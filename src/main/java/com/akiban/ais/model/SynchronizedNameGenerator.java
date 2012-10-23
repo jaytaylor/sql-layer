@@ -32,12 +32,13 @@ public class SynchronizedNameGenerator implements NameGenerator {
     private final Object LOCK = new Object();
     private final NameGenerator realNamer;
 
-    private SynchronizedNameGenerator(NameGenerator realNamer) {
-        this.realNamer = realNamer;
-    }
 
     public static SynchronizedNameGenerator wrap(NameGenerator wrapped) {
         return new SynchronizedNameGenerator(wrapped);
+    }
+
+    private SynchronizedNameGenerator(NameGenerator realNamer) {
+        this.realNamer = realNamer;
     }
 
 

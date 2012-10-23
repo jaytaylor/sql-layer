@@ -28,6 +28,7 @@ package com.akiban.server.rowdata;
 
 import com.akiban.ais.model.AISMerge;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Sequence;
@@ -163,7 +164,7 @@ public class SchemaFactory {
 
         @Override
         public void createTable(Session session, UserTable newTable) {
-            AISMerge merge = new AISMerge (ais, newTable);
+            AISMerge merge = AISMerge.newForAddTable(new DefaultNameGenerator(ais), ais, newTable);
             merge.merge();
             ais = merge.getAIS();
         }
@@ -180,7 +181,7 @@ public class SchemaFactory {
 
         @Override
         public void createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
-            AISMerge merge = new AISMerge (ais);
+            AISMerge merge = AISMerge.newForAddIndex(new DefaultNameGenerator(ais), ais);
             for(Index newIndex : indexesToAdd) {
                 merge.mergeIndex(newIndex);
             }

@@ -97,13 +97,8 @@ public class AISMerge {
     private final List<JoinChange> changedJoins;
     private final Set<IndexName> indexesToFix;
 
-    /**
-     * Creates an AISMerger with the starting values. 
-     * 
-     * @param primaryAIS - where the table will end up
-     * @param newTable - UserTable to merge into the primaryAIS
-     */
-    public AISMerge (AkibanInformationSchema primaryAIS, UserTable newTable) {
+    /** Legacy test constructor. Constructs an AISMerge for ADD_TABLE with a DefaultNameGenerator **/
+    AISMerge(AkibanInformationSchema primaryAIS, UserTable newTable) {
         this.nameGenerator = new DefaultNameGenerator(primaryAIS);
         this.targetAIS = copyAISForAdd(primaryAIS);
         this.sourceTable = newTable;
@@ -112,32 +107,41 @@ public class AISMerge {
         this.indexesToFix = null;
     }
 
-    public AISMerge (AkibanInformationSchema primaryAIS, Collection<ChangedTableDescription> alteredTables) {
-        this.nameGenerator = new DefaultNameGenerator(primaryAIS);
-        this.targetAIS = new AkibanInformationSchema();
-        this.sourceTable = null;
-        this.mergeType = MergeType.MODIFY_TABLE;
-        this.changedJoins = new ArrayList<JoinChange>();
-        this.indexesToFix = new HashSet<IndexName>();
-        copyAISForModify(primaryAIS, targetAIS, indexesToFix, changedJoins, alteredTables);
+
+    public static AISMerge newForAddTable(NameGenerator generator, AkibanInformationSchema ais, UserTable newTable) {
+        return new AISMerge(generator, copyAISForAdd(ais), newTable, MergeType.ADD_TABLE, null, null);
     }
 
-    public AISMerge (AkibanInformationSchema primaryAIS) {
-        this.nameGenerator = new DefaultNameGenerator(primaryAIS);
-        this.targetAIS = copyAISForAdd(primaryAIS);
-        this.sourceTable = null;
-        this.mergeType = MergeType.ADD_INDEX;
-        this.changedJoins = null;
-        this.indexesToFix = null;
+    public static AISMerge newForAlterTable(NameGenerator generator, AkibanInformationSchema ais,
+                                            Collection<ChangedTableDescription> alteredTables) {
+        List<JoinChange> changedJoins = new ArrayList<JoinChange>();
+        Set<IndexName> indexesToFix = new HashSet<IndexName>();
+        return new AISMerge(generator, copyAISForModify(ais, indexesToFix, changedJoins, alteredTables), null,
+                            MergeType.MODIFY_TABLE, changedJoins, indexesToFix);
+    }
+
+    public static AISMerge newForAddIndex(NameGenerator generator, AkibanInformationSchema ais) {
+        return new AISMerge(generator, copyAISForAdd(ais), null, MergeType.ADD_INDEX, null, null);
+    }
+
+    private AISMerge(NameGenerator nameGenerator, AkibanInformationSchema targetAIS, UserTable sourceTable,
+                     MergeType mergeType, List<JoinChange> changedJoins, Set<IndexName> indexesToFix) {
+        this.nameGenerator = nameGenerator;
+        this.targetAIS = targetAIS;
+        this.sourceTable = sourceTable;
+        this.mergeType = mergeType;
+        this.changedJoins = changedJoins;
+        this.indexesToFix = indexesToFix;
     }
 
     public static AkibanInformationSchema copyAISForAdd(AkibanInformationSchema oldAIS) {
         return AISCloner.clone(oldAIS);
     }
 
-    private static void copyAISForModify(AkibanInformationSchema oldAIS, AkibanInformationSchema targetAIS,
-                                         Set<IndexName> indexesToFix, final List<JoinChange> joinsToFix,
-                                         Collection<ChangedTableDescription> changedTables)
+    private static AkibanInformationSchema copyAISForModify(AkibanInformationSchema oldAIS,
+                                                            Set<IndexName> indexesToFix,
+                                                            final List<JoinChange> joinsToFix,
+                                                            Collection<ChangedTableDescription> changedTables)
     {
         final Set<Sequence> excludedSequences = new HashSet<Sequence>();
         final Set<Group> excludedGroups = new HashSet<Group>();
@@ -211,8 +215,7 @@ public class AISMerge {
             }
         }
 
-        AISCloner.clone(
-                targetAIS,
+        return AISCloner.clone(
                 oldAIS,
                 new ProtobufWriter.TableFilterSelector() {
                     @Override

@@ -51,11 +51,13 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
+import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.NopVisitor;
 import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.SQLJJar;
+import com.akiban.ais.model.SynchronizedNameGenerator;
 import com.akiban.ais.model.View;
 import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.ais.protobuf.ProtobufReader;
@@ -180,6 +182,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private int maxAISBufferSize;
     private boolean skipAISUpgrade;
     private SerializationType serializationType = SerializationType.NONE;
+    private NameGenerator nameGenerator;
 
     @Inject
     public PersistitStoreSchemaManager(ConfigurationService config, SessionService sessionService, TreeService treeService) {
@@ -269,7 +272,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     
     @Override
     public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
-        AISMerge merge = new AISMerge(getAis(session));
+        AISMerge merge = AISMerge.newForAddIndex(nameGenerator, getAis(session));
         Set<String> schemas = new HashSet<String>();
         Collection<Index> newIndexes = new ArrayList<Index>(indexesToAdd.size());
         for(Index proposed : indexesToAdd) {
@@ -331,7 +334,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             schemas.add(newName.getSchemaName());
         }
 
-        AISMerge merge = new AISMerge(getAis(session), alteredTables);
+        AISMerge merge = AISMerge.newForAlterTable(nameGenerator, getAis(session), alteredTables);
         merge.merge();
         AkibanInformationSchema newAIS = merge.getAIS();
 
@@ -709,6 +712,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
         }
+        this.nameGenerator = SynchronizedNameGenerator.wrap(new DefaultNameGenerator(ais));
     }
 
     @Override
@@ -719,6 +723,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         this.maxAISBufferSize = 0;
         this.skipAISUpgrade = false;
         this.serializationType = SerializationType.NONE;
+        this.nameGenerator = null;
     }
 
     @Override
@@ -964,7 +969,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         final TableName newName = newTable.getName();
         checkTableName(session, newName, false, isInternal);
         checkJoinTo(newTable.getParentJoin(), newName, isInternal);
-        AISMerge merge = new AISMerge(getAis(session), newTable);
+        AISMerge merge = AISMerge.newForAddTable(nameGenerator, getAis(session), newTable);
         merge.merge();
         UserTable mergedTable = merge.getAIS().getUserTable(newName);
         if(factory != null) {
