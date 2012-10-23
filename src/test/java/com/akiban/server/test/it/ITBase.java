@@ -99,8 +99,13 @@ public abstract class ITBase extends ApiTestBase {
         boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
         if (!equal)
             return false;
+        int nFields = actual.rowType().nFields();
+        Space space = space(expected.rowType());
+        if (space != null) {
+            nFields = nFields - space.dimensions() + 1;
+        }
         if (usingPValues()) {
-            for (int i = 0; i < actual.rowType().nFields(); i++) {
+            for (int i = 0; i < nFields; i++) {
                 PValueSource expectedField = expected.pvalue(i);
                 PValueSource actualField = actual.pvalue(i);
                 TInstance expectedType = expected.rowType().typeInstanceAt(i);
@@ -114,11 +119,6 @@ public abstract class ITBase extends ApiTestBase {
         }
         else {
             ToObjectValueTarget target = new ToObjectValueTarget();
-            int nFields = actual.rowType().nFields();
-            Space space = space(expected.rowType());
-            if (space != null) {
-                nFields = nFields - space.dimensions() + 1;
-            }
             for (int i = 0; equal && i < nFields; i++) {
                 Object expectedField = target.convertFromSource(expected.eval(i));
                 Object actualField = target.convertFromSource(actual.eval(i));
