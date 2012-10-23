@@ -67,7 +67,11 @@ public class TableChangeValidator {
         METADATA_NOT_NULL,
         INDEX,
         TABLE,
-        GROUP
+        GROUP;
+
+        public boolean isNoneOrMetaData() {
+            return (this == NONE) || (this == METADATA) || (this == METADATA_NOT_NULL);
+        }
     }
 
     public static class TableColumnNames {
