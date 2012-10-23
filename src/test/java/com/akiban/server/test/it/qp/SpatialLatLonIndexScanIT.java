@@ -523,6 +523,10 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
                 BigDecimal lon = lons.get(id);
                 long zExpected = space.shuffle(lat, lon);
                 assertEquals(zExpected, zActual);
+                Integer expectedId = zToId.get(zActual);
+                assertNotNull(expectedId);
+                assertEquals(expectedId.intValue(), id);
+                assertEquals(expectedHKey(id), row.hKey().toString());
                 long distance = abs(zExpected - zStart);
                 assertTrue(distance >= previousDistance);
                 previousDistance = distance;
@@ -576,6 +580,10 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
                     BigDecimal lon = lons.get(id);
                     long zExpected = space.shuffle(lat, lon);
                     assertEquals(zExpected, zActual);
+                    Integer expectedId = zToId.get(zActual);
+                    assertNotNull(expectedId);
+                    assertEquals(expectedId.intValue(), id);
+                    assertEquals(expectedHKey(id), row.hKey().toString());
                     long distance = abs(zExpected - zStart);
                     assertTrue(distance >= previousDistance);
                     previousDistance = distance;
