@@ -52,6 +52,7 @@ import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
 import static java.lang.Math.abs;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class SpatialLatLonIndexScanIT extends OperatorITBase
 {
@@ -76,6 +77,7 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
         beforeLatLonAfterIndex.markSpatial(1, Space.LAT_LON_DIMENSIONS);
         schema = new Schema(ais());
         pointRowType = schema.userTableRowType(userTable(point));
+        pointOrdinal = pointRowType.userTable().rowDef().getOrdinal();
         latLonIndexRowType = indexType(point, "lat", "lon");
         beforeLatLonIndexRowType = indexType(point, "before", "lat", "lon");
         latLonAfterIndexRowType = indexType(point, "lat", "lon", "after");
@@ -151,7 +153,7 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
                                                             id,
                                                             before(id),
                                                             after(id),
-                                                            lats.get(id),
+                                                             lats.get(id),
                                                             lons.get(id)));
                 }
             }
@@ -351,7 +353,12 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
             Row row;
             while ((row = cursor.next()) != null) {
                 assertSame(latLonIndexRowType.physicalRowType(), row.rowType());
+                long z = getLong(row, 0);
+                Integer expectedId = zToId.get(z);
+                assertNotNull(expectedId);
                 int id = getLong(row, 1).intValue();
+                assertEquals(expectedId.intValue(), id);
+                assertEquals(expectedHKey(id), row.hKey().toString());
                 actual.add(id);
             }
             // There should be no false negatives
@@ -363,7 +370,7 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
     public void testSpatialQueryWithWraparound()
     {
         loadDB();
-        final int N = 100;
+        final int N = 1; // 100;
         BigDecimal latLo;
         BigDecimal latHi;
         BigDecimal lonLo;
@@ -409,7 +416,12 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
             Row row;
             while ((row = cursor.next()) != null) {
                 assertSame(latLonIndexRowType.physicalRowType(), row.rowType());
+                long z = getLong(row, 0);
+                Integer expectedId = zToId.get(z);
+                assertNotNull(expectedId);
                 int id = getLong(row, 1).intValue();
+                assertEquals(expectedId.intValue(), id);
+                assertEquals(expectedHKey(id), row.hKey().toString());
                 actual.add(id);
             }
             // There should be no false negatives
@@ -470,8 +482,13 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
                 while ((row = cursor.next()) != null) {
                     assertSame(beforeLatLonIndexRowType.physicalRowType(), row.rowType());
                     int rowBefore = (int) row.eval(0).getInt();
+                    long z = getLong(row, 1);
+                    Integer expectedId = zToId.get(z);
+                    assertNotNull(expectedId);
                     int rowId = (int) row.eval(2).getInt();
                     assertEquals(before, rowBefore);
+                    assertEquals(expectedId.intValue(), rowId);
+                    assertEquals(expectedHKey(rowId), row.hKey().toString());
                     actual.add(rowId);
                 }
                 // There should be no false negatives
@@ -622,6 +639,11 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
         return rows;
     }
 
+    private String expectedHKey(int id)
+    {
+        return String.format("{%s,(long)%s}", pointOrdinal, id);
+    }
+
     private long[][] sort(long[][] a)
     {
         Arrays.sort(a,
@@ -655,6 +677,7 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
 
     private int point;
     private UserTableRowType pointRowType;
+    private int pointOrdinal;
     private IndexRowType latLonIndexRowType;
     private IndexRowType beforeLatLonIndexRowType;
     private IndexRowType latLonAfterIndexRowType;
