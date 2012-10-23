@@ -500,7 +500,7 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
             int count = 0;
             while ((row = cursor.next()) != null) {
                 assertSame(latLonIndexRowType.physicalRowType(), row.rowType());
-                long zActual = row.eval(0).getLong();
+                long zActual = getLong(row, 0);
                 int id = getLong(row, 1).intValue();
                 BigDecimal lat = lats.get(id);
                 BigDecimal lon = lons.get(id);
