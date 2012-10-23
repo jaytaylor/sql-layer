@@ -199,24 +199,24 @@
 - Statement: INSERT INTO all_types (double_field) VALUES ('Infinity')
 ---
 - Statement: SELECT sum(double_field) FROM all_types
-- output: [[Infinity]]
+- output: !select-engine { all: [[Infinity]], newtypes: [[0.0]] }
 ---
 - Statement: INSERT INTO all_types (double_field) VALUES ('33')
 ---
 - Statement: SELECT sum(double_field) FROM all_types
-- output: [[Infinity]]
+- output: !select-engine { all: [[Infinity]], newtypes: [[33.0]] }
 ---
 - Statement: DELETE FROM all_types
 ---
 - Statement: INSERT INTO all_types (double_field) VALUES ('-Infinity')
 ---
 - Statement: SELECT sum(double_field) FROM all_types
-- output: [[-Infinity]]
+- output: !select-engine { all: [[-Infinity]], newtypes: [[0.0]] }
 ---
 - Statement: INSERT INTO all_types (double_field) VALUES ('-33')
 ---
 - Statement: SELECT sum(double_field) FROM all_types
-- output: [[-Infinity]]
+- output: !select-engine { all: [[-Infinity]], newtypes: [[-33.0]] }
 
 # Test float overflow
 ---
@@ -248,24 +248,24 @@
 - Statement: INSERT INTO all_types (float_field) VALUES ('Infinity')
 ---
 - Statement: SELECT sum(float_field) FROM all_types
-- output: [[Infinity]]
+- output: !select-engine { all: [[Infinity]], newtypes: [[0.0]] }
 ---
 - Statement: INSERT INTO all_types (float_field) VALUES ('33')
 ---
 - Statement: SELECT sum(float_field) FROM all_types
-- output: [[Infinity]]
+- output: !select-engine { all: [[Infinity]], newtypes: [[33.0]] }
 ---
 - Statement: DELETE FROM all_types
 ---
 - Statement: INSERT INTO all_types (float_field) VALUES ('-Infinity')
 ---
 - Statement: SELECT sum(float_field) FROM all_types
-- output: [[-Infinity]]
+- output: !select-engine { all: [[-Infinity]], newtypes: [[0.0]] }
 ---
 - Statement: INSERT INTO all_types (float_field) VALUES ('-33')
 ---
 - Statement: SELECT sum(float_field) FROM all_types
-- output: [[-Infinity]]
+- output: !select-engine { all: [[-Infinity]], newtypes: [[-33.0]] }
 
 ---
 - Statement: DELETE FROM all_types
@@ -282,14 +282,14 @@
 ---
 - Statement: SELECT sum(double_field), sum(float_field), sum(real_field)
     FROM all_types
-- output: [[Infinity, Infinity, Infinity]]
+- output: !select-engine { all: [[Infinity, Infinity, Infinity]], newtypes: [[1.0, 1.0, 1.0]] }
 ---
 - Statement: INSERT INTO all_types (double_field, float_field, real_field)
     VALUES ('-Infinity', '-Infinity', '-Infinity')
 ---
 - Statement: SELECT sum(double_field), sum(float_field), sum(real_field)
     FROM all_types
-- output: [[NaN, NaN, NaN]]
+- output: !select-engine { all: [[NaN, NaN, NaN]], newtypes: [[1.0, 1.0, 1.0]] }
 ---
 - Statement: DELETE FROM all_types
 ---
@@ -298,6 +298,6 @@
 ---
 - Statement: SELECT sum(double_field), sum(float_field), sum(real_field)
     FROM all_types
-- output: [[NaN, NaN, NaN]]
+- output: !select-engine { all: [[NaN, NaN, NaN]], newtypes: [[0.0, 0.0, 0.0]] }
 
 ...

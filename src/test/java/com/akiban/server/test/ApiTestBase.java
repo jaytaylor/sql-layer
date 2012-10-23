@@ -189,6 +189,7 @@ public class ApiTestBase {
     @Before
     public final void startTestServices() throws Exception {
         types3SwitchSave = Types3Switch.ON;
+        Types3Switch.ON &= testSupportsPValues();
         assertTrue("some row updaters were left over: " + unfinishedRowUpdaters, unfinishedRowUpdaters.isEmpty());
         try {
             ConverterTestUtils.setGlobalTimezone("UTC");

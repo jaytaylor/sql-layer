@@ -306,7 +306,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
         if (Types3Switch.ON) {
             expressions = null;
             pExpressions = Arrays.asList((TPreparedExpression) new TPreparedLiteral(
-                    MNumeric.INT.instance(false), new PValue(x)), null);
+                    MNumeric.INT.instance(false), new PValue(x)));
         }
         else {
             expressions = Arrays.asList((Expression) new LiteralExpression(AkType.INT, x));
