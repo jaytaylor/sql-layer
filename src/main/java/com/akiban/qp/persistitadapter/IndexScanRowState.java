@@ -75,8 +75,8 @@ public class IndexScanRowState implements IterationHelper
     public IndexScanRowState(PersistitAdapter adapter, IndexRowType indexRowType)
     {
         this.adapter = adapter;
-        this.indexRowType = indexRowType;
-        this.row = new ShareHolder<PersistitIndexRow>(adapter.takeIndexRow(indexRowType));
+        this.indexRowType = indexRowType.physicalRowType(); // In case we have a spatial index
+        this.row = new ShareHolder<PersistitIndexRow>(adapter.takeIndexRow(this.indexRowType));
     }
 
     // For use by this class

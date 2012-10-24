@@ -1,0 +1,7 @@
+SelectQuery@5eae264f
+  ResultSet@7b553d18[pid]
+    Project@191e31ea[places.pid]
+      Sort@1a6313e1[distance_lat_lon(places.lat,places.lon,42.3583,-71.0603)]
+        Select@d5f0688[distance_lat_lon(places.lat,places.lon,42.3583,-71.0603) <= 0.0466]
+          TableGroupJoinTree@59a5d193(TableGroup@53e66f65(places), places - SingleIndexScan@3d9b7aeb(Index(test.places.places_geo[IndexColumn(state), IndexColumn(lat), IndexColumn(lon), IndexColumn(lat), IndexColumn(lon)])[-90000000:90000000, -180000000:180000000], covering/NONE, =MA, >=_center_radius(42.3583,-71.0603,0.0466), rows = 3, cost = 152.414))
+            TableSource@5dfc1b56(places - TableGroup@53e66f65(places))

@@ -30,6 +30,7 @@ import com.akiban.ais.model.*;
 import com.akiban.server.explain.*;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 
 import java.util.*;
 
@@ -134,7 +135,7 @@ public abstract class IndexRowType extends AisRowType
         @Override
         public IndexRowType physicalRowType()
         {
-            return spatialIndexRowType;
+            return spatialIndexRowType == null ? this : spatialIndexRowType;
         }
 
         public Conventional(Schema schema, UserTableRowType tableType, Index index)
@@ -145,7 +146,7 @@ public abstract class IndexRowType extends AisRowType
                 Column column = indexColumns.get(i).getColumn();
                 akTypes[i] = column.getType().akType();
             }
-            spatialIndexRowType = index.isSpatial() ? new Spatial(schema, tableType, index) : null;
+            spatialIndexRowType = index.isSpatial() ? new Spatial(schema, tableType, (TableIndex)index) : null;
         }
 
         // For a spatial index, the IndexRowType reflects the declared columns. physicalRowType reflects the
@@ -162,16 +163,32 @@ public abstract class IndexRowType extends AisRowType
             return null;
         }
 
-        public Spatial(Schema schema, UserTableRowType tableType, Index index)
+        public Spatial(Schema schema, UserTableRowType tableType, TableIndex index)
         {
-            super(schema, tableType, index, index.getAllColumns().size() - index.getKeyColumns().size() + 1);
-            int t = 0;
-            akTypes[t++] = AkType.LONG;
+            super(schema, tableType, index, index.getAllColumns().size() - index.dimensions() + 1);
             List<IndexColumn> indexColumns = index.getAllColumns();
-            for (int i = index.getKeyColumns().size(); i < indexColumns.size(); i++) {
-                Column column = indexColumns.get(i).getColumn();
-                akTypes[t++] = column.getType().akType();
+            int i = 0, t = 0;
+            while (i < indexColumns.size()) {
+                if (i == index.firstSpatialArgument()) {
+                    akTypes[t++] = AkType.LONG;;
+                    i += index.dimensions();
+                }
+                else {
+                    Column column = indexColumns.get(i++).getColumn();
+                    akTypes[t++] = column.getType().akType();
+                }
             }
+        }
+
+        @Override
+        public TInstance typeInstanceAt(int i) {
+            int firstSpatial = ((TableIndex)index()).firstSpatialArgument();
+            if (i < firstSpatial)
+                return super.typeInstanceAt(i);
+            else if (i == firstSpatial)
+                return MNumeric.BIGINT.instance(false);
+            else
+                return super.typeInstanceAt(i + ((TableIndex)index()).dimensions() - 1);
         }
     }
 }

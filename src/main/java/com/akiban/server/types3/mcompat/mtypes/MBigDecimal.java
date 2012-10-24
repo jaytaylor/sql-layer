@@ -29,6 +29,8 @@ package com.akiban.server.types3.mcompat.mtypes;
 import com.akiban.server.rowdata.ConversionHelperBigDecimal;
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.IllegalNameException;
+import com.akiban.server.types3.PValueIO;
+import com.akiban.server.types3.SimplePValueIO;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TClassBase;
 import com.akiban.server.types3.TExecutionContext;
@@ -106,6 +108,11 @@ public class MBigDecimal extends TClassBase {
         }
     }
 
+    @Override
+    protected PValueIO getPValueIO() {
+        return valueIO;
+    }
+
     public MBigDecimal(String name, int defaultVarcharLen){
         super(MBundle.INSTANCE.id(), name, AkCategory.DECIMAL, Attrs.class, NumericFormatter.FORMAT.BIGDECIMAL, 1, 1, 8,
                 PUnderlying.BYTES, TParsers.DECIMAL, defaultVarcharLen);
@@ -121,24 +128,6 @@ public class MBigDecimal extends TClassBase {
     @Override
     public boolean normalizeInstancesBeforeComparison() {
         return true;
-    }
-
-    @Override
-    protected void doWriteCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
-        byte[] bytes;
-        if (in.hasRawValue()) {
-            bytes = in.getBytes();
-        }
-        else {
-            BigDecimalWrapper value = (BigDecimalWrapper) in.getObject();
-            int precision = typeInstance.attribute(Attrs.PRECISION);
-            int scale = typeInstance.attribute(Attrs.SCALE);
-            bytes = ConversionHelperBigDecimal.bytesFromObject(
-                    value.asBigDecimal(),
-                    precision,
-                    scale);
-        }
-        out.putBytes(bytes);
     }
 
     @Override
@@ -255,6 +244,26 @@ public class MBigDecimal extends TClassBase {
             else if (object instanceof String)
                 return new MBigDecimalWrapper((String)object);
             throw new UnsupportedOperationException(String.valueOf(object));
+        }
+    };
+
+    private static final PValueIO valueIO = new SimplePValueIO() {
+        @Override
+        protected void copy(PValueSource in, TInstance typeInstance, PValueTarget out) {
+            byte[] bytes;
+            if (in.hasRawValue()) {
+                bytes = in.getBytes();
+            }
+            else {
+                BigDecimalWrapper value = (BigDecimalWrapper) in.getObject();
+                int precision = typeInstance.attribute(Attrs.PRECISION);
+                int scale = typeInstance.attribute(Attrs.SCALE);
+                bytes = ConversionHelperBigDecimal.bytesFromObject(
+                        value.asBigDecimal(),
+                        precision,
+                        scale);
+            }
+            out.putBytes(bytes);
         }
     };
 }
