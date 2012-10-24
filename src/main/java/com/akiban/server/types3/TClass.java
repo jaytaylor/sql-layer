@@ -135,10 +135,6 @@ public abstract class TClass {
         case DOUBLE:
             return Doubles.compare(sourceA.getDouble(), sourceB.getDouble());
         case BYTES:
-            if (this instanceof MBigDecimal)
-                return (new MBigDecimalWrapper(sourceA.getBytes()))
-                             .compareTo(new MBigDecimalWrapper(sourceB.getBytes()));
-            
             ByteBuffer bbA = ByteBuffer.wrap(sourceA.getBytes());
             ByteBuffer bbB = ByteBuffer.wrap(sourceB.getBytes());
             return bbA.compareTo(bbB);

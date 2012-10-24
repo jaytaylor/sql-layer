@@ -112,6 +112,12 @@ public class MBigDecimal extends TClassBase {
     }
 
     @Override
+    protected int doCompare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB)
+    {
+        return getWrapper(sourceA, instanceA).compareTo(getWrapper(sourceB, instanceB));
+    }
+    
+    @Override
     public void selfCast(TExecutionContext context, TInstance sourceInstance, PValueSource source,
                          TInstance targetInstance, PValueTarget target)
     {
