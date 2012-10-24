@@ -110,6 +110,8 @@ public class Routine
     public String getExternalName() {
         if (methodName == null)
             return className;
+        else if (className == null)
+            return methodName;
         else
             return className + "." + methodName;
     }
@@ -144,12 +146,13 @@ public class Routine
 
     public void setExternalName(SQLJJar sqljJar, String className, String methodName) {
         checkMutability();
-        AISInvariants.checkNullName(className, "Routine", "class name");
         switch (callingConvention) {
         case JAVA:
+            AISInvariants.checkNullName(className, "Routine", "class name");
             AISInvariants.checkNullName(methodName, "Routine", "method name");
             break;
         case LOADABLE_PLAN:
+            AISInvariants.checkNullName(className, "Routine", "class name");
             break;
         default:
             throw new InvalidRoutineException(name.getSchemaName(), name.getTableName(), 
