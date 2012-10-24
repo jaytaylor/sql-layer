@@ -70,7 +70,7 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
         predicateType = queryRootType;
         if (predicateIndex != null) {
             // Index bounds
-            IndexRowType indexRowType = schema.indexRowType(predicateIndex);
+            IndexRowType indexRowType = schema.indexRowType(predicateIndex).physicalRowType();
             if (start == null && end == null) {
                 indexKeyRange = IndexKeyRange.unbounded(indexRowType);
             } else {

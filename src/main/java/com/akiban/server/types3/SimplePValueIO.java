@@ -24,13 +24,27 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.t3expressions;
+package com.akiban.server.types3;
 
-public interface T3RegistryMXBean {
-    String describeTypes();
-    String describeCasts();
-    String describeScalars();
-    String describeAggregates();
-    String describeAll();
-    boolean isNewtypesOn();
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
+
+public abstract class SimplePValueIO implements PValueIO {
+
+    protected abstract void copy(PValueSource in, TInstance typeInstance, PValueTarget out);
+
+    @Override
+    public void copyCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
+        copy(in, typeInstance, out);
+    }
+
+    @Override
+    public void writeCollating(PValueSource in, TInstance typeInstance, PValueTarget out) {
+        copy(in, typeInstance, out);
+    }
+
+    @Override
+    public void readCollating(PValueSource in, TInstance typeInstance, PValueTarget out) {
+        copy(in, typeInstance, out);
+    }
 }

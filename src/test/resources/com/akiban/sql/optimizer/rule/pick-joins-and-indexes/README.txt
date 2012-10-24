@@ -109,3 +109,5 @@ group-branch-subquery: subquery from different branch (no group loop from flatte
 geospatial-1: compute max radius for N neighbors
 
 geospatial-2: get within that radius
+
+geospatial-3: covering spatial index

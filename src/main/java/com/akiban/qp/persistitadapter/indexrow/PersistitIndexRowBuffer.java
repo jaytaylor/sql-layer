@@ -353,7 +353,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         }
     }
 
-    protected void attach(PersistitKeyPValueSource source, int position, PUnderlying type)
+    protected void attach(PersistitKeyPValueSource source, int position, TInstance type)
     {
         if (position < pKeyFields) {
             source.attach(pKey, position, type);
@@ -382,8 +382,10 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
             } else {
                 int indexField = indexToHKey.getIndexRowPosition(i);
                 if (index.isSpatial()) {
-                    // A spatial index has a single key column (the z-value), representing the declared key columns.
-                    indexField = indexField - index.getKeyColumns().size() + 1;
+                    // A spatial index has a single key column (the z-value), representing the declared spatial key columns.
+                    TableIndex spatialIndex = (TableIndex)index;
+                    if (indexField > spatialIndex.firstSpatialArgument())
+                        indexField -= spatialIndex.dimensions() - 1;
                 }
                 Key keySource;
                 if (indexField < pKeyFields) {

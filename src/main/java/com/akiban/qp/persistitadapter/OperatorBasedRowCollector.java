@@ -33,10 +33,8 @@ import com.akiban.qp.operator.Limit;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.AisRowType;
-import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.*;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.api.FixedCountLimit;
 import com.akiban.server.api.dml.ColumnSelector;
@@ -278,12 +276,13 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         Group group = queryRootTable.getGroup();
         Operator plan;
         if (useIndex) {
-            Operator indexScan = indexScan_Default(predicateType.indexRowType(predicateIndex),
+            IndexRowType indexRowType = predicateType.indexRowType(predicateIndex).physicalRowType();
+            Operator indexScan = indexScan_Default(indexRowType,
                                                    descending,
                                                    indexKeyRange);
             plan = branchLookup_Default(indexScan,
                     group,
-                    predicateType.indexRowType(predicateIndex),
+                    indexRowType,
                     predicateType,
                     InputPreservationOption.DISCARD_INPUT,
                     limit);
