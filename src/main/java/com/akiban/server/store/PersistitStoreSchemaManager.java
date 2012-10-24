@@ -1031,6 +1031,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         return serializationType;
     }
 
+    @Override
     public Set<String> getTreeNames() {
         return nameGenerator.getTreeNames();
     }

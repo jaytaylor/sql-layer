@@ -29,6 +29,7 @@ package com.akiban.server.store;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedMap;
 
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -235,6 +236,12 @@ public interface SchemaManager {
     void rollbackAIS(Session session, AkibanInformationSchema replacementAIS,
                      Map<TableName, Integer> savedOrdinals, Collection<String> schemaNames);
 
+    /** Whether or not tree removal should happen immediately */
     boolean treeRemovalIsDelayed();
+
+    /** Removal of treeName in schemaName took place (e.g. by Store) */
     void treeWasRemoved(Session session, String schemaName, String treeName);
+
+    /** Get all known/allocated tree names */
+    Set<String> getTreeNames();
 }
