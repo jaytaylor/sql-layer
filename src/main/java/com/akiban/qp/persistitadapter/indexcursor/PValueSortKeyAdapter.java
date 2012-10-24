@@ -38,7 +38,6 @@ import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.common.types.TString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.texpressions.TComparisonExpression;
 import com.akiban.server.types3.texpressions.TEvaluatableExpression;
@@ -189,7 +188,7 @@ public class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPrepared
     private static class PValueSortKeySource implements SortKeySource<PValueSource> {
         @Override
         public void attach(Key key, int i, AkType fieldType, TInstance tInstance) {
-            source.attach(key, i, tInstance.typeClass().underlyingType());
+            source.attach(key, i, tInstance);
         }
 
         @Override
@@ -198,7 +197,7 @@ public class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPrepared
         }
         
         public PValueSortKeySource(TInstance tInstance) {
-            source = new PersistitKeyPValueSource(tInstance.typeClass().underlyingType());
+            source = new PersistitKeyPValueSource(tInstance);
         }
         
         private final PersistitKeyPValueSource source;

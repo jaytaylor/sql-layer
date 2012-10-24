@@ -48,7 +48,7 @@ public abstract class ServerOperatorCompiler extends OperatorCompiler
         initFunctionsRegistry(server.functionsRegistry());
         boolean usePValues;
         if (server.getBooleanProperty("cbo", true)) {
-            usePValues = server.getBooleanProperty("newtypes", Types3Switch.SET_ON);
+            usePValues = server.getBooleanProperty("newtypes", Types3Switch.DEFAULT);
             initCostEstimator(server.costEstimator(this, server.getTreeService()), usePValues);
             if (usePValues)
                 initT3Registry(server.t3RegistryService());

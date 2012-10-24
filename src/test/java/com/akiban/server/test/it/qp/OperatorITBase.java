@@ -50,6 +50,7 @@ import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.persistit.Transaction;
@@ -352,7 +353,7 @@ public class OperatorITBase extends ITBase
                     } else if (value instanceof String) {
                         pvalue.putString((String) value, null);
                     } else if (value instanceof BigDecimal) {
-                        pvalue.putObject((BigDecimal) value);
+                        pvalue.putObject(new MBigDecimalWrapper((BigDecimal) value));
                     } else {
                         fail();
                     }
