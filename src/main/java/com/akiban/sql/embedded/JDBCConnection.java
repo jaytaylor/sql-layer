@@ -222,6 +222,14 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
                 openResultSets.isEmpty());
     }
 
+    protected String getDatabaseProductName() {
+        return reqs.akServer().getServerName();
+    }
+
+    protected String getDatabaseProductVersion() {
+        return reqs.akServer().getServerVersion();
+    }
+
     /* Wrapper */
 
     @Override
@@ -327,7 +335,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     @Override
     public DatabaseMetaData getMetaData() throws SQLException {
-        return null;
+        return new JDBCDatabaseMetaData(this);
     }
 
     @Override

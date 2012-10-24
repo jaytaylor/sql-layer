@@ -26,6 +26,7 @@
 
 package com.akiban.sql.server;
 
+import com.akiban.server.AkServerInterface;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
@@ -39,7 +40,8 @@ import com.akiban.server.t3expressions.T3RegistryService;
 
 public final class ServerServiceRequirements {
 
-    public ServerServiceRequirements(DXLService dxlService,
+    public ServerServiceRequirements(AkServerInterface akServer,
+                                     DXLService dxlService,
                                      InstrumentationService instrumentation,
                                      SessionService sessionService,
                                      Store store,
@@ -49,8 +51,9 @@ public final class ServerServiceRequirements {
                                      IndexStatisticsService indexStatistics,
                                      T3RegistryService t3RegistryService,
                                      RoutineLoader routineLoader) {
-        this.instrumentation = instrumentation;
+        this.akServer = akServer;
         this.dxlService = dxlService;
+        this.instrumentation = instrumentation;
         this.sessionService = sessionService;
         this.store = store;
         this.treeService = treeService;
@@ -61,12 +64,16 @@ public final class ServerServiceRequirements {
         this.routineLoader = routineLoader;
     }
 
-    public InstrumentationService instrumentation() {
-        return instrumentation;
+    public AkServerInterface akServer() {
+        return akServer;
     }
 
     public DXLService dxl() {
         return dxlService;
+    }
+
+    public InstrumentationService instrumentation() {
+        return instrumentation;
     }
 
     public SessionService sessionService() {
@@ -101,8 +108,9 @@ public final class ServerServiceRequirements {
         return routineLoader;
     }
 
-    private final InstrumentationService instrumentation;
+    private final AkServerInterface akServer;
     private final DXLService dxlService;
+    private final InstrumentationService instrumentation;
     private final SessionService sessionService;
     private final Store store;
     private final TreeService treeService;
