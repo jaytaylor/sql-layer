@@ -49,7 +49,6 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.google.common.primitives.Doubles;
 
@@ -147,7 +146,7 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             output.putObject(MBigDecimal.getWrapper(context, DEC_INDEX)
-                        .set(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(1)))
+                        .set(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)))
                         .add(MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1))));
         }
 
@@ -216,7 +215,7 @@ public abstract class MArithmetic extends TArithmetic {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             output.putObject(MBigDecimal.getWrapper(context, DEC_INDEX)
-                        .set(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(1)))
+                        .set(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)))
                         .subtract(MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1))));
         }
 
@@ -655,7 +654,7 @@ public abstract class MArithmetic extends TArithmetic {
                  output.putNull();
              else
                  output.putObject(MBigDecimal.getWrapper(context, DEC_INDEX)
-                                     .set(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(1)))
+                                     .set(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)))
                                      .mod(divisor));
         }
     };
