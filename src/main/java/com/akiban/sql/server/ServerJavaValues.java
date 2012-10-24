@@ -58,6 +58,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.URL;
 import java.sql.Array;
 import java.sql.Blob;
@@ -727,6 +728,8 @@ public abstract class ServerJavaValues
             setNClob(index, (NClob)x);
         else if (x instanceof SQLXML)
             setSQLXML(index, (SQLXML)x);
+        else if (x instanceof BigInteger)
+            setLong(index, ((BigInteger)x).longValue());
         else 
             throw new UnsupportedOperationException("Unsupported type " + x);
     }
