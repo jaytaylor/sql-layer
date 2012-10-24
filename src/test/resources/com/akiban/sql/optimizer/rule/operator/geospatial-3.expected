@@ -2,4 +2,4 @@ PhysicalSelect@9654227[pid]
   Project_Default(Field(4))
     Sort_Tree(DISTANCE_LAT_LON(Field(2), Field(3), 42.3583, -71.0603) ASC)
       Select_HKeyOrdered(DISTANCE_LAT_LON(Field(2), Field(3), 42.3583, -71.0603) <= 0.0466)
-        IndexScan_Default(Index(test.places.places_geo), (state, lat, lon) BETWEEN ('MA', 42.3583 - 0.0466, -71.0603 - 0.0466) AND ('MA', 42.3583 + 0.0466, -71.0603 + 0.0466))
+        IndexScan_Default(Index(test.places.places_geo), state = 'MA', (lat, lon) BETWEEN (42.3583 - 0.0466, -71.0603 - 0.0466) AND (42.3583 + 0.0466, -71.0603 + 0.0466))
