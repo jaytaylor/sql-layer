@@ -989,7 +989,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         serializationType = newSerializationType;
     }
 
-    private void cleanupDelayedTrees(final Session session) throws PersistitException {
+    /** Public for test only. Should not generally be called. */
+    public void cleanupDelayedTrees(final Session session) throws PersistitException {
         treeService.visitStorage(
                 session,
                 new TreeVisitor() {
