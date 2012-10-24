@@ -802,6 +802,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private static void loadProtobuf(Exchange ex, AkibanInformationSchema newAIS) throws PersistitException {
         ProtobufReader reader = new ProtobufReader(newAIS);
         Key key = ex.getKey();
+        ex.clear().append(AIS_KEY_PREFIX);
         KeyFilter filter = new KeyFilter().append(KeyFilter.simpleTerm(AIS_PROTOBUF_PARENT_KEY));
         while(ex.traverse(Key.Direction.GT, filter, Integer.MAX_VALUE)) {
             if(key.getDepth() != 3) {
@@ -994,6 +995,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 new TreeVisitor() {
                     @Override
                     public void visit(final Exchange ex) throws PersistitException {
+                        ex.clear().append(DELAYED_TREE_KEY);
                         KeyFilter filter = new KeyFilter().append(KeyFilter.simpleTerm(DELAYED_TREE_KEY));
                         while(ex.traverse(Key.Direction.GT, filter, Integer.MAX_VALUE)) {
                             ex.getKey().indexTo(1);     // skip delayed key
