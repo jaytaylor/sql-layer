@@ -32,7 +32,6 @@ import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
-import com.akiban.qp.persistitadapter.SpatialHelper;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
