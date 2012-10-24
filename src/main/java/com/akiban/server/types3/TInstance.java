@@ -27,6 +27,7 @@
 package com.akiban.server.types3;
 
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.DataTypeDescriptor;
@@ -39,23 +40,23 @@ public final class TInstance {
     public void writeCanonical(PValueSource in, PValueTarget out) {
         tclass.writeCanonical(in, this, out);
     }
-    
+
     public void writeCollating(PValueSource in, PValueTarget out) {
         tclass.writeCollating(in, this, out);
     }
-    
-    public void readCanonical(PValueSource in, PValueTarget out) {
-        tclass.readCanonical(in, this, out);
+
+    public void readCollating(PValue in, PValue out) {
+        tclass.readCollating(in, this, out);
     }
 
     public void format(PValueSource source, AkibanAppender out) {
         tclass.format(this, source, out);
     }
-    
+
     public void formatAsLiteral(PValueSource source, AkibanAppender out) {
         tclass.formatAsLiteral(this, source, out);
     }
-    
+
     public void formatAsJson(PValueSource source, AkibanAppender out) {
         tclass.formatAsJson(this, source, out);
     }
@@ -90,7 +91,6 @@ public final class TInstance {
                 ? this
                 : new TInstance(tclass, enumClass, tclass.nAttributes(), attr0, attr1, attr2, attr3, isNullable);
     }
-
     /**
      * Convenience method for <tt>typeClass().dataTypeDescriptor(this)</tt>.
      * @return this instance's DataTypeDescriptor
@@ -99,6 +99,7 @@ public final class TInstance {
     public DataTypeDescriptor dataTypeDescriptor() {
         return tclass.dataTypeDescriptor(this);
     }
+
     /**
      * @param o additional meta data for this TInstance
      * @return
@@ -207,7 +208,6 @@ public final class TInstance {
     }
 
     // state
-
     private TInstance(TClass tclass, Class<?> enumClass, int nAttrs, int attr0, int attr1, int attr2, int attr3,
               boolean isNullable)
     {
@@ -241,6 +241,7 @@ public final class TInstance {
     private final TClass tclass;
     private final int attr0, attr1, attr2, attr3;
     private final boolean isNullable;
+
     private Object metaData;
 
     private final Class<?> enumClass;

@@ -34,6 +34,7 @@ import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.service.InstanceFinder;
 import com.akiban.server.types3.service.ReflectiveInstanceFinder;
 import com.akiban.server.types3.texpressions.TValidatedAggregator;
@@ -209,6 +210,11 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             all.put("aggregate_functions", describeOverloads(aggreatorsRegistry));
 
             return toYaml(all);
+        }
+
+        @Override
+        public boolean isNewtypesOn() {
+            return Types3Switch.ON;
         }
 
         private Object typesDescriptors() {

@@ -60,14 +60,13 @@ public class RoutineDDL {
         String language = aliasInfo.getLanguage();
         Routine.CallingConvention callingConvention;
         if (language.equalsIgnoreCase("JAVA")) {
-            switch (aliasInfo.getParameterStyle()) {
-            case JAVA:
+            if ("JAVA".equalsIgnoreCase(aliasInfo.getParameterStyle())) {
                 callingConvention = Routine.CallingConvention.JAVA;
-                break;
-            case AKIBAN_LOADABLE_PLAN:
+            }
+            else if ("AKIBAN_LOADABLE_PLAN".equalsIgnoreCase(aliasInfo.getParameterStyle())) {
                 callingConvention = Routine.CallingConvention.LOADABLE_PLAN;
-                break;
-            default:
+            }
+            else {
                 throw new InvalidRoutineException(schemaName, routineName, "unsupported PARAMETER STYLE " + aliasInfo.getParameterStyle());
             }
         }
@@ -109,24 +108,47 @@ public class RoutineDDL {
                               builderType.name(), typeParameters[0], typeParameters[1]);
         }
 
-        if (createAlias.getJavaClassName() != null) {
-            String jarSchema = defaultSchemaName;
+        if (createAlias.getExternalName() != null) {
+            String className, methodName;
+            boolean checkJarName;
+            if (callingConvention == Routine.CallingConvention.JAVA) {
+                className = createAlias.getJavaClassName();
+                methodName = createAlias.getMethodName();
+                checkJarName = true;
+            }
+            else if (callingConvention == Routine.CallingConvention.LOADABLE_PLAN) {
+                // The whole class implements a standard interface.
+                className = createAlias.getExternalName();
+                methodName = null;
+                checkJarName = true;
+            }
+            else {
+                className = null;
+                methodName = createAlias.getExternalName();
+                checkJarName = false;
+            }
+            String jarSchema = null;
             String jarName = null;
-            String className = createAlias.getJavaClassName();
-            String methodName = createAlias.getMethodName();
-            int idx = className.indexOf(':');
-            if (idx >= 0) {
-                jarName = className.substring(0, idx);
-                className = className.substring(idx + 1);
-                idx = jarName.indexOf('.');
+            if (checkJarName) {
+                int idx = className.indexOf(':');
                 if (idx >= 0) {
-                    jarSchema = jarName.substring(0, idx);
-                    jarName = jarName.substring(idx + 1);
-                }
-                else if (jarName.equals("thisjar")) {
-                    TableName thisJar = (TableName)createAlias.getUserData();
-                    jarSchema = thisJar.getSchemaName();
-                    jarName = thisJar.getTableName();
+                    jarName = className.substring(0, idx);
+                    className = className.substring(idx + 1);
+                    if (jarName.equals("thisjar")) {
+                        TableName thisJar = (TableName)createAlias.getUserData();
+                        jarSchema = thisJar.getSchemaName();
+                        jarName = thisJar.getTableName();
+                    }
+                    else {
+                        idx = jarName.indexOf('.');
+                        if (idx < 0) {
+                            jarSchema = defaultSchemaName;
+                        }
+                        else {
+                            jarSchema = jarName.substring(0, idx);
+                            jarName = jarName.substring(idx + 1);
+                        }
+                    }
                 }
             }
             if (jarName != null) {
@@ -140,7 +162,7 @@ public class RoutineDDL {
                                         jarSchema, jarName, 
                                         className, methodName);
         }
-        else if (createAlias.getDefinition() != null) {
+        if (createAlias.getDefinition() != null) {
             builder.routineDefinition(schemaName, routineName, 
                                       createAlias.getDefinition());
         }

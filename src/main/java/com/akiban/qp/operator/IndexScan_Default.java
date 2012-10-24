@@ -29,6 +29,7 @@ package com.akiban.qp.operator;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.expression.IndexKeyRange;
@@ -222,7 +223,7 @@ class IndexScan_Default extends Operator
             atts.put(Label.TABLE_NAME, PrimitiveExplainer.getInstance(column.getTable().getName().getTableName()));
             atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getName()));
         }
-        if (indexType.index().isGroupIndex())
+        if (index.isGroupIndex())
             atts.put(Label.INDEX_KIND, PrimitiveExplainer.getInstance("GROUP"));
         if (!indexKeyRange.unbounded()) {
             List<Explainer> loExprs = null, hiExprs = null;
@@ -234,8 +235,16 @@ class IndexScan_Default extends Operator
             }
             if (indexKeyRange.spatial()) {
                 atts.put(Label.INDEX_KIND, PrimitiveExplainer.getInstance("SPATIAL"));
-                if (loExprs != null)
-                    atts.put(Label.LOW_COMPARAND, loExprs);
+                int nequals = indexKeyRange.boundColumns() - ((TableIndex)index).dimensions();
+                if (nequals > 0) {
+                    for (int i = 0; i < nequals; i++) {
+                        atts.put(Label.EQUAL_COMPARAND, loExprs.get(i));
+                    }
+                    loExprs = loExprs.subList(nequals, loExprs.size());
+                    if (hiExprs != null)
+                        hiExprs = hiExprs.subList(nequals, hiExprs.size());
+                }
+                atts.put(Label.LOW_COMPARAND, loExprs);
                 if (hiExprs != null)
                     atts.put(Label.HIGH_COMPARAND, hiExprs);
             }

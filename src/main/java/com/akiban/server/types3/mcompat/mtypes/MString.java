@@ -28,6 +28,7 @@ package com.akiban.server.types3.mcompat.mtypes;
 
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.collation.AkCollatorFactory;
+import com.akiban.server.types3.PValueIO;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
@@ -51,9 +52,8 @@ public class MString extends TString
     public static final MString LONGTEXT = new MString(TypeId.LONGVARCHAR_ID, "longtext", Integer.MAX_VALUE); // TODO not big enough!
 
     @Override
-    public void writeCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
-        final int collatorId = inInstance.attribute(StringAttribute.COLLATION);
-        out.putString(AkCollator.getString(inValue), AkCollatorFactory.getAkCollator(collatorId));
+    protected PValueIO getPValueIO() {
+        return pvalueIO;
     }
 
     private MString(TypeId typeId, String name, int fixedSize) {
@@ -125,5 +125,28 @@ public class MString extends TString
             default:
                 throw new IllegalArgumentException("Unexpected UnderlyingType: " + in.getUnderlyingType());
         }
-    }           
+    }
+
+    private static final PValueIO pvalueIO = new PValueIO() {
+        @Override
+        public void copyCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
+            out.putString(in.getString(), null);
+        }
+
+        @Override
+        public void writeCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
+            final int collatorId = inInstance.attribute(StringAttribute.COLLATION);
+            out.putString(AkCollator.getString(inValue), AkCollatorFactory.getAkCollator(collatorId));
+        }
+
+        @Override
+        public void readCollating(PValueSource in, TInstance typeInstance, PValueTarget out) {
+            if (in.hasRawValue())
+                out.putString(in.getString(), null);
+            else if (in.hasCacheValue())
+                out.putObject(in.getObject());
+            else
+                throw new AssertionError("no value");
+        }
+    };
 }

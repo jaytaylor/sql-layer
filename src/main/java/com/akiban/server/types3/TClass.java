@@ -146,8 +146,11 @@ public abstract class TClass {
     }
     
 
-    protected void writeCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
-        PValueTargets.copyFrom(in, out);
+    final void writeCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
+        if (in.isNull())
+            out.putNull();
+        else
+            getPValueIO().copyCanonical(in, typeInstance, out);
     }
 
     public void attributeToString(int attributeIndex, long value, StringBuilder output) {
@@ -159,6 +162,10 @@ public abstract class TClass {
             output.append(arrayIndex);
         else
             output.append(array[(int)arrayIndex]);
+    }
+
+    protected PValueIO getPValueIO() {
+        return defaultPValueIO;
     }
 
     public abstract void putSafety(TExecutionContext context,
@@ -189,12 +196,18 @@ public abstract class TClass {
         return createInstance(4, arg0, arg1, arg2, arg3, nullable);
     }
 
-    protected void writeCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
-        writeCanonical(inValue, inInstance, out);
+    final void writeCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
+        if (inValue.isNull())
+            out.putNull();
+        else
+            getPValueIO().writeCollating(inValue, inInstance, out);
     }
 
-    protected void readCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
-        writeCanonical(inValue, typeInstance, out);
+    final void readCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
+        if (inValue.isNull())
+            out.putNull();
+        else
+            getPValueIO().readCollating(inValue, inInstance, out);
     }
 
     public TInstance pickInstance(TInstance left, TInstance right) {
@@ -379,4 +392,11 @@ public abstract class TClass {
     private static final Pattern VALID_ATTRIBUTE_PATTERN = Pattern.compile("[a-zA-Z]\\w*");
 
     private static final int EMPTY = -1;
+
+    private static final PValueIO defaultPValueIO = new SimplePValueIO() {
+        @Override
+        protected void copy(PValueSource in, TInstance typeInstance, PValueTarget out) {
+            PValueTargets.copyFrom(in, out);
+        }
+    };
 }

@@ -31,33 +31,26 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.expression.RowBasedUnboundExpressions;
-import com.akiban.qp.expression.UnboundExpressions;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.IndexScanRowState;
-import com.akiban.qp.persistitadapter.SpatialHelper;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.SetColumnSelector;
-import com.akiban.server.expression.Expression;
+import com.akiban.server.api.dml.IndexRowPrefixSelector;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.geophile.SpaceLatLon;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.server.types3.texpressions.TPreparedLiteral;
+import com.akiban.server.types3.pvalue.PValueTargets;
 
 import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.List;
 
 import static java.lang.Math.abs;
 
@@ -147,62 +140,94 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         assert keyRange.spatial();
         this.iterationHelper = iterationHelper;
         IndexRowType physicalIndexRowType = keyRange.indexRowType().physicalRowType();
-        // Cursor going forward from starting z value (inclusive)
-        List<Expression> exprs;
-        List<TPreparedExpression> pexprs;
-        boolean nullable = Types3Switch.ON && SpatialHelper.isNullable(keyRange);
-        if (Types3Switch.ON) {
-            TInstance instance = MNumeric.BIGINT.instance(nullable);
-            PValueSource value = new PValue(Long.MAX_VALUE);
-            pexprs = Collections.<TPreparedExpression>singletonList(new TPreparedLiteral(instance, value));
-            exprs = null;
-        }
-        else {
-            exprs = Collections.singletonList(Expressions.literal(Long.MAX_VALUE));
-            pexprs = null;
-        }
-        UnboundExpressions zMaxRow =
-            new RowBasedUnboundExpressions(physicalIndexRowType, exprs, pexprs);
-        IndexBound zMax = new IndexBound(zMaxRow, Z_SELECTOR);
+        Index index = keyRange.indexRowType().index();
+        TableIndex spatialIndex = (TableIndex) index;
+        SpaceLatLon space = (SpaceLatLon) spatialIndex.space();
+        int latColumn = spatialIndex.firstSpatialArgument();
+        int lonColumn = latColumn + 1;
+        // The index column selector needs to select all the columns before the z column, and the z column itself.
+        IndexRowPrefixSelector indexColumnSelector = new IndexRowPrefixSelector(latColumn + 1);
         IndexBound loBound = keyRange.lo();
         BoundExpressions loExpressions = loBound.boundExpressions(context);
-        Index index = keyRange.indexRowType().index();
-        SpaceLatLon space = (SpaceLatLon) ((TableIndex)index).space();
-        assert (space.dimensions() == 2);
-        BigDecimal xLo, yLo;
+        // Compute z-value at beginning of forward and backward scans
+        BigDecimal lat;
+        BigDecimal lon;
         if (Types3Switch.ON) {
-            TInstance xinst = index.getAllColumns().get(0).getColumn().tInstance();
-            TInstance yinst = index.getAllColumns().get(1).getColumn().tInstance();
-            xLo = MBigDecimal.getWrapper(loExpressions.pvalue(0), xinst).asBigDecimal();
-            yLo = MBigDecimal.getWrapper(loExpressions.pvalue(1), yinst).asBigDecimal();
+            TInstance latInstance = index.getAllColumns().get(latColumn).getColumn().tInstance();
+            TInstance lonInstance = index.getAllColumns().get(lonColumn).getColumn().tInstance();
+            lat = MBigDecimal.getWrapper(loExpressions.pvalue(latColumn), latInstance).asBigDecimal();
+            lon = MBigDecimal.getWrapper(loExpressions.pvalue(lonColumn), lonInstance).asBigDecimal();
+        } else {
+            lat = loExpressions.eval(latColumn).getDecimal();
+            lon = loExpressions.eval(lonColumn).getDecimal();
         }
-        else {
-            xLo = loExpressions.eval(0).getDecimal();
-            yLo = loExpressions.eval(1).getDecimal();
+        zStart = space.shuffle(lat, lon);
+        // Cursors going forward from starting z value (inclusive), and backward from the same z value (exclusive)
+        ValuesHolderRow zForwardRow = new ValuesHolderRow(physicalIndexRowType, Types3Switch.ON);
+        ValuesHolderRow zBackwardRow = new ValuesHolderRow(physicalIndexRowType, Types3Switch.ON);
+        ValuesHolderRow zMaxRow = new ValuesHolderRow(physicalIndexRowType, Types3Switch.ON);
+        ValuesHolderRow zMinRow = new ValuesHolderRow(physicalIndexRowType, Types3Switch.ON);
+        IndexBound zForward = new IndexBound(zForwardRow, indexColumnSelector);
+        IndexBound zBackward = new IndexBound(zBackwardRow, indexColumnSelector);
+        IndexBound zMax = new IndexBound(zMaxRow, indexColumnSelector);
+        IndexBound zMin = new IndexBound(zMinRow, indexColumnSelector);
+        // Take care of any equality restrictions before the spatial fields
+        zPosition = latColumn;
+        for (int f = 0; f < zPosition; f++) {
+            if (Types3Switch.ON) {
+                PValueSource eqValueSource = loExpressions.pvalue(f);
+                PValueTargets.copyFrom(eqValueSource, zForwardRow.pvalueAt(f));
+                PValueTargets.copyFrom(eqValueSource, zBackwardRow.pvalueAt(f));
+                PValueTargets.copyFrom(eqValueSource, zMaxRow.pvalueAt(f));
+                PValueTargets.copyFrom(eqValueSource, zMinRow.pvalueAt(f));
+            } else {
+                ValueSource eqValue = loExpressions.eval(f);
+                zForwardRow.holderAt(f).copyFrom(eqValue);
+                zBackwardRow.holderAt(f).copyFrom(eqValue);
+                zMaxRow.holderAt(f).copyFrom(eqValue);
+                zMinRow.holderAt(f).copyFrom(eqValue);
+            }
         }
-        zStart = space.shuffle(xLo, yLo);        
+        // Z-value part of bounds
         if (Types3Switch.ON) {
-            TInstance instance = MNumeric.BIGINT.instance(nullable);
-            PValueSource value = new PValue(zStart);
-            pexprs = Collections.<TPreparedExpression>singletonList(new TPreparedLiteral(instance, value));
-            exprs = null;
+            zForwardRow.pvalueAt(zPosition).underlying(PUnderlying.INT_64);
+            zForwardRow.pvalueAt(zPosition).putInt64(zStart);
+            zBackwardRow.pvalueAt(zPosition).underlying(PUnderlying.INT_64);
+            zBackwardRow.pvalueAt(zPosition).putInt64(zStart);
+            zMaxRow.pvalueAt(zPosition).underlying(PUnderlying.INT_64);
+            zMaxRow.pvalueAt(zPosition).putInt64(Long.MAX_VALUE);
+            zMinRow.pvalueAt(zPosition).underlying(PUnderlying.INT_64);
+            zMinRow.pvalueAt(zPosition).putInt64(Long.MIN_VALUE);
+        } else {
+            zForwardRow.holderAt(zPosition).expectType(AkType.LONG);
+            zForwardRow.holderAt(zPosition).putLong(zStart);
+            zBackwardRow.holderAt(zPosition).expectType(AkType.LONG);
+            zBackwardRow.holderAt(zPosition).putLong(zStart);
+            zMaxRow.holderAt(zPosition).expectType(AkType.LONG);
+            zMaxRow.holderAt(zPosition).putLong(Long.MAX_VALUE);
+            zMinRow.holderAt(zPosition).expectType(AkType.LONG);
+            zMinRow.holderAt(zPosition).putLong(Long.MIN_VALUE);
         }
-        else {
-            exprs = Collections.singletonList(Expressions.literal(zStart));
-            pexprs = null;
-        }
-        UnboundExpressions zLoRow =
-            new RowBasedUnboundExpressions(physicalIndexRowType, exprs, pexprs);
-        IndexBound zLo = new IndexBound(zLoRow, Z_SELECTOR);
-        IndexKeyRange geKeyRange = IndexKeyRange.bounded(physicalIndexRowType, zLo, true, zMax, false);
+        IndexKeyRange geKeyRange = IndexKeyRange.bounded(physicalIndexRowType, zForward, true, zMax, false);
+        IndexKeyRange ltKeyRange = IndexKeyRange.bounded(physicalIndexRowType, zMin, false, zBackward, false);
         IndexScanRowState geRowState = new IndexScanRowState(adapter, keyRange.indexRowType());
+        IndexScanRowState ltRowState = new IndexScanRowState(adapter, keyRange.indexRowType());
         API.Ordering upOrdering = new API.Ordering();
-        upOrdering.append(Expressions.field(physicalIndexRowType, 0), true);
+        API.Ordering downOrdering = new API.Ordering();
+        for (int f = 0; f < physicalIndexRowType.nFields(); f++) {
+            upOrdering.append(Expressions.field(physicalIndexRowType, 0), true);
+            downOrdering.append(Expressions.field(physicalIndexRowType, 0), false);
+        }
         if (Types3Switch.ON) {
             geCursor = new IndexCursorUnidirectional<PValueSource>(context,
                                                                    geRowState,
                                                                    geKeyRange,
                                                                    upOrdering,
+                                                                   PValueSortKeyAdapter.INSTANCE);
+            ltCursor = new IndexCursorUnidirectional<PValueSource>(context,
+                                                                   ltRowState,
+                                                                   ltKeyRange,
+                                                                   downOrdering,
                                                                    PValueSortKeyAdapter.INSTANCE);
         }
         else {
@@ -211,33 +236,6 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
                                                                   geKeyRange,
                                                                   upOrdering,
                                                                   OldExpressionsSortKeyAdapter.INSTANCE);
-        }
-        // Cursor going backward from starting z value (exclusive)
-        if (Types3Switch.ON) {
-            TInstance instance = MNumeric.BIGINT.instance(nullable);
-            PValueSource value = new PValue(Long.MIN_VALUE);
-            pexprs = Collections.<TPreparedExpression>singletonList(new TPreparedLiteral(instance, value));
-            exprs = null;
-        }
-        else {
-            exprs = Collections.singletonList(Expressions.literal(Long.MIN_VALUE));
-            pexprs = null;
-        }
-        UnboundExpressions zMinRow =
-            new RowBasedUnboundExpressions(physicalIndexRowType, exprs, pexprs);
-        IndexBound zMin = new IndexBound(zMinRow, Z_SELECTOR);
-        IndexKeyRange ltKeyRange = IndexKeyRange.bounded(physicalIndexRowType, zMin, false, zLo, false);
-        IndexScanRowState ltRowState = new IndexScanRowState(adapter, keyRange.indexRowType());
-        API.Ordering downOrdering = new API.Ordering();
-        downOrdering.append(Expressions.field(physicalIndexRowType, 0), false);
-        if (Types3Switch.ON) {
-            ltCursor = new IndexCursorUnidirectional<PValueSource>(context,
-                                                                   ltRowState,
-                                                                   ltKeyRange,
-                                                                   downOrdering,
-                                                                   PValueSortKeyAdapter.INSTANCE);
-        }
-        else {
             ltCursor = new IndexCursorUnidirectional<ValueSource>(context,
                                                                   ltRowState,
                                                                   ltKeyRange,
@@ -254,18 +252,14 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         if (row == null) {
             distance = Long.MAX_VALUE;
         } else if (Types3Switch.ON) {
-            long z = row.pvalue(0).getInt64();
+            long z = row.pvalue(zPosition).getInt64();
             distance = abs(z - zStart);
         } else {
-            long z = row.eval(0).getLong();
+            long z = row.eval(zPosition).getLong();
             distance = abs(z - zStart);
         }
         return distance;
     }
-
-    // Class state
-
-    private static final ColumnSelector Z_SELECTOR = new SetColumnSelector(0);
 
     // Object state
 
@@ -274,6 +268,7 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
     // in next() after determining the next row. But then the state carrying next gets advanced and next doesn't
     // have the state that it should.
 
+    private final int zPosition;
     private final IterationHelper iterationHelper;
     private long zStart;
     private Cursor geCursor;

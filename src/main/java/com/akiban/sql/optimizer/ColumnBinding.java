@@ -34,7 +34,9 @@ import com.akiban.sql.types.CharacterTypeAttributes;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
+import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Type;
 
 /**
@@ -88,25 +90,42 @@ public class ColumnBinding
     
     public static DataTypeDescriptor getType(Column column, boolean nullable)
             throws StandardException {
-        Type aisType = column.getType();
+        if (column.getNullable())
+            nullable = true;
+        return getType(column.getType(), 
+                       column.getTypeParameter1(), column.getTypeParameter2(), 
+                       column.getCharsetAndCollation(),
+                       nullable);
+    }
+
+    public static DataTypeDescriptor getType(Parameter param)
+            throws StandardException {
+        return getType(param.getType(), 
+                       param.getTypeParameter1(), param.getTypeParameter2(), 
+                       null, true);
+    }
+
+    public static DataTypeDescriptor getType(Type aisType, 
+                                             Long typeParameter1, Long typeParameter2,
+                                             CharsetAndCollation charsetAndCollation,
+                                             boolean nullable)
+            throws StandardException {
         String typeName = aisType.name().toUpperCase();
         TypeId typeId = TypeId.getBuiltInTypeId(typeName);
         if (typeId == null)
             typeId = TypeId.getSQLTypeForJavaType(typeName);
-        if (column.getNullable())
-            nullable = true;
         switch (aisType.nTypeParameters()) {
         case 0:
             return new DataTypeDescriptor(typeId, nullable);
         case 1:
             {
                 DataTypeDescriptor type = new DataTypeDescriptor(typeId, nullable, 
-                                                                 column.getTypeParameter1().intValue());
+                                                                 typeParameter1.intValue());
                 if (typeId.isStringTypeId() &&
-                    (column.getCharsetAndCollation() != null)) {
+                    (charsetAndCollation != null)) {
                     CharacterTypeAttributes cattrs = 
-                        new CharacterTypeAttributes(column.getCharsetAndCollation().charset(),
-                                                    column.getCharsetAndCollation().collation(),
+                        new CharacterTypeAttributes(charsetAndCollation.charset(),
+                                                    charsetAndCollation.collation(),
                                                     CharacterTypeAttributes.CollationDerivation.IMPLICIT);
                     type = new DataTypeDescriptor(type, cattrs);
                 }
@@ -114,8 +133,8 @@ public class ColumnBinding
             }
         case 2:
             {
-                int precision = column.getTypeParameter1().intValue();
-                int scale = column.getTypeParameter2().intValue();
+                int precision = typeParameter1.intValue();
+                int scale = typeParameter2.intValue();
                 int maxWidth = DataTypeDescriptor.computeMaxWidth(precision, scale);
                 return new DataTypeDescriptor(typeId, precision, scale, 
                                               nullable, maxWidth);

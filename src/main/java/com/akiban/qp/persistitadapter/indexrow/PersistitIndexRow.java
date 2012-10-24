@@ -32,7 +32,6 @@ import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
-import com.akiban.qp.persistitadapter.SpatialHelper;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -61,16 +60,21 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     @Override
     public final String toString()
     {
-        ValueTarget buffer = AkibanAppender.of(new StringBuilder()).asValueTarget();
-        buffer.putString("(");
+        AkibanAppender buffer = AkibanAppender.of(new StringBuilder());
+        buffer.append("(");
         for (int i = 0; i < nIndexFields; i++) {
             if (i > 0) {
-                buffer.putString(", ");
+                buffer.append(", ");
             }
-            Converters.convert(eval(i), buffer);
+            if (Types3Switch.ON) {
+                tInstances[i].format(pvalue(i), buffer);
+            }
+            else {
+                Converters.convert(eval(i), buffer.asValueTarget());
+            }
         }
-        buffer.putString(")->");
-        buffer.putString(hKey().toString());
+        buffer.append(")->");
+        buffer.append(hKey().toString());
         return buffer.toString();
     }
     
@@ -101,9 +105,9 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     @Override
     public final PValueSource pvalue(int i)
     {
-        PUnderlying underlying = tInstances[i].typeClass().underlyingType();
-        PersistitKeyPValueSource keySource = keyPSource(i, underlying);
-        attach(keySource, i, underlying);
+        TInstance tInstance = tInstances[i];
+        PersistitKeyPValueSource keySource = keyPSource(i, tInstance);
+        attach(keySource, i, tInstance);
         return keySource;
     }
 
@@ -138,51 +142,15 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
         this.indexRowType = indexRowType;
         this.leafmostTable = (UserTable) index.leafMostTable();
         this.hKeyCache = new HKeyCache<PersistitHKey>(adapter);
-        if (index.isSpatial()) {
-            // TODO: Getting the AIS and Schema to know about spatial indexes is a lot of work, and will probably
-            // TODO: be done when we support function indexes. Until then, just deal with the differences using
-            // TODO: brute force.
-            // nPhysicalFields counts the z-value field plus the number of undeclared (hkey) columns.
-            if (Types3Switch.ON) {
-                this.akTypes = null;
-                this.akCollators = null;
-                this.tInstances = new TInstance[nIndexFields];
-                this.tInstances[0] = MNumeric.BIGINT.instance(SpatialHelper.isNullable(index));
-            }
-            else {
-                this.akTypes = new AkType[nIndexFields];
-                this.akCollators = new AkCollator[nIndexFields];
-                this.akTypes[0] = AkType.LONG;
-                this.akCollators[0] = null;
-                this.tInstances = null;
-            }
-            int physicalPosition = 1;
-            int logicalPosition = index.getKeyColumns().size();
-            while (physicalPosition < nIndexFields) {
-                IndexColumn indexColumn = index.getAllColumns().get(logicalPosition);
-                Column column = indexColumn.getColumn();
-                if (Types3Switch.ON) {
-                    this.tInstances[physicalPosition] = column.tInstance();
-                } else {
-                    this.akTypes[physicalPosition] = column.getType().akType();
-                    this.akCollators[physicalPosition] = column.getCollator();
-                }
-                logicalPosition++;
-                physicalPosition++;
-            }
-        } else {
-            if (Types3Switch.ON) {
-                this.akTypes = null;
-                this.akCollators = null;
-                this.tInstances = new TInstance[nIndexFields];
-                for (int i = 0; i < nIndexFields; i++) {
-                    this.tInstances[i] = index.getAllColumns().get(i).getColumn().tInstance();
-                }
-            } else {
-                this.akTypes = index.akTypes();
-                this.akCollators = index.akCollators();
-                this.tInstances = null;
-            }
+        if (Types3Switch.ON) {
+            this.tInstances = index.tInstances();
+            this.akTypes = null;
+            this.akCollators = null;
+        }
+        else {
+            this.akTypes = index.akTypes();
+            this.akCollators = index.akCollators();
+            this.tInstances = null;
         }
     }
 
@@ -198,12 +166,12 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
         return keySources[i];
     }
 
-    private PersistitKeyPValueSource keyPSource(int i, PUnderlying underlying)
+    private PersistitKeyPValueSource keyPSource(int i, TInstance tInstance)
     {
         if (keyPSources == null)
             keyPSources = new PersistitKeyPValueSource[nIndexFields];
         if (keyPSources[i] == null) {
-            keyPSources[i] = new PersistitKeyPValueSource(underlying);
+            keyPSources[i] = new PersistitKeyPValueSource(tInstance);
         }
         return keyPSources[i];
     }
