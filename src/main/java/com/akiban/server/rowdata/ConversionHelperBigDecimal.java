@@ -244,7 +244,7 @@ public final class ConversionHelperBigDecimal {
      * @throws NullPointerException if from or appender are null
      * @throws NumberFormatException if the parse failed; the exception's message will be the String that we
      * tried to parse
-     */
+     */ 
     public static void decodeToString(byte[] from, int location, int precision, int scale, AkibanAppender appender) {
         final int intCount = precision - scale;
         final int intFull = intCount / DECIMAL_DIGIT_PER;
