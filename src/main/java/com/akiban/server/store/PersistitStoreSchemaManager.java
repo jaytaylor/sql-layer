@@ -1013,6 +1013,11 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                             Exchange ex2 = treeService.getExchange(session, link);
                             ex2.removeTree();
                             treeService.releaseExchange(session, ex2);
+
+                            // Keep consistent if called during runtime
+                            if(nameGenerator != null) {
+                                nameGenerator.removeTreeName(treeName);
+                            }
                         }
                     }
                 },

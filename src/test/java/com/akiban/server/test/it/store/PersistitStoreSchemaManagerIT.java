@@ -56,7 +56,9 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
     public void newDataSetReadAndSavedAsProtobuf() throws Exception {
         createTable(SCHEMA, T1_NAME, T1_DDL);
         assertEquals("Saved as PROTOBUF", SerializationType.PROTOBUF, pssm.getSerializationType());
+
         safeRestart();
+
         assertEquals("Saw PROTOBUF on load", SerializationType.PROTOBUF, pssm.getSerializationType());
     }
 
