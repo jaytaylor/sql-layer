@@ -29,6 +29,14 @@ package com.akiban.ais.model;
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.ais.util.ChangedTableDescription;
+import com.akiban.server.error.DuplicateIndexException;
+import com.akiban.server.error.IndexLacksColumnsException;
+import com.akiban.server.error.JoinColumnTypesMismatchException;
+import com.akiban.server.error.NoSuchColumnException;
+import com.akiban.server.error.NoSuchGroupException;
+import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.ProtectedIndexException;
+import com.akiban.server.error.TableNotInGroupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +66,7 @@ import java.util.TreeSet;
  * frozen. If you pass a frozen AIS into the merge, the copy process unfreeze the copy.
  */
 public class AISMerge {
-    public enum MergeType { ADD_TABLE, MODIFY_TABLE }
+    public enum MergeType { ADD_TABLE, MODIFY_TABLE, ADD_INDEX }
 
     private static class JoinChange {
         public final Join join;
@@ -119,6 +127,16 @@ public class AISMerge {
         this.changedJoins = new ArrayList<JoinChange>();
         this.indexesToFix = new HashSet<IndexName>();
         copyAISForModify(primaryAIS, targetAIS, indexesToFix, changedJoins, alteredTables);
+    }
+
+    public AISMerge (AkibanInformationSchema primaryAIS) {
+        collectTableIDs(primaryAIS);
+        this.nameGenerator = makeGenerator(primaryAIS);
+        this.targetAIS = copyAISForAdd(primaryAIS);
+        this.sourceTable = null;
+        this.mergeType = MergeType.ADD_INDEX;
+        this.changedJoins = null;
+        this.indexesToFix = null;
     }
 
     private static NameGenerator makeGenerator(AkibanInformationSchema ais) {
@@ -258,10 +276,13 @@ public class AISMerge {
     public AISMerge merge() {
         switch(mergeType) {
             case ADD_TABLE:
-                doAddMerge();
+                doAddTableMerge();
             break;
             case MODIFY_TABLE:
-                doModifyMerge();
+                doModifyTableMerge();
+            break;
+            case ADD_INDEX:
+                doAddIndexMerge();
             break;
             default:
                 throw new IllegalStateException("Unknown MergeType: " + mergeType);
@@ -269,7 +290,92 @@ public class AISMerge {
         return this;
     }
 
-    private void doAddMerge() {
+    public Index mergeIndex(Index index) {
+        if(index.isPrimaryKey()) {
+            throw new ProtectedIndexException("PRIMARY", index.getIndexName().getFullTableName());
+        }
+
+        final IndexName indexName = index.getIndexName();
+        final Index curIndex;
+        final Index newIndex;
+        final Group newGroup;
+        switch(index.getIndexType()) {
+            case TABLE:
+            {
+                final TableName tableName = new TableName(indexName.getSchemaName(), indexName.getTableName());
+                final UserTable newTable = targetAIS.getUserTable(tableName);
+                if(newTable == null) {
+                    throw new NoSuchTableException(tableName);
+                }
+                curIndex = newTable.getIndex(indexName.getName());
+                newGroup = newTable.getGroup();
+                Integer newId = findMaxIndexIDInGroup(targetAIS, newGroup) + 1;
+                newIndex = TableIndex.create(targetAIS, newTable, indexName.getName(), newId, index.isUnique(),
+                                             index.getConstraint());
+            }
+            break;
+            case GROUP:
+            {
+                GroupIndex gi = (GroupIndex)index;
+                newGroup = targetAIS.getGroup(gi.getGroup().getName());
+                if(newGroup == null) {
+                    throw new NoSuchGroupException(gi.getGroup().getName());
+                }
+                curIndex = newGroup.getIndex(indexName.getName());
+                Integer newId = findMaxIndexIDInGroup(targetAIS, newGroup) + 1;
+                newIndex = GroupIndex.create(targetAIS, newGroup, indexName.getName(), newId, index.isUnique(),
+                                             index.getConstraint(), index.getJoinType());
+            }
+            break;
+            default:
+                throw new IllegalArgumentException("Unknown index type: " + index);
+        }
+
+        if(index.getIndexMethod() == Index.IndexMethod.Z_ORDER_LAT_LON) {
+            if(!(index instanceof TableIndex) || !(newIndex instanceof TableIndex)) {
+                throw new IllegalStateException("Unexpected non-table spatial index: old=" + index + " new=" + newIndex);
+            }
+            TableIndex spatialIndex = (TableIndex)index;
+            ((TableIndex)newIndex).markSpatial(spatialIndex.firstSpatialArgument(), spatialIndex.dimensions());
+        }
+
+        if(curIndex != null) {
+            throw new DuplicateIndexException(indexName);
+        }
+        if(index.getKeyColumns().isEmpty()) {
+            throw new IndexLacksColumnsException(indexName);
+        }
+
+        for(IndexColumn indexCol : index.getKeyColumns()) {
+            final TableName refTableName = indexCol.getColumn().getTable().getName();
+            final UserTable newRefTable = targetAIS.getUserTable(refTableName);
+            if(newRefTable == null) {
+                throw new NoSuchTableException(refTableName);
+            }
+            if(!newRefTable.getGroup().equals(newGroup)) {
+                throw new TableNotInGroupException(refTableName);
+            }
+
+            final Column column = indexCol.getColumn();
+            final Column newColumn = newRefTable.getColumn(column.getName());
+            if(newColumn == null) {
+                throw new NoSuchColumnException(column.getName());
+            }
+            if(!column.getType().equals(newColumn.getType())) {
+                throw new JoinColumnTypesMismatchException(index.getIndexName().getFullTableName(), column.getName(),
+                                                           newRefTable.getName(), newColumn.getName());
+            }
+            // Calls (Group)Index.addColumn(), which checks all are in same branch
+            IndexColumn.create(newIndex, newColumn, indexCol, indexCol.getPosition());
+        }
+
+        newIndex.setTreeName(nameGenerator.generateIndexTreeName(newIndex));
+        newIndex.freezeColumns();
+
+        return newIndex;
+    }
+
+    private void doAddTableMerge() {
         // I should use TableSubsetWriter(new AISTarget(targetAIS))
         // but that assumes the UserTable.getAIS() is complete and valid. 
         // i.e. has a group and group table, joins are accurate, etc. 
@@ -313,7 +419,7 @@ public class AISMerge {
         builder.akibanInformationSchema().freeze();
     }
 
-    private void doModifyMerge() {
+    private void doModifyTableMerge() {
         AISBuilder builder = new AISBuilder(targetAIS);
 
         // Fix up groups
@@ -337,6 +443,12 @@ public class AISMerge {
 
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
+        builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        builder.akibanInformationSchema().freeze();
+    }
+
+    private void doAddIndexMerge() {
+        AISBuilder builder = new AISBuilder(targetAIS);
         builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
         builder.akibanInformationSchema().freeze();
     }

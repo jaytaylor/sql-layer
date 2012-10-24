@@ -26,7 +26,6 @@
 
 package com.akiban.server.rowdata;
 
-import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AISMerge;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
@@ -39,7 +38,6 @@ import com.akiban.server.MemoryOnlyTableStatusCache;
 import com.akiban.server.api.ddl.DDLFunctionsMockBase;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.store.PersistitStoreSchemaManager;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.aisddl.IndexDDL;
 import com.akiban.sql.aisddl.SequenceDDL;
@@ -182,9 +180,12 @@ public class SchemaFactory {
 
         @Override
         public void createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
-            AkibanInformationSchema newAIS = AISCloner.clone(ais);
-            PersistitStoreSchemaManager.createIndexes(newAIS, indexesToAdd);
-            ais = newAIS;
+            AISMerge merge = new AISMerge (ais);
+            for(Index newIndex : indexesToAdd) {
+                merge.mergeIndex(newIndex);
+            }
+            merge.merge();
+            ais = merge.getAIS();
         }
         
         @Override

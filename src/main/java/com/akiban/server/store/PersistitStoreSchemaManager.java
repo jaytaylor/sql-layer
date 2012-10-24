@@ -50,15 +50,12 @@ import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
-import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.NopVisitor;
 import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.SQLJJar;
-import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.View;
 import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.ais.protobuf.ProtobufReader;
@@ -66,29 +63,21 @@ import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.ais.util.ChangedTableDescription;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.error.AISTooLargeException;
-import com.akiban.server.error.BranchingGroupIndexException;
-import com.akiban.server.error.DuplicateIndexException;
 import com.akiban.server.error.DuplicateRoutineNameException;
 import com.akiban.server.error.DuplicateSequenceNameException;
 import com.akiban.server.error.DuplicateSQLJJarNameException;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.DuplicateViewException;
 import com.akiban.server.error.ISTableVersionMismatchException;
-import com.akiban.server.error.IndexLacksColumnsException;
-import com.akiban.server.error.JoinColumnTypesMismatchException;
 import com.akiban.server.error.JoinToProtectedTableException;
-import com.akiban.server.error.NoSuchColumnException;
-import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchSequenceException;
 import com.akiban.server.error.NoSuchSQLJJarException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.PersistitAdapterException;
-import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.ProtectedTableDDLException;
 import com.akiban.server.error.ReferencedTableException;
 import com.akiban.server.error.ReferencedSQLJJarException;
-import com.akiban.server.error.TableNotInGroupException;
 import com.akiban.server.error.UndefinedViewException;
 import com.akiban.server.error.UnsupportedMetadataTypeException;
 import com.akiban.server.error.UnsupportedMetadataVersionException;
@@ -108,7 +97,6 @@ import org.slf4j.LoggerFactory;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Columnar;
-import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -120,8 +108,6 @@ import com.akiban.server.service.tree.TreeVisitor;
 import com.persistit.Exchange;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
-
-import static com.akiban.ais.model.AISMerge.findMaxIndexIDInGroup;
 
 /**
  * <p>
@@ -271,7 +257,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         AISBuilder builder = new AISBuilder(newAIS);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
-        newAIS.freeze();
 
         final String curSchema = currentName.getSchemaName();
         final String newSchema = newName.getSchemaName();
@@ -281,144 +266,19 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             saveAISChangeWithRowDefs(session, newAIS, Arrays.asList(curSchema, newSchema));
         }
     }
-
-    private static boolean inSameBranch(UserTable t1, UserTable t2) {
-        if(t1 == t2) {
-            return true;
-        }
-        // search for t2 in t1->root
-        Join join = t1.getParentJoin();
-        while(join != null) {
-            final UserTable parent = join.getParent();
-            if(parent == t2) {
-                return true;
-            }
-            join = parent.getParentJoin();
-        }
-        // search fo t1 in t2->root
-        join = t2.getParentJoin();
-        while(join != null) {
-            final UserTable parent = join.getParent();
-            if(parent == t1) {
-                return true;
-            }
-            join = parent.getParentJoin();
-        }
-        return false;
-    }
-    
-    public static Collection<Index> createIndexes(AkibanInformationSchema newAIS,
-                                                  Collection<? extends Index> indexesToAdd) {
-        final List<Index> newIndexes = new ArrayList<Index>();
-        final NameGenerator nameGen = new DefaultNameGenerator().setDefaultTreeNames(AISMerge.computeTreeNames(newAIS));
-
-        for(Index index : indexesToAdd) {
-            final IndexName indexName = index.getIndexName();
-            if(index.isPrimaryKey()) {
-                throw new ProtectedIndexException("PRIMARY", new TableName(indexName.getSchemaName(), indexName.getTableName()));
-            }
-
-            final Index curIndex;
-            final Index newIndex;
-            final Group newGroup;
-
-            switch(index.getIndexType()) {
-                case TABLE:
-                {
-                    final TableName tableName = new TableName(indexName.getSchemaName(), indexName.getTableName());
-                    final UserTable newTable = newAIS.getUserTable(tableName);
-                    if(newTable == null) {
-                        throw new NoSuchTableException(tableName);
-                    }
-                    curIndex = newTable.getIndex(indexName.getName());
-                    newGroup = newTable.getGroup();
-                    Integer newId = findMaxIndexIDInGroup(newAIS, newGroup) + 1;
-                    newIndex = TableIndex.create(newAIS, newTable, indexName.getName(), newId, index.isUnique(),
-                                                 index.getConstraint());
-                }
-                break;
-                case GROUP:
-                {
-                    GroupIndex gi = (GroupIndex)index;
-                    newGroup = newAIS.getGroup(gi.getGroup().getName());
-                    if(newGroup == null) {
-                        throw new NoSuchGroupException(indexName.getFullTableName());
-                    }
-                    curIndex = newGroup.getIndex(indexName.getName());
-                    Integer newId = findMaxIndexIDInGroup(newAIS, newGroup) + 1;
-                    newIndex = GroupIndex.create(newAIS, newGroup, indexName.getName(), newId, index.isUnique(),
-                                                 index.getConstraint(), index.getJoinType());
-                }
-                break;
-                default:
-                    throw new IllegalArgumentException("Unknown index type: " + index);
-            }
-
-            if (index.getIndexMethod() == Index.IndexMethod.Z_ORDER_LAT_LON) {
-                TableIndex spatialIndex = (TableIndex) index;
-                ((TableIndex)newIndex).markSpatial(spatialIndex.firstSpatialArgument(), spatialIndex.dimensions());
-            }
-
-            if(curIndex != null) {
-                throw new DuplicateIndexException(indexName);
-            }
-            if(index.getKeyColumns().isEmpty()) {
-                throw new IndexLacksColumnsException (
-                        new TableName(index.getIndexName().getSchemaName(), index.getIndexName().getTableName()),
-                        index.getIndexName().getName());
-            }
-
-            UserTable lastTable = null;
-            for(IndexColumn indexCol : index.getKeyColumns()) {
-                final TableName refTableName = indexCol.getColumn().getTable().getName();
-                final UserTable newRefTable = newAIS.getUserTable(refTableName);
-                if(newRefTable == null) {
-                    throw new NoSuchTableException(refTableName);
-                }
-                if(!newRefTable.getGroup().equals(newGroup)) {
-                    throw new TableNotInGroupException (refTableName);
-                }
-                // TODO: Checked in newIndex.addColumn(newIndexCol) ?
-                if(lastTable != null && !inSameBranch(lastTable, newRefTable)) {
-                    throw new BranchingGroupIndexException (
-                            index.getIndexName().getName(),
-                            lastTable.getName(), newRefTable.getName());
-                }
-                lastTable = newRefTable;
-
-                final Column column = indexCol.getColumn();
-                final Column newColumn = newRefTable.getColumn(column.getName());
-                if(newColumn == null) {
-                    throw new NoSuchColumnException (column.getName());
-                }
-                if(!column.getType().equals(newColumn.getType())) {
-                    throw new JoinColumnTypesMismatchException (
-                            new TableName (index.getIndexName().getSchemaName(), index.getIndexName().getTableName()),
-                            column.getName(),
-                            newRefTable.getName(), newColumn.getName());
-                }
-                IndexColumn.create(newIndex, newColumn, indexCol.getPosition(),
-                                   indexCol.isAscending(), indexCol.getIndexedLength());
-            }
-
-            newIndex.freezeColumns();
-            newIndex.setTreeName(nameGen.generateIndexTreeName(newIndex));
-            newIndexes.add(newIndex);
-        }
-        return newIndexes;
-    }
     
     @Override
     public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
-        final Set<String> schemas = new HashSet<String>();
-        final AkibanInformationSchema newAIS = AISCloner.clone(getAis(session));
-
-        Collection<Index> newIndexes = createIndexes(newAIS, indexesToAdd);
-        for(Index index : newIndexes) {
-            schemas.add(DefaultNameGenerator.schemaNameForIndex(index));
+        AISMerge merge = new AISMerge(getAis(session));
+        Set<String> schemas = new HashSet<String>();
+        Collection<Index> newIndexes = new ArrayList<Index>(indexesToAdd.size());
+        for(Index proposed : indexesToAdd) {
+            Index newIndex = merge.mergeIndex(proposed);
+            newIndexes.add(newIndex);
+            schemas.add(DefaultNameGenerator.schemaNameForIndex(newIndex));
         }
-
-        saveAISChangeWithRowDefs(session, newAIS, schemas);
+        merge.merge();
+        saveAISChangeWithRowDefs(session, merge.getAIS(), schemas);
         return newIndexes;
     }
 
@@ -667,7 +527,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         final AkibanInformationSchema oldAIS = getAis(session);
         checkSystemSchema(sqljJar.getName(), false);
         SQLJJar oldJar = oldAIS.getSQLJJar(sqljJar.getName());
-        if (sqljJar == null)
+        if (oldJar == null)
             throw new NoSuchSQLJJarException(sqljJar.getName());
         final AkibanInformationSchema newAIS = AISCloner.clone(oldAIS);
         // Changing old state rather than actually replacing saves having to find
@@ -996,6 +856,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
      */
     private void saveAISChange(Session session, AkibanInformationSchema newAIS, Collection<String> schemaNames) {
         newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        newAIS.freeze();
 
         int maxSize = maxAISBufferSize == 0 ? Integer.MAX_VALUE : maxAISBufferSize;
         GrowableByteBuffer byteBuffer = new GrowableByteBuffer(4096, 4096, maxSize);
