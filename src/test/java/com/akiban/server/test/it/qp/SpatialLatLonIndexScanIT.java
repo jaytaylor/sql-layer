@@ -481,11 +481,11 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
                 Row row;
                 while ((row = cursor.next()) != null) {
                     assertSame(beforeLatLonIndexRowType.physicalRowType(), row.rowType());
-                    int rowBefore = (int) row.eval(0).getInt();
+                    int rowBefore = getLong(row, 0).intValue();
                     long z = getLong(row, 1);
                     Integer expectedId = zToId.get(z);
                     assertNotNull(expectedId);
-                    int rowId = (int) row.eval(2).getInt();
+                    int rowId = getLong(row, 2).intValue();
                     assertEquals(before, rowBefore);
                     assertEquals(expectedId.intValue(), rowId);
                     assertEquals(expectedHKey(rowId), row.hKey().toString());
@@ -572,10 +572,10 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
                 Collection<Integer> actualIdByDistance = new ArrayList<Integer>();
                 while ((row = cursor.next()) != null) {
                     assertSame(beforeLatLonIndexRowType.physicalRowType(), row.rowType());
-                    int beforeActual = (int) row.eval(0).getInt();
+                    int beforeActual = getLong(row, 0).intValue();
                     assertEquals(before, beforeActual);
-                    long zActual = row.eval(1).getLong();
-                    int id = (int) row.eval(2).getInt();
+                    long zActual = getLong(row, 1);
+                    int id = (int) getLong(row, 2).intValue();
                     BigDecimal lat = lats.get(id);
                     BigDecimal lon = lons.get(id);
                     long zExpected = space.shuffle(lat, lon);
