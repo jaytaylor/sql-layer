@@ -33,6 +33,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
@@ -44,8 +45,10 @@ import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
 
+import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import java.math.BigDecimal;
+import java.util.Date;
 import java.io.*;
 
 /** Encode result values for transmission. */
@@ -86,6 +89,7 @@ public class ServerValueEncoder
     private PrintWriter printWriter;
     private AkibanAppender appender;
     private FromObjectValueSource objectSource;
+    private ValueHolder dateHolder;
     private DataOutputStream dataStream;
 
     public ServerValueEncoder(String encoding) {
@@ -362,6 +366,16 @@ public class ServerValueEncoder
             printWriter.write((String)value);
             return;
         }
+        if (value instanceof Date) {
+            akType = javaDateType(value);
+            value = javaDateValue(value, akType);
+            // FromObjectValueSource's appendAsString() does not handle special longs.
+            if (dateHolder == null)
+                dateHolder = new ValueHolder();
+            dateHolder.putRaw(akType, ((Number)value).longValue());
+            appendValue(dateHolder, type, binary);
+            return;
+        }
         if (objectSource == null)
             objectSource = new FromObjectValueSource();
         objectSource.setExplicitly(value, akType);
@@ -378,11 +392,46 @@ public class ServerValueEncoder
             return;
         }
 
+        AkType akType = type.getAkType();
+        if (value instanceof Date) {
+            akType = javaDateType(value);
+            value = javaDateValue(value, akType);
+        }
         // TODO this is inefficient, but I want to get it working. I created a task to fix it in pivotal.
-        PValueSource source = PValueSources.fromObject(value, type.getAkType()).value();
+        PValueSource source = PValueSources.fromObject(value, akType).value();
         appendPValue(source, type, binary);
     }
     
+    private AkType javaDateType(Object value) {
+        if (value instanceof java.sql.Date)
+            return AkType.DATE;
+        else if (value instanceof java.sql.Time)
+            return AkType.TIME;
+        else
+            return AkType.TIMESTAMP;
+    }
+
+    private Object javaDateValue(Object value, AkType akType) {
+        switch (akType) {
+        case DATE:
+            {
+                DateTime dt = new DateTime(value);
+                return (dt.getYear() * 512 + 
+                        dt.getMonthOfYear() * 32 + 
+                        dt.getDayOfMonth());
+            }
+        case TIME:
+            {
+                DateTime dt = new DateTime(value);
+                return (dt.getHourOfDay() * 10000 +
+                        dt.getMinuteOfHour() * 100 +
+                        dt.getSecondOfMinute());
+            }
+        default:
+            return ((Date)value).getTime() / 1000; // Seconds since epoch.
+        }
+    }
+
     public void appendString(String string) throws IOException {
         printWriter.write(string);
     }
