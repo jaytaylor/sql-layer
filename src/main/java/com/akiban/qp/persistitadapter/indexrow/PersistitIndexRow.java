@@ -32,7 +32,6 @@ import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
-import com.akiban.qp.persistitadapter.SpatialHelper;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -61,16 +60,21 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
     @Override
     public final String toString()
     {
-        ValueTarget buffer = AkibanAppender.of(new StringBuilder()).asValueTarget();
-        buffer.putString("(");
+        AkibanAppender buffer = AkibanAppender.of(new StringBuilder());
+        buffer.append("(");
         for (int i = 0; i < nIndexFields; i++) {
             if (i > 0) {
-                buffer.putString(", ");
+                buffer.append(", ");
             }
-            Converters.convert(eval(i), buffer);
+            if (Types3Switch.ON) {
+                tInstances[i].format(pvalue(i), buffer);
+            }
+            else {
+                Converters.convert(eval(i), buffer.asValueTarget());
+            }
         }
-        buffer.putString(")->");
-        buffer.putString(hKey().toString());
+        buffer.append(")->");
+        buffer.append(hKey().toString());
         return buffer.toString();
     }
     
