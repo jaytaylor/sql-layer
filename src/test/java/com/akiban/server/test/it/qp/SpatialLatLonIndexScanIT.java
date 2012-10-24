@@ -575,7 +575,7 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
                     int beforeActual = getLong(row, 0).intValue();
                     assertEquals(before, beforeActual);
                     long zActual = getLong(row, 1);
-                    int id = (int) getLong(row, 2).intValue();
+                    int id = getLong(row, 2).intValue();
                     BigDecimal lat = lats.get(id);
                     BigDecimal lon = lons.get(id);
                     long zExpected = space.shuffle(lat, lon);
