@@ -429,16 +429,17 @@ public class JDBCResultSet implements ResultSet
 
     @Override
     public SQLWarning getWarnings() throws SQLException {
-        throw null;             // None at this level.
+        return warnings;
     }
 
     @Override
     public void clearWarnings() throws SQLException {
+        warnings = null;
     }
 
     @Override
     public String getCursorName() throws SQLException {
-        throw null;
+        return null;
     }
 
     @Override
