@@ -446,6 +446,13 @@ public abstract class ServerJavaValues
                     return pvalue.getFloat();
                 else if (tclass.equals(MApproximateNumber.DOUBLE))
                     return pvalue.getDouble();
+                else if (tclass.equals(MString.CHAR) ||
+                         tclass.equals(MString.VARCHAR) ||
+                         tclass.equals(MString.TINYTEXT) ||
+                         tclass.equals(MString.MEDIUMTEXT) ||
+                         tclass.equals(MString.TEXT) ||
+                         tclass.equals(MString.LONGTEXT))
+                    return pvalue.getString();
                 else if (tclass.equals(MBinary.VARBINARY))
                     return pvalue.getBytes();
                 else if (tclass.equals(MDatetimes.DATE))
