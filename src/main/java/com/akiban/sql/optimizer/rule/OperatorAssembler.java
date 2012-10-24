@@ -1082,7 +1082,8 @@ public class OperatorAssembler extends BaseRule
                                                         API.ordering(), // TODO: what ordering?
                                                         selector,
                                                         usePValues);
-                stream.rowType = indexRowType.physicalRowType();
+                indexRowType = indexRowType.physicalRowType();
+                stream.rowType = indexRowType;
             }
             else if (indexScan.getConditionRange() == null) {
                 stream.operator = API.indexScan_Default(indexRowType,
