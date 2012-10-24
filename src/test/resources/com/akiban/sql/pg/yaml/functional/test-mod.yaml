@@ -71,7 +71,7 @@
 # properly in trunk
 ############### types3's behaviour #############################
 ---
-- Statement: SET newtypes to 'true'
+- Statement: SET newtypes='true'
 ---
 - Statement: SELECT 2 % 0;
 - output: [[null]]
@@ -90,11 +90,12 @@
 - Statement: SELECT year_field % 3 FROM all_types;
 - output: [[0.0]]
 ---
-- Statement: SELECT year_field % time_field FROM all_types;
-- output: [[0.0]]
----
-- Statement: SELECT year_field from all_types;
-- output: [[0]]
+- Message: bug 1070604
+#- Statement: SELECT year_field % time_field FROM all_types;
+#- output: [[0.0]]
+#---
+#- Statement: SELECT year_field from all_types;
+#- output: [[0]]
 ---
 - Statement: SET newtypes to DEFAULT
 ...
