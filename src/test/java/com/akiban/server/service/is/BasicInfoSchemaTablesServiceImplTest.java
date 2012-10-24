@@ -794,7 +794,12 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
-        public void treeWasRemoved(String treeName) {
+        public boolean treeRemovalIsDelayed() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void treeWasRemoved(Session session, String schemaName, String treeName) {
             throw new UnsupportedOperationException();
         }
     }

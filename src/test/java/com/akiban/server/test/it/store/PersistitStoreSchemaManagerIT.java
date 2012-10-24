@@ -28,6 +28,8 @@ package com.akiban.server.test.it.store;
 
 import org.junit.Test;
 
+import java.util.Set;
+
 import static com.akiban.server.test.it.store.SchemaManagerIT.*;
 import static com.akiban.server.store.PersistitStoreSchemaManager.SerializationType;
 import static org.junit.Assert.assertEquals;
@@ -41,5 +43,35 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
         safeRestart();
 
         assertEquals("Saw PROTOBUF on load", SerializationType.PROTOBUF, pssm.getSerializationType());
+    }
+
+    @Test
+    public void delayedTreeRemoval() throws Exception {
+        int tid = createTable(SCHEMA, T1_NAME, T1_DDL);
+        for(int i = 0; i < 5; ++i) {
+            writeRow(tid, i);
+        }
+
+        String groupTreeName = getUserTable(tid).getGroup().getTreeName();
+        String pkTreeName = getUserTable(tid).getPrimaryKey().getIndex().getTreeName();
+
+        Set<String> treeNames = pssm.getTreeNames();
+        assertEquals("Group tree is in set before drop", true, treeNames.contains(groupTreeName));
+        assertEquals("PK tree is in set before drop", true, treeNames.contains(pkTreeName));
+
+        ddl().dropTable(session(), tableName(SCHEMA, T1_NAME));
+
+        treeNames = pssm.getTreeNames();
+        assertEquals("Group tree is in set after drop", true, treeNames.contains(groupTreeName));
+        assertEquals("PK tree is in set after drop", true, treeNames.contains(pkTreeName));
+
+        safeRestart();
+
+        treeNames = pssm.getTreeNames();
+        assertEquals("Group tree is in set after restart", false, treeNames.contains(groupTreeName));
+        assertEquals("PK tree is in set after restart", false, treeNames.contains(pkTreeName));
+
+        assertEquals("Group tree exist after restart", false, treeService().treeExists(SCHEMA, groupTreeName));
+        assertEquals("PK tree exists after restart", false, treeService().treeExists(SCHEMA, pkTreeName));
     }
 }

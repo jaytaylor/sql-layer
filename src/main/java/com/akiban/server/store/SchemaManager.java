@@ -235,5 +235,6 @@ public interface SchemaManager {
     void rollbackAIS(Session session, AkibanInformationSchema replacementAIS,
                      Map<TableName, Integer> savedOrdinals, Collection<String> schemaNames);
 
-    void treeWasRemoved(String treeName);
+    boolean treeRemovalIsDelayed();
+    void treeWasRemoved(Session session, String schemaName, String treeName);
 }
