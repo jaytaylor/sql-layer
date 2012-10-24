@@ -44,6 +44,7 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
+import com.akiban.server.geophile.Space;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.Types3Switch;
@@ -307,7 +308,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             TableIndex spatialIndex = (TableIndex)index.getIndex();
             firstSpatialColumn = spatialIndex.firstSpatialArgument();
             dimensions = spatialIndex.dimensions();
-            assert (dimensions == 2);
+            assert (dimensions == Space.LAT_LON_DIMENSIONS);
             spatialFunction = SpecialIndexExpression.Function.Z_ORDER_LAT_LON;
         }
         else {
