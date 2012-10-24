@@ -27,6 +27,7 @@
 package com.akiban.ais.model;
 
 import java.util.List;
+import java.util.Set;
 
 public class SynchronizedNameGenerator implements NameGenerator {
     private final Object LOCK = new Object();
@@ -102,6 +103,13 @@ public class SynchronizedNameGenerator implements NameGenerator {
     public void removeTreeName(String treeName) {
         synchronized(LOCK) {
             realNamer.removeTreeName(treeName);
+        }
+    }
+
+    @Override
+    public Set<String> getTreeNames() {
+        synchronized(LOCK) {
+            return realNamer.getTreeNames();
         }
     }
 }

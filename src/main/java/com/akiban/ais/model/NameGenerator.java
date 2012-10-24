@@ -27,6 +27,7 @@
 package com.akiban.ais.model;
 
 import java.util.List;
+import java.util.Set;
 
 public interface NameGenerator
 {
@@ -42,4 +43,7 @@ public interface NameGenerator
     // Removal
     void removeTableID(int tableID);
     void removeTreeName(String treeName);
+
+    // View only (debug/testing)
+    Set<String> getTreeNames();
 }
