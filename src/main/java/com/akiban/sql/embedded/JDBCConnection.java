@@ -327,7 +327,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     @Override
     public DatabaseMetaData getMetaData() throws SQLException {
-        return null;
+        return new JDBCDatabaseMetaData(this);
     }
 
     @Override
