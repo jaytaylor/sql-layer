@@ -28,6 +28,7 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.IndexKeyRange;
 
 import java.util.List;
@@ -38,9 +39,14 @@ public final class SpatialHelper {
     }
 
     public static boolean isNullable(Index index) {
+        TableIndex spatialIndex = (TableIndex)index;
         List<IndexColumn> declaredKeys = index.getKeyColumns();
-        assert declaredKeys.size() == 2 : "covering spatial index discovered, need to update code" + index;
-        return declaredKeys.get(0).getColumn().getNullable() || declaredKeys.get(1).getColumn().getNullable();
+        int offset = spatialIndex.firstSpatialArgument();
+        for (int i = 0; i < spatialIndex.dimensions(); i++) {
+            if (declaredKeys.get(offset + i).getColumn().getNullable())
+                return true;
+        }
+        return false;
     }
 
     public static boolean isNullable(IndexKeyRange indexKeyRange) {

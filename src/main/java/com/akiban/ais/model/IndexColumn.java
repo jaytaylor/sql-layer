@@ -74,7 +74,11 @@ public class IndexColumn
             return collator.isRecoverable();
     }
 
-    public static IndexColumn create(Index index, Column column, Integer position, Boolean ascending, Integer indexedLength) {
+    public static IndexColumn create(Index index,
+                                     Column column,
+                                     Integer position,
+                                     Boolean ascending,
+                                     Integer indexedLength) {
         index.checkMutability();
         AISInvariants.checkNullField(column, "IndexColumn", "column", "Column");
         AISInvariants.checkDuplicateColumnsInIndex(index, column.getColumnar().getName(), column.getName());

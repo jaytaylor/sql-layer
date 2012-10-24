@@ -324,56 +324,23 @@ public class DefaultFormatter
         if (verbose) {
             boolean isSpatial = atts.containsKey(Label.INDEX_KIND) && "SPATIAL".equals(atts.getValue(Label.INDEX_KIND));
             boolean isGroup = atts.containsKey(Label.INDEX_KIND) && "GROUP".equals(atts.getValue(Label.INDEX_KIND));
-            if (isSpatial) {
-                sb.append(", (");
-                int ndims = atts.get(Label.LOW_COMPARAND).size();
-                for (int i = 0; i < ndims; i++) {
-                    append(atts.get(Label.COLUMN_NAME).get(i));
-                    sb.append(", ");
-                }
-                sb.setLength(sb.length() - 2);
-                sb.append(')');
-                if (!atts.containsKey(Label.HIGH_COMPARAND)) {
-                    sb.append(" ZNEAR(");
-                    for (Explainer ex : atts.get(Label.LOW_COMPARAND)) {
-                        append(ex);
-                        sb.append(", ");
-                    }
-                    sb.setLength(sb.length() - 2);
-                    sb.append(')');
-                }
-                else {
-                    sb.append(" BETWEEN (");
-                    for (Explainer ex : atts.get(Label.LOW_COMPARAND)) {
-                        append(ex);
-                        sb.append(", ");
-                    }
-                    sb.setLength(sb.length() - 2);
-                    sb.append(") AND (");
-                    for (Explainer ex : atts.get(Label.HIGH_COMPARAND)) {
-                        append(ex);
-                        sb.append(", ");
-                    }
-                    sb.setLength(sb.length() - 2);
-                    sb.append(')');
-                }
+            int ncols = atts.get(Label.COLUMN_NAME).size();
+            int nequals = 0;
+            if (atts.containsKey(Label.EQUAL_COMPARAND))
+                nequals = atts.get(Label.EQUAL_COMPARAND).size();
+            if (atts.containsKey(Label.USED_COLUMNS)) {
+                // Don't display non-key columns if not used.
+                ncols = ((Number)atts.getValue(Label.USED_COLUMNS)).intValue();
+                int nconds = nequals;
+                if (atts.containsKey(Label.LOW_COMPARAND) ||
+                    atts.containsKey(Label.HIGH_COMPARAND))
+                    nconds++;
+                if (ncols < nconds)
+                    ncols = nconds;
             }
-            else {
-                int ncols = atts.get(Label.COLUMN_NAME).size();
-                int nequals = 0;
-                if (atts.containsKey(Label.EQUAL_COMPARAND))
-                    nequals = atts.get(Label.EQUAL_COMPARAND).size();
-                if (atts.containsKey(Label.USED_COLUMNS)) {
-                    // Don't display non-key columns if not used.
-                    ncols = ((Number)atts.getValue(Label.USED_COLUMNS)).intValue();
-                    int nconds = nequals;
-                    if (atts.containsKey(Label.LOW_COMPARAND) ||
-                        atts.containsKey(Label.HIGH_COMPARAND))
-                        nconds++;
-                    if (ncols < nconds)
-                        ncols = nconds;
-                }
-                int norders = atts.get(Label.ORDERING).size();
+            int norders = 0;
+            if (atts.containsKey(Label.ORDERING)) {
+                norders = atts.get(Label.ORDERING).size();
                 if (atts.containsKey(Label.ORDER_EFFECTIVENESS) &&
                     "NONE".equals(atts.getValue(Label.ORDER_EFFECTIVENESS))) {
                     // No need to display ordering if not used.
@@ -384,62 +351,97 @@ public class DefaultFormatter
                         break;
                     norders--;
                 }
-                String indexSchema = (String)((CompoundExplainer)atts.getAttribute(Label.INDEX)).get().getValue(Label.TABLE_SCHEMA);
-                String indexTable = (String)((CompoundExplainer)atts.getAttribute(Label.INDEX)).get().getValue(Label.TABLE_NAME);
-                for (int i = 0; i < ncols; i++) {
-                    sb.append(", ");
-                    String columnSchema = (String)atts.get(Label.TABLE_SCHEMA).get(i).get();
-                    String columnTable = (String)atts.get(Label.TABLE_NAME).get(i).get();
-                    if (!indexSchema.equals(columnSchema))
-                        sb.append(columnSchema).append('.').append(columnTable).append('.');
-                    else if (isGroup || !indexTable.equals(columnTable))
-                        sb.append(columnTable).append('.');
-                    append(atts.get(Label.COLUMN_NAME).get(i));
-                    if (i < nequals) {
-                        Explainer comparand = atts.get(Label.EQUAL_COMPARAND).get(i);
-                        if (isLiteralNull(comparand))
-                            sb.append(" IS NULL");
-                        else {
-                            sb.append(" = ");
-                            append(comparand);
+            }
+            String indexSchema = (String)((CompoundExplainer)atts.getAttribute(Label.INDEX)).get().getValue(Label.TABLE_SCHEMA);
+            String indexTable = (String)((CompoundExplainer)atts.getAttribute(Label.INDEX)).get().getValue(Label.TABLE_NAME);
+            for (int i = 0; i < ncols; i++) {
+                if (isSpatial && (i == nequals)) {
+                    sb.append(", (");
+                    int ndims = atts.get(Label.LOW_COMPARAND).size();
+                    for (int j = 0; j < ndims; j++) {
+                        append(atts.get(Label.COLUMN_NAME).get(i+j));
+                        sb.append(", ");
+                    }
+                    sb.setLength(sb.length() - 2);
+                    sb.append(')');
+                    if (!atts.containsKey(Label.HIGH_COMPARAND)) {
+                        sb.append(" ZNEAR(");
+                        for (Explainer ex : atts.get(Label.LOW_COMPARAND)) {
+                            append(ex);
+                            sb.append(", ");
                         }
+                        sb.setLength(sb.length() - 2);
+                        sb.append(')');
                     }
                     else {
-                        if (i == nequals) {
-                            Explainer lo = null, hi = null;
-                            boolean loInc = false, hiInc = false;
-                            if (atts.containsKey(Label.LOW_COMPARAND)) {
-                                lo = atts.get(Label.LOW_COMPARAND).get(0);
-                                loInc = (Boolean)atts.get(Label.LOW_COMPARAND).get(1).get();
-                                if (!loInc && isLiteralNull(lo)) lo = null;
-                            }
-                            if (atts.containsKey(Label.HIGH_COMPARAND)) {
-                                hi = atts.get(Label.HIGH_COMPARAND).get(0);
-                                hiInc = (Boolean)atts.get(Label.HIGH_COMPARAND).get(1).get();
-                                if (!hiInc && isLiteralNull(hi)) hi = null;
-                            }
-                            if (loInc && hiInc) {
-                                sb.append(" BETWEEN ");
+                        sb.append(" BETWEEN (");
+                        for (Explainer ex : atts.get(Label.LOW_COMPARAND)) {
+                            append(ex);
+                            sb.append(", ");
+                        }
+                        sb.setLength(sb.length() - 2);
+                        sb.append(") AND (");
+                        for (Explainer ex : atts.get(Label.HIGH_COMPARAND)) {
+                            append(ex);
+                            sb.append(", ");
+                        }
+                        sb.setLength(sb.length() - 2);
+                        sb.append(')');
+                    }
+                    break;
+                }
+                sb.append(", ");
+                String columnSchema = (String)atts.get(Label.TABLE_SCHEMA).get(i).get();
+                String columnTable = (String)atts.get(Label.TABLE_NAME).get(i).get();
+                if (!indexSchema.equals(columnSchema))
+                    sb.append(columnSchema).append('.').append(columnTable).append('.');
+                else if (isGroup || !indexTable.equals(columnTable))
+                    sb.append(columnTable).append('.');
+                append(atts.get(Label.COLUMN_NAME).get(i));
+                if (i < nequals) {
+                    Explainer comparand = atts.get(Label.EQUAL_COMPARAND).get(i);
+                    if (isLiteralNull(comparand))
+                        sb.append(" IS NULL");
+                    else {
+                        sb.append(" = ");
+                        append(comparand);
+                    }
+                }
+                else {
+                    if (i == nequals) {
+                        Explainer lo = null, hi = null;
+                        boolean loInc = false, hiInc = false;
+                        if (atts.containsKey(Label.LOW_COMPARAND)) {
+                            lo = atts.get(Label.LOW_COMPARAND).get(0);
+                            loInc = (Boolean)atts.get(Label.LOW_COMPARAND).get(1).get();
+                            if (!loInc && isLiteralNull(lo)) lo = null;
+                        }
+                        if (atts.containsKey(Label.HIGH_COMPARAND)) {
+                            hi = atts.get(Label.HIGH_COMPARAND).get(0);
+                            hiInc = (Boolean)atts.get(Label.HIGH_COMPARAND).get(1).get();
+                            if (!hiInc && isLiteralNull(hi)) hi = null;
+                        }
+                        if (loInc && hiInc) {
+                            sb.append(" BETWEEN ");
+                            append(lo);
+                            sb.append(" AND ");
+                            append(hi);
+                        }
+                        else {
+                            if (lo != null) {
+                                sb.append((loInc) ? " >= " : " > ");
                                 append(lo);
-                                sb.append(" AND ");
+                            }
+                            if (hi != null) {
+                                if (lo != null) sb.append(" AND");
+                                sb.append((hiInc) ? " <= " : " < ");
                                 append(hi);
                             }
-                            else {
-                                if (lo != null) {
-                                    sb.append((loInc) ? " >= " : " > ");
-                                    append(lo);
-                                }
-                                if (hi != null) {
-                                    if (lo != null) sb.append(" AND");
-                                    sb.append((hiInc) ? " <= " : " < ");
-                                    append(hi);
-                                }
-                            }
                         }
-                        if (i < norders) {
-                            sb.append(" ");
-                            append(atts.get(Label.ORDERING).get(i));
-                        }
+                    }
+                    if (i < norders) {
+                        sb.append(" ");
+                        append(atts.get(Label.ORDERING).get(i));
                     }
                 }
             }
