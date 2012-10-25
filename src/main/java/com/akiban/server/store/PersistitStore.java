@@ -1265,6 +1265,8 @@ public class PersistitStore implements Store, Service {
             for(TreeLink link : treeLinks) {
                 ex = treeService.getExchange(session, link);
                 ex.removeTree();
+                // TODO: Delayed removal
+                schemaManager.treeWasRemoved(link.getTreeName());
                 releaseExchange(session, ex);
                 ex = null;
             }
@@ -1327,6 +1329,8 @@ public class PersistitStore implements Store, Service {
             try {
                 Exchange iEx = getExchange(session, index);
                 iEx.removeTree();
+                // TODO: Delayed removal
+                schemaManager.treeWasRemoved(index.getTreeName());
             } catch (PersistitException e) {
                 LOG.debug("Exception while removing index tree: " + indexDef, e);
                 throw new PersistitAdapterException(e);

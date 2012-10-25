@@ -118,7 +118,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setNull(parameterIndex - 1);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -128,7 +128,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setBoolean(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -138,7 +138,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setByte(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -148,7 +148,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setShort(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -158,7 +158,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setInt(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -168,7 +168,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setLong(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -178,7 +178,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setFloat(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -188,7 +188,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setDouble(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -198,7 +198,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setBigDecimal(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -208,7 +208,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setString(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -218,7 +218,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setBytes(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -228,7 +228,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setDate(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -238,7 +238,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setTime(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -248,7 +248,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setTimestamp(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -261,7 +261,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             throw new JDBCException(ex);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -274,7 +274,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             throw new JDBCException(ex);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -287,7 +287,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             throw new JDBCException(ex);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -307,7 +307,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setObject(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -330,7 +330,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             throw new JDBCException(ex);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -340,7 +340,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setRef(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -350,7 +350,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setBlob(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -360,7 +360,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setClob(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -370,7 +370,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setArray(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -385,7 +385,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setDate(parameterIndex - 1, x, cal);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -395,7 +395,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setTime(parameterIndex - 1, x, cal);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -405,7 +405,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setTimestamp(parameterIndex - 1, x, cal);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -420,7 +420,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setURL(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -435,7 +435,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setRowId(parameterIndex - 1, x);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -445,7 +445,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setNString(parameterIndex - 1, value);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -458,7 +458,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             throw new JDBCException(ex);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -468,7 +468,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setNClob(parameterIndex - 1, value);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -478,7 +478,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setClob(parameterIndex - 1, reader, length);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -488,7 +488,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setBlob(parameterIndex - 1, inputStream, length);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -498,7 +498,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setNClob(parameterIndex - 1, reader, length);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -508,7 +508,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setSQLXML(parameterIndex - 1, xmlObject);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -526,7 +526,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             throw new JDBCException(ex);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -539,7 +539,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             throw new JDBCException(ex);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -552,7 +552,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             throw new JDBCException(ex);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -565,7 +565,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             throw new JDBCException(ex);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -578,7 +578,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             throw new JDBCException(ex);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -591,7 +591,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             throw new JDBCException(ex);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -604,7 +604,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             throw new JDBCException(ex);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -614,7 +614,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setClob(parameterIndex - 1, reader);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -624,7 +624,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setBlob(parameterIndex - 1, inputStream);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 
@@ -634,7 +634,7 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
             values.setNClob(parameterIndex - 1, reader);
         }
         catch (RuntimeException ex) {
-            JDBCException.throwUnwrapped(ex);
+            throw JDBCException.throwUnwrapped(ex);
         }
     }
 }

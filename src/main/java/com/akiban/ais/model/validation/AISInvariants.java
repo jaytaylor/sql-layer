@@ -111,6 +111,13 @@ public class AISInvariants {
         }
     }
     
+    public static void checkDuplicateIndexesInGroup(Group group, String indexName)
+    {
+        if (group.getIndex(indexName) != null) {
+            throw new DuplicateIndexException (group.getName(), indexName);
+        }
+    }
+
     public static boolean isIndexInTable (Table table, String indexName)
     {
         return table.getIndex(indexName) != null;

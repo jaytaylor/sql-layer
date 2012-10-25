@@ -124,12 +124,12 @@ public class JDBCResultSet implements ResultSet
 
         @Override
         protected void setValue(int index, ValueSource source, AkType akType) {
-            throw new UnsupportedOperationException("Row update not suported");
+            throw new UnsupportedOperationException("Row update not supported");
         }
 
         @Override
         protected void setPValue(int index, PValueSource source) {
-            throw new UnsupportedOperationException("Row update not suported");
+            throw new UnsupportedOperationException("Row update not supported");
         }
     }
 

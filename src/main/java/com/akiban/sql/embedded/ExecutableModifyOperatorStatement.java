@@ -37,6 +37,9 @@ import com.akiban.sql.server.ServerSession;
 import com.akiban.sql.server.ServerTransaction;
 import com.akiban.util.ShareHolder;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -44,6 +47,8 @@ import java.util.List;
 class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
 {
     private boolean requireStepIsolation;
+
+    private static final Logger logger = LoggerFactory.getLogger(ExecutableModifyOperatorStatement.class);
 
     protected ExecutableModifyOperatorStatement(Operator resultOperator,
                                                 JDBCResultSetMetaData resultSetMetaData, 
@@ -64,6 +69,7 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
             returningRows = new SpoolCursor();
         context.lock(DXLFunction.UNSPECIFIED_DML_WRITE);
         Cursor cursor = null;
+        RuntimeException runtimeException = null;
         try {
             cursor = API.cursor(resultOperator, context);
             cursor.open();
@@ -75,6 +81,9 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
                 }
             }
         }
+        catch (RuntimeException ex) {
+            runtimeException = ex;
+        }
         finally {
             try {
                 if (cursor != null) {
@@ -82,8 +91,14 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
                 }
             }
             catch (RuntimeException ex) {
+                if (runtimeException == null)
+                    runtimeException = ex;
+                else
+                    logger.warn("Error cleaning up cursor with exception already pending", ex);
             }
             context.unlock(DXLFunction.UNSPECIFIED_DML_WRITE);
+            if (runtimeException != null)
+                throw runtimeException;
         }
         if (returningRows != null)
             returningRows.open(); // Done filling.
