@@ -496,6 +496,12 @@ public class ProtobufReader {
             return Routine.CallingConvention.JAVA;
         case LOADABLE_PLAN: 
             return Routine.CallingConvention.LOADABLE_PLAN;
+        case SQL_ROW: 
+            return Routine.CallingConvention.SQL_ROW;
+        case SCRIPT_FUNCTION_JAVA: 
+            return Routine.CallingConvention.SCRIPT_FUNCTION_JAVA;
+        case SCRIPT_BINDINGS: 
+            return Routine.CallingConvention.SCRIPT_BINDINGS;
         }
     }
 

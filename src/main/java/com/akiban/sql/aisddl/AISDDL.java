@@ -114,7 +114,7 @@ public class AISDDL
             switch (((CreateAliasNode)ddl).getAliasType()) {
             case PROCEDURE:
             case FUNCTION:
-                RoutineDDL.createRoutine(ddlFunctions, session, schema, (CreateAliasNode)ddl);
+                RoutineDDL.createRoutine(ddlFunctions, server.getRoutineLoader(), session, schema, (CreateAliasNode)ddl);
                 return;
             }
             break;

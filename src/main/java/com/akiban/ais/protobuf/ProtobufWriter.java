@@ -659,6 +659,12 @@ public class ProtobufWriter {
             return AISProtobuf.RoutineCallingConvention.JAVA;
         case LOADABLE_PLAN:
             return AISProtobuf.RoutineCallingConvention.LOADABLE_PLAN;
+        case SQL_ROW: 
+            return AISProtobuf.RoutineCallingConvention.SQL_ROW;
+        case SCRIPT_FUNCTION_JAVA: 
+            return AISProtobuf.RoutineCallingConvention.SCRIPT_FUNCTION_JAVA;
+        case SCRIPT_BINDINGS: 
+            return AISProtobuf.RoutineCallingConvention.SCRIPT_BINDINGS;
         }
     }
 
