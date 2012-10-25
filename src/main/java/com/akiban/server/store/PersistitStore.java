@@ -1260,22 +1260,18 @@ public class PersistitStore implements Store, Service {
 
     @Override
     public void removeTrees(Session session, Collection<? extends TreeLink> treeLinks) {
-        Exchange ex = null;
         try {
             for(TreeLink link : treeLinks) {
-                ex = treeService.getExchange(session, link);
-                ex.removeTree();
-                // TODO: Delayed removal
-                schemaManager.treeWasRemoved(link.getTreeName());
-                releaseExchange(session, ex);
-                ex = null;
+                if(!schemaManager.treeRemovalIsDelayed()) {
+                    Exchange ex = treeService.getExchange(session, link);
+                    ex.removeTree();
+                    // Do not releaseExchange, causes caching and leak for now unused tree
+                }
+                schemaManager.treeWasRemoved(session, link.getSchemaName(), link.getTreeName());
             }
         } catch (PersistitException e) {
+            LOG.debug("Exception removing tree from Persistit", e);
             throw new PersistitAdapterException(e);
-        } finally {
-            if(ex != null) {
-                releaseExchange(session, ex);
-            }
         }
     }
 
@@ -1321,21 +1317,15 @@ public class PersistitStore implements Store, Service {
     }
 
     public void deleteIndexes(final Session session, final Collection<? extends Index> indexes) {
+        List<TreeLink> links = new ArrayList<TreeLink>(indexes.size());
         for(Index index : indexes) {
             final IndexDef indexDef = index.indexDef();
             if(indexDef == null) {
-                throw new IllegalArgumentException("indexDef is null for index: " + index);
+                throw new IllegalStateException("indexDef is null for index: " + index);
             }
-            try {
-                Exchange iEx = getExchange(session, index);
-                iEx.removeTree();
-                // TODO: Delayed removal
-                schemaManager.treeWasRemoved(index.getTreeName());
-            } catch (PersistitException e) {
-                LOG.debug("Exception while removing index tree: " + indexDef, e);
-                throw new PersistitAdapterException(e);
-            }
+            links.add(indexDef);
         }
+        removeTrees(session, links);
         indexStatistics.deleteIndexStatistics(session, indexes);
     }
     

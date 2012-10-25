@@ -92,15 +92,10 @@ public class TreeServiceImpl
 
     private int volumeOffsetCounter = 0;
 
-    private final Map<String, TreeLink> schemaLinkMap = new HashMap<String, TreeLink>();
-
-    private final SessionService sessionService;
-
     private TableStatusCache tableStatusCache;
 
     @Inject
-    public TreeServiceImpl(SessionService sessionService, ConfigurationService configService) {
-        this.sessionService = sessionService;
+    public TreeServiceImpl(ConfigurationService configService) {
         this.configService = configService;
     }
 
@@ -260,7 +255,6 @@ public class TreeServiceImpl
             dbRef.set(null);
         }
         synchronized (this) {
-            schemaLinkMap.clear();
             // TODO - remove this when sure we don't need it
             --instanceCount;
             assert instanceCount == 0 : instanceCount;
@@ -538,39 +532,29 @@ public class TreeServiceImpl
     }
 
     public TreeLink treeLink(final String schemaName, final String treeName) {
-        final Map<String, TreeLink> map = schemaLinkMap;
-        TreeLink link;
-        synchronized (map) {
-            link = map.get(schemaName);
-            if (link == null) {
-                link = new TreeLink() {
-                    TreeCache cache;
+        return new TreeLink() {
+            private TreeCache cache;
 
-                    @Override
-                    public String getSchemaName() {
-                        return schemaName;
-                    }
-
-                    @Override
-                    public String getTreeName() {
-                        return treeName;
-                    }
-
-                    @Override
-                    public void setTreeCache(TreeCache cache) {
-                        this.cache = cache;
-                    }
-
-                    @Override
-                    public TreeCache getTreeCache() {
-                        return cache;
-                    }
-
-                };
-                map.put(schemaName, link);
+            @Override
+            public String getSchemaName() {
+                return schemaName;
             }
-        }
-        return link;
+
+            @Override
+            public String getTreeName() {
+                return treeName;
+            }
+
+            @Override
+            public void setTreeCache(TreeCache cache) {
+                this.cache = cache;
+            }
+
+            @Override
+            public TreeCache getTreeCache() {
+                return cache;
+            }
+        };
     }
 
     @Override
