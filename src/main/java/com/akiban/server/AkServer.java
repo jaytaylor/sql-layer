@@ -74,9 +74,10 @@ public class AkServer implements Service, JmxManageable, AkServerInterface
         int endpos = vlong.indexOf('-');
         if (endpos < 0) endpos = vlong.length();
         vshort = vlong.substring(0, endpos);
-        String[] nums = vshort.split(".");
+        String[] nums = vshort.split("\\.");
         try {
-            major = Integer.parseInt(nums[0]);
+            if (nums.length > 0)
+                major = Integer.parseInt(nums[0]);
             if (nums.length > 1)
                 minor = Integer.parseInt(nums[1]);
             if (nums.length > 2)
