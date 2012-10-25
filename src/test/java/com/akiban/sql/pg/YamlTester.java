@@ -62,6 +62,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -69,7 +70,6 @@ import java.util.Stack;
 import java.util.regex.Pattern;
 
 import com.akiban.server.types3.Types3Switch;
-import com.google.common.collect.Iterables;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -250,15 +250,14 @@ class YamlTester {
     private void test(Reader in) {
     List<Object> sequence = null;
 	try {
+        executeSql("SET cbo TO DEFAULT");
+        executeSql("SET newtypes TO DEFAULT");
 	    Yaml yaml = new Yaml(new RegisterTags());
-        Iterable<Object> documents = yaml.loadAll(in);
-
-        documents = prependStatement(documents, "SET cbo TO DEFAULT");
-        documents = prependStatement(documents, "SET newtypes TO DEFAULT");
-
-	    for (Object document : documents) {
+	    Iterator<Object> documents = yaml.loadAll(in).iterator();
+	    while (documents.hasNext()) {
 		++commandNumber;
 		commandName = null;
+		Object document = documents.next();
 		sequence = nonEmptySequence(document,
 			"command document");
 		Entry<Object, Object> firstEntry = firstEntry(sequence.get(0),
@@ -278,7 +277,7 @@ class YamlTester {
 		} else if ("Message".equals(commandName)) {
 	        messageCommand(value);
 		} else if ("Bulkload".equals(commandName)) {
-                    bulkloadCommand(value, sequence);
+                    bulkloadCommand(value, sequence); 
                 } else if ("JMX".equals(commandName)) {
                     jmxCommand(value, sequence);
         } else if ("Newtypes".equals(commandName)) {
@@ -302,9 +301,14 @@ class YamlTester {
 	}
     }
 
-    private Iterable<Object> prependStatement(Iterable<Object> in, String statement) {
-        Object command = Collections.<Object>singletonList(Collections.singletonMap("Statement", statement));
-        return Iterables.concat(Collections.singleton(command), in);
+    private void executeSql(String sql) throws SQLException {
+        Statement statement = connection.createStatement();
+        try {
+            statement.execute(sql);
+        }
+        finally {
+            statement.close();
+        }
     }
 
     private void bulkloadCommand(Object value, List<Object> sequence) {
