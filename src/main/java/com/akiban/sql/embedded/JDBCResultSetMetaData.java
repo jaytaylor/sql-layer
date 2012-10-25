@@ -55,6 +55,7 @@ public class JDBCResultSetMetaData implements ResultSetMetaData
             super(name);
             this.jdbcType = jdbcType;
             this.sqlType = sqlType;
+            this.aisColumn = aisColumn;
             this.tInstance = tInstance;
             this.nestedResultSet = nestedResultSet;
         }
