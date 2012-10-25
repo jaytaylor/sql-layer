@@ -874,12 +874,12 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 
     @Override
     public int getDatabaseMajorVersion() throws SQLException {
-        return 1;               // TODO: Get from AkServer
+        return connection.getAkServer().getServerMajorVersion();
     }
 
     @Override
     public int getDatabaseMinorVersion() throws SQLException {
-        return 4;               // TODO: Get from AkServre
+        return connection.getAkServer().getServerMinorVersion();
     }
 
     @Override
