@@ -31,9 +31,11 @@ import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Columnar;
+import com.akiban.ais.model.DefaultIndexNameGenerator;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.IndexNameGenerator;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
@@ -227,10 +229,11 @@ public class AlterTableDDL {
         }
         copyTableIndexes(table, tableCopy, columnChanges, indexChanges);
 
+        IndexNameGenerator indexNamer = DefaultIndexNameGenerator.forTable(tableCopy);
         TableName newName = tableCopy.getName();
         for(ConstraintDefinitionNode cdn : conDefNodes) {
             assert cdn.getConstraintType() != ConstraintType.DROP : cdn;
-            String name = TableDDL.addIndex(builder, cdn, newName.getSchemaName(), newName.getTableName());
+            String name = TableDDL.addIndex(indexNamer, builder, cdn, newName.getSchemaName(), newName.getTableName());
             indexChanges.add(TableChange.createAdd(name));
         }
 

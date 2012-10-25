@@ -48,13 +48,12 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
+import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.*;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.AkServerUtil;
@@ -625,6 +624,16 @@ public class ApiTestBase {
         return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);
     }
 
+    protected final TableIndex createSpatialIndex(String schema, String table, String indexName,
+                                                  int firstSpatialArgument, int dimensions, String... indexCols) {
+        AkibanInformationSchema tempAIS = AISCloner.clone(createIndexInternal(schema, table, indexName, indexCols));
+        TableIndex tempIndex = tempAIS.getUserTable(schema, table).getIndex(indexName);
+        tempIndex.markSpatial(firstSpatialArgument, dimensions);
+        ddl().createIndexes(session(), Collections.singleton(tempIndex));
+        updateAISGeneration();
+        return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);
+    }
+
     /**
      * Add an Index to the given table that is marked as FOREIGN KEY. Intended
      * to be used by tests that need to simulate a table as created by the
@@ -632,7 +641,7 @@ public class ApiTestBase {
      */
     protected final TableIndex createGroupingFKIndex(String schema, String table, String indexName, String... indexCols) {
         assertTrue("grouping fk index must start with __akiban", indexName.startsWith("__akiban"));
-        AkibanInformationSchema tempAIS = createIndexInternal(schema, table, indexName, indexCols);
+        AkibanInformationSchema tempAIS = AISCloner.clone(createIndexInternal(schema, table, indexName, indexCols));
         UserTable userTable = tempAIS.getUserTable(schema, table);
         TableIndex tempIndex = userTable.getIndex(indexName);
         userTable.removeIndexes(Collections.singleton(tempIndex));
@@ -646,7 +655,8 @@ public class ApiTestBase {
     }
 
     protected final TableIndex createTableIndex(int tableId, String indexName, boolean unique, String... columns) {
-        return createTableIndex(getUserTable(tableId), indexName, unique, columns);
+        AkibanInformationSchema temp = AISCloner.clone(ais());
+        return createTableIndex(temp.getUserTable(tableId), indexName, unique, columns);
     }
     
     protected final TableIndex createTableIndex(UserTable table, String indexName, boolean unique, String... columns) {

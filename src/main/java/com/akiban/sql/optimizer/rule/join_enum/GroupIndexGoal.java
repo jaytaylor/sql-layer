@@ -1605,9 +1605,13 @@ public class GroupIndexGoal implements Comparator<BaseScan>
 
         estimator.spatialIndex(index);
 
-        estimator.flatten(tables, index.getLeafMostTable(), requiredTables);
+        if (!index.isCovering()) {
+            estimator.flatten(tables, index.getLeafMostTable(), requiredTables);
+        }
 
-        Collection<ConditionExpression> unhandledConditions = conditions;
+        Collection<ConditionExpression> unhandledConditions = new HashSet<ConditionExpression>(conditions);
+        if (index.getConditions() != null)
+            unhandledConditions.removeAll(index.getConditions());
         if (!unhandledConditions.isEmpty()) {
             estimator.select(unhandledConditions,
                              selectivityConditions(unhandledConditions, requiredTables));

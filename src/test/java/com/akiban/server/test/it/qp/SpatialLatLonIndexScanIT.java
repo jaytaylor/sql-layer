@@ -67,14 +67,10 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
             "lat decimal(11, 7)",
             "lon decimal(11, 7)",
             "primary key(id)");
-        TableIndex latLonIndex = createIndex("schema", "point", "lat_lon", "lat", "lon");
-        latLonIndex.markSpatial(0, Space.LAT_LON_DIMENSIONS);
-        TableIndex beforeLatLonIndex = createIndex("schema", "point", "before_lat_lon", "before", "lat", "lon");
-        beforeLatLonIndex.markSpatial(1, Space.LAT_LON_DIMENSIONS);
-        TableIndex latLonAfterIndex = createIndex("schema", "point", "lat_lon_after", "lat", "lon", "after");
-        latLonAfterIndex.markSpatial(0, Space.LAT_LON_DIMENSIONS);
-        TableIndex beforeLatLonAfterIndex = createIndex("schema", "point", "before_lat_lon_after", "before", "lat", "lon", "after");
-        beforeLatLonAfterIndex.markSpatial(1, Space.LAT_LON_DIMENSIONS);
+        createSpatialIndex("schema", "point", "lat_lon", 0, Space.LAT_LON_DIMENSIONS, "lat", "lon");
+        createSpatialIndex("schema", "point", "before_lat_lon", 1, Space.LAT_LON_DIMENSIONS, "before", "lat", "lon");
+        createSpatialIndex("schema", "point", "lat_lon_after", 0, Space.LAT_LON_DIMENSIONS, "lat", "lon", "after");
+        createSpatialIndex("schema", "point", "before_lat_lon_after", 1, Space.LAT_LON_DIMENSIONS, "before", "lat", "lon", "after");
         schema = new Schema(ais());
         pointRowType = schema.userTableRowType(userTable(point));
         pointOrdinal = pointRowType.userTable().rowDef().getOrdinal();
@@ -575,7 +571,7 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
                     int beforeActual = getLong(row, 0).intValue();
                     assertEquals(before, beforeActual);
                     long zActual = getLong(row, 1);
-                    int id = (int) getLong(row, 2).intValue();
+                    int id = getLong(row, 2).intValue();
                     BigDecimal lat = lats.get(id);
                     BigDecimal lon = lons.get(id);
                     long zExpected = space.shuffle(lat, lon);
