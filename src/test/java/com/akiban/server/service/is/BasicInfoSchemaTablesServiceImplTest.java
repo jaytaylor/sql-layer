@@ -792,5 +792,10 @@ public class BasicInfoSchemaTablesServiceImplTest {
         public void rollbackAIS(Session session, AkibanInformationSchema replacementAIS, Map<TableName, Integer> savedOrdinals, Collection<String> schemaNames) {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public void treeWasRemoved(String treeName) {
+            throw new UnsupportedOperationException();
+        }
     }
 }

@@ -234,4 +234,6 @@ public interface SchemaManager {
     // TODO: PSSM should handle this itself...
     void rollbackAIS(Session session, AkibanInformationSchema replacementAIS,
                      Map<TableName, Integer> savedOrdinals, Collection<String> schemaNames);
+
+    void treeWasRemoved(String treeName);
 }

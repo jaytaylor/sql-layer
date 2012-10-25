@@ -26,20 +26,37 @@
 
 package com.akiban.ais.model;
 
-import java.util.List;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
-public interface NameGenerator
-{
-    // Generation
-    int generateTableID(TableName name);
-    TableName generateIdentitySequenceName(TableName table);
-    String generateJoinName(TableName parentTable, TableName childTable, List<JoinColumn> joinIndex);
-    String generateJoinName(TableName parentTable, TableName childTable, List<String> pkColNames, List<String> fkColNames);
-    String generateIndexTreeName(Index index);
-    String generateGroupTreeName(String schemaName, String groupName);
-    String generateSequenceTreeName(Sequence sequence);
+public class DefaultIndexNameGenerator implements IndexNameGenerator {
+    private final Set<String> indexNames = new HashSet<String>();
 
-    // Removal
-    void removeTableID(int tableID);
-    void removeTreeName(String treeName);
+    public DefaultIndexNameGenerator(Collection<String> initialIndexNames) {
+        indexNames.addAll(initialIndexNames);
+    }
+
+    public static DefaultIndexNameGenerator forTable(UserTable table) {
+        Set<String> indexNames = new HashSet<String>();
+        for(Index index : table.getIndexesIncludingInternal()) {
+            indexNames.add(index.getIndexName().getName());
+        }
+        return new DefaultIndexNameGenerator(indexNames);
+    }
+
+    @Override
+    public String generateIndexName(String indexName, String columnName, String constraint) {
+        if((indexName != null) && !indexNames.contains(indexName)) {
+            indexNames.add(indexName);
+            return indexName;
+        }
+        String name = columnName;
+        for(int suffixNum = 2; indexNames.contains(name); ++suffixNum) {
+            name = String.format("%s_%d", columnName, suffixNum);
+        }
+        indexNames.add(name);
+        return name;
+    }
 }

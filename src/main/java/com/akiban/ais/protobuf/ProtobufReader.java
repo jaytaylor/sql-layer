@@ -384,7 +384,6 @@ public class ProtobufReader {
             if(pbIndex.hasTreeName()) {
                 tableIndex.setTreeName(pbIndex.getTreeName());
             }
-            loadIndexColumns(userTable, tableIndex, pbIndex.getColumnsList());
             if (pbIndex.hasIndexMethod()) {
                 switch (pbIndex.getIndexMethod()) {
                 case Z_ORDER_LAT_LON:
@@ -399,6 +398,7 @@ public class ProtobufReader {
                     break;
                 }
             }
+            loadIndexColumns(userTable, tableIndex, pbIndex.getColumnsList());
         }
     }
 
