@@ -111,3 +111,6 @@ geospatial-1: compute max radius for N neighbors
 geospatial-2: get within that radius
 
 geospatial-3: covering spatial index
+
+geospatial-4: two spatial indexes considered for intersection
+
