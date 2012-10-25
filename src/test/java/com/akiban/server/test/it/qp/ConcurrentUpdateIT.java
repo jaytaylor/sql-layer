@@ -182,13 +182,11 @@ public class ConcurrentUpdateIT extends OperatorITBase
         {
             PersistitAdapter adapter = new PersistitAdapter(schema, store(), treeService(), createNewSession(), configService());
             QueryContext queryContext = queryContext(adapter);
-            Transaction transaction = treeService().getTransaction(session());
+            txnService().beginTransaction(session());
             try {
-                transaction.begin();
                 plan.run(queryContext);
                 dump(cursor(groupScan_Default(group), queryContext));
-                transaction.commit();
-                transaction.end();
+                txnService().commitTransaction(session());
             } catch (Exception e) {
                 e.printStackTrace();
             }

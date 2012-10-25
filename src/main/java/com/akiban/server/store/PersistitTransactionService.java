@@ -107,6 +107,14 @@ public class PersistitTransactionService implements TransactionService {
     }
 
     @Override
+    public void rollbackTransactionIfOpen(Session session) {
+        Transaction txn = getTransaction(session);
+        if(txn.isActive() && !txn.isRollbackPending()) {
+            rollbackTransaction(session);
+        }
+    }
+
+    @Override
     public int getTransactionStep(Session session) {
         Transaction txn = getTransaction(session);
         requireActive(txn);

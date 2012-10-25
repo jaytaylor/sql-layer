@@ -49,6 +49,9 @@ public interface TransactionService extends Service {
     /** Rollback an open transaction. */
     void rollbackTransaction(Session session);
 
+    /** Rollback the current transaction if open, otherwise do nothing. */
+    void rollbackTransactionIfOpen(Session session);
+
     /**
      * @return current step for the open transaction.
      */
