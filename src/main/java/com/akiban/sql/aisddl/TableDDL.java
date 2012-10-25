@@ -30,7 +30,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.akiban.ais.model.DefaultIndexNameGenerator;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.IndexNameGenerator;
 import com.akiban.ais.model.PrimaryKey;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.*;
@@ -55,10 +57,8 @@ import com.akiban.sql.types.TypeId;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.TableName;
@@ -171,6 +171,8 @@ public class TableDDL
 
         AISBuilder builder = new AISBuilder();
         builder.userTable(schemaName, tableName);
+        UserTable table = builder.akibanInformationSchema().getUserTable(schemaName, tableName);
+        IndexNameGenerator namer = DefaultIndexNameGenerator.forTable(table);
 
         int colpos = 0;
         // first loop through table elements, add the columns
@@ -195,12 +197,11 @@ public class TableDDL
                 }
             }
             else if (tableElement instanceof ConstraintDefinitionNode) {
-                addIndex (builder, (ConstraintDefinitionNode)tableElement, schemaName, tableName);
+                addIndex (namer, builder, (ConstraintDefinitionNode)tableElement, schemaName, tableName);
             }
         }
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
-        UserTable table = builder.akibanInformationSchema().getUserTable(schemaName, tableName);
         
         ddlFunctions.createTable(session, table);
     }
@@ -306,11 +307,8 @@ public class TableDDL
         return builderType;
     }
 
-    public static String addIndex (final AISBuilder builder, final ConstraintDefinitionNode cdn,
-            final String schemaName, final String tableName)  {
-
-        NameGenerator namer = new DefaultNameGenerator();
-
+    public static String addIndex(IndexNameGenerator namer, AISBuilder builder, ConstraintDefinitionNode cdn,
+                                  String schemaName, String tableName)  {
         // We don't (yet) have a constraint representation so override any provided
         final String constraint;
         String indexName = cdn.getName();

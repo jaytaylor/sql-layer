@@ -109,7 +109,7 @@ public class AlterTableHelper {
         return indexes;
     }
 
-    public void dropAffectedGroupIndexes(Session session, BasicDDLFunctions ddl, UserTable origTable, boolean dataChange) {
+    public void dropAffectedGroupIndexes(Session session, BasicDDLFunctions ddl, UserTable origTable) {
         // Drop definition and rebuild later, probably better than doing each entry individually
         if(affectedGroupIndexes.isEmpty()) {
             return;
@@ -117,9 +117,6 @@ public class AlterTableHelper {
         List<GroupIndex> groupIndexes = new ArrayList<GroupIndex>();
         for(IndexName name : affectedGroupIndexes.keySet()) {
             groupIndexes.add(origTable.getGroup().getIndex(name.getName()));
-        }
-        if(dataChange) {
-            ddl.store().truncateIndexes(session, groupIndexes);
         }
         ddl.schemaManager().dropIndexes(session, groupIndexes);
     }
@@ -153,6 +150,13 @@ public class AlterTableHelper {
             ddl.createIndexes(session, indexesToBuild);
         } else {
             ddl.schemaManager().createIndexes(session, indexesToBuild);
+            // Restore old trees
+            Group newGroup = ddl.getAIS(session).getTable(newTable.getName()).getGroup();
+            for(IndexName name : affectedGroupIndexes.keySet()) {
+                Index oldIndex = origGroup.getIndex(name.getName());
+                Index newIndex = newGroup.getIndex(name.getName());
+                newIndex.setTreeName(oldIndex.getTreeName());
+            }
         }
     }
 }
