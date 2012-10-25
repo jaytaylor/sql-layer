@@ -50,6 +50,12 @@ public class PersistitTransactionService implements TransactionService {
     }
 
     @Override
+    public boolean isTransactionActive(Session session) {
+        Transaction txn = getTransaction(session);
+        return txn.isActive();
+    }
+
+    @Override
     public void beginTransaction(Session session) {
         Transaction txn = getTransaction(session);
         requireInactive(txn); // Do not want to use Persistit nesting

@@ -34,6 +34,9 @@ public interface TransactionService extends Service {
         void run(Session session);
     }
 
+    /** Returns true if there is a transaction active for the given Session */
+    boolean isTransactionActive(Session session);
+
     /** Begin a new transaction. */
     void beginTransaction(Session session);
 
