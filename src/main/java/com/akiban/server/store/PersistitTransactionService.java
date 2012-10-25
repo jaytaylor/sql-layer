@@ -26,7 +26,7 @@
 
 package com.akiban.server.store;
 
-import com.akiban.server.error.PersistitAdapterException;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
@@ -35,9 +35,11 @@ import com.google.inject.Inject;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 
+import static com.akiban.server.service.session.Session.Key;
 import static com.akiban.server.service.session.Session.StackKey;
 
 public class PersistitTransactionService implements TransactionService {
+    private static final Key<Transaction> TXN_KEY = Key.named("TRANSACTION_KEY");
     private static final StackKey<Callback> AFTER_END_KEY = StackKey.stackNamed("AFTER_END_CALLBACKS");
     private static final StackKey<Callback> AFTER_COMMIT_KEY = StackKey.stackNamed("AFTER_COMMIT_CALLBACKS");
     private static final StackKey<Callback> AFTER_ROLLBACK_KEY = StackKey.stackNamed("AFTER_ROLLBACK_CALLBACKS");
@@ -52,17 +54,23 @@ public class PersistitTransactionService implements TransactionService {
     @Override
     public boolean isTransactionActive(Session session) {
         Transaction txn = getTransaction(session);
-        return txn.isActive();
+        return (txn != null) && txn.isActive();
+    }
+
+    @Override
+    public boolean isRollbackPending(Session session) {
+        Transaction txn = getTransaction(session);
+        return (txn != null) && txn.isRollbackPending();
     }
 
     @Override
     public void beginTransaction(Session session) {
-        Transaction txn = getTransaction(session);
+        Transaction txn = getAndSetTransaction(session);
         requireInactive(txn); // Do not want to use Persistit nesting
         try {
             txn.begin();
         } catch(PersistitException e) {
-            throw new PersistitAdapterException(e);
+            PersistitAdapter.handlePersistitException(session, e);
         }
     }
 
@@ -77,7 +85,7 @@ public class PersistitTransactionService implements TransactionService {
         } catch(RuntimeException e) {
             re = e;
         } catch(PersistitException e) {
-            re = new PersistitAdapterException(e);
+            re = PersistitAdapter.wrapPersistitException(session, e);
         } finally {
             end(session, txn, re);
         }
@@ -96,6 +104,27 @@ public class PersistitTransactionService implements TransactionService {
         } finally {
             end(session, txn, re);
         }
+    }
+
+    @Override
+    public int getTransactionStep(Session session) {
+        Transaction txn = getTransaction(session);
+        requireActive(txn);
+        return txn.getStep();
+    }
+
+    @Override
+    public int setTransactionStep(Session session, int newStep) {
+        Transaction txn = getTransaction(session);
+        requireActive(txn);
+        return txn.setStep(newStep);
+    }
+
+    @Override
+    public int incrementTransactionStep(Session session) {
+        Transaction txn = getTransaction(session);
+        requireActive(txn);
+        return txn.incrementStep();
     }
 
     @Override
@@ -132,8 +161,16 @@ public class PersistitTransactionService implements TransactionService {
     }
 
     private Transaction getTransaction(Session session) {
-        // getTransaction() goes through a sync block, but probably low contention
-        return treeService.getDb().getTransaction();
+        return session.get(TXN_KEY);
+    }
+
+    private Transaction getAndSetTransaction(Session session) {
+        Transaction txn = session.get(TXN_KEY);
+        if(txn == null) {
+            txn = treeService.getDb().getTransaction();
+            session.put(TXN_KEY, txn);
+        }
+        return txn;
     }
 
     private void requireInactive(Transaction txn) {
@@ -143,7 +180,7 @@ public class PersistitTransactionService implements TransactionService {
     }
 
     private void requireActive(Transaction txn) {
-        if(!txn.isActive()) {
+        if((txn == null) || !txn.isActive()) {
             throw new IllegalStateException("No transaction open");
         }
     }
@@ -152,6 +189,7 @@ public class PersistitTransactionService implements TransactionService {
         RuntimeException re = cause;
         try {
             txn.end();
+            //session.remove(TXN_KEY); // If we ever move Sessions between threads, this is probably needed
         } catch(RuntimeException e) {
             re = MultipleCauseException.combine(re, e);
         } finally {

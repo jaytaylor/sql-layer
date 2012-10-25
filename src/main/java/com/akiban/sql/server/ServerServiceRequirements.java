@@ -32,6 +32,7 @@ import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.InstrumentationService;
 import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
@@ -48,7 +49,8 @@ public final class ServerServiceRequirements {
                                      ConfigurationService config,
                                      IndexStatisticsService indexStatistics,
                                      T3RegistryService t3RegistryService,
-                                     RoutineLoader routineLoader) {
+                                     RoutineLoader routineLoader,
+                                     TransactionService txnService) {
         this.instrumentation = instrumentation;
         this.dxlService = dxlService;
         this.sessionService = sessionService;
@@ -59,6 +61,7 @@ public final class ServerServiceRequirements {
         this.indexStatistics = indexStatistics;
         this.t3RegistryService = t3RegistryService;
         this.routineLoader = routineLoader;
+        this.txnService = txnService;
     }
 
     public InstrumentationService instrumentation() {
@@ -101,6 +104,10 @@ public final class ServerServiceRequirements {
         return routineLoader;
     }
 
+    public TransactionService txnService() {
+        return txnService;
+    }
+
     private final InstrumentationService instrumentation;
     private final DXLService dxlService;
     private final SessionService sessionService;
@@ -111,4 +118,5 @@ public final class ServerServiceRequirements {
     private final IndexStatisticsService indexStatistics;
     private final T3RegistryService t3RegistryService;
     private final RoutineLoader routineLoader;
+    private final TransactionService txnService;
 }

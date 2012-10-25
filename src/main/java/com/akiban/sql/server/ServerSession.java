@@ -26,6 +26,7 @@
 
 package com.akiban.sql.server;
 
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.parser.SQLParser;
@@ -45,6 +46,7 @@ import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeService;
+import com.persistit.Transaction;
 
 import java.io.IOException;
 import java.util.Date;
@@ -114,6 +116,9 @@ public interface ServerSession
 
     /** Return the tree service. */
     public TreeService getTreeService();
+
+    /** Return the transaction service */
+    public TransactionService getTransactionService();
 
     /** Is a transaction open? */
     public boolean isTransactionActive();

@@ -37,14 +37,34 @@ public interface TransactionService extends Service {
     /** Returns true if there is a transaction active for the given Session */
     boolean isTransactionActive(Session session);
 
+    /** Returns true if there is a transaction active for the given Session */
+    boolean isRollbackPending(Session session);
+
     /** Begin a new transaction. */
     void beginTransaction(Session session);
 
     /** Commit the open transaction. */
     void commitTransaction(Session session);
 
-    /** Rollback an open transaction. Throws if one has not been begun. */
+    /** Rollback an open transaction. */
     void rollbackTransaction(Session session);
+
+    /**
+     * @return current step for the open transaction.
+     */
+    int getTransactionStep(Session session);
+
+    /**
+     * Sets the current step for the open transaction.
+     * @return previous step value.
+     */
+    int setTransactionStep(Session session, int newStep);
+
+    /**
+     * Increments the current step for the open transaction.
+     * @return previous step value.
+     */
+    int incrementTransactionStep(Session session);
 
     /** Add callback to be invoked when the transactions ends, independent of commit/rollback or success/failure */
     void addEndCallback(Session session, Callback callback);
