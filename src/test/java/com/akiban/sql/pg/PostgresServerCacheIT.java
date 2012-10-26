@@ -61,6 +61,7 @@ public class PostgresServerCacheIT extends PostgresServerFilesITBase
             rows[i] = createNewRow(tid, i);
         }
         writeRows(rows);
+        server().cleanStatementCaches();
         hitsBase = server().getStatementCacheHits();
         missesBase = server().getStatementCacheMisses();
     }

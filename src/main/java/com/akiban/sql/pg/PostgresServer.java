@@ -223,7 +223,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         conn.waitAndStop();
     }
 
-    private void cleanStatementCaches() {
+    void cleanStatementCaches() {
         long oldestGeneration = reqs.dxl().ddlFunctions().getOldestActiveGeneration();
         synchronized (statementCaches) {
             Iterator<ObjectLongPair> it = statementCaches.keySet().iterator();
