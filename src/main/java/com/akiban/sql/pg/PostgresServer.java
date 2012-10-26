@@ -57,6 +57,34 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class PostgresServer implements Runnable, PostgresMXBean {
     public static final String SERVER_PROPERTIES_PREFIX = "akserver.postgres.";
 
+    private static class CacheKey {
+        public final long aisGeneration;
+        public final Object key;
+
+        public CacheKey(long aisGeneration, Object key) {
+            assert key != null : "Null key";
+            this.aisGeneration = aisGeneration;
+            this.key = key;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            CacheKey rhs = (CacheKey) o;
+            return (aisGeneration == rhs.aisGeneration) && key.equals(rhs.key);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = (int) (aisGeneration ^ (aisGeneration >>> 32));
+            result = 31 * result + key.hashCode();
+            return result;
+        }
+    }
+
     private final Properties properties;
     private final int port;
     private final ServerServiceRequirements reqs;
@@ -69,7 +97,6 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     private Thread thread;
     private final AtomicBoolean instrumentationEnabled = new AtomicBoolean(true);
     // AIS-dependent state
-    private volatile long aisTimestamp = -1;
     private volatile int statementCacheCapacity;
     private final Map<Object,ServerStatementCache<PostgresStatement>> statementCaches = new HashMap<Object,ServerStatementCache<PostgresStatement>>();
     // end AIS-dependent state
@@ -239,16 +266,8 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     /** This is the version for use by connections. */
     public ServerStatementCache<PostgresStatement> getStatementCache(Object key, long timestamp) {
-        synchronized (statementCaches) {
-            if (aisTimestamp != timestamp) {
-                assert aisTimestamp < timestamp : timestamp;
-                for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
-                    statementCache.invalidate();
-                }
-                aisTimestamp = timestamp;
-            }
-        }
-        return getStatementCache(key);
+        CacheKey fullKey = new CacheKey(timestamp, key);
+        return getStatementCache(fullKey);
     }
 
     @Override
