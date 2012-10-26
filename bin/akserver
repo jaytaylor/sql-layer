@@ -28,9 +28,12 @@
 #
 # OPTIONS:
 #   -f: start in foreground
+#   -w: start console window
 #   -g: start the persistit GUI
 #   -p <filename>: log the pid to a file (useful to kill it later)
 #   -j <filename>: jar file of server to use
+#   -d <dirname>: directory with jar dependencies
+#   -c <dirname>: configuration directory to use
 #   -k: kill an akiban server process
 #   -v: print the version of akiban server
 #
@@ -55,13 +58,18 @@ fi
 get_version()
 {
     jar_file=$1
+    dep_dir=$2
     # the JAR file we use to grab the version
-    if [ "x$jar_file" == "x" ]; then
-        jar_file="${akiban_home}/target/akiban-server-1.4.3-SNAPSHOT-jar-with-dependencies.jar"
+    if [ -z "$jar_file" ]; then
+        jar_file="${akiban_home}/target/akiban-server-1.4.3-SNAPSHOT.jar"
     fi
+    if [ -z "$dep_dir" ]; then
+        dep_dir="${akiban_home}/target/dependency"
+    fi
+    CLASSPATH=$jar_file:$dep_dir/*
 
-    server_version=$(exec $JAVA -cp $jar_file com.akiban.server.GetVersion)
-    persistit_version=$(exec $JAVA -cp $jar_file com.persistit.GetVersion)
+    server_version=$(exec $JAVA -cp "$CLASSPATH" com.akiban.server.GetVersion)
+    persistit_version=$(exec $JAVA -cp "$CLASSPATH" com.persistit.GetVersion)
     echo "server   : ${server_version}"
     echo "persistit: ${persistit_version}"
 }
@@ -73,20 +81,24 @@ launch_service()
     usegui=$3
     pidpath=$4
     JAR_FILE=$5
-    AKIBAN_CONF=$6
+    DEP_DIR=$6
+    AKIBAN_CONF=$7
 
     # the JAR file we use to launch the akiban server
-    if [ "x$JAR_FILE" == "x" ]; then
-        JAR_FILE="${akiban_home}/target/akiban-server-1.4.3-SNAPSHOT-jar-with-dependencies.jar"
+    if [ -z "$JAR_FILE" ]; then
+        JAR_FILE="${akiban_home}/target/akiban-server-1.4.3-SNAPSHOT.jar"
+    fi
+    if [ -z "$DEP_DIR" ]; then
+        DEP_DIR="${akiban_home}/target/dependency"
     fi
 
-    if [ "x$AKIBAN_CONF" == "x" ]; then
+    if [ -z "$AKIBAN_CONF" ]; then
         # default AKIBAN_CONF dir
         AKIBAN_CONF="${akiban_home}/conf"
     fi
     akiban_parms="-Dakserver.config_dir=$AKIBAN_CONF"
 
-    if [ "x$pidpath" != "x" ]; then
+    if [ -n "$pidpath" ]; then
         akiban_parms="$akiban_parms -Dakserver.pidfile=$pidpath"
     fi
 
@@ -94,19 +106,23 @@ launch_service()
         . "$AKIBAN_CONF/config/jvm.options"
     fi
 
-    if [ "x$usegui" != "x" ]; then
+    if [ -n "$usegui" ]; then
         akiban_parms="$akiban_parms -Dcom.persistit.showgui=true"
     fi
-    akiban_parms="$akiban_parms -Dservices.config=$AKIBAN_CONF/config/services-config.yaml"
+    akiban_parms="$akiban_parms -Dservices.config=$AKIBAN_CONF/config/services-config.yaml -Dlog4j.configuration=file:$AKIBAN_CONF/config/log4j.properties $props"
 
-    if [ "x$foreground" != "x" ]; then
-        echo $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props
-        exec $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props
+    CLASSPATH=$JAR_FILE:$DEP_DIR/*
+    main_class="com.akiban.server.AkServer"
+    if [ -n "$mode" ]; then
+        if [ "$mode" == "window" ]; then
+          akiban_parms="$akiban_parms -Drequire:com.akiban.server.service.ui.SwingConsoleService" "-Dprioritize:com.akiban.server.service.ui.SwingConsoleService"
+          main_class=com.akiban.server.service.ui.AkServerWithSwingConsole
+        fi
+        echo $JAVA $JVM_OPTS $akiban_parms -cp "$CLASSPATH" $main_class
+        exec $JAVA $JVM_OPTS $akiban_parms -cp "$CLASSPATH" $main_class
     else
         echo ${akiban_home}
-        # use log4j to log output
-        akiban_parms="$akiban_parms -Dlog4j.configuration=file:$AKIBAN_CONF/config/log4j.properties"
-        exec $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props <&- &
+        exec $JAVA $JVM_OPTS $akiban_parms -cp "$CLASSPATH" $main_class <&- &
     fi
 
     return $?
@@ -126,12 +142,20 @@ while true; do
             jarfile="$2"
             shift 2
         ;;
+        -d)
+            depdir="$2"
+            shift 2
+        ;;
         -c)
             conf="$2"
             shift 2
         ;;
         -f)
-            foreground="yes"
+            mode="foreground"
+            shift
+        ;;
+        -w)
+            mode="window"
             shift
         ;;
         -g)
@@ -177,7 +201,7 @@ while true; do
 done
 
 # Start up the service
-launch_service "$foreground" "$properties" "$gui" "$pidfile" "$jarfile" "$conf"
+launch_service "$mode" "$properties" "$gui" "$pidfile" "$jarfile" "$depdir" "$conf"
 
 exit $?
 
