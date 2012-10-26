@@ -761,13 +761,13 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             int ncols = Math.min(firstOrdering.size(), secondOrdering.size());
             List<Column> result = new ArrayList<Column>(ncols);
             for (int i=0; i < ncols; ++i) {
-                ColumnExpression firstCol = (ColumnExpression) firstOrdering.get(i);
-                ColumnExpression secondCol = (ColumnExpression) secondOrdering.get(i);
-                if ((firstCol == null) || (secondCol == null))
+                ExpressionNode firstCol = firstOrdering.get(i);
+                ExpressionNode secondCol = secondOrdering.get(i);
+                if (!(firstCol instanceof ColumnExpression) || !(secondCol instanceof ColumnExpression))
                     break;
-                if (!equivs.areEquivalent(firstCol, secondCol))
+                if (!equivs.areEquivalent((ColumnExpression) firstCol, (ColumnExpression) secondCol))
                     break;
-                result.add(firstCol.getColumn());
+                result.add(((ColumnExpression)firstCol).getColumn());
             }
             return result;
         }

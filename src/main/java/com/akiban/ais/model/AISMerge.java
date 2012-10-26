@@ -407,7 +407,7 @@ public class AISMerge {
     }
 
     private void doModifyTableMerge() {
-        AISBuilder builder = new AISBuilder(targetAIS);
+        AISBuilder builder = new AISBuilder(targetAIS, nameGenerator);
 
         // Fix up groups
         for(JoinChange tnj : changedJoins) {
@@ -435,7 +435,7 @@ public class AISMerge {
     }
 
     private void doAddIndexMerge() {
-        AISBuilder builder = new AISBuilder(targetAIS);
+        AISBuilder builder = new AISBuilder(targetAIS, nameGenerator);
         builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
         builder.akibanInformationSchema().freeze();
     }

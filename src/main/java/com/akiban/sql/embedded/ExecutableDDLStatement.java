@@ -24,26 +24,40 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.ais.model;
+package com.akiban.sql.embedded;
 
-import java.util.List;
-import java.util.Set;
+import com.akiban.sql.aisddl.AISDDL;
+import com.akiban.sql.parser.DDLStatementNode;
+import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
-public interface NameGenerator
+class ExecutableDDLStatement extends ExecutableStatement
 {
-    // Generation
-    int generateTableID(TableName name);
-    TableName generateIdentitySequenceName(TableName table);
-    String generateJoinName(TableName parentTable, TableName childTable, List<JoinColumn> joinIndex);
-    String generateJoinName(TableName parentTable, TableName childTable, List<String> pkColNames, List<String> fkColNames);
-    String generateIndexTreeName(Index index);
-    String generateGroupTreeName(String schemaName, String groupName);
-    String generateSequenceTreeName(Sequence sequence);
+    private DDLStatementNode ddl;
 
-    // Removal
-    void removeTableID(int tableID);
-    void removeTreeName(String treeName);
+    protected ExecutableDDLStatement(DDLStatementNode ddl) {
+        this.ddl = ddl;
+    }
 
-    // View only (debug/testing)
-    Set<String> getTreeNames();
+    @Override
+    public ExecuteResults execute(EmbeddedQueryContext context) {
+        context.lock(DXLFunction.UNSPECIFIED_DDL_WRITE);
+        try {
+            AISDDL.execute(ddl, context);
+        }
+        finally {
+            context.unlock(DXLFunction.UNSPECIFIED_DDL_WRITE);
+        }
+        return new ExecuteResults();
+    }
+
+    @Override
+    public TransactionMode getTransactionMode() {
+        return TransactionMode.NONE;
+    }
+
+    @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        return TransactionAbortedMode.NOT_ALLOWED;
+    }
+
 }

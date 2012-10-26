@@ -24,26 +24,11 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.ais.model;
+package com.akiban.sql.embedded;
 
-import java.util.List;
-import java.util.Set;
+import java.sql.Driver;
 
-public interface NameGenerator
+public interface EmbeddedJDBCService
 {
-    // Generation
-    int generateTableID(TableName name);
-    TableName generateIdentitySequenceName(TableName table);
-    String generateJoinName(TableName parentTable, TableName childTable, List<JoinColumn> joinIndex);
-    String generateJoinName(TableName parentTable, TableName childTable, List<String> pkColNames, List<String> fkColNames);
-    String generateIndexTreeName(Index index);
-    String generateGroupTreeName(String schemaName, String groupName);
-    String generateSequenceTreeName(Sequence sequence);
-
-    // Removal
-    void removeTableID(int tableID);
-    void removeTreeName(String treeName);
-
-    // View only (debug/testing)
-    Set<String> getTreeNames();
+    public Driver getDriver();
 }

@@ -161,6 +161,11 @@ public class DefaultNameGenerator implements NameGenerator {
         treeNames.remove(treeName);
     }
 
+    @Override
+    public Set<String> getTreeNames() {
+        return new TreeSet<String>(treeNames);
+    }
+
 
     /**
      * Get the next number that could be used for a table ID. The parameter indicates

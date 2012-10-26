@@ -20,4 +20,5 @@
     com.akiban.server.service.is.ServerSchemaTablesService    : com.akiban.server.service.is.ServerSchemaTablesServiceImpl
     com.akiban.server.t3expressions.T3RegistryService : com.akiban.server.t3expressions.T3RegistryServiceImpl
     com.akiban.server.service.routines.RoutineLoader : com.akiban.server.service.routines.RoutineLoaderImpl
+    com.akiban.sql.embedded.EmbeddedJDBCService : com.akiban.sql.embedded.EmbeddedJDBCServiceImpl
     com.akiban.server.service.transaction.TransactionService : com.akiban.server.store.PersistitTransactionService

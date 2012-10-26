@@ -24,26 +24,46 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.ais.model;
+package com.akiban.sql.embedded;
 
-import java.util.List;
-import java.util.Set;
+import com.akiban.qp.operator.Operator;
 
-public interface NameGenerator
+abstract class ExecutableOperatorStatement extends ExecutableStatement
 {
-    // Generation
-    int generateTableID(TableName name);
-    TableName generateIdentitySequenceName(TableName table);
-    String generateJoinName(TableName parentTable, TableName childTable, List<JoinColumn> joinIndex);
-    String generateJoinName(TableName parentTable, TableName childTable, List<String> pkColNames, List<String> fkColNames);
-    String generateIndexTreeName(Index index);
-    String generateGroupTreeName(String schemaName, String groupName);
-    String generateSequenceTreeName(Sequence sequence);
+    protected Operator resultOperator;
+    protected JDBCResultSetMetaData resultSetMetaData;
+    protected JDBCParameterMetaData parameterMetaData;
+    
+    protected ExecutableOperatorStatement(Operator resultOperator,
+                                          JDBCResultSetMetaData resultSetMetaData,
+                                          JDBCParameterMetaData parameterMetaData) {
+        this.resultOperator = resultOperator;
+        this.resultSetMetaData = resultSetMetaData;
+        this.parameterMetaData = parameterMetaData;
+    }
+    
+    public Operator getResultOperator() {
+        return resultOperator;
+    }
 
-    // Removal
-    void removeTableID(int tableID);
-    void removeTreeName(String treeName);
+    @Override
+    public JDBCResultSetMetaData getResultSetMetaData() {
+        return resultSetMetaData;
+    }
 
-    // View only (debug/testing)
-    Set<String> getTreeNames();
+    @Override
+    public JDBCParameterMetaData getParameterMetaData() {
+        return parameterMetaData;
+    }
+
+    @Override
+    public TransactionMode getTransactionMode() {
+        return TransactionMode.READ;
+    }
+
+    @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        return TransactionAbortedMode.NOT_ALLOWED;
+    }
+
 }

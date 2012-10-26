@@ -24,26 +24,20 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.ais.model;
+package com.akiban.sql.embedded;
 
-import java.util.List;
-import java.util.Set;
+import com.akiban.sql.server.ServerStatement;
 
-public interface NameGenerator
+abstract class ExecutableStatement implements ServerStatement
 {
-    // Generation
-    int generateTableID(TableName name);
-    TableName generateIdentitySequenceName(TableName table);
-    String generateJoinName(TableName parentTable, TableName childTable, List<JoinColumn> joinIndex);
-    String generateJoinName(TableName parentTable, TableName childTable, List<String> pkColNames, List<String> fkColNames);
-    String generateIndexTreeName(Index index);
-    String generateGroupTreeName(String schemaName, String groupName);
-    String generateSequenceTreeName(Sequence sequence);
+    public abstract ExecuteResults execute(EmbeddedQueryContext context);
 
-    // Removal
-    void removeTableID(int tableID);
-    void removeTreeName(String treeName);
+    public JDBCResultSetMetaData getResultSetMetaData() {
+        return null;
+    }
 
-    // View only (debug/testing)
-    Set<String> getTreeNames();
+    public JDBCParameterMetaData getParameterMetaData() {
+        return null;
+    }
+
 }

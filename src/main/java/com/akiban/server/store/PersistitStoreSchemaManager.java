@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -92,6 +91,7 @@ import com.akiban.util.GrowableByteBuffer;
 import com.google.inject.Inject;
 
 import com.persistit.Key;
+import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitInterruptedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -165,8 +165,11 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     public static final String DEFAULT_CHARSET = "akserver.default_charset";
     public static final String DEFAULT_COLLATION = "akserver.default_collation";
 
-    private static final String METAMODEL_PARENT_KEY = "byAIS";
-    private static final String PROTOBUF_PARENT_KEY = "byPBAIS";
+    private static final String AIS_KEY_PREFIX = "by";
+    private static final String AIS_METAMODEL_PARENT_KEY = AIS_KEY_PREFIX + "AIS";
+    private static final String AIS_PROTOBUF_PARENT_KEY = AIS_KEY_PREFIX + "PBAIS";
+    private static final String DELAYED_TREE_KEY = "delayedTree";
+
     // Changed from 1 to 2 due to incompatibility related to index row changes (see bug 985007)
     private static final int PROTOBUF_PSSM_VERSION = 2;
 
@@ -183,6 +186,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private boolean skipAISUpgrade;
     private SerializationType serializationType = SerializationType.NONE;
     private NameGenerator nameGenerator;
+    private AtomicLong delayedTreeIDGenerator;
 
     @Inject
     public PersistitStoreSchemaManager(ConfigurationService config, SessionService sessionService, TreeService treeService) {
@@ -666,8 +670,33 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     @Override
-    public void treeWasRemoved(String treeName) {
-        nameGenerator.removeTreeName(treeName);
+    public boolean treeRemovalIsDelayed() {
+        return true;
+    }
+
+    @Override
+    public void treeWasRemoved(Session session, String schema, String treeName) {
+        if(!treeRemovalIsDelayed()) {
+            nameGenerator.removeTreeName(treeName);
+            return;
+        }
+
+        LOG.debug("Delaying removal of tree (until next restart): {}", treeName);
+        Exchange ex = schemaTreeExchange(session, schema);
+        try {
+            long id = delayedTreeIDGenerator.incrementAndGet();
+            long timestamp = System.currentTimeMillis();
+            ex.clear().append(DELAYED_TREE_KEY).append(id).append(timestamp);
+            ex.getValue().setStreamMode(true);
+            ex.getValue().put(schema);
+            ex.getValue().put(treeName);
+            ex.getValue().setStreamMode(false);
+            ex.store();
+        } catch(PersistitException e) {
+            throw new PersistitAdapterException(e);
+        } finally {
+            treeService.releaseExchange(session, ex);
+        }
     }
 
     @Override
@@ -708,17 +737,21 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             }
 
             newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+            newAIS.freeze();
 
             transactionally(sessionService.createSession(), new ThrowingRunnable() {
                 @Override
                 public void run(Session session) throws PersistitException {
+                    cleanupDelayedTrees(session);
                     buildRowDefCache(newAIS);
                 }
             });
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
         }
+
         this.nameGenerator = SynchronizedNameGenerator.wrap(new DefaultNameGenerator(ais));
+        this.delayedTreeIDGenerator = new AtomicLong();
     }
 
     @Override
@@ -730,6 +763,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         this.skipAISUpgrade = false;
         this.serializationType = SerializationType.NONE;
         this.nameGenerator = null;
+        this.delayedTreeIDGenerator = null;
     }
 
     @Override
@@ -768,10 +802,11 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private static void loadProtobuf(Exchange ex, AkibanInformationSchema newAIS) throws PersistitException {
         ProtobufReader reader = new ProtobufReader(newAIS);
         Key key = ex.getKey();
-        key.clear().append(PROTOBUF_PARENT_KEY).append(Key.BEFORE);
-        while(ex.next(true)) {
+        ex.clear().append(AIS_KEY_PREFIX);
+        KeyFilter filter = new KeyFilter().append(KeyFilter.simpleTerm(AIS_PROTOBUF_PARENT_KEY));
+        while(ex.traverse(Key.Direction.GT, filter, Integer.MAX_VALUE)) {
             if(key.getDepth() != 3) {
-                throw new IllegalStateException("Unexpected "+PROTOBUF_PARENT_KEY+" format: " + key);
+                throw new IllegalStateException("Unexpected " + AIS_PROTOBUF_PARENT_KEY + " format: " + key);
             }
 
             key.indexTo(1);
@@ -845,7 +880,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             selector = new ProtobufWriter.SingleSchemaSelector(schema);
         }
 
-        ex.clear().append(PROTOBUF_PARENT_KEY).append(PROTOBUF_PSSM_VERSION).append(schema);
+        ex.clear().append(AIS_PROTOBUF_PARENT_KEY).append(PROTOBUF_PSSM_VERSION).append(schema);
         if(newAIS.getSchema(schema) != null) {
             buffer.clear();
             new ProtobufWriter(buffer, selector).save(newAIS);
@@ -875,8 +910,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         Exchange ex = null;
         try {
             for(String schema : schemaNames) {
-                TreeLink schemaTreeLink =  treeService.treeLink(schema, SCHEMA_TREE_NAME);
-                ex = treeService.getExchange(session, schemaTreeLink);
+                ex = schemaTreeExchange(session, schema);
                 checkAndSerialize(ex, byteBuffer, newAIS, schema);
                 treeService.releaseExchange(session, ex);
                 ex = null;
@@ -910,23 +944,36 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             SerializationType type = SerializationType.NONE;
 
             // Simple heuristic to determine which style AIS storage we have
-            boolean hasMetaModel = ex.clear().append(METAMODEL_PARENT_KEY).isValueDefined();
-            boolean hasProtobuf = ex.clear().append(PROTOBUF_PARENT_KEY).hasChildren();
+            boolean hasMetaModel = false;
+            boolean hasProtobuf = false;
+            boolean hasUnknown = false;
+
+            ex.clear().append(AIS_KEY_PREFIX);
+            while(ex.next(true)) {
+                if(ex.getKey().decodeType() != String.class) {
+                    break;
+                }
+                String k = ex.getKey().decodeString();
+                if(!k.startsWith(AIS_KEY_PREFIX)) {
+                    break;
+                }
+                if(k.equals(AIS_PROTOBUF_PARENT_KEY)) {
+                    hasProtobuf = true;
+                } else if(k.equals(AIS_METAMODEL_PARENT_KEY)) {
+                    hasMetaModel = true;
+                } else {
+                    hasUnknown = true;
+                }
+            }
 
             if(hasMetaModel && hasProtobuf) {
                 throw new IllegalStateException("Both AIS and Protobuf serializations");
-            }
-            else if(hasMetaModel) {
+            } else if(hasMetaModel) {
                 type = SerializationType.META_MODEL;
-            }
-            else if(hasProtobuf) {
+            } else if(hasProtobuf) {
                 type = SerializationType.PROTOBUF;
-            }
-            else {
-                ex.clear().append(Key.BEFORE);
-                if(ex.next(true)) {
-                    type = SerializationType.UNKNOWN;
-                }
+            } else if(hasUnknown) {
+                type = SerializationType.UNKNOWN;
             }
 
             return type;
@@ -942,18 +989,45 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         serializationType = newSerializationType;
     }
 
-    /**
-     * @return All serialization types from all volumes
-     */
-    public Set<SerializationType> getAllSerializationTypes(Session session) throws PersistitException {
-        final Set<SerializationType> allTypes = EnumSet.noneOf(SerializationType.class);
-        treeService.visitStorage(session, new TreeVisitor() {
-            @Override
-            public void visit(Exchange exchange) throws PersistitException {
-                allTypes.add(detectSerializationType(exchange));
-            }
-        }, SCHEMA_TREE_NAME);
-        return allTypes;
+    /** Public for test only. Should not generally be called. */
+    public void cleanupDelayedTrees(final Session session) throws PersistitException {
+        treeService.visitStorage(
+                session,
+                new TreeVisitor() {
+                    @Override
+                    public void visit(final Exchange ex) throws PersistitException {
+                        ex.clear().append(DELAYED_TREE_KEY);
+                        KeyFilter filter = new KeyFilter().append(KeyFilter.simpleTerm(DELAYED_TREE_KEY));
+                        while(ex.traverse(Key.Direction.GT, filter, Integer.MAX_VALUE)) {
+                            ex.getKey().indexTo(1);     // skip delayed key
+                            ex.getKey().decodeLong();   // skip id
+                            long timestamp = ex.getKey().decodeLong();
+                            ex.getValue().setStreamMode(true);
+                            String schema = ex.getValue().getString();
+                            String treeName = ex.getValue().getString();
+                            ex.getValue().setStreamMode(false);
+                            ex.remove();
+
+                            LOG.debug("Removing delayed tree {} from timestamp {}", treeName, timestamp);
+                            TreeLink link = treeService.treeLink(schema, treeName);
+                            Exchange ex2 = treeService.getExchange(session, link);
+                            ex2.removeTree();
+                            treeService.releaseExchange(session, ex2);
+
+                            // Keep consistent if called during runtime
+                            if(nameGenerator != null) {
+                                nameGenerator.removeTreeName(treeName);
+                            }
+                        }
+                    }
+                },
+                SCHEMA_TREE_NAME
+        );
+    }
+
+    private Exchange schemaTreeExchange(Session session, String schema) {
+        TreeLink link = treeService.treeLink(schema, SCHEMA_TREE_NAME);
+        return treeService.getExchange(session, link);
     }
 
     /**
@@ -963,11 +1037,9 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         return serializationType;
     }
 
-    /**
-     * @param serializationType Serialization type to use
-     */
-    public void setSerializationType(SerializationType serializationType) {
-        this.serializationType = serializationType;
+    @Override
+    public Set<String> getTreeNames() {
+        return nameGenerator.getTreeNames();
     }
 
     private TableName createTableCommon(Session session, UserTable newTable, boolean isInternal,

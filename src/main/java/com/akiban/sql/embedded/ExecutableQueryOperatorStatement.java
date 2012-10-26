@@ -24,41 +24,45 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.test.it.store;
+package com.akiban.sql.embedded;
 
-import com.akiban.server.service.config.Property;
-import com.akiban.server.store.PersistitStoreSchemaManager;
-import com.akiban.server.store.SchemaManager;
-import com.akiban.server.test.it.ITBase;
-import org.junit.Before;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.Operator;
 
-import java.util.Collection;
-
-public class PersistitStoreSchemaManagerITBase extends ITBase {
-    protected PersistitStoreSchemaManager pssm;
-
-    private PersistitStoreSchemaManager castToPSSM() {
-        SchemaManager schemaManager = serviceManager().getSchemaManager();
-        if(schemaManager instanceof PersistitStoreSchemaManager) {
-            return (PersistitStoreSchemaManager)schemaManager;
-        } else {
-            throw new IllegalStateException("Expected PersistitStoreSchemaManager!");
+class ExecutableQueryOperatorStatement extends ExecutableOperatorStatement
+{
+    protected ExecutableQueryOperatorStatement(Operator resultOperator,
+                                               JDBCResultSetMetaData resultSetMetaData, 
+                                               JDBCParameterMetaData parameterMetaData) {
+        super(resultOperator, resultSetMetaData, parameterMetaData);
+    }
+    
+    @Override
+    public ExecuteResults execute(EmbeddedQueryContext context) {
+        Cursor cursor = null;
+        try {
+            cursor = API.cursor(resultOperator, context);
+            cursor.open();
+            ExecuteResults result = new ExecuteResults(cursor);
+            cursor = null;
+            return result;
+        }
+        finally {
+            if (cursor != null) {
+                cursor.destroy();
+            }
         }
     }
 
-    @Before
-    public void setUpPSSM() {
-        pssm = castToPSSM();
+    @Override
+    public TransactionMode getTransactionMode() {
+        return TransactionMode.READ;
     }
 
-    protected void safeRestart() throws Exception {
-        safeRestart(defaultPropertiesToPreserveOnRestart());
+    @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        return TransactionAbortedMode.NOT_ALLOWED;
     }
 
-    protected void safeRestart(Collection<Property> properties) throws Exception {
-        pssm = null;
-        safeRestartTestServices(properties);
-        pssm = castToPSSM();
-        updateAISGeneration();
-    }
 }
