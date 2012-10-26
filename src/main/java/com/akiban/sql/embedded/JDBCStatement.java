@@ -28,7 +28,7 @@ package com.akiban.sql.embedded;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Deque;
+import java.util.Queue;
 import java.util.List;
 
 public class JDBCStatement implements Statement
@@ -44,7 +44,7 @@ public class JDBCStatement implements Statement
     // but this is only how they are set up.
     private ResultSet currentResultSet, generatedKeys;
     private List<ResultSet> secondaryResultSets; // For instance, nested.
-    private Deque<ResultSet> pendingResultSets; // For instance, from stored procedure.
+    private Queue<ResultSet> pendingResultSets; // For instance, from stored procedure.
 
     protected JDBCStatement(JDBCConnection connection) {
         this.connection = connection;
@@ -176,7 +176,7 @@ public class JDBCStatement implements Statement
         }
         if (pendingResultSets != null) {
             while (!pendingResultSets.isEmpty())
-                pendingResultSets.removeFirst().close();
+                pendingResultSets.remove().close();
             pendingResultSets = null;
         }
         closed = true;
@@ -254,7 +254,7 @@ public class JDBCStatement implements Statement
         }
         if (pendingResultSets == null)
             return false;
-        currentResultSet = pendingResultSets.pollFirst();
+        currentResultSet = pendingResultSets.poll();
         return (currentResultSet != null);
     }
 

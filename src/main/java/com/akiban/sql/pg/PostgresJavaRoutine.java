@@ -33,12 +33,16 @@ import com.akiban.sql.server.ServerRoutineInvocation;
 
 import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
+import com.akiban.server.error.ExternalRoutineInvocationException;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 import java.io.IOException;
 
 public abstract class PostgresJavaRoutine extends PostgresDMLStatement
@@ -128,21 +132,70 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         int nrows = 0;
+        Queue<ResultSet> dynamicResultSets = null;
         ServerJavaRoutine call = javaRoutine(context);
         call.push();
-        boolean success = false;
+        boolean anyOutput = false, success = false;
         try {
             call.setInputs();
             call.invoke();
+            dynamicResultSets = call.getDynamicResultSets();
             if (getColumnTypes() != null) {
                 PostgresOutputter<ServerJavaRoutine> outputter = 
                     new PostgresJavaRoutineResultsOutputter(context, this);
                 outputter.output(call, usesPValues());
                 nrows++;
+                anyOutput = true;
+            }
+            if (!dynamicResultSets.isEmpty()) {
+                PostgresDynamicResultSetOutputter outputter = 
+                    new PostgresDynamicResultSetOutputter(context, this);
+                while (!dynamicResultSets.isEmpty()) {
+                    ResultSet rs = dynamicResultSets.remove();
+                    if (anyOutput) {
+                        // Postgres protocol does not allow for
+                        // multiple result sets, except as the result
+                        // of multiple commands. So pretend that's what we've
+                        // got. Even with that, most clients seem to only expose the
+                        // last result set.
+                        messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
+                        messenger.writeString("CALL " + nrows);
+                        messenger.sendMessage();
+                        nrows = 0;
+                    }
+                    try {
+                        outputter.setMetaData(rs.getMetaData());
+                        outputter.sendDescription();
+                        while (rs.next()) {
+                            outputter.output(rs, usesPValues());
+                            nrows++;
+                        }
+                    }
+                    catch (SQLException ex) {
+                        throw new ExternalRoutineInvocationException(invocation.getRoutineName(), ex);
+                    }
+                    finally {
+                        try {
+                            rs.close();
+                        }
+                        catch (SQLException ex) {
+                        }
+                    }
+                    anyOutput = true;
+                }
             }
             success = true;
         }
         finally {
+            if (dynamicResultSets != null) {
+                while (!dynamicResultSets.isEmpty()) {
+                    try {
+                        dynamicResultSets.remove().close();
+                    }
+                    catch (SQLException ex) {
+                    }
+                }
+            }
             call.pop(success);
         }
         {        

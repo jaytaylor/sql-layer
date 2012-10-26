@@ -183,4 +183,35 @@ public class EmbeddedJDBCIT extends ITBase
         assertEquals("script results", "Hello 123", cstmt.getString(3));
     }
 
+    @Test
+    public void testScriptJDBC() throws Exception {
+        String defn = String.format(
+    "CREATE PROCEDURE get_co(IN cid int) LANGUAGE javascript PARAMETER STYLE variables RESULT SETS 2 AS $$\n" +
+    "var conn = java.sql.DriverManager.getConnection(\"%s\", \"%s\", \"\");\n" +
+    "var ps1 = conn.prepareStatement(\"SELECT name FROM c WHERE cid = ?\");\n" +
+    "var ps2 = conn.prepareStatement(\"SELECT order_date FROM o WHERE cid = ?\");\n" +
+    "ps1.setInt(1, cid); ps2.setInt(1, cid);\n" +
+    "[ ps1.executeQuery(), ps2.executeQuery() ]" +
+    "$$", CONNECTION_URL, SCHEMA_NAME);
+        Connection conn = DriverManager.getConnection(CONNECTION_URL, SCHEMA_NAME, "");
+        Statement stmt = conn.createStatement();
+        stmt.execute(defn);
+        stmt.close();
+        CallableStatement cstmt = conn.prepareCall("CALL get_co(?)");
+        cstmt.setInt(1, 2);
+        assertTrue("call returned results", cstmt.execute());
+        ResultSet rs = cstmt.getResultSet();
+        assertTrue("script results 1", rs.next());
+        assertEquals("script results 1 value", "Jones", rs.getString(1));
+        assertFalse("script results 1 more", rs.next());
+        rs.close();
+        assertTrue("call returned more results", cstmt.getMoreResults());
+        rs = cstmt.getResultSet();
+        assertTrue("script results 2", rs.next());
+        assertEquals("script results 2 value", "2012-04-01", rs.getDate(1).toString());
+        assertFalse("script results 2 more", rs.next());
+        rs.close();
+        assertFalse("call returned more results", cstmt.getMoreResults());
+    }
+
 }
