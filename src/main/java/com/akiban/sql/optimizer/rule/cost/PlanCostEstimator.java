@@ -182,7 +182,10 @@ public class PlanCostEstimator
             SpaceLatLon space = (SpaceLatLon)((TableIndex)index.getIndex()).space();
             if ("_center".equals(func.getFunction())) {
                 nscans = 2;     // One in each direction.
-                costEstimate = costEstimator.costIndexScan(index.getIndex(), null, null, true, null, true);
+                costEstimate = costEstimator.costIndexScan(index.getIndex(),
+                                                           index.getEqualityComparands(),
+                                                           null, true,
+                                                           null, true);
             } else if ("_center_radius".equals(func.getFunction())) {
                 BigDecimal lat = decimalConstant(operands.get(0));
                 BigDecimal lon = decimalConstant(operands.get(1));
@@ -197,7 +200,9 @@ public class PlanCostEstimator
                             ExpressionNode lo = new ConstantExpression(space.zLo(z), AkType.LONG);
                             ExpressionNode hi = new ConstantExpression(space.zHi(z), AkType.LONG);
                             CostEstimate zScanCost =
-                                costEstimator.costIndexScan(index.getIndex(), null, lo, true, hi, true);
+                                costEstimator.costIndexScan(index.getIndex(), index.getEqualityComparands(),
+                                                            lo, true,
+                                                            hi, true);
                             costEstimate =
                                 costEstimate == null
                                 ? zScanCost

@@ -45,9 +45,9 @@ import static com.akiban.qp.operator.API.project_Default;
 DROP TABLE test;
 CREATE TABLE test(id INT PRIMARY KEY NOT NULL, value VARCHAR(10));
 INSERT INTO test VALUES(1, 'aaa'), (2, 'bbb');
-CALL sqlj.install_jar('target/akiban-server-1.4.2-SNAPSHOT-tests.jar', 'testjar', 0);
+CALL sqlj.install_jar('target/akiban-server-1.4.3-SNAPSHOT-tests.jar', 'testjar', 0);
 CREATE PROCEDURE test(IN n BIGINT) LANGUAGE java PARAMETER STYLE akiban_loadable_plan EXTERNAL NAME 'testjar:com.akiban.server.test.it.routines.TestPlan';
-CALL test(666)
+CALL test(666);
  * </pre></code> 
  */
 public class TestPlan extends LoadableOperator

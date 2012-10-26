@@ -57,9 +57,11 @@ public class PostgresCallStatementGenerator extends PostgresBaseStatementGenerat
             if (invocation != null) {
                 switch (invocation.getCallingConvention()) {
                 case LOADABLE_PLAN:
-                    return PostgresLoadablePlan.statement(server, invocation, paramTypes);
-                case JAVA:
-                    return PostgresJavaMethod.statement(server, invocation, params, paramTypes);
+                    return PostgresLoadablePlan.statement(server, invocation, 
+                                                          paramTypes);
+                default:
+                    return PostgresJavaMethod.statement(server, invocation, 
+                                                        params, paramTypes);
                 }
             }
         }

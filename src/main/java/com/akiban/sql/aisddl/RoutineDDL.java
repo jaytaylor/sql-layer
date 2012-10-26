@@ -49,7 +49,66 @@ import java.sql.ParameterMetaData;
 public class RoutineDDL {
     private RoutineDDL() { }
     
+    static class ParameterStyleCallingConvention {
+        final String language, parameterStyle;
+        final Routine.CallingConvention callingConvention;
+        
+        ParameterStyleCallingConvention(String language, String parameterStyle,
+                                        Routine.CallingConvention callingConvention) {
+            this.language = language;
+            this.parameterStyle = parameterStyle;
+            this.callingConvention = callingConvention;
+        }
+    }
+
+    static final ParameterStyleCallingConvention[] parameterStyleCallingConventions = {
+        new ParameterStyleCallingConvention("JAVA", "JAVA", 
+                                            Routine.CallingConvention.JAVA),
+        new ParameterStyleCallingConvention("JAVA", "AKIBAN_LOADABLE_PLAN", 
+                                            Routine.CallingConvention.LOADABLE_PLAN),
+        new ParameterStyleCallingConvention("SQL", "ROW", 
+                                            Routine.CallingConvention.SQL_ROW),
+        new ParameterStyleCallingConvention(null, "VARIABLES", 
+                                            Routine.CallingConvention.SCRIPT_BINDINGS),
+        new ParameterStyleCallingConvention(null, "JAVA", 
+                                            Routine.CallingConvention.SCRIPT_FUNCTION_JAVA)
+    };
+
+    protected static Routine.CallingConvention findCallingConvention(String schemaName,
+                                                                     String routineName,
+                                                                     String language,
+                                                                     String parameterStyle,
+                                                                     RoutineLoader routineLoader,
+                                                                     Session session) {
+        boolean languageSeen = false, isScript = false, scriptChecked = false;
+        for (ParameterStyleCallingConvention cc : parameterStyleCallingConventions) {
+            if (cc.language == null) {
+                if (!scriptChecked) {
+                    isScript = routineLoader.isScriptLanguage(session, language);
+                    scriptChecked = true;
+                }
+                if (!isScript) continue;
+            }
+            else if (cc.language.equalsIgnoreCase(language)) {
+                languageSeen = true;
+            }
+            else {
+                continue;
+            }
+            if (cc.parameterStyle.equalsIgnoreCase(parameterStyle)) {
+                return cc.callingConvention;
+            }
+        }
+        if (languageSeen) {
+            throw new InvalidRoutineException(schemaName, routineName, "unsupported PARAMETER STYLE " + parameterStyle);
+        }
+        else {
+            throw new InvalidRoutineException(schemaName, routineName, "unsupported LANGUAGE " + language);
+        }
+    }
+
     public static void createRoutine(DDLFunctions ddlFunctions,
+                                     RoutineLoader routineLoader,
                                      Session session,
                                      String defaultSchemaName,
                                      CreateAliasNode createAlias) {
@@ -58,21 +117,18 @@ public class RoutineDDL {
         String schemaName = tableName.getSchemaName();
         String routineName = tableName.getTableName();
         String language = aliasInfo.getLanguage();
-        Routine.CallingConvention callingConvention;
-        if (language.equalsIgnoreCase("JAVA")) {
-            switch (aliasInfo.getParameterStyle()) {
-            case JAVA:
-                callingConvention = Routine.CallingConvention.JAVA;
-                break;
-            case AKIBAN_LOADABLE_PLAN:
-                callingConvention = Routine.CallingConvention.LOADABLE_PLAN;
-                break;
-            default:
-                throw new InvalidRoutineException(schemaName, routineName, "unsupported PARAMETER STYLE " + aliasInfo.getParameterStyle());
+        Routine.CallingConvention callingConvention = findCallingConvention(schemaName, routineName, language, aliasInfo.getParameterStyle(),
+                                                                            routineLoader, session);
+        switch (callingConvention) {
+        case SQL_ROW:
+        case SCRIPT_BINDINGS:
+            if (createAlias.getExternalName() != null)
+                throw new InvalidRoutineException(schemaName, routineName, language + " routine cannot have EXTERNAL NAME");
+            break;
+        case SCRIPT_FUNCTION_JAVA:
+            if (createAlias.getExternalName() == null) {
+                throw new InvalidRoutineException(schemaName, routineName, "must have EXTERNAL NAME function_name");
             }
-        }
-        else {
-            throw new InvalidRoutineException(schemaName, routineName, "unsupported LANGUAGE " + language);
         }
         AISBuilder builder = new AISBuilder();
         builder.routine(schemaName, routineName,
@@ -109,24 +165,47 @@ public class RoutineDDL {
                               builderType.name(), typeParameters[0], typeParameters[1]);
         }
 
-        if (createAlias.getJavaClassName() != null) {
-            String jarSchema = defaultSchemaName;
+        if (createAlias.getExternalName() != null) {
+            String className, methodName;
+            boolean checkJarName;
+            if (callingConvention == Routine.CallingConvention.JAVA) {
+                className = createAlias.getJavaClassName();
+                methodName = createAlias.getMethodName();
+                checkJarName = true;
+            }
+            else if (callingConvention == Routine.CallingConvention.LOADABLE_PLAN) {
+                // The whole class implements a standard interface.
+                className = createAlias.getExternalName();
+                methodName = null;
+                checkJarName = true;
+            }
+            else {
+                className = null;
+                methodName = createAlias.getExternalName();
+                checkJarName = false;
+            }
+            String jarSchema = null;
             String jarName = null;
-            String className = createAlias.getJavaClassName();
-            String methodName = createAlias.getMethodName();
-            int idx = className.indexOf(':');
-            if (idx >= 0) {
-                jarName = className.substring(0, idx);
-                className = className.substring(idx + 1);
-                idx = jarName.indexOf('.');
+            if (checkJarName) {
+                int idx = className.indexOf(':');
                 if (idx >= 0) {
-                    jarSchema = jarName.substring(0, idx);
-                    jarName = jarName.substring(idx + 1);
-                }
-                else if (jarName.equals("thisjar")) {
-                    TableName thisJar = (TableName)createAlias.getUserData();
-                    jarSchema = thisJar.getSchemaName();
-                    jarName = thisJar.getTableName();
+                    jarName = className.substring(0, idx);
+                    className = className.substring(idx + 1);
+                    if (jarName.equals("thisjar")) {
+                        TableName thisJar = (TableName)createAlias.getUserData();
+                        jarSchema = thisJar.getSchemaName();
+                        jarName = thisJar.getTableName();
+                    }
+                    else {
+                        idx = jarName.indexOf('.');
+                        if (idx < 0) {
+                            jarSchema = defaultSchemaName;
+                        }
+                        else {
+                            jarSchema = jarName.substring(0, idx);
+                            jarName = jarName.substring(idx + 1);
+                        }
+                    }
                 }
             }
             if (jarName != null) {
@@ -140,7 +219,7 @@ public class RoutineDDL {
                                         jarSchema, jarName, 
                                         className, methodName);
         }
-        else if (createAlias.getDefinition() != null) {
+        if (createAlias.getDefinition() != null) {
             builder.routineDefinition(schemaName, routineName, 
                                       createAlias.getDefinition());
         }

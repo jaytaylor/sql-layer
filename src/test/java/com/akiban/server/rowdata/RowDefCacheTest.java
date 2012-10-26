@@ -550,22 +550,7 @@ public class RowDefCacheTest
                          "create index cName_oDate on orders(customer.name, orders.date) using left join;"
         };
 
-        final AkibanInformationSchema ais;
-        {
-            ais = SCHEMA_FACTORY.ais(ddl);
-            Table customerTable = ais.getTable(SCHEMA, "customer");
-            Table ordersTable = ais.getTable(SCHEMA, "orders");
-            GroupIndex index = GroupIndex.create(ais,
-                                                 customerTable.getGroup(),
-                                                 "cName_oDate",
-                                                 100,
-                                                 false,
-                                                 Index.KEY_CONSTRAINT,
-                                                 Index.JoinType.LEFT);
-            IndexColumn.create(index, customerTable.getColumn("name"), 0, true, null);
-            IndexColumn.create(index, ordersTable.getColumn("date"), 1, true, null);
-            SCHEMA_FACTORY.buildRowDefs(ais);
-        }
+        final AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
 
         GroupIndex index;
         IndexRowComposition rowComp;

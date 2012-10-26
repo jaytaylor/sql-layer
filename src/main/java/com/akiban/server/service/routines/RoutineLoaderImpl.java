@@ -37,14 +37,17 @@ import com.akiban.server.error.SQLJInstanceException;
 import com.akiban.server.error.NoSuchSQLJJarException;
 import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.service.Service;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 
 import com.akiban.qp.loadableplan.std.DumpGroupLoadablePlan;
 import com.akiban.qp.loadableplan.std.PersistitCLILoadablePlan;
 
-import javax.inject.Inject;
 import com.google.inject.Singleton;
+import javax.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -61,10 +64,14 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     private final Map<TableName,ClassLoader> classLoaders = new HashMap<TableName,ClassLoader>();
     private final Map<TableName,LoadablePlan<?>> loadablePlans = new HashMap<TableName,LoadablePlan<?>>();
     private final Map<TableName,Method> javaMethods = new HashMap<TableName,Method>();
+    private final ScriptCache scripts;
+    private final static Logger logger = LoggerFactory.getLogger(RoutineLoaderImpl.class);
 
     @Inject @SuppressWarnings("unused")
-    public RoutineLoaderImpl(SchemaManager schemaManager) {
+    public RoutineLoaderImpl(SchemaManager schemaManager, 
+                             ConfigurationService configService) {
         this.schemaManager = schemaManager;
+        scripts = new ScriptCache(schemaManager, configService);
     }
 
     /* RoutineLoader */
@@ -171,6 +178,21 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     }
 
     @Override
+    public boolean isScriptLanguage(Session session, String language) {
+        return scripts.isScriptLanguage(session, language);
+    }
+
+    @Override
+    public ScriptPool<ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName) {
+        return scripts.getScriptEvaluator(session, routineName);
+    }
+
+    @Override
+    public ScriptPool<ScriptInvoker> getScriptInvoker(Session session, TableName routineName) {
+        return scripts.getScriptInvoker(session, routineName);
+    }
+
+    @Override
     public void unloadRoutine(Session session, TableName routineName) {
         synchronized (loadablePlans) {
             loadablePlans.remove(routineName);
@@ -178,6 +200,7 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
         synchronized (javaMethods) {
             javaMethods.remove(routineName);
         }
+        scripts.remove(routineName);
     }
 
     /* Service */

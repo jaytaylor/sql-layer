@@ -519,7 +519,7 @@ public class TableChangeValidatorTest {
                 asList(TableChange.createModify("c3", "c3")),
                 NO_CHANGES,
                 ChangeLevel.TABLE,
-                asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE)),
+                asList(changeDesc(TABLE_NAME, TABLE_NAME, false, ParentChange.NONE, "PRIMARY", "PRIMARY")),
                 false,
                 false,
                 NO_INDEX_CHANGE,

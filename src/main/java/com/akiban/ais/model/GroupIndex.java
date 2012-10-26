@@ -26,6 +26,7 @@
 
 package com.akiban.ais.model;
 
+import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.IndexColNotInGroupException;
 
@@ -163,6 +164,7 @@ public class GroupIndex extends Index
                                     Boolean isUnique, String constraint, JoinType joinType)
     {
         ais.checkMutability();
+        AISInvariants.checkDuplicateIndexesInGroup(group, indexName);
         GroupIndex index = new GroupIndex(group, indexName, indexId, isUnique, constraint, joinType);
         group.addIndex(index);
         return index;

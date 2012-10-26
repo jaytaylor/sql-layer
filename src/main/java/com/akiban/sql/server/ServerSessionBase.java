@@ -372,6 +372,16 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         }
     }
 
+    protected void inheritFromCall() {
+        ServerCallContextStack.Entry call = ServerCallContextStack.current();
+        if (call != null) {
+            ServerSessionBase server = (ServerSessionBase)call.getContext().getServer();
+            defaultSchemaName = server.defaultSchemaName;
+            transaction = server.transaction;
+            transactionDefaultReadOnly = server.transactionDefaultReadOnly;
+        }
+    }
+
     public boolean shouldNotify(QueryContext.NotificationLevel level) {
         return (level.ordinal() <= maxNotificationLevel.ordinal());
     }

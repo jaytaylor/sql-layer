@@ -58,6 +58,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.URL;
 import java.sql.Array;
 import java.sql.Blob;
@@ -446,6 +447,13 @@ public abstract class ServerJavaValues
                     return pvalue.getFloat();
                 else if (tclass.equals(MApproximateNumber.DOUBLE))
                     return pvalue.getDouble();
+                else if (tclass.equals(MString.CHAR) ||
+                         tclass.equals(MString.VARCHAR) ||
+                         tclass.equals(MString.TINYTEXT) ||
+                         tclass.equals(MString.MEDIUMTEXT) ||
+                         tclass.equals(MString.TEXT) ||
+                         tclass.equals(MString.LONGTEXT))
+                    return pvalue.getString();
                 else if (tclass.equals(MBinary.VARBINARY))
                     return pvalue.getBytes();
                 else if (tclass.equals(MDatetimes.DATE))
@@ -676,7 +684,54 @@ public abstract class ServerJavaValues
     }
 
     public void setObject(int index, Object x) {
-        setObject(index, x);
+        if (x == null)
+            setNull(index);
+        else if (x instanceof String)
+            setString(index, (String)x);
+        else if (x instanceof BigDecimal)
+            setBigDecimal(index, (BigDecimal)x);
+        else if (x instanceof Boolean)
+            setBoolean(index, (Boolean)x);
+        else if (x instanceof Byte)
+            setByte(index, (Byte)x);
+        else if (x instanceof Short)
+            setShort(index, (Short)x);
+        else if (x instanceof Integer)
+            setInt(index, (Integer)x);
+        else if (x instanceof Long)
+            setLong(index, (Long)x);
+        else if (x instanceof Float)
+            setFloat(index, (Float)x);
+        else if (x instanceof Double)
+            setDouble(index, (Double)x);
+        else if (x instanceof byte[])
+            setBytes(index, (byte[])x);
+        else if (x instanceof Date)
+            setDate(index, (Date)x);
+        else if (x instanceof Time)
+            setTime(index, (Time)x);
+        else if (x instanceof Timestamp)
+            setTimestamp(index, (Timestamp)x);
+        else if (x instanceof Array)
+            setArray(index, (Array)x);
+        else if (x instanceof Blob)
+            setBlob(index, (Blob)x);
+        else if (x instanceof Clob)
+            setClob(index, (Clob)x);
+        else if (x instanceof Ref)
+            setRef(index, (Ref)x);
+        else if (x instanceof URL)
+            setURL(index, (URL)x);
+        else if (x instanceof RowId)
+            setRowId(index, (RowId)x);
+        else if (x instanceof NClob)
+            setNClob(index, (NClob)x);
+        else if (x instanceof SQLXML)
+            setSQLXML(index, (SQLXML)x);
+        else if (x instanceof BigInteger)
+            setLong(index, ((BigInteger)x).longValue());
+        else 
+            throw new UnsupportedOperationException("Unsupported type " + x);
     }
 
     public void setNString(int index, String value) {

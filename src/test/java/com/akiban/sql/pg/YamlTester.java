@@ -244,6 +244,8 @@ class YamlTester {
 
     /** Test the input specified in the constructor. */
     void test() {
+	executeSql("SET cbo TO DEFAULT");
+	executeSql("SET newtypes TO DEFAULT");
 	test(in);
     }
 
@@ -278,6 +280,8 @@ class YamlTester {
                     bulkloadCommand(value, sequence); 
                 } else if ("JMX".equals(commandName)) {
                     jmxCommand(value, sequence);
+        } else if ("Newtypes".equals(commandName)) {
+            newtypesCommand(value);
 		} else {
 		    fail("Unknown command: " + commandName);
 		}
@@ -295,6 +299,21 @@ class YamlTester {
 	    /* Add context */
 	    throw new ContextAssertionError(String.valueOf(sequence), e.toString(), e);
 	}
+    }
+
+    private void executeSql(String sql) {
+        try {
+            Statement statement = connection.createStatement();
+            try {
+                statement.execute(sql);
+            }
+            finally {
+                statement.close();
+            }
+        }
+        catch (SQLException e) {
+            throw new ContextAssertionError(sql, e.toString(), e);
+        }
     }
 
     private void bulkloadCommand(Object value, List<Object> sequence) {
@@ -352,6 +371,21 @@ class YamlTester {
     private void messageCommand(Object value) {
         String message = string(value, "Message");
         System.err.println("FTS Message: " + message);
+    }
+
+    private void newtypesCommand(Object value) throws SQLException {
+        Boolean boolVal = (Boolean) value;
+        String newtypesValue;
+        if (boolVal == null)
+            newtypesValue = "DEFAULT";
+        else if (boolVal)
+            newtypesValue = "'true'";
+        else
+            newtypesValue = "'false'";
+        String command = "SET newtypes = " + newtypesValue;
+        Map<?,?> commandMap = Collections.singletonMap("Statement", command);
+        List<Object> sequence = Collections.<Object>singletonList(commandMap);
+        statementCommand(command, sequence);
     }
 
     private void propertiesCommand(Object value, List<Object> sequence) {

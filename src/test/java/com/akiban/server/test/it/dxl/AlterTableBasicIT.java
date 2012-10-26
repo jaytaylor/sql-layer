@@ -374,11 +374,9 @@ public class AlterTableBasicIT extends AlterTableITBase {
         createAndLoadSingleTableGroup();
         createIndex(SCHEMA, "c", "c1", "c1");
 
-        UserTable origTable = getUserTable(cid);
         runAlter("ALTER TABLE c DROP COLUMN c1");
 
         expectIndexes(cid, "PRIMARY");
-        assertEquals("index tree exists", false, treeService().treeExists(SCHEMA, origTable.getIndex("c1").getTreeName()));
         expectFullRows(
                 cid,
                 createNewRow(cid,  1L),

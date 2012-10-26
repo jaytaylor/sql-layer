@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +49,6 @@ import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.Routine;
@@ -58,7 +56,7 @@ import com.akiban.ais.model.NopVisitor;
 import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.SQLJJar;
-import com.akiban.ais.model.TableIndex;
+import com.akiban.ais.model.SynchronizedNameGenerator;
 import com.akiban.ais.model.View;
 import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.ais.protobuf.ProtobufReader;
@@ -66,29 +64,21 @@ import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.ais.util.ChangedTableDescription;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.error.AISTooLargeException;
-import com.akiban.server.error.BranchingGroupIndexException;
-import com.akiban.server.error.DuplicateIndexException;
 import com.akiban.server.error.DuplicateRoutineNameException;
 import com.akiban.server.error.DuplicateSequenceNameException;
 import com.akiban.server.error.DuplicateSQLJJarNameException;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.DuplicateViewException;
 import com.akiban.server.error.ISTableVersionMismatchException;
-import com.akiban.server.error.IndexLacksColumnsException;
-import com.akiban.server.error.JoinColumnTypesMismatchException;
 import com.akiban.server.error.JoinToProtectedTableException;
-import com.akiban.server.error.NoSuchColumnException;
-import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchSequenceException;
 import com.akiban.server.error.NoSuchSQLJJarException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.PersistitAdapterException;
-import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.ProtectedTableDDLException;
 import com.akiban.server.error.ReferencedTableException;
 import com.akiban.server.error.ReferencedSQLJJarException;
-import com.akiban.server.error.TableNotInGroupException;
 import com.akiban.server.error.UndefinedViewException;
 import com.akiban.server.error.UnsupportedMetadataTypeException;
 import com.akiban.server.error.UnsupportedMetadataVersionException;
@@ -101,6 +91,7 @@ import com.akiban.util.GrowableByteBuffer;
 import com.google.inject.Inject;
 
 import com.persistit.Key;
+import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitInterruptedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,7 +99,6 @@ import org.slf4j.LoggerFactory;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Columnar;
-import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -120,8 +110,6 @@ import com.akiban.server.service.tree.TreeVisitor;
 import com.persistit.Exchange;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
-
-import static com.akiban.ais.model.AISMerge.findMaxIndexIDInGroup;
 
 /**
  * <p>
@@ -177,8 +165,11 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     public static final String DEFAULT_CHARSET = "akserver.default_charset";
     public static final String DEFAULT_COLLATION = "akserver.default_collation";
 
-    private static final String METAMODEL_PARENT_KEY = "byAIS";
-    private static final String PROTOBUF_PARENT_KEY = "byPBAIS";
+    private static final String AIS_KEY_PREFIX = "by";
+    private static final String AIS_METAMODEL_PARENT_KEY = AIS_KEY_PREFIX + "AIS";
+    private static final String AIS_PROTOBUF_PARENT_KEY = AIS_KEY_PREFIX + "PBAIS";
+    private static final String DELAYED_TREE_KEY = "delayedTree";
+
     // Changed from 1 to 2 due to incompatibility related to index row changes (see bug 985007)
     private static final int PROTOBUF_PSSM_VERSION = 2;
 
@@ -194,6 +185,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private int maxAISBufferSize;
     private boolean skipAISUpgrade;
     private SerializationType serializationType = SerializationType.NONE;
+    private NameGenerator nameGenerator;
+    private AtomicLong delayedTreeIDGenerator;
 
     @Inject
     public PersistitStoreSchemaManager(ConfigurationService config, SessionService sessionService, TreeService treeService) {
@@ -271,7 +264,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         AISBuilder builder = new AISBuilder(newAIS);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
-        newAIS.freeze();
 
         final String curSchema = currentName.getSchemaName();
         final String newSchema = newName.getSchemaName();
@@ -281,144 +273,19 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             saveAISChangeWithRowDefs(session, newAIS, Arrays.asList(curSchema, newSchema));
         }
     }
-
-    private static boolean inSameBranch(UserTable t1, UserTable t2) {
-        if(t1 == t2) {
-            return true;
-        }
-        // search for t2 in t1->root
-        Join join = t1.getParentJoin();
-        while(join != null) {
-            final UserTable parent = join.getParent();
-            if(parent == t2) {
-                return true;
-            }
-            join = parent.getParentJoin();
-        }
-        // search fo t1 in t2->root
-        join = t2.getParentJoin();
-        while(join != null) {
-            final UserTable parent = join.getParent();
-            if(parent == t1) {
-                return true;
-            }
-            join = parent.getParentJoin();
-        }
-        return false;
-    }
-    
-    public static Collection<Index> createIndexes(AkibanInformationSchema newAIS,
-                                                  Collection<? extends Index> indexesToAdd) {
-        final List<Index> newIndexes = new ArrayList<Index>();
-        final NameGenerator nameGen = new DefaultNameGenerator().setDefaultTreeNames(AISMerge.computeTreeNames(newAIS));
-
-        for(Index index : indexesToAdd) {
-            final IndexName indexName = index.getIndexName();
-            if(index.isPrimaryKey()) {
-                throw new ProtectedIndexException("PRIMARY", new TableName(indexName.getSchemaName(), indexName.getTableName()));
-            }
-
-            final Index curIndex;
-            final Index newIndex;
-            final Group newGroup;
-
-            switch(index.getIndexType()) {
-                case TABLE:
-                {
-                    final TableName tableName = new TableName(indexName.getSchemaName(), indexName.getTableName());
-                    final UserTable newTable = newAIS.getUserTable(tableName);
-                    if(newTable == null) {
-                        throw new NoSuchTableException(tableName);
-                    }
-                    curIndex = newTable.getIndex(indexName.getName());
-                    newGroup = newTable.getGroup();
-                    Integer newId = findMaxIndexIDInGroup(newAIS, newGroup) + 1;
-                    newIndex = TableIndex.create(newAIS, newTable, indexName.getName(), newId, index.isUnique(),
-                                                 index.getConstraint());
-                }
-                break;
-                case GROUP:
-                {
-                    GroupIndex gi = (GroupIndex)index;
-                    newGroup = newAIS.getGroup(gi.getGroup().getName());
-                    if(newGroup == null) {
-                        throw new NoSuchGroupException(indexName.getFullTableName());
-                    }
-                    curIndex = newGroup.getIndex(indexName.getName());
-                    Integer newId = findMaxIndexIDInGroup(newAIS, newGroup) + 1;
-                    newIndex = GroupIndex.create(newAIS, newGroup, indexName.getName(), newId, index.isUnique(),
-                                                 index.getConstraint(), index.getJoinType());
-                }
-                break;
-                default:
-                    throw new IllegalArgumentException("Unknown index type: " + index);
-            }
-
-            if (index.getIndexMethod() == Index.IndexMethod.Z_ORDER_LAT_LON) {
-                TableIndex spatialIndex = (TableIndex) index;
-                ((TableIndex)newIndex).markSpatial(spatialIndex.firstSpatialArgument(), spatialIndex.dimensions());
-            }
-
-            if(curIndex != null) {
-                throw new DuplicateIndexException(indexName);
-            }
-            if(index.getKeyColumns().isEmpty()) {
-                throw new IndexLacksColumnsException (
-                        new TableName(index.getIndexName().getSchemaName(), index.getIndexName().getTableName()),
-                        index.getIndexName().getName());
-            }
-
-            UserTable lastTable = null;
-            for(IndexColumn indexCol : index.getKeyColumns()) {
-                final TableName refTableName = indexCol.getColumn().getTable().getName();
-                final UserTable newRefTable = newAIS.getUserTable(refTableName);
-                if(newRefTable == null) {
-                    throw new NoSuchTableException(refTableName);
-                }
-                if(!newRefTable.getGroup().equals(newGroup)) {
-                    throw new TableNotInGroupException (refTableName);
-                }
-                // TODO: Checked in newIndex.addColumn(newIndexCol) ?
-                if(lastTable != null && !inSameBranch(lastTable, newRefTable)) {
-                    throw new BranchingGroupIndexException (
-                            index.getIndexName().getName(),
-                            lastTable.getName(), newRefTable.getName());
-                }
-                lastTable = newRefTable;
-
-                final Column column = indexCol.getColumn();
-                final Column newColumn = newRefTable.getColumn(column.getName());
-                if(newColumn == null) {
-                    throw new NoSuchColumnException (column.getName());
-                }
-                if(!column.getType().equals(newColumn.getType())) {
-                    throw new JoinColumnTypesMismatchException (
-                            new TableName (index.getIndexName().getSchemaName(), index.getIndexName().getTableName()),
-                            column.getName(),
-                            newRefTable.getName(), newColumn.getName());
-                }
-                IndexColumn.create(newIndex, newColumn, indexCol.getPosition(),
-                                   indexCol.isAscending(), indexCol.getIndexedLength());
-            }
-
-            newIndex.freezeColumns();
-            newIndex.setTreeName(nameGen.generateIndexTreeName(newIndex));
-            newIndexes.add(newIndex);
-        }
-        return newIndexes;
-    }
     
     @Override
     public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
-        final Set<String> schemas = new HashSet<String>();
-        final AkibanInformationSchema newAIS = AISCloner.clone(getAis(session));
-
-        Collection<Index> newIndexes = createIndexes(newAIS, indexesToAdd);
-        for(Index index : newIndexes) {
-            schemas.add(DefaultNameGenerator.schemaNameForIndex(index));
+        AISMerge merge = AISMerge.newForAddIndex(nameGenerator, getAis(session));
+        Set<String> schemas = new HashSet<String>();
+        Collection<Index> newIndexes = new ArrayList<Index>(indexesToAdd.size());
+        for(Index proposed : indexesToAdd) {
+            Index newIndex = merge.mergeIndex(proposed);
+            newIndexes.add(newIndex);
+            schemas.add(DefaultNameGenerator.schemaNameForIndex(newIndex));
         }
-
-        saveAISChangeWithRowDefs(session, newAIS, schemas);
+        merge.merge();
+        saveAISChangeWithRowDefs(session, merge.getAIS(), schemas);
         return newIndexes;
     }
 
@@ -471,7 +338,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             schemas.add(newName.getSchemaName());
         }
 
-        AISMerge merge = new AISMerge(getAis(session), alteredTables);
+        AISMerge merge = AISMerge.newForModifyTable(nameGenerator, getAis(session), alteredTables);
         merge.merge();
         AkibanInformationSchema newAIS = merge.getAIS();
 
@@ -537,6 +404,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private void deleteTableStatuses(List<Integer> tableIDs) throws PersistitException {
         for(Integer id : tableIDs) {
             treeService.getTableStatusCache().drop(id);
+            nameGenerator.removeTableID(id);
         }
     }
 
@@ -667,7 +535,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         final AkibanInformationSchema oldAIS = getAis(session);
         checkSystemSchema(sqljJar.getName(), false);
         SQLJJar oldJar = oldAIS.getSQLJJar(sqljJar.getName());
-        if (sqljJar == null)
+        if (oldJar == null)
             throw new NoSuchSQLJJarException(sqljJar.getName());
         final AkibanInformationSchema newAIS = AISCloner.clone(oldAIS);
         // Changing old state rather than actually replacing saves having to find
@@ -802,6 +670,36 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     @Override
+    public boolean treeRemovalIsDelayed() {
+        return true;
+    }
+
+    @Override
+    public void treeWasRemoved(Session session, String schema, String treeName) {
+        if(!treeRemovalIsDelayed()) {
+            nameGenerator.removeTreeName(treeName);
+            return;
+        }
+
+        LOG.debug("Delaying removal of tree (until next restart): {}", treeName);
+        Exchange ex = schemaTreeExchange(session, schema);
+        try {
+            long id = delayedTreeIDGenerator.incrementAndGet();
+            long timestamp = System.currentTimeMillis();
+            ex.clear().append(DELAYED_TREE_KEY).append(id).append(timestamp);
+            ex.getValue().setStreamMode(true);
+            ex.getValue().put(schema);
+            ex.getValue().put(treeName);
+            ex.getValue().setStreamMode(false);
+            ex.store();
+        } catch(PersistitException e) {
+            throw new PersistitAdapterException(e);
+        } finally {
+            treeService.releaseExchange(session, ex);
+        }
+    }
+
+    @Override
     public long getUpdateTimestamp() {
         return updateTimestamp.get();
     }
@@ -839,16 +737,21 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             }
 
             newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+            newAIS.freeze();
 
             transactionally(sessionService.createSession(), new ThrowingRunnable() {
                 @Override
                 public void run(Session session) throws PersistitException {
+                    cleanupDelayedTrees(session);
                     buildRowDefCache(newAIS);
                 }
             });
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
         }
+
+        this.nameGenerator = SynchronizedNameGenerator.wrap(new DefaultNameGenerator(ais));
+        this.delayedTreeIDGenerator = new AtomicLong();
     }
 
     @Override
@@ -859,6 +762,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         this.maxAISBufferSize = 0;
         this.skipAISUpgrade = false;
         this.serializationType = SerializationType.NONE;
+        this.nameGenerator = null;
+        this.delayedTreeIDGenerator = null;
     }
 
     @Override
@@ -897,10 +802,11 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private static void loadProtobuf(Exchange ex, AkibanInformationSchema newAIS) throws PersistitException {
         ProtobufReader reader = new ProtobufReader(newAIS);
         Key key = ex.getKey();
-        key.clear().append(PROTOBUF_PARENT_KEY).append(Key.BEFORE);
-        while(ex.next(true)) {
+        ex.clear().append(AIS_KEY_PREFIX);
+        KeyFilter filter = new KeyFilter().append(KeyFilter.simpleTerm(AIS_PROTOBUF_PARENT_KEY));
+        while(ex.traverse(Key.Direction.GT, filter, Integer.MAX_VALUE)) {
             if(key.getDepth() != 3) {
-                throw new IllegalStateException("Unexpected "+PROTOBUF_PARENT_KEY+" format: " + key);
+                throw new IllegalStateException("Unexpected " + AIS_PROTOBUF_PARENT_KEY + " format: " + key);
             }
 
             key.indexTo(1);
@@ -974,7 +880,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             selector = new ProtobufWriter.SingleSchemaSelector(schema);
         }
 
-        ex.clear().append(PROTOBUF_PARENT_KEY).append(PROTOBUF_PSSM_VERSION).append(schema);
+        ex.clear().append(AIS_PROTOBUF_PARENT_KEY).append(PROTOBUF_PSSM_VERSION).append(schema);
         if(newAIS.getSchema(schema) != null) {
             buffer.clear();
             new ProtobufWriter(buffer, selector).save(newAIS);
@@ -996,6 +902,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
      */
     private void saveAISChange(Session session, AkibanInformationSchema newAIS, Collection<String> schemaNames) {
         newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        newAIS.freeze();
 
         int maxSize = maxAISBufferSize == 0 ? Integer.MAX_VALUE : maxAISBufferSize;
         GrowableByteBuffer byteBuffer = new GrowableByteBuffer(4096, 4096, maxSize);
@@ -1003,8 +910,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         Exchange ex = null;
         try {
             for(String schema : schemaNames) {
-                TreeLink schemaTreeLink =  treeService.treeLink(schema, SCHEMA_TREE_NAME);
-                ex = treeService.getExchange(session, schemaTreeLink);
+                ex = schemaTreeExchange(session, schema);
                 checkAndSerialize(ex, byteBuffer, newAIS, schema);
                 treeService.releaseExchange(session, ex);
                 ex = null;
@@ -1038,23 +944,36 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             SerializationType type = SerializationType.NONE;
 
             // Simple heuristic to determine which style AIS storage we have
-            boolean hasMetaModel = ex.clear().append(METAMODEL_PARENT_KEY).isValueDefined();
-            boolean hasProtobuf = ex.clear().append(PROTOBUF_PARENT_KEY).hasChildren();
+            boolean hasMetaModel = false;
+            boolean hasProtobuf = false;
+            boolean hasUnknown = false;
+
+            ex.clear().append(AIS_KEY_PREFIX);
+            while(ex.next(true)) {
+                if(ex.getKey().decodeType() != String.class) {
+                    break;
+                }
+                String k = ex.getKey().decodeString();
+                if(!k.startsWith(AIS_KEY_PREFIX)) {
+                    break;
+                }
+                if(k.equals(AIS_PROTOBUF_PARENT_KEY)) {
+                    hasProtobuf = true;
+                } else if(k.equals(AIS_METAMODEL_PARENT_KEY)) {
+                    hasMetaModel = true;
+                } else {
+                    hasUnknown = true;
+                }
+            }
 
             if(hasMetaModel && hasProtobuf) {
                 throw new IllegalStateException("Both AIS and Protobuf serializations");
-            }
-            else if(hasMetaModel) {
+            } else if(hasMetaModel) {
                 type = SerializationType.META_MODEL;
-            }
-            else if(hasProtobuf) {
+            } else if(hasProtobuf) {
                 type = SerializationType.PROTOBUF;
-            }
-            else {
-                ex.clear().append(Key.BEFORE);
-                if(ex.next(true)) {
-                    type = SerializationType.UNKNOWN;
-                }
+            } else if(hasUnknown) {
+                type = SerializationType.UNKNOWN;
             }
 
             return type;
@@ -1070,18 +989,45 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         serializationType = newSerializationType;
     }
 
-    /**
-     * @return All serialization types from all volumes
-     */
-    public Set<SerializationType> getAllSerializationTypes(Session session) throws PersistitException {
-        final Set<SerializationType> allTypes = EnumSet.noneOf(SerializationType.class);
-        treeService.visitStorage(session, new TreeVisitor() {
-            @Override
-            public void visit(Exchange exchange) throws PersistitException {
-                allTypes.add(detectSerializationType(exchange));
-            }
-        }, SCHEMA_TREE_NAME);
-        return allTypes;
+    /** Public for test only. Should not generally be called. */
+    public void cleanupDelayedTrees(final Session session) throws PersistitException {
+        treeService.visitStorage(
+                session,
+                new TreeVisitor() {
+                    @Override
+                    public void visit(final Exchange ex) throws PersistitException {
+                        ex.clear().append(DELAYED_TREE_KEY);
+                        KeyFilter filter = new KeyFilter().append(KeyFilter.simpleTerm(DELAYED_TREE_KEY));
+                        while(ex.traverse(Key.Direction.GT, filter, Integer.MAX_VALUE)) {
+                            ex.getKey().indexTo(1);     // skip delayed key
+                            ex.getKey().decodeLong();   // skip id
+                            long timestamp = ex.getKey().decodeLong();
+                            ex.getValue().setStreamMode(true);
+                            String schema = ex.getValue().getString();
+                            String treeName = ex.getValue().getString();
+                            ex.getValue().setStreamMode(false);
+                            ex.remove();
+
+                            LOG.debug("Removing delayed tree {} from timestamp {}", treeName, timestamp);
+                            TreeLink link = treeService.treeLink(schema, treeName);
+                            Exchange ex2 = treeService.getExchange(session, link);
+                            ex2.removeTree();
+                            treeService.releaseExchange(session, ex2);
+
+                            // Keep consistent if called during runtime
+                            if(nameGenerator != null) {
+                                nameGenerator.removeTreeName(treeName);
+                            }
+                        }
+                    }
+                },
+                SCHEMA_TREE_NAME
+        );
+    }
+
+    private Exchange schemaTreeExchange(Session session, String schema) {
+        TreeLink link = treeService.treeLink(schema, SCHEMA_TREE_NAME);
+        return treeService.getExchange(session, link);
     }
 
     /**
@@ -1091,11 +1037,9 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         return serializationType;
     }
 
-    /**
-     * @param serializationType Serialization type to use
-     */
-    public void setSerializationType(SerializationType serializationType) {
-        this.serializationType = serializationType;
+    @Override
+    public Set<String> getTreeNames() {
+        return nameGenerator.getTreeNames();
     }
 
     private TableName createTableCommon(Session session, UserTable newTable, boolean isInternal,
@@ -1103,7 +1047,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         final TableName newName = newTable.getName();
         checkTableName(session, newName, false, isInternal);
         checkJoinTo(newTable.getParentJoin(), newName, isInternal);
-        AISMerge merge = new AISMerge(getAis(session), newTable);
+        AISMerge merge = AISMerge.newForAddTable(nameGenerator, getAis(session), newTable);
         merge.merge();
         UserTable mergedTable = merge.getAIS().getUserTable(newName);
         if(factory != null) {
