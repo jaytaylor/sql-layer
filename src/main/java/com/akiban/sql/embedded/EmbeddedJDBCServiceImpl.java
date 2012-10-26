@@ -29,6 +29,7 @@ package com.akiban.sql.embedded;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.server.ServerServiceRequirements;
 
+import com.akiban.server.AkServerInterface;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
@@ -56,17 +57,18 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
     private static final Logger logger = LoggerFactory.getLogger(EmbeddedJDBCService.class);
 
     @Inject
-    public EmbeddedJDBCServiceImpl(ConfigurationService config,
+    public EmbeddedJDBCServiceImpl(AkServerInterface akServer,
                                    DXLService dxlService,
                                    InstrumentationService instrumentation,
                                    SessionService sessionService,
                                    Store store,
                                    TreeService treeService,
                                    FunctionsRegistry functionsRegistry,
+                                   ConfigurationService config,
                                    IndexStatisticsService indexStatisticsService,
                                    T3RegistryService overloadResolutionService,
                                    RoutineLoader routineLoader) {
-        reqs = new ServerServiceRequirements(dxlService, instrumentation, 
+        reqs = new ServerServiceRequirements(akServer, dxlService, instrumentation, 
                 sessionService, store, treeService, functionsRegistry, 
                 config, indexStatisticsService, overloadResolutionService, routineLoader);
     }
