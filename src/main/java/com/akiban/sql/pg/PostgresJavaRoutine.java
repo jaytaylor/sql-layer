@@ -26,6 +26,10 @@
 
 package com.akiban.sql.pg;
 
+import static com.akiban.sql.pg.PostgresJsonStatement.jsonColumnNames;
+import static com.akiban.sql.pg.PostgresJsonStatement.jsonColumnTypes;
+import static com.akiban.sql.pg.PostgresServerSession.OutputFormat;
+
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.server.ServerCallContextStack;
 import com.akiban.sql.server.ServerJavaRoutine;
@@ -57,14 +61,24 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
                                               List<ParameterNode> params, 
                                               int[] paramTypes) {
         Routine routine = invocation.getRoutine();
-        List<PostgresType> columnTypes = columnTypes(routine);
         List<String> columnNames;
-        if (columnTypes.isEmpty()) {
-            columnTypes = null;
-            columnNames = null;
-        }
-        else {
-            columnNames = columnNames(routine);
+        List<PostgresType> columnTypes;
+        switch (server.getOutputFormat()) {
+        case JSON:
+        case JSON_WITH_META_DATA:
+            columnNames = jsonColumnNames();
+            columnTypes = jsonColumnTypes();
+            break;
+        default:
+            columnTypes = columnTypes(routine);
+            if (columnTypes.isEmpty()) {
+                columnTypes = null;
+                columnNames = null;
+            }
+            else {
+                columnNames = columnNames(routine);
+            }
+            break;
         }
         PostgresType[] parameterTypes;
         if ((params == null) || params.isEmpty())
@@ -141,11 +155,22 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
             call.invoke();
             dynamicResultSets = call.getDynamicResultSets();
             if (getColumnTypes() != null) {
-                PostgresOutputter<ServerJavaRoutine> outputter = 
-                    new PostgresJavaRoutineResultsOutputter(context, this);
+                PostgresOutputter<ServerJavaRoutine> outputter;
+                switch (server.getOutputFormat()) {
+                case JSON:
+                case JSON_WITH_META_DATA:
+                    outputter = new PostgresJavaRoutineJsonOutputter(context, this,
+                                                                     dynamicResultSets);
+                    break;
+                default:
+                    outputter = new PostgresJavaRoutineResultsOutputter(context, this);
+                    break;
+                }
+                outputter.beforeData();
                 outputter.output(call, usesPValues());
                 nrows++;
                 anyOutput = true;
+                outputter.afterData();
             }
             if (!dynamicResultSets.isEmpty()) {
                 PostgresDynamicResultSetOutputter outputter = 
