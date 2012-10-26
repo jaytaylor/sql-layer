@@ -140,13 +140,13 @@ public class MBigDecimal extends TClassBase {
                 return aSigned ? -1 : 1; // a < 0 < b or a > 0 > b
             
             int d;
-            // check the digits before the decimal pint
             if (decPointA < decPointB)          // less digits
-                return -1;   
+                return aSigned ? 1 : -1;   
             else if (decPointA > decPointB)     // more digis
-                return 1;
+                return aSigned? -1 : 1;
             else
             {
+                // check the digits before the decimal pint
                 if (aSigned)
                     for (int n = 0; n < decPointA; ++n)
                     {
