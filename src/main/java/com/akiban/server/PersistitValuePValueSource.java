@@ -214,4 +214,10 @@ public final class PersistitValuePValueSource implements PValueSource {
         map.put(String.class, PUnderlying.STRING);
         return map;
     }
+
+    @Override
+    public PValueSource copySource()
+    {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }

@@ -26,6 +26,8 @@
 
 package com.akiban.server.rowdata;
 
+import com.akiban.server.types3.pvalue.PValueSource;
+
 public final class RowDataPValueSource extends AbstractRowDataPValueSource implements RowDataSource {
 
     // RowDataSource interface
@@ -76,4 +78,10 @@ public final class RowDataPValueSource extends AbstractRowDataPValueSource imple
     // object state
     private FieldDef fieldDef;
     private RowData rowData;
+
+    @Override
+    public PValueSource copySource()
+    {
+        throw new UnsupportedOperationException("not supported yet");
+    }
 }

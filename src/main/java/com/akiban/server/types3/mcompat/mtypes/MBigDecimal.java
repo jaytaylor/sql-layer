@@ -134,7 +134,7 @@ public class MBigDecimal extends TClassBase {
             int scaleB = instanceB.attribute(Attrs.SCALE);
             int decPointB = preB - scaleB - 1;
             boolean bSigned = bytesB[0] >= 0;
-
+            
             // if the two are of opposite sign, there's no need for comparison
             if (bSigned ^ aSigned)
                 return aSigned ? -1 : 1; // a < 0 < b or a > 0 > b
