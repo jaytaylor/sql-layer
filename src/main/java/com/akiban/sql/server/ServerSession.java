@@ -46,7 +46,6 @@ import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeService;
-import com.persistit.Transaction;
 
 import java.io.IOException;
 import java.util.Date;

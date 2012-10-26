@@ -97,8 +97,7 @@ public class ServerTransaction
 
     /** Abort transaction that still exists on exit. */
     public void abort() {
-        if (txnService.isTransactionActive(session))
-            txnService.rollbackTransaction(session);
+        txnService.rollbackTransactionIfOpen(session);
     }
     
     public boolean isRollbackPending() {

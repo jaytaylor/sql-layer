@@ -26,7 +26,6 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowPool;
 import com.akiban.sql.server.ServerServiceRequirements;

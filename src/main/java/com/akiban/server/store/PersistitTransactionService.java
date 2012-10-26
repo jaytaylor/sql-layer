@@ -39,10 +39,10 @@ import static com.akiban.server.service.session.Session.Key;
 import static com.akiban.server.service.session.Session.StackKey;
 
 public class PersistitTransactionService implements TransactionService {
-    private static final Key<Transaction> TXN_KEY = Key.named("TRANSACTION_KEY");
-    private static final StackKey<Callback> AFTER_END_KEY = StackKey.stackNamed("AFTER_END_CALLBACKS");
-    private static final StackKey<Callback> AFTER_COMMIT_KEY = StackKey.stackNamed("AFTER_COMMIT_CALLBACKS");
-    private static final StackKey<Callback> AFTER_ROLLBACK_KEY = StackKey.stackNamed("AFTER_ROLLBACK_CALLBACKS");
+    private static final Key<Transaction> TXN_KEY = Key.named("TXN_KEY");
+    private static final StackKey<Callback> AFTER_END_KEY = StackKey.stackNamed("TXN_AFTER_END");
+    private static final StackKey<Callback> AFTER_COMMIT_KEY = StackKey.stackNamed("TXN_AFTER_COMMIT");
+    private static final StackKey<Callback> AFTER_ROLLBACK_KEY = StackKey.stackNamed("TXN_AFTER_ROLLBACK");
 
     private final TreeService treeService;
 
@@ -197,7 +197,7 @@ public class PersistitTransactionService implements TransactionService {
         RuntimeException re = cause;
         try {
             txn.end();
-            //session.remove(TXN_KEY); // If we ever move Sessions between threads, this is probably needed
+            //session.remove(TXN_KEY); // Needed if Sessions ever move between threads
         } catch(RuntimeException e) {
             re = MultipleCauseException.combine(re, e);
         } finally {
