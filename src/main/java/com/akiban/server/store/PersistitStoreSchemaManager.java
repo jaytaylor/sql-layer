@@ -185,7 +185,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private final ConfigurationService config;
     private AkibanInformationSchema ais;
     private RowDefCache rowDefCache;
-    private AtomicLong updateTimestamp;
     private int maxAISBufferSize;
     private boolean skipAISUpgrade;
     private SerializationType serializationType = SerializationType.NONE;
@@ -704,24 +703,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     @Override
-    public long getUpdateTimestamp() {
-        return updateTimestamp.get();
-    }
-
-    @Override
-    public int getSchemaGeneration() {
-        long ts = getUpdateTimestamp();
-        return (int) ts ^ (int) (ts >>> 32);
-    }
-    
-    public void saveCurrentTimestamp() {
-        updateTimestamp.set(treeService.getDb().getCurrentTimestamp());
-    }
-
-    @Override
     public void start() {
         rowDefCache = new RowDefCache(treeService.getTableStatusCache());
-        updateTimestamp = new AtomicLong();
         skipAISUpgrade = Boolean.parseBoolean(config.getProperty(SKIP_AIS_UPGRADE_PROPERTY));
         maxAISBufferSize = Integer.parseInt(config.getProperty(MAX_AIS_SIZE_PROPERTY));
         if(maxAISBufferSize < 0) {
@@ -762,7 +745,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     public void stop() {
         this.ais = null;
         this.rowDefCache = null;
-        this.updateTimestamp = null;
         this.maxAISBufferSize = 0;
         this.skipAISUpgrade = false;
         this.serializationType = SerializationType.NONE;
@@ -840,7 +822,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             rowDefCache.setAIS(newAis);
             // This creates|verifies the trees exist for sequences
             sequenceTrees(newAis);
-            saveCurrentTimestamp();
             ais = newAis;
         } catch(PersistitException e) {
             LOG.error("AIS change successful and stored on disk but RowDefCache creation failed!");

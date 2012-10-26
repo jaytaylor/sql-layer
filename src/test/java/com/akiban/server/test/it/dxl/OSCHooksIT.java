@@ -254,13 +254,13 @@ public class OSCHooksIT extends AlterTableITBase {
         }
 
         @Override
-        public int getGeneration() {
-            return delegate.getGeneration();
+        public int getGenerationAsInt(Session session) {
+            return delegate.getGenerationAsInt(session);
         }
 
         @Override
-        public long getTimestamp() {
-            return delegate.getTimestamp();
+        public long getGeneration(Session session) {
+            return delegate.getGeneration(session);
         }
 
         @Override

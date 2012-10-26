@@ -441,7 +441,7 @@ public class ApiTestBase {
     }
 
     protected final void updateAISGeneration() {
-        aisGeneration = ddl().getGeneration();
+        aisGeneration = ddl().getGenerationAsInt(session());
     }
 
     protected Collection<Property> startupConfigProperties() {

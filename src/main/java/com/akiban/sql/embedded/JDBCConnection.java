@@ -26,6 +26,7 @@
 
 package com.akiban.sql.embedded;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerSessionBase;
 import com.akiban.sql.server.ServerSessionTracer;
@@ -159,11 +160,10 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             context.lock(DXLFunction.UNSPECIFIED_DDL_READ);
             locked = true;
             DDLFunctions ddl = reqs.dxl().ddlFunctions();
-            long currentTimestamp = ddl.getTimestamp();
-            if (aisTimestamp == currentTimestamp)
+            AkibanInformationSchema newAIS = ddl.getAIS(session);
+            if ((ais != null) && (ais.getGeneration() == newAIS.getGeneration()))
                 return;             // Unchanged.
-            aisTimestamp = currentTimestamp;
-            ais = ddl.getAIS(session);
+            ais = newAIS;
         }
         finally {
             if (locked) {

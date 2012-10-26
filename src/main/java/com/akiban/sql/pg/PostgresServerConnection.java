@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowPool;
 import com.akiban.sql.server.ServerServiceRequirements;
@@ -739,14 +740,10 @@ public class PostgresServerConnection extends ServerSessionBase
                 locked = true;
             }
             DDLFunctions ddl = reqs.dxl().ddlFunctions();
-            // TODO: This could be more reliable if the AIS object itself
-            // also knew its generation. Right now, can get new generation
-            // # and old AIS and not notice until next change.
-            long currentTimestamp = ddl.getTimestamp();
-            if (aisTimestamp == currentTimestamp) 
+            AkibanInformationSchema newAIS = ddl.getAIS(session);
+            if ((ais != null) && (ais.getGeneration() == newAIS.getGeneration()))
                 return;             // Unchanged.
-            aisTimestamp = currentTimestamp;
-            ais = ddl.getAIS(session);
+            ais = newAIS;
         }
         finally {
             if (locked) {
@@ -805,7 +802,7 @@ public class PostgresServerConnection extends ServerSessionBase
                                                       getProperty("OutputFormat", "table"),
                                                       getBooleanProperty("cbo", true),
                                                       getBooleanProperty("newtypes", false)),
-                                        aisTimestamp);
+                                        ais.getGeneration());
     }
 
     @Override

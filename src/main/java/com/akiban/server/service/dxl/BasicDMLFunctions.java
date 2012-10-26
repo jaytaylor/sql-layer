@@ -146,7 +146,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     @Override
     public CursorId openCursor(Session session, int knownAIS, ScanRequest request)
     {
-        checkAISGeneration(knownAIS);
+        checkAISGeneration(session, knownAIS);
         logger.trace("opening scan:    {} -> {}", System.identityHashCode(request), request);
         if (request.scanAllColumns()) {
             request = scanAllColumns(session, request);
@@ -162,15 +162,15 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     private void checkAISGeneration(int knownGeneration, Session session, CursorId cursorId) throws OldAISException {
         try {
-            checkAISGeneration(knownGeneration);
+            checkAISGeneration(session, knownGeneration);
         } catch (OldAISException e) {
             closeCursor(session, cursorId);
             throw e;
         }
     }
 
-    private void checkAISGeneration(int knownGeneration) throws OldAISException {
-        int currentGeneration = ddlFunctions.getGeneration();
+    private void checkAISGeneration(Session session, int knownGeneration) throws OldAISException {
+        int currentGeneration = ddlFunctions.getGenerationAsInt(session);
         if (currentGeneration != knownGeneration) {
             throw new OldAISException(knownGeneration, currentGeneration);
         }
@@ -731,7 +731,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     public void truncateTable(final Session session, final int tableId)
     {
         logger.trace("truncating tableId={}", tableId);
-        final int knownAIS = ddlFunctions.getGeneration();
+        final int knownAIS = ddlFunctions.getGenerationAsInt(session);
         final Table table = ddlFunctions.getTable(session, tableId);
         final UserTable utable = table.isUserTable() ? (UserTable)table : null;
 

@@ -800,13 +800,14 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public int getGeneration() {
-        return schemaManager().getSchemaGeneration();
+    public int getGenerationAsInt(Session session) {
+        long full = getGeneration(session);
+        return (int)full ^ (int)(full >>> 32);
     }
 
     @Override
-    public long getTimestamp() {
-        return schemaManager().getUpdateTimestamp();
+    public long getGeneration(Session session) {
+        return getAIS(session).getGeneration();
     }
 
     @Override
