@@ -115,7 +115,7 @@ launch_service()
     main_class="com.akiban.server.AkServer"
     if [ -n "$mode" ]; then
         if [ "$mode" == "window" ]; then
-          akiban_parms="$akiban_parms -Drequire:com.akiban.server.service.ui.SwingConsoleService" "-Dprioritize:com.akiban.server.service.ui.SwingConsoleService"
+          akiban_parms="$akiban_parms -Drequire:com.akiban.server.service.ui.SwingConsoleService -Dprioritize:com.akiban.server.service.ui.SwingConsoleService"
           main_class=com.akiban.server.service.ui.AkServerWithSwingConsole
         fi
         echo $JAVA $JVM_OPTS $akiban_parms -cp "$CLASSPATH" $main_class
@@ -129,7 +129,7 @@ launch_service()
 }
 
 # Parse any command line options.
-args=`getopt fkvghj:c:p:D: "$@"`
+args=`getopt fwkvghj:c:p:D: "$@"`
 eval set -- "$args"
 
 while true; do
