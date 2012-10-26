@@ -140,7 +140,7 @@ Statistics:
     lt: 545
   - distinct: 391
     eq: 6
-    key: [Bkeztg, 0194]
+    key: [Bkeztg, '0194']
     lt: 674
   - distinct: 736
     eq: 6
@@ -152,7 +152,7 @@ Statistics:
     lt: 710
   - distinct: 196
     eq: 6
-    key: [Etimvya, 0109]
+    key: [Etimvya, '0109']
     lt: 375
   - distinct: 124
     eq: 7
@@ -160,7 +160,7 @@ Statistics:
     lt: 258
   - distinct: 271
     eq: 6
-    key: [Foqgsvcymm, 0292]
+    key: [Foqgsvcymm, '0292']
     lt: 439
   - distinct: 151
     eq: 6
@@ -176,7 +176,7 @@ Statistics:
     lt: 287
   - distinct: 248
     eq: 7
-    key: [Ghmsolgjg, 0139]
+    key: [Ghmsolgjg, '0139']
     lt: 394
   - distinct: 814
     eq: 6
@@ -232,15 +232,15 @@ Statistics:
     lt: 1087
   - distinct: 532
     eq: 6
-    key: [Qjhjkw, 0185]
+    key: [Qjhjkw, '0185']
     lt: 873
   - distinct: 11
     eq: 6
-    key: [Qjhjkw, 0199]
+    key: [Qjhjkw, '0199']
     lt: 24
   - distinct: 71
     eq: 6
-    key: [Qjhjkw, 0297]
+    key: [Qjhjkw, '0297']
     lt: 134
   - distinct: 1730
     eq: 6
@@ -256,11 +256,11 @@ Statistics:
     lt: 105
   - distinct: 1476
     eq: 7
-    key: [Zrdyplkirct, 0280]
+    key: [Zrdyplkirct, '0280']
     lt: 2349
   - distinct: 258
     eq: 2
-    key: [Zxguhcguka, 0299]
+    key: [Zxguhcguka, '0299']
     lt: 417
 Table: customers
 Timestamp: 2012-01-18T00:24:08.679Z
@@ -297,7 +297,7 @@ Statistics:
     lt: 293
   - distinct: 6
     eq: 114
-    key: [0128]
+    key: ['0128']
     lt: 615
   - distinct: 18
     eq: 112
@@ -305,7 +305,7 @@ Statistics:
     lt: 1743
   - distinct: 0
     eq: 110
-    key: [0148]
+    key: ['0148']
     lt: 0
   - distinct: 3
     eq: 117
@@ -329,7 +329,7 @@ Statistics:
     lt: 482
   - distinct: 32
     eq: 120
-    key: [0195]
+    key: ['0195']
     lt: 3078
   - distinct: 5
     eq: 112
@@ -373,11 +373,11 @@ Statistics:
     lt: 0
   - distinct: 2
     eq: 112
-    key: [0258]
+    key: ['0258']
     lt: 191
   - distinct: 0
     eq: 120
-    key: [0259]
+    key: ['0259']
     lt: 0
   - distinct: 1
     eq: 115
@@ -389,15 +389,15 @@ Statistics:
     lt: 1273
   - distinct: 16
     eq: 120
-    key: [0292]
+    key: ['0292']
     lt: 1538
   - distinct: 0
     eq: 112
-    key: [0293]
+    key: ['0293']
     lt: 0
   - distinct: 5
     eq: 116
-    key: [0299]
+    key: ['0299']
     lt: 483
 - Columns: 2
   Histogram:
@@ -415,7 +415,7 @@ Statistics:
     lt: 596
   - distinct: 168
     eq: 3
-    key: [0138, '2018-07-23']
+    key: ['0138', '2018-07-23']
     lt: 179
   - distinct: 1338
     eq: 3
@@ -435,7 +435,7 @@ Statistics:
     lt: 484
   - distinct: 184
     eq: 3
-    key: [0169, '2016-01-28']
+    key: ['0169', '2016-01-28']
     lt: 199
   - distinct: 103
     eq: 3
@@ -443,15 +443,15 @@ Statistics:
     lt: 117
   - distinct: 1477
     eq: 3
-    key: [0187, '2012-01-19']
+    key: ['0187', '2012-01-19']
     lt: 1587
   - distinct: 372
     eq: 3
-    key: [0191, '2014-04-19']
+    key: ['0191', '2014-04-19']
     lt: 392
   - distinct: 759
     eq: 3
-    key: [0199, '2019-02-18']
+    key: ['0199', '2019-02-18']
     lt: 811
   - distinct: 307
     eq: 3
@@ -511,23 +511,23 @@ Statistics:
     lt: 1793
   - distinct: 504
     eq: 3
-    key: [0279, '2012-05-19']
+    key: ['0279', '2012-05-19']
     lt: 553
   - distinct: 358
     eq: 3
-    key: [0283, '2012-08-11']
+    key: ['0283', '2012-08-11']
     lt: 380
   - distinct: 457
     eq: 3
-    key: [0288, '2012-08-11']
+    key: ['0288', '2012-08-11']
     lt: 489
   - distinct: 356
     eq: 3
-    key: [0292, '2012-08-11']
+    key: ['0292', '2012-08-11']
     lt: 385
   - distinct: 724
     eq: 1
-    key: [0299, '2019-09-27']
+    key: ['0299', '2019-09-27']
     lt: 793
 Table: customers
 Timestamp: 2012-01-18T00:24:05.300Z
@@ -1294,7 +1294,7 @@ Statistics:
     lt: 293
   - distinct: 6
     eq: 114
-    key: [0128]
+    key: ['0128']
     lt: 615
   - distinct: 18
     eq: 112
@@ -1302,7 +1302,7 @@ Statistics:
     lt: 1743
   - distinct: 0
     eq: 110
-    key: [0148]
+    key: ['0148']
     lt: 0
   - distinct: 3
     eq: 117
@@ -1326,7 +1326,7 @@ Statistics:
     lt: 482
   - distinct: 32
     eq: 120
-    key: [0195]
+    key: ['0195']
     lt: 3078
   - distinct: 5
     eq: 112
@@ -1370,11 +1370,11 @@ Statistics:
     lt: 0
   - distinct: 2
     eq: 112
-    key: [0258]
+    key: ['0258']
     lt: 191
   - distinct: 0
     eq: 120
-    key: [0259]
+    key: ['0259']
     lt: 0
   - distinct: 1
     eq: 115
@@ -1386,15 +1386,15 @@ Statistics:
     lt: 1273
   - distinct: 16
     eq: 120
-    key: [0292]
+    key: ['0292']
     lt: 1538
   - distinct: 0
     eq: 112
-    key: [0293]
+    key: ['0293']
     lt: 0
   - distinct: 5
     eq: 116
-    key: [0299]
+    key: ['0299']
     lt: 483
 Table: items
 Timestamp: 2012-01-18T00:23:43.431Z
