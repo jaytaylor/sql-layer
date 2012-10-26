@@ -417,7 +417,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.GET_SCHEMA_TIMESTAMP);
-            return delegate.getGeneration(session);
+            return delegate.getOldestActiveGeneration();
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.GET_SCHEMA_TIMESTAMP, t);
