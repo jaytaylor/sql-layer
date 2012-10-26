@@ -37,6 +37,7 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.conversion.Converters;
@@ -182,13 +183,12 @@ public class ConcurrentUpdateIT extends OperatorITBase
         {
             PersistitAdapter adapter = new PersistitAdapter(schema, store(), treeService(), createNewSession(), configService());
             QueryContext queryContext = queryContext(adapter);
-            Transaction transaction = treeService().getTransaction(session());
+            Session session = createNewSession();
             try {
-                transaction.begin();
+                txnService().beginTransaction(session);
                 plan.run(queryContext);
                 dump(cursor(groupScan_Default(group), queryContext));
-                transaction.commit();
-                transaction.end();
+                txnService().commitTransaction(session);
             } catch (Exception e) {
                 e.printStackTrace();
             }

@@ -68,6 +68,7 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.dxl.DXLTestHookRegistry;
 import com.akiban.server.service.dxl.DXLTestHooks;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.t3expressions.TCastResolver;
@@ -85,7 +86,6 @@ import com.akiban.util.AssertUtils;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.TapReport;
 import com.akiban.util.Undef;
-import com.persistit.Transaction;
 import junit.framework.Assert;
 
 import org.junit.After;
@@ -434,6 +434,10 @@ public class ApiTestBase {
 
     protected final TreeService treeService() {
         return sm.getTreeService();
+    }
+
+    protected final TransactionService txnService() {
+        return sm.getServiceByClass(TransactionService.class);
     }
 
     protected final int aisGeneration() {
@@ -1203,17 +1207,14 @@ public class ApiTestBase {
     }
 
     protected <T> T transactionally(Callable<T> callable) throws Exception {
-        Transaction txn = treeService().getTransaction(session());
-        txn.begin();
+        txnService().beginTransaction(session);
         try {
             T value = callable.call();
-            txn.commit();
+            txnService().commitTransaction(session);
             return value;
         }
         finally {
-            if(txn.isActive() && !txn.isCommitted())
-                txn.rollback(); // Prevent log message
-            txn.end();
+            txnService().rollbackTransactionIfOpen(session);
         }
     }
     

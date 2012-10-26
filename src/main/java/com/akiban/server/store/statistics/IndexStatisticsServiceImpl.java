@@ -41,6 +41,7 @@ import com.akiban.server.service.dxl.DXLTransactionHook;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.SchemaManager;
@@ -69,6 +70,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
 
     private final PersistitStore store;
     private final TreeService treeService;
+    private final TransactionService txnService;
     // Following couple only used by JMX method, where there is no context.
     private final SchemaManager schemaManager;
     private final SessionService sessionService;
@@ -80,11 +82,13 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Inject
     public IndexStatisticsServiceImpl(Store store,
                                       TreeService treeService,
+                                      TransactionService txnService,
                                       SchemaManager schemaManager,
                                       SessionService sessionService,
                                       ConfigurationService configurationService) {
         this.store = store.getPersistitStore();
         this.treeService = treeService;
+        this.txnService = txnService;
         this.schemaManager = schemaManager;
         this.sessionService = sessionService;
         this.configurationService = configurationService;
@@ -235,10 +239,10 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             } else {
                 updates.putAll(updatePersistitTableIndexStatistics (session, indexes));
             }
-        }        
-        DXLTransactionHook.addCommitSuccessCallback(session, new Runnable() {
+        }
+        txnService.addCommitCallback(session, new TransactionService.Callback() {
             @Override
-            public void run() {
+            public void run(Session session) {
                 cache.putAll(updates);
             }
         });

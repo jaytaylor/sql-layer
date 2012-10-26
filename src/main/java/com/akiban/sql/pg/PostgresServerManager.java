@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.server.ServerServiceRequirements;
 
@@ -63,10 +64,11 @@ public class PostgresServerManager implements PostgresService, Service, JmxManag
                                  ConfigurationService config,
                                  IndexStatisticsService indexStatisticsService,
                                  T3RegistryService overloadResolutionService,
-                                 RoutineLoader routineLoader) {
+                                 RoutineLoader routineLoader,
+                                 TransactionService txnService) {
         reqs = new ServerServiceRequirements(akServer, dxlService, instrumentation, 
                 sessionService, store, treeService, functionsRegistry, 
-                config, indexStatisticsService, overloadResolutionService, routineLoader);
+                config, indexStatisticsService, overloadResolutionService, routineLoader, txnService);
     }
 
     @Override
