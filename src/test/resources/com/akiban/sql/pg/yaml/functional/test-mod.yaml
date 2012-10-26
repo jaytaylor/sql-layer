@@ -70,33 +70,33 @@
 # Commented out since the instance-picking algorithm isn't working
 # properly in trunk
 ############### types3's behaviour #############################
-#---
-#- Statement: SET newtypes to 'true'
-#---
-#- Statement: SELECT 2 % 0;
-#- output: [[null]]
-#---
-#- Statement: SELECT '3' % '5';
-#- output_types: [DOUBLE]
-#- output: [[3.0]]
-# test invalid argument type
-#---
-#- Statement: SELECT DATE('2006-11-07') % 3 FROM all_types;
-#- output_types: [DOUBLE]
-#- output: [[2.0]]
-#---
-#- Statement: SELECT bigint_field % date_field FROM all_types;
-#- output: [[2.0]]
-#---
-#- Statement: SELECT year_field % 3 FROM all_types;
-#- output: [[0.0]]
-#---
+---
+- Statement: SET newtypes='true'
+---
+- Statement: SELECT 2 % 0;
+- output: [[null]]
+---
+- Statement: SELECT '3' % '5';
+- output_types: [DOUBLE]
+- output: [[3.0]]
+---
+- Statement: SELECT DATE('2006-11-07') % 3 FROM all_types;
+- output_types: [DOUBLE]
+- output: [[2.0]]
+---
+- Statement: SELECT bigint_field % date_field FROM all_types;
+- output: [[2.0]]
+---
+- Statement: SELECT year_field % 3 FROM all_types;
+- output: [[0.0]]
+---
+- Message: bug 1070604
 #- Statement: SELECT year_field % time_field FROM all_types;
 #- output: [[0.0]]
 #---
 #- Statement: SELECT year_field from all_types;
 #- output: [[0]]
-#---
-#- Statement: SET newtypes to DEFAULT
+---
+- Statement: SET newtypes to DEFAULT
 ...
 
