@@ -71,7 +71,7 @@ mvn  -Dmaven.test.skip.exec clean install
 # Linux and Mac
 cp bin/akdump ../../packages-common/
 cp target/akiban-client-*-SNAPSHOT.jar ../../packages-common/
-cp target/dependency/postgresql.jar ../../packages-common/
+cp target/dependency/postgresql*.jar ../../packages-common/
 
 popd && popd
 
@@ -117,21 +117,24 @@ elif [ ${platform} == "binary" ]; then
     BINARY_TAR_NAME="${BINARY_NAME}.tar.gz"
     
     mkdir -p ${BINARY_NAME}
-    mkdir -p ${BINARY_NAME}/lib
+    mkdir -p ${BINARY_NAME}/lib/server
+    mkdir -p ${BINARY_NAME}/lib/client
     mkdir -p ${BINARY_NAME}/bin
-    cp ./target/akiban-server-*-jar-with*.jar ${BINARY_NAME}/lib
+    cp ./target/akiban-server-*.jar ${BINARY_NAME}/lib
+    cp ./target/dependency ${BINARY_NAME}/lib/server
     cp -R ./conf ${BINARY_NAME}/
     cp ./bin/akserver ${BINARY_NAME}/bin
     cp ./bin/akserver.cmd ${BINARY_NAME}/bin
     cp packages-common/akdump ${BINARY_NAME}/bin
     cp packages-common/akiban-client-*-SNAPSHOT.jar ${BINARY_NAME}/lib
-    cp packages-common/postgresql.jar ${BINARY_NAME}/lib
+    cp packages-common/postgresql*.jar ${BINARY_NAME}/lib/client
     cp ${license} ${BINARY_NAME}/LICENSE.txt
     tar zcf ${BINARY_TAR_NAME} ${BINARY_NAME}    
 elif [ ${platform} == "macosx" ]; then
-    server_jar=target/akiban-server-*-jar-with-dependencies.jar
+    server_jar=target/akiban-server-*.jar
+    server_deps=target/dependency
     akdump_jar=packages-common/akiban-client-tools-*.jar
-    postgres_jar=packages-common/postgresql.jar
+    postgres_jar=packages-common/postgresql*.jar
     akdump_bin=packages-common/akdump
     mac_app='target/Akiban Server.app'
     mac_dmg='target/Akiban Server.dmg'

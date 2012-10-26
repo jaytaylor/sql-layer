@@ -40,7 +40,8 @@ mvn -B -Dmaven.test.skip.exec -DBZR_REVISION=%{release} clean install
 %install
 rm -rf ${RPM_BUILD_ROOT}
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{username}/
-mkdir -p ${RPM_BUILD_ROOT}/usr/share/%{username}
+mkdir -p ${RPM_BUILD_ROOT}/usr/share/%{username}/lib/server
+mkdir -p ${RPM_BUILD_ROOT}/usr/share/%{username}/lib/client
 mkdir -p ${RPM_BUILD_ROOT}/etc/%{username}/config
 mkdir -p ${RPM_BUILD_ROOT}/etc/rc.d/init.d/
 mkdir -p ${RPM_BUILD_ROOT}/etc/security/limits.d/
@@ -55,12 +56,13 @@ cp -p redhat/jvm.options ${RPM_BUILD_ROOT}/etc/%{username}/config
 cp -p redhat/akiban-server ${RPM_BUILD_ROOT}/etc/rc.d/init.d/
 cp -p redhat/LICENSE.txt ${RPM_BUILD_ROOT}/usr/share/%{username}
 cp -p redhat/*.tag ${RPM_BUILD_ROOT}/usr/share/%{username}
-cp -p redhat/postgresql.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
 
 cp -p target/akiban-server-1.4.3-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
 ln -s /usr/share/%{username}/akiban-server-1.4.3-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-server.jar
+cp -p target/dependency/* ${RPM_BUILD_ROOT}/usr/share/%{username}/lib/server
 cp -p redhat/akiban-client-tools-1.3.3-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
 ln -s /usr/share/%{username}/akiban-client-tools-1.3.3-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-client-tools.jar
+cp -p redhat/postgresql*.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/lib/client
 
 mv redhat/akdump ${RPM_BUILD_ROOT}/usr/bin
 mv bin/akserver ${RPM_BUILD_ROOT}/usr/sbin
