@@ -101,12 +101,12 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 
     @Override
     public String getDatabaseProductName() throws SQLException {
-        return "Akiban Server"; // TODO: Get from AkServer
+        return connection.getAkServer().getServerName();
     }
 
     @Override
     public String getDatabaseProductVersion() throws SQLException {
-        return "1.x";           // TODO: Get from AkServer
+        return connection.getAkServer().getServerVersion();
     }
 
     @Override
@@ -874,12 +874,12 @@ public class JDBCDatabaseMetaData implements DatabaseMetaData {
 
     @Override
     public int getDatabaseMajorVersion() throws SQLException {
-        return 1;               // TODO: Get from AkServer
+        return connection.getAkServer().getServerMajorVersion();
     }
 
     @Override
     public int getDatabaseMinorVersion() throws SQLException {
-        return 4;               // TODO: Get from AkServre
+        return connection.getAkServer().getServerMinorVersion();
     }
 
     @Override

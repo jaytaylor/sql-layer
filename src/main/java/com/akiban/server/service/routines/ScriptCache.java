@@ -337,6 +337,10 @@ public class ScriptCache
         }
     }
 
+    protected static void setScriptName(TableName routineName, ScriptEngine engine) {
+        engine.getContext().setAttribute(ScriptEngine.FILENAME, routineName.toString(), ScriptContext.ENGINE_SCOPE);
+    }
+
     static class EngineEvaluator implements ScriptEvaluator {
         private final TableName routineName;
         private final ScriptEngine engine;
@@ -346,6 +350,7 @@ public class ScriptCache
             this.routineName = routineName;
             this.engine = engine;
             this.script = script;
+            setScriptName(routineName, engine);
         }
 
         @Override
@@ -373,6 +378,7 @@ public class ScriptCache
         public CompiledEvaluator(TableName routineName, ScriptEngine engine, 
                                  String script, boolean shared) {
             this.routineName = routineName;
+            setScriptName(routineName, engine);
             logger.debug("Compiling {}", routineName);
             try {
                 compiled = ((Compilable)engine).compile(script);
@@ -418,6 +424,7 @@ public class ScriptCache
                        String script, String function) {
             this.routineName = routineName;
             this.function = function;
+            setScriptName(routineName, engine);
             try {
                 if (engine instanceof Compilable) {
                     logger.debug("Compiling and loading {}", routineName);

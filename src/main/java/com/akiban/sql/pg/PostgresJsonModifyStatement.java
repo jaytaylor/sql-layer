@@ -27,6 +27,8 @@
 package com.akiban.sql.pg;
 
 import static com.akiban.sql.pg.PostgresJsonCompiler.JsonResultColumn;
+import static com.akiban.sql.pg.PostgresJsonStatement.jsonColumnNames;
+import static com.akiban.sql.pg.PostgresJsonStatement.jsonColumnTypes;
 
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
@@ -47,10 +49,7 @@ public class PostgresJsonModifyStatement extends PostgresModifyOperatorStatement
                                        boolean requireStepIsolation) {
         super(statementType, resultOperator, resultRowType,
               // Looks like just one unlimited VARCHAR to the client.
-              Collections.singletonList("JSON"),
-              Collections.singletonList(new PostgresType(PostgresType.TypeOid.VARCHAR_TYPE_OID,
-                                                         (short)-1, -1, AkType.VARCHAR,
-                                                         MString.VARCHAR.instance(false))),
+              jsonColumnNames(), jsonColumnTypes(),
               parameterTypes, usePValues, requireStepIsolation);
         this.resultColumns = resultColumns;
     }

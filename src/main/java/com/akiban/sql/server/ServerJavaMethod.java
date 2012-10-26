@@ -32,6 +32,9 @@ import com.akiban.server.error.ExternalRoutineInvocationException;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.sql.ResultSet;
+import java.util.ArrayDeque;
+import java.util.Queue;
 
 public class ServerJavaMethod extends ServerJavaRoutine
 {
@@ -100,4 +103,18 @@ public class ServerJavaMethod extends ServerJavaRoutine
         }
     }
     
+    @Override
+    public Queue<ResultSet> getDynamicResultSets() {
+        Queue<ResultSet> result = new ArrayDeque<ResultSet>();
+        for (int i = 0; i < parameterTypes.length; i++) {
+            Class<?> outputType = parameterTypes[i].getComponentType();
+            if ((outputType != null) && ResultSet.class.isAssignableFrom(outputType)) {
+                ResultSet rs = (ResultSet)Array.get(methodArgs[i], 0);
+                if (rs != null)
+                    result.add(rs);
+            }
+        }
+        return result;
+    }
+
 }
