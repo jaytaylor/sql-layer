@@ -244,14 +244,14 @@ class YamlTester {
 
     /** Test the input specified in the constructor. */
     void test() {
+    executeSql("SET cbo TO DEFAULT");
+    executeSql("SET newtypes TO DEFAULT");
 	test(in);
     }
 
     private void test(Reader in) {
     List<Object> sequence = null;
 	try {
-        executeSql("SET cbo TO DEFAULT");
-        executeSql("SET newtypes TO DEFAULT");
 	    Yaml yaml = new Yaml(new RegisterTags());
 	    Iterator<Object> documents = yaml.loadAll(in).iterator();
 	    while (documents.hasNext()) {
@@ -301,13 +301,18 @@ class YamlTester {
 	}
     }
 
-    private void executeSql(String sql) throws SQLException {
-        Statement statement = connection.createStatement();
+    private void executeSql(String sql) {
         try {
-            statement.execute(sql);
+            Statement statement = connection.createStatement();
+            try {
+                statement.execute(sql);
+            }
+            finally {
+                statement.close();
+            }
         }
-        finally {
-            statement.close();
+        catch (SQLException e) {
+            throw new ContextAssertionError(sql, e.toString(), e);
         }
     }
 
