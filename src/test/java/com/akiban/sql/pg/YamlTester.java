@@ -244,8 +244,8 @@ class YamlTester {
 
     /** Test the input specified in the constructor. */
     void test() {
-    executeSql("SET cbo TO DEFAULT");
-    executeSql("SET newtypes TO DEFAULT");
+	executeSql("SET cbo TO DEFAULT");
+	executeSql("SET newtypes TO DEFAULT");
 	test(in);
     }
 
