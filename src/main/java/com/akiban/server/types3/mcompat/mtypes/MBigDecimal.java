@@ -138,52 +138,35 @@ public class MBigDecimal extends TClassBase {
             // if the two are of opposite sign, there's no need for comparison
             if (bSigned ^ aSigned)
                 return aSigned ? -1 : 1; // a < 0 < b or a > 0 > b
-            int ret = 0;
+            
             int d;
-
             // check the digits before the decimal pint
             if (decPointA < decPointB)          // less digits
-                ret = -1;   
+                return -1;   
             else if (decPointA > decPointB)     // more digis
-                ret = 1;
+                return 1;
             else
             {
                 if (aSigned)
                     for (int n = 0; n < decPointA; ++n)
                     {
                         if ((d = ~(bytesA[n] & 0xFF) - ~(bytesB[n] & 0xFF)) < 0)
-                        {
-                            ret = -1;
-                            break;
-                        }
+                            return -1;
                         else if (d > 0)
-                        {
-                            ret = 1;
-                            break;
-                        }
+                            return 1;
                     }
                 else
                     for (int n = 0; n < decPointA; ++n)
                     {
                         if ((d = (bytesA[n] & 0xFF) - (bytesB[n] & 0xFF)) < 0)
-                        {
-                            ret = -1;
-                            break;
-                        }
+                            return -1;
                         else if (d > 0)
-                        {
-                            ret = 1;
-                            break;
-                        }
+                            return 1;
                     }
             }
 
-            if (ret != 0)
-                return ret;
-
             // check the digits after the decimal point;
             int limit = Math.min(bytesA.length, bytesB.length);
-
             if (aSigned)
                 for (int n = decPointA - 1; n < limit; ++n)
                 {
@@ -203,7 +186,7 @@ public class MBigDecimal extends TClassBase {
 
 
             if (bytesA.length == bytesB.length)
-                return ret;
+                return 0;
             else if (bytesA.length < bytesB.length)
             {
                 for (int n = limit; n < bytesB.length; ++n)
