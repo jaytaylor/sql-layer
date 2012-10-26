@@ -109,7 +109,7 @@ public class PersistitTransactionService implements TransactionService {
     @Override
     public void rollbackTransactionIfOpen(Session session) {
         Transaction txn = getTransaction(session);
-        if(txn.isActive() && !txn.isRollbackPending()) {
+        if((txn != null) && txn.isActive()) {
             rollbackTransaction(session);
         }
     }
