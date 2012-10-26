@@ -26,6 +26,7 @@
 
 package com.akiban.sql.embedded;
 
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.server.ServerServiceRequirements;
 
@@ -65,10 +66,11 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
                                    FunctionsRegistry functionsRegistry,
                                    IndexStatisticsService indexStatisticsService,
                                    T3RegistryService overloadResolutionService,
-                                   RoutineLoader routineLoader) {
+                                   RoutineLoader routineLoader,
+                                   TransactionService txnService) {
         reqs = new ServerServiceRequirements(dxlService, instrumentation, 
                 sessionService, store, treeService, functionsRegistry, 
-                config, indexStatisticsService, overloadResolutionService, routineLoader);
+                config, indexStatisticsService, overloadResolutionService, routineLoader, txnService);
     }
 
     @Override
