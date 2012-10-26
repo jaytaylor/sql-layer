@@ -96,18 +96,16 @@ public class MDateAddSub extends TScalarBase
         new MDateAddSub(Helper.DO_ADD, FirstType.TIME, SecondType.SECOND, "TIME_ADD", "ADDTIME"),
         new AddSubWithVarchar(Helper.DO_ADD, SecondType.SECOND, "TIME_ADD", "ADDTIME"),
         
-        new MDateAddSub(Helper.DO_ADD, FirstType.TIME, SecondType.INTERVAL_MILLIS, "plus", "addtime"),
+        new MDateAddSub(Helper.DO_ADD, FirstType.TIME, SecondType.INTERVAL_MILLIS, "addtime"),
         
         new MDateAddSub(Helper.DO_ADD, FirstType.TIME, SecondType.TIME, "TIME_ADD", "ADDTIME"),
+
         new AddSubWithVarchar(Helper.DO_ADD, SecondType.TIME, "TIME_ADD", "ADDTIME"),
         new AddSubWithVarchar(Helper.DO_ADD, SecondType.TIME_STRING, "ADDTIME"),
         
         //  SUBTIME
         new MDateAddSub(Helper.DO_SUB, FirstType.TIME, SecondType.SECOND, "SUBTIME"),
         new AddSubWithVarchar(Helper.DO_SUB, SecondType.SECOND, "SUBTIME"),
-        
-        new MDateAddSub(Helper.DO_SUB, FirstType.TIME, SecondType.INTERVAL_MILLIS, "minus"),
-        
         new MDateAddSub(Helper.DO_SUB, FirstType.TIME, SecondType.TIME, "SUBTIME"),
         new AddSubWithVarchar(Helper.DO_SUB, SecondType.TIME, "SUBTIME"),
         
@@ -125,36 +123,16 @@ public class MDateAddSub extends TScalarBase
         
         new MDateAddSub(Helper.DO_ADD, 1, 0, FirstType.TIMESTAMP, SecondType.INTERVAL_MILLIS, "plus"),
         new MDateAddSub(Helper.DO_ADD_MONTH, 1, 0, FirstType.TIMESTAMP, SecondType.INTERVAL_MONTH, "plus"),
-
-        new MDateAddSub(Helper.DO_ADD, 1, 0, FirstType.TIME, SecondType.INTERVAL_MILLIS, "plus"),
         
-        // nulls/error cases
-        new MArithmetic.AlwaysNull("plus", "+", true, AkInterval.MONTHS, MDatetimes.TIME)
-        {
-            @Override
-            public TOverloadResult resultType()
-            {
-                return TOverloadResult.fixed(MDatetimes.TIME);
-            }
-        },
-        new MArithmetic.AlwaysNull("plus", "+", true, MDatetimes.TIME, AkInterval.MONTHS)
-        {
-            @Override
-            public TOverloadResult resultType()
-            {
-                return TOverloadResult.fixed(MDatetimes.TIME);
-            }
-        },
-        new MArithmetic.AlwaysNull("minus", "-", true, MDatetimes.TIME, AkInterval.MONTHS)
-        {
-            @Override
-            public TOverloadResult resultType()
-            {
-                return TOverloadResult.fixed(MDatetimes.TIME);
-            }
-        }
-    };
+        // Special case, <TIME> plus/minus <INTERVAL> ===> <DATE/DATETIME> plus <INTERVAL>
+        new MDateAddSub(Helper.DO_ADD, 1, 0, FirstType.TIME_TO_DATE, SecondType.INTERVAL_MILLIS, "plus"),
+        new MDateAddSub(Helper.DO_ADD, FirstType.TIME_TO_DATE, SecondType.INTERVAL_MILLIS, "plus"),
+        new MDateAddSub(Helper.DO_ADD, 1, 0, FirstType.TIME_TO_DATE, SecondType.INTERVAL_MONTH, "plus"),
+        new MDateAddSub(Helper.DO_ADD, 0, 1, FirstType.TIME_TO_DATE, SecondType.INTERVAL_MONTH, "plus"),
 
+        new MDateAddSub(Helper.DO_SUB, FirstType.TIME_TO_DATE, SecondType.INTERVAL_MILLIS, "minus"),
+        new MDateAddSub(Helper.DO_SUB, FirstType.TIME_TO_DATE, SecondType.INTERVAL_MONTH, "minus"),
+    };
 
     private static class AddSubWithVarchar extends MDateAddSub
     {
@@ -168,7 +146,6 @@ public class MDateAddSub extends TScalarBase
             super(h, pos0, pos1, FirstType.VARCHAR, sec, ns);
         }
         
-     //   @Ove
         @Override
         public TOverloadResult resultType()
         {
@@ -277,6 +254,65 @@ public class MDateAddSub extends TScalarBase
 
     private static enum FirstType
     {
+        TIME_TO_DATE(MDatetimes.TIME)
+        {
+            @Override
+            FirstType adjustFirstArg(TInstance ins)
+            {
+                if (ins != null
+                    && ins.typeClass() instanceof AkInterval
+                    && ((AkInterval)ins.typeClass()).isTime(ins))
+                    return FirstType.DATETIME_STR;
+                else
+                    return FirstType.DATE_STR;
+            }
+            
+            @Override
+            long[] decode(PValueSource val, TExecutionContext context)
+            {
+                long ret[] = MDatetimes.decodeTime(val.getInt32());
+                MDatetimes.timeToDatetime(ret);
+                
+                return  MDatetimes.isValidDayMonth(ret)        // zero dates are considered 'valid'
+                            && !MDatetimes.isZeroDayMonth(ret) // but here we don't want them to be
+                        ? ret 
+                        : null;
+            }
+            
+            @Override
+            protected void putResult(PValueTarget out, MutableDateTime par3, TExecutionContext context)
+            {
+                out.putInt32(MDatetimes.encodeDate(MDatetimes.fromJodaDatetime(par3)));
+            }
+        },
+        DATE_STR(MString.VARCHAR, 29)
+        {
+            @Override
+            long[] decode(PValueSource val, TExecutionContext context)
+            {
+                return FirstType.TIME_TO_DATE.decode(val, context);
+            }
+            
+            @Override
+            protected void putResult(PValueTarget out, MutableDateTime par3, TExecutionContext context)
+            {
+                out.putString(par3.toString("YYYY-MM-dd"), null);
+            }
+        },
+        DATETIME_STR(MString.VARCHAR, 29)
+        {
+            @Override
+            long[] decode(PValueSource val, TExecutionContext context)
+            {
+                return FirstType.TIME_TO_DATE.decode(val, context);
+            }
+            
+            @Override
+            protected void putResult(PValueTarget out, MutableDateTime par3, TExecutionContext context)
+            {
+                out.putString(par3.toString("YYYY-MM-dd HH:mm:ss"), null);
+            }
+        },
         VARCHAR(MString.VARCHAR, 29)
         {
             @Override
@@ -499,7 +535,7 @@ public class MDateAddSub extends TScalarBase
         }
         else
         {
-            MutableDateTime dt = MDatetimes.toJodaDatetime(ymd, "UTC"); // calculations should be done
+            MutableDateTime dt = MDatetimes.toJodaDatetime(ymd, "UTC");    // calculations should be done
             helper.compute(dt, secondArg.toMillis(inputs.get(pos1)));      // in UTC (to avoid daylight-saving side effects)
             firstArg.adjustFirstArg(context.inputTInstanceAt(pos1)).putResult(output, dt, context);
         }
