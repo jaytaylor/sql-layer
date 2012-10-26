@@ -1022,6 +1022,11 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         return nameGenerator.getTreeNames();
     }
 
+    @Override
+    public long getOldestActiveAISGeneration() {
+        return ais.getGeneration();
+    }
+
     private Accumulator getGenerationAccumulator(Session session) throws PersistitException {
         // treespace policy could split the _schema_ tree across volumes and give us multiple accumulators, which would
         // be very bad. Work around that with a fake/constant schema name. It isn't a problem if this somehow got changed

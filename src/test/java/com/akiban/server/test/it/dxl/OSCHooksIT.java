@@ -264,6 +264,11 @@ public class OSCHooksIT extends AlterTableITBase {
         }
 
         @Override
+        public long getOldestActiveGeneration() {
+            return delegate.getOldestActiveGeneration();
+        }
+
+        @Override
         public void createIndexes(final Session session, Collection<? extends Index> indexesToAdd) {
             delegate.createIndexes(session, indexesToAdd);
         }

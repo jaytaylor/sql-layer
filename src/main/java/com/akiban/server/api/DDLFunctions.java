@@ -193,6 +193,12 @@ public interface DDLFunctions {
      * Get the generation number of the AIS. This value is unique and increasing increases for each change.
      */
     long getGeneration(Session session);
+
+    /**
+     * Get the oldest AIS generation still in use, not necessarily the oldest that could possibly be used.
+     * Should only be used in non-transactional scenarios, e.g. clearing caches.
+     */
+    long getOldestActiveGeneration();
     
     /**
      * Create new indexes on existing table(s). Both Table and Group indexes are supported. Primary

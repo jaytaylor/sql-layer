@@ -798,5 +798,10 @@ public class BasicInfoSchemaTablesServiceImplTest {
         public Set<String> getTreeNames() {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public long getOldestActiveAISGeneration() {
+            throw new UnsupportedOperationException();
+        }
     }
 }

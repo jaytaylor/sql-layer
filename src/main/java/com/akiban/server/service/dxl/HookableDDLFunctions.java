@@ -412,6 +412,26 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
+    public long getOldestActiveGeneration() {
+        Session session = sessionService.createSession();
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.GET_SCHEMA_TIMESTAMP);
+            return delegate.getGeneration(session);
+        } catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.GET_SCHEMA_TIMESTAMP, t);
+            throw throwAlways(t);
+        } finally {
+            try {
+                hook.hookFunctionFinally(session, DXLFunction.GET_SCHEMA_TIMESTAMP, thrown);
+            } finally {
+                session.close();
+            }
+        }
+    }
+
+    @Override
     public void createIndexes(final Session session, Collection<? extends Index> indexesToAdd) {
         Throwable thrown = null;
         try {

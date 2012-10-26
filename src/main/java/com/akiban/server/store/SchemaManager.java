@@ -227,4 +227,7 @@ public interface SchemaManager {
 
     /** Get all known/allocated tree names */
     Set<String> getTreeNames();
+
+    /** Get oldest AIS generation still in memory */
+    long getOldestActiveAISGeneration();
 }

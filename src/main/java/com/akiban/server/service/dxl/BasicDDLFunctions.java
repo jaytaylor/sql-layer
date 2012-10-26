@@ -811,6 +811,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
+    public long getOldestActiveGeneration() {
+        return schemaManager().getOldestActiveAISGeneration();
+    }
+
+    @Override
     public void createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
         logger.trace("creating indexes {}", indexesToAdd);
         if (indexesToAdd.isEmpty() == true) {

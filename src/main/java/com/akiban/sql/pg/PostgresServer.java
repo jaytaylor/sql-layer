@@ -43,6 +43,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
@@ -222,6 +223,17 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         conn.waitAndStop();
     }
 
+    private void cleanStatementCaches() {
+        long oldestGeneration = reqs.dxl().ddlFunctions().getOldestActiveGeneration();
+        synchronized (statementCaches) {
+            Iterator<ObjectLongPair> it = statementCaches.keySet().iterator();
+            while(it.hasNext()) {
+                if (it.next().longVal < oldestGeneration)
+                    it.remove();
+            }
+        }
+    }
+
     public ServerStatementCache<PostgresStatement> getStatementCache(ObjectLongPair key) {
         if (statementCacheCapacity <= 0) 
             return null;
@@ -230,6 +242,8 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         synchronized (statementCaches) {
             statementCache = statementCaches.get(key);
             if (statementCache == null) {
+                // No cache => recent DDL, reasonable time to do a little cleaning
+                cleanStatementCaches();
                 statementCache = new ServerStatementCache<PostgresStatement>(statementCacheCapacity);
                 statementCaches.put(key, statementCache);
             }

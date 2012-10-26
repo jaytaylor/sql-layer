@@ -136,6 +136,11 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     }
 
     @Override
+    public long getOldestActiveGeneration() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
         throw new UnsupportedOperationException();
     }

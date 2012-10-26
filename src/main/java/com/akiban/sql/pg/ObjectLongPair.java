@@ -27,8 +27,8 @@
 package com.akiban.sql.pg;
 
 public class ObjectLongPair {
-    private final Object obj;
-    private final long longVal;
+    public final Object obj;
+    public final long longVal;
 
     public ObjectLongPair(Object obj, long longVal) {
         assert obj != null : "Null obj for longVal " + longVal;
