@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import com.akiban.ais.model.validation.AISValidation;
 import com.akiban.ais.model.validation.AISValidationFailure;
@@ -692,6 +694,20 @@ public class AkibanInformationSchema implements Traversable
         this.generation = generation;
     }
 
+    @SuppressWarnings("unchecked") // Expected, value type varies
+    public <V> V getCachedValue(Object key, CacheValueGenerator<V> generator) {
+        Object val = cachedValues.get(key);
+        if(val == null) {
+            val = generator.valueFor(this);
+            Object firstVal = cachedValues.putIfAbsent(key, val);
+            if(firstVal != null) {
+                val = firstVal; // Someone got here before, use theirs
+            }
+        }
+        return (V)val;
+    }
+
+
     // State
 
     private static String defaultCharset = "utf8";
@@ -707,6 +723,7 @@ public class AkibanInformationSchema implements Traversable
     private final Map<String, Type> types = new TreeMap<String, Type>();
     private final Map<String, Schema> schemas = new TreeMap<String, Schema>();
     private final CharsetAndCollation charsetAndCollation;
+    private final ConcurrentMap cachedValues = new ConcurrentHashMap(4,0.75f,4); // Very few, write-once entries expected
     private long generation = -1;
 
     private Map<Integer, UserTable> userTablesById = null;
