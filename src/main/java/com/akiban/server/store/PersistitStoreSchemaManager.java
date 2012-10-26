@@ -90,6 +90,7 @@ import com.akiban.util.ArgumentValidation;
 import com.akiban.util.GrowableByteBuffer;
 import com.google.inject.Inject;
 
+import com.persistit.Accumulator;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitInterruptedException;
@@ -169,6 +170,9 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private static final String AIS_METAMODEL_PARENT_KEY = AIS_KEY_PREFIX + "AIS";
     private static final String AIS_PROTOBUF_PARENT_KEY = AIS_KEY_PREFIX + "PBAIS";
     private static final String DELAYED_TREE_KEY = "delayedTree";
+
+    private static final int SCHEMA_GEN_ACCUM_INDEX = 0;
+    private static final Accumulator.Type SCHEMA_GEN_ACCUM_TYPE = Accumulator.Type.SEQ;
 
     // Changed from 1 to 2 due to incompatibility related to index row changes (see bug 985007)
     private static final int PROTOBUF_PSSM_VERSION = 2;
@@ -901,14 +905,16 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
      * @param schemaNames The schemas affected by the change
      */
     private void saveAISChange(Session session, AkibanInformationSchema newAIS, Collection<String> schemaNames) {
-        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
-        newAIS.freeze();
-
         int maxSize = maxAISBufferSize == 0 ? Integer.MAX_VALUE : maxAISBufferSize;
         GrowableByteBuffer byteBuffer = new GrowableByteBuffer(4096, 4096, maxSize);
+        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary(); // TODO: Often redundant, cleanup
 
         Exchange ex = null;
         try {
+            long generation = getNextGeneration(session);
+            newAIS.setGeneration(generation);
+            newAIS.freeze();
+
             for(String schema : schemaNames) {
                 ex = schemaTreeExchange(session, schema);
                 checkAndSerialize(ex, byteBuffer, newAIS, schema);
@@ -1040,6 +1046,19 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     @Override
     public Set<String> getTreeNames() {
         return nameGenerator.getTreeNames();
+    }
+
+    private long getNextGeneration(Session session) throws PersistitException {
+        // treespace policy could split the _schema_ tree across volumes and give us multiple accumulators, which would
+        // be very bad. Work around that with a fake/constant schema name. It isn't a problem if this somehow got changed
+        // across a restart. Really, we want a constant, system-like volume to put this in.
+        final String SCHEMA = "pssm";
+        final int ACCUM_UPDATE_VALUE = 1;   // irrelevant for SEQ types
+        Exchange ex = schemaTreeExchange(session, SCHEMA);
+        Accumulator accumulator = ex.getTree().getAccumulator(SCHEMA_GEN_ACCUM_TYPE, SCHEMA_GEN_ACCUM_INDEX);
+        long generation = accumulator.update(ACCUM_UPDATE_VALUE, treeService.getDb().getTransaction());
+        treeService.releaseExchange(session, ex);
+        return generation;
     }
 
     private TableName createTableCommon(Session session, UserTable newTable, boolean isInternal,

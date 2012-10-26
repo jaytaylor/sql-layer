@@ -681,6 +681,17 @@ public class AkibanInformationSchema implements Traversable
         }
     }
 
+    public long getGeneration() {
+        return generation;
+    }
+
+    public void setGeneration(long generation) {
+        if(this.generation != -1) { // TODO: Cleanup. Ideally add generation to constructor
+            checkMutability();
+        }
+        this.generation = generation;
+    }
+
     // State
 
     private static String defaultCharset = "utf8";
@@ -696,6 +707,7 @@ public class AkibanInformationSchema implements Traversable
     private final Map<String, Type> types = new TreeMap<String, Type>();
     private final Map<String, Schema> schemas = new TreeMap<String, Schema>();
     private final CharsetAndCollation charsetAndCollation;
+    private long generation = -1;
 
     private Map<Integer, UserTable> userTablesById = null;
     private boolean isFrozen = false;
