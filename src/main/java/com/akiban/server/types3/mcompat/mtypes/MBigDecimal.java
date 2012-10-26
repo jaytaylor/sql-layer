@@ -121,7 +121,115 @@ public class MBigDecimal extends TClassBase {
     @Override
     protected int doCompare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB)
     {
-        return getWrapper(sourceA, instanceA).compareTo(getWrapper(sourceB, instanceB));
+        if(!sourceA.hasCacheValue() && !sourceB.hasCacheValue()) // both have bytearrays
+        {
+            byte bytesA[] = sourceA.getBytes();
+            int preA = instanceA.attribute(Attrs.PRECISION);
+            int scaleA = instanceA.attribute(Attrs.SCALE);
+            int decPointA = preA - scaleA - 1;
+            boolean aSigned = bytesA[0] >= 0;
+
+            byte bytesB[] = sourceB.getBytes();
+            int preB = instanceB.attribute(Attrs.PRECISION);
+            int scaleB = instanceB.attribute(Attrs.SCALE);
+            int decPointB = preB - scaleB - 1;
+            boolean bSigned = bytesB[0] >= 0;
+
+            // if the two are of opposite sign, there's no need for comparison
+            if (bSigned ^ aSigned)
+                return aSigned ? -1 : 1; // a < 0 < b or a > 0 > b
+            int ret = 0;
+            int d;
+
+            // check the digits before the decimal pint
+            if (decPointA < decPointB)          // less digits
+                ret = -1;   
+            else if (decPointA > decPointB)     // more digis
+                ret = 1;
+            else
+            {
+                if (aSigned)
+                    for (int n = 0; n < decPointA; ++n)
+                    {
+                        if ((d = ~(bytesA[n] & 0xFF) - ~(bytesB[n] & 0xFF)) < 0)
+                        {
+                            ret = -1;
+                            break;
+                        }
+                        else if (d > 0)
+                        {
+                            ret = 1;
+                            break;
+                        }
+                    }
+                else
+                    for (int n = 0; n < decPointA; ++n)
+                    {
+                        if ((d = (bytesA[n] & 0xFF) - (bytesB[n] & 0xFF)) < 0)
+                        {
+                            ret = -1;
+                            break;
+                        }
+                        else if (d > 0)
+                        {
+                            ret = 1;
+                            break;
+                        }
+                    }
+            }
+
+            if (ret != 0)
+                return ret;
+
+            // check the digits after the decimal point;
+            int limit = Math.min(bytesA.length, bytesB.length);
+
+            if (aSigned)
+                for (int n = decPointA - 1; n < limit; ++n)
+                {
+                    if ((d = bytesA[n] & 0xFF - bytesB[n] & 0xFF) > 0)
+                        return -1;
+                    else if (d < 0)
+                        return 1;
+                }
+            else
+                for (int n = decPointA - 1; n < limit; ++n)
+                {
+                    if ((d = bytesA[n] & 0xFF - bytesB[n] & 0xFF) > 0)
+                        return 1;
+                    else if (d < 0)
+                        return -1;
+                }
+
+
+            if (bytesA.length == bytesB.length)
+                return ret;
+            else if (bytesA.length < bytesB.length)
+            {
+                for (int n = limit; n < bytesB.length; ++n)
+                    if (bytesB[n] != 0)
+                        return aSigned ? 1 : -1;
+                return 0;
+            }
+            else
+            {
+                for (int n = limit; n < bytesA.length; ++n)
+                    if (bytesA[n] != 0)
+                        return aSigned ? -1 : 1;
+                return 0;
+            }
+        }
+        else
+            return getWrapper(sourceA, instanceA).compareTo(getWrapper(sourceB, instanceB));
+    }
+    
+    
+    static long getMask(int length)
+    {
+        long ret = 7;
+        while (length-- > 0)
+            ret = ret << 4 | 0xf;
+        return ret;
     }
     
     @Override
