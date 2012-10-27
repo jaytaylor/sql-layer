@@ -25,7 +25,7 @@
 # PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
 #
 
-usage="Usage: ./build_packages.sh [debian|redhat|macosx] [... epoch]"
+usage="Usage: ./build_packages.sh [debian|redhat|macosx|binary] [... epoch]"
 if [ $# -lt 1 ]; then
     echo "${usage}"
     exit 1
@@ -53,7 +53,7 @@ case "${target}" in
 esac
 
 mkdir -p target
-mkdir -p packages-common
+mkdir -p packages-common/client
 common_dir="config-files/${target}" # require config-files/dir to be the same as the ${target} variable
 [ -d ${common_dir} ] || \
     { echo "fatal: Couldn't find configuration files in: ${common_dir}"; exit 1; }
@@ -71,12 +71,9 @@ mvn  -Dmaven.test.skip.exec clean install
 # Linux and Mac
 cp bin/akdump ../../packages-common/
 cp target/akiban-client-*-SNAPSHOT.jar ../../packages-common/
-cp target/dependency/postgresql*.jar ../../packages-common/
+cp target/dependency/* ../../packages-common/client/
 
 popd && popd
-
-# Windows
-# Handled already by Maven / .iss
 
 if [ -z "$2" ] ; then
 	epoch=`date +%s`
@@ -107,6 +104,8 @@ elif [ ${platform} == "redhat" ]; then
     sed -i "10,10s/EPOCH/${epoch}/g" ${PWD}/redhat/akiban-server-${bzr_revno}.spec
     rpmbuild --target=noarch --define "_topdir ${PWD}/redhat/rpmbuild" -ba ${PWD}/redhat/akiban-server-${bzr_revno}.spec
 elif [ ${platform} == "binary" ]; then
+    mvn -Dmaven.test.skip.exec clean install -DBZR_REVISION=${bzr_revno}
+
     # For releases only
     # Expects the ${release} to be defined in the env, i.e. through Jenkins
     if [ -z "$release" ]; then
@@ -120,14 +119,16 @@ elif [ ${platform} == "binary" ]; then
     mkdir -p ${BINARY_NAME}/lib/server
     mkdir -p ${BINARY_NAME}/lib/client
     mkdir -p ${BINARY_NAME}/bin
+    rm -f ./target/akiban-server-*-tests.jar ./target/akiban-server-*-sources.jar
     cp ./target/akiban-server-*.jar ${BINARY_NAME}/lib
-    cp ./target/dependency ${BINARY_NAME}/lib/server
+    cp ./target/dependency/* ${BINARY_NAME}/lib/server/
     cp -R ./conf ${BINARY_NAME}/
+    rm -f ${BINARY_NAME}/conf/config/*.cmd
     cp ./bin/akserver ${BINARY_NAME}/bin
-    cp ./bin/akserver.cmd ${BINARY_NAME}/bin
     cp packages-common/akdump ${BINARY_NAME}/bin
-    cp packages-common/akiban-client-*-SNAPSHOT.jar ${BINARY_NAME}/lib
-    cp packages-common/postgresql*.jar ${BINARY_NAME}/lib/client
+    rm -f packages-common/akiban-client-*-tests.jar packages-common/akiban-client-*-sources.jar
+    cp packages-common/akiban-client-*.jar ${BINARY_NAME}/lib
+    cp packages-common/client/* ${BINARY_NAME}/lib/client
     cp ${license} ${BINARY_NAME}/LICENSE.txt
     tar zcf ${BINARY_TAR_NAME} ${BINARY_NAME}    
 elif [ ${platform} == "macosx" ]; then
