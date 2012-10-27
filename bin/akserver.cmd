@@ -28,7 +28,7 @@ REM
 
 SETLOCAL
 
-SET SERVER_JAR=akiban-server-1.4.3-SNAPSHOT-jar-with-dependencies.jar
+SET SERVER_JAR=akiban-server-1.4.3-SNAPSHOT.jar
 SET SERVICE_NAME=akserver
 SET SERVICE_DNAME=Akiban Server
 SET SERVICE_DESC=Akiban Database Server
@@ -40,6 +40,7 @@ REM Installation Configuration
 FOR %%P IN ("%~dp0..") DO SET AKIBAN_HOME=%%~fP
 
 SET JAR_FILE=%AKIBAN_HOME%\lib\%SERVER_JAR%
+SET DEP_DIR=R%AKIBAN_HOME%\lib\server
 SET AKIBAN_CONF=%AKIBAN_HOME%
 SET AKIBAN_LOGDIR=%AKIBAN_HOME%\log
 
@@ -65,6 +66,7 @@ REM Build Configuration
 FOR %%P IN ("%~dp0..") DO SET BUILD_HOME=%%~fP
 
 SET JAR_FILE=%BUILD_HOME%\target\%SERVER_JAR%
+SET DEP_DIR=%BUILD_HOME%\target\dependency
 SET AKIBAN_CONF=%BUILD_HOME%\conf
 SET AKIBAN_LOGDIR=\tmp\akiban_server
 SET PRUNSRV=prunsrv
@@ -86,6 +88,10 @@ IF "%1"=="" GOTO END_OPT
 
 IF "%1"=="-j" (
   SET JAR_FILE=%2
+  SHIFT
+  SHIFT
+) ELSE IF "%1"=="-d" (
+  SET DEP_DIR=%2
   SHIFT
   SHIFT
 ) ELSE IF "%1"=="-c" (
@@ -116,6 +122,17 @@ IF "%1"=="-j" (
 GOTO NEXT_OPT
 :END_OPT
 
+IF NOT EXIST "%JAR_FILE%" (
+  ECHO JAR file does not exist; try -j
+  GOTO EOF
+)
+IF NOT EXIST "%DEP_DIR%" (
+  ECHO server dependencies directory does not exist; try -d
+  GOTO EOF
+)
+
+SET CLASSPATH=%JAR_FILE%;%DEP_DIR%\*
+
 IF "%VERB%"=="version" GOTO VERSION
 
 IF "%VERB%"=="start" (
@@ -135,10 +152,6 @@ IF "%VERB%"=="start" (
   GOTO EOF
 )
 
-IF NOT EXIST "%JAR_FILE%" (
-  ECHO JAR file does not exist; try -j
-  GOTO EOF
-)
 IF NOT EXIST "%AKIBAN_CONF%\config\services-config.yaml" (
   ECHO Wrong configuration directory; try -c
   GOTO EOF
@@ -151,7 +164,7 @@ IF EXIST "%AKIBAN_CONF%\config\jvm-options.cmd" CALL "%AKIBAN_CONF%\config\jvm-o
 IF "%VERB%"=="window" GOTO RUN_CMD
 IF "%VERB%"=="run" GOTO RUN_CMD
 
-SET PRUNSRV_ARGS=--StartMode=jvm --StartClass com.akiban.server.AkServer --StartMethod=procrunStart --StopMode=jvm --StopClass=com.akiban.server.AkServer --StopMethod=procrunStop --StdOutput="%AKIBAN_LOGDIR%\stdout.log" --DisplayName="%SERVICE_DNAME%" --Description="%SERVICE_DESC%" --Startup=%SERVICE_MODE% --Classpath="%JAR_FILE%"
+SET PRUNSRV_ARGS=--StartMode=jvm --StartClass com.akiban.server.AkServer --StartMethod=procrunStart --StopMode=jvm --StopClass=com.akiban.server.AkServer --StopMethod=procrunStop --StdOutput="%AKIBAN_LOGDIR%\stdout.log" --DisplayName="%SERVICE_DNAME%" --Description="%SERVICE_DESC%" --Startup=%SERVICE_MODE% --Classpath="%CLASSPATH%"
 REM Each value that might have a space needs a separate ++JvmOptions.
 SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmOptions="%JVM_OPTS: =#%" ++JvmOptions="-Dakserver.config_dir=%AKIBAN_CONF%" ++JvmOptions="-Dservices.config=%AKIBAN_CONF%\config\services-config.yaml" ++JvmOptions="-Dlog4j.configuration=file:%AKIBAN_LOGCONF%"
 IF DEFINED SERVICE_USER SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --ServiceUser=%SERVICE_USER% --ServicePassword=%SERVICE_PASSWORD%
@@ -175,8 +188,8 @@ ECHO version   - print version and exit
 GOTO EOF
 
 :VERSION
-FOR /F "usebackq" %%V IN (`java -cp "%JAR_FILE%" com.akiban.server.GetVersion`) DO SET SERVER_VERSION=%%V
-FOR /F "usebackq" %%V IN (`java -cp "%JAR_FILE%" com.persistit.GetVersion`) DO SET PERSISTIT_VERSION=%%V
+FOR /F "usebackq" %%V IN (`java -cp "%CLASSPATH%" com.akiban.server.GetVersion`) DO SET SERVER_VERSION=%%V
+FOR /F "usebackq" %%V IN (`java -cp "%CLASSPATH%" com.persistit.GetVersion`) DO SET PERSISTIT_VERSION=%%V
 ECHO server   : %SERVER_VERSION%
 ECHO persistit: %PERSISTIT_VERSION%
 ECHO.
@@ -190,12 +203,12 @@ SET JVM_OPTS=%JVM_OPTS% -Dlog4j.configuration="file:%AKIBAN_LOGCONF%"
 SET JVM_OPTS=%JVM_OPTS% -ea
 IF DEFINED MAX_HEAP_SIZE SET JVM_OPTS=%JVM_OPTS% -Xms%MAX_HEAP_SIZE%-Xmx%MAX_HEAP_SIZE%
 IF "%VERB%"=="window" GOTO WINDOW_CMD
-java %JVM_OPTS% -jar "%JAR_FILE%"
+java %JVM_OPTS% -cp "%CLASSPATH%" com.akiban.server.AkServer
 GOTO EOF
 
 :WINDOW_CMD
 SET JVM_OPTS=%JVM_OPTS% "-Drequire:com.akiban.server.service.ui.SwingConsoleService" "-Dprioritize:com.akiban.server.service.ui.SwingConsoleService"
-START javaw %JVM_OPTS% -cp "%JAR_FILE%" com.akiban.server.service.ui.AkServerWithSwingConsole
+START javaw %JVM_OPTS% -cp "%CLASSPATH%" com.akiban.server.service.ui.AkServerWithSwingConsole
 GOTO EOF
 
 :CHECK_ERROR
