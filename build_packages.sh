@@ -84,7 +84,8 @@ fi
 if [ ${platform} == "debian" ]; then
     cp packages-common/* ${platform}
     mvn -Dmaven.test.skip clean install -DBZR_REVISION=${bzr_revno}
-    rm -f ./target/*-tests.jar ./target/*-sources.jar
+    mkdir -p ${platform}/server/
+    cp ./target/dependency/* ${platform}/server/
     debuild
 elif [ ${platform} == "redhat" ]; then
     mkdir -p ${PWD}/redhat/rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}

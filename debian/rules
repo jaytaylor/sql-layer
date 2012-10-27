@@ -24,14 +24,12 @@ install: build
 		usr/share/akiban
 	dh_link usr/share/akiban/akiban-server-1.4.3-SNAPSHOT.jar \
 		usr/share/akiban/akiban-server.jar
-	dh_install target/dependency /usr/share/akiban/lib/server
 
 	# Dump tools
 	dh_install packages-common/akiban-client-tools-1.3.3-SNAPSHOT.jar \
 		usr/share/akiban
 	dh_link usr/share/akiban/akiban-client-tools-1.3.3-SNAPSHOT.jar \
 		usr/share/akiban/akiban-client-tools.jar
-	dh_install packages-common/postgres*.jar /usr/share/akiban/lib/client
 
 # Build architecture-independent files here.
 binary-indep: build install
