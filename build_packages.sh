@@ -82,7 +82,7 @@ fi
 
 # Handle platform-specific packaging process
 if [ ${platform} == "debian" ]; then
-    cp packages-common/* ${platform}
+    cp -R packages-common/* ${platform}
     mvn -Dmaven.test.skip clean install -DBZR_REVISION=${bzr_revno}
     mkdir -p ${platform}/server/
     cp ./target/dependency/* ${platform}/server/
@@ -92,7 +92,7 @@ elif [ ${platform} == "redhat" ]; then
     tar_file=${PWD}/redhat/rpmbuild/SOURCES/akserver.tar
     bzr export --format=tar $tar_file
     rm {$PWD}/redhat/akserver/redhat/* # Clear out old files
-    cp packages-common/* ${PWD}/redhat/akserver/redhat
+    cp -R packages-common/* ${PWD}/redhat/akserver/redhat
     pushd redhat
 # bzr st -S outs lines like "? redhat/akserver/redhat/log4j.properties"
 # we want to turn those to just "akserver/redhat/log4j.properties"
