@@ -28,7 +28,6 @@ package com.akiban.server.types3.pvalue;
 
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.common.BigDecimalWrapper;
 
 public final class PValue implements PValueSource, PValueTarget {
     // PValue interface
@@ -135,33 +134,6 @@ public final class PValue implements PValueSource, PValueTarget {
     }
 
     // PValueSource interface
-    @Override
-    public PValueSource copySource()
-    {
-        PValue ret = new PValue();
-        
-        ret.underlying = this.underlying;
-        ret.state = this.state;
-        ret.iVal = this.iVal;
-        
-        if (oCache instanceof BigDecimalWrapper)
-            ret.oCache = ((BigDecimalWrapper)oCache).copy();
-        else
-            ret.oCache = this.oCache; // TODO 'deep' this?
-        
-        if (this.bVal == null)
-            ret.bVal = null;
-        else
-        {
-            ret.bVal = new byte[this.bVal.length];
-            
-            for (int n = 0; n < bVal.length; ++n)
-                ret.bVal[n] = this.bVal[n];
-        }
-
-        return ret;
-    }
-
     @Override
     public final boolean isNull() {
         if (state == State.UNSET)

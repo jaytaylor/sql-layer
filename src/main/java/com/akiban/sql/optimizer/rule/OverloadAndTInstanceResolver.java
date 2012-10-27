@@ -773,7 +773,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         PValue result = new PValue(targetInstance.typeClass().underlyingType());
         
         try {
-            cast.evaluate(context, source.value().copySource(), result);
+            cast.evaluate(context, source.value(), result);
         } catch (Exception e) {
             if (logger.isTraceEnabled()) {
                 logger.trace("while casting values " + source + " to " + targetInstance + " using " + cast, e);

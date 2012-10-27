@@ -78,10 +78,4 @@ public final class RowDataPValueSource extends AbstractRowDataPValueSource imple
     // object state
     private FieldDef fieldDef;
     private RowData rowData;
-
-    @Override
-    public PValueSource copySource()
-    {
-        throw new UnsupportedOperationException("not supported yet");
-    }
 }

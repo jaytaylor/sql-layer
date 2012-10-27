@@ -27,8 +27,6 @@
 package com.akiban.server.types3.pvalue;
 
 public interface PValueSource extends PBasicValueSource {
-    
-    PValueSource copySource(); // deep copy
 
     boolean hasAnyValue();
     

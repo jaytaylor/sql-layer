@@ -215,9 +215,4 @@ public final class PersistitValuePValueSource implements PValueSource {
         return map;
     }
 
-    @Override
-    public PValueSource copySource()
-    {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
 }

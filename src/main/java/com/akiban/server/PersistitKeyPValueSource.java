@@ -281,9 +281,4 @@ public class PersistitKeyPValueSource implements PValueSource {
         return result;
     }
 
-    @Override
-    public PValueSource copySource()
-    {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
 }
