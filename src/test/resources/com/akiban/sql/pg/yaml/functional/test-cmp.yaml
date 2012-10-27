@@ -1,0 +1,14 @@
+# test compar
+---
+- Statement: SET newtypes to 'true';
+---
+- CreateTable: t (c DECIMAL(3, 2), d DECIMAL(3, 2));
+---
+- Statement: INSERT INTO t values  (2.12, 2.13), (-2.13, 2.12), (-4.56, -4.55),
+                                   (-5.46, -6.00), (-5.67, -5.68), (6.01, -5.00);
+---
+- Statement: SELECT c < d from t;
+- output: [['true'], ['true'], ['true'], ['false'], ['false'], ['false']]
+---
+- Statement: SET newtypes to DEFAULT
+...

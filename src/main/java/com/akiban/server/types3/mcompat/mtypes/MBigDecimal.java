@@ -126,95 +126,50 @@ public class MBigDecimal extends TClassBase {
             byte bytesA[] = sourceA.getBytes();
             int preA = instanceA.attribute(Attrs.PRECISION);
             int scaleA = instanceA.attribute(Attrs.SCALE);
-            int decPointA = preA - scaleA - 1;
+            int decPointA = preA - scaleA;
             boolean aSigned = bytesA[0] >= 0;
 
             byte bytesB[] = sourceB.getBytes();
             int preB = instanceB.attribute(Attrs.PRECISION);
             int scaleB = instanceB.attribute(Attrs.SCALE);
-            int decPointB = preB - scaleB - 1;
+            int decPointB = preB - scaleB;
             boolean bSigned = bytesB[0] >= 0;
-            
+
             // if the two are of opposite sign, there's no need for comparison
             if (bSigned ^ aSigned)
                 return aSigned ? -1 : 1; // a < 0 < b or a > 0 > b
             
             int d;
             if (decPointA < decPointB)          // less digits
-                return aSigned ? 1 : -1;   
+                return aSigned ? 1 : -1;
             else if (decPointA > decPointB)     // more digis
                 return aSigned? -1 : 1;
             else
             {
-                // check the digits before the decimal pint
-                if (aSigned)
-                    for (int n = 0; n < decPointA; ++n)
-                    {
-                        if ((d = ~(bytesA[n] & 0xFF) - ~(bytesB[n] & 0xFF)) < 0)
-                            return -1;
-                        else if (d > 0)
-                            return 1;
-                    }
-                else
-                    for (int n = 0; n < decPointA; ++n)
-                    {
-                        if ((d = (bytesA[n] & 0xFF) - (bytesB[n] & 0xFF)) < 0)
-                            return -1;
-                        else if (d > 0)
-                            return 1;
-                    }
-            }
-
-            // check the digits after the decimal point;
-            int limit = Math.min(bytesA.length, bytesB.length);
-            if (aSigned)
-                for (int n = decPointA - 1; n < limit; ++n)
+                
+                int limit = Math.min(bytesA.length, bytesB.length);
+                for (int n = 0; n < limit; ++n)
+                    if( (d = bytesA[n] - bytesB[n]) != 0)
+                        return d;
+                if (bytesA.length < bytesB.length)
                 {
-                    if ((d = bytesA[n] & 0xFF - bytesB[n] & 0xFF) > 0)
-                        return -1;
-                    else if (d < 0)
-                        return 1;
+                    for (int n = limit; n < bytesB.length; ++n)
+                        if (bytesB[n] != 0)
+                            return aSigned ? 1 : -1;
                 }
-            else
-                for (int n = decPointA - 1; n < limit; ++n)
+                else if (bytesA.length > bytesB.length)
                 {
-                    if ((d = bytesA[n] & 0xFF - bytesB[n] & 0xFF) > 0)
-                        return 1;
-                    else if (d < 0)
-                        return -1;
+                    for (int n = limit; n < bytesA.length; ++n)
+                        if (bytesA[n] != 0)
+                            return aSigned ? -1 : 1;
                 }
-
-
-            if (bytesA.length == bytesB.length)
-                return 0;
-            else if (bytesA.length < bytesB.length)
-            {
-                for (int n = limit; n < bytesB.length; ++n)
-                    if (bytesB[n] != 0)
-                        return aSigned ? 1 : -1;
-                return 0;
-            }
-            else
-            {
-                for (int n = limit; n < bytesA.length; ++n)
-                    if (bytesA[n] != 0)
-                        return aSigned ? -1 : 1;
                 return 0;
             }
         }
         else
             return getWrapper(sourceA, instanceA).compareTo(getWrapper(sourceB, instanceB));
     }
-    
-    
-    static long getMask(int length)
-    {
-        long ret = 7;
-        while (length-- > 0)
-            ret = ret << 4 | 0xf;
-        return ret;
-    }
-    
+
     @Override
     public void selfCast(TExecutionContext context, TInstance sourceInstance, PValueSource source,
                          TInstance targetInstance, PValueTarget target)
