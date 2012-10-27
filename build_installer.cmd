@@ -61,6 +61,8 @@ MD target\isstage
 MD target\isstage\bin
 MD target\isstage\config
 MD target\isstage\lib
+MD target\isstage\lib\server
+MD target\isstage\lib\client
 MD target\isstage\procrun
 
 COPY %LICENSE% target\isstage\LICENSE.TXT
@@ -68,9 +70,12 @@ XCOPY /E windows target\isstage
 COPY bin\*.cmd target\isstage\bin
 COPY target\client-tools\bin\*.cmd target\isstage\bin
 COPY windows\%TARGET%\* target\isstage\config
-COPY target\akiban-server-*-jar-with-dependencies.jar target\isstage\lib
-COPY target\client-tools\target\akiban-client-tools-*.jar target\isstage\lib
-COPY target\client-tools\target\dependency\*.jar target\isstage\lib
+ECHO -tests.jar >target\xclude
+ECHO -sources.jar >>target\xclude
+XCOPY target\akiban-server-*.jar target\isstage\lib /EXCLUDE:target\xclude
+COPY target\dependency\* target\isstage\lib\server
+XCOPY target\client-tools\target\akiban-client-tools-*.jar target\isstage\lib /EXCLUDE:target\xclude
+COPY target\client-tools\target\dependency\* target\isstage\lib\client
 
 CD target\isstage
 

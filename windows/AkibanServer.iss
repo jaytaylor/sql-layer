@@ -36,7 +36,7 @@ Name: "{code:DataDir}\log"; Permissions: users-readexec; Tasks: installsvc
 Source: "LICENSE.txt"; DestDir: "{app}"
 Source: "bin\*"; DestDir: "{app}\bin"
 Source: "config\*"; DestDir: "{app}\config"
-Source: "lib\*"; DestDir: "{app}\lib"
+Source: "lib\*"; DestDir: "{app}\lib"; Flags: recursesubdirs
 Source: "procrun\*"; DestDir: "{app}\procrun"; Flags: recursesubdirs
 
 [Icons]
