@@ -43,7 +43,7 @@ IF NOT DEFINED CERT_PASSWORD SET CERT_PASSWORD=test
 
 ECHO "Building Akiban Server for ##### %TARGET% #####"
 
-call mvn -Dmaven.test.skip.exec clean install -DBZR_REVISION=%BZR_REVNO%
+call mvn -Dmaven.test.skip clean install -DBZR_REVISION=%BZR_REVNO%
 IF ERRORLEVEL 1 GOTO EOF
 
 IF NOT DEFINED TOOLS_BRANCH SET TOOLS_BRANCH=lp:akiban-client-tools
@@ -52,7 +52,7 @@ CD target
 bzr branch %TOOLS_BRANCH% client-tools
 IF ERRORLEVEL 1 GOTO EOF
 CD client-tools
-call mvn -Dmaven.test.skip.exec clean install
+call mvn -Dmaven.test.skip clean install
 IF ERRORLEVEL 1 GOTO EOF
 DEL target\*-sources.jar
 CD ..\..
