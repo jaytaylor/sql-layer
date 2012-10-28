@@ -129,7 +129,7 @@ launch_service()
 }
 
 # Parse any command line options.
-args=`getopt fwkvghj:c:p:D: "$@"`
+args=`getopt fwkvghj:d:c:p:D: "$@"`
 eval set -- "$args"
 
 while true; do
