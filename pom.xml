@@ -213,7 +213,7 @@
                 <artifactId>maven-dependency-plugin</artifactId>
                 <version>2.5.1</version>
                 <configuration>
-                    <excludeArtifactIds>junit</excludeArtifactIds>
+                    <excludeArtifactIds>junit,postgresql</excludeArtifactIds>
                     <excludeTypes>test-jar</excludeTypes>
                 </configuration>
                 <executions>
