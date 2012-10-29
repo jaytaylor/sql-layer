@@ -651,6 +651,22 @@ public class AkInterval extends TClassBase {
     static abstract class AkIntervalParser<U> {
 
         public long parse(String string) {
+            // string could be a floating-point number
+            
+            if (units.length == 1)
+            {
+                try
+                {
+                    double val = Double.parseDouble(string);
+                    return parseLong(Math.round(val), (U)units[0]);
+                }
+                catch (NumberFormatException e)
+                {
+                    // does nothing.
+                    // Move on to the next step
+                }
+            }
+
             boolean isNegative = (string.charAt(0) == '-');
             if (isNegative)
                 string = string.substring(1);

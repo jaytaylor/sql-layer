@@ -1,0 +1,46 @@
+# tetinterval
+---
+- Statement: SET newtypes to 'true'
+# test #1: '2000-01-01 00:00:00' plus '1 day and 1 hour'
+---
+- Statement: SELECT INTERVAL 1 DAY + INTERVAL 1 HOUR + TIMESTAMP('2000-01-01 00:00:00');
+- output: [[!re '2000-01-02 01:00:00([.]0)?']]  # 25 hours since('2000-01-02 00:00:00')
+--- # addition is relfexive
+- Statement: SELECT INTERVAL 1 HOUR + INTERVAL 1 DAY + TIMESTAMP('2000-01-01 00:00:00');
+- output: [[!re '2000-01-02 01:00:00([.]0)?']]  # 25 hours since('2000-01-02 00:00:00')
+--- # addition is relfexive
+- Statement: SELECT TIMESTAMP('2000-01-01 00:00:00') + (INTERVAL 1 HOUR + INTERVAL 1 DAY);
+- output: [[!re '2000-01-02 01:00:00([.]0)?']]  # 25 hours since('2000-01-02 00:00:00')
+--- # addition is relfexive
+- Statement: SELECT TIMESTAMP('2000-01-01 00:00:00') + INTERVAL 1 HOUR + INTERVAL 1 DAY;
+- output: [[!re '2000-01-02 01:00:00([.]0)?']]  # 25 hours since('2000-01-02 00:00:00')
+
+# test #2: '2000-01-01' minus '10 year and 2 months'
+---
+- Statement: SELECT DATE('2000-01-01') - (INTERVAL 1 YEAR + INTERVAL 1 MONTH)
+- output: [['1998-12-01']]
+---
+- Statement: SELECT DATE('2000-01-01') - INTERVAL 1 YEAR - INTERVAL 1 MONTH
+- output: [['1998-12-01']]
+
+# Test #3: '1900-01-01' minus (2 * 1 year - 1 month)
+---
+- Statement: SELECT DATE('2010-01-01') - ( INTERVAL 1 * 2 YEAR - INTERVAL 1 MONTH)
+- output: [['2008-02-01']]
+---
+- Statement: SELECT DATE('2010-01-01') - ( (INTERVAL 1 YEAR) * 2 - INTERVAL 1 MONTH)
+- output: [['2008-02-01']]
+---
+- Statement: SELECT DATE('2010-01-01') -  (INTERVAL 1 YEAR) * 2 + INTERVAL 1 MONTH
+- output: [['2008-02-01']]
+
+# Test #3: '2000-01-01 00:00:00' plus (INTERVAL '1 10' DAY_HOUR - INTERVAL 5 HOUR)
+---
+- Statement: SELECT TIMESTAMP('2000-01-01 00:00:00') + (INTERVAL '1 20' DAY_HOUR - (INTERVAL 5 HOUR) * 3);
+- output: [[!re '2000-01-02 05:00:00([.]0)?']]
+---
+- Statement: SELECT TIMESTAMP('2000-01-01 00:00:00') + (INTERVAL '1 20' DAY_HOUR - INTERVAL 5 * 3 HOUR);
+- output: [[!re '2000-01-02 05:00:00([.]0)?']]
+---
+- Statement: SET newtypes to DEFAULT
+...
