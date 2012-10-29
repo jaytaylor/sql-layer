@@ -124,38 +124,18 @@ public class MBigDecimal extends TClassBase {
     {
         if(!sourceA.hasCacheValue() && !sourceB.hasCacheValue()) // both have bytearrays
         {
-            //UnsignedBytes.lexicographicalComparator().
             byte bytesA[] = sourceA.getBytes();
-            int preA = instanceA.attribute(Attrs.PRECISION);
-            int scaleA = instanceA.attribute(Attrs.SCALE);
-            int decPointA = preA - scaleA;
             boolean aSigned = bytesA[0] >= 0;
 
             byte bytesB[] = sourceB.getBytes();
-            int preB = instanceB.attribute(Attrs.PRECISION);
-            int scaleB = instanceB.attribute(Attrs.SCALE);
-            int decPointB = preB - scaleB;
             boolean bSigned = bytesB[0] >= 0;
-
-            
-            // optimise easy cases:
+   
+            // optimise easy case:
             // if the two are of opposite sign, there's no need for comparison
             if (bSigned ^ aSigned)
-                return aSigned ? -1 : 1; // a < 0 < b or a > 0 > b
-            int d;
-            if (decPointA < decPointB)          // less digits
-                return aSigned ? 1 : -1;
-            else if (decPointA > decPointB)     // more digis
-                return aSigned? -1 : 1;
+                return aSigned ? -1 : 1;        // a < 0 < b or a > 0 > b
             else
-            {
-                // TODO:
-                // implement this correctly
-                // For now, just convert the arrays to BigDecimalWrapper
-                // and use the provided compareTo()
-                
-                return getWrapper(sourceA, instanceA).compareTo(getWrapper(sourceB, instanceB));
-            }
+                return UnsignedBytes.lexicographicalComparator().compare(bytesA, bytesB);
         }
         else
             return getWrapper(sourceA, instanceA).compareTo(getWrapper(sourceB, instanceB));
