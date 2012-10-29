@@ -229,7 +229,7 @@ public final class CBasicIT extends ITBase {
             throw new TestException(e);
         }
 
-        dml().openCursor(session(), ddl().getGeneration(), new ScanAllRequest(tableId1, ColumnSet.ofPositions(0)));
+        dml().openCursor(session(), ddl().getGenerationAsInt(session()), new ScanAllRequest(tableId1, ColumnSet.ofPositions(0)));
     }
 
     @Test(expected=RowDefNotFoundException.class)
@@ -249,7 +249,7 @@ public final class CBasicIT extends ITBase {
             throw new TestException(e);
         }
 
-        dml().openCursor(session(), ddl().getGeneration(), new ScanAllRequest(tid, ColumnSet.ofPositions(0)));
+        dml().openCursor(session(), ddl().getGenerationAsInt(session()), new ScanAllRequest(tid, ColumnSet.ofPositions(0)));
     }
 
     @Test(expected=OldAISException.class)
@@ -560,9 +560,9 @@ public final class CBasicIT extends ITBase {
 
     @Test
     public void schemaIdIncrements() throws Exception {
-        int firstGen = ddl().getGeneration();
+        int firstGen = ddl().getGenerationAsInt(session());
         createTable("sch", "c1", "id int not null primary key");
-        int secondGen = ddl().getGeneration();
+        int secondGen = ddl().getGenerationAsInt(session());
         assertTrue(String.format("failed %d > %d", secondGen, firstGen), secondGen > firstGen);
     }
 

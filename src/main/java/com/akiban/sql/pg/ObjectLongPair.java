@@ -24,27 +24,37 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.util;
+package com.akiban.sql.pg;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.CacheValueGenerator;
-import com.akiban.qp.rowtype.Schema;
+public class ObjectLongPair {
+    public final Object obj;
+    public final long longVal;
 
-public final class SchemaCache {
-
-    // static SchemaCache interface
-
-    public static Schema globalSchema(AkibanInformationSchema ais) {
-        return ais.getCachedValue(CACHE_KEY, CACHE_GENERATOR);
+    public ObjectLongPair(Object obj, long longVal) {
+        assert obj != null : "Null obj for longVal " + longVal;
+        this.obj = obj;
+        this.longVal = longVal;
     }
 
-    // class state
+    @Override
+    public String toString() {
+        return "[" + obj + "," + longVal + "]";
+    }
 
-    private static final Object CACHE_KEY = new Object();
-    private static final CacheValueGenerator<Schema> CACHE_GENERATOR = new CacheValueGenerator<Schema>() {
-        @Override
-        public Schema valueFor(AkibanInformationSchema ais) {
-            return new Schema(ais);
-        }
-    };
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        ObjectLongPair rhs = (ObjectLongPair)o;
+        return (longVal == rhs.longVal) && obj.equals(rhs.obj);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = obj.hashCode();
+        result = 31 * result + (int)(longVal ^ (longVal >>> 32));
+        return result;
+    }
 }

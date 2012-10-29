@@ -725,16 +725,6 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
-        public long getUpdateTimestamp() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int getSchemaGeneration() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public void createView(Session session, View view) {
             throw new UnsupportedOperationException();
         }
@@ -806,6 +796,11 @@ public class BasicInfoSchemaTablesServiceImplTest {
 
         @Override
         public Set<String> getTreeNames() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public long getOldestActiveAISGeneration() {
             throw new UnsupportedOperationException();
         }
     }

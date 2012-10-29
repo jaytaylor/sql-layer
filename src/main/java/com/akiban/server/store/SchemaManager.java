@@ -96,9 +96,7 @@ public interface SchemaManager {
     void unRegisterMemoryInformationSchemaTable(TableName tableName);
 
     /**
-     * Create a new table in the SchemaManager. Successful completion of this
-     * method results in a new timestamp and schema generation, see
-     * {@link #getUpdateTimestamp()} and {@link #getSchemaGeneration()} respectively.
+     * Create a new table in the SchemaManager.
      * @param session Session to operate under
      * @param newTable New table to add
      * @return The name of the table that was created.
@@ -184,21 +182,6 @@ public interface SchemaManager {
      */
     List<String> schemaStrings(Session session, boolean withISTables);
 
-    /**
-     * Return the last timestamp for the last successful change through the SchemaManager.
-     * This value changes for any create, delete, or alter method executed.
-     * @return The timestamp at which a change last occurred.
-     */
-    long getUpdateTimestamp();
-
-    /**
-     * Get the value associated with the current state of the SchemaManager. This
-     * changes under every condition that {@link #getUpdateTimestamp()} does but
-     * implies no other ordering other than being distinct from the last.
-     * @return The current schema generation value.
-     */
-    int getSchemaGeneration();
-
     /** Add the given view to the current AIS. */
     void createView(Session session, View view);
 
@@ -244,4 +227,7 @@ public interface SchemaManager {
 
     /** Get all known/allocated tree names */
     Set<String> getTreeNames();
+
+    /** Get oldest AIS generation still in memory */
+    long getOldestActiveAISGeneration();
 }

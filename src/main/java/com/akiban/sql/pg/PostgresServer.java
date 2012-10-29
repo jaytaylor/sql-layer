@@ -43,6 +43,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
@@ -69,9 +70,9 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     private Thread thread;
     private final AtomicBoolean instrumentationEnabled = new AtomicBoolean(true);
     // AIS-dependent state
-    private volatile long aisTimestamp = -1;
     private volatile int statementCacheCapacity;
-    private final Map<Object,ServerStatementCache<PostgresStatement>> statementCaches = new HashMap<Object,ServerStatementCache<PostgresStatement>>();
+    private final Map<ObjectLongPair,ServerStatementCache<PostgresStatement>> statementCaches =
+        new HashMap<ObjectLongPair,ServerStatementCache<PostgresStatement>>(); // key and aisGeneration
     // end AIS-dependent state
     private volatile Date overrideCurrentTime;
 
@@ -222,7 +223,18 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         conn.waitAndStop();
     }
 
-    public ServerStatementCache<PostgresStatement> getStatementCache(Object key) {
+    void cleanStatementCaches() {
+        long oldestGeneration = reqs.dxl().ddlFunctions().getOldestActiveGeneration();
+        synchronized (statementCaches) {
+            Iterator<ObjectLongPair> it = statementCaches.keySet().iterator();
+            while(it.hasNext()) {
+                if (it.next().longVal < oldestGeneration)
+                    it.remove();
+            }
+        }
+    }
+
+    public ServerStatementCache<PostgresStatement> getStatementCache(ObjectLongPair key) {
         if (statementCacheCapacity <= 0) 
             return null;
 
@@ -230,6 +242,8 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         synchronized (statementCaches) {
             statementCache = statementCaches.get(key);
             if (statementCache == null) {
+                // No cache => recent DDL, reasonable time to do a little cleaning
+                cleanStatementCaches();
                 statementCache = new ServerStatementCache<PostgresStatement>(statementCacheCapacity);
                 statementCaches.put(key, statementCache);
             }
@@ -238,17 +252,9 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     }
 
     /** This is the version for use by connections. */
-    public ServerStatementCache<PostgresStatement> getStatementCache(Object key, long timestamp) {
-        synchronized (statementCaches) {
-            if (aisTimestamp != timestamp) {
-                assert aisTimestamp < timestamp : timestamp;
-                for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
-                    statementCache.invalidate();
-                }
-                aisTimestamp = timestamp;
-            }
-        }
-        return getStatementCache(key);
+    public ServerStatementCache<PostgresStatement> getStatementCache(Object key, long aisGeneration) {
+        ObjectLongPair fullKey = new ObjectLongPair(key, aisGeneration);
+        return getStatementCache(fullKey);
     }
 
     @Override

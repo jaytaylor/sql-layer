@@ -325,35 +325,18 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test
     public void updateTimestampChangesWithCreate() throws Exception {
-        final long first = schemaManager.getUpdateTimestamp();
+        final long first = schemaManager.getAis(session()).getGeneration();
         createTableDef(SCHEMA, T1_NAME, T1_DDL);
-        final long second = schemaManager.getUpdateTimestamp();
+        final long second = schemaManager.getAis(session()).getGeneration();
         assertTrue("timestamp changed", first != second);
     }
 
     @Test
     public void updateTimestampChangesWithDelete() throws Exception {
         createTableDef(SCHEMA, T1_NAME, T1_DDL);
-        final long first = schemaManager.getUpdateTimestamp();
+        final long first = schemaManager.getAis(session()).getGeneration();
         deleteTableDef(SCHEMA, T1_NAME);
-        final long second = schemaManager.getUpdateTimestamp();
-        assertTrue("timestamp changed", first != second);
-    }
-
-    @Test
-    public void schemaGenChangesWithCreate() throws Exception {
-        final int first = schemaManager.getSchemaGeneration();
-        createTableDef(SCHEMA, T1_NAME, T1_DDL);
-        final int second = schemaManager.getSchemaGeneration();
-        assertTrue("timestamp changed", first != second);
-    }
-
-    @Test
-    public void schemaGenChangesWithDelete() throws Exception {
-        createTableDef(SCHEMA, T1_NAME, T1_DDL);
-        final int first = schemaManager.getSchemaGeneration();
-        deleteTableDef(SCHEMA, T1_NAME);
-        final int second = schemaManager.getSchemaGeneration();
+        final long second = schemaManager.getAis(session()).getGeneration();
         assertTrue("timestamp changed", first != second);
     }
 

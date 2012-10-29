@@ -51,7 +51,6 @@ public class AISBinderContext
 {
     protected Properties properties;
     protected AkibanInformationSchema ais;
-    protected long aisTimestamp = -1;
     protected SQLParser parser;
     protected String defaultSchemaName;
     protected AISBinder binder;

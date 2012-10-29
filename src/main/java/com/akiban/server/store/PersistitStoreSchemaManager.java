@@ -90,6 +90,7 @@ import com.akiban.util.ArgumentValidation;
 import com.akiban.util.GrowableByteBuffer;
 import com.google.inject.Inject;
 
+import com.persistit.Accumulator;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitInterruptedException;
@@ -170,6 +171,9 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private static final String AIS_PROTOBUF_PARENT_KEY = AIS_KEY_PREFIX + "PBAIS";
     private static final String DELAYED_TREE_KEY = "delayedTree";
 
+    private static final int SCHEMA_GEN_ACCUM_INDEX = 0;
+    private static final Accumulator.Type SCHEMA_GEN_ACCUM_TYPE = Accumulator.Type.SEQ;
+
     // Changed from 1 to 2 due to incompatibility related to index row changes (see bug 985007)
     private static final int PROTOBUF_PSSM_VERSION = 2;
 
@@ -181,7 +185,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private final ConfigurationService config;
     private AkibanInformationSchema ais;
     private RowDefCache rowDefCache;
-    private AtomicLong updateTimestamp;
     private int maxAISBufferSize;
     private boolean skipAISUpgrade;
     private SerializationType serializationType = SerializationType.NONE;
@@ -493,7 +496,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             throw new DuplicateRoutineNameException(routine.getName());
         final AkibanInformationSchema newAIS = AISMerge.mergeRoutine(oldAIS, routine);
         if (inSystem)
-            buildRowDefCache(newAIS);
+            unSavedAISChangeWithRowDefs(session, newAIS);
         else {
             final String schemaName = routine.getName().getSchemaName();
             saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
@@ -512,7 +515,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         if (routine.getSQLJJar() != null)
             routine.getSQLJJar().removeRoutine(routine); // Keep accurate in memory.
         if (inSystem)
-            buildRowDefCache(newAIS);
+            unSavedAISChangeWithRowDefs(session, newAIS);
         else {
             final String schemaName = routineName.getSchemaName();
             saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
@@ -700,24 +703,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     @Override
-    public long getUpdateTimestamp() {
-        return updateTimestamp.get();
-    }
-
-    @Override
-    public int getSchemaGeneration() {
-        long ts = getUpdateTimestamp();
-        return (int) ts ^ (int) (ts >>> 32);
-    }
-    
-    public void saveCurrentTimestamp() {
-        updateTimestamp.set(treeService.getDb().getCurrentTimestamp());
-    }
-
-    @Override
     public void start() {
         rowDefCache = new RowDefCache(treeService.getTableStatusCache());
-        updateTimestamp = new AtomicLong();
         skipAISUpgrade = Boolean.parseBoolean(config.getProperty(SKIP_AIS_UPGRADE_PROPERTY));
         maxAISBufferSize = Integer.parseInt(config.getProperty(MAX_AIS_SIZE_PROPERTY));
         if(maxAISBufferSize < 0) {
@@ -727,28 +714,22 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         AkibanInformationSchema.setDefaultCharsetAndCollation(config.getProperty(DEFAULT_CHARSET),
                                                               config.getProperty(DEFAULT_COLLATION));
 
-        try {
-            final AkibanInformationSchema newAIS = loadAISFromStorage();
+        final AkibanInformationSchema newAIS = loadAISFromStorage();
 
-            if(!skipAISUpgrade) {
-                // Upgrade goes here if we ever need another one
-            } else {
-                //LOG.warn("Skipping AIS upgrade");
-            }
-
-            newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
-            newAIS.freeze();
-
-            transactionally(sessionService.createSession(), new ThrowingRunnable() {
-                @Override
-                public void run(Session session) throws PersistitException {
-                    cleanupDelayedTrees(session);
-                    buildRowDefCache(newAIS);
-                }
-            });
-        } catch (PersistitException e) {
-            throw new PersistitAdapterException(e);
+        if(!skipAISUpgrade) {
+            // Upgrade goes here if we ever need another one
+        } else {
+            //LOG.warn("Skipping AIS upgrade");
         }
+
+        transactionally(sessionService.createSession(), new ThrowingRunnable() {
+            @Override
+            public void run(Session session) throws PersistitException {
+                cleanupDelayedTrees(session);
+                validateAndFreeze(session, newAIS, false);
+                buildRowDefCache(newAIS);
+            }
+        });
 
         this.nameGenerator = SynchronizedNameGenerator.wrap(new DefaultNameGenerator(ais));
         this.delayedTreeIDGenerator = new AtomicLong();
@@ -758,7 +739,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     public void stop() {
         this.ais = null;
         this.rowDefCache = null;
-        this.updateTimestamp = null;
         this.maxAISBufferSize = 0;
         this.skipAISUpgrade = false;
         this.serializationType = SerializationType.NONE;
@@ -771,7 +751,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         stop();
     }
 
-    private AkibanInformationSchema loadAISFromStorage() throws PersistitException {
+    private AkibanInformationSchema loadAISFromStorage() {
         final AkibanInformationSchema newAIS = new AkibanInformationSchema();
 
         transactionally(sessionService.createSession(), new ThrowingRunnable() {
@@ -836,7 +816,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             rowDefCache.setAIS(newAis);
             // This creates|verifies the trees exist for sequences
             sequenceTrees(newAis);
-            saveCurrentTimestamp();
             ais = newAis;
         } catch(PersistitException e) {
             LOG.error("AIS change successful and stored on disk but RowDefCache creation failed!");
@@ -893,6 +872,13 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         }
     }
 
+    private void validateAndFreeze(Session session, AkibanInformationSchema newAIS, boolean newGeneration) throws PersistitException {
+        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary(); // TODO: Often redundant, cleanup
+        long generation = newGeneration ? getNextGeneration(session) : getGenerationSnapshot(session);
+        newAIS.setGeneration(generation);
+        newAIS.freeze();
+    }
+
     /**
      * Internal helper for saving an AIS change to storage. This includes create, delete, alter, etc.
      *
@@ -900,15 +886,12 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
      * @param newAIS The new AIS to store on disk
      * @param schemaNames The schemas affected by the change
      */
-    private void saveAISChange(Session session, AkibanInformationSchema newAIS, Collection<String> schemaNames) {
-        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
-        newAIS.freeze();
-
+    private void saveAISChangeWithRowDefs(Session session, AkibanInformationSchema newAIS, Collection<String> schemaNames) {
         int maxSize = maxAISBufferSize == 0 ? Integer.MAX_VALUE : maxAISBufferSize;
         GrowableByteBuffer byteBuffer = new GrowableByteBuffer(4096, 4096, maxSize);
-
         Exchange ex = null;
         try {
+            validateAndFreeze(session, newAIS, true);
             for(String schema : schemaNames) {
                 ex = schemaTreeExchange(session, schema);
                 checkAndSerialize(ex, byteBuffer, newAIS, schema);
@@ -924,18 +907,15 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 treeService.releaseExchange(session, ex);
             }
         }
+        buildRowDefCache(newAIS);
     }
 
-    /**
-     * Internal helper for saving an AIS change, by calling saveAISChange, and then rebuilding the
-     * RowDefCache from scratch.
-     *
-     * @param session Session to run under
-     * @param newAIS The new AIS to store on disk <b>and</b> commit as {@link #getAis(Session)}.
-     * @param schemaNames The schemas affected by the change.
-     */
-    private void saveAISChangeWithRowDefs(Session session, AkibanInformationSchema newAIS, Collection<String> schemaNames) {
-        saveAISChange(session, newAIS, schemaNames);
+    private void unSavedAISChangeWithRowDefs(Session session, AkibanInformationSchema newAIS) {
+        try {
+            validateAndFreeze(session, newAIS, true);
+        } catch(PersistitException e) {
+            throw new PersistitAdapterException(e);
+        }
         buildRowDefCache(newAIS);
     }
 
@@ -1042,6 +1022,33 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         return nameGenerator.getTreeNames();
     }
 
+    @Override
+    public long getOldestActiveAISGeneration() {
+        return ais.getGeneration();
+    }
+
+    private Accumulator getGenerationAccumulator(Session session) throws PersistitException {
+        // treespace policy could split the _schema_ tree across volumes and give us multiple accumulators, which would
+        // be very bad. Work around that with a fake/constant schema name. It isn't a problem if this somehow got changed
+        // across a restart. Really, we want a constant, system-like volume to put this in.
+        final String SCHEMA = "pssm";
+        Exchange ex = schemaTreeExchange(session, SCHEMA);
+        try {
+            return ex.getTree().getAccumulator(SCHEMA_GEN_ACCUM_TYPE, SCHEMA_GEN_ACCUM_INDEX);
+        } finally {
+            treeService.releaseExchange(session, ex);
+        }
+    }
+
+    private long getGenerationSnapshot(Session session) throws PersistitException {
+        return getGenerationAccumulator(session).getSnapshotValue(treeService.getDb().getTransaction());
+    }
+
+    private long getNextGeneration(Session session) throws PersistitException {
+        final int ACCUM_UPDATE_VALUE = 1;   // irrelevant for SEQ types
+        return getGenerationAccumulator(session).update(ACCUM_UPDATE_VALUE, treeService.getDb().getTransaction());
+    }
+
     private TableName createTableCommon(Session session, UserTable newTable, boolean isInternal,
                                         Integer version, MemoryTableFactory factory) {
         final TableName newName = newTable.getName();
@@ -1061,7 +1068,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(newName.getSchemaName()));
         } else {
             // Memory only table changed, no reason to re-serialize
-            buildRowDefCache(newAIS);
+            unSavedAISChangeWithRowDefs(session, newAIS);
         }
         try {
             if (mergedTable.getIdentityColumn() != null) {

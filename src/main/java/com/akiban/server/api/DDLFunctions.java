@@ -183,16 +183,22 @@ public interface DDLFunctions {
     List<String> getDDLs(Session session);
 
     /**
-     * Get the generation of the current AIS. This value is only guaranteed to change
-     * when the AIS goes.
-     * @see #getTimestamp
+     * Get an integer version of the generation of the AIS. Upon change this is only guaranteed to be different,
+     * increasing or decreasing is unspecified, from the last.
+     * @see #getGeneration
      */
-    int getGeneration();
+    int getGenerationAsInt(Session session);
 
     /**
-     * Get the timestamp of the current AIS. This value increases for each new AIS.
+     * Get the generation number of the AIS. This value is unique and increasing increases for each change.
      */
-    long getTimestamp();
+    long getGeneration(Session session);
+
+    /**
+     * Get the oldest AIS generation still in use, not necessarily the oldest that could possibly be used.
+     * Should only be used in non-transactional scenarios, e.g. clearing caches.
+     */
+    long getOldestActiveGeneration();
     
     /**
      * Create new indexes on existing table(s). Both Table and Group indexes are supported. Primary

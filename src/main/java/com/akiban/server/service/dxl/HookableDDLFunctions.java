@@ -382,32 +382,42 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public int getGeneration() {
-        Session session = sessionService.createSession();
+    public int getGenerationAsInt(Session session) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.GET_SCHEMA_ID);
-            return delegate.getGeneration();
+            return delegate.getGenerationAsInt(session);
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.GET_SCHEMA_ID, t);
             throw throwAlways(t);
         } finally {
-            try {
-                hook.hookFunctionFinally(session, DXLFunction.GET_SCHEMA_ID, thrown);
-            } finally {
-                session.close();
-            }
+            hook.hookFunctionFinally(session, DXLFunction.GET_SCHEMA_ID, thrown);
         }
     }
 
     @Override
-    public long getTimestamp() {
+    public long getGeneration(Session session) {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.GET_SCHEMA_TIMESTAMP);
+            return delegate.getGeneration(session);
+        } catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.GET_SCHEMA_TIMESTAMP, t);
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunction.GET_SCHEMA_TIMESTAMP, thrown);
+        }
+    }
+
+    @Override
+    public long getOldestActiveGeneration() {
         Session session = sessionService.createSession();
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.GET_SCHEMA_TIMESTAMP);
-            return delegate.getTimestamp();
+            return delegate.getOldestActiveGeneration();
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.GET_SCHEMA_TIMESTAMP, t);
