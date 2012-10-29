@@ -137,10 +137,10 @@ public final class CBasicIT extends ITBase {
         assertEquals("rows scanned", 3, rows.size());
 
         List<NewRow> expectedRows = new ArrayList<NewRow>();
-        NiceRow r;
-        r = new NiceRow(session(), tableId, store()); r.put(0, 11L); r.put(7, 18L); r.put(8, 19L); expectedRows.add(r);
-        r = new NiceRow(session(), tableId, store()); r.put(0, 21L); r.put(7, 28L); r.put(8, 29L); expectedRows.add(r);
-        r = new NiceRow(session(), tableId, store()); r.put(0, 31L); r.put(7, 38L); r.put(8, 39L); expectedRows.add(r);
+        NewRow r;
+        r = createNewRow(tableId); r.put(0, 11L); r.put(7, 18L); r.put(8, 19L); expectedRows.add(r);
+        r = createNewRow(tableId); r.put(0, 21L); r.put(7, 28L); r.put(8, 29L); expectedRows.add(r);
+        r = createNewRow(tableId); r.put(0, 31L); r.put(7, 38L); r.put(8, 39L); expectedRows.add(r);
         assertEquals("row content", expectedRows, rows);
     }
 
@@ -368,7 +368,7 @@ public final class CBasicIT extends ITBase {
         }
 
         try {
-            NiceRow old = new NiceRow(session(), tableId, store());
+            NewRow old = createNewRow(tableId);
             old.put(1, "hello world");
             dml().updateRow(session(), old, createNewRow(tableId, 1, "goodbye cruel world"), null );
         } catch (NoSuchRowException e) {
@@ -528,7 +528,7 @@ public final class CBasicIT extends ITBase {
         }
 
         try {
-            NiceRow deleteAttempt = new NiceRow(session(), tableId, store());
+            NewRow deleteAttempt = createNewRow(tableId);
             deleteAttempt.put(1, "the customer's name");
             dml().deleteRow(session(), deleteAttempt);
         } catch (NoSuchRowException e) {
@@ -548,7 +548,7 @@ public final class CBasicIT extends ITBase {
         }
 
         try {
-            NiceRow deleteAttempt = new NiceRow(session(), tableId, store());
+            NewRow deleteAttempt = createNewRow(tableId);
             deleteAttempt.put(1, "the customer's name");
             dml().deleteRow(session(), createNewRow(tableId, 0, "this row doesn't exist"));
         } catch (NoSuchRowException e) {

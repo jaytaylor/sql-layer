@@ -26,6 +26,7 @@
 
 package com.akiban.server.test.it.rowtests;
 
+import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
@@ -47,7 +48,7 @@ public class RowTestIT extends ITBase
                                 "id int not null primary key",
                                 "a int not null",
                                 "b int not null");
-        NiceRow original = new NiceRow(session(), t, store());
+        NewRow original = createNewRow(t);
         int cId = 0;
         int cA = 1;
         int cB = 2;
@@ -69,7 +70,7 @@ public class RowTestIT extends ITBase
                                 "id int not null primary key",
                                 "a int not null",
                                 "b int");
-        NiceRow original = new NiceRow(session(), t, store());
+        NewRow original = createNewRow(t);
         int cId = 0;
         int cA = 1;
         int cB = 2;
@@ -92,7 +93,7 @@ public class RowTestIT extends ITBase
                                 "a int",
                                 "b int",
                                 "c int");
-        NiceRow row = new NiceRow(session(), t, store());
+        NewRow row = createNewRow(t);
         int cId = 0;
         int cA = 1;
         int cB = 2;
@@ -124,7 +125,7 @@ public class RowTestIT extends ITBase
                                 "a int",
                                 "b int",
                                 "c int");
-        NiceRow niceRow = new NiceRow(session(), t, store());
+        NewRow niceRow = createNewRow(t);
         int cId = 0;
         int cA = 1;
         int cB = 2;
@@ -134,7 +135,7 @@ public class RowTestIT extends ITBase
         niceRow.put(cA, 200L);
         niceRow.put(cB, 300L);
         niceRow.put(cC, null);
-        LegacyRowWrapper legacyRow = new LegacyRowWrapper(session(), niceRow.toRowData(), store());
+        LegacyRowWrapper legacyRow = new LegacyRowWrapper(niceRow.getRowDef(), niceRow.toRowData());
         assertEquals(100L, legacyRow.get(cId));
         assertEquals(200L, legacyRow.get(cA));
         assertEquals(300L, legacyRow.get(cB));
@@ -159,7 +160,7 @@ public class RowTestIT extends ITBase
                                 "a int",
                                 "b int",
                                 "c int");
-        NiceRow niceRow = new NiceRow(session(), t, store());
+        NewRow niceRow = createNewRow(t);
         int cId = 0;
         int cA = 1;
         int cB = 2;
@@ -170,7 +171,7 @@ public class RowTestIT extends ITBase
         niceRow.put(cB, 0L);
         niceRow.put(cC, 0L);
         // Create initial legacy row
-        LegacyRowWrapper legacyRow = new LegacyRowWrapper(session(), niceRow.toRowData(), store());
+        LegacyRowWrapper legacyRow = new LegacyRowWrapper(niceRow.getRowDef(), niceRow.toRowData());
         assertEquals(0L, legacyRow.get(cA));
         assertEquals(0L, legacyRow.get(cB));
         assertEquals(0L, legacyRow.get(cC));

@@ -770,7 +770,7 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
 
     private TestRow vendorRow(long vid, long vx)
     {
-        TestRow vendor = new TestRow(session(), vendorId, store());
+        TestRow vendor = createTestRow(vendorId);
         vendor.put(v_vid1, vid);
         vendor.put(v_vid2, vid);
         vendor.put(v_vx, vx);
@@ -780,7 +780,7 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
 
     private TestRow customerRow(long cid, long vid, long cx)
     {
-        TestRow customer = new TestRow(session(), customerId, store());
+        TestRow customer = createTestRow(customerId);
         customer.put(c_cid1, cid);
         customer.put(c_cid2, cid);
         customer.put(c_vid1, vid);
@@ -792,7 +792,7 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     
     private TestRow orderRow(TestRow customer, long oid, long cid, long ox, long priority, long when)
     {
-        TestRow order = new TestRow(session(), orderId, store());
+        TestRow order = createTestRow(orderId);
         order.put(o_oid1, oid);
         order.put(o_oid2, oid);
         order.put(o_cid1, cid);
@@ -809,7 +809,7 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     
     private TestRow itemRow(TestRow customer, TestRow order, long iid, long oid, long ix)
     {
-        TestRow item = new TestRow(session(), itemId, store());
+        TestRow item = createTestRow(itemId);
         item.put(i_iid1, iid);
         item.put(i_iid2, iid);
         item.put(i_oid1, oid);

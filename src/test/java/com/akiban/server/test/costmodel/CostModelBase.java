@@ -35,6 +35,7 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.test.ApiTestBase;
 import com.akiban.server.test.it.qp.TestRow;
@@ -105,7 +106,7 @@ public class CostModelBase extends ApiTestBase
 
     protected RowBase row(int tableId, Object... values /* alternating field position and value */)
     {
-        NiceRow niceRow = new NiceRow(session(), tableId, store());
+        NewRow niceRow = createNewRow(tableId);
         int i = 0;
         while (i < values.length) {
             int position = (Integer) values[i++];
