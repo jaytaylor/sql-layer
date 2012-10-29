@@ -214,10 +214,10 @@ public class IndexScanLexicographicIT extends OperatorITBase
     @Test
     public void test_HiMoreConstrainedThanLo() throws Exception
     {
-        NewRow loRow = new NiceRow(session(), t, store());
+        NewRow loRow = createNewRow(t);
         loRow.put(1, 1); // a = 1
         RowData loRowData = loRow.toRowData();
-        NewRow hiRow = new NiceRow(session(), t, store());
+        NewRow hiRow = createNewRow(t);
         hiRow.put(1, 1); // a = 1
         hiRow.put(2, 18); // b = 18
         RowData hiRowData = hiRow.toRowData();

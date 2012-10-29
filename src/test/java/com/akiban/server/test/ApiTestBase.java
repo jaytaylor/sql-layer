@@ -996,11 +996,7 @@ public class ApiTestBase {
     }
 
     public NewRow createNewRow(int tableId, Object... columns) {
-        return createNewRow(session(), store(), tableId, columns);
-    }
-
-    public static NewRow createNewRow(Session session, Store store, int tableId, Object... columns) {
-        NewRow row = new NiceRow(session, tableId, store);
+        NewRow row = new NiceRow(tableId, getRowDef(tableId));
         for (int i=0; i < columns.length; ++i) {
             if (columns[i] != UNDEF) {
                 row.put(i, columns[i] );

@@ -763,7 +763,7 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
 
     private TestRow vendorRow(long vid, long vx)
     {
-        TestRow vendor = new TestRow(session(), vendorId, store());
+        TestRow vendor = createTestRow(vendorId);
         vendor.put(v_vid1, vid);
         vendor.put(v_vid2, vid);
         vendor.put(v_vx, vx);
@@ -773,7 +773,7 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
 
     private TestRow customerRow(long vid, long cid, long cx)
     {
-        TestRow customer = new TestRow(session(), customerId, store());
+        TestRow customer = createTestRow(customerId);
         customer.put(c_vid1, vid);
         customer.put(c_vid2, vid);
         customer.put(c_cid1, cid);
@@ -785,7 +785,7 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
 
     private TestRow orderRow(long vid, long cid, long oid, long ox, long priority, long when)
     {
-        TestRow order = new TestRow(session(), orderId, store());
+        TestRow order = createTestRow(orderId);
         order.put(o_vid1, vid);
         order.put(o_vid2, vid);
         order.put(o_cid1, cid);
@@ -803,7 +803,7 @@ public class MultiColumnKeyUpdateCascadingKeysIT extends KeyUpdateBase
 
     private TestRow itemRow(long vid, long cid, long oid, long iid, long ix)
     {
-        TestRow item = new TestRow(session(), itemId, store());
+        TestRow item = createTestRow(itemId);
         item.put(i_vid1, vid);
         item.put(i_vid2, vid);
         item.put(i_cid1, cid);

@@ -301,9 +301,17 @@ public abstract class KeyUpdateBase extends ITBase {
         return indexEntries;
     }
 
+    protected TestRow createTestRow(int tableId) {
+        return new TestRow(tableId, getRowDef(tableId), store());
+    }
+
+    protected TestRow createTestRow(RowDef rowDef) {
+        return new TestRow(rowDef.getRowDefId(), rowDef, store());
+    }
+
     protected TestRow copyRow(TestRow row)
     {
-        TestRow copy = new TestRow(session(), row.getTableId(), store());
+        TestRow copy = createTestRow(row.getTableId());
         for (Map.Entry<Integer, Object> entry : row.getFields().entrySet()) {
             copy.put(entry.getKey(), entry.getValue());
         }
@@ -328,7 +336,7 @@ public abstract class KeyUpdateBase extends ITBase {
 
     protected final TestRow row(RowDef table, Object... values)
     {
-        TestRow row = new TestRow(session(), table.getRowDefId(), store());
+        TestRow row = createTestRow(table);
         int column = 0;
         for (Object value : values) {
             if (value instanceof Integer) {
@@ -342,7 +350,7 @@ public abstract class KeyUpdateBase extends ITBase {
 
     protected TestRow row(TestRow parent, RowDef table, Object... values)
     {
-        TestRow row = new TestRow(session(), table.getRowDefId(), store());
+        TestRow row = createTestRow(table);
         int column = 0;
         for (Object value : values) {
             if (value instanceof Integer) {
@@ -356,7 +364,7 @@ public abstract class KeyUpdateBase extends ITBase {
 
     protected TestRow row(TestRow parent, TestRow grandparent, RowDef table, Object... values)
     {
-        TestRow row = new TestRow(session(), table.getRowDefId(), store());
+        TestRow row = createTestRow(table);
         int column = 0;
         for (Object value : values) {
             if (value instanceof Integer) {

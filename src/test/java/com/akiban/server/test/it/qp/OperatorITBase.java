@@ -313,7 +313,7 @@ public class OperatorITBase extends ITBase
 
     protected RowBase row(int tableId, Object... values /* alternating field position and value */)
     {
-        NiceRow niceRow = new NiceRow(session(), tableId, store());
+        NewRow niceRow = createNewRow(tableId);
         int i = 0;
         while (i < values.length) {
             int position = (Integer) values[i++];
