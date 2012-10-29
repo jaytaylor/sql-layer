@@ -192,14 +192,14 @@ public final class PValue implements PValueSource, PValueTarget {
     @Override
     public final byte[] getBytes() {
         checkUnderlying(PUnderlying.BYTES);
-        assertHaveRawState();
+        checkRawState();
         return bVal;
     }
 
     @Override
     public String getString() {
         checkUnderlying(PUnderlying.STRING);
-        assertHaveRawState();
+        checkRawState();
         return (String) oCache;
     }
 
@@ -299,11 +299,11 @@ public final class PValue implements PValueSource, PValueTarget {
 
     private long getIVal(PUnderlying expectedType) {
         checkUnderlying(expectedType);
-        assertHaveRawState();
+        checkRawState();
         return iVal;
     }
 
-    private void assertHaveRawState() {
+    private void checkRawState() {
         switch (state) {
         case UNSET:
         case CACHE_ONLY:
