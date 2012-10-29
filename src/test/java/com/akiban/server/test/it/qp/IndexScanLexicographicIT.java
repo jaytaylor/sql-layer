@@ -232,7 +232,7 @@ public class IndexScanLexicographicIT extends OperatorITBase
                                 new SetColumnSelector(1),
                                 hiRowData,
                                 new SetColumnSelector(1, 2));
-        request.executeDML(dml(), session(), store());
+        request.executeDML(dml(), session());
     }
 
     // For use by this class
