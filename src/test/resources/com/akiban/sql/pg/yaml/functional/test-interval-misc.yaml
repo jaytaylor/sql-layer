@@ -8,6 +8,7 @@
     (1, '00:00:00', '2000-01-01', '2000-01-01 00:00:00'),
     (2, '00:00:01', '2000-01-02', '2000-01-01 00:00:01')
 
+# Bad syntax
 ---
 - Statement: SELECT time_field + INTERVAL FROM t
 - error: !select-engine { all: [42000], sys-mysql: [1064] }
@@ -30,7 +31,7 @@
 ---
 - Statement: SELECT time_field + interval '0' MICROSECOND FROM t
     WHERE ind = 1
-- output: [['00:00:00']]
+- output: !select-engine { all: [['00:00:00']], newtypes: [[NULL]] }
 ---
 - Statement: SELECT datetime_field + interval '0' MICROSECOND FROM t
     WHERE ind = 1
@@ -38,11 +39,11 @@
 ---
 - Statement: SELECT time_field + interval '2000000' MICROSECOND FROM t
     WHERE ind = 1
-- output: [['00:00:02']]
+- output: !select-engine { all: [['00:00:02']], newtypes: [[NULL]] }
 ---
 - Statement: SELECT time_field + interval '1.0' SECOND_MICROSECOND FROM t
     WHERE ind = 1
-- output: [['00:00:01']]
+- output: !select-engine { all: [['00:00:01']], newtypes: [[NULL]] }
 ---
 - Statement: SELECT datetime_field + interval '1.0' SECOND_MICROSECOND FROM t
     WHERE ind = 1
@@ -50,7 +51,7 @@
 ---
 - Statement: SELECT time_field + interval '02:03.0' MINUTE_MICROSECOND FROM t
     WHERE ind = 1
-- output: [['00:02:03']]
+- output: !select-engine { all: [['00:02:03']], newtypes:[[NULL]] }
 ---
 - Statement: SELECT datetime_field + interval '02:03.0' MINUTE_MICROSECOND
     FROM t WHERE ind = 1
@@ -58,11 +59,11 @@
 ---
 - Statement: SELECT time_field + interval '01:02:03.0' HOUR_MICROSECOND
     FROM t WHERE ind = 1
-- output: [['01:02:03']]
+- output: !select-engine { all: [['01:02:03']], newtypes: [[NULL]] }
 ---
 - Statement: SELECT time_field + interval '01:02:03.0' HOUR_MICROSECOND
     FROM t WHERE ind = 1
-- output: [['01:02:03']]
+- output: !select-engine { all: [['01:02:03']], newtypes: [[NULL]] }
 ---
 - Statement: SELECT datetime_field + interval '5 01:02:03.0' DAY_MICROSECOND
     FROM t WHERE ind = 1
@@ -74,7 +75,7 @@
 ---
 - Statement: SELECT time_field + interval '01:02' MINUTE_SECOND
     FROM t WHERE ind = 1
-- output: [['00:01:02']]
+- output: !select-engine { all: [['00:01:02']], newtypes: [[NULL]] }
 ---
 - Statement: SELECT datetime_field + interval '01:02' MINUTE_SECOND
     FROM t WHERE ind = 1
@@ -82,7 +83,7 @@
 ---
 - Statement: SELECT time_field + interval '01:02:03' HOUR_SECOND
     FROM t WHERE ind = 1
-- output: [['01:02:03']]
+- output: !select-engine { all: [['01:02:03']], newtypes: [[NULL]] }
 ---
 - Statement: SELECT datetime_field + interval '01:02:03' HOUR_SECOND
     FROM t WHERE ind = 1
@@ -94,7 +95,7 @@
 ---
 - Statement: SELECT time_field + interval '01:02' HOUR_MINUTE
     FROM t WHERE ind = 1
-- output: [['01:02:00']]
+- output: !select-engine { all: [['01:02:00']], newtypes: [[NULL]] }
 ---
 - Statement: SELECT datetime_field + interval '01:02' HOUR_MINUTE
     FROM t WHERE ind = 1
@@ -136,11 +137,11 @@
 # Case insensitivity
 ---
 - Statement: SELECT time_field + INTERVAL '1' MiNuTe FROM t WHERE ind = 1
-- output: [['00:01:00']]
+- output: !select-engine { all: [['00:01:00']], newtypes: [[NULL]] }
 ---
 - Statement: SELECT time_field + INTERVAL '03:05' minute to SECOND FROM t
     WHERE ind = 1
-- output: [['00:03:05']]
+- output: !select-engine { all: [['00:03:05']], newtypes: [[NULL]] }
 ---
 - Statement: SELECT date_field + INTERVAL '1-2' yEaR tO mOnTh FROM t
     WHERE ind = 1
