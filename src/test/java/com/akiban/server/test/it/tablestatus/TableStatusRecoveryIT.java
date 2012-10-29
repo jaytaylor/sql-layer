@@ -85,7 +85,7 @@ public class TableStatusRecoveryIT extends ITBase {
         // Transaction so we can directly read the table status
         transactionally(new Callable<Void>() {
             public Void call() throws Exception {
-                final TableStatus status = store().getRowDef(session(), tableId).getTableStatus();
+                final TableStatus status = getRowDef(tableId).getTableStatus();
                 assertEquals(20000, status.getRowCount());
                 writeRows(createNewRow(tableId, 20001, "This is record # ", -1));
                 assertEquals(20001, status.getUniqueID());
@@ -154,7 +154,7 @@ public class TableStatusRecoveryIT extends ITBase {
     private int getOrdinal(final int tableId) throws Exception {
         return transactionally(new Callable<Integer>() {
             public Integer call() throws Exception {
-                return store().getRowDef(session(), tableId).getTableStatus().getOrdinal();
+                return getRowDef(tableId).getTableStatus().getOrdinal();
             }
         });
     }
