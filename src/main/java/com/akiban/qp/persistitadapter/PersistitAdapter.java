@@ -341,14 +341,19 @@ public class PersistitAdapter extends StoreAdapter
                ((cause != null) && (cause instanceof InterruptedIOException || cause instanceof InterruptedException));
     }
 
-    public static void handlePersistitException(Session session, PersistitException e)
+    public static RuntimeException wrapPersistitException(Session session, PersistitException e)
     {
         assert e != null;
         if (isFromInterruption(e)) {
-            throw new QueryCanceledException(session);
+            return new QueryCanceledException(session);
         } else {
-            throw new PersistitAdapterException(e);
+            return new PersistitAdapterException(e);
         }
+    }
+
+    public static void handlePersistitException(Session session, PersistitException e)
+    {
+        throw wrapPersistitException(session, e);
     }
 
     public void returnExchange(Exchange exchange)

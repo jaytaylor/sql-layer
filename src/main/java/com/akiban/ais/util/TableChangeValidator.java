@@ -67,7 +67,11 @@ public class TableChangeValidator {
         METADATA_NOT_NULL,
         INDEX,
         TABLE,
-        GROUP
+        GROUP;
+
+        public boolean isNoneOrMetaData() {
+            return (this == NONE) || (this == METADATA) || (this == METADATA_NOT_NULL);
+        }
     }
 
     public static class TableColumnNames {
@@ -432,7 +436,7 @@ public class TableChangeValidator {
                                                       droppedSequences));
 
         if(!isParentChanged() && !primaryKeyChanged) {
-            for(Index index : newTable.getIndexes()) {
+            for(Index index : newTable.getIndexesIncludingInternal()) {
                 String oldName = index.getIndexName().getName();
                 String newName = findNewName(indexChanges, oldName);
                 if(!containsOldOrNew(indexChanges, oldName)) {

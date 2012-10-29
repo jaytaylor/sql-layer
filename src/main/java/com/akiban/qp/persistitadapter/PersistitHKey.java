@@ -31,7 +31,7 @@ import com.akiban.server.PersistitKeyPValueSource;
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.persistit.Key;
 
@@ -191,9 +191,9 @@ public class PersistitHKey implements HKey
         if (pSources == null) {
             assert underlyingTypes == null;
             pSources = new PersistitKeyPValueSource[hKeyMetadata.nColumns()];
-            underlyingTypes = new PUnderlying[hKeyMetadata.nColumns()];
+            underlyingTypes = new TInstance[hKeyMetadata.nColumns()];
             for (int c = 0; c < hKeyMetadata.nColumns(); c++) {
-                underlyingTypes[c] = hKeyMetadata.column(c).tInstance().typeClass().underlyingType();
+                underlyingTypes[c] = hKeyMetadata.column(c).tInstance();
             }
         }
         if (pSources[i] == null) {
@@ -218,5 +218,5 @@ public class PersistitHKey implements HKey
     private PersistitKeyValueSource[] sources;
     private PersistitKeyPValueSource[] pSources;
     private AkType[] types;
-    private PUnderlying[] underlyingTypes;
+    private TInstance[] underlyingTypes;
 }

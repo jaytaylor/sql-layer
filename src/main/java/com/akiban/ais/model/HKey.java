@@ -138,13 +138,14 @@ public class HKey
                     // keyDepth
                     keyDepth = new int[segments.size() + 1];
                     int hKeySegments = segments.size();
-                    for (int hKeySegment = 0; hKeySegment <= hKeySegments; hKeySegment++) {
+                    for (int hKeySegment = 0; hKeySegment < hKeySegments; hKeySegment++) {
                         this.keyDepth[hKeySegment] =
                             hKeySegment == 0
-                            ? 0
+                            ? 1
                             // + 1 to account for the ordinal
                             : keyDepth[hKeySegment - 1] + 1 + segments.get(hKeySegment - 1).columns().size();
                     }
+                    keyDepth[hKeySegments] = columns.length + hKeySegments;
                 }
             }
         }

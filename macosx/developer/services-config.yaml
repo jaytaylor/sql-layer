@@ -6,6 +6,7 @@
     - com.akiban.server.service.stats.StatisticsService # Stats gathering
     - com.akiban.server.service.jmx.JmxRegistryService  # Turns on JMX for other services
     - com.akiban.sql.pg.PostgresService                 # Akiban SQL
+    - com.akiban.sql.embedded.EmbeddedJDBCService       # Embedded JDBC
     - com.akiban.server.service.log4jconfig.Log4JConfigurationService
     - com.akiban.server.service.instrumentation.InstrumentationService
     - com.akiban.server.service.is.BasicInfoSchemaTablesService

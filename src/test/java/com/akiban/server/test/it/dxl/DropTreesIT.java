@@ -36,7 +36,10 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.UnsupportedDropException;
 import com.akiban.server.service.tree.TreeLink;
+import com.akiban.server.store.PersistitStoreSchemaManager;
+import com.akiban.server.store.SchemaManager;
 import com.akiban.server.test.it.ITBase;
+import com.persistit.exception.PersistitException;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -65,8 +68,21 @@ public final class DropTreesIT extends ITBase {
     }
 
     private void expectNoTree(Object hasTreeLink) throws Exception {
+        cleanupTrees();
         TreeLink link = treeLink(hasTreeLink);
         assertFalse("tree should not exist: " + link.getTreeName(), treeExists(link));
+    }
+
+    void cleanupTrees() {
+        SchemaManager schemaManager = serviceManager().getSchemaManager();
+        if(schemaManager instanceof PersistitStoreSchemaManager) {
+            PersistitStoreSchemaManager pssm = (PersistitStoreSchemaManager)schemaManager;
+            try {
+                pssm.cleanupDelayedTrees(session());
+            } catch(PersistitException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private static Index createSimpleIndex(Table curTable, String columnName) {

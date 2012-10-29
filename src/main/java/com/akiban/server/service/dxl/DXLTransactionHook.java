@@ -26,27 +26,15 @@
 
 package com.akiban.server.service.dxl;
 
-import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.tree.TreeService;
-import com.akiban.util.MultipleCauseException;
-import com.persistit.Transaction;
-import com.persistit.exception.PersistitException;
+import com.akiban.server.service.transaction.TransactionService;
 
 public class DXLTransactionHook implements DXLFunctionsHook {
-    private static final Session.StackKey<Runnable> AFTER_COMMIT_RUNNABLES
-            = Session.StackKey.stackNamed("AFTER_COMMIT_RUNNABLES");
     private static final Session.StackKey<Boolean> AUTO_TRX_CLOSE = Session.StackKey.stackNamed("AUTO_TRX_CLOSE");
-    private final TreeService treeService;
+    private final TransactionService txnService;
 
-    public static void addCommitSuccessCallback(Session session, Runnable callback) {
-        if (session.isEmpty(AUTO_TRX_CLOSE))
-            throw new IllegalStateException("not within a transaction");
-        session.push(AFTER_COMMIT_RUNNABLES, callback);
-    }
-    
-    public DXLTransactionHook(TreeService treeService) {
-        this.treeService = treeService;
+    public DXLTransactionHook(TransactionService txnService) {
+        this.txnService = txnService;
     }
 
     @Override
@@ -54,16 +42,10 @@ public class DXLTransactionHook implements DXLFunctionsHook {
         if(!needsTransaction(function)) {
             return;
         }
-        Transaction trx = treeService.getTransaction(session);
-        if(!trx.isActive()) {
-            try {
-                trx.begin();
-                session.push(AUTO_TRX_CLOSE, Boolean.TRUE);
-            } catch(PersistitException e) {
-                throw new PersistitAdapterException(e);
-            }
-        }
-        else {
+        if(!txnService.isTransactionActive(session)) {
+            txnService.beginTransaction(session);
+            session.push(AUTO_TRX_CLOSE, Boolean.TRUE);
+        } else {
             session.push(AUTO_TRX_CLOSE, Boolean.FALSE);
         }
     }
@@ -75,13 +57,7 @@ public class DXLTransactionHook implements DXLFunctionsHook {
         }
         Boolean doAuto = session.pop(AUTO_TRX_CLOSE);
         if(doAuto != null && doAuto) {
-            Transaction trx = treeService.getTransaction(session);
-            if(trx.isActive()) {
-                if(!trx.isRollbackPending()) {
-                    trx.rollback();
-                }
-                trx.end();
-            }
+            txnService.rollbackTransaction(session);
         }
     }
 
@@ -92,30 +68,7 @@ public class DXLTransactionHook implements DXLFunctionsHook {
         }
         Boolean doAuto = session.pop(AUTO_TRX_CLOSE);
         if(doAuto != null && doAuto) {
-            Transaction trx = treeService.getTransaction(session);
-            if(trx.isActive()) {
-                try {
-                    trx.commit();
-                } catch(PersistitException e) {
-                    throw new PersistitAdapterException(e);
-                }
-                finally {
-                    trx.end();
-                }
-                if (throwable == null) {
-                    RuntimeException callbackExceptions = null;
-                    for (Runnable callback; (callback = session.pop(AFTER_COMMIT_RUNNABLES)) != null; ) {
-                        try {
-                            callback.run();
-                        }
-                        catch (RuntimeException e) {
-                            callbackExceptions = MultipleCauseException.combine(callbackExceptions, e);
-                        }
-                    }
-                    if (callbackExceptions != null)
-                        throw callbackExceptions;
-                }
-            }
+            txnService.commitTransaction(session);
         }
     }
     

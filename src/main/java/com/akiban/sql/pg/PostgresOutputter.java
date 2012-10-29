@@ -47,7 +47,8 @@ public abstract class PostgresOutputter<T>
         PostgresServerSession server = context.getServer();
         messenger = server.getMessenger();
         columnTypes = statement.getColumnTypes();
-        ncols = columnTypes.size();
+        if (columnTypes != null)
+            ncols = columnTypes.size();
         encoder = new ServerValueEncoder(messenger.getEncoding(), 
                                          server.getZeroDateTimeBehavior());
     }

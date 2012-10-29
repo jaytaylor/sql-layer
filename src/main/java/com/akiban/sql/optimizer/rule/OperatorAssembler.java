@@ -1082,6 +1082,7 @@ public class OperatorAssembler extends BaseRule
                                                         API.ordering(), // TODO: what ordering?
                                                         selector,
                                                         usePValues);
+                indexRowType = indexRowType.physicalRowType();
                 stream.rowType = indexRowType;
             }
             else if (indexScan.getConditionRange() == null) {
@@ -1994,13 +1995,29 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected IndexBound assembleSpatialIndexPoint(SingleIndexScan index, ExpressionNode y, ExpressionNode x, ColumnExpressionToIndex fieldOffsets) {
-            TPreparedExpression[] pkeys = usePValues ? new TPreparedExpression[2] : null;
-            Expression[] keys = usePValues ? null : new Expression[2];
-            newPartialAssembler.assembleExpressionInto(y, fieldOffsets, pkeys, 0);
-            oldPartialAssembler.assembleExpressionInto(y, fieldOffsets, keys, 0);
-            newPartialAssembler.assembleExpressionInto(x, fieldOffsets, pkeys, 1);
-            oldPartialAssembler.assembleExpressionInto(x, fieldOffsets, keys, 1);
-            return getIndexBound(index.getIndex(), keys, pkeys, 2);
+            List<ExpressionNode> equalityComparands = index.getEqualityComparands();
+            int nkeys = 0;
+            if (equalityComparands != null)
+                nkeys = equalityComparands.size();
+            nkeys += 2;
+            TPreparedExpression[] pkeys = usePValues ? new TPreparedExpression[nkeys] : null;
+            Expression[] keys = usePValues ? null : new Expression[nkeys];
+            int kidx = 0;
+            if (equalityComparands != null) {
+                for (ExpressionNode comp : equalityComparands) {
+                    if (comp != null) {
+                        newPartialAssembler.assembleExpressionInto(comp, fieldOffsets, pkeys, kidx);
+                        oldPartialAssembler.assembleExpressionInto(comp, fieldOffsets, keys, kidx);
+                    }
+                    kidx++;
+                }
+            }
+            newPartialAssembler.assembleExpressionInto(y, fieldOffsets, pkeys, kidx);
+            oldPartialAssembler.assembleExpressionInto(y, fieldOffsets, keys, kidx++);
+            newPartialAssembler.assembleExpressionInto(x, fieldOffsets, pkeys, kidx);
+            oldPartialAssembler.assembleExpressionInto(x, fieldOffsets, keys, kidx++);
+            assert (kidx == nkeys);
+            return getIndexBound(index.getIndex(), keys, pkeys, nkeys);
         }
 
         /** Return a column selector that enables the first <code>nkeys</code> fields

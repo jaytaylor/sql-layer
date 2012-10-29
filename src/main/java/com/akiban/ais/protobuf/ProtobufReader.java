@@ -384,7 +384,6 @@ public class ProtobufReader {
             if(pbIndex.hasTreeName()) {
                 tableIndex.setTreeName(pbIndex.getTreeName());
             }
-            loadIndexColumns(userTable, tableIndex, pbIndex.getColumnsList());
             if (pbIndex.hasIndexMethod()) {
                 switch (pbIndex.getIndexMethod()) {
                 case Z_ORDER_LAT_LON:
@@ -399,6 +398,7 @@ public class ProtobufReader {
                     break;
                 }
             }
+            loadIndexColumns(userTable, tableIndex, pbIndex.getColumnsList());
         }
     }
 
@@ -496,6 +496,12 @@ public class ProtobufReader {
             return Routine.CallingConvention.JAVA;
         case LOADABLE_PLAN: 
             return Routine.CallingConvention.LOADABLE_PLAN;
+        case SQL_ROW: 
+            return Routine.CallingConvention.SQL_ROW;
+        case SCRIPT_FUNCTION_JAVA: 
+            return Routine.CallingConvention.SCRIPT_FUNCTION_JAVA;
+        case SCRIPT_BINDINGS: 
+            return Routine.CallingConvention.SCRIPT_BINDINGS;
         }
     }
 
@@ -547,10 +553,7 @@ public class ProtobufReader {
 
     private void loadExternalRoutines(String schema, Collection<AISProtobuf.Routine> pbRoutines) {
         for (AISProtobuf.Routine pbRoutine : pbRoutines) {
-            if (pbRoutine.hasClassName()) {
-                SQLJJar sqljJar = null;
-                String className = pbRoutine.getClassName();
-                String methodName = null;
+            if (pbRoutine.hasClassName() || pbRoutine.hasMethodName()) {
                 Routine routine = destAIS.getRoutine(schema, pbRoutine.getRoutineName());
                 if (routine == null) {
                     throw new ProtobufReadException(
@@ -558,6 +561,9 @@ public class ProtobufReader {
                             String.format("%s not found", pbRoutine.getRoutineName())
                     );
                 }
+                SQLJJar sqljJar = null;
+                String className = null;
+                String methodName = null;
                 if (pbRoutine.hasJarName()) {
                     sqljJar = destAIS.getSQLJJar(pbRoutine.getJarName().getSchemaName(),
                                                  pbRoutine.getJarName().getTableName());
@@ -568,6 +574,8 @@ public class ProtobufReader {
                         );
                     }
                 }
+                if (pbRoutine.hasClassName())
+                    className = pbRoutine.getClassName();
                 if (pbRoutine.hasMethodName())
                     methodName = pbRoutine.getMethodName();
                 routine.setExternalName(sqljJar, className, methodName);

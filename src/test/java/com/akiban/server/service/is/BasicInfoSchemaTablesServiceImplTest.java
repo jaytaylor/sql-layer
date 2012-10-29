@@ -61,6 +61,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.SortedMap;
 
 import static com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
@@ -790,6 +791,21 @@ public class BasicInfoSchemaTablesServiceImplTest {
 
         @Override
         public void rollbackAIS(Session session, AkibanInformationSchema replacementAIS, Map<TableName, Integer> savedOrdinals, Collection<String> schemaNames) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean treeRemovalIsDelayed() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void treeWasRemoved(Session session, String schemaName, String treeName) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Set<String> getTreeNames() {
             throw new UnsupportedOperationException();
         }
     }

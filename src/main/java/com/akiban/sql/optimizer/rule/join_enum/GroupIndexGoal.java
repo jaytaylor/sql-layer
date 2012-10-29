@@ -44,6 +44,7 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
+import com.akiban.server.geophile.Space;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.Types3Switch;
@@ -201,8 +202,8 @@ public class GroupIndexGoal implements Comparator<BaseScan>
      * @return <code>false</code> if the index is useless.
      */
     public boolean usable(SingleIndexScan index) {
-        if (index.getIndex().isSpatial()) return spatialUsable(index);
         int nequals = insertLeadingEqualities(index, conditions);
+        if (index.getIndex().isSpatial()) return spatialUsable(index, nequals);
         List<ExpressionNode> indexExpressions = index.getColumns();
         if (nequals < indexExpressions.size()) {
             ExpressionNode indexExpression = indexExpressions.get(nequals);
@@ -301,13 +302,41 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     private static void setColumnsAndOrdering(SingleIndexScan index) {
         List<IndexColumn> indexColumns = index.getAllColumns();
         int ncols = indexColumns.size();
+        int firstSpatialColumn, dimensions;
+        SpecialIndexExpression.Function spatialFunction;
+        if (index.getIndex().isSpatial()) {
+            TableIndex spatialIndex = (TableIndex)index.getIndex();
+            firstSpatialColumn = spatialIndex.firstSpatialArgument();
+            dimensions = spatialIndex.dimensions();
+            assert (dimensions == Space.LAT_LON_DIMENSIONS);
+            spatialFunction = SpecialIndexExpression.Function.Z_ORDER_LAT_LON;
+        }
+        else {
+            firstSpatialColumn = Integer.MAX_VALUE;
+            dimensions = 0;
+            spatialFunction = null;
+        }
         List<OrderByExpression> orderBy = new ArrayList<OrderByExpression>(ncols);
         List<ExpressionNode> indexExpressions = new ArrayList<ExpressionNode>(ncols);
-        for (IndexColumn indexColumn : indexColumns) {
-            ExpressionNode indexExpression = getIndexExpression(index, indexColumn);
+        int i = 0;
+        while (i < ncols) {
+            ExpressionNode indexExpression;
+            boolean ascending;
+            if (i == firstSpatialColumn) {
+                List<ExpressionNode> operands = new ArrayList<ExpressionNode>(dimensions);
+                for (int j = 0; j < dimensions; j++) {
+                    operands.add(getIndexExpression(index, indexColumns.get(i++)));
+                }
+                indexExpression = new SpecialIndexExpression(spatialFunction, operands);
+                ascending = true;
+            }
+            else {
+                IndexColumn indexColumn = indexColumns.get(i++);
+                indexExpression = getIndexExpression(index, indexColumn);
+                ascending = indexColumn.isAscending();
+            }
             indexExpressions.add(indexExpression);
-            orderBy.add(new OrderByExpression(indexExpression,
-                    indexColumn.isAscending()));
+            orderBy.add(new OrderByExpression(indexExpression, ascending));
         }
         index.setColumns(indexExpressions);
         index.setOrdering(orderBy);
@@ -569,7 +598,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
 
     /** Get an expression form of the given index column. */
     protected static ExpressionNode getIndexExpression(IndexScan index,
-                                                IndexColumn indexColumn) {
+                                                       IndexColumn indexColumn) {
         Column column = indexColumn.getColumn();
         UserTable indexTable = column.getUserTable();
         for (TableSource table = index.getLeafMostTable();
@@ -732,13 +761,13 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             int ncols = Math.min(firstOrdering.size(), secondOrdering.size());
             List<Column> result = new ArrayList<Column>(ncols);
             for (int i=0; i < ncols; ++i) {
-                ColumnExpression firstCol = (ColumnExpression) firstOrdering.get(i);
-                ColumnExpression secondCol = (ColumnExpression) secondOrdering.get(i);
-                if ((firstCol == null) || (secondCol == null))
+                ExpressionNode firstCol = firstOrdering.get(i);
+                ExpressionNode secondCol = secondOrdering.get(i);
+                if (!(firstCol instanceof ColumnExpression) || !(secondCol instanceof ColumnExpression))
                     break;
-                if (!equivs.areEquivalent(firstCol, secondCol))
+                if (!equivs.areEquivalent((ColumnExpression) firstCol, (ColumnExpression) secondCol))
                     break;
-                result.add(firstCol.getColumn());
+                result.add(((ColumnExpression)firstCol).getColumn());
             }
             return result;
         }
@@ -1435,16 +1464,18 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     /** For now, a spatial index is a special kind of table index on
      * Z-order of two coordinates.
      */
-    public boolean spatialUsable(SingleIndexScan index) {
-        setColumnsAndOrdering(index);
-
+    public boolean spatialUsable(SingleIndexScan index, int nequals) {
         // There are two cases to recognize:
         // ORDER BY znear(column_lat, column_lon, start_lat, start_lon), which
         // means fan out from that center in Z-order.
         // WHERE distance_lat_lon(column_lat, column_lon, start_lat, start_lon) <= radius
-
-        List<ExpressionNode> indexExpressions = index.getColumns();
-        assert (indexExpressions.size() > 2) : index; // lat, lon, hkey...
+        
+        ExpressionNode nextColumn = index.getColumns().get(nequals);
+        if (!(nextColumn instanceof SpecialIndexExpression)) 
+            return false;       // Did not have enough equalities to get to spatial part.
+        SpecialIndexExpression indexExpression = (SpecialIndexExpression)nextColumn;
+        assert (indexExpression.getFunction() == SpecialIndexExpression.Function.Z_ORDER_LAT_LON);
+        List<ExpressionNode> operands = indexExpression.getOperands();
 
         boolean matched = false;
         for (ConditionExpression condition : conditions) {
@@ -1454,13 +1485,13 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 switch (ccond.getOperation()) {
                 case LE:
                 case LT:
-                    centerRadius = matchDistanceLatLon(indexExpressions,
+                    centerRadius = matchDistanceLatLon(operands,
                                                        ccond.getLeft(), 
                                                        ccond.getRight());
                     break;
                 case GE:
                 case GT:
-                    centerRadius = matchDistanceLatLon(indexExpressions,
+                    centerRadius = matchDistanceLatLon(operands,
                                                        ccond.getRight(), 
                                                        ccond.getLeft());
                     break;
@@ -1477,7 +1508,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             if (sortAllowed && (queryGoal.getOrdering() != null)) {
                 List<OrderByExpression> orderBy = queryGoal.getOrdering().getOrderBy();
                 if (orderBy.size() == 1) {
-                    ExpressionNode center = matchZnear(indexExpressions,
+                    ExpressionNode center = matchZnear(operands,
                                                        orderBy.get(0));
                     if (center != null) {
                         index.setLowComparand(center, true);
@@ -1490,6 +1521,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 return false;
         }
 
+        index.setCovering(determineCovering(index));
         index.setCostEstimate(estimateCostSpatial(index));
         return true;
     }
@@ -1573,9 +1605,13 @@ public class GroupIndexGoal implements Comparator<BaseScan>
 
         estimator.spatialIndex(index);
 
-        estimator.flatten(tables, index.getLeafMostTable(), requiredTables);
+        if (!index.isCovering()) {
+            estimator.flatten(tables, index.getLeafMostTable(), requiredTables);
+        }
 
-        Collection<ConditionExpression> unhandledConditions = conditions;
+        Collection<ConditionExpression> unhandledConditions = new HashSet<ConditionExpression>(conditions);
+        if (index.getConditions() != null)
+            unhandledConditions.removeAll(index.getConditions());
         if (!unhandledConditions.isEmpty()) {
             estimator.select(unhandledConditions,
                              selectivityConditions(unhandledConditions, requiredTables));

@@ -252,7 +252,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private void doMetadataChange(Session session, QueryContext context, UserTable origTable, UserTable newDefinition,
                                   Collection<ChangedTableDescription> changedTables, boolean nullChange,
                                   AlterTableHelper helper) {
-        helper.dropAffectedGroupIndexes(session, this, origTable, false);
+        helper.dropAffectedGroupIndexes(session, this, origTable);
         if(nullChange) {
             // Check new definition
             final ConstraintChecker checker = new UserTableRowChecker(newDefinition);
@@ -288,7 +288,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     private void doIndexChange(Session session, UserTable origTable, UserTable newDefinition,
                                Collection<ChangedTableDescription> changedTables, AlterTableHelper helper) {
-        helper.dropAffectedGroupIndexes(session, this, origTable, false);
+        helper.dropAffectedGroupIndexes(session, this, origTable);
         schemaManager().alterTableDefinitions(session, changedTables);
         UserTable newTable = getUserTable(session, newDefinition.getName());
         List<Index> indexes = helper.findNewIndexesToBuild(newTable);
@@ -305,7 +305,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final AkibanInformationSchema origAIS = getAIS(session);
         final UserTable origTable = origAIS.getUserTable(tableName);
 
-        helper.dropAffectedGroupIndexes(session, this, origTable, true);
+        helper.dropAffectedGroupIndexes(session, this, origTable);
 
         // Save previous state so it can be scanned
         final Schema origSchema = SchemaCache.globalSchema(origAIS);
@@ -344,7 +344,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 } else {
                     TInstance oldInst = oldCol.tInstance();
                     TPreparedExpression pExp = new TPreparedField(oldInst, oldPosition);
-                    if(oldInst.typeClass() != newInst.typeClass()) {
+                    if(!oldInst.equalsExcludingNullable(newInst)) {
                         TCast cast = t3Registry.getCastsResolver().cast(oldInst.typeClass(), newInst.typeClass());
                         pExp = new TCastExpression(pExp, cast, newInst, queryContext);
                     }
@@ -496,9 +496,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 }
             }
 
-            for(Map.Entry<IndexName, List<TableColumnNames>> entry : affectedGroupIndexes.entrySet()) {
-                if(entry.getValue().isEmpty()) {
-                    indexesToDrop.add(origTable.getGroup().getIndex(entry.getKey().getName()));
+            if(!changeLevel.isNoneOrMetaData()) {
+                Group group = origTable.getGroup();
+                // entry.getValue().isEmpty() => index going away, non-empty will get rebuilt with new tree
+                for(Map.Entry<IndexName, List<TableColumnNames>> entry : affectedGroupIndexes.entrySet()) {
+                    indexesToDrop.add(group.getIndex(entry.getKey().getName()));
                 }
             }
 

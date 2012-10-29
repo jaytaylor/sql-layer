@@ -43,6 +43,7 @@ import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.t3expressions.T3RegistryService;
@@ -195,6 +196,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     @Override
     public TreeService getTreeService() {
         return reqs.treeService();
+    }
+
+    @Override
+    public TransactionService getTransactionService() {
+        return reqs.txnService();
     }
 
     @Override
@@ -369,6 +375,16 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
                 transaction.afterUpdate(transactionMode == ServerStatement.TransactionMode.WRITE_STEP_ISOLATED);
                 break;
             }
+        }
+    }
+
+    protected void inheritFromCall() {
+        ServerCallContextStack.Entry call = ServerCallContextStack.current();
+        if (call != null) {
+            ServerSessionBase server = (ServerSessionBase)call.getContext().getServer();
+            defaultSchemaName = server.defaultSchemaName;
+            transaction = server.transaction;
+            transactionDefaultReadOnly = server.transactionDefaultReadOnly;
         }
     }
 

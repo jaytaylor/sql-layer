@@ -132,10 +132,6 @@ public abstract class AbstractRow implements Row
         StringBuilder builder = new StringBuilder();
         builder.append(this.getClass().getSimpleName()).append('[');
         RowType rowType = rowType();
-        if (rowType instanceof IndexRowType) {
-            // Takes care of spatial indexes
-            rowType = ((IndexRowType) rowType).physicalRowType();
-        }
         final int fieldsCount = rowType.nFields();
         AkibanAppender appender = AkibanAppender.of(builder);
         for (int i=0; i < fieldsCount; ++i) {
