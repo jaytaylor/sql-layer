@@ -26,8 +26,6 @@
 
 package com.akiban.server.rowdata;
 
-import com.akiban.server.types3.pvalue.PValueSource;
-
 public final class RowDataPValueSource extends AbstractRowDataPValueSource implements RowDataSource {
 
     // RowDataSource interface

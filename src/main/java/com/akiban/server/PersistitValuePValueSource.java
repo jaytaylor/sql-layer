@@ -214,5 +214,4 @@ public final class PersistitValuePValueSource implements PValueSource {
         map.put(String.class, PUnderlying.STRING);
         return map;
     }
-
 }
