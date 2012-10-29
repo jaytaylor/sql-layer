@@ -270,7 +270,8 @@ public class PersistitStoreIndexStatistics
 
     private boolean selectedIndex(Session session, RowData rowData, long tableId, long indexId)
     {
-        LegacyRowWrapper row = new LegacyRowWrapper(session, rowData, store);
+        RowDef rowDef = store.getRowDef(session, rowData.getRowDefId());
+        LegacyRowWrapper row = new LegacyRowWrapper(rowDef, rowData);
         long rowTableId = (Long) row.get(0);
         long rowIndexId = (Long) row.get(1);
         return rowTableId == tableId && rowIndexId == indexId;

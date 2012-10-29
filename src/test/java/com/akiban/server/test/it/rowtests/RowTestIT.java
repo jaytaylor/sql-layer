@@ -135,7 +135,7 @@ public class RowTestIT extends ITBase
         niceRow.put(cA, 200L);
         niceRow.put(cB, 300L);
         niceRow.put(cC, null);
-        LegacyRowWrapper legacyRow = new LegacyRowWrapper(session(), niceRow.toRowData(), store());
+        LegacyRowWrapper legacyRow = new LegacyRowWrapper(niceRow.getRowDef(), niceRow.toRowData());
         assertEquals(100L, legacyRow.get(cId));
         assertEquals(200L, legacyRow.get(cA));
         assertEquals(300L, legacyRow.get(cB));
@@ -171,7 +171,7 @@ public class RowTestIT extends ITBase
         niceRow.put(cB, 0L);
         niceRow.put(cC, 0L);
         // Create initial legacy row
-        LegacyRowWrapper legacyRow = new LegacyRowWrapper(session(), niceRow.toRowData(), store());
+        LegacyRowWrapper legacyRow = new LegacyRowWrapper(niceRow.getRowDef(), niceRow.toRowData());
         assertEquals(0L, legacyRow.get(cA));
         assertEquals(0L, legacyRow.get(cB));
         assertEquals(0L, legacyRow.get(cC));

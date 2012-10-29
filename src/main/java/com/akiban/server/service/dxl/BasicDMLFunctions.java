@@ -546,6 +546,13 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
+    public NewRow wrapRowData(Session session, RowData rowData) {
+        logger.trace("wrapping in NewRow: {}", rowData);
+        RowDef rowDef = ddlFunctions.getRowDef(session, rowData.getRowDefId());
+        return new LegacyRowWrapper(rowDef, rowData);
+    }
+
+    @Override
     public NewRow convertRowData(Session session, RowData rowData) {
         logger.trace("converting to NewRow: {}", rowData);
         RowDef rowDef = ddlFunctions.getRowDef(session, rowData.getRowDefId());

@@ -79,13 +79,13 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
                 IndexBound lo = null;
                 if (start != null) {
                     assert start.getRowDefId() == queryRootTable.getTableId();
-                    NewRow loRow = new LegacyRowWrapper(session, start, store);
+                    NewRow loRow = new LegacyRowWrapper(rowDef, start);
                     lo = new IndexBound(new NewRowBackedIndexRow(queryRootType, loRow, predicateIndex), indexStartSelector);
                 }
                 IndexBound hi = null;
                 if (end != null) {
                     assert end.getRowDefId() == queryRootTable.getTableId();
-                    NewRow hiRow = new LegacyRowWrapper(session, end, store);
+                    NewRow hiRow = new LegacyRowWrapper(rowDef, end);
                     hi = new IndexBound(new NewRowBackedIndexRow(queryRootType, hiRow, predicateIndex), indexEndSelector);
                 }
                 boolean loInclusive = start != null && (scanFlags & (SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE)) == 0;

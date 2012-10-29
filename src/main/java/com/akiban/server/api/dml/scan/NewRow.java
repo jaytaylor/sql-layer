@@ -31,8 +31,6 @@ import java.util.Map;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.store.Store;
 
 /**
  * <p>A map-like interface for defining rows. This interface does not specify any inherent binding to a row definition;
@@ -153,10 +151,5 @@ public abstract class NewRow {
     protected NewRow(RowDef rowDef)
     {
         this.rowDef = rowDef;
-    }
-
-    protected static RowDef rowDef(Session session, int rowDefId, Store store)
-    {
-        return store.getRowDef(session, rowDefId);
     }
 }

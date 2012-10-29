@@ -206,6 +206,14 @@ public interface DMLFunctions {
     RowData convertNewRow(NewRow row);
 
     /**
+     * Wraps a RowData in a NewRow. This conversion requires a RowDef, which the caller may not have, but which
+     * implementers of this interface should.
+     * @param rowData the row to wrap
+     * @return a NewRow representation of the RowData
+     */
+    NewRow wrapRowData(Session session, RowData rowData);
+
+    /**
      * Converts a RowData to a NewRow. This conversion requires a RowDef, which the caller may not have, but which
      * implementers of this interface should.
      * @param rowData the row to convert

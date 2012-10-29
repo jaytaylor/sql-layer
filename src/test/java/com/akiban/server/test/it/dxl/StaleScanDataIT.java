@@ -75,8 +75,8 @@ public final class StaleScanDataIT extends ITBase
         // - There is a non-closed ScanData whose index contains columns from field positions that don't exist
         //   in the old/new rows, (set up using the t1 scan).
         dml().updateRow(session(),
-                        new LegacyRowWrapper(session(), createNewRow(t2, 2, 2).toRowData(), store()),
-                        new LegacyRowWrapper(session(), createNewRow(t2, 2, 999).toRowData(), store()),
+                        dml().wrapRowData(session(), createNewRow(t2, 2, 2).toRowData()),
+                        dml().wrapRowData(session(), createNewRow(t2, 2, 999).toRowData()),
                         null);
         dml().closeCursor(session(), cursorId);
         assertTrue(dml().getCursors(session()).isEmpty());

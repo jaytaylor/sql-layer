@@ -71,7 +71,7 @@ public abstract class TreeRecordVisitor
     {
         RowData rowData = new RowData(EMPTY_BYTE_ARRAY);
         store.expandRowData(exchange, rowData);
-        return new LegacyRowWrapper(session, rowData, store);
+        return new LegacyRowWrapper(store.getRowDef(session, rowData.getRowDefId()), rowData);
     }
 
     private Object[] key(RowDef rowDef)
