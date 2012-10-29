@@ -27,6 +27,7 @@
 package com.akiban.sql.embedded;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.server.AkServerInterface;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerSessionBase;
 import com.akiban.sql.server.ServerSessionTracer;
@@ -220,6 +221,10 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         return ((commitMode == CommitMode.AUTO) && 
                 (transaction != null) &&
                 openResultSets.isEmpty());
+    }
+
+    protected AkServerInterface getAkServer() {
+        return reqs.akServer();
     }
 
     /* Wrapper */

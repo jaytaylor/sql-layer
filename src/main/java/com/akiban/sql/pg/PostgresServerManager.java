@@ -26,9 +26,11 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.server.ServerServiceRequirements;
 
+import com.akiban.server.AkServerInterface;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
@@ -52,19 +54,21 @@ public class PostgresServerManager implements PostgresService, Service, JmxManag
     private PostgresServer server = null;
 
     @Inject
-    public PostgresServerManager(ConfigurationService config,
+    public PostgresServerManager(AkServerInterface akServer,
                                  DXLService dxlService,
                                  InstrumentationService instrumentation,
                                  SessionService sessionService,
                                  Store store,
                                  TreeService treeService,
                                  FunctionsRegistry functionsRegistry,
+                                 ConfigurationService config,
                                  IndexStatisticsService indexStatisticsService,
                                  T3RegistryService overloadResolutionService,
-                                 RoutineLoader routineLoader) {
-        reqs = new ServerServiceRequirements(dxlService, instrumentation, 
+                                 RoutineLoader routineLoader,
+                                 TransactionService txnService) {
+        reqs = new ServerServiceRequirements(akServer, dxlService, instrumentation, 
                 sessionService, store, treeService, functionsRegistry, 
-                config, indexStatisticsService, overloadResolutionService, routineLoader);
+                config, indexStatisticsService, overloadResolutionService, routineLoader, txnService);
     }
 
     @Override

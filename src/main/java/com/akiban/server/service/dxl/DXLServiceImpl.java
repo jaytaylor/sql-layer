@@ -39,6 +39,7 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
@@ -65,6 +66,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     private final IndexStatisticsService indexStatisticsService;
     private final ConfigurationService configService;
     private final T3RegistryService t3Registry;
+    private final TransactionService txnService;
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
@@ -163,7 +165,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     protected List<DXLFunctionsHook> getHooks() {
         List<DXLFunctionsHook> hooks = new ArrayList<DXLFunctionsHook>();
         hooks.add(DXLReadWriteLockHook.only());
-        hooks.add(new DXLTransactionHook(treeService));
+        hooks.add(new DXLTransactionHook(txnService));
         return hooks;
     }
 
@@ -174,7 +176,8 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     @Inject
     public DXLServiceImpl(SchemaManager schemaManager, Store store, TreeService treeService, SessionService sessionService,
-                          IndexStatisticsService indexStatisticsService, ConfigurationService configService, T3RegistryService t3Registry) {
+                          IndexStatisticsService indexStatisticsService, ConfigurationService configService, T3RegistryService t3Registry,
+                          TransactionService txnService) {
         this.schemaManager = schemaManager;
         this.store = store;
         this.treeService = treeService;
@@ -182,6 +185,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
         this.indexStatisticsService = indexStatisticsService;
         this.configService = configService;
         this.t3Registry = t3Registry;
+        this.txnService = txnService;
     }
 
     // for use by subclasses

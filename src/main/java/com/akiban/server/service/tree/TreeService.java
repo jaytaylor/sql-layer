@@ -69,6 +69,7 @@ public interface TreeService extends KeyCreator {
 
     void releaseExchange(Session session, Exchange exchange);
 
+    /** @deprecated Use the TransactionService */
     Transaction getTransaction(Session session);
 
     void visitStorage(Session session, TreeVisitor visitor, String treeName) throws PersistitException;

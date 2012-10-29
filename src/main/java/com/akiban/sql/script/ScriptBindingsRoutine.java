@@ -36,6 +36,9 @@ import com.akiban.server.service.routines.ScriptEvaluator;
 import com.akiban.server.service.routines.ScriptPool;
 
 import javax.script.Bindings;
+import java.sql.ResultSet;
+import java.util.ArrayDeque;
+import java.util.Queue;
 import java.util.List;
 import java.util.Map;
 
@@ -125,7 +128,26 @@ public class ScriptBindingsRoutine extends ServerJavaRoutine
         }
         return index;
     }
-    
+
+    @Override
+    public Queue<ResultSet> getDynamicResultSets() {
+        Queue<ResultSet> result = new ArrayDeque<ResultSet>();
+        if (evalResult instanceof ResultSet) {
+            result.add((ResultSet)evalResult);
+        }
+        else if (evalResult instanceof List) {
+            for (Object obj : (List)evalResult) {
+                if (obj instanceof ResultSet) {
+                    result.add((ResultSet)obj);
+                }
+            }
+        }
+        else if (getRhino16Interface().isScriptable(evalResult)) {
+            getRhino16Interface().getDynamicResultSets(result, evalResult);
+        }
+        return result;
+    }
+
     @Override
     public void pop(boolean success) {
         pool.put(evaluator, success);
@@ -190,6 +212,23 @@ public class ScriptBindingsRoutine extends ServerJavaRoutine
             catch (Exception ex) {
             }
             return null;
+        }
+
+        public static final int MAX_LENGTH = 100; // Just in case.
+
+        public void getDynamicResultSets(Queue<ResultSet> result, Object evalResult) {
+            try {
+                for (int i = 0; i < MAX_LENGTH; i++) {
+                    Object elem = getInt.invoke(evalResult, i, null);
+                    if (elem == NOT_FOUND) break;
+                    if (nativeJavaObject.isInstance(elem))
+                        elem = unwrap.invoke(elem);
+                    if (elem instanceof ResultSet)
+                        result.add((ResultSet)elem);
+                }
+            }
+            catch (Exception ex) {
+            }
         }
     }
 

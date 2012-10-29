@@ -29,13 +29,13 @@ package com.akiban.sql.embedded;
 import com.akiban.qp.operator.Cursor;
 
 import java.sql.ResultSet;
-import java.util.Deque;
+import java.util.Queue;
 
 class ExecuteResults
 {
     private int updateCount;
     private Cursor cursor;
-    private Deque<ResultSet> additionalResultSets;
+    private Queue<ResultSet> additionalResultSets;
 
     /** No results. */
     public ExecuteResults() {
@@ -59,7 +59,7 @@ class ExecuteResults
     }
 
     /** Stored procedure returning result sets of unknown provenance. */
-    public ExecuteResults(Deque<ResultSet> resultSets) {
+    public ExecuteResults(Queue<ResultSet> resultSets) {
         this.updateCount = -1;
         this.additionalResultSets = resultSets;
     }
@@ -76,7 +76,7 @@ class ExecuteResults
         return (updateCount < 0);
     }
     
-    public Deque<ResultSet> getAdditionalResultSets() {
+    public Queue<ResultSet> getAdditionalResultSets() {
         return additionalResultSets;
     }
     

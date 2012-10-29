@@ -75,18 +75,12 @@ public class OperatorITBase extends ITBase
 
     @Before
     public void before_beginTransaction() throws PersistitException {
-        transaction = treeService().getTransaction(session());
-        transaction.begin();
+        txnService().beginTransaction(session());
     }
 
     @After
     public void after_endTransaction() throws PersistitException {
-        try {
-            transaction.commit();
-        }
-        finally {
-            transaction.end();
-        }
+        txnService().commitTransaction(session());
     }
 
     @Before

@@ -28,6 +28,9 @@ package com.akiban.sql.server;
 
 import com.akiban.ais.model.Parameter;
 
+import java.sql.ResultSet;
+import java.util.Queue;
+
 /** A Routine that uses Java native data types in its invocation API. */
 public abstract class ServerJavaRoutine
 {
@@ -51,7 +54,7 @@ public abstract class ServerJavaRoutine
     public abstract void setInParameter(Parameter parameter, ServerJavaValues values, int index);
     public abstract void invoke();
     public abstract Object getOutParameter(Parameter parameter, int index);
-    // TODO: Something about list of dynamic result sets.
+    public abstract Queue<ResultSet> getDynamicResultSets();
 
     public void push() {
         ServerCallContextStack.push(context, invocation);

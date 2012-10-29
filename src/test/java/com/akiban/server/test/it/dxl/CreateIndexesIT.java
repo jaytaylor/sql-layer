@@ -62,6 +62,7 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.dxl.DXLServiceImpl;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
@@ -537,8 +538,8 @@ public final class CreateIndexesIT extends ITBase {
         @Inject
         public StartHookDxlService(SchemaManager schemaManager, Store store, TreeService treeService,
                                    SessionService sessionService, IndexStatisticsService indexStatisticsService,
-                                   ConfigurationService configService, T3RegistryService t3Registry) {
-            super(schemaManager, store, treeService, sessionService, indexStatisticsService, configService, t3Registry);
+                                   ConfigurationService configService, T3RegistryService t3Registry, TransactionService txnService) {
+            super(schemaManager, store, treeService, sessionService, indexStatisticsService, configService, t3Registry, txnService);
         }
 
         @Override

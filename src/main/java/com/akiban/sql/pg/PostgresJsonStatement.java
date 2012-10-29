@@ -46,13 +46,19 @@ public class PostgresJsonStatement extends PostgresOperatorStatement
                                  boolean usePValues) {
         super(resultOperator, resultRowType,
               // Looks like just one unlimited VARCHAR to the client.
-              Collections.singletonList("JSON"),
-              Collections.singletonList(new PostgresType(PostgresType.TypeOid.VARCHAR_TYPE_OID,
-                                                         (short)-1, -1, AkType.VARCHAR,
-                                                         MString.VARCHAR.instance(false))),
-              parameterTypes,
-              usePValues);
+              jsonColumnNames(), jsonColumnTypes(),
+              parameterTypes, usePValues);
         this.resultColumns = resultColumns;
+    }
+
+    public static List<String> jsonColumnNames() {
+        return Collections.singletonList("JSON");
+    }
+
+    public static List<PostgresType> jsonColumnTypes() {
+        return Collections.singletonList(new PostgresType(PostgresType.TypeOid.VARCHAR_TYPE_OID,
+                                                          (short)-1, -1, AkType.VARCHAR,
+                                                          MString.VARCHAR.instance(false)));
     }
 
     @Override
