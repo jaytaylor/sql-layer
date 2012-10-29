@@ -52,6 +52,7 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 import com.akiban.util.AkibanAppender;
 
+import com.google.common.primitives.UnsignedBytes;
 import java.math.BigDecimal;
 
 public class MBigDecimal extends TClassBase {
@@ -123,6 +124,7 @@ public class MBigDecimal extends TClassBase {
     {
         if(!sourceA.hasCacheValue() && !sourceB.hasCacheValue()) // both have bytearrays
         {
+            //UnsignedBytes.lexicographicalComparator().
             byte bytesA[] = sourceA.getBytes();
             int preA = instanceA.attribute(Attrs.PRECISION);
             int scaleA = instanceA.attribute(Attrs.SCALE);
@@ -135,10 +137,11 @@ public class MBigDecimal extends TClassBase {
             int decPointB = preB - scaleB;
             boolean bSigned = bytesB[0] >= 0;
 
+            
+            // optimise easy cases:
             // if the two are of opposite sign, there's no need for comparison
             if (bSigned ^ aSigned)
                 return aSigned ? -1 : 1; // a < 0 < b or a > 0 > b
-            
             int d;
             if (decPointA < decPointB)          // less digits
                 return aSigned ? 1 : -1;
@@ -146,24 +149,12 @@ public class MBigDecimal extends TClassBase {
                 return aSigned? -1 : 1;
             else
             {
+                // TODO:
+                // implement this correctly
+                // For now, just convert the arrays to BigDecimalWrapper
+                // and use the provided compareTo()
                 
-                int limit = Math.min(bytesA.length, bytesB.length);
-                for (int n = 0; n < limit; ++n)
-                    if( (d = bytesA[n] - bytesB[n]) != 0)
-                        return d;
-                if (bytesA.length < bytesB.length)
-                {
-                    for (int n = limit; n < bytesB.length; ++n)
-                        if (bytesB[n] != 0)
-                            return aSigned ? 1 : -1;
-                }
-                else if (bytesA.length > bytesB.length)
-                {
-                    for (int n = limit; n < bytesA.length; ++n)
-                        if (bytesA[n] != 0)
-                            return aSigned ? -1 : 1;
-                }
-                return 0;
+                return getWrapper(sourceA, instanceA).compareTo(getWrapper(sourceB, instanceB));
             }
         }
         else

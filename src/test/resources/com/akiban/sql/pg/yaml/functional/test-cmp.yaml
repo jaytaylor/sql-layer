@@ -2,14 +2,21 @@
 ---
 - Statement: SET newtypes to 'true';
 ---
-- CreateTable: t (c DECIMAL(4, 2), d DECIMAL(4, 2));
+- CreateTable: t (c DECIMAL(6, 2), d DECIMAL(6, 2));
 ---
-- Statement: INSERT INTO t values  (2.12, 2.13), (-2.13, 2.12), (-4.56, -4.55),
-                                   (-5.46, -6.00), (-5.67, -5.68), (6.01, -5.00),
-                                   (0, 0.12), (0, -0.12);
+- Statement: INSERT INTO t values  
+               (2.12, 2.13), (-2.13, 2.12), (-4.56, -4.55),
+               (-5.46, -6.00), (-5.67, -5.68), (6.01, -5.00),
+               (-00.00, 0.12), (0, -0.12), (10.4, 9.12),
+               (-10.01, -10.10), (-100.12, -9.00), (-1000.12, -99.12),
+               (3855.00, 4080.00), (-3855.00, -4080.00);
 ---
 - Statement: SELECT c < d from t;
-- output: [['true'], ['true'], ['true'], ['false'], ['false'], ['false']]
+- output: [['true'], ['true'], ['true'],
+           ['false'], ['false'], ['false'],
+           ['true'], ['false'], ['false'],
+           ['false'], ['true'], ['true'],
+           ['true'], ['false']]
 ---
 - Statement: SET newtypes to DEFAULT
 ...
