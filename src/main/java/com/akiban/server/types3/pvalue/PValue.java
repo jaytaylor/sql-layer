@@ -192,14 +192,14 @@ public final class PValue implements PValueSource, PValueTarget {
     @Override
     public final byte[] getBytes() {
         checkUnderlying(PUnderlying.BYTES);
-        internalUpdateRaw();
+        checkRawState();
         return bVal;
     }
 
     @Override
     public String getString() {
         checkUnderlying(PUnderlying.STRING);
-        internalUpdateRaw();
+        checkRawState();
         return (String) oCache;
     }
 
@@ -299,20 +299,17 @@ public final class PValue implements PValueSource, PValueTarget {
 
     private long getIVal(PUnderlying expectedType) {
         checkUnderlying(expectedType);
-        internalUpdateRaw();
+        checkRawState();
         return iVal;
     }
 
-    private void internalUpdateRaw() {
+    private void checkRawState() {
         switch (state) {
         case UNSET:
-            throw new IllegalStateException("no value set");
+        case CACHE_ONLY:
+            throw new IllegalStateException("no raw value set: state is " + state);
         case NULL:
             throw new NullValueException();
-        case CACHE_ONLY:
-            // TODO
-            assert false;
-            // fall through
         case VAL_ONLY:
         case VAL_AND_CACHE:
             break;
