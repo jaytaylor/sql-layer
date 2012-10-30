@@ -35,6 +35,7 @@ import static junit.framework.Assert.*;
 
 import java.io.StringWriter;
 import java.io.File;
+import java.util.concurrent.Callable;
 
 public class PersistitStoreIndexStatisticsIT extends PostgresServerFilesITBase
 {
@@ -57,6 +58,16 @@ public class PersistitStoreIndexStatisticsIT extends PostgresServerFilesITBase
     
     @Test
     public void testLoadDump() throws Exception {
+        transactionallyUnchecked(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                loadDump();
+                return null;
+            }
+        });
+    }
+
+    public void loadDump() throws Exception {
         service.loadIndexStatistics(session(), SCHEMA_NAME, YAML_FILE);
         service.clearCache();
         File tempFile = File.createTempFile("stats", ".yaml");
