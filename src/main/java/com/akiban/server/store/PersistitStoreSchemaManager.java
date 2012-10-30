@@ -40,6 +40,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.akiban.ais.AISCloner;
@@ -160,6 +161,15 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     private static enum GenValue { NEW, SNAPSHOT }
     private static enum GenMap { PUT_NEW, NO_PUT }
+    private static class AISAndTimestamp {
+        public final AkibanInformationSchema ais;
+        public final long timestamp;
+
+        public AISAndTimestamp(AkibanInformationSchema ais, long timestamp) {
+            this.ais = ais;
+            this.timestamp = timestamp;
+        }
+    }
 
     public static final String MAX_AIS_SIZE_PROPERTY = "akserver.max_ais_size_bytes";
     public static final String SKIP_AIS_UPGRADE_PROPERTY = "akserver.skip_ais_upgrade";
@@ -196,6 +206,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private AtomicLong delayedTreeIDGenerator;
     private SortedMap<Long,AkibanInformationSchema> aisMap;
     private ReentrantReadWriteLock aisMapLock;
+    private AtomicReference<AISAndTimestamp> latestAISCache;
+    private TransactionService.Callback latestAISCacheClearCallback;
 
     @Inject
     public PersistitStoreSchemaManager(ConfigurationService config, SessionService sessionService,
@@ -403,12 +415,14 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         });
 
         final AkibanInformationSchema newAIS = removeTablesFromAIS(session, tables, sequences);
-        saveAISChangeWithRowDefs(session, newAIS, schemas);
-        //deleteTableStatuses(tableIDs);
+        try {
+            saveAISChangeWithRowDefs(session, newAIS, schemas);
+            deleteTableStatuses(tableIDs);
+        } catch(PersistitException e) {
+            throw wrapPersistitException(session, e);
+        }
     }
 
-    // Can no longer be called on drop now that AIS is transactional.
-    // TableStatus are around as long as needed (attached to RowDefs) and IDs don't get reused until restart
     private void deleteTableStatuses(List<Integer> tableIDs) throws PersistitException {
         for(Integer id : tableIDs) {
             treeService.getTableStatusCache().drop(id);
@@ -577,20 +591,31 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             return local;
         }
 
-        final long generation = getGenerationSnapshot(session);
-        sharedMapClaim();
-        try {
-            local = aisMap.get(generation);
-        } finally {
-            sharedMapRelease();
+        // If the cache's commit timestamp (guaranteed latest) is strictly before our start timestamp, we can use that.
+        long startTimestamp = txnService.getTransactionStartTimestamp(session);
+        AISAndTimestamp cached = latestAISCache.get();
+        if(cached.timestamp < startTimestamp) {
+            local = cached.ais;
         }
 
-        // If still null then AIS wasn't in map. Need to reload from disk.
+        // Couldn't use the cache, do an always accurate accumulator lookup and check in map.
+        long generation = 0;
+        if(local == null) {
+            generation = getGenerationSnapshot(session);
+            sharedMapClaim();
+            try {
+                local = aisMap.get(generation);
+            } finally {
+                sharedMapRelease();
+            }
+        }
+
+        // Wasn't in map so need to reload from disk.
         // Should be 1) very rare and 2) fairly quick, so just do it under write lock to avoid duplicate work/entries
         if(local == null) {
             exclusiveMapClaim();
             try {
-                // Look again while under exclusive
+                // Double check while while under exclusive
                 local = aisMap.get(generation);
                 if(local == null) {
                     try {
@@ -735,6 +760,15 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         this.aisMap = new TreeMap<Long, AkibanInformationSchema>();
         this.aisMapLock = new ReentrantReadWriteLock();
 
+        this.latestAISCache = new AtomicReference<AISAndTimestamp>(new AISAndTimestamp(null, Long.MIN_VALUE));
+        final AISAndTimestamp invalidSentinel  = new AISAndTimestamp(null, Long.MAX_VALUE);
+        this.latestAISCacheClearCallback = new TransactionService.Callback() {
+            @Override
+            public void run(Session session, long timestamp) {
+                updateLatestAISCache(invalidSentinel);
+            }
+        };
+
         AkibanInformationSchema newAIS = transactionally(
                 sessionService.createSession(),
                 new ThrowingCallable<AkibanInformationSchema>() {
@@ -769,6 +803,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         this.delayedTreeIDGenerator = null;
         this.aisMap = null;
         this.aisMapLock = null;
+        this.latestAISCache = null;
+        this.latestAISCacheClearCallback = null;
     }
 
     @Override
@@ -889,13 +925,21 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         }
     }
 
-    private void validateAndFreeze(Session session, AkibanInformationSchema newAIS, GenValue genValue, GenMap genMap) {
+    private void validateAndFreeze(Session session, final AkibanInformationSchema newAIS, GenValue genValue, GenMap genMap) {
         session.remove(SESSION_AIS_KEY); // Remove old cache
 
         newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary(); // TODO: Often redundant, cleanup
         long generation = (genValue == GenValue.NEW) ? getNextGeneration(session) : getGenerationSnapshot(session);
         newAIS.setGeneration(generation);
         newAIS.freeze();
+
+        txnService.addPreCommitCallback(session, latestAISCacheClearCallback);
+        txnService.addCommitCallback(session, new TransactionService.Callback() {
+            @Override
+            public void run(Session session, long timestamp) {
+                updateLatestAISCache(new AISAndTimestamp(newAIS, timestamp));
+            }
+        });
 
         if(genMap == GenMap.PUT_NEW) {
             saveNewAISInMap(newAIS);
@@ -912,6 +956,15 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             aisMap.put(generation, ais);
         } finally {
             aisMapLock.writeLock().unlock();
+        }
+    }
+
+    private void updateLatestAISCache(final AISAndTimestamp newCache) {
+        while (true) {
+            final AISAndTimestamp latest = latestAISCache.get();
+            if((latest.timestamp > newCache.timestamp) || latestAISCache.compareAndSet(latest, newCache)) {
+                break;
+            }
         }
     }
 
@@ -1246,7 +1299,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     private static final TransactionService.Callback CLEAR_SESSION_KEY_CALLBACK = new TransactionService.Callback() {
         @Override
-        public void run(Session session) {
+        public void run(Session session, long timestamp) {
             session.remove(SESSION_AIS_KEY);
         }
     };
