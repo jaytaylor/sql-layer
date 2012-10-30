@@ -403,15 +403,11 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         });
 
         final AkibanInformationSchema newAIS = removeTablesFromAIS(session, tables, sequences);
-        try {
-            saveAISChangeWithRowDefs(session, newAIS, schemas);
-            // Success, remaining cleanup
-            deleteTableStatuses(tableIDs);
-        } catch (PersistitException ex) {
-            throw new PersistitAdapterException(ex);
-        }
+        saveAISChangeWithRowDefs(session, newAIS, schemas);
     }
 
+    // Can no longer be called on drop now that AIS is transactional.
+    // TableStatus are around as long as needed (attached to RowDefs) and IDs don't get reused until restart
     private void deleteTableStatuses(List<Integer> tableIDs) throws PersistitException {
         for(Integer id : tableIDs) {
             treeService.getTableStatusCache().drop(id);
@@ -678,28 +674,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         List<TableName> emptyList = new ArrayList<TableName>(0);
         final AkibanInformationSchema newAIS = removeTablesFromAIS(session, emptyList, Collections.singleton(sequence.getSequenceName()));
         saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(sequence.getSchemaName()));
-    }
-
-    // TODO: Method is a complete hack, failed DDL should be handled more gracefully
-    @Override
-    public void rollbackAIS(Session session, AkibanInformationSchema replaceAIS,
-                            Map<TableName, Integer> savedOrdinals, Collection<String> schemaNames) {
-        Transaction txn = treeService.getTransaction(session);
-        if(txn.isActive() && !txn.isRollbackPending()) {
-            txn.rollback();
-        }
-        txn.end();
-        try {
-            txn.begin();
-            for(Map.Entry<TableName, Integer> entry : savedOrdinals.entrySet()) {
-                UserTable table = replaceAIS.getUserTable(entry.getKey());
-                treeService.getTableStatusCache().setOrdinal(table.getTableId(), entry.getValue());
-            }
-            AkibanInformationSchema newAIS = AISCloner.clone(replaceAIS);
-            saveAISChangeWithRowDefs(session, newAIS, schemaNames);
-        } catch(PersistitException e) {
-            throw new PersistitAdapterException(e);
-        }
     }
 
     @Override
