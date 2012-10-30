@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.test.it.store;
+package com.akiban.server.store;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -32,11 +32,13 @@ import org.junit.Test;
 
 import java.util.Set;
 
-import static com.akiban.server.test.it.store.SchemaManagerIT.*;
 import static com.akiban.server.store.PersistitStoreSchemaManager.SerializationType;
 import static org.junit.Assert.assertEquals;
 
 public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerITBase {
+    private final static String SCHEMA = "my_schema";
+    private final static String T1_NAME = "t1";
+    private final static String T1_DDL = "id int NOT NULL, PRIMARY KEY(id)";
     private static final TableName TABLE_NAME = new TableName(SCHEMA, T1_NAME);
     private static final int ROW_COUNT = 10;
 
@@ -111,6 +113,13 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
         treeService().getDb().getTransaction().end();
 
         safeRestart();
+        expectFullRows(tid, rows);
+    }
+
+    @Test
+    public void aisCanBeReloaded() {
+        createAndLoad();
+        pssm.clearAISMap();
         expectFullRows(tid, rows);
     }
 }
