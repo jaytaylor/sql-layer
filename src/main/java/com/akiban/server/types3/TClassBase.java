@@ -72,7 +72,7 @@ public abstract class TClassBase extends TClass
          else {
              PUnderlying underlyingType = in.getUnderlyingType();
              if (underlyingType != PUnderlying.STRING && underlyingType != PUnderlying.BYTES) {
-                 // This isn't efficient, but it centralizes conversions of different inputs conveniently.
+                 // This isn't efficient, but it normalizes conversions of different inputs conveniently.
                  // This method isn't used in any tight loops, so some inefficiency is okay.
                  final String asString;
                  switch (underlyingType) {

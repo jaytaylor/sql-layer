@@ -28,6 +28,7 @@ package com.akiban.sql.embedded;
 
 import com.akiban.server.test.it.ITBase;
 
+import com.akiban.server.types3.Types3Switch;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -179,7 +180,14 @@ public class EmbeddedJDBCIT extends ITBase
         cstmt.setInt(1, 23);
         assertFalse("call returned results", cstmt.execute());
         assertEquals("sum result", 123, cstmt.getInt("sum"));
-        assertEquals("diff results", 77L, cstmt.getObject("diff"));
+        // we have to if-else it; a ternary expression will always try to make both a Long, it seems, even if
+        // we explicitly invoke Long.valueOf and Integer.valueOf.
+        Object diffExpected;
+        if (Types3Switch.ON)
+            diffExpected = 77;
+        else
+            diffExpected = 77L;
+        assertEquals("diff results", diffExpected, cstmt.getObject("diff"));
     }
 
     @Test
