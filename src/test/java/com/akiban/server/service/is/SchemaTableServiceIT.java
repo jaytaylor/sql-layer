@@ -30,6 +30,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.util.Collection;
+import java.util.concurrent.Callable;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -59,8 +60,13 @@ public final class SchemaTableServiceIT extends ITBase {
     private AkibanInformationSchema ais;
     
     @Before
-    public void getISTables () {
-        ais = serviceManager().getSchemaManager().getAis(session());
+    public void getISTables () throws Exception {
+        ais = transactionally(new Callable<AkibanInformationSchema>() {
+            @Override
+            public AkibanInformationSchema call() {
+                return serviceManager().getSchemaManager().getAis(session());
+            }
+        });
     }
     
     @Test
