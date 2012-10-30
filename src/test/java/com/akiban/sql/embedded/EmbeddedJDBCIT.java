@@ -113,6 +113,18 @@ public class EmbeddedJDBCIT extends ITBase
     }
 
     @Test
+    public void testPreparedBinary() throws Exception {
+        Connection conn = DriverManager.getConnection(CONNECTION_URL, SCHEMA_NAME, "");
+        PreparedStatement stmt = conn.prepareStatement("SELECT name FROM c WHERE AES_ENCRYPT(name, 'key') = ?");
+        stmt.setBytes(1, new byte[] { 1, 2, 3 });
+        assertTrue("has result set", stmt.execute());
+        ResultSet rs = stmt.getResultSet();
+        assertFalse("doesn't have first row", rs.next());
+        stmt.close();
+        conn.close();
+    }
+
+    @Test
     public void testNested() throws Exception {
         Connection conn = DriverManager.getConnection(CONNECTION_URL, SCHEMA_NAME, "");
         Statement stmt = conn.createStatement();
