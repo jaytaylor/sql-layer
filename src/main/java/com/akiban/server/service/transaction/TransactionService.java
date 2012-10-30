@@ -55,9 +55,7 @@ public interface TransactionService extends Service {
     /** Rollback the current transaction if open, otherwise do nothing. */
     void rollbackTransactionIfOpen(Session session);
 
-    /**
-     * @return current step for the open transaction.
-     */
+    /** @return current step for the open transaction. */
     int getTransactionStep(Session session);
 
     /**
@@ -72,15 +70,15 @@ public interface TransactionService extends Service {
      */
     int incrementTransactionStep(Session session);
 
-    /** Add a callback to be invoked upon successful prior to completing commit. */
+    /** Add a callback to be invoked upon prior to invoking commit. */
     void addPreCommitCallback(Session session, Callback callback);
-
-    /** Add callback to be invoked when the transactions ends, independent of commit/rollback or success/failure */
-    void addEndCallback(Session session, Callback callback);
 
     /** Add a callback to be invoked upon successful completion of commit. */
     void addCommitCallback(Session session, Callback callback);
 
     /** Add a callback to be invoked upon successful completion of commit. */
     void addRollbackCallback(Session session, Callback callback);
+
+    /** Add callback to be invoked when the transactions ends, independent of commit/rollback or success/failure */
+    void addEndCallback(Session session, Callback callback);
 }

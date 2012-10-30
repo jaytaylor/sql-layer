@@ -104,7 +104,7 @@ public final class Session
         }
         return deque.pollLast();
     }
-
+    
     public boolean isEmpty(StackKey<?> key) {
         Deque<?> deque = get( key.asKey() );
         return deque == null || deque.isEmpty();
