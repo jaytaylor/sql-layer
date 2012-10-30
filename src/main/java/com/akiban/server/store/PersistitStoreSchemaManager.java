@@ -179,6 +179,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     // Changed from 1 to 2 due to incompatibility related to index row changes (see bug 985007)
     private static final int PROTOBUF_PSSM_VERSION = 2;
 
+    private static final Session.Key<AkibanInformationSchema> SESSION_AIS_KEY = Session.Key.named("AIS_KEY");
+
     private static final String CREATE_SCHEMA_FORMATTER = "create schema if not exists `%s`;";
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class.getName());
 
@@ -573,6 +575,11 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     @Override
     public AkibanInformationSchema getAis(Session session) {
+        AkibanInformationSchema local = session.get(SESSION_AIS_KEY);
+        if(local != null) {
+            return local;
+        }
+
         final long generation;
         try {
             generation = getGenerationSnapshot(session);
@@ -585,6 +592,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             if(ais == null) {
                 throw new IllegalStateException("Unknown generation: " + generation); // TODO: load from disk
             }
+            session.put(SESSION_AIS_KEY, ais);
+            txnService.addEndCallback(session, CLEAR_SESSION_KEY_CALLBACK);
             return ais;
         } finally {
             aisMapLock.readLock().unlock();
@@ -904,6 +913,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         if(newGeneration) {
             saveAISInMap(newAIS);
         }
+        session.put(SESSION_AIS_KEY, newAIS);
     }
 
     private void saveAISInMap(AkibanInformationSchema ais) {
@@ -1192,21 +1202,22 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     private void transactionally(Session session, ThrowingRunnable runnable) {
-        Transaction txn = treeService.getTransaction(session);
+        txnService.beginTransaction(session);
         try {
-            txn.begin();
             runnable.run(session);
-            txn.commit();
+            txnService.commitTransaction(session);
         } catch(PersistitException e) {
             throw new PersistitAdapterException(e);
         } finally {
+            txnService.rollbackTransactionIfOpen(session);
             session.close();
-            if(txn.isActive()) {
-                if(!txn.isCommitted()) {
-                    txn.rollback();
-                }
-                txn.end();
-            }
         }
     }
+
+    private static final TransactionService.Callback CLEAR_SESSION_KEY_CALLBACK = new TransactionService.Callback() {
+        @Override
+        public void run(Session session) {
+            session.remove(SESSION_AIS_KEY);
+        }
+    };
 }
