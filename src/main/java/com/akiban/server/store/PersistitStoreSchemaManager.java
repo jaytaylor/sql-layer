@@ -168,8 +168,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         public final AtomicInteger refCount;
         public final AkibanInformationSchema ais;
 
-        public SharedAIS(int initialCount, AkibanInformationSchema ais) {
-            this.refCount = new AtomicInteger(initialCount);
+        public SharedAIS(AkibanInformationSchema ais) {
+            this.refCount = new AtomicInteger(0);
             this.ais = ais;
         }
 
@@ -632,7 +632,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         long startTimestamp = txnService.getTransactionStartTimestamp(session);
         AISAndTimestamp cached = latestAISCache.get();
         if(cached.timestamp < startTimestamp) {
-            local = cached.sAIS.acquire();
+            local = cached.sAIS;
         }
 
         // Couldn't use the cache, do an always accurate accumulator lookup and check in map.
@@ -642,9 +642,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             sharedMapClaim();
             try {
                 local = aisMap.get(generation);
-                if(local != null) {
-                    local.acquire();
-                }
             } finally {
                 sharedMapRelease();
             }
@@ -657,11 +654,9 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             try {
                 // Double check while while under exclusive
                 local = aisMap.get(generation);
-                if(local != null) {
-                    local.acquire();
-                } else {
+                if(local == null) {
                     try {
-                        local = loadAISFromStorage(session, GenValue.SNAPSHOT, GenMap.PUT_NEW); // Comes out acquired
+                        local = loadAISFromStorage(session, GenValue.SNAPSHOT, GenMap.PUT_NEW);
                         buildRowDefCache(local.ais);
                     } catch(PersistitException e) {
                         throw wrapPersistitException(session, e);
@@ -969,8 +964,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         newAIS.setGeneration(generation);
         newAIS.freeze();
 
-        // Constructed with ref count 1 for this session
-        final SharedAIS sAIS = new SharedAIS(1, newAIS);
+        // Constructed with ref count 0, attach bumps to 1
+        final SharedAIS sAIS = new SharedAIS(newAIS);
         attachToSession(session, sAIS);
 
         if(genMap == GenMap.PUT_NEW) {
@@ -1253,6 +1248,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     private void attachToSession(Session session, SharedAIS sAIS) {
+        sAIS.acquire();
         SharedAIS old = session.put(SESSION_SAIS_KEY, sAIS);
         if(old != null) {
             old.release();
