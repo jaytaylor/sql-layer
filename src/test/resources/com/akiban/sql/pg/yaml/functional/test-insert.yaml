@@ -40,7 +40,7 @@
 ---
 - Statement: SELECT (blob_field) from all_types
 - output: [['deadbeef']]
-- output_types: !select-engine {it: [VARCHAR], sys-aksql: [BLOB], sys-mysql: [BLOB], newtypes: [BLOB] }
+- output_types: !select-engine {it: [VARCHAR], all: [BLOB] }
 ---
 - Statement: DELETE from all_types
 
@@ -76,7 +76,7 @@
 ---
 - Statement: SELECT (clob_field) from all_types
 - output: [[deadbeef]]
-- output_types: !select-engine {it: [VARCHAR], sys-aksql: [BLOB], sys-mysql: [BLOB], newtypes: [BLOB] }
+- output_types: !select-engine {it: [VARCHAR], all: [BLOB] }
 ---
 - Statement: DELETE from all_types
 
@@ -171,7 +171,7 @@
 ---
 - Statement: SELECT (real_field) from all_types
 - output: [[1.0]]
-- output_types: !select-engine {it: [REAL], sys-aksql: [FLOAT], sys-mysql: [FLOAT], newtypes: [FLOAT]}
+- output_types: !select-engine {it: [REAL], all: [FLOAT] }
 ---
 - Statement: DELETE from all_types
 
