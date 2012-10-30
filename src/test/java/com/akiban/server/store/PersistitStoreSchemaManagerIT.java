@@ -31,6 +31,8 @@ import com.akiban.ais.model.TableName;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.service.session.Session;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
@@ -41,6 +43,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerITBase {
+    private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManagerIT.class.getName());
+
     private final static String SCHEMA = "my_schema";
     private final static String T1_NAME = "t1";
     private final static String T1_DDL = "id int NOT NULL, PRIMARY KEY(id)";
@@ -178,7 +182,11 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
             txnService().commitTransaction(session());
         }
         sem.release(); // trigger commit
-        thread2.join();
+        thread2.join(5000);
+        if(thread2.isAlive()) {
+            LOG.error("Test "+thread2.getName()+"did not die, interrupting and continuing");
+            thread2.interrupt();
+        }
     }
 
 
@@ -204,6 +212,7 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
             } catch(Exception e) {
                 throw new RuntimeException(e);
             } finally {
+                sem.release(); // sanity only, don't hold up main thread if something goes wrong
                 txnService().rollbackTransactionIfOpen(session);
                 session.close();
             }
