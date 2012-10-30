@@ -641,11 +641,16 @@ public class MDatetimes
     
     public static String timeToString(int val)
     {
+        String sign = "";
+        if (val < 0) {
+            val = - val;
+            sign = "-";
+        }
         int h  = (int)(val / DATETIME_HOUR_SCALE);
         int m = (int)(val / DATETIME_MIN_SCALE) % 100;
         int s = (int)val % 100;
 
-        return String.format("%d:%02d:%02d", h, m, s);
+        return String.format("%s%d:%02d:%02d", sign, h, m, s);
     }
 
     public static void timeToDatetime(long time[])
