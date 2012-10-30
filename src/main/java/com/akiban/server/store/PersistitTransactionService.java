@@ -216,6 +216,9 @@ public class PersistitTransactionService implements TransactionService {
         } catch(RuntimeException e) {
             re = MultipleCauseException.combine(re, e);
         } finally {
+            session.removeAll(PRE_COMMIT_KEY);
+            session.removeAll(AFTER_COMMIT_KEY);
+            session.removeAll(AFTER_ROLLBACK_KEY);
             runCallbacks(session, AFTER_END_KEY, -1, re);
         }
     }

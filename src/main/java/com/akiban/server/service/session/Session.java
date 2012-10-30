@@ -104,10 +104,17 @@ public final class Session
         }
         return deque.pollLast();
     }
-    
+
     public boolean isEmpty(StackKey<?> key) {
         Deque<?> deque = get( key.asKey() );
         return deque == null || deque.isEmpty();
+    }
+
+    public void removeAll(StackKey<?> key) {
+        Deque deque = get( key.asKey() );
+        if (deque != null) {
+            deque.clear();
+        }
     }
 
     // "unused" suppression: Key<T> is only used for type inference
