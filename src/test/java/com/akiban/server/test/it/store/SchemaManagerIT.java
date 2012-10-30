@@ -692,6 +692,32 @@ public final class SchemaManagerIT extends ITBase {
     }
 
     /**
+     * Assert that the given tables in the given schema has the, and only the, given tables. Also
+     * confirm each table exists in the AIS and has a definition.
+     * @param schema Name of schema to check.
+     * @param tableNames List of table names to check.
+     * @throws Exception For any internal error.
+     */
+    private void assertTablesInSchema(String schema, String... tableNames) {
+        final SortedSet<String> expected = new TreeSet<String>();
+        final AkibanInformationSchema ais = ddl().getAIS(session());
+        for (String name : tableNames) {
+            final Table table = ais.getTable(schema, name);
+            assertNotNull(schema + "." + name + " in AIS", table);
+            final TableDefinition def = getTableDefinitions(schema).get(table.getName().getTableName());
+            assertNotNull(schema + "." + name  + " has definition", def);
+            expected.add(name);
+        }
+        final SortedSet<String> actual = new TreeSet<String>();
+        for (TableDefinition def : getTableDefinitions(schema).values()) {
+            final Table table = ais.getTable(schema, def.getTableName());
+            assertNotNull(def + " in AIS", table);
+            actual.add(def.getTableName());
+        }
+        assertEquals("tables in: " + schema, expected, actual);
+    }
+    
+    /**
      * Check that the result of {@link SchemaManager#schemaStrings(Session, boolean)} is correct for
      * the given tables. The only guarantees are that schemas are created with 'if not exists',
      * a schema statement comes before any table in it, and a create table statement is fully qualified.
@@ -733,32 +759,6 @@ public final class SchemaManagerIT extends ITBase {
                 return schemaManager.getTableDefinitions(session(), schema);
             }
         });
-    }
-
-    /**
-     * Assert that the given tables in the given schema has the, and only the, given tables. Also
-     * confirm each table exists in the AIS and has a definition.
-     * @param schema Name of schema to check.
-     * @param tableNames List of table names to check.
-     * @throws Exception For any internal error.
-     */
-    private void assertTablesInSchema(String schema, String... tableNames) {
-        final SortedSet<String> expected = new TreeSet<String>();
-        final AkibanInformationSchema ais = ddl().getAIS(session());
-        for (String name : tableNames) {
-            final Table table = ais.getTable(schema, name);
-            assertNotNull(schema + "." + name + " in AIS", table);
-            final TableDefinition def = getTableDefinitions(schema).get(table.getName().getTableName());
-            assertNotNull(schema + "." + name  + " has definition", def);
-            expected.add(name);
-        }
-        final SortedSet<String> actual = new TreeSet<String>();
-        for (TableDefinition def : getTableDefinitions(schema).values()) {
-            final Table table = ais.getTable(schema, def.getTableName());
-            assertNotNull(def + " in AIS", table);
-            actual.add(def.getTableName());
-        }
-        assertEquals("tables in: " + schema, expected, actual);
     }
 
     private static UserTable makeSimpleISTable(TableName name) {
