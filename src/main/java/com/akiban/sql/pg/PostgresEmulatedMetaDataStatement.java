@@ -26,21 +26,12 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.ais.model.*;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.sql.server.ServerValueEncoder;
-
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Columnar;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.View;
 
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
@@ -782,8 +773,13 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         // Only issue is that for PRIMARY KEY, it prints a comma in
         // anticipation of some method word before the column.
         str.append(" USING ");
-        if (index.getIndexMethod() != Index.IndexMethod.NORMAL)
-            str.append(index.getIndexMethod());
+        int firstSpatialColumn = Integer.MAX_VALUE;
+        int lastSpatialColumn = Integer.MIN_VALUE;
+        if (index.getIndexMethod() == Index.IndexMethod.Z_ORDER_LAT_LON) {
+            TableIndex spatialIndex = (TableIndex) index;
+            firstSpatialColumn = spatialIndex.firstSpatialArgument();
+            lastSpatialColumn = firstSpatialColumn + spatialIndex.dimensions() - 1;
+        }
         str.append("(");
         boolean first = true;
         for (IndexColumn icolumn : index.getKeyColumns()) {
@@ -794,11 +790,19 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             else {
                 str.append(", ");
             }
+            int positionInIndex = icolumn.getPosition();
+            if (positionInIndex == firstSpatialColumn) {
+                str.append(index.getIndexMethod().name());
+                str.append('(');
+            }
             if (column.getTable() != table) {
                 str.append(column.getTable().getName().getTableName())
                    .append(".");
             }
             str.append(column.getName());
+            if (positionInIndex == lastSpatialColumn) {
+                str.append(')');
+            }
         }
         str.append(")");
         if (index.isGroupIndex()) {
