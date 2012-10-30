@@ -1008,8 +1008,12 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         final long newTs = newCache.timestamp;
         while (true) {
             final AISAndTimestamp latest = latestAISCache.get();
-            // Don't set cache if out ts is lower (concurrent DDL)
-            if((latest != AIS_TIMESTAMP_SENTINEL) && (latest.timestamp > newTs)) {
+            // Don't set cache if out ts is lower (concurrent DDL) or equal
+            // Equal cases:
+            // 1) Transaction made more than one SchemaManager call. Will be multiple callbacks on list and we want the
+            //    first one to stick (list is popped in reverse order)
+            // 2) Setting sentinel when already sentinel (trivial nop)
+            if((latest != AIS_TIMESTAMP_SENTINEL) && (latest.timestamp >= newTs)) {
                 break;
             }
             // Otherwise update and stop if successful
