@@ -40,6 +40,7 @@ import static com.akiban.server.service.session.Session.StackKey;
 
 public class PersistitTransactionService implements TransactionService {
     private static final Key<Transaction> TXN_KEY = Key.named("TXN_KEY");
+    private static final StackKey<Callback> PRE_COMMIT_KEY = StackKey.stackNamed("TXN_PRE_COMMIT");
     private static final StackKey<Callback> AFTER_END_KEY = StackKey.stackNamed("TXN_AFTER_END");
     private static final StackKey<Callback> AFTER_COMMIT_KEY = StackKey.stackNamed("TXN_AFTER_COMMIT");
     private static final StackKey<Callback> AFTER_ROLLBACK_KEY = StackKey.stackNamed("TXN_AFTER_ROLLBACK");
@@ -64,6 +65,13 @@ public class PersistitTransactionService implements TransactionService {
     }
 
     @Override
+    public long getTransactionStartTimestamp(Session session) {
+        Transaction txn = getAndSetTransaction(session);
+        requireActive(txn);
+        return txn.getStartTimestamp();
+    }
+
+    @Override
     public void beginTransaction(Session session) {
         Transaction txn = getAndSetTransaction(session);
         requireInactive(txn); // Do not want to use Persistit nesting
@@ -80,8 +88,9 @@ public class PersistitTransactionService implements TransactionService {
         requireActive(txn);
         RuntimeException re = null;
         try {
+            runCallbacks(session, PRE_COMMIT_KEY, txn.getStartTimestamp(), null);
             txn.commit();
-            runCallbacks(session, AFTER_COMMIT_KEY, null);
+            runCallbacks(session, AFTER_COMMIT_KEY, txn.getCommitTimestamp(), null);
         } catch(RuntimeException e) {
             re = e;
         } catch(PersistitException e) {
@@ -98,7 +107,7 @@ public class PersistitTransactionService implements TransactionService {
         RuntimeException re = null;
         try {
             txn.rollback();
-            runCallbacks(session, AFTER_ROLLBACK_KEY, null);
+            runCallbacks(session, AFTER_ROLLBACK_KEY, -1, null);
         } catch(RuntimeException e) {
             re = e;
         } finally {
@@ -133,6 +142,12 @@ public class PersistitTransactionService implements TransactionService {
         Transaction txn = getTransaction(session);
         requireActive(txn);
         return txn.incrementStep();
+    }
+
+    @Override
+    public void addPreCommitCallback(Session session, Callback callback) {
+        requireActive(getTransaction(session));
+        session.push(PRE_COMMIT_KEY, callback);
     }
 
     @Override
@@ -201,16 +216,16 @@ public class PersistitTransactionService implements TransactionService {
         } catch(RuntimeException e) {
             re = MultipleCauseException.combine(re, e);
         } finally {
-            runCallbacks(session, AFTER_END_KEY, re);
+            runCallbacks(session, AFTER_END_KEY, -1, re);
         }
     }
 
-    private void runCallbacks(Session session, StackKey<Callback> key, RuntimeException cause) {
+    private void runCallbacks(Session session, StackKey<Callback> key, long timestamp, RuntimeException cause) {
         RuntimeException exceptions = cause;
         Callback cb;
         while((cb = session.pop(key)) != null) {
             try {
-                cb.run(session);
+                cb.run(session, timestamp);
             } catch(RuntimeException e) {
                 exceptions = MultipleCauseException.combine(exceptions, e);
             }
