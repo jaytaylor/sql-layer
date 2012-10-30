@@ -169,6 +169,12 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             this.ais = ais;
             this.timestamp = timestamp;
         }
+
+        @Override
+        public String toString() {
+            long generation = (ais != null) ? ais.getGeneration() : -1;
+            return "AIS(" + generation + "):" + timestamp;
+        }
     }
 
     public static final String MAX_AIS_SIZE_PROPERTY = "akserver.max_ais_size_bytes";
@@ -926,12 +932,15 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     private void validateAndFreeze(Session session, final AkibanInformationSchema newAIS, GenValue genValue, GenMap genMap) {
-        session.remove(SESSION_AIS_KEY); // Remove old cache
-
         newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary(); // TODO: Often redundant, cleanup
         long generation = (genValue == GenValue.NEW) ? getNextGeneration(session) : getGenerationSnapshot(session);
         newAIS.setGeneration(generation);
         newAIS.freeze();
+
+        session.put(SESSION_AIS_KEY, newAIS); // Override old cache, anchor new AIS
+        if(genMap == GenMap.PUT_NEW) {
+            saveNewAISInMap(newAIS);
+        }
 
         txnService.addPreCommitCallback(session, latestAISCacheClearCallback);
         txnService.addCommitCallback(session, new TransactionService.Callback() {
@@ -940,10 +949,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 updateLatestAISCache(new AISAndTimestamp(newAIS, timestamp));
             }
         });
-
-        if(genMap == GenMap.PUT_NEW) {
-            saveNewAISInMap(newAIS);
-        }
     }
 
     private void saveNewAISInMap(AkibanInformationSchema ais) {
@@ -960,9 +965,15 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     private void updateLatestAISCache(final AISAndTimestamp newCache) {
+        final long newTs = newCache.timestamp;
         while (true) {
             final AISAndTimestamp latest = latestAISCache.get();
-            if((latest.timestamp > newCache.timestamp) || latestAISCache.compareAndSet(latest, newCache)) {
+            // Don't set cache if out ts is lower (concurrent DDL). MAX_VALUE is sentinel and never a commit timestamp.
+            if((latest.timestamp != Long.MAX_VALUE) && (latest.timestamp > newTs)) {
+                break;
+            }
+            // Otherwise update and stop if still the same
+            if(latestAISCache.compareAndSet(latest, newCache)) {
                 break;
             }
         }
