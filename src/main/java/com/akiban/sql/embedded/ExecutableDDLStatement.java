@@ -40,13 +40,7 @@ class ExecutableDDLStatement extends ExecutableStatement
 
     @Override
     public ExecuteResults execute(EmbeddedQueryContext context) {
-        context.lock(DXLFunction.UNSPECIFIED_DDL_WRITE);
-        try {
-            AISDDL.execute(ddl, context);
-        }
-        finally {
-            context.unlock(DXLFunction.UNSPECIFIED_DDL_WRITE);
-        }
+        AISDDL.execute(ddl, context);
         return new ExecuteResults();
     }
 

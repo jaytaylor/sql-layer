@@ -67,7 +67,6 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
             // count right and have this all happen even if the caller
             // does not read all of the generated keys.
             returningRows = new SpoolCursor();
-        context.lock(DXLFunction.UNSPECIFIED_DML_WRITE);
         Cursor cursor = null;
         RuntimeException runtimeException = null;
         try {
@@ -96,7 +95,6 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
                 else
                     logger.warn("Error cleaning up cursor with exception already pending", ex);
             }
-            context.unlock(DXLFunction.UNSPECIFIED_DML_WRITE);
             if (runtimeException != null)
                 throw runtimeException;
         }

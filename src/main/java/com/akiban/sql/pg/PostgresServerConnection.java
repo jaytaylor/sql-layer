@@ -731,25 +731,11 @@ public class PostgresServerConnection extends ServerSessionBase
     // When the AIS changes, throw everything away, since it might
     // point to obsolete objects.
     protected void updateAIS(PostgresQueryContext context) {
-        boolean locked = false;
-        try {
-            if (context != null) {
-                // If there is long-running DDL like creating an index, this is almost
-                // always where other queries will lock.
-                context.lock(DXLFunction.UNSPECIFIED_DDL_READ);
-                locked = true;
-            }
-            DDLFunctions ddl = reqs.dxl().ddlFunctions();
-            AkibanInformationSchema newAIS = ddl.getAIS(session);
-            if ((ais != null) && (ais.getGeneration() == newAIS.getGeneration()))
-                return;             // Unchanged.
-            ais = newAIS;
-        }
-        finally {
-            if (locked) {
-                context.unlock(DXLFunction.UNSPECIFIED_DDL_READ);
-            }
-        }
+        DDLFunctions ddl = reqs.dxl().ddlFunctions();
+        AkibanInformationSchema newAIS = ddl.getAIS(session);
+        if ((ais != null) && (ais.getGeneration() == newAIS.getGeneration()))
+            return;             // Unchanged.
+        ais = newAIS;
         rebuildCompiler();
     }
 
