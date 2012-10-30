@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Semaphore;
 
 import static com.akiban.server.store.PersistitStoreSchemaManager.SerializationType;
@@ -139,23 +140,10 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
         for(int i = 0; i < COUNT; ++i) {
             createTable(SCHEMA, T1_NAME+i, T1_DDL);
         }
-        assertEquals("More than 1 AIS in map", true, pssm.getAISMapSize() > 1);
+        // Should be fully cleared after DDL is committed (performed synchronouslyy)
+        assertEquals("AIS map size", 1, pssm.getAISMapSize());
         pssm.clearUnreferencedAISMap();
         assertEquals("AIS map size after clearing", 1, pssm.getAISMapSize());
-    }
-
-    @Test
-    public void oldestActiveCausesMapCleanup() {
-        final int COUNT = 10;
-        // Create a number of versions
-        for(int i = 0; i < COUNT; ++i) {
-            createTable(SCHEMA, T1_NAME+i, T1_DDL);
-        }
-        assertEquals("More than 1 AIS in map", true, pssm.getAISMapSize() > 1);
-        long oldest1 = pssm.getOldestActiveAISGeneration();
-        assertEquals("AIS map size after clearing", 1, pssm.getAISMapSize());
-        long oldest2 = pssm.getOldestActiveAISGeneration();
-        assertTrue("Oldest active changed: ", oldest1 != oldest2);
     }
 
     @Test
@@ -167,10 +155,11 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
         // Construct this sequence:
         // Session 1: CREATE t1,t2                  BEGIN,CREATE t3,getAIS(),cleanup(),COMMIT
         // Session 2:               BEGIN,getAIS()                                             COMMIT
-        Semaphore sem = new Semaphore(0);
-        Thread thread2 = new Thread(new AISReader(sem, expectedTableCount + 2), "TestThread2");
+        CyclicBarrier b1 = new CyclicBarrier(2);
+        CyclicBarrier b2 = new CyclicBarrier(2);
+        Thread thread2 = new Thread(new AISReader(b1, b2, expectedTableCount + 2), "TestThread2");
         thread2.start();
-        sem.acquire(); // wait for get
+        b1.await();
         createTable(SCHEMA, T1_NAME + 3, T1_DDL);
         txnService().beginTransaction(session());
         try {
@@ -181,21 +170,18 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
         } finally {
             txnService().commitTransaction(session());
         }
-        sem.release(); // trigger commit
-        thread2.join(5000);
-        if(thread2.isAlive()) {
-            LOG.error("Test "+thread2.getName()+"did not die, interrupting and continuing");
-            thread2.interrupt();
-        }
+        b2.await();
+        thread2.join();
     }
 
 
     private class AISReader implements Runnable {
-        private final Semaphore sem;
+        private final CyclicBarrier b1, b2;
         private final int tableCount;
 
-        public AISReader(Semaphore sem, int expectedCount) {
-            this.sem = sem;
+        public AISReader(CyclicBarrier b1, CyclicBarrier b2, int expectedCount) {
+            this.b1 = b1;
+            this.b2 = b2;
             this.tableCount = expectedCount;
         }
 
@@ -205,14 +191,13 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
             try {
                 txnService().beginTransaction(session);
                 AkibanInformationSchema ais = ddl().getAIS(session);
-                sem.release();
+                b1.await();
                 assertEquals("Table count (session 2)", tableCount, ais.getUserTables().size());
-                sem.acquire(); // Wait for cleanup/commit
+                b2.await();
                 txnService().commitTransaction(session);
             } catch(Exception e) {
                 throw new RuntimeException(e);
             } finally {
-                sem.release(); // sanity only, don't hold up main thread if something goes wrong
                 txnService().rollbackTransactionIfOpen(session);
                 session.close();
             }
