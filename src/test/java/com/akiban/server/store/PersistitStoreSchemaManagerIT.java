@@ -26,14 +26,19 @@
 
 package com.akiban.server.store;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.service.session.Session;
 import org.junit.Test;
 
 import java.util.Set;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.Semaphore;
 
 import static com.akiban.server.store.PersistitStoreSchemaManager.SerializationType;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerITBase {
     private final static String SCHEMA = "my_schema";
@@ -121,5 +126,87 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
         createAndLoad();
         pssm.clearAISMap();
         expectFullRows(tid, rows);
+    }
+
+    @Test
+    public void aisMapCleanup() {
+        final int COUNT = 10;
+        // Create a number of versions
+        for(int i = 0; i < COUNT; ++i) {
+            createTable(SCHEMA, T1_NAME+i, T1_DDL);
+        }
+        assertEquals("More than 1 AIS in map", true, pssm.getAISMapSize() > 1);
+        pssm.clearUnreferencedAISMap();
+        assertEquals("AIS map size after clearing", 1, pssm.getAISMapSize());
+    }
+
+    @Test
+    public void oldestActiveCausesMapCleanup() {
+        final int COUNT = 10;
+        // Create a number of versions
+        for(int i = 0; i < COUNT; ++i) {
+            createTable(SCHEMA, T1_NAME+i, T1_DDL);
+        }
+        assertEquals("More than 1 AIS in map", true, pssm.getAISMapSize() > 1);
+        long oldest1 = pssm.getOldestActiveAISGeneration();
+        assertEquals("AIS map size after clearing", 1, pssm.getAISMapSize());
+        long oldest2 = pssm.getOldestActiveAISGeneration();
+        assertTrue("Oldest active changed: ", oldest1 != oldest2);
+    }
+
+    @Test
+    public void clearUnreferencedAndOpenTransaction() throws BrokenBarrierException, InterruptedException {
+        final int expectedTableCount = ais().getUserTables().size();
+        createTable(SCHEMA, T1_NAME+1, T1_DDL);
+        createTable(SCHEMA, T1_NAME+2, T1_DDL);
+
+        // Construct this sequence:
+        // Session 1: CREATE t1,t2                  BEGIN,CREATE t3,getAIS(),cleanup(),COMMIT
+        // Session 2:               BEGIN,getAIS()                                             COMMIT
+        Semaphore sem = new Semaphore(0);
+        Thread thread2 = new Thread(new AISReader(sem, expectedTableCount + 2), "TestThread2");
+        thread2.start();
+        sem.acquire(); // wait for get
+        createTable(SCHEMA, T1_NAME + 3, T1_DDL);
+        txnService().beginTransaction(session());
+        try {
+            AkibanInformationSchema ais = ddl().getAIS(session());
+            assertEquals("Table count after creates", expectedTableCount + 3, ais.getUserTables().size());
+            pssm.clearUnreferencedAISMap();
+            assertEquals("AIS map size after clearing", 2, pssm.getAISMapSize());
+        } finally {
+            txnService().commitTransaction(session());
+        }
+        sem.release(); // trigger commit
+        thread2.join();
+    }
+
+
+    private class AISReader implements Runnable {
+        private final Semaphore sem;
+        private final int tableCount;
+
+        public AISReader(Semaphore sem, int expectedCount) {
+            this.sem = sem;
+            this.tableCount = expectedCount;
+        }
+
+        @Override
+        public void run() {
+            Session session = createNewSession();
+            try {
+                txnService().beginTransaction(session);
+                AkibanInformationSchema ais = ddl().getAIS(session);
+                sem.release();
+                assertEquals("Table count (session 2)", tableCount, ais.getUserTables().size());
+                sem.acquire(); // Wait for cleanup/commit
+                txnService().commitTransaction(session);
+            } catch(Exception e) {
+                throw new RuntimeException(e);
+            } finally {
+                txnService().rollbackTransactionIfOpen(session);
+                session.close();
+            }
+        }
     }
 }

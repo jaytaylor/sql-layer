@@ -35,10 +35,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -161,19 +163,47 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     private static enum GenValue { NEW, SNAPSHOT }
     private static enum GenMap { PUT_NEW, NO_PUT }
-    private static class AISAndTimestamp {
+
+    private static class SharedAIS {
+        public final AtomicInteger refCount;
         public final AkibanInformationSchema ais;
+
+        public SharedAIS(int initialCount, AkibanInformationSchema ais) {
+            this.refCount = new AtomicInteger(initialCount);
+            this.ais = ais;
+        }
+
+        public SharedAIS acquire() {
+            refCount.incrementAndGet();
+            return this;
+        }
+
+        public void release() {
+            refCount.decrementAndGet();
+        }
+
+        public boolean isShared() {
+            return refCount.get() > 0;
+        }
+
+        @Override
+        public String toString() {
+            return "Shared[" + refCount.get() + "]" + ais;
+        }
+    }
+
+    private static class AISAndTimestamp {
+        public final SharedAIS sAIS;
         public final long timestamp;
 
-        public AISAndTimestamp(AkibanInformationSchema ais, long timestamp) {
-            this.ais = ais;
+        public AISAndTimestamp(SharedAIS sAIS, long timestamp) {
+            this.sAIS = sAIS;
             this.timestamp = timestamp;
         }
 
         @Override
         public String toString() {
-            long generation = (ais != null) ? ais.getGeneration() : -1;
-            return "AIS(" + generation + "):" + timestamp;
+            return sAIS + ":" + timestamp;
         }
     }
 
@@ -195,7 +225,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     // Changed from 1 to 2 due to incompatibility related to index row changes (see bug 985007)
     private static final int PROTOBUF_PSSM_VERSION = 2;
 
-    private static final Session.Key<AkibanInformationSchema> SESSION_AIS_KEY = Session.Key.named("AIS_KEY");
+    private static final Session.Key<SharedAIS> SESSION_SAIS_KEY = Session.Key.named("SAIS_KEY");
+    private static final AISAndTimestamp AIS_TIMESTAMP_SENTINEL = new AISAndTimestamp(null, Long.MAX_VALUE);
 
     private static final String CREATE_SCHEMA_FORMATTER = "create schema if not exists `%s`;";
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class.getName());
@@ -210,7 +241,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private SerializationType serializationType = SerializationType.NONE;
     private NameGenerator nameGenerator;
     private AtomicLong delayedTreeIDGenerator;
-    private SortedMap<Long,AkibanInformationSchema> aisMap;
+    private SortedMap<Long,SharedAIS> aisMap;
     private ReentrantReadWriteLock aisMapLock;
     private AtomicReference<AISAndTimestamp> latestAISCache;
     private TransactionService.Callback latestAISCacheClearCallback;
@@ -592,16 +623,16 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     @Override
     public AkibanInformationSchema getAis(Session session) {
-        AkibanInformationSchema local = session.get(SESSION_AIS_KEY);
+        SharedAIS local = session.get(SESSION_SAIS_KEY);
         if(local != null) {
-            return local;
+            return local.ais;
         }
 
         // If the cache's commit timestamp (guaranteed latest) is strictly before our start timestamp, we can use that.
         long startTimestamp = txnService.getTransactionStartTimestamp(session);
         AISAndTimestamp cached = latestAISCache.get();
         if(cached.timestamp < startTimestamp) {
-            local = cached.ais;
+            local = cached.sAIS.acquire();
         }
 
         // Couldn't use the cache, do an always accurate accumulator lookup and check in map.
@@ -611,6 +642,9 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             sharedMapClaim();
             try {
                 local = aisMap.get(generation);
+                if(local != null) {
+                    local.acquire();
+                }
             } finally {
                 sharedMapRelease();
             }
@@ -623,10 +657,12 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             try {
                 // Double check while while under exclusive
                 local = aisMap.get(generation);
-                if(local == null) {
+                if(local != null) {
+                    local.acquire();
+                } else {
                     try {
-                        local = loadAISFromStorage(session, GenValue.SNAPSHOT, GenMap.PUT_NEW);
-                        buildRowDefCache(local);
+                        local = loadAISFromStorage(session, GenValue.SNAPSHOT, GenMap.PUT_NEW); // Comes out acquired
+                        buildRowDefCache(local.ais);
                     } catch(PersistitException e) {
                         throw wrapPersistitException(session, e);
                     }
@@ -636,9 +672,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             }
         }
 
-        session.put(SESSION_AIS_KEY, local);
-        txnService.addEndCallback(session, CLEAR_SESSION_KEY_CALLBACK);
-        return local;
+        attachToSession(session, local);
+        return local.ais;
     }
 
     /**
@@ -763,15 +798,13 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         AkibanInformationSchema.setDefaultCharsetAndCollation(config.getProperty(DEFAULT_CHARSET),
                                                               config.getProperty(DEFAULT_COLLATION));
 
-        this.aisMap = new TreeMap<Long, AkibanInformationSchema>();
+        this.aisMap = new TreeMap<Long, SharedAIS>();
         this.aisMapLock = new ReentrantReadWriteLock();
-
         this.latestAISCache = new AtomicReference<AISAndTimestamp>(new AISAndTimestamp(null, Long.MIN_VALUE));
-        final AISAndTimestamp invalidSentinel  = new AISAndTimestamp(null, Long.MAX_VALUE);
         this.latestAISCacheClearCallback = new TransactionService.Callback() {
             @Override
             public void run(Session session, long timestamp) {
-                updateLatestAISCache(invalidSentinel);
+                updateLatestAISCache(AIS_TIMESTAMP_SENTINEL);
             }
         };
 
@@ -783,14 +816,14 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                         // Unrelated to loading, but fine time to do it
                         cleanupDelayedTrees(session);
 
-                        AkibanInformationSchema ais = loadAISFromStorage(session, GenValue.SNAPSHOT, GenMap.PUT_NEW);
+                        SharedAIS sAIS = loadAISFromStorage(session, GenValue.SNAPSHOT, GenMap.PUT_NEW);
                         if(!skipAISUpgrade) {
                             // Upgrade goes here if we ever need another one
                         } else {
                             //LOG.warn("Skipping AIS upgrade");
                         }
-                        buildRowDefCache(ais);
-                        return ais;
+                        buildRowDefCache(sAIS.ais);
+                        return sAIS.ais;
                     }
                 }
         );
@@ -818,7 +851,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         stop();
     }
 
-    private AkibanInformationSchema loadAISFromStorage(final Session session, GenValue genValue, GenMap genMap) throws PersistitException {
+    private SharedAIS loadAISFromStorage(final Session session, GenValue genValue, GenMap genMap) throws PersistitException {
         final AkibanInformationSchema newAIS = new AkibanInformationSchema();
         treeService.visitStorage(
                 session,
@@ -841,8 +874,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 },
                 SCHEMA_TREE_NAME
         );
-        validateAndFreeze(session, newAIS, genValue, genMap);
-        return newAIS;
+        return validateAndFreeze(session, newAIS, genValue, genMap);
     }
 
     private static void loadProtobuf(Exchange ex, AkibanInformationSchema newAIS) throws PersistitException {
@@ -931,34 +963,42 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         }
     }
 
-    private void validateAndFreeze(Session session, final AkibanInformationSchema newAIS, GenValue genValue, GenMap genMap) {
+    private SharedAIS validateAndFreeze(Session session, AkibanInformationSchema newAIS, GenValue genValue, GenMap genMap) {
         newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary(); // TODO: Often redundant, cleanup
         long generation = (genValue == GenValue.NEW) ? getNextGeneration(session) : getGenerationSnapshot(session);
         newAIS.setGeneration(generation);
         newAIS.freeze();
 
-        session.put(SESSION_AIS_KEY, newAIS); // Override old cache, anchor new AIS
+        // Constructed with ref count 1 for this session
+        final SharedAIS sAIS = new SharedAIS(1, newAIS);
+        attachToSession(session, sAIS);
+
         if(genMap == GenMap.PUT_NEW) {
-            saveNewAISInMap(newAIS);
+            saveNewAISInMap(sAIS);
         }
 
         txnService.addPreCommitCallback(session, latestAISCacheClearCallback);
         txnService.addCommitCallback(session, new TransactionService.Callback() {
             @Override
             public void run(Session session, long timestamp) {
-                updateLatestAISCache(new AISAndTimestamp(newAIS, timestamp));
+                updateLatestAISCache(new AISAndTimestamp(sAIS, timestamp));
             }
         });
+        return sAIS;
     }
 
-    private void saveNewAISInMap(AkibanInformationSchema ais) {
-        long generation = ais.getGeneration();
+    private void saveNewAISInMap(SharedAIS sAIS) {
+        long generation = sAIS.ais.getGeneration();
         aisMapLock.writeLock().lock();
         try {
             if(aisMap.containsKey(generation)) {
                 throw new IllegalStateException("Expected new generation: " + generation);
             }
-            aisMap.put(generation, ais);
+            aisMap.put(generation, sAIS);
+
+            if(aisMap.size() > 3) { // Trivial heuristic
+                clearUnreferencedAISMap();
+            }
         } finally {
             aisMapLock.writeLock().unlock();
         }
@@ -968,12 +1008,18 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         final long newTs = newCache.timestamp;
         while (true) {
             final AISAndTimestamp latest = latestAISCache.get();
-            // Don't set cache if out ts is lower (concurrent DDL). MAX_VALUE is sentinel and never a commit timestamp.
-            if((latest.timestamp != Long.MAX_VALUE) && (latest.timestamp > newTs)) {
+            // Don't set cache if out ts is lower (concurrent DDL)
+            if((latest != AIS_TIMESTAMP_SENTINEL) && (latest.timestamp > newTs)) {
                 break;
             }
-            // Otherwise update and stop if still the same
+            // Otherwise update and stop if successful
             if(latestAISCache.compareAndSet(latest, newCache)) {
+                if(latest.sAIS != null) {
+                    latest.sAIS.release();
+                }
+                if(newCache.sAIS != null) {
+                    newCache.sAIS.acquire();
+                }
                 break;
             }
         }
@@ -1107,11 +1153,37 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     // Package for tests
     void clearAISMap() {
-        aisMapLock.writeLock().lock();
+        exclusiveMapClaim();
         try {
             aisMap.clear();
         } finally {
-            aisMapLock.writeLock().unlock();
+            exclusiveMapRelease();
+        }
+    }
+
+    // Package for tests
+    void clearUnreferencedAISMap() {
+        exclusiveMapClaim();
+        try {
+            Iterator<SharedAIS> it = aisMap.values().iterator();
+            while(it.hasNext()) {
+                SharedAIS sAIS = it.next();
+                if(!sAIS.isShared()) {
+                    it.remove();
+                }
+            }
+        } finally {
+            exclusiveMapRelease();
+        }
+    }
+
+    // Package for Tests
+    int getAISMapSize() {
+        sharedMapClaim();
+        try {
+            return aisMap.size();
+        } finally {
+            sharedMapRelease();
         }
     }
 
@@ -1134,15 +1206,20 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     @Override
     public long getOldestActiveAISGeneration() {
+        boolean doCleanup = false;
+        final long oldest;
         sharedMapClaim();
         try {
-            if(aisMap.isEmpty()) {
-                return Long.MIN_VALUE;
-            }
-            return aisMap.firstKey();
+            int size = aisMap.size();
+            oldest = (size == 0) ? Long.MIN_VALUE : aisMap.firstKey();
+            doCleanup = (size > 1);
          } finally {
             sharedMapRelease();
         }
+        if(doCleanup) {
+            clearUnreferencedAISMap();
+        }
+        return oldest;
     }
 
     private Accumulator getGenerationAccumulator(Session session) throws PersistitException {
@@ -1172,6 +1249,15 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             return getGenerationAccumulator(session).update(ACCUM_UPDATE_VALUE, treeService.getDb().getTransaction());
         } catch(PersistitException e) {
             throw wrapPersistitException(session, e);
+        }
+    }
+
+    private void attachToSession(Session session, SharedAIS sAIS) {
+        SharedAIS old = session.put(SESSION_SAIS_KEY, sAIS);
+        if(old != null) {
+            old.release();
+        } else {
+            txnService.addEndCallback(session, CLEAR_SESSION_KEY_CALLBACK);
         }
     }
 
@@ -1311,7 +1397,10 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private static final TransactionService.Callback CLEAR_SESSION_KEY_CALLBACK = new TransactionService.Callback() {
         @Override
         public void run(Session session, long timestamp) {
-            session.remove(SESSION_AIS_KEY);
+            SharedAIS sAIS = session.remove(SESSION_SAIS_KEY);
+            if(sAIS != null) {
+                sAIS.release();
+            }
         }
     };
 }
