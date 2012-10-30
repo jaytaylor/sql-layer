@@ -40,6 +40,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class LockServiceImpl implements LockService {
     private final static boolean TXN_LOCK_FAIRNESS = false;
     private final static boolean LOCK_MAP_LOCK_FAIRNESS = false;
+    private final static boolean TABLE_LOCK_FAIRENESS = false;
+
     private final Session.Key<Boolean> SESSION_HAS_CB_KEY = Session.Key.named("LOCK_HAS_CB");
     private final Session.MapKey<Integer,Mode> SESSION_TABLES_KEY = Session.MapKey.mapNamed("LOCK_TABLES");
 
@@ -54,12 +56,13 @@ public class LockServiceImpl implements LockService {
             Iterator<Map.Entry<Integer,Mode>> it = session.iterator(SESSION_TABLES_KEY);
             while(it.hasNext()) {
                 Map.Entry<Integer, Mode> entry = it.next();
-                getAccess(entry.getValue(), getLock(entry.getKey())).unlock();
+                tableRelease(session, entry.getValue(), entry.getKey(), false);
             }
             session.remove(SESSION_TABLES_KEY);
             session.remove(SESSION_HAS_CB_KEY);
         }
     };
+
 
     @Inject
     public LockServiceImpl(TransactionService txnService) {
@@ -139,7 +142,15 @@ public class LockServiceImpl implements LockService {
 
     @Override
     public void tableRelease(Session session, Mode mode, int tableID) {
-        Mode prevMode = session.remove(SESSION_TABLES_KEY, tableID);
+        tableRelease(session, mode, tableID, true);
+    }
+
+    //
+    // Internal methods
+    //
+
+    public void tableRelease(Session session, Mode mode, int tableID, boolean removeKey) {
+        Mode prevMode = removeKey ? session.remove(SESSION_TABLES_KEY, tableID) : session.get(SESSION_TABLES_KEY, tableID);
         if(prevMode == null) {
             throw new IllegalArgumentException("Table is not locked: " + tableID);
         }
@@ -149,12 +160,8 @@ public class LockServiceImpl implements LockService {
         getAccess(mode, getLock(tableID)).unlock();
     }
 
-    //
-    // Internal methods
-    //
-
     private ReentrantReadWriteLock getLock(int tableID) {
-        final ReentrantReadWriteLock lock;
+        ReentrantReadWriteLock lock;
         lockMapLock.readLock().lock();
         try {
             lock = lockMap.get(tableID);
@@ -162,7 +169,16 @@ public class LockServiceImpl implements LockService {
             lockMapLock.readLock().unlock();
         }
         if(lock == null) {
-            throw new IllegalArgumentException("Unknown table: " + tableID);
+            lockMapLock.writeLock().lock();
+            try {
+                lock = lockMap.get(tableID);
+                if(lock == null) {
+                    lock = new ReentrantReadWriteLock(TABLE_LOCK_FAIRENESS);
+                    lockMap.put(tableID, lock);
+                }
+            } finally {
+                lockMapLock.writeLock().unlock();
+            }
         }
         return lock;
     }

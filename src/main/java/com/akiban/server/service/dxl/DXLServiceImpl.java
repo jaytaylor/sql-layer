@@ -37,6 +37,7 @@ import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
+import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
@@ -67,6 +68,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     private final ConfigurationService configService;
     private final T3RegistryService t3Registry;
     private final TransactionService txnService;
+    private final LockService lockService;
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
@@ -96,7 +98,8 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     }
 
     DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
-        return new BasicDDLFunctions(middleman, schemaManager, store, treeService, indexStatisticsService, configService, t3Registry);
+        return new BasicDDLFunctions(middleman, schemaManager, store, treeService, indexStatisticsService, configService,
+                                     t3Registry, lockService, txnService);
     }
 
     @Override
@@ -177,7 +180,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     @Inject
     public DXLServiceImpl(SchemaManager schemaManager, Store store, TreeService treeService, SessionService sessionService,
                           IndexStatisticsService indexStatisticsService, ConfigurationService configService, T3RegistryService t3Registry,
-                          TransactionService txnService) {
+                          TransactionService txnService, LockService lockService) {
         this.schemaManager = schemaManager;
         this.store = store;
         this.treeService = treeService;
@@ -186,6 +189,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
         this.configService = configService;
         this.t3Registry = t3Registry;
         this.txnService = txnService;
+        this.lockService = lockService;
     }
 
     // for use by subclasses

@@ -84,6 +84,15 @@ public class DXLTransactionHook implements DXLFunctionsHook {
             case DROP_GROUP:
             case CREATE_INDEXES:
             case DROP_INDEXES:
+            case CREATE_SEQUENCE:
+            case DROP_SEQUENCE:
+            case CREATE_ROUTINE:
+            case DROP_ROUTINE:
+            case CREATE_SQLJ_JAR:
+            case REPLACE_SQLJ_JAR:
+            case DROP_SQLJ_JAR:
+                return false;
+
             case GET_DDLS:
             case GET_TABLE_STATISTICS:
             case SCAN_SOME:
@@ -93,13 +102,6 @@ public class DXLTransactionHook implements DXLFunctionsHook {
             case TRUNCATE_TABLE:
             case UPDATE_TABLE_STATISTICS:
             case CHECK_AND_FIX_INDEXES:
-            case CREATE_SEQUENCE:
-            case DROP_SEQUENCE:
-            case CREATE_ROUTINE:
-            case DROP_ROUTINE:
-            case CREATE_SQLJ_JAR:
-            case REPLACE_SQLJ_JAR:
-            case DROP_SQLJ_JAR:
                 return true;
 
             case GET_AIS:

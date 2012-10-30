@@ -46,6 +46,7 @@ import com.akiban.server.error.*;
 import com.akiban.server.rowdata.*;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
@@ -109,6 +110,8 @@ public class PersistitStore implements Store, Service {
 
     private SchemaManager schemaManager;
 
+    private LockService lockService;
+
     private volatile IndexStatisticsService indexStatistics;
 
     private final Map<Tree, SortedSet<KeyState>> deferredIndexKeys = new HashMap<Tree, SortedSet<KeyState>>();
@@ -116,7 +119,7 @@ public class PersistitStore implements Store, Service {
     private int deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
 
     public PersistitStore(boolean updateGroupIndexes, TreeService treeService, ConfigurationService config,
-                          SchemaManager schemaManager) {
+                          SchemaManager schemaManager, LockService lockService) {
         this.updateGroupIndexes = updateGroupIndexes;
         this.treeService = treeService;
         this.config = config;
@@ -348,6 +351,8 @@ public class PersistitStore implements Store, Service {
                                  + " bytes");
             }
         }
+
+        lockService.tableClaim(session, LockService.Mode.SHARED, rowDefId);
 
         final RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
         checkNoGroupIndexes(rowDef.table());

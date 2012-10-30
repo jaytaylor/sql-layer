@@ -101,7 +101,9 @@ import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.error.UnsupportedDropException;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.t3expressions.T3RegistryService;
@@ -140,6 +142,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private final IndexStatisticsService indexStatisticsService;
     private final ConfigurationService configService;
     private final T3RegistryService t3Registry;
+    private final LockService lockService;
+    private final TransactionService txnService;
     
 
     private static class ShimContext extends QueryContextBase {
@@ -817,6 +821,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
 
+        int tid = indexesToAdd.iterator().next().leafMostTable().getTableId();
+        lockService.tableClaim(session, LockService.Mode.EXCLUSIVE, tid);
+        txnService.beginTransaction(session);
+
+
         final Collection<Index> newIndexes;
         newIndexes = schemaManager().createIndexes(session, indexesToAdd);
 
@@ -843,6 +852,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             }
             throw e;
         }
+
+        txnService.commitTransaction(session);
     }
 
     @Override
@@ -1058,10 +1069,13 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService,
-                      IndexStatisticsService indexStatisticsService, ConfigurationService configService, T3RegistryService t3Registry) {
+                      IndexStatisticsService indexStatisticsService, ConfigurationService configService,
+                      T3RegistryService t3Registry, LockService lockService, TransactionService txnService) {
         super(middleman, schemaManager, store, treeService);
         this.indexStatisticsService = indexStatisticsService;
         this.configService = configService;
         this.t3Registry = t3Registry;
+        this.lockService = lockService;
+        this.txnService = txnService;
     }
 }
