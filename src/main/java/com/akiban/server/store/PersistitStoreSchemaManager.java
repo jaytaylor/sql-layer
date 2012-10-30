@@ -245,6 +245,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private ReentrantReadWriteLock aisMapLock;
     private AtomicReference<AISAndTimestamp> latestAISCache;
     private TransactionService.Callback latestAISCacheClearCallback;
+    private TransactionService.Callback clearAISMapCallback;
 
     @Inject
     public PersistitStoreSchemaManager(ConfigurationService config, SessionService sessionService,
@@ -802,6 +803,12 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 updateLatestAISCache(AIS_TIMESTAMP_SENTINEL);
             }
         };
+        this.clearAISMapCallback = new TransactionService.Callback() {
+            @Override
+            public void run(Session session, long timestamp) {
+                clearUnreferencedAISMap();
+            }
+        };
 
         AkibanInformationSchema newAIS = transactionally(
                 sessionService.createSession(),
@@ -839,6 +846,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         this.aisMapLock = null;
         this.latestAISCache = null;
         this.latestAISCacheClearCallback = null;
+        this.clearAISMapCallback = null;
     }
 
     @Override
@@ -979,6 +987,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 updateLatestAISCache(new AISAndTimestamp(sAIS, timestamp));
             }
         });
+        txnService.addEndCallback(session, clearAISMapCallback);
         return sAIS;
     }
 
@@ -990,10 +999,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 throw new IllegalStateException("Expected new generation: " + generation);
             }
             aisMap.put(generation, sAIS);
-
-            if(aisMap.size() > 3) { // Trivial heuristic
-                clearUnreferencedAISMap();
-            }
         } finally {
             aisMapLock.writeLock().unlock();
         }
@@ -1110,7 +1115,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         serializationType = newSerializationType;
     }
 
-    // Public for tests
+    /** Public for test only. Should not generally be called. */
     public void cleanupDelayedTrees(final Session session) throws PersistitException {
         treeService.visitStorage(
                 session,
@@ -1201,20 +1206,15 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     @Override
     public long getOldestActiveAISGeneration() {
-        boolean doCleanup = false;
-        final long oldest;
         sharedMapClaim();
         try {
-            int size = aisMap.size();
-            oldest = (size == 0) ? Long.MIN_VALUE : aisMap.firstKey();
-            doCleanup = (size > 1);
+            if(aisMap.isEmpty()) {
+                return Long.MIN_VALUE;
+            }
+            return aisMap.firstKey();
          } finally {
             sharedMapRelease();
         }
-        if(doCleanup) {
-            clearUnreferencedAISMap();
-        }
-        return oldest;
     }
 
     private Accumulator getGenerationAccumulator(Session session) throws PersistitException {
