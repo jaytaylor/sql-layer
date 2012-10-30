@@ -31,21 +31,14 @@ import com.akiban.ais.model.TableName;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.service.session.Session;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Set;
-import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.Semaphore;
 
 import static com.akiban.server.store.PersistitStoreSchemaManager.SerializationType;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerITBase {
-    private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManagerIT.class.getName());
-
     private final static String SCHEMA = "my_schema";
     private final static String T1_NAME = "t1";
     private final static String T1_DDL = "id int NOT NULL, PRIMARY KEY(id)";
@@ -147,7 +140,7 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
     }
 
     @Test
-    public void clearUnreferencedAndOpenTransaction() throws BrokenBarrierException, InterruptedException {
+    public void clearUnreferencedAndOpenTransaction() throws Exception {
         final int expectedTableCount = ais().getUserTables().size();
         createTable(SCHEMA, T1_NAME+1, T1_DDL);
         createTable(SCHEMA, T1_NAME+2, T1_DDL);
