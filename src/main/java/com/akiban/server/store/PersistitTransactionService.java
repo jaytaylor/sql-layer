@@ -169,7 +169,7 @@ public class PersistitTransactionService implements TransactionService {
     }
 
     private Transaction getTransaction(Session session) {
-        return session.get(TXN_KEY);
+        return session.get(TXN_KEY); // Note: Assumes 1 session per thread
     }
 
     private Transaction getAndSetTransaction(Session session) {

@@ -40,6 +40,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AISBuilder;
@@ -85,6 +86,7 @@ import com.akiban.server.error.UnsupportedMetadataVersionException;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.GrowableByteBuffer;
@@ -183,19 +185,23 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private final SessionService sessionService;
     private final TreeService treeService;
     private final ConfigurationService config;
-    private AkibanInformationSchema ais;
+    private final TransactionService txnService;
     private RowDefCache rowDefCache;
     private int maxAISBufferSize;
     private boolean skipAISUpgrade;
     private SerializationType serializationType = SerializationType.NONE;
     private NameGenerator nameGenerator;
     private AtomicLong delayedTreeIDGenerator;
+    private SortedMap<Long,AkibanInformationSchema> aisMap;
+    private ReentrantReadWriteLock aisMapLock;
 
     @Inject
-    public PersistitStoreSchemaManager(ConfigurationService config, SessionService sessionService, TreeService treeService) {
+    public PersistitStoreSchemaManager(ConfigurationService config, SessionService sessionService,
+                                       TreeService treeService, TransactionService txnService) {
         this.config = config;
         this.sessionService = sessionService;
         this.treeService = treeService;
+        this.txnService = txnService;
     }
 
     @Override
@@ -567,7 +573,22 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     @Override
     public AkibanInformationSchema getAis(Session session) {
-        return ais;
+        final long generation;
+        try {
+            generation = getGenerationSnapshot(session);
+        } catch(PersistitException e) {
+            throw new PersistitAdapterException(e);
+        }
+        aisMapLock.readLock().lock();
+        try {
+            AkibanInformationSchema ais = aisMap.get(generation);
+            if(ais == null) {
+                throw new IllegalStateException("Unknown generation: " + generation); // TODO: load from disk
+            }
+            return ais;
+        } finally {
+            aisMapLock.readLock().unlock();
+        }
     }
 
     /**
@@ -715,35 +736,39 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                                                               config.getProperty(DEFAULT_COLLATION));
 
         final AkibanInformationSchema newAIS = loadAISFromStorage();
-
         if(!skipAISUpgrade) {
             // Upgrade goes here if we ever need another one
         } else {
             //LOG.warn("Skipping AIS upgrade");
         }
 
+        this.aisMap = new TreeMap<Long, AkibanInformationSchema>();
+        this.aisMapLock = new ReentrantReadWriteLock();
+
         transactionally(sessionService.createSession(), new ThrowingRunnable() {
             @Override
             public void run(Session session) throws PersistitException {
                 cleanupDelayedTrees(session);
                 validateAndFreeze(session, newAIS, false);
+                saveAISInMap(newAIS);
                 buildRowDefCache(newAIS);
             }
         });
 
-        this.nameGenerator = SynchronizedNameGenerator.wrap(new DefaultNameGenerator(ais));
+        this.nameGenerator = SynchronizedNameGenerator.wrap(new DefaultNameGenerator(newAIS));
         this.delayedTreeIDGenerator = new AtomicLong();
     }
 
     @Override
     public void stop() {
-        this.ais = null;
         this.rowDefCache = null;
         this.maxAISBufferSize = 0;
         this.skipAISUpgrade = false;
         this.serializationType = SerializationType.NONE;
         this.nameGenerator = null;
         this.delayedTreeIDGenerator = null;
+        this.aisMap = null;
+        this.aisMapLock = null;
     }
 
     @Override
@@ -816,7 +841,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             rowDefCache.setAIS(newAis);
             // This creates|verifies the trees exist for sequences
             sequenceTrees(newAis);
-            ais = newAis;
         } catch(PersistitException e) {
             LOG.error("AIS change successful and stored on disk but RowDefCache creation failed!");
             LOG.error("RUNNING STATE NOW INCONSISTENT");
@@ -877,6 +901,22 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         long generation = newGeneration ? getNextGeneration(session) : getGenerationSnapshot(session);
         newAIS.setGeneration(generation);
         newAIS.freeze();
+        if(newGeneration) {
+            saveAISInMap(newAIS);
+        }
+    }
+
+    private void saveAISInMap(AkibanInformationSchema ais) {
+        long generation = ais.getGeneration();
+        aisMapLock.writeLock().lock();
+        try {
+            if(aisMap.containsKey(generation)) {
+                throw new IllegalStateException("Expected new generation: " + generation);
+            }
+            aisMap.put(generation, ais);
+        } finally {
+            aisMapLock.writeLock().unlock();
+        }
     }
 
     /**
@@ -1024,7 +1064,15 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     @Override
     public long getOldestActiveAISGeneration() {
-        return ais.getGeneration();
+        aisMapLock.readLock().lock();
+        try {
+            if(aisMap.isEmpty()) {
+                return Long.MIN_VALUE;
+            }
+            return aisMap.firstKey();
+         } finally {
+            aisMapLock.readLock().unlock();
+        }
     }
 
     private Accumulator getGenerationAccumulator(Session session) throws PersistitException {
