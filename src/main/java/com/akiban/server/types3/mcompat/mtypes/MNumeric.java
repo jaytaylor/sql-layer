@@ -114,6 +114,10 @@ public class MNumeric extends SimpleDtdTClass {
         return instance(Math.max(leftWidth, rightWidth), suggestedNullability);
     }
 
+    public boolean isUnsigned() {
+        return isUnsigned;
+    }
+    
     private final int defaultWidth;
     private final boolean isUnsigned;
     
