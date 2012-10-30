@@ -2379,9 +2379,9 @@
 #command number: 403
 # This command used to be the one that's commented out. That expects a failure in types2, but it
 # succeeds in types3 and in MySQL. The rest of the queries here are of that same nature, so I'm just
-# going to turn this into a SET newtypes='false' instead. That way, the "command number" comments
+# going to turn this into a 'Newtypes: false' instead. That way, the "command number" comments
 # all stay right, and all we lose is an incorrect test.
-- Statement: SET newtypes='false'
+- Newtypes: false
 #- Statement: SELECT numeric_field + date_field FROM all_types;
 #- error: !select-engine { sys-mysql: [1064], all: [22503], newtypes: [22503] }
 ---
@@ -3098,5 +3098,5 @@
 #- Statement: SELECT timestamp_field - timestamp_field FROM all_types;
 #- output_types: [INTERVAL_MILLIS]
 ---
-- Statement: SET newtypes=DEFAULT;
+- Newtypes: null
 ...
