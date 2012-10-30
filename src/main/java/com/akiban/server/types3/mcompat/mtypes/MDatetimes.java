@@ -64,7 +64,7 @@ public class MDatetimes
     public static final NoAttrTClass TIME = new NoAttrTClass(MBundleID,
             "time", AkCategory.DATE_TIME, FORMAT.TIME, 1, 1, 4, PUnderlying.INT_32, TParsers.TIME, 8, TypeId.TIME_ID);
     public static final NoAttrTClass YEAR = new NoAttrTClass(MBundleID,
-            "year", AkCategory.DATE_TIME, FORMAT.YEAR, 1, 1, 1, PUnderlying.INT_8, TParsers.YEAR, 4, TypeId.YEAR_ID);
+            "year", AkCategory.DATE_TIME, FORMAT.YEAR, 1, 1, 1, PUnderlying.INT_16, TParsers.YEAR, 4, TypeId.YEAR_ID);
     public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(MBundleID,
             "timestamp", AkCategory.DATE_TIME, FORMAT.TIMESTAMP, 1, 1, 4, PUnderlying.INT_32, TParsers.TIMESTAMP, 19, TypeId.TIMESTAMP_ID);
 
@@ -121,11 +121,11 @@ public class MDatetimes
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out)
             {
-                byte raw = source.getInt8();
+                short raw = source.getInt16();
                 if (raw == 0)
                     out.append("0000");
                 else
-                    out.append((raw & 0xff) + 1900);
+                    out.append(raw + 1900);
             }
 
             @Override

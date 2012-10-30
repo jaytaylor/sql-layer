@@ -29,6 +29,7 @@ package com.akiban.server.rowdata;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.types.*;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -175,6 +176,8 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
         TClass tclass = fieldDef().column().tInstance().typeClass();
         if (tclass instanceof MNumeric)
             return ((MNumeric)tclass).isUnsigned() ? Signage.UNSIGNED : Signage.SIGNED;
+        else if (tclass == MDatetimes.YEAR)
+            return Signage.UNSIGNED;
         else
             return Signage.SIGNED;
     }
