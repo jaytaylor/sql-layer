@@ -8,4 +8,8 @@
 ---
 - Statement: SELECT s1, s2 FROM (SELECT id, 1 AS s1, 1 AS s2 FROM t1 LIMIT 5) AS x ORDER BY 1;
 - output: [[1, 1]]
+---
+- Statement: SELECT d1, d2 FROM
+             (SELECT id, CAST(1 AS DECIMAL(2,1)) AS d1, CAST(1 AS DECIMAL(2,1)) AS d2 FROM t1 LIMIT 5) AS x ORDER BY 1;
+- output: [[1, 1]]
 ...
