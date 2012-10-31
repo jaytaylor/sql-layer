@@ -37,6 +37,7 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
 
     private BigDecimal value;
 
+    
     public MBigDecimalWrapper(BigDecimal value) {
         this.value = value;
     }

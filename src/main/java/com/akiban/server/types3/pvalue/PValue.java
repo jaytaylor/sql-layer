@@ -134,7 +134,6 @@ public final class PValue implements PValueSource, PValueTarget {
     }
 
     // PValueSource interface
-
     @Override
     public final boolean isNull() {
         if (state == State.UNSET)
