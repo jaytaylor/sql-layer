@@ -213,24 +213,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     @Override
     public void renameTable(Session session, TableName currentName, TableName newName)
     {
-        final int tableID;
-        txnService.beginTransaction(session);
-        try {
-            tableID = getTable(session, currentName).getTableId();
-            txnService.commitTransaction(session);
-        } finally {
-            txnService.rollbackTransactionIfOpen(session);
-        }
-
-        lockService.tableClaim(session, LockService.Mode.EXCLUSIVE, tableID);
-        txnService.beginTransaction(session);
-        try {
-            schemaManager().renameTable(session, currentName, newName);
-            checkCursorsForDDLModification(session, getAIS(session).getTable(newName));
-            txnService.commitTransaction(session);
-        } finally {
-            txnService.rollbackTransactionIfOpen(session);
-        }
+        schemaManager().renameTable(session, currentName, newName);
+        checkCursorsForDDLModification(session, getAIS(session).getTable(newName));
     }
 
     @Override

@@ -75,7 +75,6 @@ public class DXLTransactionHook implements DXLFunctionsHook {
     private static boolean needsTransaction(DXLFunction function) {
         switch(function) {
             // DDL modifying existing table(s), locking and manual transaction handling needed
-            case RENAME_TABLE:
             case DROP_TABLE:
             case ALTER_TABLE:
             case DROP_SCHEMA:
@@ -84,7 +83,8 @@ public class DXLTransactionHook implements DXLFunctionsHook {
             case DROP_INDEXES:
                 return false;
 
-            // DDL changing AIS but does not modify existing table (locking not needed)
+            // DDL changing AIS but does not scan or modify existing table (locking not needed)
+            case RENAME_TABLE:
             case CREATE_TABLE:
             case CREATE_VIEW:
             case DROP_VIEW:
