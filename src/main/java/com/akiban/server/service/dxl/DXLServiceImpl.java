@@ -164,7 +164,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     protected List<DXLFunctionsHook> getHooks() {
         List<DXLFunctionsHook> hooks = new ArrayList<DXLFunctionsHook>();
-        hooks.add(DXLReadWriteLockHook.only());
+        //hooks.add(DXLReadWriteLockHook.only());
         hooks.add(new DXLTransactionHook(txnService));
         return hooks;
     }
