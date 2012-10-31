@@ -47,6 +47,8 @@ import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.google.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -55,6 +57,8 @@ import java.util.List;
 import java.util.Map;
 
 public class DXLServiceImpl implements DXLService, Service, JmxManageable {
+    private final static String CONFIG_GLOBAL_LOCK = "akserver.dxl.use_global_lock";
+    private final static Logger LOG = LoggerFactory.getLogger(DXLServiceImpl.class);
 
     private final Object MONITOR = new Object();
 
@@ -77,7 +81,9 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     @Override
     public void start() {
-        List<DXLFunctionsHook> hooks = getHooks();
+        boolean withGlobalLock = Boolean.parseBoolean(configService.getProperty(CONFIG_GLOBAL_LOCK));
+        LOG.debug("Using global lock: {}", withGlobalLock);
+        List<DXLFunctionsHook> hooks = getHooks(withGlobalLock);
         BasicDXLMiddleman middleman = BasicDXLMiddleman.create();
         HookableDDLFunctions localDdlFunctions
                 = new HookableDDLFunctions(createDDLFunctions(middleman), hooks,sessionService);
@@ -165,9 +171,12 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
         }
     }
 
-    protected List<DXLFunctionsHook> getHooks() {
+    protected List<DXLFunctionsHook> getHooks(boolean withGlobalLock) {
         List<DXLFunctionsHook> hooks = new ArrayList<DXLFunctionsHook>();
-        //hooks.add(DXLReadWriteLockHook.only());
+        if(withGlobalLock) {
+            LOG.warn("Global DDL lock is enabled");
+            hooks.add(DXLReadWriteLockHook.only());
+        }
         hooks.add(new DXLTransactionHook(txnService));
         return hooks;
     }
