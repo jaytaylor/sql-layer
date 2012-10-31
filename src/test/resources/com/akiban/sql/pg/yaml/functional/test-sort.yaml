@@ -4,5 +4,5 @@
 - Statement: INSERT INTO t1 VALUES (1, 'foo')
 ---
 - Statement: SELECT s1, s2 FROM (SELECT id, CURRENT_USER AS s1, CURRENT_USER AS s2 FROM t1 LIMIT 5) AS x ORDER BY 1;
-- output: [['foo', 'foo']]
----
+- output: [['test', 'test']]
+...
