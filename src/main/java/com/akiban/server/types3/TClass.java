@@ -107,7 +107,8 @@ public abstract class TClass {
             Object objectA = sourceA.getObject();
             if (objectA instanceof Comparable<?>) {
                 // assume objectA and objectB are of the same class. If it's comparable, use that
-                Comparable comparableA = (Comparable<?>) objectA;
+                @SuppressWarnings("unchecked")
+                Comparable<Object> comparableA = (Comparable<Object>) objectA;
                 return comparableA.compareTo(sourceB.getObject());
             }
         }
