@@ -40,6 +40,7 @@ import com.google.common.primitives.Booleans;
 import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Floats;
 import com.google.common.primitives.Longs;
+import com.google.common.primitives.UnsignedBytes;
 
 import java.nio.ByteBuffer;
 import java.util.regex.Pattern;
@@ -131,9 +132,7 @@ public abstract class TClass {
         case DOUBLE:
             return Doubles.compare(sourceA.getDouble(), sourceB.getDouble());
         case BYTES:
-            ByteBuffer bbA = ByteBuffer.wrap(sourceA.getBytes());
-            ByteBuffer bbB = ByteBuffer.wrap(sourceB.getBytes());
-            return bbA.compareTo(bbB);
+            return UnsignedBytes.lexicographicalComparator().compare(sourceA.getBytes(), sourceB.getBytes());
         case STRING:
             return sourceA.getString().compareTo(sourceB.getString());
         default:
