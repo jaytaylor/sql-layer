@@ -681,7 +681,7 @@ public class PersistitStore implements Store, Service {
     }
 
     @Override
-    public void dropGroup(Session session, Group group) throws PersistitException {
+    public void dropGroup(Session session, Group group) {
         for(Table table : group.getRoot().getAIS().getUserTables().values()) {
             if(table.getGroup() == group) {
                 removeTrees(session, table);

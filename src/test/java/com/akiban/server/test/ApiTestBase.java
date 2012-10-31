@@ -1008,7 +1008,7 @@ public class ApiTestBase {
         dropAllTables(session());
     }
 
-    protected final void dropAllTables(Session session) throws InvalidOperationException {
+    protected final void dropAllTables(final Session session) throws InvalidOperationException {
         for(Routine routine : ddl().getAIS(session).getRoutines().values()) {
             TableName name = routine.getName();
             if (!name.getSchemaName().equals(TableName.SQLJ_SCHEMA) &&

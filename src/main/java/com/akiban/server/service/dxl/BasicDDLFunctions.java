@@ -731,19 +731,44 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     public void dropGroup(Session session, TableName groupName)
     {
         logger.trace("dropping group {}", groupName);
-        final Group group = getAIS(session).getGroup(groupName);
-        if(group == null) {
-            return;
-        }
+
+        List<Integer> tableIDs = new ArrayList<Integer>();
+        txnService.beginTransaction(session);
         try {
-            store().dropGroup(session, group);
-        } catch (PersistitException ex) {
-            throw new PersistitAdapterException(ex);
+            AkibanInformationSchema ais = getAIS(session);
+            Group group = ais.getGroup(groupName);
+            if(groupName == null) {
+                return;
+            }
+            for(Table table : ais.getUserTables().values()) {
+                if(table.getGroup() == group) {
+                    tableIDs.add(table.getTableId());
+                }
+            }
+            txnService.commitTransaction(session);
+        } finally {
+            txnService.rollbackTransactionIfOpen(session);
         }
-        final UserTable root = group.getRoot();
-        schemaManager().dropTableDefinition(session, root.getName().getSchemaName(), root.getName().getTableName(),
-                                            SchemaManager.DropBehavior.CASCADE);
-        checkCursorsForDDLModification(session, root);
+
+        Collections.sort(tableIDs);
+        for(Integer id : tableIDs) {
+            lockService.claimTable(session, LockService.Mode.EXCLUSIVE, id);
+        }
+        txnService.beginTransaction(session);
+        try {
+            final Group group = getAIS(session).getGroup(groupName);
+            if(group == null) {
+                return;
+            }
+            store().dropGroup(session, group);
+            final UserTable root = group.getRoot();
+            schemaManager().dropTableDefinition(session, root.getName().getSchemaName(), root.getName().getTableName(),
+                                                SchemaManager.DropBehavior.CASCADE);
+            checkCursorsForDDLModification(session, root);
+            txnService.commitTransaction(session);
+        } finally {
+            txnService.rollbackTransactionIfOpen(session);
+        }
     }
 
     @Override
