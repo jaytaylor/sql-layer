@@ -41,7 +41,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import static com.akiban.server.util.ReadWriteMap.ValueCreator;
 
 public class LockServiceImpl implements LockService {
-    private final static boolean LOCK_MAP_FAIRNESS = false;
     private final static boolean TABLE_LOCK_FAIRENESS = false;
 
     private final static Session.Key<Boolean> SESSION_HAS_CB_KEY = Session.Key.named("LOCK_HAS_CB");
@@ -49,7 +48,7 @@ public class LockServiceImpl implements LockService {
     private final static Session.MapKey<Integer,int[]> SESSION_EXCLUSIVE_KEY = Session.MapKey.mapNamed("LOCK_EXCLUSIVE");
 
     private final TransactionService txnService;
-    private final ReadWriteMap<Integer,ReadWriteLock> lockMap = ReadWriteMap.wrap(new HashMap<Integer,ReadWriteLock>(), LOCK_MAP_FAIRNESS);
+    private final ReadWriteMap<Integer,ReadWriteLock> lockMap = ReadWriteMap.wrapNonFair(new HashMap<Integer,ReadWriteLock>());
 
     private final TransactionService.Callback unlockCallback = new TransactionService.Callback() {
         @Override

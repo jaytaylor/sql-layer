@@ -38,14 +38,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AISBuilder;
@@ -89,7 +87,6 @@ import com.akiban.server.error.UnsupportedMetadataTypeException;
 import com.akiban.server.error.UnsupportedMetadataVersionException;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeLink;
@@ -246,6 +243,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private NameGenerator nameGenerator;
     private AtomicLong delayedTreeIDGenerator;
     private ReadWriteMap<Long,SharedAIS> aisMap;
+    private ReadWriteMap<Integer,Integer> tableVersionMap;
     private AtomicReference<AISAndTimestamp> latestAISCache;
     private TransactionService.Callback latestAISCacheClearCallback;
     private TransactionService.Callback clearAISMapCallback;
@@ -318,6 +316,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
         final AkibanInformationSchema newAIS = AISCloner.clone(getAis(session));
         final UserTable newTable = newAIS.getUserTable(currentName);
+        // Rename does not affect scan or modify data, bumping version not required
         
         AISTableNameChanger nameChanger = new AISTableNameChanger(newTable);
         nameChanger.setSchemaName(newName.getSchemaName());
@@ -342,14 +341,20 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
         AISMerge merge = AISMerge.newForAddIndex(nameGenerator, getAis(session));
         Set<String> schemas = new HashSet<String>();
+
+        Collection<Integer> tableIDs = new ArrayList<Integer>(indexesToAdd.size());
         Collection<Index> newIndexes = new ArrayList<Index>(indexesToAdd.size());
         for(Index proposed : indexesToAdd) {
             Index newIndex = merge.mergeIndex(proposed);
             newIndexes.add(newIndex);
+            tableIDs.addAll(newIndex.getAllTableIDs());
             schemas.add(DefaultNameGenerator.schemaNameForIndex(newIndex));
         }
         merge.merge();
-        saveAISChangeWithRowDefs(session, merge.getAIS(), schemas);
+        AkibanInformationSchema newAIS = merge.getAIS();
+        bumpTableVersions(newAIS, tableIDs);
+
+        saveAISChangeWithRowDefs(session, newAIS, schemas);
         return newIndexes;
     }
 
@@ -369,6 +374,12 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                     }
         });
 
+        Collection<Integer> tableIDs = new ArrayList<Integer>(indexesToDrop.size());
+        for(Index index : indexesToDrop) {
+            tableIDs.addAll(index.getAllTableIDs());
+        }
+        bumpTableVersions(newAIS, tableIDs);
+
         final Set<String> schemas = new HashSet<String>();
         for(Index index : indexesToDrop) {
             schemas.add(DefaultNameGenerator.schemaNameForIndex(index));
@@ -386,7 +397,9 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     public void alterTableDefinitions(Session session, Collection<ChangedTableDescription> alteredTables) {
         ArgumentValidation.isTrue("Altered list is not empty", !alteredTables.isEmpty());
 
+        AkibanInformationSchema oldAIS = getAis(session);
         Set<String> schemas = new HashSet<String>();
+        List<Integer> tableIDs = new ArrayList<Integer>(alteredTables.size());
         for(ChangedTableDescription desc : alteredTables) {
             TableName oldName = desc.getOldName();
             TableName newName = desc.getNewName();
@@ -400,11 +413,13 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             }
             schemas.add(oldName.getSchemaName());
             schemas.add(newName.getSchemaName());
+            tableIDs.add(oldAIS.getUserTable(oldName).getTableId());
         }
 
         AISMerge merge = AISMerge.newForModifyTable(nameGenerator, getAis(session), alteredTables);
         merge.merge();
         AkibanInformationSchema newAIS = merge.getAIS();
+        bumpTableVersions(newAIS, tableIDs);
 
         for(ChangedTableDescription desc : alteredTables) {
             if(desc.isNewGroup()) {
@@ -424,7 +439,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                                  final boolean isInternal, final boolean mustBeMemory) {
         checkTableName(session, tableName, true, isInternal);
         final UserTable table = getAis(session).getUserTable(tableName);
-        assert table != null : tableName + " is a GroupTable";
 
         final List<TableName> tables = new ArrayList<TableName>();
         final Set<String> schemas = new HashSet<String>();
@@ -456,12 +470,10 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         });
 
         final AkibanInformationSchema newAIS = removeTablesFromAIS(session, tables, sequences);
-        try {
-            saveAISChangeWithRowDefs(session, newAIS, schemas);
-            deleteTableStatuses(tableIDs);
-        } catch(PersistitException e) {
-            throw wrapPersistitException(session, e);
-        }
+        bumpTableVersions(newAIS, Collections.singleton(table.getTableId()));
+
+        saveAISChangeWithRowDefs(session, newAIS, schemas);
+        //deleteTableStatuses(tableIDs); // Cannot transactionally remove IDs easily, so don't
     }
 
     private void deleteTableStatuses(List<Integer> tableIDs) throws PersistitException {
@@ -792,7 +804,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         AkibanInformationSchema.setDefaultCharsetAndCollation(config.getProperty(DEFAULT_CHARSET),
                                                               config.getProperty(DEFAULT_COLLATION));
 
-        this.aisMap = ReadWriteMap.wrap(new HashMap<Long,SharedAIS>(), false);
+        this.aisMap = ReadWriteMap.wrapNonFair(new HashMap<Long,SharedAIS>());
         this.latestAISCache = new AtomicReference<AISAndTimestamp>(new AISAndTimestamp(null, Long.MIN_VALUE));
         this.latestAISCacheClearCallback = new TransactionService.Callback() {
             @Override
@@ -829,6 +841,14 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
         this.nameGenerator = SynchronizedNameGenerator.wrap(new DefaultNameGenerator(newAIS));
         this.delayedTreeIDGenerator = new AtomicLong();
+        this.tableVersionMap = ReadWriteMap.wrapNonFair(new HashMap<Integer,Integer>());
+
+        for(UserTable table : newAIS.getUserTables().values()) {
+            if(!table.hasVersion()) {
+                table.setVersion(0);
+            }
+            tableVersionMap.put(table.getTableId(), table.getVersion());
+        }
     }
 
     @Override
@@ -1208,6 +1228,16 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         }
     }
 
+    @Override
+    public boolean hasTableChanged(Session session, int tableID) {
+        UserTable table = getAis(session).getUserTable(tableID);
+        if(table == null) {
+            throw new IllegalStateException("Unknown table: " + tableID);
+        }
+        Integer current = tableVersionMap.get(tableID);
+        return current.compareTo(table.getVersion()) != 0;
+    }
+
     private Accumulator getGenerationAccumulator(Session session) throws PersistitException {
         // treespace policy could split the _schema_ tree across volumes and give us multiple accumulators, which would
         // be very bad. Work around that with a fake/constant schema name. It isn't a problem if this somehow got changed
@@ -1255,18 +1285,20 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         checkJoinTo(newTable.getParentJoin(), newName, isInternal);
         AISMerge merge = AISMerge.newForAddTable(nameGenerator, getAis(session), newTable);
         merge.merge();
-        UserTable mergedTable = merge.getAIS().getUserTable(newName);
-        if(factory != null) {
-            mergedTable.setMemoryTableFactory(factory);
-        }
-        if(version != null) {
-            mergedTable.setVersion(version);
-        }
         AkibanInformationSchema newAIS = merge.getAIS();
+        UserTable mergedTable = newAIS.getUserTable(newName);
+
+        if(version == null) {
+            version = 0; // New user table
+        }
+        tableVersionMap.putNewKey(mergedTable.getTableId(), version);
+        mergedTable.setVersion(version);
+
         if(factory == null) {
             saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(newName.getSchemaName()));
         } else {
             // Memory only table changed, no reason to re-serialize
+            mergedTable.setMemoryTableFactory(factory);
             unSavedAISChangeWithRowDefs(session, newAIS);
         }
         try {
@@ -1277,7 +1309,23 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             LOG.error("Setting sequence starting value for table {} failed", mergedTable.getName().getDescription());
             throw wrapPersistitException(session, ex);
         }
-        return getAis(session).getUserTable(newName).getName();
+        return newName;
+    }
+
+    private void bumpTableVersions(AkibanInformationSchema newAIS, Collection<Integer> allTableIDs) {
+        for(Integer tableID : allTableIDs) {
+            Integer current = tableVersionMap.get(tableID);
+            Integer update = current + 1;
+            boolean success = tableVersionMap.compareAndSet(tableID, current, update);
+            // Failed CAS would indicate concurrent DDL on this table, which should be possible
+            if(!success) {
+                throw new IllegalStateException("Unexpected concurrent DDL on table: " + tableID);
+            }
+            UserTable table = newAIS.getUserTable(tableID);
+            if(table != null) { // From drop
+                table.setVersion(update);
+            }
+        }
     }
 
     private static void checkSystemSchema(TableName tableName, boolean shouldBeSystem) {

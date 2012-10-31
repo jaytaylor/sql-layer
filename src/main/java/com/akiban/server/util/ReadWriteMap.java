@@ -45,10 +45,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * underlying map (e.g cleanup) needs to happen in a globally consistent way.
  */
 public class ReadWriteMap<K,V> implements Map<K,V> {
+
     public interface ValueCreator<K,V> {
         V createValueForKey(K key);
     }
-    
+
 
     private final Map<K,V> map;
     private final ReadWriteLock rwLock;
@@ -62,8 +63,12 @@ public class ReadWriteMap<K,V> implements Map<K,V> {
         this.exclusive = rwLock.writeLock();
     }
 
-    public static <K,V> ReadWriteMap<K,V> wrap(Map<K,V> map, boolean isFair) {
-        return new ReadWriteMap<K,V>(map, isFair);
+    public static <K,V> ReadWriteMap<K,V> wrapNonFair(Map<K,V> map) {
+        return new ReadWriteMap<K,V>(map, false);
+    }
+
+    public static <K,V> ReadWriteMap<K,V> wrapFair(Map<K,V> map) {
+        return new ReadWriteMap<K,V>(map, true);
     }
 
 
@@ -138,6 +143,20 @@ public class ReadWriteMap<K,V> implements Map<K,V> {
             }
         }
         return value;
+    }
+
+    public boolean compareAndSet(K key, V expected, V update) {
+        claimExclusive();
+        try {
+            V current = map.get(key);
+            if(expected != current) {
+                return false;
+            }
+            map.put(key, update);
+            return true;
+        } finally {
+            releaseExclusive();
+        }
     }
 
 
@@ -251,5 +270,15 @@ public class ReadWriteMap<K,V> implements Map<K,V> {
     @Override
     public Set<Entry<K,V>> entrySet() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String toString() {
+        claimShared();
+        try {
+            return map.toString();
+        } finally {
+            releaseShared();
+        }
     }
 }

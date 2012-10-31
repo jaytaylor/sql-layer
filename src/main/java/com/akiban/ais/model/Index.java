@@ -50,6 +50,7 @@ public abstract class Index implements Traversable
     public abstract Table leafMostTable();
     public abstract Table rootMostTable();
     public abstract void checkMutability();
+    public abstract Collection<Integer> getAllTableIDs();
 
     protected Index(TableName tableName,
                     String indexName,
