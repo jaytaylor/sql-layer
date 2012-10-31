@@ -35,7 +35,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import static com.akiban.server.util.ReadWriteMap.ValueCreator;
 
 public class LockServiceImpl implements LockService {
     private final static boolean LOCK_MAP_FAIRNESS = false;
@@ -46,8 +49,7 @@ public class LockServiceImpl implements LockService {
     private final static Session.MapKey<Integer,int[]> SESSION_EXCLUSIVE_KEY = Session.MapKey.mapNamed("LOCK_EXCLUSIVE");
 
     private final TransactionService txnService;
-    private final ReadWriteMap<Integer,ReentrantReadWriteLock> lockMap =
-            ReadWriteMap.wrap(new HashMap<Integer, ReentrantReadWriteLock>(), LOCK_MAP_FAIRNESS);
+    private final ReadWriteMap<Integer,ReadWriteLock> lockMap = ReadWriteMap.wrap(new HashMap<Integer,ReadWriteLock>(), LOCK_MAP_FAIRNESS);
 
     private final TransactionService.Callback unlockCallback = new TransactionService.Callback() {
         @Override
@@ -125,24 +127,11 @@ public class LockServiceImpl implements LockService {
     // Internal methods
     //
 
-    private ReentrantReadWriteLock getLock(int tableID) {
-        ReentrantReadWriteLock lock = lockMap.get(tableID);
-        if(lock == null) {
-            lockMap.claimExclusive();
-            try {
-                lock = lockMap.get(tableID);
-                if(lock == null) {
-                    lock = new ReentrantReadWriteLock(TABLE_LOCK_FAIRENESS);
-                    lockMap.putNewKey(tableID, lock);
-                }
-            } finally {
-                lockMap.releaseExclusive();
-            }
-        }
-        return lock;
+    private ReadWriteLock getLock(int tableID) {
+        return lockMap.getOrCreateAndPut(tableID, RWL_CREATOR);
     }
 
-    private Lock getLevel(Mode mode, ReentrantReadWriteLock lock) {
+    private Lock getLevel(Mode mode, ReadWriteLock lock) {
         switch(mode) {
             case SHARED:
                 return lock.readLock();
@@ -204,4 +193,11 @@ public class LockServiceImpl implements LockService {
                 throw new IllegalStateException("Unknown mode: " + mode);
         }
     }
+
+    private static final ValueCreator<Integer,ReadWriteLock> RWL_CREATOR = new ValueCreator<Integer,ReadWriteLock>() {
+        @Override
+        public ReadWriteLock createValueForKey(Integer key) {
+            return new ReentrantReadWriteLock(TABLE_LOCK_FAIRENESS);
+        }
+    };
 }
