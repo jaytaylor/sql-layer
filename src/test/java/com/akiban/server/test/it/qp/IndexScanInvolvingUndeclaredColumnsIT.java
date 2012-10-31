@@ -49,8 +49,8 @@ import static com.akiban.server.test.ExpressionGenerators.field;
 
 public class IndexScanInvolvingUndeclaredColumnsIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         region = createTable(
             "schema", "region",
@@ -62,6 +62,11 @@ public class IndexScanInvolvingUndeclaredColumnsIT extends OperatorITBase
             "locid int not null",
             "grouping foreign key(rid) references region(rid)");
         createIndex("schema", "region_children", "idx_locid", "locid");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         regionChildrenRowType = schema.userTableRowType(userTable(regionChildren));
         idxRowType = indexType(regionChildren, "locid");

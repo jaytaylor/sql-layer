@@ -43,9 +43,7 @@ import com.akiban.qp.rowtype.*;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.collation.AkCollator;
-import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.types.AkType;
@@ -53,7 +51,6 @@ import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
-import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.akiban.util.Strings;
 import org.junit.After;
@@ -71,8 +68,6 @@ import static org.junit.Assert.fail;
 
 public class OperatorITBase extends ITBase
 {
-    private Transaction transaction;
-
     @Before
     public void before_beginTransaction() throws PersistitException {
         txnService().beginTransaction(session());
@@ -81,42 +76,57 @@ public class OperatorITBase extends ITBase
     @After
     public void after_endTransaction() throws PersistitException {
         txnService().commitTransaction(session());
+        txnService().rollbackTransactionIfOpen(session());
     }
 
     @Before
-    public void before() throws InvalidOperationException
-    {
-        txnService().commitTransaction(session());
+    public final void runAllSetup() {
+        // DDL cannot be performed in an open transaction, close (and reopen) if one exists
+        boolean wasActive = txnService().isTransactionActive(session());
+        if(wasActive)
+            txnService().commitTransaction(session());
+        try {
+            setupCreateSchema();
+        } finally {
+            if(wasActive)
+                txnService().beginTransaction(session());
+        }
+        setupPostCreateSchema();
+    }
+
+    protected void setupCreateSchema() {
         customer = createTable(
-            "schema", "customer",
-            "cid int not null primary key",
-            "name varchar(20)");
+                "schema", "customer",
+                "cid int not null primary key",
+                "name varchar(20)");
         createIndex("schema", "customer", "name", "name");
         order = createTable(
-            "schema", "order",
-            "oid int not null primary key",
-            "cid int",
-            "salesman varchar(20)",
-            "grouping foreign key (cid) references customer(cid)");
+                "schema", "order",
+                "oid int not null primary key",
+                "cid int",
+                "salesman varchar(20)",
+                "grouping foreign key (cid) references customer(cid)");
         createIndex("schema", "order", "salesman", "salesman");
         createIndex("schema", "order", "cid", "cid");
         item = createTable(
-            "schema", "item",
-            "iid int not null primary key",
-            "oid int",
-            "grouping foreign key (oid) references \"order\"(oid)");
+                "schema", "item",
+                "iid int not null primary key",
+                "oid int",
+                "grouping foreign key (oid) references \"order\"(oid)");
         createIndex("schema", "item", "oid", "oid");
         createIndex("schema", "item", "oid2", "oid", "iid");
         address = createTable(
-            "schema", "address",
-            "aid int not null primary key",
-            "cid int",
-            "address varchar(100)",
-            "grouping foreign key (cid) references customer(cid)");
+                "schema", "address",
+                "aid int not null primary key",
+                "cid int",
+                "address varchar(100)",
+                "grouping foreign key (cid) references customer(cid)");
         createIndex("schema", "address", "cid", "cid");
         createIndex("schema", "address", "address", "address");
         createGroupIndex("customer", "cname_ioid", "customer.name,item.oid", Index.JoinType.LEFT);
-        txnService().beginTransaction(session());
+    }
+
+    protected void setupPostCreateSchema() {
         schema = new Schema(ais());
         customerRowType = schema.userTableRowType(userTable(customer));
         orderRowType = schema.userTableRowType(userTable(order));

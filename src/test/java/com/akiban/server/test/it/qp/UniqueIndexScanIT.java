@@ -45,8 +45,8 @@ import static com.akiban.qp.operator.API.indexScan_Default;
 
 public class UniqueIndexScanIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         item = createTable(
             "schema", "item",
@@ -57,6 +57,11 @@ public class UniqueIndexScanIT extends OperatorITBase
         createUniqueIndex("schema", "item", "idx_x", "x");
         createUniqueIndex("schema", "item", "idx_y", "y");
         createUniqueIndex("schema", "item", "idx_xy", "x", "y");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         itemRowType = schema.userTableRowType(userTable(item));
         xIndexRowType = indexType(item, "x");

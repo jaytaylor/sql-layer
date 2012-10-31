@@ -67,9 +67,8 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
     private IndexRowType idxRowType;
     private Map<Long, TestRow> indexRowMap = new HashMap<Long, TestRow>();
 
-    @Before
     @Override
-    public void before()
+    protected void setupCreateSchema()
     {
         t = createTable(
             "schema", "t",
@@ -78,6 +77,10 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
             "b int",
             "c int");
         createUniqueIndex("schema", "t", "idx", "a", "b", "c");
+    }
+
+    @Override
+    protected void setupPostCreateSchema() {
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "a", "b", "c");

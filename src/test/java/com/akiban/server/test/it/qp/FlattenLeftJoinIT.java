@@ -61,8 +61,8 @@ import static com.akiban.server.types.AkType.*;
 
 public class FlattenLeftJoinIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         // Don't call super.before(). This is a different schema from most operator ITs.
         ancestor = createTable(
@@ -93,6 +93,11 @@ public class FlattenLeftJoinIT extends OperatorITBase
             "pid int",
             "avalue varchar(20)",
             "grouping foreign key(pid) references parent(pid)");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         ancestorRowType = schema.userTableRowType(userTable(ancestor));
         parentRowType = schema.userTableRowType(userTable(parent));

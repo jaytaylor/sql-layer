@@ -51,8 +51,8 @@ import static org.junit.Assert.assertEquals;
 
 public class GroupIndexRowIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         user = createTable(
             "schema", "usr",
@@ -71,6 +71,11 @@ public class GroupIndexRowIT extends OperatorITBase
             "primary key(entUserGroupID)",
             "grouping foreign key (uid) references member_info(profileID)");
         createGroupIndex("usr", "gi", "entitlement_user_group.uid,member_info.lastLogin", Index.JoinType.LEFT);
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new com.akiban.qp.rowtype.Schema(ais());
         userRowType = schema.userTableRowType(userTable(user));
         memberInfoRowType = schema.userTableRowType(userTable(memberInfo));

@@ -53,8 +53,8 @@ import static org.junit.Assert.assertEquals;
 
 public class UniqueIndexScanJumpUnboundedIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         t = createTable(
             "schema", "t",
@@ -63,6 +63,11 @@ public class UniqueIndexScanJumpUnboundedIT extends OperatorITBase
             "b int",
             "c int");
         createUniqueIndex("schema", "t", "idx", "a", "b", "c", "id");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "a", "b", "c", "id");
