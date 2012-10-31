@@ -345,8 +345,6 @@ public class PersistitStore implements Store, Service {
                           boolean propagateHKeyChanges) throws PersistitException
     {
         final int rowDefId = rowData.getRowDefId();
-        lockService.claimTable(session, LockService.Mode.SHARED, rowDefId);
-
         if (rowData.getRowSize() > MAX_ROW_SIZE) {
             if (LOG.isWarnEnabled()) {
                 LOG.warn("RowData size " + rowData.getRowSize() + " is larger than current limit of " + MAX_ROW_SIZE
@@ -356,6 +354,8 @@ public class PersistitStore implements Store, Service {
 
         final RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
         checkNoGroupIndexes(rowDef.table());
+        lockAndCheckVersion(session, rowDef);
+
         Exchange hEx;
         hEx = getExchange(session, rowDef);
         WRITE_ROW_TAP.in();
@@ -455,10 +455,10 @@ public class PersistitStore implements Store, Service {
         throws PersistitException
     {
         int rowDefId = rowData.getRowDefId();
-        lockService.claimTable(session, LockService.Mode.SHARED, rowDefId);
-
         RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
         checkNoGroupIndexes(rowDef.table());
+        lockAndCheckVersion(session, rowDef);
+
         Exchange hEx = null;
         DELETE_ROW_TAP.in();
         try {
@@ -518,8 +518,6 @@ public class PersistitStore implements Store, Service {
         throws PersistitException
     {
         int rowDefId = oldRowData.getRowDefId();
-        lockService.claimTable(session, LockService.Mode.SHARED, rowDefId);
-
         if (newRowData.getRowDefId() != rowDefId) {
             throw new IllegalArgumentException("RowData values have different rowDefId values: ("
                                                        + rowDefId + "," + newRowData.getRowDefId() + ")");
@@ -529,7 +527,9 @@ public class PersistitStore implements Store, Service {
         // Only non-pk or grouping columns could have change in this scenario
         RowDef rowDef = rowDefFromExplicitOrId(session, oldRowData);
         RowDef newRowDef = rowDefFromExplicitOrId(session, newRowData);
-        checkNoGroupIndexes(rowDef.table());
+        checkNoGroupIndexes(newRowDef.table());
+        lockAndCheckVersion(session, rowDef);
+
         Exchange hEx = null;
         UPDATE_ROW_TAP.in();
         try {
@@ -1393,6 +1393,14 @@ public class PersistitStore implements Store, Service {
     @Override
     public void setDeferIndexes(final boolean defer) {
         deferIndexes = defer;
+    }
+
+    private void lockAndCheckVersion(Session session, RowDef rowDef) {
+        int tableID = rowDef.getRowDefId();
+        lockService.claimTable(session, LockService.Mode.SHARED, tableID);
+        if(schemaManager.hasTableChanged(session, tableID)) {
+            throw new RuntimeException("Table changed");
+        }
     }
 
     public void traverse(Session session, Group group, TreeRecordVisitor visitor) throws PersistitException {

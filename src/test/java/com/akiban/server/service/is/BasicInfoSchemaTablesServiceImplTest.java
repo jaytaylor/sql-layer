@@ -798,5 +798,10 @@ public class BasicInfoSchemaTablesServiceImplTest {
         public long getOldestActiveAISGeneration() {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public boolean isTableVersionOld(Session session, int tableID, int knownVersion) {
+            throw new UnsupportedOperationException();
+        }
     }
 }

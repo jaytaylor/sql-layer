@@ -31,6 +31,8 @@ import com.akiban.server.geophile.Space;
 import com.akiban.server.geophile.SpaceLatLon;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -163,6 +165,11 @@ public class TableIndex extends Index
     @Override
     public void checkMutability() {
         table.checkMutability();
+    }
+
+    @Override
+    public Collection<Integer> getAllTableIDs() {
+        return Collections.singleton(table.getTableId());
     }
 
     public Table getTable()

@@ -57,6 +57,16 @@ public class GroupIndex extends Index
     }
 
     @Override
+    public Collection<Integer> getAllTableIDs()
+    {
+        List<Integer> branchIDs = new ArrayList<Integer>(tablesByDepth.size());
+        for (UserTable userTable = leafMostTable(); userTable != null; userTable = userTable.parentTable()) {
+            branchIDs.add(userTable.getTableId());
+        }
+        return branchIDs;
+    }
+
+    @Override
     public void addColumn(IndexColumn indexColumn)
     {
         Table indexGenericTable = indexColumn.getColumn().getTable();
