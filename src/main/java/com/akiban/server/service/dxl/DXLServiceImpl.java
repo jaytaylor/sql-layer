@@ -81,9 +81,10 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     @Override
     public void start() {
-        boolean withGlobalLock = Boolean.parseBoolean(configService.getProperty(CONFIG_GLOBAL_LOCK));
-        LOG.debug("Using global lock: {}", withGlobalLock);
-        List<DXLFunctionsHook> hooks = getHooks(withGlobalLock);
+        boolean withDDLLock = Boolean.parseBoolean(configService.getProperty(CONFIG_GLOBAL_LOCK));
+        DXLReadWriteLockHook.only().setDDLLockEnabled(withDDLLock);
+        LOG.debug("Using global lock: {}", withDDLLock);
+        List<DXLFunctionsHook> hooks = getHooks(withDDLLock);
         BasicDXLMiddleman middleman = BasicDXLMiddleman.create();
         HookableDDLFunctions localDdlFunctions
                 = new HookableDDLFunctions(createDDLFunctions(middleman), hooks,sessionService);

@@ -78,7 +78,10 @@ public class PostgresOperatorStatement extends PostgresDMLStatement
         int nrows = 0;
         Cursor cursor = null;
         IOException exceptionDuringExecution = null;
+        boolean lockSuccess = false;
         try {
+            lock(context, DXLFunction.UNSPECIFIED_DML_READ);
+            lockSuccess = true;
             cursor = API.cursor(resultOperator, context);
             cursor.open();
             PostgresOutputter<Row> outputter = getRowOutputter(context);
@@ -107,6 +110,9 @@ public class PostgresOperatorStatement extends PostgresDMLStatement
                 exceptionDuringCleanup = e;
                 logger.error("Caught exception while cleaning up cursor for {0}", resultOperator.describePlan());
                 logger.error("Exception stack", e);
+            }
+            finally {
+                unlock(context, DXLFunction.UNSPECIFIED_DML_READ, lockSuccess);
             }
             if (exceptionDuringExecution != null) {
                 throw exceptionDuringExecution;

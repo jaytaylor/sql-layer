@@ -48,8 +48,7 @@ public class LockServiceImpl implements LockService {
     private final static Session.MapKey<Integer,int[]> SESSION_EXCLUSIVE_KEY = Session.MapKey.mapNamed("LOCK_EXCLUSIVE");
 
     private final TransactionService txnService;
-    private final ReadWriteMap<Integer,ReadWriteLock> lockMap = ReadWriteMap.wrapNonFair(
-            new HashMap<Integer,ReadWriteLock>());
+    private final ReadWriteMap<Integer,ReadWriteLock> lockMap = ReadWriteMap.wrapNonFair(new HashMap<Integer,ReadWriteLock>());
 
     private final TransactionService.Callback unlockCallback = new TransactionService.Callback() {
         @Override

@@ -156,11 +156,21 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     }
 
     protected void updateAIS(EmbeddedQueryContext context) {
-        DDLFunctions ddl = reqs.dxl().ddlFunctions();
-        AkibanInformationSchema newAIS = ddl.getAIS(session);
-        if ((ais != null) && (ais.getGeneration() == newAIS.getGeneration()))
-            return;             // Unchanged.
-        ais = newAIS;
+        boolean locked = false;
+        try {
+            context.lock(DXLFunction.UNSPECIFIED_DDL_READ);
+            locked = true;
+            DDLFunctions ddl = reqs.dxl().ddlFunctions();
+            AkibanInformationSchema newAIS = ddl.getAIS(session);
+            if ((ais != null) && (ais.getGeneration() == newAIS.getGeneration()))
+                return;             // Unchanged.
+            ais = newAIS;
+        }
+        finally {
+            if (locked) {
+                context.unlock(DXLFunction.UNSPECIFIED_DDL_READ);
+            }
+        }
         rebuildCompiler();
     }
 

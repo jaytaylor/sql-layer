@@ -84,8 +84,16 @@ public class PostgresDDLStatement extends PostgresBaseStatement
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
-        AISDDL.execute(ddl, context);
-        {
+        boolean lockSuccess = false;
+        try {
+            lock(context, DXLFunction.UNSPECIFIED_DDL_WRITE);
+            lockSuccess = true;
+            AISDDL.execute(ddl, context);
+        }
+        finally {
+            unlock(context, DXLFunction.UNSPECIFIED_DDL_WRITE, lockSuccess);
+        }
+        {        
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
             messenger.writeString(ddl.statementToString());
             messenger.sendMessage();

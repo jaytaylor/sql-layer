@@ -35,11 +35,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import static junit.framework.Assert.*;
 
-@Ignore
 public class DDLLockTimeoutIT extends PostgresServerITBase
 {
     static enum State { 

@@ -45,6 +45,8 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
 
     private final ReentrantReadWriteLock schemaLock = new ReentrantReadWriteLock(true);
     private final ReentrantReadWriteLock dataLock = new ReentrantReadWriteLock(true);
+    private volatile boolean DDL_LOCK = true;
+
 
     private final static DXLReadWriteLockHook INSTANCE = new DXLReadWriteLockHook();
     private final static boolean DML_LOCK;
@@ -65,6 +67,10 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
 
     public boolean isEnabled() {
         return DML_LOCK;
+    }
+
+    public void setDDLLockEnabled(boolean enabled) {
+        DDL_LOCK = enabled;
     }
 
     @Override
@@ -112,6 +118,9 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
     }
 
     private boolean lockSchema(Session session, DXLFunction function, long timeout) throws InterruptedException {
+        if(!DDL_LOCK) {
+            return true;
+        }
         Lock lock;
         if (DXLType.DDL_FUNCTIONS_WRITE.equals(function.getType())) {
             if (schemaLock.isWriteLocked() && (!schemaLock.isWriteLockedByCurrentThread())) {
