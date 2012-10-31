@@ -42,7 +42,7 @@ BASE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # the sed of '-' -> 'ZZZ' -> '-' is to ensure stable sorting across OSes
 FAILED=$(grep '^testYaml' $BASE/target/surefire-reports/com.akiban.sql.pg.PostgresServerMiscYamlIT.txt | sed -E 's/testYaml \[([^]]*).*/\1/' | sed 's/-/ZZZ/g' | sort | sed 's/ZZZ/-/g')
 FAILDIFF=$(echo "$FAILED" | diff <(echo "$KNOWN_FAILURES") <(echo "$FAILED"))
-REGRESSIONS=$(echo "$FAILDIFF" | grep '>')
+REGRESSIONS=$(echo "$FAILDIFF" | grep '>[[:space:]]*[[:graph:]]')
 FIXES=$(echo "$FAILDIFF" | grep '<')
 RESULT="neither"
 REGRESSIONS_COUNT=0
