@@ -5,4 +5,7 @@
 ---
 - Statement: SELECT s1, s2 FROM (SELECT id, CURRENT_USER AS s1, CURRENT_USER AS s2 FROM t1 LIMIT 5) AS x ORDER BY 1;
 - output: [['test', 'test']]
+---
+- Statement: SELECT s1, s2 FROM (SELECT id, 1 AS s1, 1 AS s2 FROM t1 LIMIT 5) AS x ORDER BY 1;
+- output: [[1, 1]]
 ...
