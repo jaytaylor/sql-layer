@@ -28,6 +28,7 @@ package com.akiban.server.service.lock;
 
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
+import com.akiban.server.util.ReadWriteMap;
 import com.google.inject.Inject;
 
 import java.util.HashMap;
@@ -37,7 +38,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class LockServiceImpl implements LockService {
-    private final static boolean LOCK_MAP_LOCK_FAIRNESS = false;
+    private final static boolean LOCK_MAP_FAIRNESS = false;
     private final static boolean TABLE_LOCK_FAIRENESS = false;
 
     private final static Session.Key<Boolean> SESSION_HAS_CB_KEY = Session.Key.named("LOCK_HAS_CB");
@@ -45,8 +46,8 @@ public class LockServiceImpl implements LockService {
     private final static Session.MapKey<Integer,int[]> SESSION_EXCLUSIVE_KEY = Session.MapKey.mapNamed("LOCK_EXCLUSIVE");
 
     private final TransactionService txnService;
-    private final Map<Object,ReentrantReadWriteLock> lockMap = new HashMap<Object, ReentrantReadWriteLock>();
-    private final ReentrantReadWriteLock lockMapLock = new ReentrantReadWriteLock(LOCK_MAP_LOCK_FAIRNESS);
+    private final ReadWriteMap<Integer,ReentrantReadWriteLock> lockMap =
+            ReadWriteMap.wrap(new HashMap<Integer, ReentrantReadWriteLock>(), LOCK_MAP_FAIRNESS);
 
     private final TransactionService.Callback unlockCallback = new TransactionService.Callback() {
         @Override
@@ -75,12 +76,7 @@ public class LockServiceImpl implements LockService {
 
     @Override
     public void stop() {
-        lockMapLock.writeLock().lock();
-        try {
-            lockMap.clear();
-        } finally {
-            lockMapLock.writeLock().unlock();
-        }
+        lockMap.clear();
     }
 
     @Override
@@ -130,23 +126,17 @@ public class LockServiceImpl implements LockService {
     //
 
     private ReentrantReadWriteLock getLock(int tableID) {
-        ReentrantReadWriteLock lock;
-        lockMapLock.readLock().lock();
-        try {
-            lock = lockMap.get(tableID);
-        } finally {
-            lockMapLock.readLock().unlock();
-        }
+        ReentrantReadWriteLock lock = lockMap.get(tableID);
         if(lock == null) {
-            lockMapLock.writeLock().lock();
+            lockMap.claimExclusive();
             try {
                 lock = lockMap.get(tableID);
                 if(lock == null) {
                     lock = new ReentrantReadWriteLock(TABLE_LOCK_FAIRENESS);
-                    lockMap.put(tableID, lock);
+                    lockMap.putNewKey(tableID, lock);
                 }
             } finally {
-                lockMapLock.writeLock().unlock();
+                lockMap.releaseExclusive();
             }
         }
         return lock;
