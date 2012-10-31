@@ -35,6 +35,8 @@ import com.google.inject.Inject;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 
+import java.util.Deque;
+
 import static com.akiban.server.service.session.Session.Key;
 import static com.akiban.server.service.session.Session.StackKey;
 
@@ -145,27 +147,20 @@ public class PersistitTransactionService implements TransactionService {
     }
 
     @Override
-    public void addPreCommitCallback(Session session, Callback callback) {
-        requireActive(getTransaction(session));
-        session.push(PRE_COMMIT_KEY, callback);
+    public void addCallback(Session session, CallbackType type, Callback callback) {
+        session.push(getCallbackKey(type), callback);
     }
 
     @Override
-    public void addEndCallback(Session session, Callback callback) {
-        //requireActive(getTransaction(session));
-        session.push(AFTER_END_KEY, callback);
+    public void addCallbackOnActive(Session session, CallbackType type, Callback callback) {
+        requireActive(getTransaction(session));
+        session.push(getCallbackKey(type), callback);
     }
 
     @Override
-    public void addCommitCallback(Session session, Callback callback) {
-        requireActive(getTransaction(session));
-        session.push(AFTER_COMMIT_KEY, callback);
-    }
-
-    @Override
-    public void addRollbackCallback(Session session, Callback callback) {
-        requireActive(getTransaction(session));
-        session.push(AFTER_ROLLBACK_KEY, callback);
+    public void addCallbackOnInactive(Session session, CallbackType type, Callback callback) {
+        requireInactive(getTransaction(session));
+        session.push(getCallbackKey(type), callback);
     }
 
     @Override
@@ -197,7 +192,7 @@ public class PersistitTransactionService implements TransactionService {
     }
 
     private void requireInactive(Transaction txn) {
-        if(txn.isActive()) {
+        if((txn != null) && txn.isActive()) {
             throw new IllegalStateException("Transaction already began");
         }
     }
@@ -211,16 +206,29 @@ public class PersistitTransactionService implements TransactionService {
     private void end(Session session, Transaction txn, RuntimeException cause) {
         RuntimeException re = cause;
         try {
+            if(txn.isActive() && !txn.isCommitted() && !txn.isRollbackPending()) {
+                txn.rollback(); // Abnormally ended, do not call rollback hooks
+            }
+        } catch(RuntimeException e) {
+            re = MultipleCauseException.combine(re, e);
+        }
+        try {
             txn.end();
             //session.remove(TXN_KEY); // Needed if Sessions ever move between threads
         } catch(RuntimeException e) {
             re = MultipleCauseException.combine(re, e);
         } finally {
+            clearStack(session, PRE_COMMIT_KEY);
+            clearStack(session, AFTER_COMMIT_KEY);
+            clearStack(session, AFTER_ROLLBACK_KEY);
             runCallbacks(session, AFTER_END_KEY, -1, re);
-            session.remove(PRE_COMMIT_KEY);
-            session.remove(AFTER_COMMIT_KEY);
-            session.remove(AFTER_ROLLBACK_KEY);
-            session.remove(AFTER_END_KEY);
+        }
+    }
+
+    private void clearStack(Session session, StackKey<Callback> key) {
+        Deque<Callback> stack = session.get(key);
+        if(stack != null) {
+            stack.clear();
         }
     }
 
@@ -237,5 +245,15 @@ public class PersistitTransactionService implements TransactionService {
         if(exceptions != null) {
             throw exceptions;
         }
+    }
+
+    private static StackKey<Callback> getCallbackKey(CallbackType type) {
+        switch(type) {
+            case PRE_COMMIT:    return PRE_COMMIT_KEY;
+            case COMMIT:        return AFTER_COMMIT_KEY;
+            case ROLLBACK:      return AFTER_ROLLBACK_KEY;
+            case END:           return AFTER_END_KEY;
+        }
+        throw new IllegalArgumentException("Unknown CallbackType: " + type);
     }
 }

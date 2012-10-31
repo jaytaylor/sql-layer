@@ -30,6 +30,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.transaction.TransactionService;
 import org.junit.Test;
 
 import java.util.Set;
@@ -37,6 +38,7 @@ import java.util.concurrent.CyclicBarrier;
 
 import static com.akiban.server.store.PersistitStoreSchemaManager.SerializationType;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerITBase {
     private final static String SCHEMA = "my_schema";
@@ -107,13 +109,33 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
 
     @Test
     public void delayedTreeRemovalRollbackSafe() throws Exception {
+        final String EX_MSG = "Intentional";
         createAndLoad();
 
-        // Start a transaction for this thread so it can be aborted manually. Less invasive than hooks or similar.
-        treeService().getDb().getTransaction().begin();
-        ddl().dropTable(session(), TABLE_NAME);
-        treeService().getDb().getTransaction().rollback();
-        treeService().getDb().getTransaction().end();
+        // This is a bit of a hack, but only makes minor assumptions.
+        // DDL.dropTable() performs 2 transactions, first to get table ID to lock and then second to do DDL.
+        // Set up a hook for the end of the first that adds another hook for pre-commit of the second to cause a failure.
+
+        final TransactionService.Callback preCommitCB = new TransactionService.Callback() {
+            @Override
+            public void run(Session session, long timestamp) {
+                throw new RuntimeException(EX_MSG);
+            }
+        };
+        final TransactionService.Callback firstEndCB = new TransactionService.Callback() {
+            @Override
+            public void run(Session session, long timestamp) {
+                txnService().addCallbackOnInactive(session, TransactionService.CallbackType.PRE_COMMIT, preCommitCB);
+            }
+        };
+        txnService().addCallbackOnInactive(session(), TransactionService.CallbackType.END, firstEndCB);
+
+        try {
+            ddl().dropTable(session(), TABLE_NAME);
+            fail("Expected exception");
+        } catch(RuntimeException e) {
+            assertEquals("Correct exception (message)", EX_MSG, e.getMessage());
+        }
 
         safeRestart();
         expectFullRows(tid, rows);
@@ -133,7 +155,7 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
         for(int i = 0; i < COUNT; ++i) {
             createTable(SCHEMA, T1_NAME+i, T1_DDL);
         }
-        // Should be fully cleared after DDL is committed (performed synchronouslyy)
+        // Should be fully cleared after DDL is committed (performed synchronously)
         assertEquals("AIS map size", 1, pssm.getAISMapSize());
         pssm.clearUnreferencedAISMap();
         assertEquals("AIS map size after clearing", 1, pssm.getAISMapSize());

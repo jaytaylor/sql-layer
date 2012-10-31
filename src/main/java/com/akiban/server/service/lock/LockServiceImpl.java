@@ -172,7 +172,7 @@ public class LockServiceImpl implements LockService {
         Boolean hasCB = session.get(SESSION_HAS_CB_KEY);
         if(hasCB == null) {
             session.put(SESSION_HAS_CB_KEY, Boolean.TRUE);
-            txnService.addEndCallback(session, unlockCallback);
+            txnService.addCallback(session, TransactionService.CallbackType.END, unlockCallback);
         }
     }
 
