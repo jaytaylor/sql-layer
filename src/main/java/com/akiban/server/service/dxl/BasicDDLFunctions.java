@@ -235,17 +235,17 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         lockService.claimTable(session, LockService.Mode.EXCLUSIVE, tableID);
         txnService.beginTransaction(session);
         try {
-            dropTableInternal(session, tableName, tableID);
+            dropTableInternal(session, tableName);
             txnService.commitTransaction(session);
         } finally {
             txnService.rollbackTransactionIfOpen(session);
         }
     }
 
-    private void dropTableInternal(Session session, TableName tableName, int tableID) {
+    private void dropTableInternal(Session session, TableName tableName) {
         logger.trace("dropping table {}", tableName);
 
-        UserTable table = getAIS(session).getUserTable(tableID);
+        UserTable table = getAIS(session).getUserTable(tableName);
         if(table == null) {
             return;
         }
@@ -657,6 +657,34 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     {
         logger.trace("dropping schema {}", schemaName);
 
+        List<Integer> tableIDs = new ArrayList<Integer>();
+        txnService.beginTransaction(session);
+        try {
+            final com.akiban.ais.model.Schema schema = getAIS(session).getSchema(schemaName);
+            if(schema != null) {
+                for(Table table : schema.getUserTables().values()) {
+                    tableIDs.add(table.getTableId());
+                }
+            }
+            txnService.commitTransaction(session);
+        } finally {
+            txnService.rollbackTransactionIfOpen(session);
+        }
+
+        Collections.sort(tableIDs);
+        for(Integer id : tableIDs) {
+            lockService.claimTable(session, LockService.Mode.EXCLUSIVE, id);
+        }
+        txnService.beginTransaction(session);
+        try {
+            dropSchemaInternal(session, schemaName);
+            txnService.commitTransaction(session);
+        } finally {
+            txnService.rollbackTransactionIfOpen(session);
+        }
+    }
+
+    private void dropSchemaInternal(Session session, String schemaName) {
         final com.akiban.ais.model.Schema schema = getAIS(session).getSchema(schemaName);
         if (schema == null)
             return; // NOT throw new NoSuchSchemaException(schemaName); adapter does it.
@@ -727,10 +755,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             dropView(session, view.getName());
         }
         for(UserTable table : tablesToDrop) {
-            dropTable(session, table.getName());
+            dropTableInternal(session, table.getName());
         }
         for(Group group : groupsToDrop) {
-            dropGroup(session, group.getName());
+            dropGroupInternal(session, group.getName());
         }
         for (Sequence sequence : sequencesToDrop) {
             dropSequence(session, sequence.getSequenceName());
@@ -792,19 +820,23 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
         txnService.beginTransaction(session);
         try {
-            final Group group = getAIS(session).getGroup(groupName);
-            if(group == null) {
-                return;
-            }
-            store().dropGroup(session, group);
-            final UserTable root = group.getRoot();
-            schemaManager().dropTableDefinition(session, root.getName().getSchemaName(), root.getName().getTableName(),
-                                                SchemaManager.DropBehavior.CASCADE);
-            checkCursorsForDDLModification(session, root);
+            dropGroupInternal(session, groupName);
             txnService.commitTransaction(session);
         } finally {
             txnService.rollbackTransactionIfOpen(session);
         }
+    }
+
+    private void dropGroupInternal(Session session, TableName groupName) {
+        final Group group = getAIS(session).getGroup(groupName);
+        if(group == null) {
+            return;
+        }
+        store().dropGroup(session, group);
+        final UserTable root = group.getRoot();
+        schemaManager().dropTableDefinition(session, root.getName().getSchemaName(), root.getName().getTableName(),
+                                            SchemaManager.DropBehavior.CASCADE);
+        checkCursorsForDDLModification(session, root);
     }
 
     @Override
