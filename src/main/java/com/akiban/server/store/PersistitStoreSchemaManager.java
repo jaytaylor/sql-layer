@@ -34,9 +34,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -91,6 +93,7 @@ import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeLink;
+import com.akiban.server.util.ReadWriteMap;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.GrowableByteBuffer;
 import com.google.inject.Inject;
@@ -242,8 +245,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private SerializationType serializationType = SerializationType.NONE;
     private NameGenerator nameGenerator;
     private AtomicLong delayedTreeIDGenerator;
-    private SortedMap<Long,SharedAIS> aisMap;
-    private ReentrantReadWriteLock aisMapLock;
+    private ReadWriteMap<Long,SharedAIS> aisMap;
     private AtomicReference<AISAndTimestamp> latestAISCache;
     private TransactionService.Callback latestAISCacheClearCallback;
     private TransactionService.Callback clearAISMapCallback;
@@ -641,18 +643,13 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         long generation = 0;
         if(local == null) {
             generation = getGenerationSnapshot(session);
-            sharedMapClaim();
-            try {
-                local = aisMap.get(generation);
-            } finally {
-                sharedMapRelease();
-            }
+            local = aisMap.get(generation);
         }
 
         // Wasn't in map so need to reload from disk.
         // Should be 1) very rare and 2) fairly quick, so just do it under write lock to avoid duplicate work/entries
         if(local == null) {
-            exclusiveMapClaim();
+            aisMap.claimExclusive();
             try {
                 // Double check while while under exclusive
                 local = aisMap.get(generation);
@@ -665,7 +662,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                     }
                 }
             } finally {
-                exclusiveMapRelease();
+                aisMap.claimExclusive();
             }
         }
 
@@ -795,8 +792,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         AkibanInformationSchema.setDefaultCharsetAndCollation(config.getProperty(DEFAULT_CHARSET),
                                                               config.getProperty(DEFAULT_COLLATION));
 
-        this.aisMap = new TreeMap<Long, SharedAIS>();
-        this.aisMapLock = new ReentrantReadWriteLock();
+        this.aisMap = ReadWriteMap.wrap(new HashMap<Long,SharedAIS>(), false);
         this.latestAISCache = new AtomicReference<AISAndTimestamp>(new AISAndTimestamp(null, Long.MIN_VALUE));
         this.latestAISCacheClearCallback = new TransactionService.Callback() {
             @Override
@@ -844,7 +840,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         this.nameGenerator = null;
         this.delayedTreeIDGenerator = null;
         this.aisMap = null;
-        this.aisMapLock = null;
         this.latestAISCache = null;
         this.latestAISCacheClearCallback = null;
         this.clearAISMapCallback = null;
@@ -994,15 +989,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     private void saveNewAISInMap(SharedAIS sAIS) {
         long generation = sAIS.ais.getGeneration();
-        aisMapLock.writeLock().lock();
-        try {
-            if(aisMap.containsKey(generation)) {
-                throw new IllegalStateException("Expected new generation: " + generation);
-            }
-            aisMap.put(generation, sAIS);
-        } finally {
-            aisMapLock.writeLock().unlock();
-        }
+        aisMap.putNewKey(generation, sAIS);
     }
 
     private void updateLatestAISCache(final AISAndTimestamp newCache) {
@@ -1166,19 +1153,14 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     // Package for tests
     void clearAISMap() {
-        exclusiveMapClaim();
-        try {
-            aisMap.clear();
-        } finally {
-            exclusiveMapRelease();
-        }
+        aisMap.clear();
     }
 
     // Package for tests
     void clearUnreferencedAISMap() {
-        exclusiveMapClaim();
+        aisMap.claimExclusive();
         try {
-            Iterator<SharedAIS> it = aisMap.values().iterator();
+            Iterator<SharedAIS> it = aisMap.getWrappedMap().values().iterator();
             while(it.hasNext()) {
                 SharedAIS sAIS = it.next();
                 if(!sAIS.isShared()) {
@@ -1186,18 +1168,13 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 }
             }
         } finally {
-            exclusiveMapRelease();
+            aisMap.releaseExclusive();
         }
     }
 
     // Package for Tests
     int getAISMapSize() {
-        sharedMapClaim();
-        try {
-            return aisMap.size();
-        } finally {
-            sharedMapRelease();
-        }
+        return aisMap.size();
     }
 
     private Exchange schemaTreeExchange(Session session, String schema) {
@@ -1219,14 +1196,15 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     @Override
     public long getOldestActiveAISGeneration() {
-        sharedMapClaim();
+        aisMap.claimShared();
         try {
-            if(aisMap.isEmpty()) {
-                return Long.MIN_VALUE;
+            long min = Long.MIN_VALUE;
+            for(Long l : aisMap.getWrappedMap().keySet()) {
+                min = Math.min(min, l);
             }
-            return aisMap.firstKey();
+            return min;
          } finally {
-            sharedMapRelease();
+            aisMap.releaseShared();
         }
     }
 
@@ -1268,22 +1246,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         } else {
             txnService.addEndCallback(session, CLEAR_SESSION_KEY_CALLBACK);
         }
-    }
-
-    private void sharedMapClaim() {
-        aisMapLock.readLock().lock();
-    }
-
-    private void sharedMapRelease() {
-        aisMapLock.readLock().unlock();
-    }
-
-    private void exclusiveMapClaim() {
-        aisMapLock.writeLock().lock();
-    }
-
-    private void exclusiveMapRelease() {
-        aisMapLock.writeLock().unlock();
     }
 
     private TableName createTableCommon(Session session, UserTable newTable, boolean isInternal,

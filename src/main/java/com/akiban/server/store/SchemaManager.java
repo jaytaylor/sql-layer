@@ -226,4 +226,6 @@ public interface SchemaManager {
 
     /** Get oldest AIS generation still in memory */
     long getOldestActiveAISGeneration();
+
+    //boolean hasTableChanged(Session session, int tableID, int knownVersion);
 }
