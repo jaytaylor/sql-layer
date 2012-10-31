@@ -88,6 +88,14 @@ public final class Session
         return map.remove(key);
     }
 
+    public <K,V> Iterator<Map.Entry<K,V>> iterator(MapKey<K, V> mapKey) {
+        Map<K,V> map = get( mapKey.asKey() );
+        if (map == null) {
+            return null;
+        }
+        return map.entrySet().iterator();
+    }
+
     public <T> void push(StackKey<T> key, T item) {
         Deque<T> deque = get( key.asKey() );
         if (deque == null) {
