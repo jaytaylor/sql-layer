@@ -31,34 +31,28 @@ import com.akiban.server.service.transaction.TransactionService;
 import com.google.inject.Inject;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class LockServiceImpl implements LockService {
-    private final static boolean TXN_LOCK_FAIRNESS = false;
     private final static boolean LOCK_MAP_LOCK_FAIRNESS = false;
     private final static boolean TABLE_LOCK_FAIRENESS = false;
 
-    private final Session.Key<Boolean> SESSION_HAS_CB_KEY = Session.Key.named("LOCK_HAS_CB");
-    private final Session.MapKey<Integer,Mode> SESSION_TABLES_KEY = Session.MapKey.mapNamed("LOCK_TABLES");
+    private final static Session.Key<Boolean> SESSION_HAS_CB_KEY = Session.Key.named("LOCK_HAS_CB");
+    private final static Session.MapKey<Integer,int[]> SESSION_SHARED_KEY = Session.MapKey.mapNamed("LOCK_SHARED");
+    private final static Session.MapKey<Integer,int[]> SESSION_EXCLUSIVE_KEY = Session.MapKey.mapNamed("LOCK_EXCLUSIVE");
 
     private final TransactionService txnService;
     private final Map<Object,ReentrantReadWriteLock> lockMap = new HashMap<Object, ReentrantReadWriteLock>();
-    private final ReentrantReadWriteLock txnLock = new ReentrantReadWriteLock(TXN_LOCK_FAIRNESS);
     private final ReentrantReadWriteLock lockMapLock = new ReentrantReadWriteLock(LOCK_MAP_LOCK_FAIRNESS);
 
     private final TransactionService.Callback unlockCallback = new TransactionService.Callback() {
         @Override
         public void run(Session session, long timestamp) {
-            Iterator<Map.Entry<Integer,Mode>> it = session.iterator(SESSION_TABLES_KEY);
-            while(it.hasNext()) {
-                Map.Entry<Integer, Mode> entry = it.next();
-                tableRelease(session, entry.getValue(), entry.getKey(), false);
-            }
-            session.remove(SESSION_TABLES_KEY);
+            unlockEntireSessionMap(session, Mode.SHARED, SESSION_SHARED_KEY);
+            unlockEntireSessionMap(session, Mode.EXCLUSIVE, SESSION_EXCLUSIVE_KEY);
             session.remove(SESSION_HAS_CB_KEY);
         }
     };
@@ -100,40 +94,20 @@ public class LockServiceImpl implements LockService {
     //
 
     @Override
-    public void transactionClaim(Session session, Mode mode) {
-        getAccess(mode, txnLock).lock();
-    }
-
-    @Override
-    public void transactionClaimInterruptible(Session session, Mode mode) throws InterruptedException {
-        getAccess(mode, txnLock).lockInterruptibly();
-    }
-
-    @Override
-    public boolean transactionTryClaim(Session session, Mode mode, int milliseconds) throws InterruptedException {
-        return getAccess(mode, txnLock).tryLock(milliseconds, TimeUnit.MILLISECONDS);
-    }
-
-    @Override
-    public void transactionRelease(Session session, Mode mode) {
-        getAccess(mode, txnLock).unlock();
-    }
-
-    @Override
     public void tableClaim(Session session, Mode mode, int tableID) {
-        getAccess(mode, getLock(tableID)).lock();
+        getLevel(mode, getLock(tableID)).lock();
         trackForUnlock(session, mode, tableID);
     }
 
     @Override
     public void tableClaimInterruptible(Session session, Mode mode, int tableID) throws InterruptedException {
-        getAccess(mode, getLock(tableID)).lockInterruptibly();
+        getLevel(mode, getLock(tableID)).lock();
         trackForUnlock(session, mode, tableID);
     }
 
     @Override
     public boolean tableTryClaim(Session session, Mode mode, int tableID, int milliseconds) throws InterruptedException {
-        boolean locked = getAccess(mode, getLock(tableID)).tryLock(milliseconds, TimeUnit.MILLISECONDS);
+        boolean locked = getLevel(mode, getLock(tableID)).tryLock(milliseconds, TimeUnit.MILLISECONDS);
         if(locked) {
             trackForUnlock(session, mode, tableID);
         }
@@ -142,23 +116,18 @@ public class LockServiceImpl implements LockService {
 
     @Override
     public void tableRelease(Session session, Mode mode, int tableID) {
-        tableRelease(session, mode, tableID, true);
+        int[] count = getLockedCount(session, mode, tableID);
+        if((count == null) || (count[0] == 0)) {
+            throw new IllegalArgumentException("Table is not locked: " + tableID);
+        }
+        getLevel(mode, getLock(tableID)).unlock();
+        --count[0];
     }
+
 
     //
     // Internal methods
     //
-
-    public void tableRelease(Session session, Mode mode, int tableID, boolean removeKey) {
-        Mode prevMode = removeKey ? session.remove(SESSION_TABLES_KEY, tableID) : session.get(SESSION_TABLES_KEY, tableID);
-        if(prevMode == null) {
-            throw new IllegalArgumentException("Table is not locked: " + tableID);
-        }
-        if(prevMode != mode) {
-            throw new IllegalAccessError("Attempt to unlock " + prevMode + " with " + mode + " for table: " + tableID);
-        }
-        getAccess(mode, getLock(tableID)).unlock();
-    }
 
     private ReentrantReadWriteLock getLock(int tableID) {
         ReentrantReadWriteLock lock;
@@ -183,7 +152,7 @@ public class LockServiceImpl implements LockService {
         return lock;
     }
 
-    private Lock getAccess(Mode mode, ReentrantReadWriteLock lock) {
+    private Lock getLevel(Mode mode, ReentrantReadWriteLock lock) {
         switch(mode) {
             case SHARED:
                 return lock.readLock();
@@ -194,12 +163,55 @@ public class LockServiceImpl implements LockService {
         }
     }
 
+    private Map<Integer,int[]> getOrCreateModeMap(Session session, Mode mode) {
+        Map<Integer,int[]> map = session.get(getMapKey(mode));
+        if(map == null) {
+            map = new HashMap<Integer,int[]>();
+            session.put(getMapKey(mode), map);
+        }
+        return map;
+    }
+
+    private int[] getLockedCount(Session session, Mode mode, int tableID) {
+        return getOrCreateModeMap(session, mode).get(tableID);
+    }
+
     private void trackForUnlock(Session session, Mode mode, int tableID) {
-        session.put(SESSION_TABLES_KEY, tableID, mode);
+        Map<Integer,int[]> map = getOrCreateModeMap(session, mode);
+        int[] count = map.get(tableID);
+        if(count == null) {
+            count = new int[1];
+            map.put(tableID, count);
+        }
+        ++count[0];
         Boolean hasCB = session.get(SESSION_HAS_CB_KEY);
         if(hasCB == null) {
             session.put(SESSION_HAS_CB_KEY, Boolean.TRUE);
             txnService.addEndCallback(session, unlockCallback);
+        }
+    }
+
+    private void unlockEntireSessionMap(Session session, Mode mode, Session.MapKey<Integer, int[]> key) {
+        Map<Integer,int[]> lockedTables = session.remove(key);
+        if(lockedTables != null) {
+            for(Map.Entry<Integer, int[]> entry : lockedTables.entrySet()) {
+                Lock lock = getLevel(mode, getLock(entry.getKey()));
+                final int lockCount = entry.getValue()[0];
+                for(int i = 0; i < lockCount; ++i) {
+                    lock.unlock();
+                }
+            }
+        }
+    }
+
+    private static Session.MapKey<Integer,int[]> getMapKey(Mode mode) {
+        switch(mode) {
+            case SHARED:
+                return SESSION_SHARED_KEY;
+            case EXCLUSIVE:
+                return SESSION_EXCLUSIVE_KEY;
+            default:
+                throw new IllegalStateException("Unknown mode: " + mode);
         }
     }
 }
