@@ -53,7 +53,8 @@ public class AISDDLITBase extends ITBase {
     protected void executeDDL(String sql) throws Exception {
         // Most of the state in this depends on the current AIS, which changes
         // as a result of this, so it's simplest to just make a new session
-        // one every time.
+        // every time. Only views need all of the binder state, but
+        // it's just as easy to make the parser this way.
         TestSession session = new TestSession();
         StatementNode stmt = session.getParser().parseStatement(sql);
         assert (stmt instanceof DDLStatementNode) : stmt;
