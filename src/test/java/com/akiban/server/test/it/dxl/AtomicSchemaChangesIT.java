@@ -37,6 +37,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 import static junit.framework.Assert.*;
 
@@ -210,9 +211,14 @@ public class AtomicSchemaChangesIT extends ITBase
         return buffer;
     }
 
-    private Map<String, TableDefinition> createTableStatements(String schema) throws Exception
+    private Map<String, TableDefinition> createTableStatements(final String schema) throws Exception
     {
-        return serviceManager().getServiceByClass(SchemaManager.class).getTableDefinitions(session(), schema);
+        return transactionallyUnchecked(new Callable<Map<String, TableDefinition>>() {
+            @Override
+            public Map<String, TableDefinition> call() throws Exception {
+                return serviceManager().getServiceByClass(SchemaManager.class).getTableDefinitions(session(), schema);
+            }
+        });
     }
 
     private static final int BUFFER_SIZE = 100000; // 100K

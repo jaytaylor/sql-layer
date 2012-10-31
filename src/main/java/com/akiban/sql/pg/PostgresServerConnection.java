@@ -820,6 +820,19 @@ public class PostgresServerConnection extends ServerSessionBase
     protected PostgresStatement generateStatement(StatementNode stmt, 
                                                   List<ParameterNode> params,
                                                   int[] paramTypes) {
+        // Costing requires looking at AIS and potentially scanning index_stats rows
+        ServerTransaction local = (transaction == null) ? new ServerTransaction(this, true) : null;
+        try {
+            return generateStatementInternal(stmt, params, paramTypes);
+        } finally {
+            if (local != null)
+                local.commit();
+        }
+    }
+
+    private PostgresStatement generateStatementInternal(StatementNode stmt,
+                                                        List<ParameterNode> params,
+                                                        int[] paramTypes) {
         try {
             sessionTracer.beginEvent(EventTypes.OPTIMIZE);
             for (PostgresStatementGenerator generator : parsedGenerators) {
