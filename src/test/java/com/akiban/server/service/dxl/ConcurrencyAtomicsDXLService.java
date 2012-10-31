@@ -35,6 +35,7 @@ import com.akiban.server.api.dml.scan.LegacyRowOutput;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.error.CursorIsUnknownException;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
@@ -87,7 +88,8 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
 
     @Override
     DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
-        return new ConcurrencyAtomicsDDLFunctions(middleman, schemaManager(), store(), treeService(), indexStatisticsService(), configService(), t3Registry());
+        return new ConcurrencyAtomicsDDLFunctions(middleman, schemaManager(), store(), treeService(), indexStatisticsService(),
+                                                  configService(), t3Registry(), lockService(), txnService());
     }
 
     public static ScanHooks installScanHook(Session session, ScanHooks hook) {
@@ -123,8 +125,8 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
     @Inject
     public ConcurrencyAtomicsDXLService(SchemaManager schemaManager, Store store, TreeService treeService, SessionService sessionService,
                                         IndexStatisticsService indexStatisticsService, ConfigurationService configService,
-                                        T3RegistryService t3Registry, TransactionService txnService) {
-        super(schemaManager, store, treeService, sessionService, indexStatisticsService, configService, t3Registry, txnService, null);
+                                        T3RegistryService t3Registry, TransactionService txnService, LockService lockService) {
+        super(schemaManager, store, treeService, sessionService, indexStatisticsService, configService, t3Registry, txnService, lockService);
     }
 
     public class ScanhooksDMLFunctions extends BasicDMLFunctions {
@@ -181,8 +183,9 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
         }
 
         private ConcurrencyAtomicsDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService,
-                                               IndexStatisticsService indexStatisticsService, ConfigurationService configService, T3RegistryService t3Registry) {
-            super(middleman, schemaManager, store, treeService, indexStatisticsService, configService, t3Registry, null, null);
+                                               IndexStatisticsService indexStatisticsService, ConfigurationService configService,
+                                               T3RegistryService t3Registry, LockService lockService, TransactionService txnService) {
+            super(middleman, schemaManager, store, treeService, indexStatisticsService, configService, t3Registry, lockService, txnService);
         }
     }
 }

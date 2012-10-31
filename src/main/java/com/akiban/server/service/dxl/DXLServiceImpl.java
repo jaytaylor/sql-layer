@@ -227,6 +227,14 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
         return t3Registry;
     }
 
+    protected final TransactionService txnService() {
+        return txnService;
+    }
+
+    protected final LockService lockService() {
+        return lockService;
+    }
+
     protected final Session session() {
         return null;
     }

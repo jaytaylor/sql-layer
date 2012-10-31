@@ -345,6 +345,7 @@ public class PersistitStore implements Store, Service {
                           boolean propagateHKeyChanges) throws PersistitException
     {
         final int rowDefId = rowData.getRowDefId();
+
         if (rowData.getRowSize() > MAX_ROW_SIZE) {
             if (LOG.isWarnEnabled()) {
                 LOG.warn("RowData size " + rowData.getRowSize() + " is larger than current limit of " + MAX_ROW_SIZE
@@ -527,7 +528,7 @@ public class PersistitStore implements Store, Service {
         // Only non-pk or grouping columns could have change in this scenario
         RowDef rowDef = rowDefFromExplicitOrId(session, oldRowData);
         RowDef newRowDef = rowDefFromExplicitOrId(session, newRowData);
-        checkNoGroupIndexes(newRowDef.table());
+        checkNoGroupIndexes(rowDef.table());
         lockAndCheckVersion(session, rowDef);
 
         Exchange hEx = null;
