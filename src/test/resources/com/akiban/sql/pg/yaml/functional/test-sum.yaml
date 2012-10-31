@@ -21,13 +21,13 @@
 
 # Test sum with incompatible data types
 ---
-- Statement: SET newtypes='true'
+- Newtypes: true
 ---
 - Statement: SELECT sum(blob_field) FROM all_types
 - output: [[NULL]]
 
 ---
-- Statement: SET newtypes='false'
+- Newtypes: false
 ---
 - Statement: SELECT sum(blob_field) FROM all_types
 - error: [22503]
@@ -53,7 +53,7 @@
 - Statement: SELECT sum(varchar_field) FROM all_types
 - error: [22503]
 ---
-- Statement: SET newtypes=DEFAULT
+- Newtypes: null
 # Test sum with inserted rows
 
 ---
