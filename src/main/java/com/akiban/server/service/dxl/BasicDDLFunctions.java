@@ -27,6 +27,7 @@
 package com.akiban.server.service.dxl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -232,7 +233,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             txnService.rollbackTransactionIfOpen(session);
         }
 
-        lockService.claimTable(session, LockService.Mode.EXCLUSIVE, tableID);
+        lockTables(session, Arrays.asList(tableID));
         txnService.beginTransaction(session);
         try {
             dropTableInternal(session, tableName);
@@ -490,11 +491,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             txnService.rollbackTransactionIfOpen(session);
         }
 
-        Collections.sort(tableIDs);
-        for(Integer id : tableIDs) {
-            lockService.claimTable(session, LockService.Mode.EXCLUSIVE, id);
-        }
-
+        lockTables(session, tableIDs);
         final ChangeLevel level;
         txnService.beginTransaction(session);
         try {
@@ -671,10 +668,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             txnService.rollbackTransactionIfOpen(session);
         }
 
-        Collections.sort(tableIDs);
-        for(Integer id : tableIDs) {
-            lockService.claimTable(session, LockService.Mode.EXCLUSIVE, id);
-        }
+        lockTables(session, tableIDs);
         txnService.beginTransaction(session);
         try {
             dropSchemaInternal(session, schemaName);
@@ -686,8 +680,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     private void dropSchemaInternal(Session session, String schemaName) {
         final com.akiban.ais.model.Schema schema = getAIS(session).getSchema(schemaName);
-        if (schema == null)
+        if(schema == null) {
             return; // NOT throw new NoSuchSchemaException(schemaName); adapter does it.
+        }
 
         List<View> viewsToDrop = new ArrayList<View>();
         Set<View> seen = new HashSet<View>();
@@ -747,8 +742,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     break;
                 }
             }
-            if (!anyOutside)
+            if(!anyOutside) {
                 jarsToDrop.add(jar);
+            }
         }
         // Do the actual dropping
         for(View view : viewsToDrop) {
@@ -814,10 +810,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             txnService.rollbackTransactionIfOpen(session);
         }
 
-        Collections.sort(tableIDs);
-        for(Integer id : tableIDs) {
-            lockService.claimTable(session, LockService.Mode.EXCLUSIVE, id);
-        }
+        lockTables(session, tableIDs);
         txnService.beginTransaction(session);
         try {
             dropGroupInternal(session, groupName);
@@ -932,20 +925,20 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         txnService.beginTransaction(session);
         try {
             AkibanInformationSchema ais = getAIS(session);
+            // Cannot use Index.getAllTableIDs(), stub AIS only has to be name-correct
             for(Index index : indexesToAdd) {
                 switch(index.getIndexType()) {
                     case TABLE:
                         UserTable table = ais.getUserTable(index.getIndexName().getFullTableName());
-                        if(table == null) {
-                            break; // Let PSSM handle it
+                        if(table != null) {
+                            tableIDs.add(table.getTableId());
                         }
-                        tableIDs.add(table.getTableId());
                     break;
                     case GROUP:
                         table = ais.getUserTable(index.leafMostTable().getName());
                         while(table != null) {
                             tableIDs.add(table.getTableId());
-                            table = (table.getParentJoin() != null) ? table.getParentJoin().getParent() : null;
+                            table = table.parentTable();
                         }
                     break;
                     default:
@@ -957,11 +950,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             txnService.rollbackTransactionIfOpen(session);
         }
 
-        Collections.sort(tableIDs); // Lock order, low to high
-        for(Integer id : tableIDs) {
-            lockService.claimTable(session, LockService.Mode.EXCLUSIVE, id);
-        }
-
+        lockTables(session, tableIDs);
         Collection<Index> newIndexes = null;
         txnService.beginTransaction(session);
         try {
@@ -1008,7 +997,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             txnService.rollbackTransactionIfOpen(session);
         }
 
-        lockService.claimTable(session, LockService.Mode.EXCLUSIVE, tableID);
+        lockTables(session, Arrays.asList(tableID));
         txnService.beginTransaction(session);
         try {
             final Table table = getTable(session, tableName);
@@ -1051,20 +1040,13 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 if(index == null) {
                     throw new NoSuchIndexException(name);
                 }
-                UserTable table = index.leafMostTable();
-                while(table != null) {
-                    tableIDs.add(table.getTableId());
-                    table = (table.getParentJoin() != null) ? table.getParentJoin().getParent() : null;
-                }
+                tableIDs.addAll(index.getAllTableIDs());
             }
         } finally {
             txnService.rollbackTransactionIfOpen(session);
         }
 
-        Collections.sort(tableIDs);
-        for(Integer id : tableIDs) {
-            lockService.claimTable(session, LockService.Mode.EXCLUSIVE, id);
-        }
+        lockTables(session, tableIDs);
         txnService.beginTransaction(session);
         try {
             final Group group = getAIS(session).getGroup(groupName);
@@ -1094,8 +1076,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         if (indexesToUpdate == null) {
             indexes.addAll(table.getIndexes());
             for (Index index : table.getGroup().getIndexes()) {
-                if (table == index.leafMostTable())
+                if(table == index.leafMostTable()) {
                     indexes.add(index);
+                }
             }
         }
         else {
@@ -1103,8 +1086,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 Index index = table.getIndex(indexName);
                 if (index == null) {
                     index = table.getGroup().getIndex(indexName);
-                    if (index == null)
+                    if(index == null) {
                         throw new NoSuchIndexException(indexName);
+                    }
                 }
                 indexes.add(index);
             }
@@ -1129,8 +1113,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 List<Index> indexes = new ArrayList<Index>();
                 indexes.add(uTable.getPrimaryKeyIncludingInternal().getIndex());
                 for (Index gi : uTable.getGroup().getIndexes()) {
-                    if (gi.leafMostTable().equals(uTable))
+                    if(gi.leafMostTable().equals(uTable)) {
                         indexes.add(gi);
+                    }
                 }
                 for (Index index : indexes) {
                     IndexCheckResult indexCheckResult = checkAndFixIndex(session, index);
@@ -1227,6 +1212,13 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             if (scanTableId == tableId) {
                 cursor.setDDLModified();
             }
+        }
+    }
+
+    private void lockTables(Session session, List<Integer> tableIDs) {
+        Collections.sort(tableIDs); // Lock order: IDs low to high
+        for(Integer id : tableIDs) {
+            lockService.claimTable(session, LockService.Mode.EXCLUSIVE, id);
         }
     }
     
