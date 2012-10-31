@@ -94,19 +94,19 @@ public class LockServiceImpl implements LockService {
     //
 
     @Override
-    public void tableClaim(Session session, Mode mode, int tableID) {
+    public void claimTable(Session session, Mode mode, int tableID) {
         getLevel(mode, getLock(tableID)).lock();
         trackForUnlock(session, mode, tableID);
     }
 
     @Override
-    public void tableClaimInterruptible(Session session, Mode mode, int tableID) throws InterruptedException {
+    public void claimTableInterruptible(Session session, Mode mode, int tableID) throws InterruptedException {
         getLevel(mode, getLock(tableID)).lock();
         trackForUnlock(session, mode, tableID);
     }
 
     @Override
-    public boolean tableTryClaim(Session session, Mode mode, int tableID, int milliseconds) throws InterruptedException {
+    public boolean tryClaimTable(Session session, Mode mode, int tableID, int milliseconds) throws InterruptedException {
         boolean locked = getLevel(mode, getLock(tableID)).tryLock(milliseconds, TimeUnit.MILLISECONDS);
         if(locked) {
             trackForUnlock(session, mode, tableID);
@@ -115,7 +115,7 @@ public class LockServiceImpl implements LockService {
     }
 
     @Override
-    public void tableRelease(Session session, Mode mode, int tableID) {
+    public void releaseTable(Session session, Mode mode, int tableID) {
         int[] count = getLockedCount(session, mode, tableID);
         if((count == null) || (count[0] == 0)) {
             throw new IllegalArgumentException("Table is not locked: " + tableID);
