@@ -680,9 +680,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     private void dropSchemaInternal(Session session, String schemaName) {
         final com.akiban.ais.model.Schema schema = getAIS(session).getSchema(schemaName);
-        if(schema == null) {
+        if (schema == null)
             return; // NOT throw new NoSuchSchemaException(schemaName); adapter does it.
-        }
 
         List<View> viewsToDrop = new ArrayList<View>();
         Set<View> seen = new HashSet<View>();
@@ -742,9 +741,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     break;
                 }
             }
-            if(!anyOutside) {
+            if (!anyOutside)
                 jarsToDrop.add(jar);
-            }
         }
         // Do the actual dropping
         for(View view : viewsToDrop) {
@@ -1076,9 +1074,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         if (indexesToUpdate == null) {
             indexes.addAll(table.getIndexes());
             for (Index index : table.getGroup().getIndexes()) {
-                if(table == index.leafMostTable()) {
+                if (table == index.leafMostTable())
                     indexes.add(index);
-                }
             }
         }
         else {
@@ -1086,9 +1083,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 Index index = table.getIndex(indexName);
                 if (index == null) {
                     index = table.getGroup().getIndex(indexName);
-                    if(index == null) {
+                    if (index == null)
                         throw new NoSuchIndexException(indexName);
-                    }
                 }
                 indexes.add(index);
             }
@@ -1113,9 +1109,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 List<Index> indexes = new ArrayList<Index>();
                 indexes.add(uTable.getPrimaryKeyIncludingInternal().getIndex());
                 for (Index gi : uTable.getGroup().getIndexes()) {
-                    if(gi.leafMostTable().equals(uTable)) {
+                    if (gi.leafMostTable().equals(uTable))
                         indexes.add(gi);
-                    }
                 }
                 for (Index index : indexes) {
                     IndexCheckResult indexCheckResult = checkAndFixIndex(session, index);
