@@ -345,6 +345,7 @@ public class PersistitStore implements Store, Service {
                           boolean propagateHKeyChanges) throws PersistitException
     {
         final int rowDefId = rowData.getRowDefId();
+        lockService.claimTable(session, LockService.Mode.SHARED, rowDefId);
 
         if (rowData.getRowSize() > MAX_ROW_SIZE) {
             if (LOG.isWarnEnabled()) {
@@ -352,8 +353,6 @@ public class PersistitStore implements Store, Service {
                                  + " bytes");
             }
         }
-
-        lockService.tableClaim(session, LockService.Mode.SHARED, rowDefId);
 
         final RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
         checkNoGroupIndexes(rowDef.table());
@@ -456,6 +455,8 @@ public class PersistitStore implements Store, Service {
         throws PersistitException
     {
         int rowDefId = rowData.getRowDefId();
+        lockService.claimTable(session, LockService.Mode.SHARED, rowDefId);
+
         RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
         checkNoGroupIndexes(rowDef.table());
         Exchange hEx = null;
@@ -517,6 +518,8 @@ public class PersistitStore implements Store, Service {
         throws PersistitException
     {
         int rowDefId = oldRowData.getRowDefId();
+        lockService.claimTable(session, LockService.Mode.SHARED, rowDefId);
+
         if (newRowData.getRowDefId() != rowDefId) {
             throw new IllegalArgumentException("RowData values have different rowDefId values: ("
                                                        + rowDefId + "," + newRowData.getRowDefId() + ")");

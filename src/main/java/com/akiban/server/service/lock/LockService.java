@@ -32,8 +32,8 @@ import com.akiban.server.service.session.Session;
 public interface LockService extends Service {
     enum Mode { SHARED, EXCLUSIVE }
 
-    void tableClaim(Session session, Mode mode, int tableID);
-    void tableClaimInterruptible(Session session, Mode mode, int tableID) throws InterruptedException;
-    boolean tableTryClaim(Session session, Mode mode, int tableID, int milliseconds) throws InterruptedException;
-    void tableRelease(Session session, Mode mode, int tableID);
+    void claimTable(Session session, Mode mode, int tableID);
+    void claimTableInterruptible(Session session, Mode mode, int tableID) throws InterruptedException;
+    boolean tryClaimTable(Session session, Mode mode, int tableID, int milliseconds) throws InterruptedException;
+    void releaseTable(Session session, Mode mode, int tableID);
 }

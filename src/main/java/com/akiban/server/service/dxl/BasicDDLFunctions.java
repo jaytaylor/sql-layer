@@ -78,7 +78,6 @@ import com.akiban.server.AccumulatorAdapter.AccumInfo;
 import com.akiban.server.error.AlterMadeNoChangeException;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidAlterException;
-import com.akiban.server.error.NoSuchSchemaException;
 import com.akiban.server.error.ViewReferencesExist;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.FieldExpression;
@@ -93,7 +92,6 @@ import com.akiban.server.error.ForeignConstraintDDLException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchIndexException;
-import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchSequenceException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
@@ -234,7 +232,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             txnService.rollbackTransactionIfOpen(session);
         }
 
-        lockService.tableClaim(session, LockService.Mode.EXCLUSIVE, tableID);
+        lockService.claimTable(session, LockService.Mode.EXCLUSIVE, tableID);
         txnService.beginTransaction(session);
         try {
             dropTableInternal(session, tableName, tableID);
@@ -868,7 +866,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         Collections.sort(tableIDs); // Lock order, low to high
         for(Integer id : tableIDs) {
-            lockService.tableClaim(session, LockService.Mode.EXCLUSIVE, id);
+            lockService.claimTable(session, LockService.Mode.EXCLUSIVE, id);
         }
 
         Collection<Index> newIndexes = null;
@@ -913,7 +911,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             txnService.rollbackTransactionIfOpen(session);
         }
 
-        lockService.tableClaim(session, LockService.Mode.EXCLUSIVE, tableID);
+        lockService.claimTable(session, LockService.Mode.EXCLUSIVE, tableID);
         txnService.beginTransaction(session);
         try {
             final Table table = getTable(session, tableName);
@@ -968,7 +966,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
         Collections.sort(tableIDs);
         for(Integer id : tableIDs) {
-            lockService.tableClaim(session, LockService.Mode.EXCLUSIVE, id);
+            lockService.claimTable(session, LockService.Mode.EXCLUSIVE, id);
         }
         txnService.beginTransaction(session);
         try {
