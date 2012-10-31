@@ -48,8 +48,8 @@ import static com.akiban.server.test.ExpressionGenerators.field;
 
 public class MultiIndexCrossBranchIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         p = createTable(
             "schema", "p",
@@ -70,6 +70,11 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
             "z int",
             "grouping foreign key (pid) references p(pid)");
         createIndex("schema", "d", "dz", "z");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         pRowType = schema.userTableRowType(userTable(p));
         cRowType = schema.userTableRowType(userTable(c));

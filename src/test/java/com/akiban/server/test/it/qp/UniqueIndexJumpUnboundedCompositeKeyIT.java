@@ -86,9 +86,8 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     private Map<Long, TestRow> indexRowMap = new HashMap<Long, TestRow>();
     private Map<Long, TestRow> indexRowWithIdMap = new HashMap<Long, TestRow>(); // use for jumping
 
-    @Before
     @Override
-    public void before()
+    protected void setupCreateSchema()
     {
         t = createTable(
             "schema", "t",
@@ -98,9 +97,12 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
             "b int",
             "c int",
             "PRIMARY KEY (id1, id2)");
-        
         createUniqueIndex("schema", "t", "idx", "a", "b", "c");
-        
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "a", "b", "c");

@@ -48,8 +48,8 @@ import static com.akiban.qp.operator.API.*;
 
 public class Sort_Tree_RandomIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         // Don't call super.before(). This is a different schema from most operator ITs.
         t = createTable(
@@ -59,6 +59,11 @@ public class Sort_Tree_RandomIT extends OperatorITBase
             "c int not null",
             "d int not null",
             "id int not null primary key");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         group = group(t);

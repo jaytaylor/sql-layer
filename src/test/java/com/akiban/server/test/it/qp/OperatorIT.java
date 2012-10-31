@@ -46,10 +46,10 @@ import static com.akiban.qp.operator.API.JoinType.*;
 
 public class OperatorIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupPostCreateSchema()
     {
-        super.before();
+        super.setupPostCreateSchema();
         use(db);
     }
 

@@ -50,10 +50,9 @@ import static org.junit.Assert.assertTrue;
 
 public class FlattenIT extends OperatorITBase
 {
-    @Before
-    public void before()
-    {
-        super.before();
+    @Override
+    protected void setupPostCreateSchema() {
+        super.setupPostCreateSchema();
         NewRow[] dbWithOrphans = new NewRow[]{
             createNewRow(customer, 1L, "northbridge"),
             createNewRow(customer, 2L, "foundation"),

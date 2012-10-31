@@ -51,8 +51,8 @@ import static org.junit.Assert.assertTrue;
 
 public class Product3WayIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         // Don't call super.before(). This is a different schema from most operator ITs.
         r = createTable(
@@ -81,6 +81,11 @@ public class Product3WayIT extends OperatorITBase
             "cvalue varchar(20)",
             "grouping foreign key(rid) references r(rid)");
         createIndex("schema", "c", "cvalue", "cvalue");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         rRowType = schema.userTableRowType(userTable(r));
         aRowType = schema.userTableRowType(userTable(a));

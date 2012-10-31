@@ -51,8 +51,8 @@ import static com.akiban.server.test.ExpressionGenerators.field;
 @Ignore
 public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         t = createTable(
             "schema", "t",
@@ -69,6 +69,11 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
             "primary key(id)");
         createIndex("schema", "t", "idx_left", "test", "l1", "l2", "l3");
         createIndex("schema", "t", "idx_right", "test", "r1", "r2", "r3");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         leftIndexRowType = indexType(t, "test", "l1", "l2", "l3");

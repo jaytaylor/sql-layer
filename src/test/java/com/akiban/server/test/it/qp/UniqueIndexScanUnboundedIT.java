@@ -51,8 +51,8 @@ import static com.akiban.server.test.ExpressionGenerators.field;
 
 public class UniqueIndexScanUnboundedIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         t = createTable(
             "schema", "t",
@@ -61,6 +61,11 @@ public class UniqueIndexScanUnboundedIT extends OperatorITBase
             "b int",
             "c int");
         createUniqueIndex("schema", "t", "idx_abc", "a", "b", "c");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "a", "b", "c");

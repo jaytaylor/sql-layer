@@ -55,8 +55,8 @@ import static org.junit.Assert.fail;
 
 public class IndexScanBoundedIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         t = createTable(
             "schema", "t",
@@ -65,6 +65,11 @@ public class IndexScanBoundedIT extends OperatorITBase
             "b int",
             "c int");
         createIndex("schema", "t", "a", "a", "b", "c", "id");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "a", "b", "c", "id");
