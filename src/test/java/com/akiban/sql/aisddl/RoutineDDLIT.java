@@ -34,47 +34,30 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.sql.SQLException;
-
 import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
-import com.akiban.sql.pg.PostgresServerITBase;
+import com.akiban.server.error.NoSuchRoutineException;
 
 import java.net.URL;
 import java.util.Collection;
 
-public class RoutineDDLIT extends PostgresServerITBase {
-    private Statement stmt;
-
+public class RoutineDDLIT extends AISDDLITBase {
     @Before
-    public void createStatement() throws Exception {
-        stmt = getConnection().createStatement();
-        if (false) {
-            stmt.executeUpdate("CALL SQLJ.INSTALL_JAR('foo.jar', 'ajar', 0)");
-        }
-        else {
-            AISBuilder builder = new AISBuilder();
-            builder.sqljJar(SCHEMA_NAME, "ajar", new URL("file://foo.jar"));
-            ddl().createSQLJJar(session(), builder.akibanInformationSchema().getSQLJJar(SCHEMA_NAME, "ajar"));
-            updateAISGeneration();
-        }
-    }
-
-    @After
-    public void closeStatement() throws Exception {
-        stmt.close();
+    public void createJar() throws Exception {
+        // CALL SQLJ.INSTALL_JAR('foo.jar', 'ajar', 0)
+        AISBuilder builder = new AISBuilder();
+        builder.sqljJar(SCHEMA_NAME, "ajar", new URL("file://foo.jar"));
+        ddl().createSQLJJar(session(), builder.akibanInformationSchema().getSQLJJar(SCHEMA_NAME, "ajar"));
+        updateAISGeneration();
     }
 
     @Test
     public void testCreateJava() throws Exception {
-        stmt.executeUpdate("CREATE PROCEDURE proca(IN x INT, OUT d DOUBLE) LANGUAGE JAVA PARAMETER STYLE JAVA READS SQL DATA DYNAMIC RESULT SETS 1 EXTERNAL NAME 'ajar:com.acme.Procs.aproc'");
-        Routine proc = ddl().getAIS(session()).getRoutine(SCHEMA_NAME, "proca");
+        executeDDL("CREATE PROCEDURE proca(IN x INT, OUT d DOUBLE) LANGUAGE JAVA PARAMETER STYLE JAVA READS SQL DATA DYNAMIC RESULT SETS 1 EXTERNAL NAME 'ajar:com.acme.Procs.aproc'");
+        Routine proc = ais().getRoutine(SCHEMA_NAME, "proca");
         assertNotNull(proc);
         assertEquals("java", proc.getLanguage());
         assertEquals(Routine.CallingConvention.JAVA, proc.getCallingConvention());
@@ -89,18 +72,18 @@ public class RoutineDDLIT extends PostgresServerITBase {
         assertEquals(1, proc.getDynamicResultSets());
     }
 
-    @Test(expected=SQLException.class)
+    @Test(expected=NoSuchRoutineException.class)
     public void testDropNonexistent() throws Exception {
-        stmt.executeUpdate("DROP PROCEDURE no_such_proc");
+        executeDDL("DROP PROCEDURE no_such_proc");
     }
 
     @Test
     public void testDropExists() throws Exception {
-        stmt.executeUpdate("CREATE PROCEDURE procb() LANGUAGE JAVA PARAMETER STYLE JAVA EXTERNAL NAME 'ajar:com.acme.Procs.bproc'");
-        assertNotNull(ddl().getAIS(session()).getRoutine(SCHEMA_NAME, "procb"));
+        executeDDL("CREATE PROCEDURE procb() LANGUAGE JAVA PARAMETER STYLE JAVA EXTERNAL NAME 'ajar:com.acme.Procs.bproc'");
+        assertNotNull(ais().getRoutine(SCHEMA_NAME, "procb"));
 
-        stmt.executeUpdate("DROP PROCEDURE procb");
-        assertNull(ddl().getAIS(session()).getRoutine(SCHEMA_NAME, "procb"));
+        executeDDL("DROP PROCEDURE procb");
+        assertNull(ais().getRoutine(SCHEMA_NAME, "procb"));
     }
 
 }

@@ -36,18 +36,27 @@ import com.akiban.sql.server.ServerQueryContext;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerSessionBase;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AISDDLITBase extends ITBase {
+    public static final String SCHEMA_NAME = "test";
 
-    private static final Logger logger = LoggerFactory.getLogger(AISDDLITBase.class);
-    
+    protected List<String> warnings = null;
+
+    protected List<String> getWarnings() {
+        return warnings;
+    }
+
     protected void executeDDL(String sql) throws Exception {
         SQLParser parser = new SQLParser();
         StatementNode stmt = parser.parseStatement(sql);
         assert (stmt instanceof DDLStatementNode) : stmt;
-        AISDDL.execute((DDLStatementNode)stmt, new TestQueryContext());
+            AISDDL.execute((DDLStatementNode)stmt, queryContext());
+    }
+
+    protected TestQueryContext queryContext() {
+        return new TestQueryContext();
     }
 
     protected class TestQueryContext extends ServerQueryContext<TestSession> {
@@ -70,7 +79,8 @@ public class AISDDLITBase extends ITBase {
                                                 serviceManager().getServiceByClass(com.akiban.server.t3expressions.T3RegistryService.class),
                                                 serviceManager().getServiceByClass(com.akiban.server.service.routines.RoutineLoader.class),
                                                 txnService()));
-                                                
+            session = session();
+            defaultSchemaName = SCHEMA_NAME;
         }
 
         @Override
@@ -79,17 +89,9 @@ public class AISDDLITBase extends ITBase {
 
         @Override
         public void notifyClient(QueryContext.NotificationLevel level, ErrorCode errorCode, String message) {
-            switch (level) {
-            case WARNING:
-                logger.warn(message);
-                break;
-            case INFO:
-                logger.info(message);
-                break;
-            case DEBUG:
-                logger.debug(message);
-                break;
-            }
+            if (warnings == null)
+                warnings = new ArrayList<String>();
+            warnings.add(message);
         }
     }
 
