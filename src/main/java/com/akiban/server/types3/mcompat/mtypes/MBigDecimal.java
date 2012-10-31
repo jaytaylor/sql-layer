@@ -93,7 +93,7 @@ public class MBigDecimal extends TClassBase {
         int inputScale = inputInstance.attribute(Attrs.SCALE);
         int targetScale = targetInstance.attribute(Attrs.SCALE);
         if ( (inputPrecision != targetPrecision) || (inputScale != targetScale) ) {
-            BigDecimalWrapper bdw = getWrapper(source, inputInstance).copy();
+            BigDecimalWrapper bdw = new MBigDecimalWrapper().set(getWrapper(source, inputInstance));
             bdw.round(targetScale);
             target.putObject(bdw);
         }

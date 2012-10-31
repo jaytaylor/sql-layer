@@ -45,7 +45,6 @@ public interface BigDecimalWrapper extends Comparable<BigDecimalWrapper> {
     BigDecimalWrapper negate();
     BigDecimalWrapper abs();
     BigDecimalWrapper mod(BigDecimalWrapper num);
-    BigDecimalWrapper copy();
 
     int compareTo (BigDecimalWrapper o);
     int getScale();
