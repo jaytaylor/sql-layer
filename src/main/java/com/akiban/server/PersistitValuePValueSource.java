@@ -51,7 +51,8 @@ public final class PersistitValuePValueSource implements PValueSource {
         }
         else {
             Class<?> valueClass = persistitValue.getType();
-            // workaround for bug 1073357
+            // TODO This is a workaround for bug 1073357. When that's fixed, we should remove this block
+            // and the rawObject field, and we should uncomment the code at the end of this method
             Object decoded;
             if (valueClass == Object.class) {
                 decoded = persistitValue.get();
@@ -60,6 +61,7 @@ public final class PersistitValuePValueSource implements PValueSource {
             else {
                 decoded = null;
             }
+            // end workaround block
 
             PUnderlying rawUnderlying = classesToUnderlying.get(valueClass);
             if (rawUnderlying != null) {
@@ -72,6 +74,7 @@ public final class PersistitValuePValueSource implements PValueSource {
                 cacheObject = decoded;
                 rawObject = null;
             }
+// TODO uncomment this when bug 1073357 is fixed.
 //            else
 //                cacheObject = READY_FOR_CACHE;
         }
