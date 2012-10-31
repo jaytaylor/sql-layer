@@ -464,19 +464,55 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                                   List<TableChange> origColChanges, List<TableChange> origIndexChanges,
                                   QueryContext context)
     {
+        final List<Integer> tableIDs = new ArrayList<Integer>();
+        final List<TableChange> columnChanges = new ArrayList<TableChange>(origColChanges);
+        final List<TableChange> indexChanges = new ArrayList<TableChange>(origIndexChanges);
+        final TableChangeValidator validator;
+        txnService.beginTransaction(session);
+        try {
+            UserTable origTable = getUserTable(session, tableName);
+            validator = new TableChangeValidator(origTable, newDefinition, columnChanges, indexChanges,
+                                                 ALTER_AUTO_INDEX_CHANGES);
+
+            try {
+                validator.compareAndThrowIfNecessary();
+            } catch(TableChangeValidatorException e) {
+                throw new InvalidAlterException(tableName, e.getMessage());
+            }
+
+            for(ChangedTableDescription desc : validator.getAllChangedTables()) {
+                UserTable table = getUserTable(session, desc.getOldName());
+                tableIDs.add(table.getTableId());
+            }
+
+            txnService.commitTransaction(session);
+        } finally {
+            txnService.rollbackTransactionIfOpen(session);
+        }
+
+        Collections.sort(tableIDs);
+        for(Integer id : tableIDs) {
+            lockService.claimTable(session, LockService.Mode.EXCLUSIVE, id);
+        }
+
+        final ChangeLevel level;
+        txnService.beginTransaction(session);
+        try {
+            level = alterTableInternal(session, tableName, newDefinition, columnChanges, indexChanges, validator, context);
+            txnService.commitTransaction(session);
+        } finally {
+            txnService.rollbackTransactionIfOpen(session);
+        }
+        return level;
+    }
+
+    private ChangeLevel alterTableInternal(Session session, TableName tableName, UserTable newDefinition,
+                                           List<TableChange> columnChanges, List<TableChange> indexChanges,
+                                           TableChangeValidator validator,
+                                           QueryContext context)
+    {
         final AkibanInformationSchema origAIS = getAIS(session);
         final UserTable origTable = getUserTable(session, tableName);
-        List<TableChange> columnChanges = new ArrayList<TableChange>(origColChanges);
-        List<TableChange> indexChanges = new ArrayList<TableChange>(origIndexChanges);
-
-        TableChangeValidator validator = new TableChangeValidator(origTable, newDefinition, columnChanges, indexChanges,
-                                                                  ALTER_AUTO_INDEX_CHANGES);
-
-        try {
-            validator.compareAndThrowIfNecessary();
-        } catch(TableChangeValidatorException e) {
-            throw new InvalidAlterException(tableName, e.getMessage());
-        }
 
         ChangeLevel changeLevel;
         boolean success = false;
