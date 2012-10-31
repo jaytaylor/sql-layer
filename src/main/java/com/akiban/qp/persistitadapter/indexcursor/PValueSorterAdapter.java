@@ -94,7 +94,7 @@ final class PValueSorterAdapter extends SorterAdapter<PValueSource, TPreparedExp
 
     @Override
     protected void putFieldToTarget(PValueSource value, int i, AkType[] oFieldTypes, TInstance[] tFieldTypes) {
-        PValueTargets.copyFrom(value, valueTarget);
+        tFieldTypes[i].writeCanonical(value, valueTarget);
     }
 
     PValueSorterAdapter() {
