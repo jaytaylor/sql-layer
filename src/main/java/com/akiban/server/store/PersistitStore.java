@@ -104,13 +104,13 @@ public class PersistitStore implements Store, Service {
 
     private final TreeService treeService;
 
+    private final SchemaManager schemaManager;
+
+    private final LockService lockService;
+
     private TableStatusCache tableStatusCache;
 
     private DisplayFilter originalDisplayFilter;
-
-    private SchemaManager schemaManager;
-
-    private LockService lockService;
 
     private volatile IndexStatisticsService indexStatistics;
 
@@ -124,6 +124,7 @@ public class PersistitStore implements Store, Service {
         this.treeService = treeService;
         this.config = config;
         this.schemaManager = schemaManager;
+        this.lockService = lockService;
     }
 
     @Override

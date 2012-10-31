@@ -82,7 +82,6 @@ public class DXLTransactionHook implements DXLFunctionsHook {
             case DROP_VIEW:
             case DROP_SCHEMA:
             case DROP_GROUP:
-            case CREATE_INDEXES:
             case DROP_INDEXES:
             case CREATE_SEQUENCE:
             case DROP_SEQUENCE:
@@ -91,6 +90,9 @@ public class DXLTransactionHook implements DXLFunctionsHook {
             case CREATE_SQLJ_JAR:
             case REPLACE_SQLJ_JAR:
             case DROP_SQLJ_JAR:
+                return true;
+
+            case CREATE_INDEXES:
                 return false;
 
             case GET_DDLS:
