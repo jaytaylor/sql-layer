@@ -86,6 +86,7 @@ public class OperatorITBase extends ITBase
     @Before
     public void before() throws InvalidOperationException
     {
+        txnService().commitTransaction(session());
         customer = createTable(
             "schema", "customer",
             "cid int not null primary key",
@@ -115,6 +116,7 @@ public class OperatorITBase extends ITBase
         createIndex("schema", "address", "cid", "cid");
         createIndex("schema", "address", "address", "address");
         createGroupIndex("customer", "cname_ioid", "customer.name,item.oid", Index.JoinType.LEFT);
+        txnService().beginTransaction(session());
         schema = new Schema(ais());
         customerRowType = schema.userTableRowType(userTable(customer));
         orderRowType = schema.userTableRowType(userTable(order));
