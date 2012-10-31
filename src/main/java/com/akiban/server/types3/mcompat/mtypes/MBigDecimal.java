@@ -52,6 +52,7 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 import com.akiban.util.AkibanAppender;
 
+import com.google.common.primitives.UnsignedBytes;
 import java.math.BigDecimal;
 
 public class MBigDecimal extends TClassBase {
@@ -116,6 +117,28 @@ public class MBigDecimal extends TClassBase {
     public MBigDecimal(String name, int defaultVarcharLen){
         super(MBundle.INSTANCE.id(), name, AkCategory.DECIMAL, Attrs.class, NumericFormatter.FORMAT.BIGDECIMAL, 1, 1, 8,
                 PUnderlying.BYTES, TParsers.DECIMAL, defaultVarcharLen);
+    }
+
+    @Override
+    protected int doCompare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB)
+    {
+        if(!sourceA.hasCacheValue() && !sourceB.hasCacheValue()) // both have bytearrays
+        {
+            byte bytesA[] = sourceA.getBytes();
+            boolean aSigned = bytesA[0] >= 0;
+
+            byte bytesB[] = sourceB.getBytes();
+            boolean bSigned = bytesB[0] >= 0;
+   
+            // optimise easy case:
+            // if the two are of opposite sign, there's no need for comparison
+            if (bSigned ^ aSigned)
+                return aSigned ? -1 : 1;        // a < 0 < b or a > 0 > b
+            else
+                return UnsignedBytes.lexicographicalComparator().compare(bytesA, bytesB);
+        }
+        else
+            return getWrapper(sourceA, instanceA).compareTo(getWrapper(sourceB, instanceB));
     }
 
     @Override
