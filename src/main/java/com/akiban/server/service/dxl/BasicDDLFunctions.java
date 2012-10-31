@@ -40,6 +40,7 @@ import java.util.regex.Pattern;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
@@ -212,39 +213,77 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     @Override
     public void renameTable(Session session, TableName currentName, TableName newName)
     {
-        schemaManager().renameTable(session, currentName, newName);
-        checkCursorsForDDLModification(session, getAIS(session).getTable(newName));
+        final int tableID;
+        txnService.beginTransaction(session);
+        try {
+            tableID = getTable(session, currentName).getTableId();
+            txnService.commitTransaction(session);
+        } finally {
+            txnService.rollbackTransactionIfOpen(session);
+        }
+
+        lockService.tableClaim(session, LockService.Mode.EXCLUSIVE, tableID);
+        txnService.beginTransaction(session);
+        try {
+            schemaManager().renameTable(session, currentName, newName);
+            checkCursorsForDDLModification(session, getAIS(session).getTable(newName));
+            txnService.commitTransaction(session);
+        } finally {
+            txnService.rollbackTransactionIfOpen(session);
+        }
     }
 
     @Override
     public void dropTable(Session session, TableName tableName)
     {
-        logger.trace("dropping table {}", tableName);
-        final Table table = getAIS(session).getTable(tableName);
-        
-        if(table == null) {
-            return; // dropping a non-existing table is a no-op
+        final int tableID;
+        txnService.beginTransaction(session);
+        try {
+            UserTable table = getAIS(session).getUserTable(tableName);
+            // Dropping a non-existing table is a no-op
+            if(table == null) {
+                return;
+            }
+            tableID = table.getTableId();
+            txnService.commitTransaction(session);
+        } finally {
+            txnService.rollbackTransactionIfOpen(session);
         }
 
-        final UserTable userTable = table.isUserTable() ? (UserTable)table : null;
+        lockService.tableClaim(session, LockService.Mode.EXCLUSIVE, tableID);
+        txnService.beginTransaction(session);
+        try {
+            dropTableInternal(session, tableName, tableID);
+            txnService.commitTransaction(session);
+        } finally {
+            txnService.rollbackTransactionIfOpen(session);
+        }
+    }
 
-        // Halo spec: may only drop leaf tables through DDL interface
-        if(userTable == null || userTable.getChildJoins().isEmpty() == false) {
+    private void dropTableInternal(Session session, TableName tableName, int tableID) {
+        logger.trace("dropping table {}", tableName);
+
+        UserTable table = getAIS(session).getUserTable(tableID);
+        if(table == null) {
+            return;
+        }
+
+        // May only drop leaf tables through DDL interface
+        if(!table.getChildJoins().isEmpty()) {
             throw new UnsupportedDropException(table.getName());
         }
 
         DMLFunctions dml = new BasicDMLFunctions(middleman(), schemaManager(), store(), treeService(), this);
-        if(userTable.getParentJoin() == null) {
+        if(table.isRoot()) {
             // Root table and no child tables, can delete all associated trees
             store().removeTrees(session, table);
         } else {
             dml.truncateTable(session, table.getTableId());
-            store().deleteIndexes(session, userTable.getIndexesIncludingInternal());
-            store().deleteIndexes(session, userTable.getGroupIndexes());
-            
-            
-            if (userTable.getIdentityColumn() != null) {
-                Collection<Sequence> sequences = Collections.singleton(userTable.getIdentityColumn().getIdentityGenerator());
+            store().deleteIndexes(session, table.getIndexesIncludingInternal());
+            store().deleteIndexes(session, table.getGroupIndexes());
+
+            if (table.getIdentityColumn() != null) {
+                Collection<Sequence> sequences = Collections.singleton(table.getIdentityColumn().getIdentityGenerator());
                 store().deleteSequences(session, sequences);
             }
         }
@@ -460,14 +499,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         ChangeLevel changeLevel;
         boolean success = false;
         boolean oldWasRootAndIsNewGroup = false;
-        Set<String> savedSchemas = new HashSet<String>();
-        Map<TableName,Integer> savedOrdinals = new HashMap<TableName,Integer>();
         List<Index> indexesToDrop = new ArrayList<Index>();
         List<Sequence> sequencesToDrop = new ArrayList<Sequence>();
         List<IndexName> newIndexTrees = new ArrayList<IndexName>();
 
-        savedSchemas.add(tableName.getSchemaName());
-        savedSchemas.add(newDefinition.getName().getSchemaName());
         try {
             changeLevel = validator.getFinalChangeLevel();
             Map<IndexName, List<TableColumnNames>> affectedGroupIndexes = validator.getAffectedGroupIndexes();
@@ -543,9 +578,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                         UserTable oldTable = origAIS.getUserTable(desc.getOldName());
                         Index index = oldTable.getPrimaryKeyIncludingInternal().getIndex();
                         indexesToTruncate.add(index);
-                        savedSchemas.add(desc.getOldName().getSchemaName());
-                        savedOrdinals.put(desc.getOldName(), oldTable.rowDef().getOrdinal());
-
                         if((oldTable == origTable) && oldTable.isRoot() && desc.isNewGroup()) {
                             oldWasRootAndIsNewGroup = true;
                         }
@@ -821,39 +853,63 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
 
-        int tid = indexesToAdd.iterator().next().leafMostTable().getTableId();
-        lockService.tableClaim(session, LockService.Mode.EXCLUSIVE, tid);
+        List<Integer> tableIDs = new ArrayList<Integer>(indexesToAdd.size());
         txnService.beginTransaction(session);
-
-
-        final Collection<Index> newIndexes;
-        newIndexes = schemaManager().createIndexes(session, indexesToAdd);
-
-        for(Index index : newIndexes) {
-            checkCursorsForDDLModification(session, index.leafMostTable());
-        }
-
         try {
-            store().buildIndexes(session, newIndexes, DEFER_INDEX_BUILDING);
-        } catch(InvalidOperationException e) {
-            // Try and roll back all changes
-            try {
-                /*
-                 * Call to deleteIndexes removed "temporarily" to fix
-                 * a problem with MVCC pruning.  Theory: records
-                 * added to any indexes will be removed anyway by
-                 * rollback.  Any new Tree instances created above by
-                 * buildIndexes will be left behind, but empty. -- Peter
-                 */
-//                store().deleteIndexes(session, newIndexes);
-                schemaManager().dropIndexes(session, newIndexes);
-            } catch(Exception e2) {
-                logger.error("Exception while rolling back failed createIndex: " + newIndexes, e2);
+            AkibanInformationSchema ais = getAIS(session);
+            for(Index index : indexesToAdd) {
+                switch(index.getIndexType()) {
+                    case TABLE:
+                        UserTable table = ais.getUserTable(index.getIndexName().getFullTableName());
+                        if(table == null) {
+                            break; // Let PSSM handle it
+                        }
+                        tableIDs.add(table.getTableId());
+                    break;
+                    case GROUP:
+                        table = ais.getUserTable(index.leafMostTable().getName());
+                        while(table != null) {
+                            tableIDs.add(table.getTableId());
+                            table = (table.getParentJoin() != null) ? table.getParentJoin().getParent() : null;
+                        }
+                    break;
+                    default:
+                        throw new IllegalStateException("Unknown index type: " + index.getIndexType());
+                }
             }
-            throw e;
+            txnService.commitTransaction(session);
+        } finally {
+            txnService.rollbackTransactionIfOpen(session);
         }
 
-        txnService.commitTransaction(session);
+        Collections.sort(tableIDs); // Lock order, low to high
+        for(Integer id : tableIDs) {
+            lockService.tableClaim(session, LockService.Mode.EXCLUSIVE, id);
+        }
+
+        Collection<Index> newIndexes = null;
+        txnService.beginTransaction(session);
+        try {
+            newIndexes = schemaManager().createIndexes(session, indexesToAdd);
+            for(Index index : newIndexes) {
+                checkCursorsForDDLModification(session, index.leafMostTable());
+            }
+            store().buildIndexes(session, newIndexes, DEFER_INDEX_BUILDING);
+            txnService.commitTransaction(session);
+            newIndexes.clear();
+        } finally {
+            txnService.rollbackTransactionIfOpen(session);
+
+            // If indexes left in list, transaction was not committed and trees aren't transactional. Try to clean up.
+            if((newIndexes != null) && !newIndexes.isEmpty()) {
+                Collection<TreeLink> links = new ArrayList<TreeLink>(newIndexes.size());
+                for(Index index : newIndexes) {
+                    links.add(index.indexDef());
+                }
+                store().removeTrees(session, links);
+            }
+        }
+
     }
 
     @Override
@@ -864,23 +920,37 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
 
-        final Table table = getTable(session, tableName);
-        Collection<Index> indexes = new HashSet<Index>();
-        for(String indexName : indexNamesToDrop) {
-            Index index = table.getIndex(indexName);
-            if(index == null) {
-                throw new NoSuchIndexException (indexName);
-            }
-            if(index.isPrimaryKey()) {
-                throw new ProtectedIndexException ("PRIMARY", table.getName());
-            }
-            indexes.add(index);
+        final int tableID;
+        txnService.beginTransaction(session);
+        try {
+            tableID = getTable(session, tableName).getTableId();
+            txnService.commitTransaction(session);
+        } finally {
+            txnService.rollbackTransactionIfOpen(session);
         }
-        // Drop them from the Store before while IndexDefs still exist
-        store().deleteIndexes(session, indexes);
-            
-        schemaManager().dropIndexes(session, indexes);
-        checkCursorsForDDLModification(session, table);
+
+        lockService.tableClaim(session, LockService.Mode.EXCLUSIVE, tableID);
+        txnService.beginTransaction(session);
+        try {
+            final Table table = getTable(session, tableName);
+            Collection<Index> indexes = new HashSet<Index>();
+            for(String indexName : indexNamesToDrop) {
+                Index index = table.getIndex(indexName);
+                if(index == null) {
+                    throw new NoSuchIndexException (indexName);
+                }
+                if(index.isPrimaryKey()) {
+                    throw new ProtectedIndexException(indexName, table.getName());
+                }
+                indexes.add(index);
+            }
+            schemaManager().dropIndexes(session, indexes);
+            store().deleteIndexes(session, indexes);
+            checkCursorsForDDLModification(session, table);
+            txnService.commitTransaction(session);
+        } finally {
+            txnService.rollbackTransactionIfOpen(session);
+        }
     }
 
     @Override
@@ -890,24 +960,52 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
 
-        final Group group = getAIS(session).getGroup(groupName);
-        if (group == null) {
-            throw new NoSuchGroupException(groupName);
-        }
-
-        Collection<Index> indexes = new HashSet<Index>();
-        for(String indexName : indexNamesToDrop) {
-            final Index index = group.getIndex(indexName);
-            if(index == null) {
-                throw new NoSuchIndexException(indexName);
+        List<Integer> tableIDs = new ArrayList<Integer>(3);
+        txnService.beginTransaction(session);
+        try {
+            Group group = getAIS(session).getGroup(groupName);
+            if(group == null) {
+                throw new NoSuchGroupException(groupName);
             }
-            indexes.add(index);
+            for(String name : indexNamesToDrop) {
+                GroupIndex index = group.getIndex(name);
+                if(index == null) {
+                    throw new NoSuchIndexException(name);
+                }
+                UserTable table = index.leafMostTable();
+                while(table != null) {
+                    tableIDs.add(table.getTableId());
+                    table = (table.getParentJoin() != null) ? table.getParentJoin().getParent() : null;
+                }
+            }
+        } finally {
+            txnService.rollbackTransactionIfOpen(session);
         }
 
-        // Drop them from the Store before while IndexDefs still exist
-        store().deleteIndexes(session, indexes);
-        schemaManager().dropIndexes(session, indexes);
-        // TODO: checkCursorsForDDLModification ?
+        Collections.sort(tableIDs);
+        for(Integer id : tableIDs) {
+            lockService.tableClaim(session, LockService.Mode.EXCLUSIVE, id);
+        }
+        txnService.beginTransaction(session);
+        try {
+            final Group group = getAIS(session).getGroup(groupName);
+            if (group == null) {
+                throw new NoSuchGroupException(groupName);
+            }
+            Collection<Index> indexes = new HashSet<Index>();
+            for(String indexName : indexNamesToDrop) {
+                final Index index = group.getIndex(indexName);
+                if(index == null) {
+                    throw new NoSuchIndexException(indexName);
+                }
+                indexes.add(index);
+            }
+            schemaManager().dropIndexes(session, indexes);
+            store().deleteIndexes(session, indexes);
+            txnService.commitTransaction(session);
+        } finally {
+            txnService.rollbackTransactionIfOpen(session);
+        }
     }
 
     @Override
