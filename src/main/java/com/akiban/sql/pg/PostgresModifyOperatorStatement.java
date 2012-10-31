@@ -99,14 +99,11 @@ public class PostgresModifyOperatorStatement extends PostgresDMLStatement
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
-        boolean lockSuccess = false;
         int rowsModified = 0;
         if (resultOperator != null) {
             Cursor cursor = null;
             IOException exceptionDuringExecution = null;
             try {
-                lock(context, DXLFunction.UNSPECIFIED_DML_WRITE);
-                lockSuccess = true;
                 cursor = API.cursor(resultOperator, context);
                 cursor.open();
                 PostgresOutputter<Row> outputter = null;
@@ -138,9 +135,6 @@ public class PostgresModifyOperatorStatement extends PostgresDMLStatement
                     exceptionDuringCleanup = e;
                     LOG.error("Caught exception while cleaning up cursor for {0}", resultOperator.describePlan());
                     LOG.error("Exception stack", e);
-                }
-                finally {
-                    unlock(context, DXLFunction.UNSPECIFIED_DML_WRITE, lockSuccess);
                 }
                 if (exceptionDuringExecution != null) {
                     throw exceptionDuringExecution;
