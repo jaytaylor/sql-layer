@@ -33,11 +33,13 @@ import com.akiban.sql.parser.DDLStatementNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.server.ServerQueryContext;
+import com.akiban.sql.server.ServerOperatorCompiler;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerSessionBase;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 public class AISDDLITBase extends ITBase {
     public static final String SCHEMA_NAME = "test";
@@ -49,19 +51,25 @@ public class AISDDLITBase extends ITBase {
     }
 
     protected void executeDDL(String sql) throws Exception {
-        SQLParser parser = new SQLParser();
-        StatementNode stmt = parser.parseStatement(sql);
+        // Most of the state in this depends on the current AIS, which changes
+        // as a result of this, so it's simplest to just make a new session
+        // one every time.
+        TestSession session = new TestSession();
+        StatementNode stmt = session.getParser().parseStatement(sql);
         assert (stmt instanceof DDLStatementNode) : stmt;
-            AISDDL.execute((DDLStatementNode)stmt, queryContext());
-    }
-
-    protected TestQueryContext queryContext() {
-        return new TestQueryContext();
+        AISDDL.execute((DDLStatementNode)stmt, new TestQueryContext(session));
     }
 
     protected class TestQueryContext extends ServerQueryContext<TestSession> {
-        public TestQueryContext() {
-            super(new TestSession());
+        public TestQueryContext(TestSession session) {
+            super(session);
+        }
+    }
+
+    protected class TestOperatorCompiler extends ServerOperatorCompiler {
+        public TestOperatorCompiler(TestSession session) {
+            initServer(session);
+            initDone();
         }
     }
 
@@ -80,7 +88,12 @@ public class AISDDLITBase extends ITBase {
                                                 serviceManager().getServiceByClass(com.akiban.server.service.routines.RoutineLoader.class),
                                                 txnService()));
             session = session();
+            ais = ais();
             defaultSchemaName = SCHEMA_NAME;
+            properties = new Properties();
+            properties.put("database", defaultSchemaName);
+            initParser();        
+            TestOperatorCompiler compiler = new TestOperatorCompiler(this);
         }
 
         @Override
