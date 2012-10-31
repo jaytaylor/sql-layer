@@ -152,7 +152,7 @@ public class PersistitTransactionService implements TransactionService {
 
     @Override
     public void addEndCallback(Session session, Callback callback) {
-        requireActive(getTransaction(session));
+        //requireActive(getTransaction(session));
         session.push(AFTER_END_KEY, callback);
     }
 
