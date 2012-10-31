@@ -9,7 +9,7 @@
 ---
 - Statement: SELECT SUM(real_field) FROM t
 - output: !select-engine { all: [[Infinity]],
-                          newtypes: [[3.4028235E38]],             # We see REAL as a float field,
+                          newtypes: [[!re '3.402823[0-9]*[eE][+]?38']],             # We see REAL as a float field,
                           sys-mysql: [[1.7976931348623157e308]] } # MySQL sees it as a DOUBLE field.
 # Test sum with no rows => null
 ---
