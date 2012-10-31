@@ -74,15 +74,20 @@ public class DXLTransactionHook implements DXLFunctionsHook {
     
     private static boolean needsTransaction(DXLFunction function) {
         switch(function) {
-            case CREATE_TABLE:
+            // DDL modifying existing table(s), locking and manual transaction handling needed
             case RENAME_TABLE:
             case DROP_TABLE:
             case ALTER_TABLE:
-            case CREATE_VIEW:
-            case DROP_VIEW:
             case DROP_SCHEMA:
             case DROP_GROUP:
+            case CREATE_INDEXES:
             case DROP_INDEXES:
+                return false;
+
+            // DDL changing AIS but does not modify existing table (locking not needed)
+            case CREATE_TABLE:
+            case CREATE_VIEW:
+            case DROP_VIEW:
             case CREATE_SEQUENCE:
             case DROP_SEQUENCE:
             case CREATE_ROUTINE:
@@ -92,20 +97,10 @@ public class DXLTransactionHook implements DXLFunctionsHook {
             case DROP_SQLJ_JAR:
                 return true;
 
-            case CREATE_INDEXES:
-                return false;
-
+            // Remaining methods on DDL interface, querying only
             case GET_DDLS:
-            case GET_TABLE_STATISTICS:
-            case SCAN_SOME:
-            case WRITE_ROW:
-            case DELETE_ROW:
-            case UPDATE_ROW:
-            case TRUNCATE_TABLE:
             case UPDATE_TABLE_STATISTICS:
             case CHECK_AND_FIX_INDEXES:
-                return true;
-
             case GET_AIS:
             case GET_TABLE_ID:
             case GET_TABLE_BY_ID:
@@ -115,12 +110,22 @@ public class DXLTransactionHook implements DXLFunctionsHook {
             case GET_ROWDEF:
             case GET_SCHEMA_ID:
             case GET_SCHEMA_TIMESTAMP:
+                return true;
+
+            // DML that looks at AIS
+            case GET_TABLE_STATISTICS:
+            case SCAN_SOME:
+            case WRITE_ROW:
+            case DELETE_ROW:
+            case UPDATE_ROW:
+            case TRUNCATE_TABLE:
             case CONVERT_NEW_ROW:
             case CONVERT_ROW_DATA:
             case CONVERT_ROW_DATAS:
             case OPEN_CURSOR:
                 return true;
 
+            // Remaining DML
             case GET_CURSOR_STATE:
             case CLOSE_CURSOR:
             case GET_CURSORS:
