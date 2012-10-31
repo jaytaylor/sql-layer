@@ -145,6 +145,10 @@ public class ReadWriteMap<K,V> implements Map<K,V> {
         return value;
     }
 
+    /**
+     * Update a key to a new value if and only if the current value is as given.
+     * @return true if the key was updated to the new value
+     */
     public boolean compareAndSet(K key, V expected, V update) {
         claimExclusive();
         try {
