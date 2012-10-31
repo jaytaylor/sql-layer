@@ -933,11 +933,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         Collection<Index> newIndexes = null;
         txnService.beginTransaction(session);
         try {
-            newIndexes = schemaManager().createIndexes(session, indexesToAdd);
-            for(Index index : newIndexes) {
-                checkCursorsForDDLModification(session, index.leafMostTable());
-            }
-            store().buildIndexes(session, newIndexes, DEFER_INDEX_BUILDING);
+            newIndexes = createIndexesInternal(session, indexesToAdd);
             txnService.commitTransaction(session);
             newIndexes.clear();
         } finally {
@@ -952,7 +948,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 store().removeTrees(session, links);
             }
         }
+    }
 
+    Collection<Index> createIndexesInternal(Session session, Collection<? extends Index> indexesToAdd) {
+        Collection<Index> newIndexes = schemaManager().createIndexes(session, indexesToAdd);
+        for(Index index : newIndexes) {
+            checkCursorsForDDLModification(session, index.leafMostTable());
+        }
+        store().buildIndexes(session, newIndexes, DEFER_INDEX_BUILDING);
+        return newIndexes;
     }
 
     @Override

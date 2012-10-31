@@ -147,7 +147,7 @@ public class AlterTableHelper {
         }
 
         if(dataChange) {
-            ddl.createIndexes(session, indexesToBuild);
+            ddl.createIndexesInternal(session, indexesToBuild);
         } else {
             ddl.schemaManager().createIndexes(session, indexesToBuild);
             // Restore old trees
