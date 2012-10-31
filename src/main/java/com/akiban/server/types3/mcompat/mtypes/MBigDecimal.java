@@ -123,20 +123,8 @@ public class MBigDecimal extends TClassBase {
     protected int doCompare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB)
     {
         if(!sourceA.hasCacheValue() && !sourceB.hasCacheValue()) // both have bytearrays
-        {
-            byte bytesA[] = sourceA.getBytes();
-            boolean aSigned = bytesA[0] >= 0;
-
-            byte bytesB[] = sourceB.getBytes();
-            boolean bSigned = bytesB[0] >= 0;
-   
-            // optimise easy case:
-            // if the two are of opposite sign, there's no need for comparison
-            if (bSigned ^ aSigned)
-                return aSigned ? -1 : 1;        // a < 0 < b or a > 0 > b
-            else
-                return UnsignedBytes.lexicographicalComparator().compare(bytesA, bytesB);
-        }
+            return UnsignedBytes.lexicographicalComparator().compare(sourceA.getBytes(),
+                                                                     sourceB.getBytes());
         else
             return getWrapper(sourceA, instanceA).compareTo(getWrapper(sourceB, instanceB));
     }
