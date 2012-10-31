@@ -32,6 +32,7 @@ import com.akiban.server.service.session.Session;
 public interface LockService extends Service {
     enum Mode { SHARED, EXCLUSIVE }
 
+    boolean isTableClaimed(Session session, Mode mode, int tableID);
     void claimTable(Session session, Mode mode, int tableID);
     void claimTableInterruptible(Session session, Mode mode, int tableID) throws InterruptedException;
     boolean tryClaimTable(Session session, Mode mode, int tableID, int milliseconds) throws InterruptedException;

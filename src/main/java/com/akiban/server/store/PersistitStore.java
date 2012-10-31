@@ -1397,9 +1397,12 @@ public class PersistitStore implements Store, Service {
 
     private void lockAndCheckVersion(Session session, RowDef rowDef) {
         int tableID = rowDef.getRowDefId();
-        lockService.claimTable(session, LockService.Mode.SHARED, tableID);
-        if(schemaManager.hasTableChanged(session, tableID)) {
-            throw new RuntimeException("Table changed");
+        // Since this is called on a per-row basis, we can't rely on reentrancy.
+        if(!lockService.isTableClaimed(session, LockService.Mode.SHARED, tableID)) {
+            lockService.claimTable(session, LockService.Mode.SHARED, tableID);
+            if(schemaManager.hasTableChanged(session, tableID)) {
+                throw new RuntimeException("Table changed");
+            }
         }
     }
 

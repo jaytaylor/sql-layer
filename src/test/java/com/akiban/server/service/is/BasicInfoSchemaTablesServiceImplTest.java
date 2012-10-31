@@ -800,7 +800,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
-        public boolean isTableVersionOld(Session session, int tableID, int knownVersion) {
+        public boolean hasTableChanged(Session session, int tableID) {
             throw new UnsupportedOperationException();
         }
     }
