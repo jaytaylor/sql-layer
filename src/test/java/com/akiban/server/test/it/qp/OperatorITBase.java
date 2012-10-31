@@ -76,7 +76,6 @@ public class OperatorITBase extends ITBase
     @After
     public void after_endTransaction() throws PersistitException {
         txnService().commitTransaction(session());
-        txnService().rollbackTransactionIfOpen(session());
     }
 
     @Before
