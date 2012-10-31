@@ -34,6 +34,18 @@ public interface TransactionService extends Service {
         void run(Session session, long timestamp);
     }
 
+    enum CallbackType {
+        /** Invoked prior to calling commit. */
+        PRE_COMMIT,
+        /** Invoked <i>after</i> commit completes successfully. */
+        COMMIT,
+        /** Invoked <i>after</i> rollback completes successfully (but not for commit failure). */
+        ROLLBACK,
+        /** Invoked when the transaction ends, independent of success/failure of commit/rollback. */
+        END
+    }
+
+
     /** Returns true if there is a transaction active for the given Session */
     boolean isTransactionActive(Session session);
 
@@ -70,15 +82,12 @@ public interface TransactionService extends Service {
      */
     int incrementTransactionStep(Session session);
 
-    /** Add a callback to be invoked upon prior to invoking commit. */
-    void addPreCommitCallback(Session session, Callback callback);
+    /** Add a callback to transaction. */
+    void addCallback(Session session, CallbackType type, Callback callback);
 
-    /** Add a callback to be invoked upon successful completion of commit. */
-    void addCommitCallback(Session session, Callback callback);
+    /** Add a callback to transaction that is required to be active. */
+    void addCallbackOnActive(Session session, CallbackType type, Callback callback);
 
-    /** Add a callback to be invoked upon successful completion of commit. */
-    void addRollbackCallback(Session session, Callback callback);
-
-    /** Add callback to be invoked when the transactions ends, independent of commit/rollback or success/failure */
-    void addEndCallback(Session session, Callback callback);
+    /** Add a callback to transaction that is required to be inactive. */
+    void addCallbackOnInactive(Session session, CallbackType type, Callback callback);
 }

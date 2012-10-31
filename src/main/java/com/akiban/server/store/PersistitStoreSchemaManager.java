@@ -26,6 +26,8 @@
 
 package com.akiban.server.store;
 
+import static com.akiban.server.service.transaction.TransactionService.Callback;
+import static com.akiban.server.service.transaction.TransactionService.CallbackType;
 import static com.akiban.server.service.tree.TreeService.SCHEMA_TREE_NAME;
 import static com.akiban.qp.persistitadapter.PersistitAdapter.wrapPersistitException;
 
@@ -996,14 +998,18 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             saveNewAISInMap(sAIS);
         }
 
-        txnService.addPreCommitCallback(session, latestAISCacheClearCallback);
-        txnService.addCommitCallback(session, new TransactionService.Callback() {
-            @Override
-            public void run(Session session, long timestamp) {
-                updateLatestAISCache(new AISAndTimestamp(sAIS, timestamp));
-            }
-        });
-        txnService.addEndCallback(session, clearAISMapCallback);
+        txnService.addCallbackOnActive(session, CallbackType.PRE_COMMIT, latestAISCacheClearCallback);
+        txnService.addCallbackOnActive(
+                session,
+                CallbackType.COMMIT,
+                new TransactionService.Callback() {
+                    @Override
+                    public void run(Session session, long timestamp) {
+                        updateLatestAISCache(new AISAndTimestamp(sAIS, timestamp));
+                    }
+                }
+        );
+        txnService.addCallbackOnActive(session, CallbackType.END, clearAISMapCallback);
         return sAIS;
     }
 
@@ -1274,7 +1280,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         if(old != null) {
             old.release();
         } else {
-            txnService.addEndCallback(session, CLEAR_SESSION_KEY_CALLBACK);
+            txnService.addCallbackOnActive(session, CallbackType.END, CLEAR_SESSION_KEY_CALLBACK);
         }
     }
 
@@ -1413,7 +1419,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         }
     }
 
-    private static final TransactionService.Callback CLEAR_SESSION_KEY_CALLBACK = new TransactionService.Callback() {
+    private static final Callback CLEAR_SESSION_KEY_CALLBACK = new TransactionService.Callback() {
         @Override
         public void run(Session session, long timestamp) {
             SharedAIS sAIS = session.remove(SESSION_SAIS_KEY);
