@@ -71,7 +71,7 @@ public class MemoryAdapterIT extends PostgresServerITBase {
 
     @After
     public void unRegister() {
-        if(schemaManager.getAis(session()).getUserTable(TEST_NAME) != null) {
+        if(ais().getUserTable(TEST_NAME) != null) {
             schemaManager.unRegisterMemoryInformationSchemaTable(TEST_NAME);
         }
     }
@@ -84,7 +84,7 @@ public class MemoryAdapterIT extends PostgresServerITBase {
 
         registerISTable(table, factory);
  
-        UserTable table = schemaManager.getAis(session()).getUserTable(TEST_NAME);
+        UserTable table = ais().getUserTable(TEST_NAME);
         assertNotNull (table);
         assertTrue (table.hasMemoryTableFactory());
     }
@@ -106,7 +106,7 @@ public class MemoryAdapterIT extends PostgresServerITBase {
         table = AISBBasedBuilder.create().userTable(TEST_NAME.getSchemaName(),TEST_NAME.getTableName()).colLong("c1").pk("c1").ais().getUserTable(TEST_NAME);
         MemoryTableFactory factory = new TestFactory (TEST_NAME);
         registerISTable(table, factory);
-        UserTable newtable = serviceManager().getSchemaManager().getAis(session()).getUserTable(TEST_NAME);
+        UserTable newtable = ais().getUserTable(TEST_NAME);
         
         StoreAdapter adapter = postgresConn.getStore(newtable);
         assertNotNull (adapter);

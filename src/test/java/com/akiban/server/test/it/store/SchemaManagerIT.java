@@ -174,7 +174,7 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test
     public void getTableDefinitionsUnknownSchema() throws Exception {
-        final SortedMap<String, TableDefinition> defs = schemaManager.getTableDefinitions(session(), "fooschema");
+        final SortedMap<String, TableDefinition> defs = getTableDefinitions("fooschema");
         assertEquals("no defs", 0, defs.size());
     }
 
@@ -183,7 +183,7 @@ public final class SchemaManagerIT extends ITBase {
         createTableDef(SCHEMA, T1_NAME, T1_DDL);
         createTableDef(SCHEMA, T2_NAME, T2_DDL);
         createTableDef(SCHEMA + "_bob", T1_NAME, T1_DDL);
-        final SortedMap<String, TableDefinition> defs = schemaManager.getTableDefinitions(session(), SCHEMA);
+        final SortedMap<String, TableDefinition> defs = getTableDefinitions(SCHEMA);
         assertTrue("contains t1", defs.containsKey(T1_NAME));
         assertTrue("contains t2", defs.containsKey(T2_NAME));
         assertEquals("no defs", 2, defs.size());
@@ -325,18 +325,18 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test
     public void updateTimestampChangesWithCreate() throws Exception {
-        final long first = schemaManager.getAis(session()).getGeneration();
+        final long first = ais().getGeneration();
         createTableDef(SCHEMA, T1_NAME, T1_DDL);
-        final long second = schemaManager.getAis(session()).getGeneration();
+        final long second = ais().getGeneration();
         assertTrue("timestamp changed", first != second);
     }
 
     @Test
     public void updateTimestampChangesWithDelete() throws Exception {
         createTableDef(SCHEMA, T1_NAME, T1_DDL);
-        final long first = schemaManager.getAis(session()).getGeneration();
+        final long first = ais().getGeneration();
         deleteTableDef(SCHEMA, T1_NAME);
-        final long second = schemaManager.getAis(session()).getGeneration();
+        final long second = ais().getGeneration();
         assertTrue("timestamp changed", first != second);
     }
 
@@ -401,7 +401,7 @@ public final class SchemaManagerIT extends ITBase {
     @Test
     public void manyTablesAndRestart() throws Exception {
         final int TABLE_COUNT = 50;
-        final int UT_COUNT = schemaManager.getAis(session()).getUserTables().size();
+        final int UT_COUNT = ais().getUserTables().size();
 
         String tableNames[] = new String[TABLE_COUNT];
         for(int i = 0; i < TABLE_COUNT; ++i) {
@@ -409,13 +409,13 @@ public final class SchemaManagerIT extends ITBase {
             createTable(SCHEMA, tableNames[i], "id int not null primary key");
         }
 
-        AkibanInformationSchema ais = schemaManager.getAis(session());
+        AkibanInformationSchema ais = ais();
         Collection<UserTable> before = new ArrayList<UserTable>(ais.getUserTables().values());
         assertEquals("user tables count before", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
         assertTablesInSchema(SCHEMA, tableNames);
 
         safeRestart();
-        ais = schemaManager.getAis(session());
+        ais = ais();
         assertNotNull(ais);
         Collection<UserTable> after = ais.getUserTables().values();
         // Diagnostics for occasional assertion violation of user table count
@@ -436,21 +436,21 @@ public final class SchemaManagerIT extends ITBase {
     @Test
     public void multipleSchemasAndRestart() throws Exception {
         final int TABLE_COUNT = 3;
-        AkibanInformationSchema ais = schemaManager.getAis(session());
+        AkibanInformationSchema ais = ais();
         final int UT_COUNT = ais.getUserTables().size();
 
         createTable(SCHEMA+"1", "t1", "id int not null primary key");
         createTable(SCHEMA+"2", "t2", "id int not null primary key");
         createTable(SCHEMA+"3", "t3", "id int not null primary key");
 
-        ais = schemaManager.getAis(session());
+        ais = ais();
         assertEquals("user tables count", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
         assertTablesInSchema(SCHEMA+"1", "t1");
         assertTablesInSchema(SCHEMA+"2", "t2");
         assertTablesInSchema(SCHEMA+"3", "t3");
 
         safeRestart();
-        ais = schemaManager.getAis(session());
+        ais = ais();
         assertNotNull("ais exists", ais);
 
         assertEquals("user tables count", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
@@ -688,7 +688,7 @@ public final class SchemaManagerIT extends ITBase {
         builder.userTable(name).colLong("id", false).pk("id");
         builder.userTable(T1_NAME).colLong("id", false).colLong("pid", true).pk("id").joinTo("information_schema", "p").on("pid", "id");
         registerISTable(builder.unvalidatedAIS().getUserTable(name), new MemoryTableFactoryMock());
-        schemaManager.createTableDefinition(session(), builder.unvalidatedAIS().getUserTable(SCHEMA, T1_NAME));
+        ddl().createTable(session(), builder.unvalidatedAIS().getUserTable(SCHEMA, T1_NAME));
     }
 
     /**
@@ -698,26 +698,25 @@ public final class SchemaManagerIT extends ITBase {
      * @param tableNames List of table names to check.
      * @throws Exception For any internal error.
      */
-    private void assertTablesInSchema(String schema, String... tableNames) throws Exception {
+    private void assertTablesInSchema(String schema, String... tableNames) {
         final SortedSet<String> expected = new TreeSet<String>();
         final AkibanInformationSchema ais = ddl().getAIS(session());
-        final Session session = session();
         for (String name : tableNames) {
             final Table table = ais.getTable(schema, name);
             assertNotNull(schema + "." + name + " in AIS", table);
-            final TableDefinition def = schemaManager.getTableDefinition(session, table.getName());
+            final TableDefinition def = getTableDefinitions(schema).get(table.getName().getTableName());
             assertNotNull(schema + "." + name  + " has definition", def);
             expected.add(name);
         }
         final SortedSet<String> actual = new TreeSet<String>();
-        for (TableDefinition def : schemaManager.getTableDefinitions(session, schema).values()) {
+        for (TableDefinition def : getTableDefinitions(schema).values()) {
             final Table table = ais.getTable(schema, def.getTableName());
             assertNotNull(def + " in AIS", table);
             actual.add(def.getTableName());
         }
         assertEquals("tables in: " + schema, expected, actual);
     }
-
+    
     /**
      * Check that the result of {@link SchemaManager#schemaStrings(Session, boolean)} is correct for
      * the given tables. The only guarantees are that schemas are created with 'if not exists',
@@ -751,6 +750,15 @@ public final class SchemaManagerIT extends ITBase {
                 Assert.fail("Unknown statement type: " + statement);
             }
         }
+    }
+
+    private SortedMap<String, TableDefinition> getTableDefinitions(final String schema) {
+        return transactionallyUnchecked(new Callable<SortedMap<String, TableDefinition>>() {
+            @Override
+            public SortedMap<String, TableDefinition> call() throws Exception {
+                return schemaManager.getTableDefinitions(session(), schema);
+            }
+        });
     }
 
     private static UserTable makeSimpleISTable(TableName name) {

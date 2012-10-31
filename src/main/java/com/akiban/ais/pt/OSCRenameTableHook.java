@@ -374,7 +374,7 @@ public class OSCRenameTableHook
     }
 
     private AkibanInformationSchema ais(Session session) {
-        return requiredServices.schemaManager().getAis(session);
+        return ddl().getAIS(session);
     }
 
     private DDLFunctions ddl() {
