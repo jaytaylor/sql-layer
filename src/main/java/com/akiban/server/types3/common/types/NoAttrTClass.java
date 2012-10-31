@@ -28,14 +28,11 @@ package com.akiban.server.types3.common.types;
 
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.TBundleID;
-import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TParser;
 import com.akiban.server.types3.*;
 import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.TypeId;
 
 public class NoAttrTClass extends SimpleDtdTClass {
@@ -82,16 +79,6 @@ public class NoAttrTClass extends SimpleDtdTClass {
                            int defaultVarcharLen, TypeId typeId) {
         super(bundle, name, category, formatter, Attribute.NONE.class, internalRepVersion, serializationVersion, serializationSize,
                 pUnderlying, parser, defaultVarcharLen, typeId);
-    }
-
-    @Override
-    public void putSafety(TExecutionContext context, 
-                          TInstance sourceInstance,
-                          PValueSource sourceValue,
-                          TInstance targetInstance,
-                          PValueTarget targetValue)
-    {
-        // about to delete...
     }
 
     private volatile TInstance nullableTInstance;

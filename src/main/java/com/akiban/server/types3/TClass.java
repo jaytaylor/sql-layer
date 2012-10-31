@@ -163,12 +163,6 @@ public abstract class TClass {
         return defaultPValueIO;
     }
 
-    public abstract void putSafety(TExecutionContext context,
-                        TInstance sourceInstance,
-                        PValueSource sourceValue,
-                        TInstance targetInstance,
-                        PValueTarget targetValue);
-
     public abstract TInstance instance(boolean nullable);
 
     public TInstance instance(int arg0, boolean nullable)
