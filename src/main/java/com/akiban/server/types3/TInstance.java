@@ -115,7 +115,7 @@ public final class TInstance {
     }
 
     public String toStringIgnoringNullability() {
-        String className = tclass.name().toString();
+        String className = tclass.toString();
         int nattrs = tclass.nAttributes();
         if (nattrs == 0)
             return className;

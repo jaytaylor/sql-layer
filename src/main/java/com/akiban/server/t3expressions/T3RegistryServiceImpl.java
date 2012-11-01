@@ -469,10 +469,10 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                         target.putString(data.targetClass().name().unqualifiedName(), null);
                         break;
                     case 4:
-                        target.putBool(castsResolver.isStrong(data));
+                        target.putInt64(castsResolver.isStrong(data) ? 1 : 0);
                         break;
                     case 5:
-                        target.putBool(data instanceof TCastsRegistry.ChainedCast);
+                        target.putInt64((data instanceof TCastsRegistry.ChainedCast) ? 1 : 0);
                         break;
                     default:
                         target.putNull();
@@ -496,10 +496,10 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                         target.putString(data.targetClass().name().unqualifiedName());
                         break;
                     case 4:
-                        target.putBool(castsResolver.isStrong(data));
+                        target.putLong(castsResolver.isStrong(data) ? 1 : 0);
                         break;
                     case 5:
-                        target.putBool(data instanceof TCastsRegistry.ChainedCast);
+                        target.putLong((data instanceof TCastsRegistry.ChainedCast) ? 1 : 0);
                         break;
                     default:
                         target.putNull();
