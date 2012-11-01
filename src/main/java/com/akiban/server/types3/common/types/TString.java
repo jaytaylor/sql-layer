@@ -29,14 +29,11 @@ package com.akiban.server.types3.common.types;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.error.InvalidArgumentTypeException;
-import com.akiban.server.error.StringTruncationException;
 import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.types3.TBundle;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TClassFormatter;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TInstanceAdjuster;
@@ -45,7 +42,6 @@ import com.akiban.server.types3.TInstanceNormalizer;
 import com.akiban.server.types3.aksql.AkCategory;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.sql.types.CharacterTypeAttributes;
 import com.akiban.sql.types.DataTypeDescriptor;
@@ -201,32 +197,6 @@ public abstract class TString extends TClass
     }
 
     @Override
-    public void putSafety(TExecutionContext context, 
-                          TInstance sourceInstance,
-                          PValueSource sourceValue,
-                          TInstance targetInstance,
-                          PValueTarget targetValue)
-    {
-        // check type safety
-        assert getClass().isAssignableFrom(sourceInstance.typeClass().getClass())
-                    && getClass().isAssignableFrom(targetInstance.typeClass().getClass())
-                : "expected instances of TString";
-        
-        String raw = sourceValue.getString();
-        int maxLen = targetInstance.attribute(StringAttribute.LENGTH);
-        
-        if (raw.length() > maxLen)
-        {   
-            String truncated = raw.substring(0, maxLen);
-            // TODO: check charset and collation, too
-            context.warnClient(new StringTruncationException(raw, truncated));
-            targetValue.putString(truncated, null);
-        }
-        else
-            targetValue.putString(raw, null);
-    }
-     
-    @Override
     public TInstance instance(boolean nullable)
     {
         return instance(fixedLength >= 0 ? fixedLength : StringFactory.DEFAULT_LENGTH,
@@ -242,12 +212,6 @@ public abstract class TString extends TClass
                         StringFactory.DEFAULT_CHARSET.ordinal(),
                         StringFactory.DEFAULT_COLLATION_ID,
                         nullable);
-    }
-    
-    @Override
-    public TFactory factory()
-    {
-        return new StringFactory(this);
     }
 
     @Override

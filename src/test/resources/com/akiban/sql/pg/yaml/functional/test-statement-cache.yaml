@@ -50,7 +50,6 @@
 - output: [['2']]
 ---
 # AIS change
-# Deletes old caches (hits, misses, out)
 - Statement: CREATE INDEX t_s ON t(s)
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
@@ -60,12 +59,12 @@
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheMisses
-# EXPLAIN
-- output: [['1']]
+# CREATE, EXPLAIN
+- output: [['4']]
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheHits
-- output: [['0']]
+- output: [['2']]
 ---
 # Different compiler mode
 - Statement: SET cbo TO 'true'
@@ -78,11 +77,11 @@
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheMisses
 # SET, EXPLAIN
-- output: [['3']]
+- output: [['6']]
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheHits
-- output: [['0']]
+- output: [['2']]
 ---
 - Statement: DROP INDEX t_s
 ---

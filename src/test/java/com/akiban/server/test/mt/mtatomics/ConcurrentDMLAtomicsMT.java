@@ -343,10 +343,9 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
         @Override
         protected List<NewRow> doCall(TimePoints timePoints, Session session) throws Exception {
             BufferedLegacyOutputRouter smallRouter = new BufferedLegacyOutputRouter(size, false);
-            LegacyOutputConverter converter = new LegacyOutputConverter(session, dml);
+            LegacyOutputConverter converter = new LegacyOutputConverter(dml);
             ListRowOutput output = new ListRowOutput();
-            converter.setOutput(output);
-            converter.setColumnsToScan(new HashSet<Integer>(Arrays.asList(0, 1)));
+            converter.reset(session, output, new HashSet<Integer>(Arrays.asList(0, 1)));
             smallRouter.addHandler(converter);
 
 

@@ -28,11 +28,8 @@ package com.akiban.server.types3.mcompat.mtypes;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.IllegalNameException;
-import com.akiban.server.types3.TAttributeValues;
-import com.akiban.server.types3.TAttributesDeclaration;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TParser;
 import com.akiban.server.types3.aksql.AkCategory;
@@ -102,33 +99,6 @@ public final class MBinary extends SimpleDtdTClass {
         }
         else
             out.putBytes(bytes);
-    }
-
-    @Override
-    public TFactory factory() {
-        return new TFactory() {
-            @Override
-            public TInstance create(TAttributesDeclaration declaration) {
-                final int len;
-                TAttributeValues values = declaration.validate(1, 1);
-                if (defaultLength < 0) {
-                    len = values.intAt(Attrs.LENGTH, defaultLength);
-                    if (len < 0)
-                        throw new IllegalNameException("length must be positive");
-                }
-                else {
-                    declaration.validate(0, 0);
-                    len = defaultLength;
-                }
-                return instance(len, values.nullable());
-            }
-        };
-    }
-
-    @Override
-    public void putSafety(TExecutionContext context, TInstance sourceInstance, PValueSource sourceValue,
-                          TInstance targetInstance, PValueTarget targetValue) {
-        targetValue.putBytes(sourceValue.getBytes());
     }
 
     @Override

@@ -31,6 +31,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.server.error.ExternalRoutineInvocationException;
 import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 
@@ -50,15 +51,15 @@ import java.util.Map;
 public class ScriptCache
 {
     public static final String CLASS_PATH = "akserver.routines.script_class_path";
-    private final SchemaManager schemaManager;
+    private final DXLService dxlService;
     private final ConfigurationService configService;
     private final Map<TableName,CacheEntry> cache = new HashMap<TableName,CacheEntry>();
     // Script engine discovery can be fairly expensive, so it is deferred.
     private ScriptEngineManager manager = null;
     private final static Logger logger = LoggerFactory.getLogger(ScriptCache.class);
 
-    public ScriptCache(SchemaManager schemaManager, ConfigurationService configService) {
-        this.schemaManager = schemaManager;
+    public ScriptCache(DXLService dxlService, ConfigurationService configService) {
+        this.dxlService = dxlService;
         this.configService = configService;
     }
 
@@ -118,7 +119,7 @@ public class ScriptCache
         CacheEntry entry = cache.get(routineName);
         if (entry != null)
             return entry;
-        Routine routine = schemaManager.getAis(session).getRoutine(routineName);
+        Routine routine = dxlService.ddlFunctions().getAIS(session).getRoutine(routineName);
         if (null == routine)
             throw new NoSuchRoutineException(routineName);
         ScriptEngine engine = getManager(session).getEngineByName(routine.getLanguage());

@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.server.CacheCounters;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerStatementCache;
 
@@ -75,6 +76,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         new HashMap<ObjectLongPair,ServerStatementCache<PostgresStatement>>(); // key and aisGeneration
     // end AIS-dependent state
     private volatile Date overrideCurrentTime;
+    private final CacheCounters cacheCounters = new CacheCounters();
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresServer.class);
 
@@ -234,27 +236,23 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         }
     }
 
-    public ServerStatementCache<PostgresStatement> getStatementCache(ObjectLongPair key) {
-        if (statementCacheCapacity <= 0) 
+    /** This is the version for use by connections. */
+    public ServerStatementCache<PostgresStatement> getStatementCache(Object key, long aisGeneration) {
+        if (statementCacheCapacity <= 0)
             return null;
 
+        ObjectLongPair fullKey = new ObjectLongPair(key, aisGeneration);
         ServerStatementCache<PostgresStatement> statementCache;
         synchronized (statementCaches) {
             statementCache = statementCaches.get(key);
             if (statementCache == null) {
                 // No cache => recent DDL, reasonable time to do a little cleaning
                 cleanStatementCaches();
-                statementCache = new ServerStatementCache<PostgresStatement>(statementCacheCapacity);
-                statementCaches.put(key, statementCache);
+                statementCache = new ServerStatementCache<PostgresStatement>(cacheCounters, statementCacheCapacity);
+                statementCaches.put(fullKey, statementCache);
             }
         }
         return statementCache;
-    }
-
-    /** This is the version for use by connections. */
-    public ServerStatementCache<PostgresStatement> getStatementCache(Object key, long aisGeneration) {
-        ObjectLongPair fullKey = new ObjectLongPair(key, aisGeneration);
-        return getStatementCache(fullKey);
     }
 
     @Override
@@ -277,29 +275,18 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     @Override
     public int getStatementCacheHits() {
-        int total = 0;
-        synchronized (statementCaches) {
-            for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
-                total += statementCache.getHits();
-            }        
-        }
-        return total;
+        return cacheCounters.getHits();
     }
 
     @Override
     public int getStatementCacheMisses() {
-        int total = 0;
-        synchronized (statementCaches) {
-            for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
-                total += statementCache.getMisses();
-            }        
-        }
-        return total;
+        return cacheCounters.getMisses();
     }
     
     @Override
     public void resetStatementCache() {
         synchronized (statementCaches) {
+            cacheCounters.reset();
             for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
                 statementCache.reset();
             }        

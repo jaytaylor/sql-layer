@@ -42,13 +42,12 @@ import com.akiban.server.service.session.Session;
  * LegacyRowOutput.</p>
  */
 public final class LegacyOutputConverter implements BufferedLegacyOutputRouter.Handler {
-    private final Session session;
     private final DMLFunctions converter;
+    private Session session;
     private RowOutput output;
     private Set<Integer> columnsToScan;
 
-    public LegacyOutputConverter(Session session, DMLFunctions converter) {
-        this.session = session;
+    public LegacyOutputConverter(DMLFunctions converter) {
         this.converter = converter;
     }
 
@@ -74,11 +73,13 @@ public final class LegacyOutputConverter implements BufferedLegacyOutputRouter.H
         output.output(aNew);
     }
 
-    public void setOutput(RowOutput output) {
-        this.output = output;
+    public void clearSession() {
+        this.session = null;
     }
 
-    public void setColumnsToScan(Set<Integer> columns) {
+    public void reset(Session session, RowOutput output, Set<Integer> columns) {
+        this.session = session;
+        this.output = output;
         this.columnsToScan = columns;
     }
 

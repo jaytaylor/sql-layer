@@ -2,7 +2,7 @@
 # Also compare  types2's behaviour with that of types3
 # Note:, types3 is doing the correct thing!
 ---
-- Statement: SET newtypes to 'true'
+- Newtypes: true
 ---
 - Include: all-types-schema.yaml
 ---
@@ -21,7 +21,7 @@
 ---
 - Statement: DELETE FROM all_types;
 ---
-- Statement: SET newtypes to 'false'
+- Newtypes: false
 ---
 - Statement: INSERT INTO all_types(year_field)
              VALUES (0),
@@ -36,5 +36,5 @@
 ---
 - Statement: DELETE FROM all_types;
 ---
-- Statement: SET newtypes to DEFAULT;
+- Newtypes: null
 ...

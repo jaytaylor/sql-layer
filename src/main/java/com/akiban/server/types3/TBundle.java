@@ -30,5 +30,4 @@ import java.util.Map;
 
 public interface TBundle {
     TBundleID id();
-    Map<TClass, TFactory> typeClasses();
 }
