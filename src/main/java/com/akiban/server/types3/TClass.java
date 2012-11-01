@@ -30,7 +30,6 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueCacher;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.pvalue.PValueTargets;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -215,10 +214,6 @@ public abstract class TClass {
         return attributes.length;
     }
 
-    public String attributeName(int index) {
-        return attributes[index].name();
-    }
-
     public TName name() {
         return name;
     }
@@ -279,10 +274,6 @@ public abstract class TClass {
             out.append("null");
         else
             formatter.formatAsJson(instance, source, out);
-    }
-
-    public TInstanceNormalizer pickInstanceNormalizer() {
-        return pickInstanceNormalizer;
     }
 
     // for use by subclasses
@@ -354,30 +345,6 @@ public abstract class TClass {
     private final int serializationSize;
 
     private final PUnderlying pUnderlying;
-
-    private TInstanceNormalizer pickInstanceNormalizer = new TInstanceNormalizer() {
-        @Override
-        public void apply(TInstanceAdjuster adjuster, TValidatedOverload overload, TInputSet inputSet, int max) {
-            TInstance result = null;
-            boolean resultEverChanged = false;
-            for (int i = overload.firstInput(inputSet); i >= max; i = overload.nextInput(inputSet, i+1, max)) {
-                TInstance inputInstance = adjuster.get(i);
-                if (result == null) {
-                    result = inputInstance;
-                }
-                else {
-                    TInstance picked = pickInstance(result, inputInstance);
-                    resultEverChanged |= (!picked.equalsIncludingNullable(picked));
-                    result = picked;
-                }
-            }
-            if (resultEverChanged) {
-                for (int i = overload.firstInput(inputSet); i >= max; i = overload.nextInput(inputSet, i+1, max)) {
-                    adjuster.replace(i, result);
-                }
-            }
-        }
-    };
 
     private static final Pattern VALID_ATTRIBUTE_PATTERN = Pattern.compile("[a-zA-Z]\\w*");
 
