@@ -676,7 +676,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                     }
                 }
             } finally {
-                aisMap.claimExclusive();
+                aisMap.releaseExclusive();
             }
         }
 
