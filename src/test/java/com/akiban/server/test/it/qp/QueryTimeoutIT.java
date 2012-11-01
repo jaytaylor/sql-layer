@@ -46,10 +46,10 @@ import static org.junit.Assert.fail;
 
 public class QueryTimeoutIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupPostCreateSchema()
     {
-        super.before();
+        super.setupPostCreateSchema();
         session().cancelCurrentQuery(false);
     }
 

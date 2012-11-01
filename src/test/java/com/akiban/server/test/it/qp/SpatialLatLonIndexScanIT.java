@@ -56,8 +56,8 @@ import static org.junit.Assert.assertEquals;
 
 public class SpatialLatLonIndexScanIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         point = createTable(
             "schema", "point",
@@ -71,6 +71,11 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
         createSpatialIndex("schema", "point", "before_lat_lon", 1, Space.LAT_LON_DIMENSIONS, "before", "lat", "lon");
         createSpatialIndex("schema", "point", "lat_lon_after", 0, Space.LAT_LON_DIMENSIONS, "lat", "lon", "after");
         createSpatialIndex("schema", "point", "before_lat_lon_after", 1, Space.LAT_LON_DIMENSIONS, "before", "lat", "lon", "after");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         pointRowType = schema.userTableRowType(userTable(point));
         pointOrdinal = pointRowType.userTable().rowDef().getOrdinal();

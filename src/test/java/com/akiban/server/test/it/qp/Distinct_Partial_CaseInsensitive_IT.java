@@ -52,8 +52,8 @@ import static com.akiban.server.test.ExpressionGenerators.*;
 
 public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         t = createTable(
             "s", "t",
@@ -61,6 +61,11 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
             "cs varchar(10)", // case sensitive
             "ci varchar(10) collate latin1_swedish_ci", // case insensitive
             "ns int"); // non-string
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         adapter = persistitAdapter(schema);

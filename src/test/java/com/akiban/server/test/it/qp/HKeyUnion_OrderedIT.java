@@ -46,8 +46,8 @@ import static junit.framework.Assert.fail;
 
 public class HKeyUnion_OrderedIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         parent = createTable(
             "schema", "parent",
@@ -63,6 +63,11 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
             "z int",
             "grouping foreign key (pid) references parent(pid)");
         createIndex("schema", "child", "z", "z");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         parentRowType = schema.userTableRowType(userTable(parent));
         childRowType = schema.userTableRowType(userTable(child));

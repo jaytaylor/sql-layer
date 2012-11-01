@@ -55,8 +55,8 @@ import static com.akiban.qp.operator.API.*;
 @Ignore
 public class ConcurrentUpdateIT extends OperatorITBase
 {
-    @Before
-    public void before() throws InvalidOperationException
+    @Override
+    protected void setupCreateSchema()
     {
         a = createTable(
             "schema", "a",
@@ -66,6 +66,11 @@ public class ConcurrentUpdateIT extends OperatorITBase
             "schema", "b",
             "bid int not null primary key",
             "bx int");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         aRowType = schema.userTableRowType(userTable(a));
         bRowType = schema.userTableRowType(userTable(b));

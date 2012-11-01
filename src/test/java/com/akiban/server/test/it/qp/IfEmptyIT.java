@@ -53,10 +53,9 @@ import static com.akiban.server.test.ExpressionGenerators.literal;
 
 public class IfEmptyIT extends OperatorITBase
 {
-    @Before
-    public void before()
-    {
-        super.before();
+    @Override
+    protected void setupPostCreateSchema() {
+        super.setupPostCreateSchema();
         NewRow[] db = new NewRow[]{
             createNewRow(customer, 0L, "matrix"), // no orders
             createNewRow(customer, 2L, "foundation"), // two orders
