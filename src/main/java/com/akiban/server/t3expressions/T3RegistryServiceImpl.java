@@ -397,8 +397,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         public UserTable userTable() {
             return AISBBasedBuilder.create()
                     .userTable(tableName)
-                    .colString("priority_order", 128, false)
-                    .colBigInt("lowest_priority", false)
+                    .colString("name", 128, false)
+                    .colBigInt("priority_order", false)
                     .colString("inputs", 256, false)
                     .colString("output", 256, false)
                     .colString("internal_impl", 256, false)
