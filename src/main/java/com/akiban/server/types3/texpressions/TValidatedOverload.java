@@ -186,19 +186,19 @@ public class TValidatedOverload implements TOverload {
         return result;
     }
 
+    public String describeInputs() {
+        StringBuilder sb = new StringBuilder();
+        buildInputsDescription(sb);
+        return sb.toString();
+    }
+
     // Redefine toString
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(overload.displayName()).append('(');
-        for (int i = 0, nPos = positionalInputs(), nDesc = inputSetDescriptions.length; i < nDesc; ++i) {
-            sb.append(inputSetDescriptions[i]);
-            if (i == nPos)
-                sb.append("...");
-            if (i+1 < nDesc)
-                sb.append(", ");
-        }
+        buildInputsDescription(sb);
         sb.append(") -> ").append(resultStrategy);
         return sb.toString();
     }
@@ -247,6 +247,16 @@ public class TValidatedOverload implements TOverload {
         this.inputSetDescriptions = createInputSetDescriptions(inputSetsByPos, pickingSet, varargs);
         this.exactInputs = overload.exactInputs();
         this.inputsToInputSetIndex = mapInputsToInputSetIndex(inputSetsByPos, inputSetsCached, varargs);
+    }
+
+    private void buildInputsDescription(StringBuilder sb) {
+        for (int i = 0, nPos = positionalInputs(), nDesc = inputSetDescriptions.length; i < nDesc; ++i) {
+            sb.append(inputSetDescriptions[i]);
+            if (i == nPos)
+                sb.append("...");
+            if (i+1 < nDesc)
+                sb.append(", ");
+        }
     }
 
     private static int[] mapInputsToInputSetIndex(List<TInputSet> inputSetsByPos,

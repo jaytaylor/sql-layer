@@ -76,6 +76,11 @@ public abstract class SimpleMemoryGroupScan<T> implements MemoryGroupCursor.Grou
         @Override
         public PValueSource pvalue(int i) {
             PValue value = pValues[i];
+            if (value == null) {
+                value = new PValue(rowType.typeInstanceAt(i).typeClass().underlyingType());
+                pValues[i] = value;
+
+            }
             SimpleMemoryGroupScan.this.eval(i, data, value);
             return value;
         }
@@ -83,6 +88,11 @@ public abstract class SimpleMemoryGroupScan<T> implements MemoryGroupCursor.Grou
         @Override
         public ValueSource eval(int i) {
             ValueHolder value = values[i];
+            if (value == null) {
+                value = new ValueHolder();
+                value.expectType(rowType.typeAt(i));
+                values[i] = value;
+            }
             SimpleMemoryGroupScan.this.eval(i, data, value);
             return value;
         }

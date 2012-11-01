@@ -29,6 +29,7 @@ package com.akiban.server.t3expressions;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.memoryadapter.MemoryAdapter;
 import com.akiban.qp.memoryadapter.MemoryGroupCursor;
@@ -37,11 +38,11 @@ import com.akiban.qp.memoryadapter.SimpleMemoryGroupScan;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.IndexScanSelector;
-import com.akiban.qp.row.Row;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types3.TAggregator;
@@ -60,9 +61,9 @@ import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Multimap;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -87,6 +88,15 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         T3RegistryServiceImpl registryService = new T3RegistryServiceImpl();
         registryService.start();
         return registryService.getCastsResolver();
+    }
+
+    public T3RegistryServiceImpl() {
+        this(null);
+    }
+
+    @Inject
+    public T3RegistryServiceImpl(SchemaManager schemaManager) {
+        this.schemaManager = schemaManager;
     }
 
     // T3RegistryService interface
@@ -118,6 +128,11 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             throw new ServiceStartupException("T3Registry");
         }
         start(registry);
+        if (schemaManager != null) {
+            OverloadsTableFactory overloadsTable = new OverloadsTableFactory(
+                    TableName.create("information_schema", "ak_overloads"));
+            schemaManager.registerMemoryInformationSchemaTable(overloadsTable.userTable(), overloadsTable);
+        }
     }
 
     @Override
@@ -185,6 +200,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     private static final Logger logger = LoggerFactory.getLogger(T3RegistryServiceImpl.class);
 
     // object state
+
+    private final SchemaManager schemaManager;
 
     private volatile TCastResolver castsResolver;
     private volatile ResolvablesRegistry<TValidatedAggregator> aggreatorsRegistry;
@@ -361,19 +378,34 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                 int[] o2Priorities = o2.getPriorities();
                 return lowest(o1Priorities) - lowest(o2Priorities);
             }
-
-            private int lowest(int[] ints) {
-                int result = ints[0];
-                for (int i = 1; i < ints.length; ++i)
-                    result = Math.min(result, ints[i]);
-                return result;
-            }
         };
+    }
+
+    private static int lowest(int[] ints) {
+        int result = ints[0];
+        for (int i = 1; i < ints.length; ++i)
+            result = Math.min(result, ints[i]);
+        return result;
     }
 
     private static final TableName overloadsTableName = TableName.create("information_schema", "ak_overloads");
 
     private class OverloadsTableFactory implements MemoryTableFactory {
+
+        // OverloadsTableFactory interface
+
+        public UserTable userTable() {
+            return AISBBasedBuilder.create()
+                    .userTable(tableName)
+                    .colString("priority_order", 128, false)
+                    .colBigInt("lowest_priority", false)
+                    .colString("inputs", 256, false)
+                    .colString("output", 256, false)
+                    .colString("internal_id", 256, false)
+                    .ais()
+                    .getUserTable(tableName);
+        }
+
         @Override
         public TableName getName() {
             return tableName;
@@ -388,12 +420,48 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             return new SimpleMemoryGroupScan<TValidatedOverload>(adapter, overloadsTableName, allOverloads) {
                 @Override
                 protected void eval(int field, TValidatedOverload data, PValueTarget target) {
-                    throw new UnsupportedOperationException(); // TODO
+                    switch (field) {
+                    case 0:
+                        target.putString(data.displayName().toLowerCase(), null);
+                        break;
+                    case 1:
+                        target.putInt64(lowest(data.getPriorities()));
+                        break;
+                    case 2:
+                        target.putString(data.describeInputs(), null);
+                        break;
+                    case 3:
+                        target.putString(data.resultStrategy().toString(), null);
+                        break;
+                    case 4:
+                        target.putString(data.id(), null);
+                        break;
+                    default:
+                        target.putNull();
+                    }
                 }
 
                 @Override
                 protected void eval(int field, TValidatedOverload data, ValueTarget target) {
-                    throw new UnsupportedOperationException(); // TODO
+                    switch (field) {
+                    case 0:
+                        target.putString(data.displayName().toLowerCase());
+                        break;
+                    case 1:
+                        target.putLong(lowest(data.getPriorities()));
+                        break;
+                    case 2:
+                        target.putString(data.describeInputs());
+                        break;
+                    case 3:
+                        target.putString(data.resultStrategy().toString());
+                        break;
+                    case 4:
+                        target.putString(data.id());
+                        break;
+                    default:
+                        target.putNull();
+                    }
                 }
             };
         }
@@ -416,8 +484,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             throw new UnsupportedOperationException(); // TODO
         }
 
-        public OverloadsFactory(UserTable table) {
-            this.tableName = table.getName();
+        public OverloadsTableFactory(TableName tableName) {
+            this.tableName = tableName;
         }
 
         private final TableName tableName;

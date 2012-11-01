@@ -219,13 +219,15 @@ final class ResolvablesRegistry<V extends TValidatedOverload> implements Iterabl
         @Override
         public boolean hasNext() {
             final boolean haveNext;
-            if (withinGroupIterator != null && !withinGroupIterator.hasNext()) {
+            if (withinGroupIterator != null && withinGroupIterator.hasNext()) {
                 haveNext = true;
             }
             else {
                 if (groupsIter.hasNext()) {
                     withinGroupIterator = groupsIter.next().getOverloads().iterator();
-                    haveNext = true;
+                    haveNext = withinGroupIterator.hasNext();
+                    if (!haveNext)
+                        withinGroupIterator = null;
                 }
                 else {
                     haveNext = false;

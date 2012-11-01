@@ -114,10 +114,7 @@ public final class TInstance {
         return true;
     }
 
-    // object interface
-
-    @Override
-    public String toString() {
+    public String toStringIgnoringNullability() {
         String className = tclass.name().toString();
         int nattrs = tclass.nAttributes();
         if (nattrs == 0)
@@ -133,11 +130,14 @@ public final class TInstance {
                 sb.append(", ");
         }
         sb.append(')');
-        if (isNullable)
-            sb.append(" NULL");
-        else
-            sb.append(" NOT NULL");
         return sb.toString();
+    }
+
+    // object interface
+
+    @Override
+    public String toString() {
+        return toStringIgnoringNullability() + (isNullable ? " NULL" : " NOT NULL");
     }
 
     @Override

@@ -54,6 +54,11 @@ public final class TInstanceGenerator {
         return tclass;
     }
 
+    @Override
+    public String toString() {
+        return setNullable(true).toStringIgnoringNullability();
+    }
+
     public TInstanceGenerator(TClass tclass, int... attrs) {
         this.tclass = tclass;
         this.attrs = Arrays.copyOf(attrs, attrs.length);
