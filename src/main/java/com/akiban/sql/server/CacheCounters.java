@@ -24,25 +24,32 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.common.types;
+package com.akiban.sql.server;
 
-import com.akiban.server.types3.TAttributesDeclaration;
-import com.akiban.server.types3.TFactory;
-import com.akiban.server.types3.TInstance;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public class NoAttrFactory implements TFactory
-{
-    private final TInstance instance;
-    
-    public NoAttrFactory(TInstance tInstance)
-    {
-        instance = tInstance;
+public class CacheCounters {
+    private final AtomicInteger hits = new AtomicInteger(0);
+    private final AtomicInteger misses = new AtomicInteger(0);
+
+    public void incrementHits() {
+        hits.incrementAndGet();
     }
-    
-    @Override
-    public TInstance create(TAttributesDeclaration declaration)
-    {
-        declaration.validate(0, 0);
-        return instance;
+
+    public void incrementMisses() {
+        misses.incrementAndGet();
+    }
+
+    public int getHits() {
+        return hits.get();
+    }
+
+    public int getMisses() {
+        return misses.get();
+    }
+
+    public void reset() {
+        hits.set(0);
+        misses.set(0);
     }
 }

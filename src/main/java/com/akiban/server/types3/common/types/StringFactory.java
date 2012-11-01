@@ -26,19 +26,12 @@
 
 package com.akiban.server.types3.common.types;
 
-import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.types3.TAttributeValues;
-import com.akiban.server.types3.TAttributesDeclaration;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TFactory;
-import com.akiban.server.types3.TInstance;
-import com.akiban.util.Enums;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class StringFactory implements TFactory
+public class StringFactory
 {
     //--------------------------------CHARSET-----------------------------------
     //TODO: add more charsets as needed
@@ -87,29 +80,6 @@ public class StringFactory implements TFactory
     public static final int NULL_COLLATION_ID = -1; // String literals
     
     //--------------------------------------------------------------------------
-    
-    private final TClass tclass;
-    
-    public StringFactory(TClass tClass)
-    {
-        tclass = tClass;
-    }
-     
-    /**
-     * 
-     *
-     * @param declaration@return a type instance with the given attribute
-     */
-    @Override
-    public TInstance create(TAttributesDeclaration declaration)
-    {
-        TAttributeValues values = declaration.validate(3, 3);
-        int length = values.intAt(StringAttribute.LENGTH, DEFAULT_LENGTH);
-        String charsetName = values.stringAt(StringAttribute.CHARSET, DEFAULT_CHARSET.name());
-        int charsetId = Enums.ordinalOf(Charset.class, charsetName);
-        String collationName = values.stringAt(StringAttribute.COLLATION, AkCollatorFactory.UCS_BINARY);
-        int collation = AkCollatorFactory.getAkCollator(collationName).getCollationId();
-        return tclass.instance(length, charsetId, collation, values.nullable());
-    }
 
+    private StringFactory() {}
 }

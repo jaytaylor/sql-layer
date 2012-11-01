@@ -32,27 +32,33 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-
 import org.junit.Ignore;
 import org.junit.Test;
-import org.postgresql.util.PSQLException;
 
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index.JoinType;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.sql.pg.PostgresServerITBase;
+import com.akiban.server.error.BranchingGroupIndexException;
+import com.akiban.server.error.IndexTableNotInGroupException;
+import com.akiban.server.error.IndistinguishableIndexException;
+import com.akiban.server.error.MissingGroupIndexJoinTypeException;
+import com.akiban.server.error.NoSuchColumnException;
+import com.akiban.server.error.NoSuchIndexException;
+import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.ProtectedIndexException;
+import com.akiban.server.error.TableIndexJoinTypeException;
+import com.akiban.server.error.UnsupportedUniqueGroupIndexException;
 
-public class IndexDDLIT extends PostgresServerITBase {
+public class IndexDDLIT extends AISDDLITBase {
 
     @Test
     public void createKey() throws Exception {
         String sql = "CREATE INDEX test1 on test.t1 (test.t1.c1, t1.c2, c3)";
         createTable();
         
-        getConnection().createStatement().execute(sql);
+        executeDDL(sql);
         
-        UserTable table = ddlServer().getAIS(session()).getUserTable("test", "t1");
+        UserTable table = ais().getUserTable("test", "t1");
         assertNotNull (table);
         assertNotNull (table.getIndex("test1"));
         assertFalse (table.getIndex("test1").isUnique());
@@ -67,8 +73,8 @@ public class IndexDDLIT extends PostgresServerITBase {
         String sql = "CREATE UNIQUE INDEX test2 on test.t1 (test.t1.c1, t1.c2, c3)";
         createTable();
         
-        getConnection().createStatement().execute(sql);
-        UserTable table=ddlServer().getAIS(session()).getUserTable("test", "t1");
+        executeDDL(sql);
+        UserTable table=ais().getUserTable("test", "t1");
         assertNotNull (table);
         assertNotNull (table.getIndex("test2"));
         assertTrue   (table.getIndex("test2").isUnique());
@@ -84,12 +90,12 @@ public class IndexDDLIT extends PostgresServerITBase {
         String sql = "CREATE INDEX test4 on test.t2 (t1.c1, t2.c1) USING LEFT JOIN";
         createJoinedTables();
         
-        getConnection().createStatement().execute(sql);
+        executeDDL(sql);
 
-        UserTable table1 = ddlServer().getAIS(session()).getUserTable("test", "t1");
+        UserTable table1 = ais().getUserTable("test", "t1");
         assertNotNull (table1);
 
-        UserTable table2 = ddlServer().getAIS(session()).getUserTable("test", "t2");
+        UserTable table2 = ais().getUserTable("test", "t2");
         assertNotNull (table2);
         
         assertNull (table1.getIndex("test4"));
@@ -112,12 +118,12 @@ public class IndexDDLIT extends PostgresServerITBase {
         String sql = "CREATE INDEX test4 on test.t2 (t1.c1, t2.c1) USING RIGHT JOIN";
         createJoinedTables();
         
-        getConnection().createStatement().execute(sql);
+        executeDDL(sql);
 
-        UserTable table1 = ddlServer().getAIS(session()).getUserTable("test", "t1");
+        UserTable table1 = ais().getUserTable("test", "t1");
         assertNotNull (table1);
 
-        UserTable table2 = ddlServer().getAIS(session()).getUserTable("test", "t2");
+        UserTable table2 = ais().getUserTable("test", "t2");
         assertNotNull (table2);
         
         assertNull (table1.getIndex("test4"));
@@ -135,12 +141,12 @@ public class IndexDDLIT extends PostgresServerITBase {
         
     }
     
-    @Test (expected=PSQLException.class)
+    @Test (expected=UnsupportedUniqueGroupIndexException.class)
     public void createUniqueGroupKey () throws Exception {
         String sql = "CREATE UNIQUE INDEX test4 on test.t2 (t1.c1, t2.c1) USING LEFT JOIN";
         createJoinedTables();
         
-        getConnection().createStatement().execute(sql);
+        executeDDL(sql);
         
         
     }
@@ -150,59 +156,59 @@ public class IndexDDLIT extends PostgresServerITBase {
         String sql = "CREATE INDEX test6 on test.t2 (t2.c1, c2, test.t2.c3)";
         createJoinedTables();
         
-        getConnection().createStatement().execute(sql);
-        UserTable table2 = ddlServer().getAIS(session()).getUserTable("test", "t2");
+        executeDDL(sql);
+        UserTable table2 = ais().getUserTable("test", "t2");
         assertNotNull (table2);
         assertNotNull (table2.getIndex("test6"));
         assertNull    (table2.getGroup().getIndex("test6"));
     }
     
    
-    @Test (expected=PSQLException.class)
+    @Test (expected=NoSuchTableException.class)
     public void createIndexErrorTable () throws Exception {
         String sql = "CREATE INDEX test10 on test.bad (c1, c2)";
         createJoinedTables();
         
-        getConnection().createStatement().execute(sql);
+        executeDDL(sql);
     }
     
     
-    @Test (expected=PSQLException.class)
+    @Test (expected=NoSuchColumnException.class)
     public void createIndexErrorCol() throws Exception {
         String sql = "CREATE INDEX test11 on test.t1 (c1, colBad)";
         createJoinedTables();
         
-        getConnection().createStatement().execute(sql);
+        executeDDL(sql);
     }
     
-    @Test (expected=PSQLException.class)
+    @Test (expected=BranchingGroupIndexException.class)
     public void createIndexErrorBranching() throws Exception {
         String sql ="CREATE INDEX test12 on test.t1 (t1.c1, t2.c3, t3.c1) USING LEFT JOIN";
         createBranchedGroup();
-        getConnection().createStatement().execute(sql);
+        executeDDL(sql);
     }
 
-    @Test (expected=PSQLException.class)
+    @Test (expected=NoSuchTableException.class)
     public void createIndexErrorTableCol() throws Exception {
         String sql = "CREATE INDEX test13 on test.t1 (t1.c1, t.c1) USING LEFT JOIN";
         createJoinedTables();
-        getConnection().createStatement().execute(sql);
+        executeDDL(sql);
     }
 
-    @Test (expected=PSQLException.class)
+    @Test (expected=TableIndexJoinTypeException.class)
     public void createIndexTableWithJoin () throws Exception {
         String sql = "CREATE INDEX test4 on test.t1 (t1.c1, t1.c2) USING LEFT JOIN";
         createJoinedTables();
         
-        getConnection().createStatement().execute(sql);
+        executeDDL(sql);
     }
 
-    @Test (expected=PSQLException.class)
+    @Test (expected=MissingGroupIndexJoinTypeException.class)
     public void createIndexGroupWithoutJoin () throws Exception {
         String sql = "CREATE INDEX test4 on test.t2 (t1.c1, t2.c1)";
         createJoinedTables();
         
-        getConnection().createStatement().execute(sql);
+        executeDDL(sql);
     }
 
     @Test
@@ -210,27 +216,27 @@ public class IndexDDLIT extends PostgresServerITBase {
         String sql = "CREATE INDEX test114 on test.t1 (test.t1.c1, t1.c2, c3)";
         createTable();
         
-        getConnection().createStatement().execute(sql);
+        executeDDL(sql);
         String sql1 = "DROP INDEX test114";
         
-        getConnection().createStatement().execute(sql1);
-        UserTable table = ddlServer().getAIS(session()).getUserTable("test", "t1");
+        executeDDL(sql1);
+        UserTable table = ais().getUserTable("test", "t1");
         assertNotNull (table);
         assertNull (table.getIndex("test114"));
     }
      
     
-    @Test(expected=PSQLException.class)
+    @Test(expected=NoSuchIndexException.class)
     public void dropNonExistingIndexError() throws Exception 
     {
         String sql = "CREATE INDEX test114 on test.t1 (test.t1.c1, t1.c2, c3)";
         createTable();
         
-        getConnection().createStatement().execute(sql);
+        executeDDL(sql);
         String sql1 = "DROP INDEX test114b";
         
-        getConnection().createStatement().execute(sql1);
-        UserTable table = ddlServer().getAIS(session()).getUserTable("test", "t1");
+        executeDDL(sql1);
+        UserTable table = ais().getUserTable("test", "t1");
         assertNotNull (table);
         assertNull (table.getIndex("test114b"));
     }
@@ -241,11 +247,11 @@ public class IndexDDLIT extends PostgresServerITBase {
         String sql = "CREATE INDEX test114 on test.t1 (test.t1.c1, t1.c2, c3)";
         createTable();
         
-        getConnection().createStatement().execute(sql);
+        executeDDL(sql);
         String sql1 = "DROP INDEX IF EXISTS test114b";
         
-        getConnection().createStatement().execute(sql1);
-        UserTable table = ddlServer().getAIS(session()).getUserTable("test", "t1");
+        executeDDL(sql1);
+        UserTable table = ais().getUserTable("test", "t1");
         assertNotNull (table);
         assertNull (table.getIndex("test114b"));
     }
@@ -256,11 +262,11 @@ public class IndexDDLIT extends PostgresServerITBase {
         String sql = "CREATE INDEX test115 on test.t1 (test.t1.c1, t1.c2, c3)";
         createTable();
         
-        getConnection().createStatement().execute(sql);
+        executeDDL(sql);
         
-        getConnection().createStatement().execute("SET SCHEMA test; DROP INDEX t1.test115");
-        getConnection().createStatement().execute("DROP INDEX t1.test115");
-        UserTable table = ddlServer().getAIS(session()).getUserTable("test", "t1");
+        executeDDL("SET SCHEMA test; DROP INDEX t1.test115");
+        executeDDL("DROP INDEX t1.test115");
+        UserTable table = ais().getUserTable("test", "t1");
         assertNotNull (table);
         assertNull (table.getIndex("test115"));
     }
@@ -270,51 +276,51 @@ public class IndexDDLIT extends PostgresServerITBase {
         String sql = "CREATE INDEX test116 on test.t1 (test.t1.c1, t1.c2, c3)";
         createTable();
         
-        getConnection().createStatement().execute(sql);
+        executeDDL(sql);
         String sql1 = "DROP INDEX test.t1.test116";
         
-        getConnection().createStatement().execute(sql1);
-        UserTable table = ddlServer().getAIS(session()).getUserTable("test", "t1");
+        executeDDL(sql1);
+        UserTable table = ais().getUserTable("test", "t1");
         assertNotNull (table);
         assertNull (table.getIndex("test116"));
     }
     
-    @Test (expected=PSQLException.class)
+    @Test (expected=NoSuchIndexException.class)
     public void dropIndexFailure() throws Exception {
         String sql = "CREATE INDEX test15 on test.t1 (test.t1.c1, t1.c2, c3)";
         createTable();
         
-        getConnection().createStatement().execute(sql);
+        executeDDL(sql);
         String sql1 = "DROP INDEX bad_index";
         
-        getConnection().createStatement().execute(sql1);
+        executeDDL(sql1);
     }
     
     @Test 
     public void dropGroupIndex () throws Exception { 
         String sql = "CREATE INDEX test16 on test.t2 (t1.c1, t2.c1) USING LEFT JOIN";
         createJoinedTables();
-        getConnection().createStatement().execute(sql);
+        executeDDL(sql);
         
         String sql1 = "DROP INDEX test16";
-        getConnection().createStatement().execute(sql1);
-        UserTable table1 = ddlServer().getAIS(session()).getUserTable("test", "t1");
+        executeDDL(sql1);
+        UserTable table1 = ais().getUserTable("test", "t1");
         assertNotNull (table1);
         Group group = table1.getGroup();
         assertNotNull (group);
         assertNull (group.getIndex("test16"));
     }
     
-    @Test (expected=PSQLException.class)
+    @Test (expected=IndistinguishableIndexException.class)
     public void dropDuplicateIndexes () throws Exception {
         createJoinedTables();
         String sql1 = "CREATE INDEX test17 on test.t2 (t2.c1)";
         String sql2 = "CREATE INDEX test17 on test.t1 (t1.c1)";
-        getConnection().createStatement().execute(sql1);
-        getConnection().createStatement().execute(sql2);
+        executeDDL(sql1);
+        executeDDL(sql2);
         
         String sql3 = "DROP INDEX test17";
-        getConnection().createStatement().execute(sql3);
+        executeDDL(sql3);
     }
 
     @Test 
@@ -322,37 +328,37 @@ public class IndexDDLIT extends PostgresServerITBase {
         createJoinedTables();
         String sql1 = "CREATE INDEX test18 on test.t2 (t2.c1)";
         String sql2 = "CREATE INDEX test18 on test.t1 (t1.c1)";
-        getConnection().createStatement().execute(sql1);
-        getConnection().createStatement().execute(sql2);
+        executeDDL(sql1);
+        executeDDL(sql2);
         
         String sql3 = "DROP INDEX test.t1.test18";
-        getConnection().createStatement().execute(sql3);
-        UserTable table1 = ddlServer().getAIS(session()).getUserTable("test", "t2");
+        executeDDL(sql3);
+        UserTable table1 = ais().getUserTable("test", "t2");
         assertNotNull (table1);
         assertNotNull (table1.getIndex("test18"));
     }
 
-    @Test (expected=PSQLException.class)
+    @Test (expected=ProtectedIndexException.class)
     public void dropPrimaryKeyFails() throws Exception {
         createTable(); 
         
         String sql = "DROP INDEX test.t1.\"PRIMARY\"";
-        getConnection().createStatement().execute(sql);
+        executeDDL(sql);
     }
     
-    @Test (expected=PSQLException.class)
+    @Test (expected=IndexTableNotInGroupException.class)
     public void createCrossGroupIndex() throws Exception {
         createUngroupedTables(); 
         
         String sql = "CREATE INDEX t1_t2 ON test.t1(c1, test.t2.c1) USING LEFT JOIN";
-        getConnection().createStatement().execute(sql);
+        executeDDL(sql);
     }
     
     private void createTable () throws Exception {
         String sql = "CREATE TABLE test.t1 (c1 integer not null primary key, " +
             " c2 integer, c3 integer, c4 integer, c5 integer)";
         
-        getConnection().createStatement().execute(sql);
+        executeDDL(sql);
     }
     
     private void createJoinedTables() throws Exception {
@@ -362,8 +368,8 @@ public class IndexDDLIT extends PostgresServerITBase {
             "c2 integer not null, grouping foreign key (c2) references test.t1, " +
             "c3 integer not null)";
         
-        getConnection().createStatement().execute(sql1);
-        getConnection().createStatement().execute(sql2);
+        executeDDL(sql1);
+        executeDDL(sql2);
     }
     
     private void createBranchedGroup () throws Exception {
@@ -375,9 +381,9 @@ public class IndexDDLIT extends PostgresServerITBase {
         String sql3 = "CREATE TABLE test.t3 (c1 integer not null primary key, " +
             "c2 integer not null, grouping foreign key (c2) references test.t1, " +
             "c3 integer not null)";
-        getConnection().createStatement().execute(sql1);
-        getConnection().createStatement().execute(sql2);
-        getConnection().createStatement().execute(sql3);
+        executeDDL(sql1);
+        executeDDL(sql2);
+        executeDDL(sql3);
     }
 
     private void createSchemaJoinedTables() throws Exception {
@@ -387,8 +393,8 @@ public class IndexDDLIT extends PostgresServerITBase {
             "c2 integer not null, grouping foreign key (c2) references test.t1, " +
             "c3 integer not null)";
         
-        getConnection().createStatement().execute(sql1);
-        getConnection().createStatement().execute(sql2);
+        executeDDL(sql1);
+        executeDDL(sql2);
     }
 
     private void createUngroupedTables()  throws Exception {
@@ -397,12 +403,8 @@ public class IndexDDLIT extends PostgresServerITBase {
         String sql2 = "CREATE TABLE test.t2 (c1 integer not null primary key, " +
                 "c2 integer not null)";
         
-        getConnection().createStatement().execute(sql1);
-        getConnection().createStatement().execute(sql2);
-    }
-    
-    protected DDLFunctions ddlServer() {
-        return serviceManager().getDXL().ddlFunctions();
+        executeDDL(sql1);
+        executeDDL(sql2);
     }
     
 }
