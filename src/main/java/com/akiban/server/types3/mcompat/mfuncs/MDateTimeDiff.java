@@ -166,7 +166,7 @@ public class MDateTimeDiff
         {
             protected void buildInputSets(TInputSetBuilder bd)
             {
-                bd.covers(MDatetimes.DATETIME, 0).covers(null, 1);
+                bd.covers(MDatetimes.DATETIME, 0).covers(MString.VARCHAR, 1);
             }
             
             @Override
