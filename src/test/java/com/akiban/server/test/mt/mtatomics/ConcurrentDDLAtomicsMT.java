@@ -68,6 +68,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
+    /** Used by {@link #largeEnoughTable(long)} to save length computation between tests */
+    private static long lastLargeEnoughMS = 0;
+    private static int lastLargeEnoughCount = 0;
 
     @Test
     public void dropTableWhileScanningPK() throws Exception {
@@ -404,6 +407,16 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         assertTrue("rows weren't empty!", scanCallable.getRows().isEmpty());
     }
 
+    private Object[] largeEnoughNewRow(int id, int pid, String nameFormat) {
+        return new Object[]{ id, pid, String.format(nameFormat, id) };
+    }
+
+    private void largeEnoughWriteRows(int tableId, int count, String nameFormat) {
+        for(int i = 1; i <= count; ++i) {
+            writeRow(tableId, largeEnoughNewRow(i, i, nameFormat));
+        }
+    }
+
     /**
      * Creates a table with enough rows that it takes a while to drop it
      * @param msForDropping how long (at least) it should take to drop this table
@@ -411,43 +424,54 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
      * @throws InvalidOperationException if ever encountered
      */
     private int largeEnoughTable(long msForDropping) throws InvalidOperationException {
-        int rowCount;
-        long dropTime;
-        float factor = 1.5f; // after we write N rows, we'll write an additional (factor-1)*N rows as buffer
-        int parentId = createTable(SCHEMA, TABLE+"parent", "id int not null primary key");
-        writeRows(
-                createNewRow(parentId, 1)
-        );
-        final String[] childTableDDL = {"id int not null primary key", "pid int", "name varchar(32)", "UNIQUE(name)",
-                "GROUPING FOREIGN KEY (pid) REFERENCES " +TABLE+"parent(id)"};
-        do {
-            int tableId = createTable(SCHEMA, TABLE, childTableDDL);
-            rowCount = 1;
-            final long writeStart = System.currentTimeMillis();
-            while (System.currentTimeMillis() - writeStart < msForDropping) {
-                writeRows(
-                        createNewRow(tableId, rowCount, Integer.toString(rowCount), String.format("King Frosty %s", rowCount))
-                );
-                ++rowCount;
-            }
-            for(int i = rowCount; i < (int) factor * rowCount ; ++i) {
-                writeRows(
-                        createNewRow(tableId, i, Integer.toString(i), String.format("King Melty %s", i))
-                );
-            }
-            final long dropStart = System.currentTimeMillis();
-            ddl().dropTable(session(), new TableName(SCHEMA, TABLE));
-            dropTime = System.currentTimeMillis() - dropStart;
-            factor += 0.2;
-        } while(dropTime < msForDropping);
+        final String NAME_FORMAT_INITIAL = "King Frosty %d";
+        final String NAME_FORMAT_EXPANDING = "King Melty %d";
+        final String NAME_FORMAT_FINAL = "King Snowy %d";
 
-        int tableId = createTable(SCHEMA, TABLE, childTableDDL);
-        for(int i = 1; i < rowCount ; ++i) {
-            writeRows(
-                    createNewRow(tableId, i, Integer.toString(i), String.format("King Snowy %s", i))
-            );
+        if(lastLargeEnoughMS != msForDropping) {
+            lastLargeEnoughCount = 0;
         }
 
+        int parentId = createTable(SCHEMA, TABLE+"parent", "id int not null primary key");
+        writeRow(parentId, 1);
+        final String[] childTableDDL = {"id int not null primary key", "pid int", "name varchar(32)", "UNIQUE(name)",
+                "GROUPING FOREIGN KEY (pid) REFERENCES " +TABLE+"parent(id)"};
+
+        // Use previously computed row count if available
+        int tableId = createTable(SCHEMA, TABLE, childTableDDL);
+        if(lastLargeEnoughCount != 0) {
+            largeEnoughWriteRows(tableId, lastLargeEnoughCount, NAME_FORMAT_FINAL);
+            return tableId;
+        }
+
+        // Start estimate by how long it takes to insert for desired time
+        int rowCount = 1;
+        final long writeStart = System.currentTimeMillis();
+        while (System.currentTimeMillis() - writeStart < msForDropping) {
+            writeRow(tableId, largeEnoughNewRow(rowCount, rowCount, NAME_FORMAT_INITIAL));
+            ++rowCount;
+        }
+
+        for(;;) {
+            final long dropStart = System.currentTimeMillis();
+            ddl().dropTable(session(), new TableName(SCHEMA, TABLE));
+            final long dropTime = System.currentTimeMillis() - dropStart;
+            if(dropTime > msForDropping) {
+                lastLargeEnoughMS = msForDropping;
+                lastLargeEnoughCount = rowCount;
+                break;
+            }
+
+            // Compute how fast we dropped, estimate how many more we need (plus some slop)
+            float rowsPerMS = rowCount / (float)dropTime;
+            float neededMS = (msForDropping - dropTime) * 1.25f;
+            rowCount += (int)(rowsPerMS * neededMS);
+            tableId = createTable(SCHEMA, TABLE, childTableDDL);
+            largeEnoughWriteRows(tableId, rowCount, NAME_FORMAT_EXPANDING);
+        }
+
+        tableId = createTable(SCHEMA, TABLE, childTableDDL);
+        largeEnoughWriteRows(tableId, rowCount, NAME_FORMAT_FINAL);
         return tableId;
     }
 
