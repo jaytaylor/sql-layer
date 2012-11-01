@@ -26,23 +26,8 @@
 
 package com.akiban.server.service.monitor;
 
-public interface MonitorMXBean
+/** The processing stages for a query session. */
+public enum MonitorStage
 {
-    /** Enable the query log. */
-    void enableQueryLog();
-
-    /** Disable the query log. */
-    void disableQueryLog();
-
-    /** Set the filename for the query log. Must be called before {@link enableQueryLog}. */
-    void setQueryLogFileName(String fileName);
-
-    /** Get the current query log or <code>null</code> if not set. */
-    String getQueryLogFileName();
-
-    /** Set the time limit on query execution. */
-    void setExecutionTimeThreshold(long threshold);
-
-    /** Get the time limit on query execution. */
-    long getExecutionTimeThreshold();
+    IDLE, PARSE, OPTIMIZE, EXECUTE, COMMIT
 }

@@ -24,42 +24,50 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service.instrumentation;
+package com.akiban.server.service.monitor;
 
 import java.util.Date;
 
-public interface SessionTracer {
-    
-    public void beginEvent(String eventName);
-    
-    public void endEvent();
-    
-    public Event getEvent(String eventName);
-    
-    public Object[] getCurrentEvents();
-    
-    public Object[] getCompletedEvents();
-    
-    public void setTraceLevel(int level);
-    
-    public int getTraceLevel();
-    
-    public void enable();
-    
-    public void disable();
-    
-    public boolean isEnabled();
-    
-    public String getCurrentStatement();
-    
-    public String getRemoteAddress();
-    
-    public Date getStartTime();
-        
-    public long getProcessingTime();
-    
-    public long getEventTime(String eventName);
-    
-    public long getTotalEventTime(String eventName);
+public interface SessionMonitor {
+    /** The id of the session being monitored. */
+    public int getSessionId();
 
+    /** The id of the session that called this one or -1 if none. */
+    public int getCallerSessionId();
+
+    /** What kind of server is this a session for? */
+    public String getServerType();
+
+    /** The remote IP address of a network connection or <code>null</code>. */
+    public String getRemoteAddress();
+
+    /** The time at which this session started. */
+    public Date getStartTime();
+    
+    /** The number of queries executed. */
+    public int getStatementCount();
+
+    /** The SQL of the current last statement. */
+    public String getCurrentStatement();    
+
+    /** The time at which the current statement began executing. */
+    public Date getCurrentStatementStartTime();
+
+    /** The time at which the current statement completed. */
+    public Date getCurrentStatementEndTime();
+
+    /** The number of rows returned / affected by the last statement
+     * or <code>-1</code> if unknown, not applicable or in
+     * progress. 
+     */
+    public int getRowsProcessed();
+
+    /** The current stage of the session. */
+    public MonitorStage getCurrentStage();
+    
+    /** The time in nanoseconds last spent in the given stage. */
+    public long getLastTimeStageNanos(MonitorStage stage);
+
+    /** The total time in nanoseconds spent in the given stage. */
+    public long getTotalTimeStageNanos(MonitorStage stage);
 }

@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service.instrumentation;
+package com.akiban.server.service.monitor;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -42,10 +42,10 @@ import org.slf4j.LoggerFactory;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
 
-public class InstrumentationServiceImpl implements
-    InstrumentationService, 
+public class MonitorServiceImpl implements
+    MonitorService, 
     Service,
-    InstrumentationMXBean,
+    MonitorMXBean,
     JmxManageable {
     
     /**
@@ -111,7 +111,7 @@ public class InstrumentationServiceImpl implements
         // anything to do?
     }
 
-    // InstrumentationService interface
+    // MonitorService interface
     
     @Override
     public boolean isQueryLogEnabled()
@@ -177,7 +177,7 @@ public class InstrumentationServiceImpl implements
         }
     }
     
-    // InstrumentationMXBean interface
+    // MonitorMXBean interface
 
     @Override
     public void enableQueryLog()
@@ -231,13 +231,13 @@ public class InstrumentationServiceImpl implements
     @Override
     public JmxObjectInfo getJmxObjectInfo()
     {
-        return new JmxObjectInfo("Instrumentation", this, InstrumentationMXBean.class);
+        return new JmxObjectInfo("Monitor", this, MonitorMXBean.class);
     }
 
-    // InstrumentationServiceImpl interface
+    // MonitorServiceImpl interface
 
     @Inject
-    public InstrumentationServiceImpl(ConfigurationService config) {
+    public MonitorServiceImpl(ConfigurationService config) {
         this.config = config;
     }
 
@@ -248,7 +248,7 @@ public class InstrumentationServiceImpl implements
     private static final String QUERY_LOG_FILE_PROPERTY = "akserver.querylog.filename";
     private static final String QUERY_LOG_THRESHOLD = "akserver.querylog.exec_time_threshold";
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(InstrumentationServiceImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MonitorServiceImpl.class);
             
 //    private final PostgresServer pgServer;
     private final ConfigurationService config;
