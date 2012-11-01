@@ -521,8 +521,15 @@ public abstract class CostEstimator implements TableRowCounts
     protected boolean encodeKeyValue(ExpressionNode node, Index index, int column) {
         if (usePValues()) {
             PValueSource pvalue = null;
-            if ((node != null) && (node.getPreptimeValue() != null))
-                pvalue = node.getPreptimeValue().value();
+            if (node instanceof ConstantExpression) {
+                if (node.getPreptimeValue() != null) {
+                    if (node.getPreptimeValue().instance() == null) { // Literal null
+                        keyPTarget.putNull();
+                        return true;
+                    }
+                    pvalue = node.getPreptimeValue().value();
+                }
+            }
             if (pvalue == null)
                 return false;
             TInstance tInstance;
