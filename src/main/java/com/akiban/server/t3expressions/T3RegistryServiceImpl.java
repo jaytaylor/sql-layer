@@ -401,7 +401,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                     .colBigInt("lowest_priority", false)
                     .colString("inputs", 256, false)
                     .colString("output", 256, false)
-                    .colString("internal_id", 256, false)
+                    .colString("internal_impl", 256, false)
                     .ais()
                     .getUserTable(tableName);
         }
