@@ -43,6 +43,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.PointTap;
@@ -147,15 +148,8 @@ class OperatorStoreGIHandler {
 
     private void copyFieldToIndexRow(GroupIndex groupIndex, Row row, int flattenedIndex)
     {
-        if (Types3Switch.ON) {
-            PValueSource source = row.pvalue(flattenedIndex);
-            TInstance sourceInstance = row.rowType().typeInstanceAt(flattenedIndex);
-            sourceInstance.writeCollating(source, pTarget);
-        } else {
-            Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
-            ValueSource source = row.eval(flattenedIndex);
-            indexRow.append(column, source);
-        }
+        Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
+        indexRow.append(row.eval(flattenedIndex), column.getType().akType(), column.tInstance(), null);
     }
 
     private void copyZValueToIndexRow(GroupIndex groupIndex,
@@ -168,28 +162,20 @@ class OperatorStoreGIHandler {
         boolean zNull = false;
         for (int d = 0; d < Space.LAT_LON_DIMENSIONS; d++) {
             if (!zNull) {
-                if (Types3Switch.ON) {
-                    assert false : "TBD";
+                ValueSource columnValue = row.eval(irc.getFieldPosition(firstSpatialColumn + d));
+                if (columnValue.isNull()) {
+                    zNull = true;
                 } else {
-                    ValueSource columnValue = row.eval(irc.getFieldPosition(firstSpatialColumn + d));
-                    if (columnValue.isNull()) {
-                        zNull = true;
-                    } else {
-                        coords[d] = columnValue.getDecimal();
-                    }
+                    coords[d] = columnValue.getDecimal();
                 }
             }
         }
-        if (Types3Switch.ON) {
-            assert false : "TBD";
+        if (zNull) {
+            zSource.putNull();
+            indexRow.append(zSource, AkType.NULL, null, null);
         } else {
-            if (zNull) {
-                zSource.putNull();
-                indexRow.append(zSource, AkType.NULL, null, null);
-            } else {
-                zSource.putLong(space.shuffle(coords));
-                indexRow.append(zSource, AkType.LONG, null, null);
-            }
+            zSource.putLong(space.shuffle(coords));
+            indexRow.append(zSource, AkType.LONG, NON_NULL_Z_TYPE, null);
         }
     }
 
@@ -247,6 +233,7 @@ class OperatorStoreGIHandler {
     // class state
     private static volatile GIHandlerHook giHandlerHook;
     private static final PointTap UNNEEDED_DELETE_TAP = Tap.createCount("superfluous_delete");
+    private static final TInstance NON_NULL_Z_TYPE = MNumeric.BIGINT.instance(false);
 
     // nested classes
 
