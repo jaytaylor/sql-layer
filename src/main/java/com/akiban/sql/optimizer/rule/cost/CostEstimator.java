@@ -33,6 +33,7 @@ import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 import com.akiban.ais.model.*;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.server.PersistitKeyPValueTarget;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Expressions;
@@ -42,6 +43,11 @@ import static com.akiban.server.store.statistics.IndexStatistics.*;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.persistit.Key;
 import com.persistit.Persistit;
 
@@ -62,6 +68,7 @@ public abstract class CostEstimator implements TableRowCounts
     private final CostModel model;
     private final Key key;
     private final PersistitKeyValueTarget keyTarget;
+    private final PersistitKeyPValueTarget keyPTarget;
     private final Comparator<byte[]> bytesComparator;
     protected boolean warningsEnabled;
 
@@ -70,13 +77,24 @@ public abstract class CostEstimator implements TableRowCounts
         this.properties = properties;
         model = CostModel.newCostModel(schema, this);
         key = keyCreator.createKey();
-        keyTarget = new PersistitKeyValueTarget();
+        if (Types3Switch.ON) {
+            keyPTarget = new PersistitKeyPValueTarget();
+            keyTarget = null;
+        }
+        else {
+            keyTarget = new PersistitKeyValueTarget();
+            keyPTarget = null;
+        }
         bytesComparator = UnsignedBytes.lexicographicalComparator();
         warningsEnabled = logger.isWarnEnabled();
     }
 
     protected CostEstimator(SchemaRulesContext rulesContext, KeyCreator keyCreator) {
         this(rulesContext.getSchema(), rulesContext.getProperties(), keyCreator);
+    }
+
+    private boolean usePValues() {
+        return (keyPTarget != null);
     }
 
     @Override
@@ -277,7 +295,10 @@ public abstract class CostEstimator implements TableRowCounts
                                    Index[] indexColumnsIndexes, IndexStatistics[] indexColumnsStats,
                                    List<ExpressionNode> eqExpressions) {
         double selectivity = 1.0;
-        keyTarget.attach(key);
+        if (usePValues())
+            keyPTarget.attach(key);
+        else
+            keyTarget.attach(key);
         for (int column = 0; column < eqExpressions.size(); column++) {
             ExpressionNode node = eqExpressions.get(column);
             selectivity *= fractionEqual(index.getAllColumns().get(column).getColumn(),
@@ -300,7 +321,10 @@ public abstract class CostEstimator implements TableRowCounts
                 return missingStatsSelectivity();
             } else {
                 key.clear();
-                keyTarget.attach(key);
+                if (usePValues())
+                    keyPTarget.attach(key);
+                else
+                    keyTarget.attach(key);
                 // encodeKeyValue evaluates non-null iff node is a constant expression. key is initialized as a side-effect.
                 byte[] columnValue = encodeKeyValue(expr, index, 0) ? keyCopy() : null;
                 if (columnValue == null) {
@@ -342,7 +366,10 @@ public abstract class CostEstimator implements TableRowCounts
             missingStats(column, index);
             return missingStatsSelectivity();
         }
-        keyTarget.attach(key);
+        if (usePValues())
+            keyPTarget.attach(key);
+        else
+            keyTarget.attach(key);
         key.clear();
         byte[] loBytes = encodeKeyValue(lo, index, 0) ? keyCopy() : null;
         key.clear();
@@ -463,7 +490,10 @@ public abstract class CostEstimator implements TableRowCounts
                                     ExpressionNode anotherField,
                                     boolean upper) {
         key.clear();
-        keyTarget.attach(key);
+        if (usePValues())
+            keyPTarget.attach(key);
+        else
+            keyTarget.attach(key);
         int i = 0;
         if (fields != null) {
             for (ExpressionNode field : fields) {
@@ -489,34 +519,65 @@ public abstract class CostEstimator implements TableRowCounts
     }
 
     protected boolean encodeKeyValue(ExpressionNode node, Index index, int column) {
-        Expression expr = null;
-        if (node instanceof ConstantExpression) {
-            if (node.getAkType() == null)
-                expr = Expressions.literal(((ConstantExpression)node).getValue());
-            else
-                expr = Expressions.literal(((ConstantExpression)node).getValue(),
-                                           node.getAkType());
-        }
-        if (expr == null)
-            return false;
-        ValueSource valueSource = expr.evaluation().eval();
-        expect_type:
-        {
-            if (index.isSpatial()) {
-                TableIndex spatialIndex = (TableIndex)index;
-                int firstSpatialColumn = spatialIndex.firstSpatialArgument();
-                if (column == firstSpatialColumn) {
-                    keyTarget.expectingType(AkType.LONG, null);
-                    break expect_type;
+        if (usePValues()) {
+            PValueSource pvalue = null;
+            if ((node != null) && (node.getPreptimeValue() != null))
+                pvalue = node.getPreptimeValue().value();
+            if (pvalue == null)
+                return false;
+            TInstance tInstance;
+            determine_type:
+            {
+                if (index.isSpatial()) {
+                    TableIndex spatialIndex = (TableIndex)index;
+                    int firstSpatialColumn = spatialIndex.firstSpatialArgument();
+                    if (column == firstSpatialColumn) {
+                        tInstance = MNumeric.BIGINT.instance(node.getPreptimeValue().isNullable());
+                        break determine_type;
+                    }
+                    else if (column > firstSpatialColumn) {
+                        column += spatialIndex.dimensions() - 1;
+                    }
                 }
-                else if (column > firstSpatialColumn) {
-                    column += spatialIndex.dimensions() - 1;
-                }
+                tInstance = index.getAllColumns().get(column).getColumn().tInstance();
             }
-            keyTarget.expectingType(index.getAllColumns().get(column).getColumn());
+            tInstance.writeCollating(pvalue, keyPTarget);
+            return true;
         }
-        Converters.convert(valueSource, keyTarget);
-        return true;
+        else {
+            Expression expr = null;
+            if (node instanceof ConstantExpression) {
+                if (node.getAkType() == null)
+                    expr = Expressions.literal(((ConstantExpression)node).getValue());
+                else
+                    expr = Expressions.literal(((ConstantExpression)node).getValue(),
+                                               node.getAkType());
+            }
+            if (expr == null)
+                return false;
+            ValueSource valueSource = expr.evaluation().eval();
+            determine_type:
+            {
+                if (index.isSpatial()) {
+                    TableIndex spatialIndex = (TableIndex)index;
+                    int firstSpatialColumn = spatialIndex.firstSpatialArgument();
+                    if (column == firstSpatialColumn) {
+                        // If there were ever a constant expression for
+                        // the Z-value, it would be a long.
+                        keyTarget.expectingType(AkType.LONG, null);
+                        break determine_type;
+                    }
+                    else if (column > firstSpatialColumn) {
+                        // Following columns are offset by difference
+                        // between logical and physical layouts.
+                        column += spatialIndex.dimensions() - 1;
+                    }
+                }
+                keyTarget.expectingType(index.getAllColumns().get(column).getColumn());
+            }
+            Converters.convert(valueSource, keyTarget);
+            return true;
+        }
     }
 
     private byte[] keyCopy()
