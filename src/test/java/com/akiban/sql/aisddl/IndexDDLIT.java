@@ -38,6 +38,16 @@ import org.junit.Test;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index.JoinType;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.error.BranchingGroupIndexException;
+import com.akiban.server.error.IndexTableNotInGroupException;
+import com.akiban.server.error.IndistinguishableIndexException;
+import com.akiban.server.error.MissingGroupIndexJoinTypeException;
+import com.akiban.server.error.NoSuchColumnException;
+import com.akiban.server.error.NoSuchIndexException;
+import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.ProtectedIndexException;
+import com.akiban.server.error.TableIndexJoinTypeException;
+import com.akiban.server.error.UnsupportedUniqueGroupIndexException;
 
 public class IndexDDLIT extends AISDDLITBase {
 
@@ -131,7 +141,7 @@ public class IndexDDLIT extends AISDDLITBase {
         
     }
     
-    @Test (expected=NullPointerException.class)
+    @Test (expected=UnsupportedUniqueGroupIndexException.class)
     public void createUniqueGroupKey () throws Exception {
         String sql = "CREATE UNIQUE INDEX test4 on test.t2 (t1.c1, t2.c1) USING LEFT JOIN";
         createJoinedTables();
@@ -154,7 +164,7 @@ public class IndexDDLIT extends AISDDLITBase {
     }
     
    
-    @Test (expected=NullPointerException.class)
+    @Test (expected=NoSuchTableException.class)
     public void createIndexErrorTable () throws Exception {
         String sql = "CREATE INDEX test10 on test.bad (c1, c2)";
         createJoinedTables();
@@ -163,7 +173,7 @@ public class IndexDDLIT extends AISDDLITBase {
     }
     
     
-    @Test (expected=NullPointerException.class)
+    @Test (expected=NoSuchColumnException.class)
     public void createIndexErrorCol() throws Exception {
         String sql = "CREATE INDEX test11 on test.t1 (c1, colBad)";
         createJoinedTables();
@@ -171,21 +181,21 @@ public class IndexDDLIT extends AISDDLITBase {
         executeDDL(sql);
     }
     
-    @Test (expected=NullPointerException.class)
+    @Test (expected=BranchingGroupIndexException.class)
     public void createIndexErrorBranching() throws Exception {
         String sql ="CREATE INDEX test12 on test.t1 (t1.c1, t2.c3, t3.c1) USING LEFT JOIN";
         createBranchedGroup();
         executeDDL(sql);
     }
 
-    @Test (expected=NullPointerException.class)
+    @Test (expected=NoSuchTableException.class)
     public void createIndexErrorTableCol() throws Exception {
         String sql = "CREATE INDEX test13 on test.t1 (t1.c1, t.c1) USING LEFT JOIN";
         createJoinedTables();
         executeDDL(sql);
     }
 
-    @Test (expected=NullPointerException.class)
+    @Test (expected=TableIndexJoinTypeException.class)
     public void createIndexTableWithJoin () throws Exception {
         String sql = "CREATE INDEX test4 on test.t1 (t1.c1, t1.c2) USING LEFT JOIN";
         createJoinedTables();
@@ -193,7 +203,7 @@ public class IndexDDLIT extends AISDDLITBase {
         executeDDL(sql);
     }
 
-    @Test (expected=NullPointerException.class)
+    @Test (expected=MissingGroupIndexJoinTypeException.class)
     public void createIndexGroupWithoutJoin () throws Exception {
         String sql = "CREATE INDEX test4 on test.t2 (t1.c1, t2.c1)";
         createJoinedTables();
@@ -216,7 +226,7 @@ public class IndexDDLIT extends AISDDLITBase {
     }
      
     
-    @Test(expected=NullPointerException.class)
+    @Test(expected=NoSuchIndexException.class)
     public void dropNonExistingIndexError() throws Exception 
     {
         String sql = "CREATE INDEX test114 on test.t1 (test.t1.c1, t1.c2, c3)";
@@ -275,7 +285,7 @@ public class IndexDDLIT extends AISDDLITBase {
         assertNull (table.getIndex("test116"));
     }
     
-    @Test (expected=NullPointerException.class)
+    @Test (expected=NoSuchIndexException.class)
     public void dropIndexFailure() throws Exception {
         String sql = "CREATE INDEX test15 on test.t1 (test.t1.c1, t1.c2, c3)";
         createTable();
@@ -301,7 +311,7 @@ public class IndexDDLIT extends AISDDLITBase {
         assertNull (group.getIndex("test16"));
     }
     
-    @Test (expected=NullPointerException.class)
+    @Test (expected=IndistinguishableIndexException.class)
     public void dropDuplicateIndexes () throws Exception {
         createJoinedTables();
         String sql1 = "CREATE INDEX test17 on test.t2 (t2.c1)";
@@ -328,7 +338,7 @@ public class IndexDDLIT extends AISDDLITBase {
         assertNotNull (table1.getIndex("test18"));
     }
 
-    @Test (expected=NullPointerException.class)
+    @Test (expected=ProtectedIndexException.class)
     public void dropPrimaryKeyFails() throws Exception {
         createTable(); 
         
@@ -336,7 +346,7 @@ public class IndexDDLIT extends AISDDLITBase {
         executeDDL(sql);
     }
     
-    @Test (expected=NullPointerException.class)
+    @Test (expected=IndexTableNotInGroupException.class)
     public void createCrossGroupIndex() throws Exception {
         createUngroupedTables(); 
         
