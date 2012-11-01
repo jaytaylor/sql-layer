@@ -33,6 +33,7 @@ import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.ais.model.aisb2.NewUserTableBuilder;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.memoryadapter.BasicFactoryBase;
 import com.akiban.qp.memoryadapter.MemoryAdapter;
 import com.akiban.qp.memoryadapter.MemoryGroupCursor;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
@@ -393,44 +394,19 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         return result;
     }
 
-    private abstract class MemTableBase implements MemoryTableFactory {
+    private abstract class MemTableBase extends BasicFactoryBase {
 
         protected abstract void buildUserTable(NewUserTableBuilder builder);
 
-        protected TableName tableName() {
-            return tableName;
-        }
-
         public UserTable userTable() {
             NewAISBuilder builder = AISBBasedBuilder.create();
-            buildUserTable(builder.userTable(tableName));
-            return builder.ais().getUserTable(tableName);
-        }
-
-        @Override
-        public TableName getName() {
-            return tableName;
+            buildUserTable(builder.userTable(getName()));
+            return builder.ais().getUserTable(getName());
         }
 
         protected MemTableBase(TableName tableName) {
-            this.tableName = tableName;
+            super(tableName);
         }
-
-        // unsupported methods
-
-        @Override
-        public Cursor getIndexCursor(Index index, Session session, IndexKeyRange keyRange, API.Ordering ordering,
-                                     IndexScanSelector scanSelector) {
-            throw new UnsupportedOperationException(); // TODO
-        }
-
-        @Override
-        public IndexStatistics computeIndexStatistics(Session session, Index index) {
-            throw new UnsupportedOperationException(); // TODO
-        }
-
-        private final TableName tableName;
-
     }
 
     private class CastsTableFactory extends MemTableBase {
@@ -452,7 +428,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             for (Map<?, TCast> castMap : castsBySource) {
                 castsCollections.addAll(castMap.values());
             }
-            return new SimpleMemoryGroupScan<TCast>(adapter, tableName(), castsCollections.iterator()) {
+            return new SimpleMemoryGroupScan<TCast>(adapter, getName(), castsCollections.iterator()) {
                 @Override
                 protected void eval(int field, TCast data, PValueTarget target) {
                     switch (field) {
@@ -540,7 +516,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                     scalarsRegistry.iterator(),
                     aggreatorsRegistry.iterator()
             );
-            return new SimpleMemoryGroupScan<TValidatedOverload>(adapter, tableName(), allOverloads) {
+            return new SimpleMemoryGroupScan<TValidatedOverload>(adapter, getName(), allOverloads) {
                 @Override
                 protected void eval(int field, TValidatedOverload data, PValueTarget target) {
                     switch (field) {
