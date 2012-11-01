@@ -28,7 +28,6 @@ package com.akiban.server.types3.common.types;
 
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.TBundleID;
-import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TParser;
 import com.akiban.server.types3.*;
@@ -36,11 +35,6 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.sql.types.TypeId;
 
 public class NoAttrTClass extends SimpleDtdTClass {
-
-    @Override
-    public TFactory factory() {
-        return new NoAttrFactory(instance(true)); // TODO
-    }
 
     @Override
     public TInstance instance(boolean nullable) {

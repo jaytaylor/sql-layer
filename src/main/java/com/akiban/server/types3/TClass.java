@@ -45,8 +45,6 @@ import java.util.regex.Pattern;
 
 public abstract class TClass {
 
-    public abstract TFactory factory();
-
     protected abstract DataTypeDescriptor dataTypeDescriptor(TInstance instance);
 
     public abstract void fromObject (TExecutionContext contextForErrors, PValueSource in, PValueTarget out);

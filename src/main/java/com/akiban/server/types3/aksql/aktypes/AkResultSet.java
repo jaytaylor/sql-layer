@@ -30,7 +30,6 @@ import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.TClassBase;
 import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TParser;
 import com.akiban.server.types3.aksql.AkBundle;
@@ -136,11 +135,6 @@ public class AkResultSet extends TClassBase {
 
     @Override
     protected TInstance doPickInstance(TInstance left, TInstance right, boolean suggestedNullability) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public TFactory factory() {
         throw new UnsupportedOperationException();
     }
 

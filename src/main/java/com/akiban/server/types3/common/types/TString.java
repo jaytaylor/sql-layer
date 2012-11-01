@@ -34,7 +34,6 @@ import com.akiban.server.types3.TBundle;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TClassFormatter;
-import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TInstanceAdjuster;
@@ -213,12 +212,6 @@ public abstract class TString extends TClass
                         StringFactory.DEFAULT_CHARSET.ordinal(),
                         StringFactory.DEFAULT_COLLATION_ID,
                         nullable);
-    }
-    
-    @Override
-    public TFactory factory()
-    {
-        return new StringFactory(this);
     }
 
     @Override

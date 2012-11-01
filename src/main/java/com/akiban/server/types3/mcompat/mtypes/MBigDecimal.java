@@ -34,7 +34,6 @@ import com.akiban.server.types3.SimplePValueIO;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TClassBase;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TParsers;
 import com.akiban.server.types3.aksql.AkCategory;
@@ -146,11 +145,6 @@ public class MBigDecimal extends TClassBase {
     @Override
     public TInstance instance(boolean nullable) {
         return instance(10, 0, nullable);
-    }
-
-    @Override
-    public TFactory factory() {
-        return new MNumericFactory(this);
     }
 
     @Override
