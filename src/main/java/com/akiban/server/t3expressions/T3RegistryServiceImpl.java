@@ -30,6 +30,8 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.ais.model.aisb2.NewUserTableBuilder;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.memoryadapter.MemoryAdapter;
 import com.akiban.qp.memoryadapter.MemoryGroupCursor;
@@ -132,6 +134,9 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             OverloadsTableFactory overloadsTable = new OverloadsTableFactory(
                     TableName.create("information_schema", "ak_overloads"));
             schemaManager.registerMemoryInformationSchemaTable(overloadsTable.userTable(), overloadsTable);
+            CastsTableFactory castsTable = new CastsTableFactory(
+                    TableName.create("information_schema", "ak_casts"));
+            schemaManager.registerMemoryInformationSchemaTable(castsTable.userTable(), castsTable);
         }
     }
 
@@ -388,27 +393,147 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         return result;
     }
 
-    private static final TableName overloadsTableName = TableName.create("information_schema", "ak_overloads");
+    private abstract class MemTableBase implements MemoryTableFactory {
 
-    private class OverloadsTableFactory implements MemoryTableFactory {
+        protected abstract void buildUserTable(NewUserTableBuilder builder);
 
-        // OverloadsTableFactory interface
+        protected TableName tableName() {
+            return tableName;
+        }
 
         public UserTable userTable() {
-            return AISBBasedBuilder.create()
-                    .userTable(tableName)
-                    .colString("name", 128, false)
-                    .colBigInt("priority_order", false)
-                    .colString("inputs", 256, false)
-                    .colString("output", 256, false)
-                    .colString("internal_impl", 256, false)
-                    .ais()
-                    .getUserTable(tableName);
+            NewAISBuilder builder = AISBBasedBuilder.create();
+            buildUserTable(builder.userTable(tableName));
+            return builder.ais().getUserTable(tableName);
         }
 
         @Override
         public TableName getName() {
             return tableName;
+        }
+
+        protected MemTableBase(TableName tableName) {
+            this.tableName = tableName;
+        }
+
+        // unsupported methods
+
+        @Override
+        public Cursor getIndexCursor(Index index, Session session, IndexKeyRange keyRange, API.Ordering ordering,
+                                     IndexScanSelector scanSelector) {
+            throw new UnsupportedOperationException(); // TODO
+        }
+
+        @Override
+        public IndexStatistics computeIndexStatistics(Session session, Index index) {
+            throw new UnsupportedOperationException(); // TODO
+        }
+
+        private final TableName tableName;
+
+    }
+
+    private class CastsTableFactory extends MemTableBase {
+
+        @Override
+        protected void buildUserTable(NewUserTableBuilder builder) {
+            builder.colString("source_bundle", 64, false)
+                    .colString("source_type", 64, false)
+                    .colString("target_bundle", 64, false)
+                    .colString("target_type", 64, false)
+                    .colBigInt("is_strong", false) // TODO change to bool when the AIS can support it
+                    .colBigInt("is_derived", false); // ditto
+        }
+
+        @Override
+        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter) {
+            Collection<Map<TClass, TCast>> castsBySource = castsResolver.castsBySource();
+            Collection<TCast> castsCollections = new ArrayList<TCast>(castsBySource.size());
+            for (Map<?, TCast> castMap : castsBySource) {
+                castsCollections.addAll(castMap.values());
+            }
+            return new SimpleMemoryGroupScan<TCast>(adapter, tableName(), castsCollections.iterator()) {
+                @Override
+                protected void eval(int field, TCast data, PValueTarget target) {
+                    switch (field) {
+                    case 0:
+                        target.putString(data.sourceClass().name().bundleId().name(), null);
+                        break;
+                    case 1:
+                        target.putString(data.sourceClass().name().unqualifiedName(), null);
+                        break;
+                    case 2:
+                        target.putString(data.targetClass().name().bundleId().name(), null);
+                        break;
+                    case 3:
+                        target.putString(data.targetClass().name().unqualifiedName(), null);
+                        break;
+                    case 4:
+                        target.putBool(castsResolver.isStrong(data));
+                        break;
+                    case 5:
+                        target.putBool(data instanceof TCastsRegistry.ChainedCast);
+                        break;
+                    default:
+                        assert false;
+                        target.putNull();
+                        break;
+                    }
+                }
+
+                @Override
+                protected void eval(int field, TCast data, ValueTarget target) {
+                    switch (field) {
+                    case 0:
+                        target.putString(data.sourceClass().name().bundleId().name());
+                        break;
+                    case 1:
+                        target.putString(data.sourceClass().name().unqualifiedName());
+                        break;
+                    case 2:
+                        target.putString(data.targetClass().name().bundleId().name());
+                        break;
+                    case 3:
+                        target.putString(data.targetClass().name().unqualifiedName());
+                        break;
+                    case 4:
+                        target.putBool(castsResolver.isStrong(data));
+                        break;
+                    case 5:
+                        target.putBool(data instanceof TCastsRegistry.ChainedCast);
+                        break;
+                    default:
+                        assert false;
+                        target.putNull();
+                        break;
+                    }
+                }
+            };
+        }
+
+        @Override
+        public long rowCount() {
+            long count = 0;
+            for (Map<?,?> castsBySource : castsResolver.castsBySource()) {
+                count += castsBySource.size();
+            }
+            return count;
+        }
+
+        private CastsTableFactory(TableName tableName) {
+            super(tableName);
+        }
+    }
+
+    private class OverloadsTableFactory extends MemTableBase {
+
+        @Override
+        protected void buildUserTable(NewUserTableBuilder builder) {
+            builder.colString("name", 128, false)
+                   .colBigInt("priority_order", false)
+                   .colString("inputs", 256, false)
+                   .colString("output", 256, false)
+                   .colString("internal_impl", 256, false);
         }
 
         @Override
@@ -417,7 +542,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                     scalarsRegistry.iterator(),
                     aggreatorsRegistry.iterator()
             );
-            return new SimpleMemoryGroupScan<TValidatedOverload>(adapter, overloadsTableName, allOverloads) {
+            return new SimpleMemoryGroupScan<TValidatedOverload>(adapter, tableName(), allOverloads) {
                 @Override
                 protected void eval(int field, TValidatedOverload data, PValueTarget target) {
                     switch (field) {
@@ -437,6 +562,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                         target.putString(data.id(), null);
                         break;
                     default:
+                        assert false;
                         target.putNull();
                     }
                 }
@@ -460,6 +586,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                         target.putString(data.id());
                         break;
                     default:
+                        assert false;
                         target.putNull();
                     }
                 }
@@ -471,24 +598,9 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             return aggreatorsRegistry.allScalarsGroups().size() + scalarsRegistry.allScalarsGroups().size();
         }
 
-        // unsupported methods
-
-        @Override
-        public Cursor getIndexCursor(Index index, Session session, IndexKeyRange keyRange, API.Ordering ordering,
-                                     IndexScanSelector scanSelector) {
-            throw new UnsupportedOperationException(); // TODO
-        }
-
-        @Override
-        public IndexStatistics computeIndexStatistics(Session session, Index index) {
-            throw new UnsupportedOperationException(); // TODO
-        }
-
         public OverloadsTableFactory(TableName tableName) {
-            this.tableName = tableName;
+            super(tableName);
         }
-
-        private final TableName tableName;
     }
 
 }

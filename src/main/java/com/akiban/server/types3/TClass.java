@@ -250,7 +250,7 @@ public abstract class TClass {
 
     @Override
     public String toString() {
-        return name.toString();
+        return name.unqualifiedName();
     }
 
     void format(TInstance instance, PValueSource source, AkibanAppender out) {
