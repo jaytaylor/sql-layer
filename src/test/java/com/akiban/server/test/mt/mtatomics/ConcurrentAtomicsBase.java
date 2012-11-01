@@ -50,6 +50,7 @@ import static org.junit.Assert.assertEquals;
 
 class ConcurrentAtomicsBase extends MTBase {
     protected static final String SCHEMA = "cold";
+    protected static final String SCHEMA2 = "brisk";
     protected static final String TABLE = "frosty";
 
     // ApiTestBase interface
@@ -89,7 +90,7 @@ class ConcurrentAtomicsBase extends MTBase {
                                         "SCAN: FINISH"));
 
         // 'update: out' will get blocked until scan is done if top level r/w lock is on
-        if(DXLReadWriteLockHook.only().isEnabled()) {
+        if(DXLReadWriteLockHook.only().isDMLLockEnabled()) {
             timePoints.add(timePoints.remove(3));
         }
 

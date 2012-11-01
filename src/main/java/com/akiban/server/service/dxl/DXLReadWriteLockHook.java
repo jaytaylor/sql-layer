@@ -65,8 +65,12 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
         // Having multiple of these introduces the possibility of a deadlock, for all the usual deadlocky reasons
     }
 
-    public boolean isEnabled() {
+    public boolean isDMLLockEnabled() {
         return DML_LOCK;
+    }
+
+    public boolean isDDLLockEnabled() {
+        return DDL_LOCK;
     }
 
     public void setDDLLockEnabled(boolean enabled) {

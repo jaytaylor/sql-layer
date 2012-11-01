@@ -58,12 +58,13 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
     private final long initialDelay;
     private final int aisGeneration;
     private final boolean markOpenCursor;
-    private volatile ApiTestBase.ListRowOutput output;
+    private final boolean fullRowOutput;
+    private volatile ApiTestBase.TestRowOutput output;
 
     DelayableScanCallable(int aisGeneration,
                           int tableId, int indexId,
                           DelayerFactory topOfLoopDelayer, DelayerFactory beforeConversionDelayer,
-                          boolean markFinish, long initialDelay, long finishDelay, boolean markOpenCursor)
+                          boolean markFinish, long initialDelay, long finishDelay, boolean markOpenCursor, boolean fullRowOutput)
     {
         this.aisGeneration = aisGeneration;
         this.tableId = tableId;
@@ -74,6 +75,7 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
         this.initialDelay = initialDelay;
         this.finishDelay = finishDelay;
         this.markOpenCursor = markOpenCursor;
+        this.fullRowOutput = fullRowOutput;
     }
 
     private Delayer topOfLoopDelayer(TimePoints timePoints) {
@@ -141,7 +143,7 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
                 }
                 throw e;
             }
-            output = new ApiTestBase.ListRowOutput();
+            output = fullRowOutput ? new ApiTestBase.ListRowOutput() : new ApiTestBase.CountingRowOutput();
             timePoints.mark("SCAN: START");
             dml.scanSome(session, cursorId, output);
             dml.closeCursor(session, cursorId);
@@ -149,7 +151,7 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
             if (ConcurrencyAtomicsDXLService.isScanHookInstalled(session)) {
                 throw new ScanHooksNotRemovedException();
             }
-            return output.getRows();
+            return fullRowOutput ? getRows() : null;
         } catch (Exception e) {
             timePoints.mark("SCAN: exception " + e.getClass().getSimpleName());
             if (ConcurrencyAtomicsDXLService.isScanHookInstalled(session)) {
@@ -159,8 +161,15 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
         }
     }
 
+    public int getRowCount() {
+        return (output != null) ? output.getRowCount() : 0;
+    }
+
     public List<NewRow> getRows() {
-        ApiTestBase.ListRowOutput outputLocal = output;
+        if(!fullRowOutput) {
+            throw new IllegalArgumentException("No rows to get (constructed without fullRowOutput)");
+        }
+        ApiTestBase.ListRowOutput outputLocal = (ApiTestBase.ListRowOutput)output;
         return outputLocal == null ? Collections.<NewRow>emptyList() : outputLocal.getRows();
     }
 

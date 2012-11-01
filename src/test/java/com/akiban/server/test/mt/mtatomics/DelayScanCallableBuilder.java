@@ -41,6 +41,7 @@ class DelayScanCallableBuilder {
     private long initialDelay = 0;
     private DelayerFactory topOfLoopDelayer;
     private DelayerFactory beforeConversionDelayer;
+    private boolean fullRowOutput = true;
 
     DelayScanCallableBuilder(int aisGeneration, int tableId, int indexId) {
         this.aisGeneration = aisGeneration;
@@ -98,13 +99,19 @@ class DelayScanCallableBuilder {
         return this;
     }
 
+    DelayScanCallableBuilder withFullRowOutput(boolean fullRowOutput) {
+        this.fullRowOutput = fullRowOutput;
+        return this;
+    }
+
     DelayableScanCallable get() {
         return new DelayableScanCallable(
                 aisGeneration,
                 tableId, indexId,
                 topOfLoopDelayer, beforeConversionDelayer,
                 markFinish, initialDelay, DEFAULT_FINISH_DELAY,
-                markOpenCursor
+                markOpenCursor,
+                fullRowOutput
         );
     }
 }
