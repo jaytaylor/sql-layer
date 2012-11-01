@@ -30,117 +30,75 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-import java.sql.SQLWarning;
-import java.sql.Statement;
-import java.sql.ResultSet;
-
 import org.junit.Test;
-import org.postgresql.util.PSQLException;
 
-import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.ErrorCode;
-import com.akiban.sql.pg.PostgresServerITBase;
+import com.akiban.server.error.NoSuchSequenceException;
+import com.akiban.sql.parser.SQLParserException;
 import com.ibm.icu.text.MessageFormat;
+import java.util.Collections;
 
-
-public class SequenceDDLIT extends PostgresServerITBase {
+public class SequenceDDLIT extends AISDDLITBase {
 
     
-    @Test (expected=PSQLException.class)
+    @Test (expected=SQLParserException.class)
     public void dropSequenceFail() throws Exception{
         String sql = "DROP SEQUENCE not_here";
-        getConnection().createStatement().execute(sql);
+        executeDDL(sql);
     }
     
     @Test
     public void createSequence () throws Exception {
         String sql = "CREATE SEQUENCE new_sequence";
-        getConnection().createStatement().execute(sql);
-        AkibanInformationSchema ais = ddlServer().getAIS(session());
-        assertNotNull (ais.getSequence(new TableName ("test", "new_sequence")));
+        executeDDL(sql);
+        assertNotNull (ais().getSequence(new TableName ("test", "new_sequence")));
         
         sql = "DROP SEQUENCE new_sequence restrict";
-        getConnection().createStatement().execute(sql);
-        ais = ddlServer().getAIS(session());
-        assertEquals (0, ais.getSequences().size());
+        executeDDL(sql);
+        assertEquals (0, ais().getSequences().size());
     }
 
     @Test 
     public void duplicateSequence() throws Exception {
         String sql = "CREATE SEQUENCE test.new_sequence";
-        getConnection().createStatement().execute(sql);
-        AkibanInformationSchema ais = ddlServer().getAIS(session());
-        assertNotNull (ais.getSequence(new TableName ("test", "new_sequence")));
+        executeDDL(sql);
+        assertNotNull (ais().getSequence(new TableName ("test", "new_sequence")));
 
         try {
-            getConnection().createStatement().execute(sql);
+            executeDDL(sql);
             fail ("Duplicate Sequence not checked");
-        } catch (PSQLException ex) {
-            assertEquals("ERROR: Sequence `test`.`new_sequence` already exists", ex.getMessage());
+        } catch (Exception ex) {
+            assertEquals("DUPLICATE_SEQUENCE: Sequence `test`.`new_sequence` already exists", ex.getMessage());
         }
 
         sql = "DROP SEQUENCE test.new_sequence restrict";
-        getConnection().createStatement().execute(sql);
-        ais = ddlServer().getAIS(session());
-        assertEquals (0, ais.getSequences().size());
+        executeDDL(sql);
+        assertEquals (0, ais().getSequences().size());
 
     }
     
-    @Test (expected=PSQLException.class)
+    @Test (expected=NoSuchSequenceException.class)
     public void doubleDropSequence() throws Exception {
         String sql = "CREATE SEQUENCE test.new_sequence";
-        getConnection().createStatement().execute(sql);
-        AkibanInformationSchema ais = ddlServer().getAIS(session());
-        assertNotNull (ais.getSequence(new TableName ("test", "new_sequence")));
+        executeDDL(sql);
+        assertNotNull (ais().getSequence(new TableName ("test", "new_sequence")));
 
         sql = "DROP SEQUENCE test.new_sequence restrict";
-        getConnection().createStatement().execute(sql);
-        ais = ddlServer().getAIS(session());
-        assertEquals (0, ais.getSequences().size());
+        executeDDL(sql);
+        assertEquals (0, ais().getSequences().size());
 
         // fails for the second one due to non-existence of the sequence. 
-        getConnection().createStatement().execute(sql);
+        executeDDL(sql);
     }
     
     @Test 
     public void dropSequenceExists() throws Exception {
         String sql = "DROP SEQUENCE IF EXISTS test.not_exists RESTRICT";
-        Statement stmt = getConnection().createStatement();
-        stmt.execute(sql);
-        SQLWarning warn = stmt.getWarnings();
-        assertNotNull(warn);
-        assertEquals(warn.getMessage(), MessageFormat.format(ErrorCode.NO_SUCH_SEQUENCE.getMessage(), "test", "not_exists"));
-    }
-
-    @Test
-    public void testSequenceValues() throws Exception {
-        String sql = "DROP SEQUENCE IF EXISTS test.new_sequence RESTRICT";
-        Statement stmt = getConnection().createStatement();
-        stmt.execute(sql);
-        sql = "CREATE SEQUENCE test.new_sequence START WITH 5 INCREMENT BY 5";
-        getConnection().createStatement().execute(sql);
-        sql = "SELECT NEXT VALUE FOR test.new_sequence";
-        stmt = getConnection().createStatement();
-        stmt.execute(sql);
-        ResultSet rs = stmt.getResultSet();
-        long nextValue = rs.next() ? rs.getLong(1) : 0;
-        assertEquals(nextValue, 5);
-        sql = "SELECT CURRENT VALUE FOR test.new_sequence";
-        stmt = getConnection().createStatement();
-        stmt.execute(sql);
-        rs = stmt.getResultSet();
-        long currentValue = rs.next() ? rs.getLong(1) : 0;
-        assertEquals(currentValue, nextValue);
-        sql = "DROP SEQUENCE test.new_sequence RESTRICT";
-        getConnection().createStatement().execute(sql);
+        executeDDL(sql);
+        assertEquals(Collections.singletonList(MessageFormat.format(ErrorCode.NO_SUCH_SEQUENCE.getMessage(), "test", "not_exists")), getWarnings());
     }
     
-    protected DDLFunctions ddlServer() {
-        return serviceManager().getDXL().ddlFunctions();
-    }
-    
- 
-
 }

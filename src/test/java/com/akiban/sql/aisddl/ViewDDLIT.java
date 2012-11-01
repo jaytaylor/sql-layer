@@ -34,122 +34,75 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.sql.SQLException;
-
-import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.View;
-import com.akiban.sql.pg.PostgresServerITBase;
-
-import com.akiban.server.service.config.Property;
-import com.akiban.server.service.is.BasicInfoSchemaTablesService;
-import com.akiban.server.service.is.BasicInfoSchemaTablesServiceImpl;
-import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import com.akiban.server.error.UndefinedViewException;
+import com.akiban.server.error.ViewReferencesExist;
 
 import java.util.Collection;
 
-public class ViewDDLIT extends PostgresServerITBase {
-    @Override
-    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
-        return super.serviceBindingsProvider()
-                .bind(BasicInfoSchemaTablesService.class, BasicInfoSchemaTablesServiceImpl.class)
-;
-    }
-
-    @Override
-    protected Collection<Property> startupConfigProperties() {
-        return uniqueStartupConfigProperties(getClass());
-    }
-
-    private Statement stmt;
+public class ViewDDLIT extends AISDDLITBase {
 
     @Before
-    public void createStatement() throws Exception {
-        stmt = getConnection().createStatement();
-        
-        stmt.executeUpdate("CREATE TABLE t(id INT PRIMARY KEY NOT NULL, s VARCHAR(10))");
-    }
-
-    @After
-    public void closeStatement() throws Exception {
-        stmt.close();
+    public void createTable() throws Exception {
+        executeDDL("CREATE TABLE t(id INT PRIMARY KEY NOT NULL, s VARCHAR(10))");
     }
 
     @Test
     public void testCreate() throws Exception {
-        stmt.executeUpdate("CREATE VIEW v AS SELECT * FROM t");
-        View v = ddl().getAIS(session()).getView(SCHEMA_NAME, "v");
+        executeDDL("CREATE VIEW v AS SELECT * FROM t");
+        View v = ais().getView(SCHEMA_NAME, "v");
         assertNotNull(v);
         assertEquals(2, v.getColumns().size());
         assertEquals("id", v.getColumn(0).getName());
         assertEquals("s", v.getColumn(1).getName());
-        Table t = ddl().getAIS(session()).getTable(SCHEMA_NAME, "t");
+        Table t = ais().getTable(SCHEMA_NAME, "t");
         assertEquals(1, v.getTableReferences().size());
         Collection<Column> tcols = v.getTableColumnReferences(t);
         assertNotNull(tcols);
         assertEquals(2, tcols.size());
     }
 
-    @Test(expected=SQLException.class)
+    @Test(expected=UndefinedViewException.class)
     public void testDropNonexistent() throws Exception {
-        stmt.executeUpdate("DROP VIEW no_such_view");
+        executeDDL("DROP VIEW no_such_view");
     }
 
     @Test
     public void testDropOptionalNonexistent() throws Exception {
-        stmt.executeUpdate("DROP VIEW IF EXISTS no_such_view");
+        executeDDL("DROP VIEW IF EXISTS no_such_view");
     }
 
     @Test
     public void testDropExists() throws Exception {
-        stmt.executeUpdate("CREATE VIEW v AS SELECT * FROM t");
-        assertNotNull(ddl().getAIS(session()).getView(SCHEMA_NAME, "v"));
+        executeDDL("CREATE VIEW v AS SELECT * FROM t");
+        assertNotNull(ais().getView(SCHEMA_NAME, "v"));
 
-        stmt.executeUpdate("DROP VIEW v");
-        assertNull(ddl().getAIS(session()).getView(SCHEMA_NAME, "v"));
+        executeDDL("DROP VIEW v");
+        assertNull(ais().getView(SCHEMA_NAME, "v"));
     }
 
     @Test
     public void testDropOptionalExists() throws Exception {
-        stmt.executeUpdate("CREATE VIEW v AS SELECT * FROM t");
-        assertNotNull(ddl().getAIS(session()).getView(SCHEMA_NAME, "v"));
+        executeDDL("CREATE VIEW v AS SELECT * FROM t");
+        assertNotNull(ais().getView(SCHEMA_NAME, "v"));
 
-        stmt.executeUpdate("DROP VIEW IF EXISTS v");
-        assertNull(ddl().getAIS(session()).getView(SCHEMA_NAME, "v"));
+        executeDDL("DROP VIEW IF EXISTS v");
+        assertNull(ais().getView(SCHEMA_NAME, "v"));
     }
 
-    @Test(expected=SQLException.class)
+    @Test(expected=ViewReferencesExist.class)
     public void testDropTableReferenced() throws Exception {
-        stmt.executeUpdate("CREATE VIEW v AS SELECT * FROM t");
-        stmt.executeUpdate("DROP TABLE t");
+        executeDDL("CREATE VIEW v AS SELECT * FROM t");
+        executeDDL("DROP TABLE t");
     }
 
-    @Test(expected=SQLException.class)
+    @Test(expected=ViewReferencesExist.class)
     public void testDropViewReferenced() throws Exception {
-        stmt.executeUpdate("CREATE VIEW v1 AS SELECT * FROM t");
-        stmt.executeUpdate("CREATE VIEW v2 AS SELECT * FROM v1");
-        stmt.executeUpdate("DROP VIEW v1");
-    }
-
-    @Test
-    public void testSystemView() throws Exception {
-        serviceManager().getServiceByClass(BasicInfoSchemaTablesService.class);
-        stmt.executeUpdate("CREATE VIEW v AS SELECT table_name FROM information_schema.tables WHERE table_schema <> 'information_schema'");
-        forgetConnection();
-        safeRestartTestServices();
-        serviceManager().getServiceByClass(BasicInfoSchemaTablesService.class);
-        stmt = getConnection().createStatement();
-        ResultSet rs = stmt.executeQuery("SELECT * FROM v");
-        boolean found = false;
-        while (rs.next()) {
-            String s = rs.getString(1);
-            if ("v".equals(s))
-                found = true;
-        }
-        assertTrue(found);
+        executeDDL("CREATE VIEW v1 AS SELECT * FROM t");
+        executeDDL("CREATE VIEW v2 AS SELECT * FROM v1");
+        executeDDL("DROP VIEW v1");
     }
 
 }
