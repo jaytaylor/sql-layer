@@ -1,6 +1,6 @@
 # test compar
 ---
-- Statement: SET newtypes to 'true';
+- Newtypes: true
 ---
 - CreateTable: t (c DECIMAL(6, 2), d DECIMAL(6, 2));
 ---
@@ -18,5 +18,5 @@
            ['false'], ['true'], ['true'],
            ['true'], ['false']]
 ---
-- Statement: SET newtypes to DEFAULT
+- Newtypes: null
 ...
