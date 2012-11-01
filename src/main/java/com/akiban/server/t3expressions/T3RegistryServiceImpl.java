@@ -475,7 +475,6 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                         target.putBool(data instanceof TCastsRegistry.ChainedCast);
                         break;
                     default:
-                        assert false;
                         target.putNull();
                         break;
                     }
@@ -503,7 +502,6 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                         target.putBool(data instanceof TCastsRegistry.ChainedCast);
                         break;
                     default:
-                        assert false;
                         target.putNull();
                         break;
                     }
@@ -562,7 +560,6 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                         target.putString(data.id(), null);
                         break;
                     default:
-                        assert false;
                         target.putNull();
                     }
                 }
@@ -586,7 +583,6 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                         target.putString(data.id());
                         break;
                     default:
-                        assert false;
                         target.putNull();
                     }
                 }
