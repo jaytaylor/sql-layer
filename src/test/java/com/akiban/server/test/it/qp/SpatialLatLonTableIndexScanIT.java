@@ -26,7 +26,6 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
@@ -54,7 +53,7 @@ import static java.lang.Math.abs;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
 
-public class SpatialLatLonIndexScanIT extends OperatorITBase
+public class SpatialLatLonTableIndexScanIT extends OperatorITBase
 {
     @Before
     public void before()
@@ -67,10 +66,10 @@ public class SpatialLatLonIndexScanIT extends OperatorITBase
             "lat decimal(11, 7)",
             "lon decimal(11, 7)",
             "primary key(id)");
-        createSpatialIndex("schema", "point", "lat_lon", 0, Space.LAT_LON_DIMENSIONS, "lat", "lon");
-        createSpatialIndex("schema", "point", "before_lat_lon", 1, Space.LAT_LON_DIMENSIONS, "before", "lat", "lon");
-        createSpatialIndex("schema", "point", "lat_lon_after", 0, Space.LAT_LON_DIMENSIONS, "lat", "lon", "after");
-        createSpatialIndex("schema", "point", "before_lat_lon_after", 1, Space.LAT_LON_DIMENSIONS, "before", "lat", "lon", "after");
+        createSpatialTableIndex("schema", "point", "lat_lon", 0, Space.LAT_LON_DIMENSIONS, "lat", "lon");
+        createSpatialTableIndex("schema", "point", "before_lat_lon", 1, Space.LAT_LON_DIMENSIONS, "before", "lat", "lon");
+        createSpatialTableIndex("schema", "point", "lat_lon_after", 0, Space.LAT_LON_DIMENSIONS, "lat", "lon", "after");
+        createSpatialTableIndex("schema", "point", "before_lat_lon_after", 1, Space.LAT_LON_DIMENSIONS, "before", "lat", "lon", "after");
         schema = new Schema(ais());
         pointRowType = schema.userTableRowType(userTable(point));
         pointOrdinal = pointRowType.userTable().rowDef().getOrdinal();

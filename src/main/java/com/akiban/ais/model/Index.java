@@ -31,6 +31,7 @@ import com.akiban.qp.persistitadapter.SpatialHelper;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.geophile.Space;
+import com.akiban.server.geophile.SpaceLatLon;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.types.AkType;
@@ -100,7 +101,15 @@ public abstract class Index implements Traversable
     @Override
     public String toString()
     {
-        return "Index(" + indexName + keyColumns + ")";
+        StringBuilder buffer = new StringBuilder();
+        buffer.append("Index(");
+        buffer.append(indexName.toString());
+        buffer.append(keyColumns.toString());
+        buffer.append(")");
+        if (space != null) {
+            buffer.append(space.toString());
+        }
+        return buffer.toString();
     }
 
     void addColumn(IndexColumn indexColumn)
@@ -167,8 +176,39 @@ public abstract class Index implements Traversable
         return allColumns;
     }
 
-    public IndexMethod getIndexMethod() {
-        return IndexMethod.NORMAL;
+    public IndexMethod getIndexMethod()
+    {
+        if (space != null)
+            return IndexMethod.Z_ORDER_LAT_LON;
+        else
+            return IndexMethod.NORMAL;
+    }
+
+    public void markSpatial(int firstSpatialArgument, int dimensions)
+    {
+        checkMutability();
+        if (dimensions != Space.LAT_LON_DIMENSIONS) {
+            // Only lat/lon for now
+            throw new IllegalArgumentException();
+        }
+        this.firstSpatialArgument = firstSpatialArgument;
+        this.space = SpaceLatLon.create();
+    }
+
+    public int firstSpatialArgument()
+    {
+        return firstSpatialArgument;
+    }
+
+    public int dimensions()
+    {
+        // Only lat/lon for now
+        return Space.LAT_LON_DIMENSIONS;
+    }
+
+    public Space space()
+    {
+        return space;
     }
 
     public final boolean isSpatial()
@@ -363,10 +403,9 @@ public abstract class Index implements Traversable
                     int firstSpatialColumn;
                     int dimensions;
                     if (isSpatial()) {
-                        TableIndex spatialIndex = (TableIndex) this;
-                        dimensions = spatialIndex.dimensions();
+                        dimensions = dimensions();
                         physicalColumns = allColumns.size() - dimensions + 1;
-                        firstSpatialColumn = spatialIndex.firstSpatialArgument();
+                        firstSpatialColumn = firstSpatialArgument();
                     } else {
                         dimensions = 0;
                         physicalColumns = allColumns.size();
@@ -420,7 +459,7 @@ public abstract class Index implements Traversable
         }
     }
 
-    public static boolean isSpatialCompatible(TableIndex index)
+    public static boolean isSpatialCompatible(Index index)
     {
         boolean isSpatialCompatible = false;
         List<IndexColumn> indexColumns = index.getKeyColumns();
@@ -470,6 +509,9 @@ public abstract class Index implements Traversable
     private volatile AkType[] akTypes;
     private volatile AkCollator[] akCollators;
     private volatile TInstance[] tInstances;
+    // For a spatial index
+    private Space space;
+    private int firstSpatialArgument;
 
     public enum JoinType {
         LEFT, RIGHT

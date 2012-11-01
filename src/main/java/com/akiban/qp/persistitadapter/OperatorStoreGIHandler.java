@@ -36,7 +36,11 @@ import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.PersistitKeyPValueTarget;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.error.PersistitAdapterException;
+import com.akiban.server.geophile.Space;
+import com.akiban.server.geophile.SpaceLatLon;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -46,6 +50,8 @@ import com.akiban.util.tap.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
+
+import java.math.BigDecimal;
 
 class OperatorStoreGIHandler {
 
@@ -57,26 +63,23 @@ class OperatorStoreGIHandler {
         if (sourceRowPosition.equals(GroupIndexPosition.BELOW_SEGMENT)) { // asserts sourceRowPosition != null :-)
             return; // nothing to do
         }
-
+        int firstSpatialColumn = groupIndex.isSpatial() ? groupIndex.firstSpatialArgument() : -1;
         Exchange exchange = adapter.takeExchange(groupIndex);
         try {
             indexRow.resetForWrite(groupIndex, exchange.getKey(), exchange.getValue());
             if (Types3Switch.ON)
                 pTarget.attach(exchange.getKey());
             IndexRowComposition irc = groupIndex.indexRowComposition();
-            for(int i=0, LEN = irc.getLength(); i < LEN; ++i) {
-                assert irc.isInRowData(i);
-                assert ! irc.isInHKey(i);
-                int flattenedIndex = irc.getFieldPosition(i);
-                if (Types3Switch.ON) {
-                    PValueSource source = row.pvalue(flattenedIndex);
-                    TInstance sourceInstance = row.rowType().typeInstanceAt(flattenedIndex);
-                    sourceInstance.writeCollating(source, pTarget);
-                }
-                else {
-                    Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
-                    ValueSource source = row.eval(flattenedIndex);
-                    indexRow.append(column, source);
+            int nFields = irc.getLength();
+            int f = 0;
+            while (f < nFields) {
+                assert irc.isInRowData(f);
+                assert ! irc.isInHKey(f);
+                if (f == firstSpatialColumn) {
+                    copyZValueToIndexRow(groupIndex, row, irc);
+                    f += groupIndex.dimensions();
+                } else {
+                    copyFieldToIndexRow(groupIndex, row, irc.getFieldPosition(f++));
                 }
             }
             indexRow.close(action == Action.STORE);
@@ -142,6 +145,54 @@ class OperatorStoreGIHandler {
         }
     }
 
+    private void copyFieldToIndexRow(GroupIndex groupIndex, Row row, int flattenedIndex)
+    {
+        if (Types3Switch.ON) {
+            PValueSource source = row.pvalue(flattenedIndex);
+            TInstance sourceInstance = row.rowType().typeInstanceAt(flattenedIndex);
+            sourceInstance.writeCollating(source, pTarget);
+        } else {
+            Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
+            ValueSource source = row.eval(flattenedIndex);
+            indexRow.append(column, source);
+        }
+    }
+
+    private void copyZValueToIndexRow(GroupIndex groupIndex,
+                                      Row row,
+                                      IndexRowComposition irc)
+    {
+        BigDecimal[] coords = new BigDecimal[Space.LAT_LON_DIMENSIONS];
+        SpaceLatLon space = (SpaceLatLon) groupIndex.space();
+        int firstSpatialColumn = groupIndex.firstSpatialArgument();
+        boolean zNull = false;
+        for (int d = 0; d < Space.LAT_LON_DIMENSIONS; d++) {
+            if (!zNull) {
+                if (Types3Switch.ON) {
+                    assert false : "TBD";
+                } else {
+                    ValueSource columnValue = row.eval(irc.getFieldPosition(firstSpatialColumn + d));
+                    if (columnValue.isNull()) {
+                        zNull = true;
+                    } else {
+                        coords[d] = columnValue.getDecimal();
+                    }
+                }
+            }
+        }
+        if (Types3Switch.ON) {
+            assert false : "TBD";
+        } else {
+            if (zNull) {
+                zSource.putNull();
+                indexRow.append(zSource, AkType.NULL, null, null);
+            } else {
+                zSource.putLong(space.shuffle(coords));
+                indexRow.append(zSource, AkType.LONG, null, null);
+            }
+        }
+    }
+
     // The group index row's value contains a bitmap indicating which of the tables covered by the index
     // have rows contributing to this index row. The leafmost table of the index is represented by bit
     // position 0.
@@ -191,7 +242,8 @@ class OperatorStoreGIHandler {
     private final PersistitKeyValueTarget target = new PersistitKeyValueTarget();
     private final PersistitKeyPValueTarget pTarget = new PersistitKeyPValueTarget();
     private final PersistitIndexRowBuffer indexRow;
-    
+    private final ValueHolder zSource = new ValueHolder();
+
     // class state
     private static volatile GIHandlerHook giHandlerHook;
     private static final PointTap UNNEEDED_DELETE_TAP = Tap.createCount("superfluous_delete");
