@@ -126,12 +126,6 @@ public final class MBinary extends SimpleDtdTClass {
     }
 
     @Override
-    public void putSafety(TExecutionContext context, TInstance sourceInstance, PValueSource sourceValue,
-                          TInstance targetInstance, PValueTarget targetValue) {
-        targetValue.putBytes(sourceValue.getBytes());
-    }
-
-    @Override
     public TInstance instance(boolean nullable) {
         // 'defaultLength' doesn't always mean "LENGTH"
         // -1 simply means a (VAR)BINARY type, in which case, you don't want

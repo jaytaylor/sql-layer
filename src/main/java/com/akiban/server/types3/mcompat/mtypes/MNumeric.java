@@ -28,7 +28,6 @@ package com.akiban.server.types3.mcompat.mtypes;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TParser;
@@ -83,16 +82,6 @@ public class MNumeric extends SimpleDtdTClass {
     @Override
     public TInstance instance(boolean nullable) {
         return instance(defaultWidth, nullable);
-    }
-
-    @Override
-    public void putSafety(TExecutionContext context, 
-                          TInstance sourceInstance,
-                          PValueSource sourceValue,
-                          TInstance targetInstance,
-                          PValueTarget targetValue)
-    {
-       // going away soon
     }
 
     @Override

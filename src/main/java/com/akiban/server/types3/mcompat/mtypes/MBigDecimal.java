@@ -41,7 +41,6 @@ import com.akiban.server.types3.aksql.AkCategory;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.common.NumericFormatter;
 import com.akiban.server.types3.mcompat.MBundle;
-import com.akiban.server.types3.mcompat.mcasts.CastUtils;
 import com.akiban.server.types3.pvalue.PBasicValueSource;
 import com.akiban.server.types3.pvalue.PBasicValueTarget;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -158,17 +157,6 @@ public class MBigDecimal extends TClassBase {
     @Override
     public TInstance instance(boolean nullable) {
         return instance(10, 0, nullable);
-    }
-
-    @Override
-    public void putSafety(TExecutionContext context,
-                          TInstance sourceInstance,
-                          PValueSource sourceValue,
-                          TInstance targetInstance,
-                          PValueTarget targetValue)
-    {
-        BigDecimalWrapper wrapped = MBigDecimal.getWrapper(sourceValue, sourceInstance);
-        CastUtils.doCastDecimal(context, wrapped, targetValue);
     }
 
     @Override

@@ -144,11 +144,4 @@ public class AkResultSet extends TClassBase {
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public void putSafety(TExecutionContext context, 
-                          TInstance sourceInstance,
-                          PValueSource sourceValue,
-                          TInstance targetInstance,
-                          PValueTarget targetValue) {
-    }
 }
