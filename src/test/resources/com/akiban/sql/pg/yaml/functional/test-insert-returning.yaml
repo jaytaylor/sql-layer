@@ -14,7 +14,6 @@
 ---
 - Statement: INSERT INTO all_types (blob_field) VALUES ('deadbeef') returning blob_field
 - output: [['deadbeef']]
-- output_types: !select-engine {it: [VARCHAR], sys-aksql: [BLOB]}
 ---
 - Statement: DELETE from all_types
 ---
