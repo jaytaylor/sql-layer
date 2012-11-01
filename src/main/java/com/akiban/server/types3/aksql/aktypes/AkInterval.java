@@ -376,12 +376,6 @@ public class AkInterval extends TClassBase {
     }
 
     @Override
-    public void putSafety(TExecutionContext context, TInstance sourceInstance, PValueSource sourceValue,
-                          TInstance targetInstance, PValueTarget targetValue) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     protected DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
         Boolean isNullable = instance.nullability(); // on separate line to make NPE easier to catch
         int literalFormatId = instance.attribute(formatAttribute);

@@ -25,12 +25,10 @@
  */
 package com.akiban.server.types3.mcompat.mtypes;
 
-import com.akiban.server.error.OutOfRangeException;
 import com.akiban.server.types3.TAttributeValues;
 import com.akiban.server.types3.TAttributesDeclaration;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TClassFormatter;
-import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TParser;
@@ -42,8 +40,6 @@ import com.akiban.server.types3.common.types.SimpleDtdTClass;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.mcompat.mcasts.CastUtils;
 import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.TypeId;
 
 public class MApproximateNumber extends SimpleDtdTClass
@@ -112,28 +108,6 @@ public class MApproximateNumber extends SimpleDtdTClass
             return  Math.round(factor * val) / factor;
         }
         return val;
-    }
-
-    @Override
-    public void putSafety(TExecutionContext context, 
-                          TInstance sourceInstance,
-                          PValueSource sourceValue,
-                          TInstance targetInstance,
-                          PValueTarget targetValue)
-    {
-        double raw;
-        if (underlyingType() == PUnderlying.DOUBLE)
-            raw = sourceValue.getDouble();
-        else
-            raw = sourceValue.getFloat();
-        double rounded = round(targetInstance, raw);
-
-        // TODO: in strict (My)SQL mode, this would be an error
-        // NOT a warning
-        if (Double.compare(raw, rounded) != 0)
-            context.warnClient(new OutOfRangeException(Double.toString(raw)));
-
-        targetValue.putDouble(rounded);
     }
 
     private class DoubleFactory implements TFactory
