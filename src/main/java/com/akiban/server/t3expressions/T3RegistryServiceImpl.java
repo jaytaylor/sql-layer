@@ -26,15 +26,31 @@
 
 package com.akiban.server.t3expressions;
 
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.memoryadapter.MemoryAdapter;
+import com.akiban.qp.memoryadapter.MemoryGroupCursor;
+import com.akiban.qp.memoryadapter.MemoryTableFactory;
+import com.akiban.qp.memoryadapter.SimpleMemoryGroupScan;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.IndexScanSelector;
+import com.akiban.qp.row.Row;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
+import com.akiban.server.service.session.Session;
+import com.akiban.server.store.statistics.IndexStatistics;
+import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.service.InstanceFinder;
 import com.akiban.server.types3.service.ReflectiveInstanceFinder;
 import com.akiban.server.types3.texpressions.TValidatedAggregator;
@@ -44,6 +60,8 @@ import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Multimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -351,6 +369,58 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                 return result;
             }
         };
+    }
+
+    private static final TableName overloadsTableName = TableName.create("information_schema", "ak_overloads");
+
+    private class OverloadsTableFactory implements MemoryTableFactory {
+        @Override
+        public TableName getName() {
+            return tableName;
+        }
+
+        @Override
+        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter) {
+            Iterator<? extends TValidatedOverload> allOverloads = Iterators.concat(
+                    scalarsRegistry.iterator(),
+                    aggreatorsRegistry.iterator()
+            );
+            return new SimpleMemoryGroupScan<TValidatedOverload>(adapter, overloadsTableName, allOverloads) {
+                @Override
+                protected void eval(int field, TValidatedOverload data, PValueTarget target) {
+                    throw new UnsupportedOperationException(); // TODO
+                }
+
+                @Override
+                protected void eval(int field, TValidatedOverload data, ValueTarget target) {
+                    throw new UnsupportedOperationException(); // TODO
+                }
+            };
+        }
+
+        @Override
+        public long rowCount() {
+            return aggreatorsRegistry.allScalarsGroups().size() + scalarsRegistry.allScalarsGroups().size();
+        }
+
+        // unsupported methods
+
+        @Override
+        public Cursor getIndexCursor(Index index, Session session, IndexKeyRange keyRange, API.Ordering ordering,
+                                     IndexScanSelector scanSelector) {
+            throw new UnsupportedOperationException(); // TODO
+        }
+
+        @Override
+        public IndexStatistics computeIndexStatistics(Session session, Index index) {
+            throw new UnsupportedOperationException(); // TODO
+        }
+
+        public OverloadsFactory(UserTable table) {
+            this.tableName = table.getName();
+        }
+
+        private final TableName tableName;
     }
 
 }

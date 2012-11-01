@@ -38,6 +38,7 @@ import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
@@ -48,13 +49,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-final class ResolvablesRegistry<V extends TValidatedOverload> {
+final class ResolvablesRegistry<V extends TValidatedOverload> implements Iterable<V> {
 
     public Iterable<? extends ScalarsGroup<V>> get(String name) {
         List<ScalarsGroup<V>> result = overloadsByName.get(name.toLowerCase());
@@ -63,6 +66,22 @@ final class ResolvablesRegistry<V extends TValidatedOverload> {
 
     public Collection<? extends Map.Entry<String, ScalarsGroup<V>>> entriesByName() {
         return Collections.unmodifiableCollection(overloadsByName.entries());
+    }
+
+    public Collection<ScalarsGroup<V>> allScalarsGroups() {
+        return Collections2.transform(
+                entriesByName(),
+                new Function<Map.Entry<String, ScalarsGroup<V>>, ScalarsGroup<V>>() {
+                    @Override
+                    public ScalarsGroup<V> apply(Map.Entry<String, ScalarsGroup<V>> input) {
+                        return input.getValue();
+                    }
+                });
+    }
+
+    @Override
+    public Iterator<V> iterator() {
+        return new InternalIterator();
     }
 
     public static <R extends TOverload, V extends TValidatedOverload>
@@ -194,6 +213,48 @@ final class ResolvablesRegistry<V extends TValidatedOverload> {
 
     private final ListMultimap<String, ScalarsGroup<V>> overloadsByName;
 
+    // inner classes
+
+    private class InternalIterator implements Iterator<V> {
+        @Override
+        public boolean hasNext() {
+            final boolean haveNext;
+            if (withinGroupIterator != null && !withinGroupIterator.hasNext()) {
+                haveNext = true;
+            }
+            else {
+                if (groupsIter.hasNext()) {
+                    withinGroupIterator = groupsIter.next().getOverloads().iterator();
+                    haveNext = true;
+                }
+                else {
+                    haveNext = false;
+                }
+            }
+            return haveNext;
+        }
+
+        @Override
+        public V next() {
+            if (!hasNext()) // also advances to the next withinGroupIterator, if needed
+                throw new NoSuchElementException();
+            return withinGroupIterator.next();
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+
+        private InternalIterator() {
+            this.groupsIter = allScalarsGroups().iterator();
+            this.withinGroupIterator = null;
+        }
+
+        private Iterator<? extends ScalarsGroup<V>> groupsIter;
+        private Iterator<? extends V> withinGroupIterator;
+    }
+
     // class state
     private static final Logger logger = LoggerFactory.getLogger(ResolvablesRegistry.class);
 
@@ -268,5 +329,4 @@ final class ResolvablesRegistry<V extends TValidatedOverload> {
         private final Collection<? extends V> overloads;
 
     }
-
 }
