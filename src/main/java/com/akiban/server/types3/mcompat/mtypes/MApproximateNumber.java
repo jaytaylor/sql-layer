@@ -25,11 +25,8 @@
  */
 package com.akiban.server.types3.mcompat.mtypes;
 
-import com.akiban.server.types3.TAttributeValues;
-import com.akiban.server.types3.TAttributesDeclaration;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TClassFormatter;
-import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TParser;
 import com.akiban.server.types3.TParsers;
@@ -38,7 +35,6 @@ import com.akiban.server.types3.common.types.DoubleAttribute;
 import com.akiban.server.types3.common.NumericFormatter;
 import com.akiban.server.types3.common.types.SimpleDtdTClass;
 import com.akiban.server.types3.mcompat.MBundle;
-import com.akiban.server.types3.mcompat.mcasts.CastUtils;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.sql.types.TypeId;
 
@@ -51,79 +47,6 @@ public class MApproximateNumber extends SimpleDtdTClass
     
     public static final int DEFAULT_DOUBLE_PRECISION = -1;
     public static final int DEFAULT_DOUBLE_SCALE = -1;
-
-    private static final int MAX_INDEX = 0;
-    private static final int MIN_INDEX = 1;
-
-    private static double round(TInstance instance, double val)
-    {
-        assert instance.typeClass() instanceof MApproximateNumber : "instance has to be of type MDouble";
-
-        // meta data
-        double meta[] = (double[])instance.getMetaData();
-        
-        
-        int precision = instance.attribute(DoubleAttribute.PRECISION);
-        int scale = instance.attribute(DoubleAttribute.SCALE);
-
-        if (meta == null)
-        {
-            boolean neg;
-            String st = Double.toString((neg = val < 0) ? -val : val);
-            int point = st.indexOf('.');
-
-            // check the digits before the decimal point
-            if (point > precision - scale)
-            {
-                // cache the max value
-                meta = new double[2];
-                meta[MAX_INDEX] = Double.parseDouble(CastUtils.getNum(scale, precision));
-                meta[MIN_INDEX] = meta[MAX_INDEX] * -1;
-                instance.setMetaData(meta);
-                return neg ? meta[MIN_INDEX] : meta[MAX_INDEX];
-            }
-
-            // check the scale
-            if (point >= 0)
-            {
-                int lastDigit = scale + point;
-
-                // actual length is longer than expected, then trucate/round it
-                if (st.length() > lastDigit)
-                {
-                    double factor = Math.pow(10, scale);
-                    return  Math.round(factor * val) / factor;
-                }
-            }
-        }
-        else
-        {
-            assert meta.length == 2 : "MDouble's TInstace's meta data should be Double[2]";
-            
-            if (Double.compare(Math.abs(val), meta[MAX_INDEX]) >= 0)
-                return meta[MAX_INDEX];
-            
-            // check the scale
-            double factor = Math.pow(10, scale);
-            return  Math.round(factor * val) / factor;
-        }
-        return val;
-    }
-
-    private class DoubleFactory implements TFactory
-    {
-        @Override
-        public TInstance create(TAttributesDeclaration declaration)
-        {
-            // DOUBLE could have 0 attributes
-            TAttributeValues values = declaration.validate(2, 0);
-            return instance(
-                    values.intAt(DoubleAttribute.PRECISION, DEFAULT_DOUBLE_PRECISION),
-                    values.intAt(DoubleAttribute.SCALE, DEFAULT_DOUBLE_SCALE),
-                    values.nullable());
-        }
-    }
-
 
     private MApproximateNumber(String name, TypeId typeId, PUnderlying underlying, TParser parser,
                                TClassFormatter formatter, int defaultVarcharLen)
@@ -138,12 +61,6 @@ public class MApproximateNumber extends SimpleDtdTClass
     public TInstance instance(boolean nullable)
     {
         return instance(DEFAULT_DOUBLE_PRECISION, DEFAULT_DOUBLE_SCALE, nullable);
-    }
-    
-    @Override
-    public TFactory factory()
-    {
-        return new DoubleFactory();
     }
 
     @Override

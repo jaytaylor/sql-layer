@@ -33,7 +33,6 @@ import com.akiban.server.types3.TBundleID;
 import com.akiban.server.types3.TClassBase;
 import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TParser;
 import com.akiban.server.types3.aksql.AkBundle;
@@ -382,11 +381,6 @@ public class AkInterval extends TClassBase {
         IntervalFormat format = formatters[literalFormatId];
         TypeId typeId = format.getTypeId();
         return new DataTypeDescriptor(typeId, isNullable);
-    }
-
-    @Override
-    public TFactory factory() {
-        throw new UnsupportedOperationException();
     }
 
     public TInstance tInstanceFrom(DataTypeDescriptor type) {
