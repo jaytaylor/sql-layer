@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.test.it.store;
+package com.akiban.server.store;
 
 import com.akiban.server.service.config.Property;
 import com.akiban.server.store.PersistitStoreSchemaManager;

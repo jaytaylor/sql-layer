@@ -242,7 +242,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         }
         txnService.addCommitCallback(session, new TransactionService.Callback() {
             @Override
-            public void run(Session session) {
+            public void run(Session session, long timestamp) {
                 cache.putAll(updates);
             }
         });
