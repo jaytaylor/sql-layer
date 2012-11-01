@@ -500,10 +500,19 @@ public abstract class CostEstimator implements TableRowCounts
         if (expr == null)
             return false;
         ValueSource valueSource = expr.evaluation().eval();
-        if (index.isSpatial()) {
-            keyTarget.expectingType(AkType.LONG, null);
-        }
-        else {
+        expect_type:
+        {
+            if (index.isSpatial()) {
+                TableIndex spatialIndex = (TableIndex)index;
+                int firstSpatialColumn = spatialIndex.firstSpatialArgument();
+                if (column == firstSpatialColumn) {
+                    keyTarget.expectingType(AkType.LONG, null);
+                    break expect_type;
+                }
+                else if (column > firstSpatialColumn) {
+                    column += spatialIndex.dimensions() - 1;
+                }
+            }
             keyTarget.expectingType(index.getAllColumns().get(column).getColumn());
         }
         Converters.convert(valueSource, keyTarget);
