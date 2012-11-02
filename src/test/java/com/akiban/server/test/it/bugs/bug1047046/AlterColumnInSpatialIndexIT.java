@@ -42,7 +42,7 @@ public class AlterColumnInSpatialIndexIT extends AlterTableITBase {
     public void createAndLoadTable() {
         int tid = createTable(SCHEMA, TABLE, "c1 decimal(11,7), c2 decimal(11,7)");
         writeRows(
-                createNewRow(tid, "143.5435", "156.989"),
+                createNewRow(tid, "43.5435", "156.989"),
                 createNewRow(tid, "32.456", "99.543"),
                 createNewRow(tid, "53.00", "80.00")
         );

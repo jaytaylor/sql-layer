@@ -47,14 +47,19 @@ import static junit.framework.Assert.fail;
 
 public class Union_OrderedIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         t = createTable(
             "schema", "t",
             "pid int not null primary key",
             "x int");
         createIndex("schema", "t", "idx_x", "x");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         tPidIndexRowType = indexType(t, "pid");

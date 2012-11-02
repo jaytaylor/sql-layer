@@ -56,6 +56,10 @@ public final class PersistitValuePValueSource implements PValueSource {
             Object decoded;
             if (valueClass == Object.class) {
                 decoded = persistitValue.get();
+                if (decoded == null) {
+                    cacheObject = NULL;
+                    return;
+                }
                 valueClass = decoded.getClass();
             }
             else {

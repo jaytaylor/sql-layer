@@ -117,6 +117,15 @@ public class MBigDecimal extends TClassBase {
     }
 
     @Override
+    protected int doCompare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB)
+    {
+        if (sourceA.hasRawValue() && sourceB.hasRawValue()) // both have bytearrays
+            return super.doCompare(instanceA, sourceA, instanceB, sourceB);
+        else
+            return getWrapper(sourceA, instanceA).compareTo(getWrapper(sourceB, instanceB));
+    }
+
+    @Override
     public void selfCast(TExecutionContext context, TInstance sourceInstance, PValueSource source,
                          TInstance targetInstance, PValueTarget target)
     {

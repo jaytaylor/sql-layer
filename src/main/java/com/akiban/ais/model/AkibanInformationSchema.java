@@ -707,6 +707,11 @@ public class AkibanInformationSchema implements Traversable
         return (V)val;
     }
 
+    @Override
+    public String toString() {
+        return "AIS(" + generation + ")";
+    }
+
 
     // State
 

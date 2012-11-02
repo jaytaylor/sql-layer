@@ -51,8 +51,8 @@ import static org.junit.Assert.fail;
 
 public class Select_BloomFilterIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         // Tables are Driving (D) and Filtering (F). Find Filtering rows with a given test id, yielding
         // a set of (a, b) rows. Then find Driving rows matching a and b.
@@ -66,13 +66,18 @@ public class Select_BloomFilterIT extends OperatorITBase
             "test_id int not null",
             "a int",
             "b int");
-        Index dIndex = createIndex("schema", "driving", "idx_d", "test_id", "a", "b");
-        Index fab = createIndex("schema", "filtering", "idx_fab", "a", "b");
+        createIndex("schema", "driving", "idx_d", "test_id", "a", "b");
+        createIndex("schema", "filtering", "idx_fab", "a", "b");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         dRowType = schema.userTableRowType(userTable(d));
         fRowType = schema.userTableRowType(userTable(f));
-        dIndexRowType = dRowType.indexRowType(dIndex);
-        fabIndexRowType = fRowType.indexRowType(fab);
+        dIndexRowType = indexType(d, "test_id", "a", "b");
+        fabIndexRowType = indexType(f, "a", "b");
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[]{

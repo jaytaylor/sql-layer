@@ -43,6 +43,7 @@ import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.geophile.Space;
 import com.akiban.server.geophile.SpaceLatLon;
+import com.akiban.server.test.it.bugs.bug720768.GroupNameCollisionIT;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -57,8 +58,8 @@ import static org.junit.Assert.assertEquals;
 
 public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    public void setupCreateSchema()
     {
         parent = createTable(
             "schema", "parent",
@@ -76,7 +77,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
             "clon decimal(11, 7)", // plon + cid % 10
             "primary key(cid)",
             "grouping foreign key(pid) references parent(pid)");
-        TableName groupName = new TableName("schema", "parent");
+        groupName = new TableName("schema", "parent");
         createSpatialGroupIndex(groupName, "pbefore_clat_clon_cafter",
                                 1, Space.LAT_LON_DIMENSIONS,
                                 "parent.pbefore, child.clat, child.clon, child.cafter",
@@ -85,6 +86,11 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                                 1, Space.LAT_LON_DIMENSIONS,
                                 "parent.pbefore, parent.plat, parent.plon, child.cafter",
                                 Index.JoinType.LEFT);
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         parentRowType = schema.userTableRowType(userTable(parent));
         childRowType = schema.userTableRowType(userTable(child));
@@ -585,6 +591,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
 
     private int parent;
     private int child;
+    private TableName groupName;
     private UserTableRowType parentRowType;
     private UserTableRowType childRowType;
     private int parentOrdinal;

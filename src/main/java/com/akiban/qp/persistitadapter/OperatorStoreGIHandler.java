@@ -33,8 +33,6 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.row.Row;
 import com.akiban.server.AccumulatorAdapter;
-import com.akiban.server.PersistitKeyPValueTarget;
-import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.geophile.Space;
 import com.akiban.server.geophile.SpaceLatLon;
@@ -44,7 +42,8 @@ import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
@@ -68,8 +67,6 @@ class OperatorStoreGIHandler {
         Exchange exchange = adapter.takeExchange(groupIndex);
         try {
             indexRow.resetForWrite(groupIndex, exchange.getKey(), exchange.getValue());
-            if (Types3Switch.ON)
-                pTarget.attach(exchange.getKey());
             IndexRowComposition irc = groupIndex.indexRowComposition();
             int nFields = irc.getLength();
             int f = 0;
@@ -149,7 +146,11 @@ class OperatorStoreGIHandler {
     private void copyFieldToIndexRow(GroupIndex groupIndex, Row row, int flattenedIndex)
     {
         Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
-        indexRow.append(row.eval(flattenedIndex), column.getType().akType(), column.tInstance(), null);
+        if (Types3Switch.ON) {
+            indexRow.append(row.pvalue(flattenedIndex), column.getType().akType(), column.tInstance(), null);
+        } else {
+            indexRow.append(row.eval(flattenedIndex), column.getType().akType(), column.tInstance(), null);
+        }
     }
 
     private void copyZValueToIndexRow(GroupIndex groupIndex,
@@ -170,12 +171,22 @@ class OperatorStoreGIHandler {
                 }
             }
         }
-        if (zNull) {
-            zSource.putNull();
-            indexRow.append(zSource, AkType.NULL, null, null);
+        if (Types3Switch.ON) {
+            if (zNull) {
+                zSource_t3.putNull();
+                indexRow.append(zSource_t3, AkType.NULL, NON_NULL_Z_TYPE, null);
+            } else {
+                zSource_t3.putInt64(space.shuffle(coords));
+                indexRow.append(zSource_t3, AkType.LONG, NON_NULL_Z_TYPE, null);
+            }
         } else {
-            zSource.putLong(space.shuffle(coords));
-            indexRow.append(zSource, AkType.LONG, NON_NULL_Z_TYPE, null);
+            if (zNull) {
+                zSource_t2.putNull();
+                indexRow.append(zSource_t2, AkType.NULL, NON_NULL_Z_TYPE, null);
+            } else {
+                zSource_t2.putLong(space.shuffle(coords));
+                indexRow.append(zSource_t2, AkType.LONG, NON_NULL_Z_TYPE, null);
+            }
         }
     }
 
@@ -225,10 +236,9 @@ class OperatorStoreGIHandler {
 
     private final PersistitAdapter adapter;
     private final UserTable sourceTable;
-    private final PersistitKeyValueTarget target = new PersistitKeyValueTarget();
-    private final PersistitKeyPValueTarget pTarget = new PersistitKeyPValueTarget();
     private final PersistitIndexRowBuffer indexRow;
-    private final ValueHolder zSource = new ValueHolder();
+    private final ValueHolder zSource_t2 = new ValueHolder();
+    private final PValue zSource_t3 = new PValue(PUnderlying.INT_64);
 
     // class state
     private static volatile GIHandlerHook giHandlerHook;

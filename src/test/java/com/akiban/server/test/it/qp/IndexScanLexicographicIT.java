@@ -63,8 +63,8 @@ import static org.junit.Assert.fail;
 
 public class IndexScanLexicographicIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
 /*
         NetworkService ns = serviceManager().getServiceByClass(NetworkService.class);
@@ -88,6 +88,11 @@ public class IndexScanLexicographicIT extends OperatorITBase
             "b int",
             "c int");
         createIndex("schema", "t", "a", "a", "b", "c", "id");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "a", "b", "c", "id");

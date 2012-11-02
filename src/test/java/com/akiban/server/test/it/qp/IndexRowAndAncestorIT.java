@@ -49,14 +49,8 @@ import static org.junit.Assert.assertEquals;
 
 public class IndexRowAndAncestorIT extends OperatorITBase
 {
-    @Before
-    public void before()
-    {
-        createSchema();
-        loadDatabase();
-    }
-
-    private void createSchema()
+    @Override
+    protected void setupCreateSchema()
     {
         // A bizarre coih schema in which all FKs are PKs. I.e., all joins are 1:1.
         c = createTable(
@@ -92,6 +86,11 @@ public class IndexRowAndAncestorIT extends OperatorITBase
         // ch left/right indexes declare an hky column from an internal table (neither leafmost nor rootmost)
         idxCHLeft = createGroupIndex("c", "idxCHLeft", "c.cx, o.ox, i.ix, h.hx, o.id", Index.JoinType.LEFT);
         idxCHRight = createGroupIndex("c", "idxCHRight", "c.cx, o.ox, i.ix, h.hx, o.id", Index.JoinType.RIGHT);
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new com.akiban.qp.rowtype.Schema(ais());
         cRowType = schema.userTableRowType(userTable(c));
         oRowType = schema.userTableRowType(userTable(o));
@@ -111,6 +110,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
         group = group(c);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
+        loadDatabase();
     }
 
     private void loadDatabase()

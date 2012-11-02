@@ -44,8 +44,8 @@ import static com.akiban.qp.operator.API.*;
 
 public class Intersect_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         item = createTable(
             "schema", "item",
@@ -86,6 +86,11 @@ public class Intersect_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBase
                          "item_value_state.revision_to," +
                          "item.created_on," +
                          "item.item_id");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         itemRowType = schema.userTableRowType(userTable(item));
         itemValueStateRowType = schema.userTableRowType(userTable(itemValueState));

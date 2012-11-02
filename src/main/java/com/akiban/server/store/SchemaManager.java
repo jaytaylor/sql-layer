@@ -215,10 +215,6 @@ public interface SchemaManager {
     /** Drop a system routine from the live AIS. */
     void unRegisterSystemRoutine(TableName routineName);
 
-    // TODO: PSSM should handle this itself...
-    void rollbackAIS(Session session, AkibanInformationSchema replacementAIS,
-                     Map<TableName, Integer> savedOrdinals, Collection<String> schemaNames);
-
     /** Whether or not tree removal should happen immediately */
     boolean treeRemovalIsDelayed();
 

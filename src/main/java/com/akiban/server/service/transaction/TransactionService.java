@@ -31,7 +31,7 @@ import com.akiban.server.service.session.Session;
 
 public interface TransactionService extends Service {
     interface Callback {
-        void run(Session session);
+        void run(Session session, long timestamp);
     }
 
     /** Returns true if there is a transaction active for the given Session */
@@ -39,6 +39,9 @@ public interface TransactionService extends Service {
 
     /** Returns true if there is a transaction active for the given Session */
     boolean isRollbackPending(Session session);
+
+    /** Returns the start timestamp for the open transaction. */
+    long getTransactionStartTimestamp(Session session);
 
     /** Begin a new transaction. */
     void beginTransaction(Session session);
@@ -52,9 +55,7 @@ public interface TransactionService extends Service {
     /** Rollback the current transaction if open, otherwise do nothing. */
     void rollbackTransactionIfOpen(Session session);
 
-    /**
-     * @return current step for the open transaction.
-     */
+    /** @return current step for the open transaction. */
     int getTransactionStep(Session session);
 
     /**
@@ -69,12 +70,15 @@ public interface TransactionService extends Service {
      */
     int incrementTransactionStep(Session session);
 
-    /** Add callback to be invoked when the transactions ends, independent of commit/rollback or success/failure */
-    void addEndCallback(Session session, Callback callback);
+    /** Add a callback to be invoked upon prior to invoking commit. */
+    void addPreCommitCallback(Session session, Callback callback);
 
     /** Add a callback to be invoked upon successful completion of commit. */
     void addCommitCallback(Session session, Callback callback);
 
     /** Add a callback to be invoked upon successful completion of commit. */
     void addRollbackCallback(Session session, Callback callback);
+
+    /** Add callback to be invoked when the transactions ends, independent of commit/rollback or success/failure */
+    void addEndCallback(Session session, Callback callback);
 }
