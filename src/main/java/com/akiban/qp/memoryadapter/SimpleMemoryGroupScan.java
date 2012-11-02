@@ -27,30 +27,23 @@
 package com.akiban.qp.memoryadapter;
 
 import com.akiban.ais.model.TableName;
-import com.akiban.qp.row.AbstractRow;
-import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueTarget;
-import com.akiban.server.types.util.ValueHolder;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
+import com.google.common.base.Function;
 
 import java.util.Iterator;
 
 public abstract class SimpleMemoryGroupScan<T> implements MemoryGroupCursor.GroupScan {
 
-    protected abstract void eval(int field, T data, PValueTarget target);
-    protected abstract void eval(int field, T data, ValueTarget target);
+    protected abstract Object[] createRow(T data);
 
     @Override
     public Row next() {
         if (!iterator.hasNext())
             return null;
-        return new InternalRow(iterator.next());
+        Object[] rowContents = createRow(iterator.next());
+        return new ValuesRow(rowType, rowContents);
     }
 
     @Override
@@ -61,61 +54,8 @@ public abstract class SimpleMemoryGroupScan<T> implements MemoryGroupCursor.Grou
     public SimpleMemoryGroupScan(MemoryAdapter adapter, TableName tableName, Iterator<? extends T> iterator) {
         this.iterator = iterator;
         this.rowType = adapter.schema().userTableRowType(adapter.schema().ais().getUserTable(tableName));
-        if (Types3Switch.ON) {
-            pValues = new PValue[rowType.nFields()];
-            values = null;
-        }
-        else {
-            pValues = null;
-            values = new ValueHolder[rowType.nFields()];
-        }
-    }
-
-    private class InternalRow extends AbstractRow {
-
-        @Override
-        public PValueSource pvalue(int i) {
-            PValue value = pValues[i];
-            if (value == null) {
-                value = new PValue(rowType.typeInstanceAt(i).typeClass().underlyingType());
-                pValues[i] = value;
-
-            }
-            SimpleMemoryGroupScan.this.eval(i, data, value);
-            return value;
-        }
-
-        @Override
-        public ValueSource eval(int i) {
-            ValueHolder value = values[i];
-            if (value == null) {
-                value = new ValueHolder();
-                value.expectType(rowType.typeAt(i));
-                values[i] = value;
-            }
-            SimpleMemoryGroupScan.this.eval(i, data, value);
-            return value;
-        }
-
-        @Override
-        public RowType rowType() {
-            return rowType;
-        }
-
-        @Override
-        public HKey hKey() {
-            throw new UnsupportedOperationException();
-        }
-
-        private InternalRow(T data) {
-            this.data = data;
-        }
-
-        private final T data;
     }
 
     private final Iterator<? extends T> iterator;
     private final RowType rowType;
-    private final PValue[] pValues;
-    private final ValueHolder[] values;
 }

@@ -26,35 +26,25 @@
 
 package com.akiban.server.t3expressions;
 
-import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.ais.model.aisb2.NewUserTableBuilder;
-import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.memoryadapter.BasicFactoryBase;
 import com.akiban.qp.memoryadapter.MemoryAdapter;
 import com.akiban.qp.memoryadapter.MemoryGroupCursor;
-import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.qp.memoryadapter.SimpleMemoryGroupScan;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
-import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
-import com.akiban.server.store.statistics.IndexStatistics;
-import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.service.InstanceFinder;
 import com.akiban.server.types3.service.ReflectiveInstanceFinder;
 import com.akiban.server.types3.texpressions.TValidatedAggregator;
@@ -133,10 +123,10 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         start(registry);
         if (schemaManager != null) {
             OverloadsTableFactory overloadsTable = new OverloadsTableFactory(
-                    TableName.create("information_schema", "ak_overloads"));
+                    TableName.create(TableName.INFORMATION_SCHEMA, "ak_overloads"));
             schemaManager.registerMemoryInformationSchemaTable(overloadsTable.userTable(), overloadsTable);
             CastsTableFactory castsTable = new CastsTableFactory(
-                    TableName.create("information_schema", "ak_casts"));
+                    TableName.create(TableName.INFORMATION_SCHEMA, "ak_casts"));
             schemaManager.registerMemoryInformationSchemaTable(castsTable.userTable(), castsTable);
         }
     }
@@ -417,8 +407,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                     .colString("source_type", 64, false)
                     .colString("target_bundle", 64, false)
                     .colString("target_type", 64, false)
-                    .colBigInt("is_strong", false) // TODO change to bool when the AIS can support it
-                    .colBigInt("is_derived", false); // ditto
+                    .colString("is_strong", 3, false)
+                    .colString("is_derived", 3, false);
         }
 
         @Override
@@ -430,57 +420,15 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             }
             return new SimpleMemoryGroupScan<TCast>(adapter, getName(), castsCollections.iterator()) {
                 @Override
-                protected void eval(int field, TCast data, PValueTarget target) {
-                    switch (field) {
-                    case 0:
-                        target.putString(data.sourceClass().name().bundleId().name(), null);
-                        break;
-                    case 1:
-                        target.putString(data.sourceClass().name().unqualifiedName(), null);
-                        break;
-                    case 2:
-                        target.putString(data.targetClass().name().bundleId().name(), null);
-                        break;
-                    case 3:
-                        target.putString(data.targetClass().name().unqualifiedName(), null);
-                        break;
-                    case 4:
-                        target.putInt64(castsResolver.isStrong(data) ? 1 : 0);
-                        break;
-                    case 5:
-                        target.putInt64((data instanceof TCastsRegistry.ChainedCast) ? 1 : 0);
-                        break;
-                    default:
-                        target.putNull();
-                        break;
-                    }
-                }
-
-                @Override
-                protected void eval(int field, TCast data, ValueTarget target) {
-                    switch (field) {
-                    case 0:
-                        target.putString(data.sourceClass().name().bundleId().name());
-                        break;
-                    case 1:
-                        target.putString(data.sourceClass().name().unqualifiedName());
-                        break;
-                    case 2:
-                        target.putString(data.targetClass().name().bundleId().name());
-                        break;
-                    case 3:
-                        target.putString(data.targetClass().name().unqualifiedName());
-                        break;
-                    case 4:
-                        target.putLong(castsResolver.isStrong(data) ? 1 : 0);
-                        break;
-                    case 5:
-                        target.putLong((data instanceof TCastsRegistry.ChainedCast) ? 1 : 0);
-                        break;
-                    default:
-                        target.putNull();
-                        break;
-                    }
+                protected Object[] createRow(TCast data) {
+                    return new Object[] {
+                            data.sourceClass().name().bundleId().name(),
+                            data.sourceClass().name().unqualifiedName(),
+                            data.targetClass().name().bundleId().name(),
+                            data.targetClass().name().unqualifiedName(),
+                            boolResult(castsResolver.isStrong(data)),
+                            boolResult(data instanceof TCastsRegistry.ChainedCast)
+                    };
                 }
             };
         }
@@ -514,53 +462,17 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter) {
             Iterator<? extends TValidatedOverload> allOverloads = Iterators.concat(
                     scalarsRegistry.iterator(),
-                    aggreatorsRegistry.iterator()
-            );
+                    aggreatorsRegistry.iterator());
             return new SimpleMemoryGroupScan<TValidatedOverload>(adapter, getName(), allOverloads) {
                 @Override
-                protected void eval(int field, TValidatedOverload data, PValueTarget target) {
-                    switch (field) {
-                    case 0:
-                        target.putString(data.displayName().toLowerCase(), null);
-                        break;
-                    case 1:
-                        target.putInt64(lowest(data.getPriorities()));
-                        break;
-                    case 2:
-                        target.putString(data.describeInputs(), null);
-                        break;
-                    case 3:
-                        target.putString(data.resultStrategy().toString(), null);
-                        break;
-                    case 4:
-                        target.putString(data.id(), null);
-                        break;
-                    default:
-                        target.putNull();
-                    }
-                }
-
-                @Override
-                protected void eval(int field, TValidatedOverload data, ValueTarget target) {
-                    switch (field) {
-                    case 0:
-                        target.putString(data.displayName().toLowerCase());
-                        break;
-                    case 1:
-                        target.putLong(lowest(data.getPriorities()));
-                        break;
-                    case 2:
-                        target.putString(data.describeInputs());
-                        break;
-                    case 3:
-                        target.putString(data.resultStrategy().toString());
-                        break;
-                    case 4:
-                        target.putString(data.id());
-                        break;
-                    default:
-                        target.putNull();
-                    }
+                protected Object[] createRow(TValidatedOverload data) {
+                    return new Object[] {
+                            data.displayName().toLowerCase(), null,
+                            lowest(data.getPriorities()),
+                            data.describeInputs(), null,
+                            data.resultStrategy().toString(), null,
+                            data.id(), null,
+                    };
                 }
             };
         }
