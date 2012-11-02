@@ -472,7 +472,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         });
 
         final AkibanInformationSchema newAIS = removeTablesFromAIS(session, tables, sequences);
-        bumpTableVersions(newAIS, Collections.singleton(table.getTableId()));
+        bumpTableVersions(newAIS, tableIDs);
 
         saveAISChangeWithRowDefs(session, newAIS, schemas);
         //deleteTableStatuses(tableIDs); // Cannot transactionally remove IDs easily, so don't

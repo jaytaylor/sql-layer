@@ -1172,7 +1172,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
             return;
         }
 
-        final int DDL_PRE_COMMIT_WAIT = 1500;
+        final int DDL_PRE_COMMIT_WAIT = 3000;
         final int tableIndex = inferParentOrChild(oldCols, newCols);
         final int tableId = createJoinedTablesWithTwoRowsEach().get(tableIndex);
 
@@ -1184,7 +1184,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         final NewRow oldRow = (oldCols != null) ? createNewRow(tableId, oldCols) : null;
         final NewRow newRow = (newCols != null) ? createNewRow(tableId, newCols) : null;
 
-        TimedCallable<Void> dmlCallable = new DelayableIUDCallable(iudType, oldRow, newRow, 500, 0, 0);
+        TimedCallable<Void> dmlCallable = new DelayableIUDCallable(iudType, oldRow, newRow, 500, 1000, 0);
         TimedCallable<Void> ddlCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
