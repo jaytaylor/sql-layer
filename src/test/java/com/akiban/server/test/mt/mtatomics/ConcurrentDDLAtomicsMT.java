@@ -687,21 +687,123 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         beginWaitDDLThenScan(DDLOp.DROP_GROUP_INDEX, "name");
     }
 
+    @Test
+    public void beginWaitRenameTableScanGroup() throws Exception {
+        beginWaitDDLThenScan(DDLOp.RENAME_TABLE, null);
+    }
+
+    @Test
+    public void beginWaitRenameTableScanPK() throws Exception {
+        beginWaitDDLThenScan(DDLOp.RENAME_TABLE, Index.PRIMARY_KEY_CONSTRAINT);
+    }
+
+    @Test
+    public void beginWaitRenameTableScanIndex() throws Exception {
+        beginWaitDDLThenScan(DDLOp.RENAME_TABLE, "name");
+    }
+
 
     //
     // Internal
     //
 
     private static enum DDLOp {
-        ALTER_TABLE,
-        CREATE_TABLE_INDEX,
-        CREATE_GROUP_INDEX,
-        DROP_TABLE_INDEX,
-        DROP_GROUP_INDEX,
-        DROP_TABLE,
-        DROP_GROUP,
-        DROP_SCHEMA
+        //
+        // DDL that require special handling (lock and then transaction)
+        //
+        ALTER_TABLE(
+                new Runner() {
+                    @Override
+                    public void run(Session session, DDLFunctions ddl) {
+                        UserTable altered = joinedTableTemplates(true, false, false).get(1);
+                        ddl.alterTable(
+                                session, TABLE_NAME, altered,
+                                Arrays.asList(TableChange.createModify("extra", "extra")),
+                                Collections.<TableChange>emptyList(),
+                                null
+                        );
+                    }
+                }
+        ),
+        CREATE_TABLE_INDEX(
+                new Runner() {
+                    @Override
+                    public void run(Session session, DDLFunctions ddl) {
+                        UserTable table = joinedTableTemplates(false, true, false).get(1);
+                        Index index = table.getIndex("extra");
+                        ddl.createIndexes(session, Collections.singleton(index));
+                    }
+                }
+        ),
+        CREATE_GROUP_INDEX(
+                new Runner() {
+                    @Override
+                    public void run(Session session, DDLFunctions ddl) {
+                        List<UserTable> tables = joinedTableTemplates(false, false, true);
+                        Index index = tables.get(0).getGroup().getIndex("g_i");
+                        ddl.createIndexes(session, Collections.singleton(index));
+                    }
+                }
+        ),
+        DROP_TABLE_INDEX(
+                new Runner() {
+                    @Override
+                    public void run(Session session, DDLFunctions ddl) {
+                        ddl.dropTableIndexes(session, TABLE_NAME, Collections.singleton("name"));
+                    }
+                }
+        ),
+        DROP_GROUP_INDEX(
+                new Runner() {
+                    @Override
+                    public void run(Session session, DDLFunctions ddl) {
+                        ddl.dropGroupIndexes(session, TABLE_PARENT, Collections.singleton("g_i"));
+                    }
+                }
+        ),
+        DROP_TABLE(
+                new Runner() {
+                    @Override
+                    public void run(Session session, DDLFunctions ddl) {
+                        ddl.dropTable(session, TABLE_NAME);
+                    }
+                }
+        ),
+        DROP_GROUP(
+                new Runner() {
+                    @Override
+                    public void run(Session session, DDLFunctions ddl) {
+                        ddl.dropGroup(session, TABLE_NAME);
+                    }
+                }
+        ),
+        DROP_SCHEMA(
+                new Runner() {
+                    @Override
+                    public void run(Session session, DDLFunctions ddl) {
+                        ddl.dropSchema(session, SCHEMA);
+                    }
+                }
+        ),
+
+        //
+        // Not a special DDL, only a sanity check
+        //
+        RENAME_TABLE(new Runner() {
+            @Override
+            public void run(Session session, DDLFunctions ddl) {
+                ddl.renameTable(session, TABLE_NAME, TABLE2_NAME);
+            }
+        })
         ;
+
+
+        public interface Runner { void run(Session session, DDLFunctions ddl); }
+        private final Runner runner;
+
+        private DDLOp(Runner runner) {
+            this.runner = runner;
+        }
 
         public String inTag() {
             return name() + ": IN";
@@ -712,47 +814,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         }
 
         public void run(Session session, DDLFunctions ddl) {
-            switch(this) {
-                case ALTER_TABLE: {
-                    UserTable altered = joinedTableTemplates(true, false, false).get(1);
-                    ddl.alterTable(
-                            session, TABLE_NAME, altered,
-                            Arrays.asList(TableChange.createModify("extra", "extra")),
-                            Collections.<TableChange>emptyList(),
-                            null
-                    );
-                }
-                break;
-                case CREATE_TABLE_INDEX: {
-                    UserTable table = joinedTableTemplates(false, true, false).get(1);
-                    Index index = table.getIndex("extra");
-                    ddl.createIndexes(session, Collections.singleton(index));
-                }
-                break;
-                case DROP_TABLE_INDEX:
-                    ddl.dropTableIndexes(session, TABLE_NAME, Collections.singleton("name"));
-                break;
-                case DROP_TABLE:
-                    ddl.dropTable(session, TABLE_NAME);
-                break;
-                case DROP_GROUP:
-                    ddl.dropGroup(session, TABLE_NAME);
-                break;
-                case DROP_SCHEMA:
-                    ddl.dropSchema(session, SCHEMA);
-                break;
-                case CREATE_GROUP_INDEX: {
-                    List<UserTable> tables = joinedTableTemplates(false, false, true);
-                    Index index = tables.get(0).getGroup().getIndex("g_i");
-                    ddl.createIndexes(session, Collections.singleton(index));
-                }
-                break;
-                case DROP_GROUP_INDEX:
-                    ddl.dropGroupIndexes(session, TABLE_PARENT, Collections.singleton("g_i"));
-                break;
-                default:
-                    throw new IllegalStateException("Unknown op: " + this);
-            }
+            runner.run(session, ddl);
         }
     }
 

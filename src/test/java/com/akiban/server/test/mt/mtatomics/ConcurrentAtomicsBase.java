@@ -59,8 +59,10 @@ class ConcurrentAtomicsBase extends MTBase {
     protected static final String SCHEMA2 = "brisk";
     protected static final String PARENT = "icy";
     protected static final String TABLE = "frosty";
+    protected static final String TABLE2 = "frosty2";
     protected static final TableName TABLE_PARENT = new TableName(SCHEMA, PARENT);
     protected static final TableName TABLE_NAME = new TableName(SCHEMA, TABLE);
+    protected static final TableName TABLE2_NAME = new TableName(SCHEMA, TABLE2);
 
     // ApiTestBase interface
 
