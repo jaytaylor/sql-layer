@@ -26,16 +26,12 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.error.InvalidDateFormatException;
 import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
-import com.akiban.server.types3.mcompat.mtypes.MDatetimes.StringType;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
@@ -44,134 +40,16 @@ import com.akiban.sql.parser.TernaryOperatorNode;
 
 public class MTimestampDiff extends TScalarBase
 {
-    public static TScalar[] create()
+    public static final TScalar instance = new MTimestampDiff();
+    
+    private MTimestampDiff()
     {
-        ArgType args[] = ArgType.values();
-        TScalar ret[] = new TScalar[args.length * args.length];
-        int n = 0;
-        
-        for (ArgType arg1 : args)
-            for (ArgType arg2 : args)
-                ret[n++] = new MTimestampDiff(arg1, arg2);
-        
-        return ret;
-    }
-    
-    private static enum ArgType
-    {
-        DATE(MDatetimes.DATE)
-        {
-            @Override
-            long[] getYMD(PValueSource source, TExecutionContext context)
-            {
-                int date = source.getInt32();
-                long ymd[] = MDatetimes.decodeDate(date);
-             
-                if (MDatetimes.isValidDatetime(ymd))
-                    return ymd;
-                else
-                {
-                    context.warnClient(new InvalidDateFormatException("DATE",
-                                                                      MDatetimes.dateToString(date)));
-                    return null;
-                }
-            }
-        },
-        DATETIME(MDatetimes.DATETIME)
-        {
-            @Override
-            long[] getYMD(PValueSource source, TExecutionContext context)
-            {
-                long datetime = source.getInt64();
-                long ymd[] = MDatetimes.decodeDate(datetime);
-                
-                if (MDatetimes.isValidDatetime(ymd))
-                    return ymd;
-                else
-                {
-                    context.warnClient(new InvalidDateFormatException("DATE",
-                                                                      MDatetimes.datetimeToString(datetime)));
-                    return null;
-                }
-            }
-        },
-        TIMESTAMP(MDatetimes.TIMESTAMP)
-        {
-            @Override
-            long [] getYMD(PValueSource source, TExecutionContext context)
-            {
-                return MDatetimes.decodeTimestamp(source.getInt32(), "UTC"/*context.getCurrentTimezone()*/);
-            }
-            
-            // override this because TIMESTAMP type doesn't need to go thru the decoding process
-            // just return whatever is passed in
-            @Override
-            Long getUnix(PValueSource source, TExecutionContext context)
-            {
-                return source.getInt32() * 1000L; // unix
-            }
-        },
-        VARCHAR(MString.VARCHAR)
-        {
-            @Override
-            long [] getYMD(PValueSource source, TExecutionContext context)
-            {
-                long ymd[] = new long[6];
-                InvalidDateFormatException error;
-                try
-                {
-                    StringType strType = MDatetimes.parseDateOrTime(source.getString(), ymd);
-                                
-                    if (strType == StringType.TIME_ST)
-                        error = new InvalidDateFormatException("DATETIME",
-                                                               source.getString());
-                    else
-                        return ymd;
-                    
-                }
-                catch (InvalidDateFormatException e)
-                {
-                    error = e;
-                }
-
-                context.warnClient(error);
-                return null;
-            }
-        }
-        ;
-        
-        abstract long[] getYMD(PValueSource source, TExecutionContext context);
-        
-        Long getUnix(PValueSource source, TExecutionContext context)
-        {
-            long ymd[] = getYMD(source, context);
-
-            return ymd == null
-                    ? null
-                    : MDatetimes.getTimestamp(ymd, "UTC") * 1000L; // use UTC to do the computation
-        }
-        
-        private ArgType(TClass type)
-        {
-            this.type = type;
-        }
-        private final TClass type;
-    }
-    
-    
-    private final ArgType arg1;
-    private final ArgType arg2;
-    
-    private MTimestampDiff(ArgType arg1, ArgType arg2)
-    {
-        this.arg1 = arg1;
-        this.arg2 = arg2;
     }
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(MNumeric.INT, 0).covers(arg1.type, 1).covers(arg2.type, 2);
+        builder.covers(MNumeric.INT, 0).covers(MDatetimes.TIMESTAMP, 1, 2);
     }
 
     @Override
@@ -187,8 +65,8 @@ public class MTimestampDiff extends TScalarBase
             case TernaryOperatorNode.YEAR_INTERVAL:
             case TernaryOperatorNode.QUARTER_INTERVAL:
             case TernaryOperatorNode.MONTH_INTERVAL:
-                doMonthSubtraction(arg2.getYMD(date2, context),
-                                   arg1.getYMD(date1, context),
+                doMonthSubtraction(getYMD(date2),
+                                   getYMD(date1),
                                    MONTH_DIV[unit - MONTH_BASE],
                                    output);
                 break;
@@ -198,15 +76,12 @@ public class MTimestampDiff extends TScalarBase
             case TernaryOperatorNode.MINUTE_INTERVAL:
             case TernaryOperatorNode.SECOND_INTERVAL:
             case TernaryOperatorNode.FRAC_SECOND_INTERVAL:
-                Long unix1, unix2 = 0L;
-                if ((unix1 = arg1.getUnix(date1, context)) == null
-                        || (unix2 = arg2.getUnix(date2, context)) == null)
-                    output.putNull();
-                else
-                    output.putInt64((unix2 - unix1) / MILLIS_DIV[unit - MILLIS_BASE]);
+                long unix1 = getUnix(date1);
+                long unix2 = getUnix(date2);
+                output.putInt64((unix2 - unix1) / MILLIS_DIV[unit - MILLIS_BASE]);
                 break;
             default:
-                        throw new UnsupportedOperationException("Unknown UNIT: " + unit);
+                throw new UnsupportedOperationException("Unknown UNIT: " + unit);
         
         }
     }
@@ -221,6 +96,16 @@ public class MTimestampDiff extends TScalarBase
     public TOverloadResult resultType()
     {
         return TOverloadResult.fixed(MNumeric.BIGINT, 21);
+    }
+
+    private long [] getYMD(PValueSource source)
+    {
+        return MDatetimes.decodeTimestamp(source.getInt32(), "UTC"/*context.getCurrentTimezone()*/);
+    }
+
+    private long getUnix(PValueSource source)
+    {
+        return source.getInt32() * 1000L; // unix
     }
     
     // -------- static members --------------

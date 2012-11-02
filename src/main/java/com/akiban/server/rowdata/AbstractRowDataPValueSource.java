@@ -33,7 +33,6 @@ import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.util.WrappingByteSource;
 
 
 abstract class AbstractRowDataPValueSource implements PValueSource {
@@ -191,7 +190,6 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
     }
 
     // object state
-    private final WrappingByteSource byteSource = new WrappingByteSource();
 
     private enum Signage {
         SIGNED, UNSIGNED

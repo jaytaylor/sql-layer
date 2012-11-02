@@ -1,5 +1,5 @@
 ---
-- Statement: SET newtypes='true';
+- Newtypes: true
 ---
 - Include: all-types-schema.yaml
 ---
@@ -14,5 +14,5 @@
 - Statement: SELECT DESCRIBE_EXPRESSION(CONCAT('a', 'bb', 'ccc', 'dddd')) from all_types;
 - output: [['const MCOMPAT_ VARCHAR(10, UTF8, UCS_BINARY) NOT NULL']]
 ---
-- Statement: SET newtypes=DEFAULT;
+- Newtypes: null
 ...

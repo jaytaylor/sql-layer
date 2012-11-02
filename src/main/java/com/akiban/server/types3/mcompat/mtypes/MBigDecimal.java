@@ -34,14 +34,12 @@ import com.akiban.server.types3.SimplePValueIO;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TClassBase;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TParsers;
 import com.akiban.server.types3.aksql.AkCategory;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.common.NumericFormatter;
 import com.akiban.server.types3.mcompat.MBundle;
-import com.akiban.server.types3.mcompat.mcasts.CastUtils;
 import com.akiban.server.types3.pvalue.PBasicValueSource;
 import com.akiban.server.types3.pvalue.PBasicValueTarget;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -93,7 +91,7 @@ public class MBigDecimal extends TClassBase {
         int inputScale = inputInstance.attribute(Attrs.SCALE);
         int targetScale = targetInstance.attribute(Attrs.SCALE);
         if ( (inputPrecision != targetPrecision) || (inputScale != targetScale) ) {
-            BigDecimalWrapper bdw = getWrapper(source, inputInstance);
+            BigDecimalWrapper bdw = new MBigDecimalWrapper().set(getWrapper(source, inputInstance));
             bdw.round(targetScale);
             target.putObject(bdw);
         }
@@ -116,6 +114,15 @@ public class MBigDecimal extends TClassBase {
     public MBigDecimal(String name, int defaultVarcharLen){
         super(MBundle.INSTANCE.id(), name, AkCategory.DECIMAL, Attrs.class, NumericFormatter.FORMAT.BIGDECIMAL, 1, 1, 8,
                 PUnderlying.BYTES, TParsers.DECIMAL, defaultVarcharLen);
+    }
+
+    @Override
+    protected int doCompare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB)
+    {
+        if (sourceA.hasRawValue() && sourceB.hasRawValue()) // both have bytearrays
+            return super.doCompare(instanceA, sourceA, instanceB, sourceB);
+        else
+            return getWrapper(sourceA, instanceA).compareTo(getWrapper(sourceB, instanceB));
     }
 
     @Override
@@ -147,22 +154,6 @@ public class MBigDecimal extends TClassBase {
     @Override
     public TInstance instance(boolean nullable) {
         return instance(10, 0, nullable);
-    }
-
-    @Override
-    public void putSafety(TExecutionContext context,
-                          TInstance sourceInstance,
-                          PValueSource sourceValue,
-                          TInstance targetInstance,
-                          PValueTarget targetValue)
-    {
-        BigDecimalWrapper wrapped = MBigDecimal.getWrapper(sourceValue, sourceInstance);
-        CastUtils.doCastDecimal(context, wrapped, targetValue);
-    }
-
-    @Override
-    public TFactory factory() {
-        return new MNumericFactory(this);
     }
 
     @Override
