@@ -163,12 +163,7 @@ public class MDateTimeDiff
             }
         },
         new DateTimeDiff(ArgType.DATETIME, ArgType.VARCHAR, "TIMEDIFF", true, false)
-        {
-            protected void buildInputSets(TInputSetBuilder bd)
-            {
-                bd.covers(MDatetimes.DATETIME, 0).covers(MString.VARCHAR, 1);
-            }
-            
+        {   
             @Override
             int compute(long[] arg0, long[] arg1, TExecutionContext context)
             {

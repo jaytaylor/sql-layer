@@ -47,12 +47,22 @@ public class MTimestampDiff extends TScalarBase
     public static TScalar[] create()
     {
         ArgType args[] = ArgType.values();
-        TScalar ret[] = new TScalar[args.length * args.length];
+        TScalar ret[] = new TScalar[args.length * args.length + 1];
         int n = 0;
         
         for (ArgType arg1 : args)
             for (ArgType arg2 : args)
-                ret[n++] = new MTimestampDiff(arg1, arg2);
+                ret[n++] = new MTimestampDiff(arg1, arg2)
+                {
+                    public int[] getPriorities() {return new int[] {0};}
+                };
+        
+        // create a second group prio group, forcing all arguments be
+        // casted to the formal types
+        ret[n] = new MTimestampDiff(ArgType.TIMESTAMP, ArgType.TIMESTAMP)
+        {
+            public int[] getPriorities() {return new int[] {1};}
+        };
         
         return ret;
     }
@@ -173,7 +183,7 @@ public class MTimestampDiff extends TScalarBase
     {
         builder.covers(MNumeric.INT, 0).covers(arg1.type, 1).covers(arg2.type, 2);
     }
-
+    
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
