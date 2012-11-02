@@ -92,9 +92,7 @@ public class PostgresServerConnection extends ServerSessionBase
     private PostgresStatementParser[] unparsedGenerators;
     private PostgresStatementGenerator[] parsedGenerators;
     private Thread thread;
-    
-    private String sql;
-    
+
     private volatile String cancelForKillReason, cancelByUser;
 
     public PostgresServerConnection(PostgresServer server, Socket socket, 
@@ -106,7 +104,7 @@ public class PostgresServerConnection extends ServerSessionBase
         this.socket = socket;
         this.sessionId = sessionId;
         this.secret = secret;
-        this.sessionTracer = new ServerSessionTracer(sessionId, server.isInstrumentationEnabled());
+        this.sessionTracer = new ServerSessionMonitor(sessionId);
         sessionTracer.setRemoteAddress(socket.getInetAddress().getHostAddress());
     }
 
@@ -464,15 +462,15 @@ public class PostgresServerConnection extends ServerSessionBase
 
     protected void processQuery() throws IOException {
         long startTime = System.currentTimeMillis();
-        int rowsProcessed = 0;
-        sql = messenger.readString();
-        sessionTracer.setCurrentStatement(sql);
+        String sql = messenger.readString();
         logger.info("Query: {}", sql);
 
         if (sql.length() == 0) {
             emptyQuery();
             return;
         }
+
+        sessionMonitor.setCurrentStatement(sql, startTime);
 
         PostgresQueryContext context = new PostgresQueryContext(this);
         updateAIS(context);
@@ -489,6 +487,7 @@ public class PostgresServerConnection extends ServerSessionBase
                     break;
             }
         }
+        int rowsProcessed = 0;
         if (pstmt != null) {
             pstmt.sendDescription(context, false);
             rowsProcessed = executeStatement(pstmt, context, -1);
@@ -497,7 +496,7 @@ public class PostgresServerConnection extends ServerSessionBase
             // Parse as a _list_ of statements and process each in turn.
             List<StatementNode> stmts;
             try {
-                sessionTracer.beginEvent(EventTypes.PARSE);
+                sessionMonitor.setStage(MonitorStage.PARSE);
                 stmts = parser.parseStatements(sql);
             } 
             catch (SQLParserException ex) {
@@ -507,7 +506,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 throw new SQLParserInternalException(ex);
             }
             finally {
-                sessionTracer.endEvent();
+                sessionMonitor.setStage(null);
             }
             for (StatementNode stmt : stmts) {
                 pstmt = generateStatement(stmt, null, null);
@@ -518,9 +517,10 @@ public class PostgresServerConnection extends ServerSessionBase
             }
         }
         readyForQuery();
+        sessionMonitor.endStatement(rowsProcessed);
         logger.debug("Query complete");
-        if (reqs.instrumentation().isQueryLogEnabled()) {
-            reqs.instrumentation().logQuery(sessionId, sql, (System.currentTimeMillis() - startTime), rowsProcessed);
+        if (reqs.monitor().isQueryLogEnabled()) {
+            reqs.monitor().logQuery(sessionMonitor);
         }
     }
 
@@ -658,17 +658,19 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     protected void processExecute() throws IOException {
-        long startTime = System.nanoTime();
-        int rowsProcessed = 0;
+        long startTime = System.currentTimeMillis();
         String portalName = messenger.readString();
         int maxrows = messenger.readInt();
         PostgresBoundQueryContext context = boundPortals.get(portalName);
         PostgresStatement pstmt = context.getStatement();
         logger.info("Execute: {}", pstmt);
-        rowsProcessed = executeStatement(pstmt, context, maxrows);
+        // TODO: save SQL in prepared statement and get it here.
+        sessionMonitor.setCurrentStatement(null, startTime);
+        int rowsProcessed = executeStatement(pstmt, context, maxrows);
+        sessionMonitor.endStatement(rowsProcessed);
         logger.debug("Execute complete");
-        if (reqs.instrumentation().isQueryLogEnabled()) {
-            reqs.instrumentation().logQuery(sessionId, sql, (System.nanoTime() - startTime), rowsProcessed);
+        if (reqs.monitor().isQueryLogEnabled()) {
+            reqs.monitor().logQuery(sessionMonitor);
         }
     }
 
@@ -954,32 +956,6 @@ public class PostgresServerConnection extends ServerSessionBase
             return true;
         }
         return super.propertySet(key, value);
-    }
-
-    /* MBean-related access */
-
-    public boolean isInstrumentationEnabled() {
-        return sessionTracer.isEnabled();
-    }
-    
-    public void enableInstrumentation() {
-        sessionTracer.enable();
-    }
-    
-    public void disableInstrumentation() {
-        sessionTracer.disable();
-    }
-    
-    public String getSqlString() {
-        return sql;
-    }
-    
-    public String getRemoteAddress() {
-        return socket.getInetAddress().getHostAddress();
-    }
-    
-    public PostgresServer getServer() {
-        return server;
     }
 
 }

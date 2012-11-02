@@ -30,44 +30,44 @@ import java.util.Date;
 
 public interface SessionMonitor {
     /** The id of the session being monitored. */
-    public int getSessionId();
+    int getSessionId();
 
     /** The id of the session that called this one or -1 if none. */
-    public int getCallerSessionId();
+    int getCallerSessionId();
 
     /** What kind of server is this a session for? */
-    public String getServerType();
+    String getServerType();
 
     /** The remote IP address of a network connection or <code>null</code>. */
-    public String getRemoteAddress();
+    String getRemoteAddress();
 
     /** The time at which this session started. */
-    public Date getStartTime();
+    Date getStartTime();
     
     /** The number of queries executed. */
-    public int getStatementCount();
+    int getStatementCount();
 
     /** The SQL of the current last statement. */
-    public String getCurrentStatement();    
+    String getCurrentStatement();    
 
     /** The time at which the current statement began executing. */
-    public Date getCurrentStatementStartTime();
+    Date getCurrentStatementStartTime();
 
     /** The time at which the current statement completed. */
-    public Date getCurrentStatementEndTime();
+    Date getCurrentStatementEndTime();
 
     /** The number of rows returned / affected by the last statement
      * or <code>-1</code> if unknown, not applicable or in
      * progress. 
      */
-    public int getRowsProcessed();
+    int getRowsProcessed();
 
     /** The current stage of the session. */
-    public MonitorStage getCurrentStage();
+    MonitorStage getCurrentStage();
     
     /** The time in nanoseconds last spent in the given stage. */
-    public long getLastTimeStageNanos(MonitorStage stage);
+    long getLastTimeStageNanos(MonitorStage stage);
 
     /** The total time in nanoseconds spent in the given stage. */
-    public long getTotalTimeStageNanos(MonitorStage stage);
+    long getTotalTimeStageNanos(MonitorStage stage);
 }

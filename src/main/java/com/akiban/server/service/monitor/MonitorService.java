@@ -47,4 +47,7 @@ public interface MonitorService {
 
     /** Log the given SQL to the query log. */
     void logQuery(int sessionId, String sqlText, long duration, int rowsProcessed);
+
+    /** Log last statement from given monitor. */
+    void logQuery(SessionMonitor sessionMonitor);
 }

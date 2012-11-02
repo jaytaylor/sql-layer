@@ -69,7 +69,6 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     private Map<Integer,PostgresServerConnection> connections =
         new HashMap<Integer,PostgresServerConnection>();
     private Thread thread;
-    private final AtomicBoolean instrumentationEnabled = new AtomicBoolean(true);
     // AIS-dependent state
     private volatile int statementCacheCapacity;
     private final Map<ObjectLongPair,ServerStatementCache<PostgresStatement>> statementCaches =
@@ -153,7 +152,6 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     @Override
     public void run() {
         logger.info("Postgres server listening on port {}", port);
-        int sessionId = 0;
         Random rand = new Random();
         try {
             synchronized(this) {
@@ -163,7 +161,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
             }
             while (running) {
                 Socket sock = socket.accept();
-                sessionId++;
+                int sessionId = reqs.monitor().allocateSessionId();
                 int secret = rand.nextInt();
                 PostgresServerConnection connection = 
                     new PostgresServerConnection(this, sock, sessionId, secret, reqs);
@@ -205,12 +203,12 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     @Override
     public String getSqlString(int sessionId) {
-        return getConnection(sessionId).getSqlString();
+        return getConnection(sessionId).getSessionMonitor().getCurrentStatement();
     }
     
     @Override
     public String getRemoteAddress(int sessionId) {
-        return getConnection(sessionId).getRemoteAddress();
+        return getConnection(sessionId).getSessionMonitor().getRemoteAddress();
     }
 
     @Override
@@ -300,59 +298,23 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     }
 
     @Override
-    public boolean isInstrumentationEnabled() {
-        return instrumentationEnabled.get();
-    }
-
-    @Override
-    public void enableInstrumentation() {
-        for (PostgresServerConnection conn : connections.values()) {
-            conn.getSessionTracer().enable();
-        }
-        instrumentationEnabled.set(true);
-    }
-
-    @Override
-    public void disableInstrumentation() {
-        for (PostgresServerConnection conn : connections.values()) {
-            conn.getSessionTracer().disable();
-        }
-        instrumentationEnabled.set(false);
-    }
-
-    @Override
-    public boolean isInstrumentationEnabled(int sessionId) {
-        return getConnection(sessionId).isInstrumentationEnabled();
-    }
-
-    @Override
-    public void enableInstrumentation(int sessionId) {
-        getConnection(sessionId).enableInstrumentation();
-    }
-
-    @Override
-    public void disableInstrumentation(int sessionId) {
-        getConnection(sessionId).disableInstrumentation();
-    }
-
-    @Override
     public Date getStartTime(int sessionId) {
-        return getConnection(sessionId).getSessionTracer().getStartTime();
+        return getConnection(sessionId).getSessionMonitor().getStartTime();
     }
 
     @Override
     public long getProcessingTime(int sessionId) {
-        return getConnection(sessionId).getSessionTracer().getProcessingTime();
+        return getConnection(sessionId).getSessionMonitor().getNonIdleTime();
     }
 
     @Override
     public long getEventTime(int sessionId, String eventName) {
-        return getConnection(sessionId).getSessionTracer().getEventTime(eventName);
+        return getConnection(sessionId).getSessionMonitor().getLastTimeStageNanos(MonitorStage.valueOf(eventName));
     }
 
     @Override
     public long getTotalEventTime(int sessionId, String eventName) {
-        return getConnection(sessionId).getSessionTracer().getTotalEventTime(eventName);
+        return getConnection(sessionId).getSessionMonitor().getTotalTimeStageNanos(MonitorStage.valueOf(eventName));
     }
 
     @Override

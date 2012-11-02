@@ -50,23 +50,9 @@ public interface PostgresMXBean {
     void resetStatementCache();
     
     Set<Integer> getCurrentSessions();
-    
+
     /*
-     * whether instrumentation is enabled for all sessions
-     */
-    boolean isInstrumentationEnabled();
-    void enableInstrumentation();
-    void disableInstrumentation();
-    
-    /*
-     * whether instrumentation is enabled for a specific session
-     */
-    boolean isInstrumentationEnabled(int sessionId);
-    void enableInstrumentation(int sessionId);
-    void disableInstrumentation(int sessionId);
-    
-    /*
-     * information on individual sessions being traced
+     * information on individual sessions being monitored
      */
     Date getStartTime(int sessionId);
     long getProcessingTime(int sessionId);

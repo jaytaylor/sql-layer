@@ -26,199 +26,134 @@
 
 package com.akiban.sql.server;
 
+import com.akiban.server.service.monitor.MonitorStage;
+import com.akiban.server.service.monitor.SessionMonitor;
+
 import java.util.Date;
-import java.util.EmptyStackException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Stack;
 
-import com.akiban.server.service.instrumentation.Event;
-import com.akiban.server.service.instrumentation.EventImpl;
-import com.akiban.server.service.instrumentation.SessionTracer;
+public class ServerSessionMonitor implements SessionMonitor {
+    private final String serverType;
+    private final int sessionId;
+    private final long startTime;
+    private int callerSessionId = -1;
+    private String remoteAddress;
+    private int statementCount;
+    private String currentStatement;
+    private long currentStatementStartTime = -1;
+    private long currentStatementEndTime = -1;
+    private int rowsProcessed;
+    private int statementCount;
+    private long[] lastNanos, totalNanos;
+    private MonitorStage currentStage;
+    private long currentStageStartNanos;
 
-public class ServerSessionTracer implements SessionTracer {
-    
-    // PostgresSessionTracer interface
-    
-    public ServerSessionTracer(int sessionId,
-                               boolean enabled) {
+    public ServerSessionMonitor(String serverType, int sessionId) {
+        this.serverType = serverType;
         this.sessionId = sessionId;
-        this.currentStatement = null;
-        this.remoteAddress = null;
-        this.startTime = System.currentTimeMillis();
-        this.nrows = 0;
-        this.traceLevel = 0;
-        this.enabled = enabled;
-        this.events = new HashMap<String, Event>();
-        this.completedEvents = new LinkedList<Event>();
-        this.currentEvents = new Stack<Event>();
+        startTime = System.currentTimeMillis();
+        lastNanos = new long[MonitorStage.values().size()];
+        totalNanos = new long[MonitorStage.values().size()];
     }
     
-    public void setCurrentStatement(String stmt) {
-        currentStatement = stmt;
+    public void setCallerSessionId(int callerSessionId) {
+        this.callerSessionId = callerSessionId;
     }
-    
+
     public void setRemoteAddress(String remoteAddress) {
         this.remoteAddress = remoteAddress;
     }
     
-    public void setNumberOfRowsReturned(int nrows) {
-        this.nrows = nrows;
+    public void startStatement(String statement) {
+        startStatement(statement, System.currentTimeMillis());
     }
-    
-    public int getNumberOfRowsReturned() {
-        return nrows;
+
+    public void startStatement(String statement, long startTime) {
+        if (statement != null)  // TODO: Remove when always passed by PG server.
+            currentStatement = statement;
+        currentStatementStartTime = startTime;
+        currentStatementEndTime = -1;
+        rowsProcessed = -1;
+        statementCount++;
     }
-    
-    // SessionTracer interface
-    
-    @Override
-    public void beginEvent(String eventName) {
-        if (enabled) {
-            Event ev = events.get(eventName);
-            if (ev == null) {
-                ev = new EventImpl(eventName, sessionId, true);
-                events.put(eventName, ev);
-            }
-            ev.start();
-            currentEvents.push(ev);
+
+    public void endStatement(int rowsProcessed) {
+        currentStatementEndTime = System.currentTimeMillis();
+        this.rowsProcessed = rowsProcessed;
+    }
+
+    public long getCurrentStatementDuration() {
+        return currentStatementEndTime - currentStatementStartTime;
+    }
+
+    public void setStage(MonitorStage stage) {
+        long now = System.nanoTime();
+        if (currentStage != null) {
+            long delta = currentStageStartNanos - now;
+            lastNanos[stage.ordinal()] = delta;
+            totalNanos[stage.ordinal()] += delta;
         }
+        currentStage = stage;
+        currentStageStartNanos = now;
     }
 
-    @Override
-    public void endEvent() {
-        if (enabled) {
-            try {
-                Event ev = currentEvents.pop();
-                if (ev == null) {
-                    /*
-                     * this could happen if instrumentation was enabled during
-                     * an event. The same is true for the EmptyStackException
-                     * that could be thrown by the call to pop() above.
-                     */
-                    return;
-                }
-                ev.stop();
-                addCompletedEvent(ev);
-            } catch (EmptyStackException e) {
-                return;
-            }
-        }
+    /* SessionMonitor */
+
+    public int getSessionId() {
+        return sessionId;
     }
 
-    @Override
-    public Event getEvent(String eventName) {
-        return events.get(eventName);
-    }
-    
-    @Override
-    public Object[] getCurrentEvents() {
-        return currentEvents.toArray();
-    }
-    
-    @Override
-    public Object[] getCompletedEvents() {
-        return completedEvents.toArray();
+    public int getCallerSessionId() {
+        return callerSessionId;
     }
 
-    @Override
-    public void setTraceLevel(int level) {
-        traceLevel = level;
+    public String getServerType() {
+        return serverType;
     }
 
-    @Override
-    public int getTraceLevel() {
-        return traceLevel;
-    }
-
-    @Override
-    public void enable() {
-        /* enable instrumentation for all events */
-        for (Event ev : events.values()) {
-            ev.enable();
-        }
-        enabled = true;
-    }
-
-    @Override
-    public void disable() {
-        /* disable instrumentation for all events */
-        for (Event ev : events.values()) {
-            ev.disable();
-        }
-        events.clear(); /* should we do this? */
-        completedEvents.clear();
-        currentEvents.clear();
-        enabled = false;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return enabled;
-    }
-    
-    @Override
-    public String getCurrentStatement() {
-        return currentStatement;
-    }
-    
-    @Override
     public String getRemoteAddress() {
         return remoteAddress;
     }
 
-    @Override
     public Date getStartTime() {
         return new Date(startTime);
     }
     
-    @Override
-    public long getProcessingTime() {
-        return (System.currentTimeMillis() - startTime);
+    public int getStatementCount() {
+        return statementCount;
     }
-    
-    @Override
-    public long getEventTime(String eventName) {
-        Event ev = events.get(eventName);
-        if (ev != null) {
-            return ev.getLastDuration();
-        }
-        return 0;
-    }
-    
-    @Override
-    public long getTotalEventTime(String eventName) {
-        Event ev = events.get(eventName);
-        if (ev != null) {
-            return ev.getTotalTime();
-        }
-        return 0;
-    }
-    
-    // helper methods
-    
-    private void addCompletedEvent(Event ev) {
-        completedEvents.add(ev);
-        if (completedEvents.size() > MAX_EVENTS) {
-            completedEvents.remove();
-        }
-    }
-    
-    // state
-    
-    private final static int MAX_EVENTS = 100;
 
-    private int sessionId;
-    private String currentStatement;
-    private String remoteAddress;
-    private long startTime;
-    private int nrows;
-    private int traceLevel;
-    private boolean enabled;
-    private Map<String, Event> events;
-    private Queue<Event> completedEvents;
-    private Stack<Event> currentEvents;
+    public String getCurrentStatement() {
+        return currentStatement;
+    }
+
+    public Date getCurrentStatementStartTime() {
+        if (currentStatementStartTime < 0)
+            return null;
+        else
+            return new Date(currentStatementStartTime);
+    }
+
+    public Date getCurrentStatementEndTime() {
+        if (currentStatementEndTime < 0)
+            return null;
+        else
+            return new Date(currentStatementEndTime);
+    }
+
+    public int getRowsProcessed() {
+        return rowsProcessed;
+    }
+
+    public MonitorStage getCurrentStage() {
+        return currentStage;
+    }
     
+    public long getLastTimeStageNanos(MonitorStage stage) {
+        return lastNanos[stage.ordinal()];
+    }
+
+    public long getTotalTimeStageNanos(MonitorStage stage) {
+        return totalNanos[stage.ordinal()];
+    }
+
 }
