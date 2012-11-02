@@ -24,7 +24,10 @@
 ---
 - Statement: INSERT INTO t_unsigned VALUES (0), (1), (2), (4294967295);
 ---
-- Statement: SELECT id_signed, id_unsigned FROM t_signed JOIN t_unsigned ON id_signed = id_unsigned
+- Statement: SELECT id_signed, id_unsigned FROM t_signed JOIN t_unsigned ON id_signed = id_unsigned ORDER BY id_signed
+- output: [[0, 0], [1, 1], [2, 2]]
+---
+- Statement: SELECT id_signed, id_unsigned FROM t_signed JOIN t_unsigned ON id_signed = id_unsigned ORDER BY id_unsigned
 - output: [[0, 0], [1, 1], [2, 2]]
 ---
 - Statement: SET cbo TO DEFAULT
