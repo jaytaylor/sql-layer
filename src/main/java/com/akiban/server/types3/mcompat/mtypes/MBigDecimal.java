@@ -242,7 +242,10 @@ public class MBigDecimal extends TClassBase {
         @Override
         public void copyCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
             if (in.hasCacheValue()) {
-                out.putObject(in.getObject());
+                if (out.supportsCachedObjects())
+                    out.putObject(in.getObject());
+                else
+                    cacher.cacheToValue(in.getObject(), typeInstance, out);
             }
             else if (in.hasRawValue()) {
                 out.putBytes(in.getBytes());
