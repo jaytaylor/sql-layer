@@ -26,8 +26,6 @@
 
 package com.akiban.server.service.monitor;
 
-import java.util.Date;
-
 public interface SessionMonitor {
     /** The id of the session being monitored. */
     int getSessionId();
@@ -41,8 +39,8 @@ public interface SessionMonitor {
     /** The remote IP address of a network connection or <code>null</code>. */
     String getRemoteAddress();
 
-    /** The time at which this session started. */
-    Date getStartTime();
+    /** The system time at which this session started. */
+    long getStartTimeMillis();
     
     /** The number of queries executed. */
     int getStatementCount();
@@ -50,14 +48,14 @@ public interface SessionMonitor {
     /** The SQL of the current last statement. */
     String getCurrentStatement();    
 
-    /** The time at which the current statement began executing. */
-    Date getCurrentStatementStartTime();
+    /** The time at which the current statement began executing or <code>-1</code>. */
+    long getCurrentStatementStartTimeMillis();
 
-    /** The time at which the current statement completed. */
-    Date getCurrentStatementEndTime();
+    /** The time at which the current statement completed or <code>-1</code>. */
+    long getCurrentStatementEndTimeMillis();
 
     /** The time for which current statement ran. */
-    long getCurrentStatementDuration();
+    long getCurrentStatementDurationMillis();
 
     /** The number of rows returned / affected by the last statement
      * or <code>-1</code> if unknown, not applicable or in
@@ -75,5 +73,5 @@ public interface SessionMonitor {
     long getTotalTimeStageNanos(MonitorStage stage);
 
     /** Get total time in nanoseconds not spent idle. */
-    long getNonIdleTime();
+    long getNonIdleTimeNanos();
 }

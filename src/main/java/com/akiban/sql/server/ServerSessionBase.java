@@ -385,6 +385,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             defaultSchemaName = server.defaultSchemaName;
             transaction = server.transaction;
             transactionDefaultReadOnly = server.transactionDefaultReadOnly;
+            sessionMonitor.setCallerSessionId(server.getSessionMonitor().getSessionId());
         }
     }
 

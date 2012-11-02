@@ -29,8 +29,6 @@ package com.akiban.sql.server;
 import com.akiban.server.service.monitor.MonitorStage;
 import com.akiban.server.service.monitor.SessionMonitor;
 
-import java.util.Date;
-
 public class ServerSessionMonitor implements SessionMonitor {
     private final String serverType;
     private final int sessionId;
@@ -81,11 +79,17 @@ public class ServerSessionMonitor implements SessionMonitor {
         this.rowsProcessed = rowsProcessed;
     }
 
-    public long getCurrentStatementDuration() {
-        return currentStatementEndTime - currentStatementStartTime;
+    public long getCurrentStatementDurationMillis() {
+        if (currentStatementEndTime < 0)
+            return -1;
+        else
+            return currentStatementEndTime - currentStatementStartTime;
     }
 
-    public void setStage(MonitorStage stage) {
+    // Caller can sequence all stages and avoid any gaps at the cost of more complicated
+    // exception handling, or just enter & leave and accept a tiny bit
+    // unaccounted for.
+    public void enterStage(MonitorStage stage) {
         long now = System.nanoTime();
         if (currentStage != null) {
             long delta = currentStageStartNanos - now;
@@ -94,6 +98,10 @@ public class ServerSessionMonitor implements SessionMonitor {
         }
         currentStage = stage;
         currentStageStartNanos = now;
+    }
+
+    public void leaveStage() {
+        enterStage(null);
     }
 
     /* SessionMonitor */
@@ -114,8 +122,8 @@ public class ServerSessionMonitor implements SessionMonitor {
         return remoteAddress;
     }
 
-    public Date getStartTime() {
-        return new Date(startTime);
+    public long getStartTimeMillis() {
+        return startTime;
     }
     
     public int getStatementCount() {
@@ -126,18 +134,12 @@ public class ServerSessionMonitor implements SessionMonitor {
         return currentStatement;
     }
 
-    public Date getCurrentStatementStartTime() {
-        if (currentStatementStartTime < 0)
-            return null;
-        else
-            return new Date(currentStatementStartTime);
+    public long getCurrentStatementStartTimeMillis() {
+        return currentStatementStartTime;
     }
 
-    public Date getCurrentStatementEndTime() {
-        if (currentStatementEndTime < 0)
-            return null;
-        else
-            return new Date(currentStatementEndTime);
+    public long getCurrentStatementEndTimeMillis() {
+        return currentStatementEndTime;
     }
 
     public int getRowsProcessed() {
@@ -156,7 +158,7 @@ public class ServerSessionMonitor implements SessionMonitor {
         return totalNanos[stage.ordinal()];
     }
 
-    public long getNonIdleTime() {
+    public long getNonIdleTimeNanos() {
         long total = 0;
         for (int i = 1; i < totalNanos.length; i++) {
             total += totalNanos[i];

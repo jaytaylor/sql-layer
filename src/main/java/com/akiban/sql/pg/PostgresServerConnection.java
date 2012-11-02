@@ -158,6 +158,18 @@ public class PostgresServerConnection extends ServerSessionBase
     protected void createMessenger() throws IOException {
         messenger = new PostgresMessenger(socket) {
                 @Override
+                public void beforeIdle() throws IOException {
+                    super.beforeIdle();
+                    sessionMonitor.enterStage(MonitorStage.IDLE);
+                }
+
+                @Override
+                public void afterIdle() throws IOException {
+                    sessionMonitor.leaveStage();
+                    super.afterIdle();
+                }
+
+                @Override
                 public void idle() {
                     if (cancelForKillReason != null) {
                         String msg = cancelForKillReason;
@@ -495,7 +507,7 @@ public class PostgresServerConnection extends ServerSessionBase
             // Parse as a _list_ of statements and process each in turn.
             List<StatementNode> stmts;
             try {
-                sessionMonitor.setStage(MonitorStage.PARSE);
+                sessionMonitor.enterStage(MonitorStage.PARSE);
                 stmts = parser.parseStatements(sql);
             } 
             catch (SQLParserException ex) {
@@ -505,7 +517,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 throw new SQLParserInternalException(ex);
             }
             finally {
-                sessionMonitor.setStage(null);
+                sessionMonitor.leaveStage();
             }
             for (StatementNode stmt : stmts) {
                 pstmt = generateStatement(stmt, null, null);
@@ -543,7 +555,7 @@ public class PostgresServerConnection extends ServerSessionBase
             StatementNode stmt;
             List<ParameterNode> params;
             try {
-                sessionMonitor.setStage(MonitorStage.PARSE);
+                sessionMonitor.enterStage(MonitorStage.PARSE);
                 stmt = parser.parseStatement(sql);
                 params = parser.getParameterList();
             } 
@@ -554,7 +566,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 throw new SQLParserInternalException(ex);
             }
             finally {
-                sessionMonitor.setStage(null);
+                sessionMonitor.leaveStage();
             }
             pstmt = generateStatement(stmt, params, paramTypes);
             if (statementCache != null)
@@ -835,7 +847,7 @@ public class PostgresServerConnection extends ServerSessionBase
                                                         List<ParameterNode> params,
                                                         int[] paramTypes) {
         try {
-            sessionMonitor.setStage(MonitorStage.OPTIMIZE);
+            sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
             for (PostgresStatementGenerator generator : parsedGenerators) {
                 PostgresStatement pstmt = generator.generate(this, stmt, 
                                                              params, paramTypes);
@@ -843,7 +855,7 @@ public class PostgresServerConnection extends ServerSessionBase
             }
         }
         finally {
-            sessionMonitor.setStage(null);
+            sessionMonitor.leaveStage();
         }
         throw new UnsupportedSQLException ("", stmt);
     }
@@ -861,7 +873,7 @@ public class PostgresServerConnection extends ServerSessionBase
         int rowsProcessed = 0;
         boolean success = false;
         try {
-            sessionMonitor.setStage(MonitorStage.EXECUTE);
+            sessionMonitor.enterStage(MonitorStage.EXECUTE);
             rowsProcessed = pstmt.execute(context, maxrows);
             success = true;
         }
@@ -869,7 +881,7 @@ public class PostgresServerConnection extends ServerSessionBase
             afterExecute(pstmt, localTransaction, success);
             if (persistitAdapter != null)
                 persistitAdapter.withStepChanging(true); // Keep conservative default.
-            sessionMonitor.setStage(null);
+            sessionMonitor.leaveStage();
         }
         return rowsProcessed;
     }

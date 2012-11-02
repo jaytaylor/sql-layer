@@ -198,7 +198,7 @@ public class MonitorServiceImpl implements Service, MonitorService, MonitorMXBea
     public void logQuery(SessionMonitor sessionMonitor) {
         logQuery(sessionMonitor.getSessionId(), 
                  sessionMonitor.getCurrentStatement(),
-                 sessionMonitor.getCurrentStatementDuration(),
+                 sessionMonitor.getCurrentStatementDurationMillis(),
                  sessionMonitor.getRowsProcessed());
     }
 

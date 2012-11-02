@@ -300,12 +300,12 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     @Override
     public Date getStartTime(int sessionId) {
-        return getConnection(sessionId).getSessionMonitor().getStartTime();
+        return new Date(getConnection(sessionId).getSessionMonitor().getStartTimeMillis());
     }
 
     @Override
     public long getProcessingTime(int sessionId) {
-        return getConnection(sessionId).getSessionMonitor().getNonIdleTime();
+        return getConnection(sessionId).getSessionMonitor().getNonIdleTimeNanos();
     }
 
     @Override

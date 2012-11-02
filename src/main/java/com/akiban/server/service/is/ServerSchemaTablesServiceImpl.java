@@ -174,12 +174,22 @@ public class ServerSchemaTablesServiceImpl
                 MonitorStage stage = session.getCurrentStage();
                 ValuesRow row = new ValuesRow(rowType,
                                               session.getSessionId(),
+                                              session.getCallerSessionId() < 0 ? null : session.getCallerSessionId(),
                                               null, // see below
-                                              (stage == null) ? null : stage.name(),
+                                              session.getServerType(),
                                               session.getRemoteAddress(),
+                                              (stage == null) ? null : stage.name(),
+                                              session.getStatementCount(),
                                               session.getCurrentStatement(),
+                                              null, null,
                                               ++rowCounter);
-                ((FromObjectValueSource)row.eval(1)).setExplicitly(session.getStartTime().getTime()/1000, AkType.TIMESTAMP);
+                ((FromObjectValueSource)row.eval(2)).setExplicitly(session.getStartTimeMillis()/1000, AkType.TIMESTAMP);
+                long queryStartTime = session.getCurrentStatementStartTimeMillis();
+                if (queryStartTime >= 0)
+                    ((FromObjectValueSource)row.eval(8)).setExplicitly(queryStartTime/1000, AkType.TIMESTAMP);
+                long queryEndTime = session.getCurrentStatementEndTimeMillis();
+                if (queryEndTime >= 0)
+                    ((FromObjectValueSource)row.eval(9)).setExplicitly(queryEndTime/1000, AkType.TIMESTAMP);
                 return row;
             }
         }
@@ -269,10 +279,15 @@ public class ServerSchemaTablesServiceImpl
         
         builder.userTable(SERVER_SESSIONS)
             .colBigInt("session_id", false)
+            .colBigInt("caller_session_id", true)
             .colTimestamp("start_time", false)
-            .colString("session_status", DESCRIPTOR_MAX, true)
+            .colString("server_type", IDENT_MAX, false)
             .colString("remote_address", DESCRIPTOR_MAX, true)
-            .colString("last_sql_executed", PATH_MAX, true);
+            .colString("session_status", DESCRIPTOR_MAX, true)
+            .colBigInt("query_count", false)
+            .colString("last_query_executed", PATH_MAX, true)
+            .colTimestamp("query_start_time", true)
+            .colTimestamp("query_end_time", true);
         
         builder.userTable(ERROR_CODES)
             .colString("code", 5, false)
