@@ -31,6 +31,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
@@ -66,7 +67,6 @@ import java.util.concurrent.Future;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
     /** Used by {@link #largeEnoughTable(long)} to save length computation between tests */
@@ -568,17 +568,17 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
     @Test
     public void beginWaitDropScanGroup() throws Exception {
-        beginWaitDropScan(null);
+        beginWaitDropScan(DDLOp.DROP_TABLE, null);
     }
 
     @Test
     public void beginWaitDropScanPK() throws Exception {
-        beginWaitDropScan("PRIMARY");
+        beginWaitDropScan(DDLOp.DROP_TABLE, "PRIMARY");
     }
 
     @Test
     public void beginWaitDropScanIndex() throws Exception {
-        beginWaitDropScan("name");
+        beginWaitDropScan(DDLOp.DROP_TABLE, "name");
     }
 
 
@@ -586,6 +586,42 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
     //
     // Internal
     //
+
+    private static enum DDLOp {
+        ALTER_TABLE,
+        CREATE_TABLE_INDEX,
+        CREATE_GROUP_INDEX,
+        DROP_TABLE,
+        DROP_GROUP,
+        DROP_TABLE_INDEX,
+        ;
+
+        public String inTag() {
+            return name() + ": IN";
+        }
+
+        public String outTag() {
+            return name() + ": IN";
+        }
+
+        public void run(Session session, DDLFunctions ddl) {
+            switch(this) {
+                case DROP_TABLE:
+                    ddl.dropTable(session, TABLE_NAME);
+                break;
+
+                case ALTER_TABLE:
+                case CREATE_TABLE_INDEX:
+                case CREATE_GROUP_INDEX:
+                case DROP_GROUP:
+                case DROP_TABLE_INDEX:
+                    throw new UnsupportedOperationException();
+
+                default:
+                    throw new IllegalStateException("Unknown op: " + this);
+            }
+        }
+    }
 
     private void newRowsOrdered(List<NewRow> rows, final int fieldIndex) {
         assertTrue("not enough rows: " + rows, rows.size() > 1);
@@ -695,17 +731,17 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         }
     }
 
-    private void beginWaitDropScan(String indexName) throws Exception {
+    private void beginWaitDropScan(final DDLOp op, String indexName) throws Exception {
         if(isDDLLockOn()) {
             return;
         }
 
-        final int tableId = largeEnoughTable(100);
+        final int tableId = tableWithTwoRows();
         final int indexId = (indexName == null) ? 0 : ddl().getUserTable(session(), TABLE_NAME).getIndex(indexName).getIndexId();
 
         DelayScanCallableBuilder callableBuilder = new DelayScanCallableBuilder(aisGeneration(), tableId, indexId)
                 .topOfLoopDelayer(1, 100, "SCAN: FIRST")
-                .initialDelay(1000)
+                .initialDelay(2000)
                 .markFinish(true)
                 .markOpenCursor(false)
                 .withFullRowOutput(false)
@@ -714,23 +750,24 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         TimedCallable<Void> dropCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(final TimePoints timePoints, Session session) throws Exception {
+                Timing.sleep(500);
                 ConcurrencyAtomicsDXLService.hookNextDropTable(
                         session,
                         new Runnable() {
                             @Override
                             public void run() {
-                                timePoints.mark("DROP: IN");
+                                timePoints.mark(op.inTag());
                             }
                         },
                         new Runnable() {
                             @Override
                             public void run() {
-                                timePoints.mark("DROP: OUT");
+                                timePoints.mark(op.outTag());
                                 Timing.sleep(50);
                             }
                         }
                 );
-                ddl().dropTable(session, TABLE_NAME); // will take ~5 seconds
+                op.run(session, ddl());
                 assertFalse(
                         "drop table hook still installed",
                         ConcurrencyAtomicsDXLService.isDropTableHookInstalled(session)
@@ -758,8 +795,8 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
         new TimePointsComparison(scanResult, updateResult).verify(
                 "TXN: BEGAN",
-                "DROP: IN",
-                "DROP: OUT",
+                op.inTag(),
+                op.outTag(),
                 "SCAN: START",
                 "(SCAN: FIRST)>",
                 "<(SCAN: FIRST)",
