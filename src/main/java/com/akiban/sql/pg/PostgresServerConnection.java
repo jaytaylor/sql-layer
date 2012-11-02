@@ -107,6 +107,7 @@ public class PostgresServerConnection extends ServerSessionBase
         this.secret = secret;
         this.sessionMonitor = new ServerSessionMonitor(SERVER_TYPE, sessionId);
         sessionMonitor.setRemoteAddress(socket.getInetAddress().getHostAddress());
+        reqs.monitor().registerSessionMonitor(sessionMonitor);
     }
 
     public void start() {
@@ -298,6 +299,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 transaction = null;
             }
             server.removeConnection(sessionId);
+            reqs.monitor().deregisterSessionMonitor(sessionMonitor);
         }
     }
 

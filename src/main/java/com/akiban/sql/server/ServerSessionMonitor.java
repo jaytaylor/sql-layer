@@ -93,8 +93,8 @@ public class ServerSessionMonitor implements SessionMonitor {
         long now = System.nanoTime();
         if (currentStage != null) {
             long delta = currentStageStartNanos - now;
-            lastNanos[stage.ordinal()] = delta;
-            totalNanos[stage.ordinal()] += delta;
+            lastNanos[currentStage.ordinal()] = delta;
+            totalNanos[currentStage.ordinal()] += delta;
         }
         currentStage = stage;
         currentStageStartNanos = now;
