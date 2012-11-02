@@ -35,12 +35,6 @@ import com.akiban.server.types3.pvalue.PValueSource;
 
 public final class TComparisonExpression extends TComparisonExpressionBase {
 
-    public TComparisonExpression(TPreparedExpression arg1, Comparison comparison, TPreparedExpression arg2) {
-        super(arg1, arg2);
-        this.comparison = comparison;
-        this.collator = null;
-    }
-
     @Override
     protected boolean doEvaluate(TInstance leftInstance, PValueSource leftSource,
                               TInstance rightInstance, PValueSource rightSource)
@@ -86,6 +80,10 @@ public final class TComparisonExpression extends TComparisonExpressionBase {
     @Override
     protected String comparisonName() {
         return comparison.toString();
+    }
+
+    public TComparisonExpression(TPreparedExpression left, Comparison comparison, TPreparedExpression right) {
+        this(left, comparison, right, null);
     }
 
     public TComparisonExpression(TPreparedExpression left, Comparison comparison, TPreparedExpression right,
