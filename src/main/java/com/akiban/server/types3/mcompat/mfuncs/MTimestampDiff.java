@@ -233,7 +233,7 @@ public class MTimestampDiff extends TScalarBase
         return TOverloadResult.fixed(MNumeric.BIGINT, 21);
     }
     
-    // -------- static members --------------
+    // ------------ static members --------------
     private static final long[] MILLIS_DIV = new long[6];
     private static final int[] MONTH_DIV = {12, 4, 1};
 

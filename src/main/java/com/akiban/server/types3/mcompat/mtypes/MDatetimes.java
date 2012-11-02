@@ -765,21 +765,33 @@ public class MDatetimes
     public static long[] decodeTime(long val)
     {
         int sign;
-        
         if (val < 0)
             val *= sign = -1;
         else
             sign = 1;
-
-        return new long[]
-        {
+        
+         long ret[] =  new long[]
+         {
             1970,
             1,
             1,
-            sign * val / DATETIME_HOUR_SCALE,
+            val / DATETIME_HOUR_SCALE,
             val / DATETIME_MIN_SCALE % 100,
             val % 100
-        };
+         };
+   
+         if (sign < 0)
+         {
+             int ind = HOUR_INDEX;
+             // find the first element that is NOT zero
+             while (ret[ind] == 0 && ind < ret.length)
+                ++ind; 
+
+             // and place the sign on it!
+            if (ind < ret.length)
+                ret[ind] *= -1;
+         }        
+         return ret;
     }
     
     /**
@@ -800,9 +812,19 @@ public class MDatetimes
     
     public static int encodeTime(long val[])
     {
+        int n = HOUR_INDEX;
+        int sign = 1;
+        
+        while (n < val.length && val[n] >= 0)
+            ++n;
+        
+        if (n < val.length)
+            val[n] = val[n] * (sign = -1);
+
+        
         return (int)(val[HOUR_INDEX] * DATETIME_HOUR_SCALE
                     + val[MIN_INDEX] * DATETIME_MIN_SCALE
-                    + val[SEC_INDEX]);
+                    + val[SEC_INDEX]) * sign;
     }
     
     public static int encodeTime(long hr, long min, long sec, TExecutionContext context)
@@ -814,6 +836,10 @@ public class MDatetimes
         
         if (hr < 0)
             hr *= mul = -1;
+        else if (min < 0)
+            min *= mul = -1;
+        else if (sec < 0)
+            sec *= mul = -1;
         else
             mul = 1;
         
@@ -920,12 +946,33 @@ public class MDatetimes
         return ymdhms != null && isValidDayMonth(ymdhms) && isValidHrMinSec(ymdhms, true);
     }
     
-    public static boolean isValidHrMinSec (long ymdhms[], boolean shortTime)
+    public static boolean isValidHrMinSec (long hms[], boolean shortTime)
     {
-        return  (shortTime ? ymdhms[HOUR_INDEX] >= 0  : true) // if time portion is from a DATETIME, hour should be non-neg
-                && (shortTime ? ymdhms[HOUR_INDEX] < 24 : true) // if time portion is from a DATETIME, hour should be less than 24
-                && ymdhms[MIN_INDEX] >= 0 && ymdhms[MIN_INDEX] < 60 
-                && ymdhms[SEC_INDEX] >= 0 && ymdhms[SEC_INDEX] < 60;
+        // if time is from a DATETIME
+        if (shortTime)
+        {
+            return hms[HOUR_INDEX] >= 0 && hms[HOUR_INDEX] < 24
+                    && hms[MIN_INDEX] >= 0 && hms[MIN_INDEX] < 60 
+                    && hms[SEC_INDEX] >= 0 && hms[SEC_INDEX] < 60;
+            
+        }
+        else // if TIME is NOT from a DATETIME
+        {
+            // hh:mm:ss
+            // One (and only one) of these three parts can be negative
+            // and that would be the first part that is non-zero
+            //
+            // For eg., -12:13:12, or 00:-13:12 or 00:00:-12
+            //
+            // This is enforced by the decodeTime method, but just check to be sure!
+            assert hms[HOUR_INDEX] >= 0 && hms[MIN_INDEX] >= 0 && hms[SEC_INDEX] >= 0
+                   || ((hms[HOUR_INDEX] < 0) ^ 
+                       (hms[MIN_INDEX] < 0) ^ 
+                       (hms[SEC_INDEX] < 0))
+                    : "TIME value probably decoded incorrectly!";
+            
+            return hms[MIN_INDEX] < 60 && hms[SEC_INDEX] < 60;
+        }
     }
  
     public static boolean isValidHrMinSec(int hr, int min, int sec, boolean shortTime)

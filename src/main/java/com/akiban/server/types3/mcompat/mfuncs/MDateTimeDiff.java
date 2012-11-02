@@ -218,7 +218,7 @@ public class MDateTimeDiff
                 return new int[] {1};
             }
         },
-        
+
         // UNSUPPORTED cases
         new RejectedCase(ArgType.DATE, ArgType.DATETIME, "TIMEDIFF"),
         new RejectedCase(ArgType.DATE, ArgType.TIME, "TIMEDIFF"),
@@ -464,9 +464,18 @@ public class MDateTimeDiff
     
     private static long hmsToMillis(long hms[])
     {
-        return hms[HOUR_INDEX] * MILLIS_PER_HOUR
+        int n = HOUR_INDEX;
+        int sign = 1;
+        
+        while (n < hms.length && hms[n] >= 0)
+            ++n;
+        
+        if (n < hms.length)
+            hms[n] = hms[n] * (sign = -1);
+        
+        return sign * (hms[HOUR_INDEX] * MILLIS_PER_HOUR
                 + hms[MIN_INDEX] * MILLIS_PER_MIN
-                + hms[SEC_INDEX] * MILLIS_PER_SEC;
+                + hms[SEC_INDEX] * MILLIS_PER_SEC);
     }
     
     private static final long MILLIS_PER_SEC = 1000L;
