@@ -42,6 +42,7 @@ import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TKeyComparable;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.akfuncs.AkIfElse;
 import com.akiban.server.types3.common.types.StringAttribute;
@@ -49,6 +50,7 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.texpressions.TCastExpression;
 import com.akiban.server.types3.texpressions.TComparisonExpression;
+import com.akiban.server.types3.texpressions.TComparisonExpressionBase;
 import com.akiban.server.types3.texpressions.TInExpression;
 import com.akiban.server.types3.texpressions.TNullExpression;
 import com.akiban.server.types3.texpressions.TPreparedBoundField;
@@ -179,8 +181,14 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     }
 
     @Override
-    protected TPreparedExpression compare(TPreparedExpression left, Comparison comparison, TPreparedExpression right) {
-        return new TComparisonExpression(left, comparison, right);
+    protected TPreparedExpression compare(TPreparedExpression left, ComparisonCondition comparison, TPreparedExpression right) {
+        TKeyComparable keyComparable = comparison.getKeyComparable();
+        if (keyComparable != null) {
+            return new TKeyComparisonPreparation(left, right);
+        }
+        else {
+            return new TComparisonExpression(left, comparison.getOperation(), right);
+        }
     }
 
     @Override
@@ -262,5 +270,23 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     @Override
     protected Logger logger() {
         return logger;
+    }
+
+    private class TKeyComparisonPreparation extends TComparisonExpressionBase {
+
+        private TKeyComparisonPreparation(TPreparedExpression left, TPreparedExpression right) {
+            super(left, right);
+        }
+
+        @Override
+        protected boolean doEvaluate(TInstance leftInstance, PValueSource left, TInstance rightInstance,
+                                     PValueSource right) {
+            throw new UnsupportedOperationException(); // TODO
+        }
+
+        @Override
+        protected String comparisonName() {
+            return "==";
+        }
     }
 }

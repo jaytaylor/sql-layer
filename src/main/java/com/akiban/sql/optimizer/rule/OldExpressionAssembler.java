@@ -178,8 +178,8 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
     }
 
     @Override
-    protected Expression compare(Expression left, Comparison comparison, Expression right) {
-        return Expressions.compare(left, comparison, right);
+    protected Expression compare(Expression left, ComparisonCondition comparison, Expression right) {
+        return Expressions.compare(left, comparison.getOperation(), right);
     }
 
     @Override
