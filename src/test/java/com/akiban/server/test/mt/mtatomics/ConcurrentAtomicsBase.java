@@ -157,6 +157,10 @@ class ConcurrentAtomicsBase extends MTBase {
         return ids;
     }
 
+    protected static Object[] newChildCols() {
+        return new Object[] { 100L, "BOBSLED", 1000L };
+    }
+
     protected int tableWithTwoRows() throws InvalidOperationException {
         int id = createTable(SCHEMA, TABLE, "id int not null primary key", "name varchar(32)");
         createIndex(SCHEMA, TABLE, "name", "name");

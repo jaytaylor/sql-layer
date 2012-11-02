@@ -69,6 +69,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import static com.akiban.server.test.mt.mtatomics.DelayableIUDCallable.IUDType;
+
 public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
     /** Used by {@link #largeEnoughTable(long)} to save length computation between tests */
     private static long lastLargeEnoughMS = 0;
@@ -702,6 +704,11 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         beginWaitDDLThenScan(DDLOp.RENAME_TABLE, "name");
     }
 
+    @Test
+    public void insertWithConcurrentDropTable() throws Exception {
+        dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.DROP_TABLE);
+    }
+
 
     //
     // Internal
@@ -932,21 +939,22 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         }
 
         final int tableId = createJoinedTablesWithTwoRowsEach().get(1);
+        final int indexId = (indexName == null) ? 0 : indexId(SCHEMA, TABLE, indexName);
         if(op == DDLOp.DROP_GROUP_INDEX) {
             DDLOp.CREATE_GROUP_INDEX.run(session(), ddl());
             updateAISGeneration();
         }
-        final int indexId = (indexName == null) ? 0 : ddl().getUserTable(session(), TABLE_NAME).getIndex(indexName).getIndexId();
 
-        DelayScanCallableBuilder callableBuilder = new DelayScanCallableBuilder(aisGeneration(), tableId, indexId)
+        DelayableScanCallable scanCallable = new DelayScanCallableBuilder(aisGeneration(), tableId, indexId)
                 .topOfLoopDelayer(1, 100, "SCAN: FIRST")
                 .initialDelay(1500)
                 .markFinish(true)
                 .markOpenCursor(false)
                 .withFullRowOutput(false)
-                .withExplicitTxn(true);
-        DelayableScanCallable scanCallable = callableBuilder.get();
-        TimedCallable<Void> dropCallable = new TimedCallable<Void>() {
+                .withExplicitTxn(true)
+                .get();
+
+        TimedCallable<Void> ddlCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(final TimePoints timePoints, Session session) throws Exception {
                 Timing.sleep(500);
@@ -959,19 +967,10 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
         ExecutorService executor = Executors.newFixedThreadPool(2);
         Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
-        Future<TimedResult<Void>> updateFuture = executor.submit(dropCallable);
+        Future<TimedResult<Void>> ddlFuture = executor.submit(ddlCallable);
 
-        try {
-            scanFuture.get();
-            // If exception is not thrown, TimePoint comparison will catch it
-        } catch (ExecutionException e) {
-            throw new RuntimeException("Unexpected scan exception", e);
-        }
-
-        // If exception is expected then scanFuture.get() would throw, so use ofNull
-        TimedResult<List<NewRow>> scanResult = scanFuture.get();
-        TimedResult<Void> updateResult = updateFuture.get();
-
+        TimedResult scanResult = scanFuture.get();
+        TimedResult updateResult = ddlFuture.get();
         new TimePointsComparison(scanResult, updateResult).verify(
                 "TXN: BEGAN",
                 op.inTag(),
@@ -983,6 +982,47 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 "TXN: COMMITTED"
         );
         assertTrue("rows were expected!", scanCallable.getRowCount() > 0);
+    }
+
+    private void dmlWaitAndDDL(IUDType iudType, Object[] oldCols, Object[] newCols, final DDLOp ddlOp) throws Exception {
+        if(isDDLLockOn()) {
+            return;
+        }
+
+        final int POST_DML_WAIT = 1500;
+        final int tableId = createJoinedTablesWithTwoRowsEach().get(1);
+        final NewRow oldRow = (oldCols != null) ? createNewRow(tableId, oldCols) : null;
+        final NewRow newRow = (newCols != null) ? createNewRow(tableId, newCols) : null;
+
+        TimedCallable<Void> dmlCallable = new DelayableIUDCallable(iudType, oldRow, newRow, 0, 0, POST_DML_WAIT, 0);
+        TimedCallable<Void> ddlCallable = new TimedCallable<Void>() {
+            @Override
+            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
+                Timing.sleep(500);
+                timePoints.mark(ddlOp.inTag());
+                ddlOp.run(session, ddl());
+                timePoints.mark(ddlOp.outTag());
+                return null;
+            }
+        };
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        Future<TimedResult<Void>> dmlFuture = executor.submit(dmlCallable);
+        Future<TimedResult<Void>> ddlFuture = executor.submit(ddlCallable);
+
+        TimedResult<Void> scanResult = dmlFuture.get();
+        TimedResult<Void> updateResult = ddlFuture.get();
+        new TimePointsComparison(scanResult, updateResult).verify(
+                iudType.startMark(),
+                iudType.inMark(),
+                ddlOp.inTag(),
+                iudType.outMark(),
+                iudType.finishMark(),
+                ddlOp.outTag()
+        );
+
+        //assertEquals("rows scanned (in order)", scanCallableExpected, scanResult.getItem());
+        //expectFullRows(tableId, endStateExpected.toArray(new NewRow[endStateExpected.size()]));
     }
 
     private Object[] largeEnoughNewRow(int id, int pid, String nameFormat) {
