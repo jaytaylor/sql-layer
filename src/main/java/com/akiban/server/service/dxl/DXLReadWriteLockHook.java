@@ -162,6 +162,9 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
 
     private void unlockSchema(Session session, Throwable t)
     {
+        if(!DDL_LOCK) {
+            return;
+        }
         Lock lock = session.pop(SCHEMA_LOCK_KEY);
         if (lock == null) {
             Boolean writeLockWasTaken = session.remove(WRITE_LOCK_TAKEN);
