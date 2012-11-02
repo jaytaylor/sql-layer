@@ -74,6 +74,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import static com.akiban.server.test.mt.mtatomics.DelayableIUDCallable.IUDType;
+import static org.junit.Assert.fail;
 
 public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
     /** Used by {@link #largeEnoughTable(long)} to save length computation between tests */
@@ -1069,19 +1070,9 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
             return;
         }
 
-        final int colCount;
-        if(oldCols != null && newCols != null) {
-            colCount = oldCols.length;
-            assertEquals("Old and new col count", oldCols.length, newCols.length);
-        } else if(oldCols != null) {
-            colCount = oldCols.length;
-        } else {
-            colCount = newCols.length;
-        }
-
         final int POST_DML_WAIT = 1500;
-        final List<Integer> tIds = createJoinedTablesWithTwoRowsEach();
-        final int tableId = (colCount == 2) ? tIds.get(0) : tIds.get(1);
+        final int tableIndex = inferParentOrChild(oldCols, newCols);
+        final int tableId = createJoinedTablesWithTwoRowsEach().get(tableIndex);
 
         if(ddlOp == DDLOp.DROP_GROUP_INDEX) {
             DDLOp.CREATE_GROUP_INDEX.run(session(), ddl());
@@ -1132,19 +1123,9 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
             return;
         }
 
-        final int colCount;
-        if(oldCols != null && newCols != null) {
-            colCount = oldCols.length;
-            assertEquals("Old and new col count", oldCols.length, newCols.length);
-        } else if(oldCols != null) {
-            colCount = oldCols.length;
-        } else {
-            colCount = newCols.length;
-        }
-
         final int DDL_PRE_COMMIT_WAIT = 1500;
-        final List<Integer> tIds = createJoinedTablesWithTwoRowsEach();
-        final int tableId = (colCount == 2) ? tIds.get(0) : tIds.get(1);
+        final int tableIndex = inferParentOrChild(oldCols, newCols);
+        final int tableId = createJoinedTablesWithTwoRowsEach().get(tableIndex);
 
         if(ddlOp == DDLOp.DROP_GROUP_INDEX) {
             DDLOp.CREATE_GROUP_INDEX.run(session(), ddl());
@@ -1190,6 +1171,22 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         };
 
         new TimePointsComparison(TimedResult.ofNull(dmlCallable.getTimePoints()), ddlResult).verify(expected);
+    }
+
+    private int inferParentOrChild(Object[] oldCols, Object[] newCols) {
+        final int colCount;
+        if(oldCols == null && newCols == null) {
+            fail("Both old and new columns null");
+        }
+        if(oldCols != null && newCols != null) {
+            assertEquals("Column count", oldCols.length, newCols.length);
+            colCount = oldCols.length;
+        } else if(oldCols != null) {
+            colCount = oldCols.length;
+        } else {
+            colCount = newCols.length;
+        }
+        return (colCount == 2) ? 0 /*parent*/ : 1;
     }
 
     private void delayInterestingDDLCommit(Session session, final AtomicInteger fires, final long delay) {
