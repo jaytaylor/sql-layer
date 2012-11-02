@@ -146,6 +146,10 @@ class ConcurrentAtomicsBase extends MTBase {
         );
     }
 
+    protected static Object[] newParentCols() {
+        return new Object[] { 100L, 10000L };
+    }
+
     protected static Object[] newChildCols() {
         return new Object[] { 100L, "BOBSLED", 1000L };
     }

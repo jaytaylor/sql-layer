@@ -730,12 +730,32 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
     public void insertWithConcurrentCreateTableIndex() throws Exception {
         dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.CREATE_TABLE_INDEX);
     }
-// create GI
+
+    @Test
+    public void insertChildWithConcurrentCreateGroupIndex() throws Exception {
+        dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.CREATE_GROUP_INDEX);
+    }
+
+    @Test
+    public void insertParentWithConcurrentCreateGroupIndex() throws Exception {
+        dmlWaitAndDDL(IUDType.INSERT, null, newParentCols(), DDLOp.CREATE_GROUP_INDEX);
+    }
+
     @Test
     public void insertWithConcurrentDropTableIndex() throws Exception {
         dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.DROP_TABLE_INDEX);
     }
-// drop GI
+
+    @Test
+    public void insertChildWithConcurrentDropGroupIndex() throws Exception {
+        dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.DROP_GROUP_INDEX);
+    }
+
+    @Test
+    public void insertParentWithConcurrentDropGroupIndex() throws Exception {
+        dmlWaitAndDDL(IUDType.INSERT, null, newParentCols(), DDLOp.DROP_GROUP_INDEX);
+    }
+
     @Test
     public void insertWithConcurrentDropGroup() throws Exception {
         dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.DROP_GROUP);
@@ -1036,8 +1056,25 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
             return;
         }
 
+        final int colCount;
+        if(oldCols != null && newCols != null) {
+            colCount = oldCols.length;
+            assertEquals("Old and new col count", oldCols.length, newCols.length);
+        } else if(oldCols != null) {
+            colCount = oldCols.length;
+        } else {
+            colCount = newCols.length;
+        }
+
         final int POST_DML_WAIT = 1500;
-        final int tableId = createJoinedTablesWithTwoRowsEach().get(1);
+        final List<Integer> tIds = createJoinedTablesWithTwoRowsEach();
+        final int tableId = (colCount == 2) ? tIds.get(0) : tIds.get(1);
+
+        if(ddlOp == DDLOp.DROP_GROUP_INDEX) {
+            DDLOp.CREATE_GROUP_INDEX.run(session(), ddl());
+            updateAISGeneration();
+        }
+
         final NewRow oldRow = (oldCols != null) ? createNewRow(tableId, oldCols) : null;
         final NewRow newRow = (newCols != null) ? createNewRow(tableId, newCols) : null;
 
