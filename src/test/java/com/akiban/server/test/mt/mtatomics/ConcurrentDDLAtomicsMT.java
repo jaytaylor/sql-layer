@@ -573,12 +573,27 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
     @Test
     public void beginWaitDropScanPK() throws Exception {
-        beginWaitDropScan(DDLOp.DROP_TABLE, "PRIMARY");
+        beginWaitDropScan(DDLOp.DROP_TABLE, Index.PRIMARY_KEY_CONSTRAINT);
     }
 
     @Test
     public void beginWaitDropScanIndex() throws Exception {
         beginWaitDropScan(DDLOp.DROP_TABLE, "name");
+    }
+
+    @Test
+    public void beginWaitCreateIndexScanGrop() throws Exception {
+        beginWaitDropScan(DDLOp.CREATE_TABLE_INDEX, null);
+    }
+
+    @Test
+    public void beginWaitCreateIndexScanPK() throws Exception {
+        beginWaitDropScan(DDLOp.CREATE_TABLE_INDEX, Index.PRIMARY_KEY_CONSTRAINT);
+    }
+
+    @Test
+    public void beginWaitCreateIndexScanOtherIndex() throws Exception {
+        beginWaitDropScan(DDLOp.CREATE_TABLE_INDEX, "name");
     }
 
 
@@ -591,9 +606,10 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         ALTER_TABLE,
         CREATE_TABLE_INDEX,
         CREATE_GROUP_INDEX,
+        DROP_TABLE_INDEX,
+        DROP_GROUP_INDEX,
         DROP_TABLE,
         DROP_GROUP,
-        DROP_TABLE_INDEX,
         ;
 
         public String inTag() {
@@ -610,11 +626,19 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                     ddl.dropTable(session, TABLE_NAME);
                 break;
 
+                case CREATE_TABLE_INDEX: {
+                    NewAISBuilder builder = AISBBasedBuilder.create();
+                    builder.userTable(TABLE_NAME).colLong("extra").key("extra", "extra");
+                    Index index = builder.ais().getUserTable(TABLE_NAME).getIndex("extra");
+                    ddl.createIndexes(session, Collections.singleton(index));
+                }
+                break;
+
+                case DROP_TABLE_INDEX:
                 case ALTER_TABLE:
-                case CREATE_TABLE_INDEX:
                 case CREATE_GROUP_INDEX:
                 case DROP_GROUP:
-                case DROP_TABLE_INDEX:
+                case DROP_GROUP_INDEX:
                     throw new UnsupportedOperationException();
 
                 default:
@@ -741,7 +765,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
         DelayScanCallableBuilder callableBuilder = new DelayScanCallableBuilder(aisGeneration(), tableId, indexId)
                 .topOfLoopDelayer(1, 100, "SCAN: FIRST")
-                .initialDelay(2000)
+                .initialDelay(1500)
                 .markFinish(true)
                 .markOpenCursor(false)
                 .withFullRowOutput(false)
@@ -751,27 +775,9 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
             @Override
             protected Void doCall(final TimePoints timePoints, Session session) throws Exception {
                 Timing.sleep(500);
-                ConcurrencyAtomicsDXLService.hookNextDropTable(
-                        session,
-                        new Runnable() {
-                            @Override
-                            public void run() {
-                                timePoints.mark(op.inTag());
-                            }
-                        },
-                        new Runnable() {
-                            @Override
-                            public void run() {
-                                timePoints.mark(op.outTag());
-                                Timing.sleep(50);
-                            }
-                        }
-                );
+                timePoints.mark(op.inTag());
                 op.run(session, ddl());
-                assertFalse(
-                        "drop table hook still installed",
-                        ConcurrencyAtomicsDXLService.isDropTableHookInstalled(session)
-                );
+                timePoints.mark(op.outTag());
                 return null;
             }
         };

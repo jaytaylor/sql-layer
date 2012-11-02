@@ -103,11 +103,11 @@ class ConcurrentAtomicsBase extends MTBase {
     }
 
     protected int tableWithTwoRows() throws InvalidOperationException {
-        int id = createTable(SCHEMA, TABLE, "id int not null primary key", "name varchar(32)");
+        int id = createTable(SCHEMA, TABLE, "id int not null primary key", "name varchar(32)", "extra int");
         createIndex(SCHEMA, TABLE, "name", "name");
         writeRows(
-            createNewRow(id, 1L, "the snowman"),
-            createNewRow(id, 2L, "mr melty")
+            createNewRow(id, 1L, "the snowman", 10L),
+            createNewRow(id, 2L, "mr melty", 20L)
         );
         return id;
     }
