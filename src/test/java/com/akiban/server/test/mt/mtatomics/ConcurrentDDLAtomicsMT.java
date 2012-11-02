@@ -569,6 +569,9 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
     // Tests below assume DML and DDL can be concurrent (and exit quietly if not possible)
     //
 
+    //
+    // Section 1: Test all types of DDL while a transaction doing a scan is open
+    //
     @Test
     public void beginWaitDropScanGroup() throws Exception {
         beginWaitDDLThenScan(DDLOp.DROP_TABLE, null);
@@ -704,9 +707,23 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         beginWaitDDLThenScan(DDLOp.RENAME_TABLE, "name");
     }
 
+    //
+    // Section 2: Test IUD against a concurrent DROP, then I against all other DDLs
+    //
+
     @Test
     public void insertWithConcurrentDropTable() throws Exception {
         dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.DROP_TABLE);
+    }
+
+    @Test
+    public void updateWithConcurrentDropTable() throws Exception {
+        dmlWaitAndDDL(IUDType.UPDATE, oldChildCols(), newChildCols(), DDLOp.DROP_TABLE);
+    }
+
+    @Test
+    public void deleteWithConcurrentDropTable() throws Exception {
+        dmlWaitAndDDL(IUDType.DELETE, oldChildCols(), null, DDLOp.DROP_TABLE);
     }
 
 
@@ -981,7 +998,8 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 "SCAN: FINISH",
                 "TXN: COMMITTED"
         );
-        assertTrue("rows were expected!", scanCallable.getRowCount() > 0);
+
+        assertEquals("Scanned rows count", 2, scanCallable.getRowCount());
     }
 
     private void dmlWaitAndDDL(IUDType iudType, Object[] oldCols, Object[] newCols, final DDLOp ddlOp) throws Exception {
@@ -994,7 +1012,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         final NewRow oldRow = (oldCols != null) ? createNewRow(tableId, oldCols) : null;
         final NewRow newRow = (newCols != null) ? createNewRow(tableId, newCols) : null;
 
-        TimedCallable<Void> dmlCallable = new DelayableIUDCallable(iudType, oldRow, newRow, 0, 0, POST_DML_WAIT, 0);
+        TimedCallable<Void> dmlCallable = new DelayableIUDCallable(iudType, oldRow, newRow, 0, 0, POST_DML_WAIT);
         TimedCallable<Void> ddlCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
@@ -1017,12 +1035,8 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 iudType.inMark(),
                 ddlOp.inTag(),
                 iudType.outMark(),
-                iudType.finishMark(),
                 ddlOp.outTag()
         );
-
-        //assertEquals("rows scanned (in order)", scanCallableExpected, scanResult.getItem());
-        //expectFullRows(tableId, endStateExpected.toArray(new NewRow[endStateExpected.size()]));
     }
 
     private Object[] largeEnoughNewRow(int id, int pid, String nameFormat) {

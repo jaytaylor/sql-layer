@@ -55,10 +55,6 @@ class DelayableIUDCallable extends TimedCallable<Void> {
         public String outMark() {
             return name() + "<";
         }
-
-        public String finishMark() {
-            return name() + ": START";
-        }
     }
 
     private final IUDType type;
@@ -67,15 +63,14 @@ class DelayableIUDCallable extends TimedCallable<Void> {
     private final long startDelay;
     private final long preDelay;
     private final long postDelay;
-    private final long finishDelay;
 
     public DelayableIUDCallable(IUDType type, NewRow oldRow, NewRow newRow,
-                                long startDelay, long preDelay, long postDelay, long finishDelay) {
+                                long startDelay, long preDelay, long postDelay) {
         if(type == IUDType.INSERT || type == IUDType.UPDATE) {
             assertNotNull("Row to insert", newRow);
         }
         if(type == IUDType.DELETE | type == IUDType.UPDATE) {
-            assertNotNull("Row to change", newRow);
+            assertNotNull("Row to change", oldRow);
         }
         this.type = type;
         this.oldRow = oldRow;
@@ -83,7 +78,6 @@ class DelayableIUDCallable extends TimedCallable<Void> {
         this.startDelay = startDelay;
         this.preDelay = preDelay;
         this.postDelay = postDelay;
-        this.finishDelay = finishDelay;
     }
 
     @Override
@@ -125,8 +119,6 @@ class DelayableIUDCallable extends TimedCallable<Void> {
             throw e;
         }
 
-        Timing.sleep(finishDelay);
-        timePoints.mark(type.finishMark());
         return null;
     }
 

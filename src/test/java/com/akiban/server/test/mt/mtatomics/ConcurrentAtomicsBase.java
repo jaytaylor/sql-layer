@@ -146,19 +146,23 @@ class ConcurrentAtomicsBase extends MTBase {
         );
     }
 
+    protected static Object[] newChildCols() {
+        return new Object[] { 100L, "BOBSLED", 1000L };
+    }
+
+    protected static Object[] oldChildCols() {
+        return new Object[] { 1L, "the snowman", 10L };
+    }
+
     protected List<Integer> createJoinedTablesWithTwoRowsEach() {
         List<Integer> ids = createJoinedTables(false, false, false);
         writeRows(
                 createNewRow(ids.get(0), 1L, 100L),
-                createNewRow(ids.get(1), 1L, "the snowman", 10L),
+                createNewRow(ids.get(1), oldChildCols()),
                 createNewRow(ids.get(0), 2L, 200L),
                 createNewRow(ids.get(1), 2L, "mr melty", 20L)
         );
         return ids;
-    }
-
-    protected static Object[] newChildCols() {
-        return new Object[] { 100L, "BOBSLED", 1000L };
     }
 
     protected int tableWithTwoRows() throws InvalidOperationException {
