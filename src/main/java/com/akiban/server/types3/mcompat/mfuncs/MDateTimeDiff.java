@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.texpressions.TScalarBase;
 import com.akiban.server.error.AkibanInternalException;
@@ -36,7 +37,6 @@ import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
@@ -75,7 +75,7 @@ public class MDateTimeDiff
                 return new int[] {0};
             }
         },
-        new DateTimeDiff(ArgType.TIME, ArgType.VARCHAR, "TIMEDIFF")
+        new DateTimeDiff(ArgType.TIME, ArgType.VARCHAR, "TIMEDIFF", true, false)
         {
             @Override
             int compute(long[] arg0, long[] arg1, TExecutionContext context)
@@ -86,10 +86,10 @@ public class MDateTimeDiff
             @Override
             public int[] getPriorities()
             {
-                return new int[] {0};
+                return new int[] {1};
             }
         },
-        new DateTimeDiff(ArgType.VARCHAR, ArgType.TIME, "TIMEDIFF")
+        new DateTimeDiff(ArgType.VARCHAR, ArgType.TIME, "TIMEDIFF", false, true)
         {
             @Override
             int compute(long[] arg0, long[] arg1, TExecutionContext context)
@@ -100,7 +100,7 @@ public class MDateTimeDiff
             @Override
             public int[] getPriorities()
             {
-                return new int[] {0};
+                return new int[] {1};
             }
         },
         new DateTimeDiff(ArgType.VARCHAR, ArgType.VARCHAR, "TIMEDIFF")
@@ -162,8 +162,13 @@ public class MDateTimeDiff
                 return new int[] {0};
             }
         },
-        new DateTimeDiff(ArgType.DATETIME, ArgType.VARCHAR, "TIMEDIFF")
+        new DateTimeDiff(ArgType.DATETIME, ArgType.VARCHAR, "TIMEDIFF", true, false)
         {
+            protected void buildInputSets(TInputSetBuilder bd)
+            {
+                bd.covers(MDatetimes.DATETIME, 0).covers(MString.VARCHAR, 1);
+            }
+            
             @Override
             int compute(long[] arg0, long[] arg1, TExecutionContext context)
             {
@@ -173,10 +178,10 @@ public class MDateTimeDiff
             @Override
             public int[] getPriorities()
             {
-                return new int[] {0};
+                return new int[] {1};
             }
         },
-        new DateTimeDiff(ArgType.VARCHAR, ArgType.DATETIME, "TIMEDIFF")
+        new DateTimeDiff(ArgType.VARCHAR, ArgType.DATETIME, "TIMEDIFF", false, true)
         {
             @Override
             int compute(long[] arg0, long[] arg1, TExecutionContext context)
@@ -187,10 +192,10 @@ public class MDateTimeDiff
             @Override
             public int[] getPriorities()
             {
-                return new int[] {0};
+                return new int[] {1};
             }
         },
-        new DateTimeDiff(ArgType.TIMESTAMP, ArgType.VARCHAR, "TIMEDIFF")
+        new DateTimeDiff(ArgType.TIMESTAMP, ArgType.VARCHAR, "TIMEDIFF", true, false)
         {
             @Override
             int compute(long[] arg0, long[] arg1, TExecutionContext context)
@@ -201,10 +206,10 @@ public class MDateTimeDiff
             @Override
             public int[] getPriorities()
             {
-                return new int[] {0};
+                return new int[] {1};
             }
         },
-        new DateTimeDiff(ArgType.VARCHAR, ArgType.TIMESTAMP, "TIMEDIFF")
+        new DateTimeDiff(ArgType.VARCHAR, ArgType.TIMESTAMP, "TIMEDIFF", false, true)
         {
             @Override
             int compute(long[] arg0, long[] arg1, TExecutionContext context)
@@ -215,7 +220,7 @@ public class MDateTimeDiff
             @Override
             public int[] getPriorities()
             {
-                return new int[] {0};
+                return new int[] {1};
             }
         },
         
@@ -244,7 +249,7 @@ public class MDateTimeDiff
             @Override
             public int[] getPriorities()
             {
-                return new int[] {1};
+                return new int[] {2};
             }
         },
             
