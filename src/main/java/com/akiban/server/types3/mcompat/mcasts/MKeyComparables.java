@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.mcompat.mcasts;
 
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TComparison;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TKeyComparable;
@@ -33,16 +34,46 @@ import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.google.common.primitives.Longs;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import static com.akiban.server.types3.pvalue.PValueSources.getLong;
+
 public final class MKeyComparables {
 
-    public static final TKeyComparable INT_and_INT_UNSIGNED = new TKeyComparable(MNumeric.INT, MNumeric.INT_UNSIGNED,
-            new TComparison() {
-                @Override
-                public int compare(TInstance leftInstance, PValueSource left, TInstance rightInstance,
-                                   PValueSource right) {
-                    return Longs.compare(left.getInt32(), right.getInt64());
-                }
-            });
+    public static final TKeyComparable[] intComparisons = createIntComparisons();
 
+    private static TKeyComparable[] createIntComparisons() {
+        final TComparison integerComparison = new TComparison() {
+            @Override
+            public int compare(TInstance leftInstance, PValueSource left, TInstance rightInstance, PValueSource right) {
+                return Longs.compare(getLong(left), getLong(right));
+            }
+        };
+
+        List<TClass> candidates = Arrays.<TClass>asList(
+                MNumeric.TINYINT, MNumeric.SMALLINT, MNumeric.MEDIUMINT, MNumeric.INT, MNumeric.BIGINT,
+                MNumeric.TINYINT_UNSIGNED, MNumeric.SMALLINT_UNSIGNED, MNumeric.MEDIUMINT_UNSIGNED,
+                MNumeric.INT_UNSIGNED, MNumeric.BIGINT_UNSIGNED
+        );
+        Set<Set<TClass>> alreadyCreated = new HashSet<Set<TClass>>();
+        List<TKeyComparable> results = new ArrayList<TKeyComparable>();
+        for (TClass outer : candidates) {
+            for (TClass inner : candidates) {
+                if (inner == outer)
+                    continue;
+                Set<TClass> pair = new HashSet<TClass>(Arrays.asList(inner, outer));
+                if (alreadyCreated.add(pair)) {
+                    results.add(new TKeyComparable(outer, inner, integerComparison));
+                }
+            }
+        }
+        return results.toArray(new TKeyComparable[results.size()]);
+    }
+    
+    
     private MKeyComparables() {}
 }
