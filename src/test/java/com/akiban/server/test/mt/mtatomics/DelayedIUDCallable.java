@@ -55,6 +55,10 @@ class DelayableIUDCallable extends TimedCallable<Void> {
         public String outMark() {
             return name() + "<";
         }
+
+        public String exceptionMark(Class<? extends Exception> clazz) {
+            return name() + ": " + clazz.getSimpleName();
+        }
     }
 
     private final IUDType type;
@@ -115,7 +119,8 @@ class DelayableIUDCallable extends TimedCallable<Void> {
                 break;
             }
         } catch(Exception e) {
-            timePoints.mark(type.name() + ": exception " + e.getClass().getSimpleName());
+            Timing.sleep(500);
+            timePoints.mark(type.exceptionMark(e.getClass()));
             throw e;
         }
 

@@ -40,8 +40,10 @@ import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.OldAISException;
+import com.akiban.server.error.TableChangedByDDLException;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.test.mt.mtutil.TimePoints;
 import com.akiban.server.test.mt.mtutil.TimePointsComparison;
 import com.akiban.server.test.mt.mtutil.TimedCallable;
@@ -65,6 +67,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -771,9 +775,18 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.RENAME_TABLE);
     }
 
+    //
+    // Section 3: Attempt to do IUD while DDL is in progress (DML waits and then gets exception)
+    //
+
+    @Test
+    public void dropTableWithConcurrentInsert() throws Exception {
+        ddlWaitAndDML(IUDType.INSERT, null, newChildCols(), DDLOp.DROP_TABLE);
+    }
+
 
     //
-    // Internal
+    // Test helper methods
     //
 
     private static enum DDLOp {
@@ -878,11 +891,11 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
             return this != RENAME_TABLE;
         }
 
-        public String inTag() {
+        public String inMark() {
             return name() + ">";
         }
 
-        public String outTag() {
+        public String outMark() {
             return name() + "<";
         }
 
@@ -1024,9 +1037,9 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
             @Override
             protected Void doCall(final TimePoints timePoints, Session session) throws Exception {
                 Timing.sleep(500);
-                timePoints.mark(op.inTag());
+                timePoints.mark(op.inMark());
                 op.run(session, ddl());
-                timePoints.mark(op.outTag());
+                timePoints.mark(op.outMark());
                 return null;
             }
         };
@@ -1039,8 +1052,8 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         TimedResult updateResult = ddlFuture.get();
         new TimePointsComparison(scanResult, updateResult).verify(
                 "TXN: BEGAN",
-                op.inTag(),
-                op.outTag(),
+                op.inMark(),
+                op.outMark(),
                 "SCAN: START",
                 "(SCAN: FIRST)>",
                 "<(SCAN: FIRST)",
@@ -1083,9 +1096,9 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
                 Timing.sleep(500);
-                timePoints.mark(ddlOp.inTag());
+                timePoints.mark(ddlOp.inMark());
                 ddlOp.run(session, ddl());
-                timePoints.mark(ddlOp.outTag());
+                timePoints.mark(ddlOp.outMark());
                 return null;
             }
         };
@@ -1094,15 +1107,15 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         Future<TimedResult<Void>> dmlFuture = executor.submit(dmlCallable);
         Future<TimedResult<Void>> ddlFuture = executor.submit(ddlCallable);
 
-        TimedResult<Void> scanResult = dmlFuture.get();
-        TimedResult<Void> updateResult = ddlFuture.get();
+        TimedResult<Void> dmlResult = dmlFuture.get();
+        TimedResult<Void> ddlResult = ddlFuture.get();
 
         final String[] expected = new String[] {
                 iudType.startMark(),
                 iudType.inMark(),
-                ddlOp.inTag(),
+                ddlOp.inMark(),
                 iudType.outMark(),
-                ddlOp.outTag()
+                ddlOp.outMark()
         };
 
         if(!ddlOp.waitsOnIUD()) {
@@ -1111,7 +1124,90 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
             expected[4] = tmp;
         }
 
-        new TimePointsComparison(scanResult, updateResult).verify(expected);
+        new TimePointsComparison(dmlResult, ddlResult).verify(expected);
+    }
+
+    private void ddlWaitAndDML(IUDType iudType, Object[] oldCols, Object[] newCols, final DDLOp ddlOp) throws Exception {
+        if(isDDLLockOn()) {
+            return;
+        }
+
+        final int colCount;
+        if(oldCols != null && newCols != null) {
+            colCount = oldCols.length;
+            assertEquals("Old and new col count", oldCols.length, newCols.length);
+        } else if(oldCols != null) {
+            colCount = oldCols.length;
+        } else {
+            colCount = newCols.length;
+        }
+
+        final int DDL_PRE_COMMIT_WAIT = 1500;
+        final List<Integer> tIds = createJoinedTablesWithTwoRowsEach();
+        final int tableId = (colCount == 2) ? tIds.get(0) : tIds.get(1);
+
+        if(ddlOp == DDLOp.DROP_GROUP_INDEX) {
+            DDLOp.CREATE_GROUP_INDEX.run(session(), ddl());
+            updateAISGeneration();
+        }
+
+        final NewRow oldRow = (oldCols != null) ? createNewRow(tableId, oldCols) : null;
+        final NewRow newRow = (newCols != null) ? createNewRow(tableId, newCols) : null;
+
+        TimedCallable<Void> dmlCallable = new DelayableIUDCallable(iudType, oldRow, newRow, 500, 0, 0);
+        TimedCallable<Void> ddlCallable = new TimedCallable<Void>() {
+            @Override
+            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
+                AtomicInteger fireCount = new AtomicInteger(0);
+                delayInterestingDDLCommit(session, fireCount, DDL_PRE_COMMIT_WAIT);
+                timePoints.mark(ddlOp.inMark());
+                ddlOp.run(session, ddl());
+                timePoints.mark(ddlOp.outMark());
+                assertEquals("DDL hook fire count", 2, fireCount.get());
+                return null;
+            }
+        };
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        Future<TimedResult<Void>> dmlFuture = executor.submit(dmlCallable);
+        Future<TimedResult<Void>> ddlFuture = executor.submit(ddlCallable);
+
+        TimedResult<Void> ddlResult = ddlFuture.get(); // DDL first to catch hook errors
+
+        try {
+            dmlFuture.get();
+            // If exception doesn't throw time points check will catch it
+        } catch(ExecutionException e) {
+            // expected
+        }
+
+        final String[] expected = new String[] {
+                ddlOp.inMark(),
+                iudType.startMark(),
+                iudType.inMark(),
+                ddlOp.outMark(),
+                iudType.exceptionMark(TableChangedByDDLException.class)
+        };
+
+        new TimePointsComparison(TimedResult.ofNull(dmlCallable.getTimePoints()), ddlResult).verify(expected);
+    }
+
+    private void delayInterestingDDLCommit(Session session, final AtomicInteger fires, final long delay) {
+        final TransactionService.Callback preCommitCB = new TransactionService.Callback() {
+            @Override
+            public void run(Session session, long timestamp) {
+                fires.incrementAndGet();
+                Timing.sleep(delay);
+            }
+        };
+        TransactionService.Callback endCB = new TransactionService.Callback() {
+            @Override
+            public void run(Session session, long timestamp) {
+                fires.incrementAndGet();
+                txnService().addCallback(session, TransactionService.CallbackType.PRE_COMMIT, preCommitCB);
+            }
+        };
+        txnService().addCallback(session, TransactionService.CallbackType.END, endCB);
     }
 
     private Object[] largeEnoughNewRow(int id, int pid, String nameFormat) {
