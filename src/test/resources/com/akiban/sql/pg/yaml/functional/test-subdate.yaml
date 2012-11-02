@@ -48,7 +48,7 @@
 #- params: [[3]]
 #- output: [['2012-03-02']]
 #---
-#- Statement: SET newtypes=DEFAULT;
+#- Newtypes: null
 ## Test wrong arity
 ---
 - Statement: SELECT SUBDATE() from all_types;

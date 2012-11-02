@@ -29,6 +29,7 @@ package com.akiban.server.types3;
 import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.util.AkibanAppender;
@@ -65,10 +66,49 @@ public abstract class TClassBase extends TClass
     @Override
      public void fromObject(TExecutionContext context, PValueSource in, PValueTarget out)
      {
-         if (in.isNull())
+         if (in.isNull()) {
              out.putNull();
-         else
+         }
+         else {
+             PUnderlying underlyingType = in.getUnderlyingType();
+             if (underlyingType != PUnderlying.STRING && underlyingType != PUnderlying.BYTES) {
+                 // This isn't efficient, but it normalizes conversions of different inputs conveniently.
+                 // This method isn't used in any tight loops, so some inefficiency is okay.
+                 final String asString;
+                 switch (underlyingType) {
+                 case BOOL:
+                     asString = Boolean.toString(in.getBoolean());
+                     break;
+                 case INT_8:
+                     asString = Byte.toString(in.getInt8());
+                     break;
+                 case INT_16:
+                     asString = Short.toString(in.getInt16());
+                     break;
+                 case UINT_16:
+                     asString = Integer.toString(in.getUInt16());
+                     break;
+                 case INT_32:
+                     asString = Integer.toString(in.getInt32());
+                     break;
+                 case INT_64:
+                     asString = Long.toString(in.getInt64());
+                     break;
+                 case FLOAT:
+                     asString = Float.toString(in.getFloat());
+                     break;
+                 case DOUBLE:
+                     asString = Double.toString(in.getDouble());
+                     break;
+                 case BYTES:
+                 case STRING:
+                 default:
+                     throw new AssertionError(underlyingType + ": " + in);
+                 }
+                 in = new PValue(asString);
+             }
             parser.parse(context, in, out);
+         }
      }
 
     @Override

@@ -46,7 +46,7 @@
 - output: [[0.0]]
 ############### types2's behaviour #############################
 ---
-- Statement: SET newtypes to 'false'
+- Newtypes: false
 # test division by zero
 ---
 - Statement: SELECT 2 % 0;
@@ -71,7 +71,7 @@
 # properly in trunk
 ############### types3's behaviour #############################
 ---
-- Statement: SET newtypes='true'
+- Newtypes: true
 ---
 - Statement: SELECT 2 % 0;
 - output: [[null]]
@@ -97,6 +97,6 @@
 #- Statement: SELECT year_field from all_types;
 #- output: [[0]]
 ---
-- Statement: SET newtypes to DEFAULT
+- Newtypes: null
 ...
 

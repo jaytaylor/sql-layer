@@ -42,24 +42,23 @@ public abstract class ServerOperatorCompiler extends OperatorCompiler
     }
 
     protected void initServer(ServerSession server) {
+        boolean useCBO = server.getBooleanProperty("cbo", true);
+        boolean usePValues = useCBO && server.getBooleanProperty("newtypes", Types3Switch.DEFAULT);
+        // the following is racy, but everything about the Types3Switch is
+        if (usePValues != Types3Switch.ON)
+            Types3Switch.ON = usePValues;
         initProperties(server.getCompilerProperties());
         initAIS(server.getAIS(), server.getDefaultSchemaName());
         initParser(server.getParser());
         initFunctionsRegistry(server.functionsRegistry());
-        boolean usePValues;
-        if (server.getBooleanProperty("cbo", true)) {
-            usePValues = server.getBooleanProperty("newtypes", Types3Switch.DEFAULT);
+        if (useCBO) {
             initCostEstimator(server.costEstimator(this, server.getTreeService()), usePValues);
             if (usePValues)
                 initT3Registry(server.t3RegistryService());
         }
         else {
             initCostEstimator(null, false);
-            usePValues = false;
         }
-        // the following is racy, but everything about the Types3Switch is
-        if (usePValues != Types3Switch.ON)
-            Types3Switch.ON = usePValues;
         
         server.getBinderContext().setBinderAndTypeComputer(binder, typeComputer);
 

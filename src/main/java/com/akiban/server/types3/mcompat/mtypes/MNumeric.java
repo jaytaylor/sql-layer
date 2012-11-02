@@ -28,8 +28,6 @@ package com.akiban.server.types3.mcompat.mtypes;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TParser;
 import com.akiban.server.types3.TParsers;
@@ -86,25 +84,10 @@ public class MNumeric extends SimpleDtdTClass {
     }
 
     @Override
-    public void putSafety(TExecutionContext context, 
-                          TInstance sourceInstance,
-                          PValueSource sourceValue,
-                          TInstance targetInstance,
-                          PValueTarget targetValue)
-    {
-       // going away soon
-    }
-
-    @Override
     protected void validate(TInstance instance) {
         int m = instance.attribute(NumericAttribute.WIDTH);
         if (m < 0 || m > 255)
             throw new TypeDeclarationException("width must be 0 < M < 256");
-    }
-
-    @Override
-    public TFactory factory() {
-        return new MNumericFactory(this);
     }
 
     @Override
