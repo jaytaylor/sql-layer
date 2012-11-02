@@ -78,7 +78,7 @@ public class AISDDLITBase extends ITBase {
         public TestSession() {
             super(new ServerServiceRequirements(serviceManager().getAkSserver(),
                                                 dxl(),
-                                                serviceManager().getInstrumentationService(),
+                                                serviceManager().getMonitorService(),
                                                 serviceManager().getSessionService(),
                                                 store(),
                                                 treeService(),

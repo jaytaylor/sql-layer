@@ -28,18 +28,9 @@ package com.akiban.sql.optimizer.rule;
 
 import org.slf4j.Logger;
 
-import com.akiban.server.service.EventTypes;
-
 public abstract class BaseRule
 {
-    private final String traceName;
-
     protected BaseRule() {
-        traceName = EventTypes.OPTIMIZE + ": " + getName();
-    }
-
-    public String getTraceName() {
-        return traceName;
     }
 
     public String getName() {

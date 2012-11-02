@@ -36,7 +36,7 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.service.instrumentation.InstrumentationService;
+import com.akiban.server.service.monitor.MonitorService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.session.SessionService;
@@ -56,7 +56,7 @@ public class PostgresServerManager implements PostgresService, Service, JmxManag
     @Inject
     public PostgresServerManager(AkServerInterface akServer,
                                  DXLService dxlService,
-                                 InstrumentationService instrumentation,
+                                 MonitorService monitor,
                                  SessionService sessionService,
                                  Store store,
                                  TreeService treeService,
@@ -66,7 +66,7 @@ public class PostgresServerManager implements PostgresService, Service, JmxManag
                                  T3RegistryService overloadResolutionService,
                                  RoutineLoader routineLoader,
                                  TransactionService txnService) {
-        reqs = new ServerServiceRequirements(akServer, dxlService, instrumentation, 
+        reqs = new ServerServiceRequirements(akServer, dxlService, monitor, 
                 sessionService, store, treeService, functionsRegistry, 
                 config, indexStatisticsService, overloadResolutionService, routineLoader, txnService);
     }
