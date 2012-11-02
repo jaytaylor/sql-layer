@@ -304,8 +304,9 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
         @Override
         protected int compare(TInstance leftInstance, PValueSource left, TInstance rightInstance,
                                   PValueSource right) {
-            int cmp = comparison.compare(leftInstance, left, rightInstance, right);
-            return reverseComparison ? (-cmp) : cmp;
+            return reverseComparison
+                    ? - comparison.compare(rightInstance, right, leftInstance, left)
+                    :   comparison.compare(leftInstance, left, rightInstance, right);
         }
 
         private final TComparison comparison;

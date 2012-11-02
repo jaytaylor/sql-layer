@@ -120,7 +120,8 @@ abstract class ExpressionAssembler<T extends Explainable> {
             ComparisonCondition cond = (ComparisonCondition)node;
             T left = assembleExpression(cond.getLeft(), columnContext, subqueryAssembler);
             T right = assembleExpression(cond.getRight(), columnContext, subqueryAssembler);
-            AkCollator collator = collator(cond, left, right);
+            // never use a collator if we have a KeyComparable
+            AkCollator collator = (cond.getKeyComparable() == null) ? collator(cond, left, right) : null;
             if (collator != null)
                 return collate(left, cond.getOperation(), right, collator);
             else
