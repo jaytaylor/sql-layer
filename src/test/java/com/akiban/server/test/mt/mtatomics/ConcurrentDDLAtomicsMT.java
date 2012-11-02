@@ -582,20 +582,34 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
     }
 
     @Test
-    public void beginWaitCreateIndexScanGrop() throws Exception {
+    public void beginWaitCreateTableIndexScanGrop() throws Exception {
         beginWaitDropScan(DDLOp.CREATE_TABLE_INDEX, null);
     }
 
     @Test
-    public void beginWaitCreateIndexScanPK() throws Exception {
+    public void beginWaitCreateTableIndexScanPK() throws Exception {
         beginWaitDropScan(DDLOp.CREATE_TABLE_INDEX, Index.PRIMARY_KEY_CONSTRAINT);
     }
 
     @Test
-    public void beginWaitCreateIndexScanOtherIndex() throws Exception {
+    public void beginWaitCreateTableIndexScanOtherIndex() throws Exception {
         beginWaitDropScan(DDLOp.CREATE_TABLE_INDEX, "name");
     }
 
+    @Test
+    public void beginWaitDropTableIndexScanGroup() throws Exception {
+        beginWaitDropScan(DDLOp.DROP_TABLE_INDEX, null);
+    }
+
+    @Test
+    public void beginWaitDropTableIndexScanPK() throws Exception {
+        beginWaitDropScan(DDLOp.DROP_TABLE_INDEX, Index.PRIMARY_KEY_CONSTRAINT);
+    }
+
+    @Test
+    public void beginWaitDropTableIndexScanSameIndex() throws Exception {
+        beginWaitDropScan(DDLOp.DROP_TABLE_INDEX, "name");
+    }
 
 
     //
@@ -635,6 +649,9 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 break;
 
                 case DROP_TABLE_INDEX:
+                    ddl.dropTableIndexes(session, TABLE_NAME, Collections.singleton("name"));
+                break;
+
                 case ALTER_TABLE:
                 case CREATE_GROUP_INDEX:
                 case DROP_GROUP:
