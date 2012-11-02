@@ -849,64 +849,34 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
             return;
         }
 
-        // Line both up at commit, second will fail
-        final int DDL_PRE_COMMIT_WAIT_1 = 1000;
-        final int DDL_PRE_COMMIT_WAIT_2 = 3000;
-
         createJoinedTables(SCHEMA, SCHEMA);
         final List<UserTable> tables = joinedTableTemplates(SCHEMA, SCHEMA, true, false, true, false);
         final Index parentIndex = tables.get(0).getIndex("value");
         final Index childIndex = tables.get(1).getIndex("extra");
 
-        TimedCallable<Void> ddlParentCallbable = new TimedCallable<Void>() {
-            @Override
-            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
-                AtomicInteger fireCount = new AtomicInteger(0);
-                delayInterestingDDLCommit(session, fireCount, DDL_PRE_COMMIT_WAIT_1);
-                timePoints.mark("CREATE INDEX (PARENT)>");
-                ddl().createIndexes(session, Collections.singleton(parentIndex));
-                timePoints.mark("CREATE INDEX (PARENT)<");
-                assertEquals("DDL hook fire count", 2, fireCount.get());
-                return null;
-            }
-        };
+        TimePointsComparison result = ddlWaitAndDDL(
+                "CREATE INDEX (PARENT)",
+                new DDLOp.Runner() {
+                    @Override
+                    public void run(Session session, DDLFunctions ddl) {
+                        ddl().createIndexes(session, Collections.singleton(parentIndex));
+                    }
+                },
+                "CREATE INDEX (CHILD)",
+                new DDLOp.Runner() {
+                    @Override
+                    public void run(Session session, DDLFunctions ddl) {
+                        ddl().createIndexes(session, Collections.singleton(childIndex));
+                    }
+                }
+        );
 
-        TimedCallable<Void> ddlChildCallable = new TimedCallable<Void>() {
-            @Override
-            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
-                Timing.sleep(500);
-                AtomicInteger fireCount = new AtomicInteger(0);
-                delayInterestingDDLCommit(session, fireCount, DDL_PRE_COMMIT_WAIT_2);
-                timePoints.mark("CREATE INDEX (CHILD)>");
-                ddl().createIndexes(session, Collections.singleton(childIndex));
-                timePoints.mark("CREATE INDEX (CHILD)<");
-                assertEquals("DDL hook fire count", 2, fireCount.get());
-                return null;
-            }
-        };
-
-        ExecutorService executor = Executors.newFixedThreadPool(2);
-        Future<TimedResult<Void>> ddlParentFuture = executor.submit(ddlParentCallbable);
-        Future<TimedResult<Void>> ddlChildFuture = executor.submit(ddlChildCallable);
-
-        TimedResult<Void> ddlParentResult = ddlParentFuture.get();
-
-        try {
-            ddlChildFuture.get();
-            // If exception doesn't throw time points check will catch it
-        } catch(ExecutionException e) {
-            ddlChildCallable.getTimePoints().mark("CHILD EXCEPTION: " + e.getCause().getClass().getSimpleName());
-        }
-
-        final String[] expected = new String[] {
+        result.verify(
                 "CREATE INDEX (PARENT)>",
                 "CREATE INDEX (CHILD)>",
                 "CREATE INDEX (PARENT)<",
-                "CHILD EXCEPTION: RollbackException"
-        };
-
-        new TimePointsComparison(TimedResult.ofNull(ddlChildCallable.getTimePoints()), ddlParentResult).verify(expected);
-
+                "CREATE INDEX (CHILD): RollbackException"
+        );
         final AkibanInformationSchema ais = ais();
         assertNotNull("Parent index should exist", ais.getUserTable(TABLE_PARENT).getIndex(parentIndex.getIndexName().getName()));
         assertNull("Child index shouldn't exist", ais.getUserTable(TABLE_NAME).getIndex(childIndex.getIndexName().getName()));
@@ -918,58 +888,34 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
             return;
         }
 
-        // Line both up at commit, second will fail
-        final int DDL_PRE_COMMIT_WAIT_1 = 1000;
-        final int DDL_PRE_COMMIT_WAIT_2 = 3000;
-
         createJoinedTables(SCHEMA, SCHEMA2);
         final List<UserTable> tables = joinedTableTemplates(SCHEMA, SCHEMA2, true, false, true, false);
         final Index parentIndex = tables.get(0).getIndex("value");
         final Index childIndex = tables.get(1).getIndex("extra");
 
-        TimedCallable<Void> ddlParentCallbable = new TimedCallable<Void>() {
-            @Override
-            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
-                AtomicInteger fireCount = new AtomicInteger(0);
-                delayInterestingDDLCommit(session, fireCount, DDL_PRE_COMMIT_WAIT_1);
-                timePoints.mark("CREATE INDEX (PARENT)>");
-                ddl().createIndexes(session, Collections.singleton(parentIndex));
-                timePoints.mark("CREATE INDEX (PARENT)<");
-                assertEquals("DDL hook fire count", 2, fireCount.get());
-                return null;
-            }
-        };
+        TimePointsComparison result = ddlWaitAndDDL(
+                "CREATE INDEX (PARENT)",
+                new DDLOp.Runner() {
+                    @Override
+                    public void run(Session session, DDLFunctions ddl) {
+                        ddl().createIndexes(session, Collections.singleton(parentIndex));
+                    }
+                },
+                "CREATE INDEX (CHILD)",
+                new DDLOp.Runner() {
+                    @Override
+                    public void run(Session session, DDLFunctions ddl) {
+                        ddl().createIndexes(session, Collections.singleton(childIndex));
+                    }
+                }
+        );
 
-        TimedCallable<Void> ddlChildCallable = new TimedCallable<Void>() {
-            @Override
-            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
-                Timing.sleep(500);
-                AtomicInteger fireCount = new AtomicInteger(0);
-                delayInterestingDDLCommit(session, fireCount, DDL_PRE_COMMIT_WAIT_2);
-                timePoints.mark("CREATE INDEX (CHILD)>");
-                ddl().createIndexes(session, Collections.singleton(childIndex));
-                timePoints.mark("CREATE INDEX (CHILD)<");
-                assertEquals("DDL hook fire count", 2, fireCount.get());
-                return null;
-            }
-        };
-
-        ExecutorService executor = Executors.newFixedThreadPool(2);
-        Future<TimedResult<Void>> ddlParentFuture = executor.submit(ddlParentCallbable);
-        Future<TimedResult<Void>> ddlChildFuture = executor.submit(ddlChildCallable);
-
-        TimedResult<Void> ddlParentResult = ddlParentFuture.get();
-        TimedResult<Void> ddlChildResult = ddlChildFuture.get();
-
-        final String[] expected = new String[] {
+        result.verify(
                 "CREATE INDEX (PARENT)>",
                 "CREATE INDEX (CHILD)>",
                 "CREATE INDEX (PARENT)<",
-                "CREATE INDEX (CHILD)<",
-        };
-
-        new TimePointsComparison(ddlChildResult, ddlParentResult).verify(expected);
-
+                "CREATE INDEX (CHILD)<"
+        );
         final AkibanInformationSchema ais = ais();
         assertNotNull("Parent index should exist", ais.getUserTable(SCHEMA, PARENT).getIndex(parentIndex.getIndexName().getName()));
         assertNotNull("Child index should exist", ais.getUserTable(SCHEMA2, TABLE).getIndex(childIndex.getIndexName().getName()));
@@ -1361,6 +1307,62 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         };
 
         new TimePointsComparison(TimedResult.ofNull(dmlCallable.getTimePoints()), ddlResult).verify(expected);
+    }
+
+    private TimePointsComparison ddlWaitAndDDL(final String desc1, final DDLOp.Runner ddl1,
+                                               final String desc2, final DDLOp.Runner ddl2) throws Exception {
+        // Line both up to be concurrent, ddl2 will commit second
+        final int DDL_PRE_COMMIT_WAIT_1 = 1000;
+        final int DDL_PRE_COMMIT_WAIT_2 = 3000;
+
+        TimedCallable<Void> ddl1Callable = new TimedCallable<Void>() {
+            @Override
+            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
+                AtomicInteger fireCount = new AtomicInteger(0);
+                delayInterestingDDLCommit(session, fireCount, DDL_PRE_COMMIT_WAIT_1);
+                timePoints.mark(desc1 + ">");
+                ddl1.run(session, ddl());
+                timePoints.mark(desc1 + "<");
+                assertEquals("DDL hook fire count", 2, fireCount.get());
+                return null;
+            }
+        };
+
+        TimedCallable<Void> ddl2Callable = new TimedCallable<Void>() {
+            @Override
+            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
+                Timing.sleep(500);
+                AtomicInteger fireCount = new AtomicInteger(0);
+                delayInterestingDDLCommit(session, fireCount, DDL_PRE_COMMIT_WAIT_2);
+                timePoints.mark(desc2 + ">");
+                ddl2.run(session, ddl());
+                timePoints.mark(desc2 + "<");
+                assertEquals("DDL hook fire count", 2, fireCount.get());
+                return null;
+            }
+        };
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        Future<TimedResult<Void>> ddl1Future = executor.submit(ddl1Callable);
+        Future<TimedResult<Void>> ddl2Future = executor.submit(ddl2Callable);
+
+        TimedResult<Void> ddl1Result = null;
+        try {
+            ddl1Result = ddl1Future.get();
+        } catch(ExecutionException e) {
+            ddl1Callable.getTimePoints().mark(desc1 + ": " + e.getCause().getClass().getSimpleName());
+        }
+
+        TimedResult<Void> ddl2Result = null;
+        try {
+            ddl2Result = ddl2Future.get();
+        } catch(ExecutionException e) {
+            ddl2Callable.getTimePoints().mark(desc2 + ": " + e.getCause().getClass().getSimpleName());
+        }
+
+        ddl1Result = (ddl1Result != null) ? ddl1Result : TimedResult.ofNull(ddl1Callable.getTimePoints());
+        ddl2Result = (ddl2Result != null) ? ddl2Result : TimedResult.ofNull(ddl2Callable.getTimePoints());
+        return new TimePointsComparison(ddl1Result, ddl2Result);
     }
 
     private int inferParentOrChild(Object[] oldCols, Object[] newCols) {
