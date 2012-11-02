@@ -420,14 +420,15 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             }
             return new SimpleMemoryGroupScan<TCast>(adapter, getName(), castsCollections.iterator()) {
                 @Override
-                protected Object[] createRow(TCast data) {
+                protected Object[] createRow(TCast data, int hiddenPk) {
                     return new Object[] {
                             data.sourceClass().name().bundleId().name(),
                             data.sourceClass().name().unqualifiedName(),
                             data.targetClass().name().bundleId().name(),
                             data.targetClass().name().unqualifiedName(),
                             boolResult(castsResolver.isStrong(data)),
-                            boolResult(data instanceof TCastsRegistry.ChainedCast)
+                            boolResult(data instanceof TCastsRegistry.ChainedCast),
+                            hiddenPk
                     };
                 }
             };
@@ -465,13 +466,14 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                     aggreatorsRegistry.iterator());
             return new SimpleMemoryGroupScan<TValidatedOverload>(adapter, getName(), allOverloads) {
                 @Override
-                protected Object[] createRow(TValidatedOverload data) {
+                protected Object[] createRow(TValidatedOverload data, int hiddenPk) {
                     return new Object[] {
                             data.displayName().toLowerCase(),
                             lowest(data.getPriorities()),
                             data.describeInputs(),
                             data.resultStrategy().toString(),
                             data.id(),
+                            hiddenPk
                     };
                 }
             };

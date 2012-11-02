@@ -35,13 +35,13 @@ import java.util.Iterator;
 
 public abstract class SimpleMemoryGroupScan<T> implements MemoryGroupCursor.GroupScan {
 
-    protected abstract Object[] createRow(T data);
+    protected abstract Object[] createRow(T data, int hiddenPk);
 
     @Override
     public Row next() {
         if (!iterator.hasNext())
             return null;
-        Object[] rowContents = createRow(iterator.next());
+        Object[] rowContents = createRow(iterator.next(), ++hiddenPk);
         return new ValuesRow(rowType, rowContents);
     }
 
@@ -57,4 +57,5 @@ public abstract class SimpleMemoryGroupScan<T> implements MemoryGroupCursor.Grou
 
     private final Iterator<? extends T> iterator;
     private final RowType rowType;
+    private int hiddenPk = 0;
 }
