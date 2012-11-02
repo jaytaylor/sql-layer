@@ -31,6 +31,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.ais.util.TableChange;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -641,6 +642,21 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         beginWaitDropScan(DDLOp.DROP_SCHEMA, "name");
     }
 
+    @Test
+    public void beginWaitAlterTableScanGroup() throws Exception {
+        beginWaitDropScan(DDLOp.ALTER_TABLE, null);
+    }
+
+    @Test
+    public void beginWaitAlterTableScanPK() throws Exception {
+        beginWaitDropScan(DDLOp.ALTER_TABLE, Index.PRIMARY_KEY_CONSTRAINT);
+    }
+
+    @Test
+    public void beginWaitAlterTableScanIndex() throws Exception {
+        beginWaitDropScan(DDLOp.ALTER_TABLE, "name");
+    }
+
 
     //
     // Internal
@@ -667,6 +683,21 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
         public void run(Session session, DDLFunctions ddl) {
             switch(this) {
+                case ALTER_TABLE: {
+                    NewAISBuilder builder = AISBBasedBuilder.create();
+                    builder.userTable(TABLE_NAME).colLong("id", false).colString("name", 32, true).colString("extra", 32, true).pk("id").key("name", "name");
+                    UserTable table = builder.ais().getUserTable(TABLE_NAME);
+                    ddl.alterTable(
+                            session,
+                            TABLE_NAME,
+                            table,
+                            Arrays.asList(TableChange.createModify("extra", "extra")),
+                            Collections.<TableChange>emptyList(),
+                            null
+                    );
+                }
+                break;
+
                 case CREATE_TABLE_INDEX: {
                     NewAISBuilder builder = AISBBasedBuilder.create();
                     builder.userTable(TABLE_NAME).colLong("extra").key("extra", "extra");
@@ -674,20 +705,23 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                     ddl.createIndexes(session, Collections.singleton(index));
                 }
                 break;
+
                 case DROP_TABLE_INDEX:
                     ddl.dropTableIndexes(session, TABLE_NAME, Collections.singleton("name"));
                 break;
+
                 case DROP_TABLE:
                     ddl.dropTable(session, TABLE_NAME);
                 break;
+
                 case DROP_GROUP:
                     ddl.dropGroup(session, TABLE_NAME);
                 break;
+
                 case DROP_SCHEMA:
                     ddl.dropSchema(session, SCHEMA);
                 break;
 
-                case ALTER_TABLE:
                 case CREATE_GROUP_INDEX:
                 case DROP_GROUP_INDEX:
                     throw new UnsupportedOperationException();

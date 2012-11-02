@@ -27,6 +27,9 @@
 package com.akiban.server.test.mt.mtatomics;
 
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
@@ -102,9 +105,19 @@ class ConcurrentAtomicsBase extends MTBase {
         expectFullRows(tableId, endStateExpected.toArray(new NewRow[endStateExpected.size()]));
     }
 
+    protected static UserTable tableWithTwoRowsTemplate() {
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        builder.userTable(TABLE_NAME).
+                colLong("id", false).colString("name", 32, true).colLong("extra", true).
+                pk("id").key("name", "name");
+        return builder.ais().getUserTable(TABLE_NAME);
+    }
+
     protected int tableWithTwoRows() throws InvalidOperationException {
-        int id = createTable(SCHEMA, TABLE, "id int not null primary key", "name varchar(32)", "extra int");
-        createIndex(SCHEMA, TABLE, "name", "name");
+        UserTable table = tableWithTwoRowsTemplate();
+        ddl().createTable(session(), table);
+        updateAISGeneration();
+        int id = tableId(TABLE_NAME);
         writeRows(
             createNewRow(id, 1L, "the snowman", 10L),
             createNewRow(id, 2L, "mr melty", 20L)
