@@ -26,6 +26,7 @@
 
 package com.akiban.server.test.mt.mtatomics;
 
+import com.akiban.ais.model.TableName;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
@@ -52,6 +53,7 @@ class ConcurrentAtomicsBase extends MTBase {
     protected static final String SCHEMA = "cold";
     protected static final String SCHEMA2 = "brisk";
     protected static final String TABLE = "frosty";
+    protected static final TableName TABLE_NAME = new TableName(SCHEMA, TABLE);
 
     // ApiTestBase interface
 

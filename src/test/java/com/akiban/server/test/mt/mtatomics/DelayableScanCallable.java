@@ -33,6 +33,7 @@ import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.test.ApiTestBase;
 import com.akiban.server.test.mt.mtutil.TimePoints;
 import com.akiban.server.test.mt.mtutil.TimedCallable;
@@ -59,12 +60,14 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
     private final int aisGeneration;
     private final boolean markOpenCursor;
     private final boolean fullRowOutput;
+    private final boolean explicitTransaction;
     private volatile ApiTestBase.TestRowOutput output;
 
     DelayableScanCallable(int aisGeneration,
                           int tableId, int indexId,
                           DelayerFactory topOfLoopDelayer, DelayerFactory beforeConversionDelayer,
-                          boolean markFinish, long initialDelay, long finishDelay, boolean markOpenCursor, boolean fullRowOutput)
+                          boolean markFinish, long initialDelay, long finishDelay, boolean markOpenCursor,
+                          boolean fullRowOutput, boolean explicitTransaction)
     {
         this.aisGeneration = aisGeneration;
         this.tableId = tableId;
@@ -76,6 +79,7 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
         this.finishDelay = finishDelay;
         this.markOpenCursor = markOpenCursor;
         this.fullRowOutput = fullRowOutput;
+        this.explicitTransaction = explicitTransaction;
     }
 
     private Delayer topOfLoopDelayer(TimePoints timePoints) {
@@ -88,6 +92,27 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
 
     @Override
     protected final List<NewRow> doCall(final TimePoints timePoints, Session session) throws Exception {
+        if(!explicitTransaction) {
+            return doCallInternal(timePoints, session);
+        }
+        txn().beginTransaction(session);
+        timePoints.mark("TXN: BEGAN");
+        boolean success = false;
+        try {
+            List<NewRow> rows = doCallInternal(timePoints, session);
+            txn().commitTransaction(session);
+            timePoints.mark("TXN: COMMITTED");
+            success = true;
+            return rows;
+        } finally {
+            if(!success) {
+                txn().rollbackTransaction(session);
+                timePoints.mark("TXN: ROLLEDBACK");
+            }
+        }
+    }
+
+    private List<NewRow> doCallInternal(final TimePoints timePoints, Session session) throws Exception {
         Timing.sleep(initialDelay);
         final Delayer topOfLoopDelayer = topOfLoopDelayer(timePoints);
         final Delayer beforeConversionDelayer = beforeConversionDelayer(timePoints);
@@ -127,7 +152,7 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
         assertTrue("scanhook not installed correctly", ConcurrencyAtomicsDXLService.isScanHookInstalled(session));
         try {
             final CursorId cursorId;
-            DMLFunctions dml = ServiceManagerImpl.get().getDXL().dmlFunctions();
+            DMLFunctions dml = dml();
             try {
                 if (markOpenCursor) {
                     timePoints.mark("(SCAN: OPEN CURSOR)>");
@@ -181,5 +206,13 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
         private ScanHooksNotRemovedException(Throwable cause) {
             super("scanhooks not removed!", cause);
         }
+    }
+
+    private static DMLFunctions dml() {
+        return ServiceManagerImpl.get().getDXL().dmlFunctions();
+    }
+
+    private static TransactionService txn() {
+        return ServiceManagerImpl.get().getServiceByClass(TransactionService.class);
     }
 }

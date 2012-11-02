@@ -102,7 +102,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
     private void dropTableWhileScanning(int tableId, String indexName, NewRow... expectedScanRows) throws Exception {
         final int SCAN_WAIT = 5000;
 
-        int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex(indexName).getIndexId();
+        int indexId = ddl().getUserTable(session(), TABLE_NAME).getIndex(indexName).getIndexId();
 
         TimedCallable<List<NewRow>> scanCallable
                 = new DelayScanCallableBuilder(aisGeneration(), tableId, indexId)
@@ -111,7 +111,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
-                TableName table = new TableName(SCHEMA, TABLE);
+                TableName table = TABLE_NAME;
                 Timing.sleep(2000);
                 timePoints.mark("TABLE: DROP>");
                 ddl().dropTable(session, table);
@@ -160,7 +160,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
     public void rowConvertedAfterTableDrop() throws Exception {
         final String index = "PRIMARY";
         final int tableId = tableWithTwoRows();
-        final int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex(index).getIndexId();
+        final int indexId = ddl().getUserTable(session(), TABLE_NAME).getIndex(index).getIndexId();
 
         DelayScanCallableBuilder callableBuilder = new DelayScanCallableBuilder(aisGeneration(), tableId, indexId)
                 .markFinish(false)
@@ -177,7 +177,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
-                TableName table = new TableName(SCHEMA, TABLE);
+                TableName table = TABLE_NAME;
                 Timing.sleep(2000);
                 timePoints.mark("TABLE: DROP>");
                 ddl().dropTable(session, table);
@@ -251,7 +251,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 // We'll get to the 2nd index (bravo) when we drop the index, and we want to make sure we don't
                 // continue scanning with alpha (which would thus badly order name)
         );
-        final TableName tableName = new TableName(SCHEMA, TABLE);
+        final TableName tableName = TABLE_NAME;
         Index nameIndex = ddl().getUserTable(session(), tableName).getIndex("name");
         Index ageIndex = ddl().getUserTable(session(), tableName).getIndex("age");
         final int nameIndexId = nameIndex.getIndexId();
@@ -323,7 +323,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
                 timePoints.mark("DROP>");
-                ddl().dropTable(session, new TableName(SCHEMA, TABLE));
+                ddl().dropTable(session, TABLE_NAME);
                 timePoints.mark("<DROP");
                 return null;
             }
@@ -385,189 +385,12 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         );
     }
 
-    private void newRowsOrdered(List<NewRow> rows, final int fieldIndex) {
-        assertTrue("not enough rows: " + rows, rows.size() > 1);
-        List<NewRow> ordered = new ArrayList<NewRow>(rows);
-        Collections.sort(ordered, new Comparator<NewRow>() {
-            @Override @SuppressWarnings("unchecked")
-            public int compare(NewRow o1, NewRow o2) {
-                Object o1Field = o1.getFields().get(fieldIndex);
-                Object o2Field = o2.getFields().get(fieldIndex);
-                if (o1Field == null) {
-                    return o2Field == null ? 0 : -1;
-                }
-                if (o2Field == null) {
-                    return 1;
-                }
-                Comparable o1Comp = (Comparable)o1Field;
-                Comparable o2Comp = (Comparable)o2Field;
-                return o1Comp.compareTo(o2Comp);
-            }
-        });
-    }
-
-    private void scanWhileDropping(String indexName) throws InvalidOperationException, InterruptedException, ExecutionException {
-        final int tableId = largeEnoughTable(5000);
-        final TableName tableName = new TableName(SCHEMA, TABLE);
-        final int indexId = ddl().getUserTable(session(), tableName).getIndex(indexName).getIndexId();
-
-        DelayScanCallableBuilder callableBuilder = new DelayScanCallableBuilder(aisGeneration(), tableId, indexId)
-                .topOfLoopDelayer(1, 100, "SCAN: FIRST")
-                .initialDelay(2500)
-                .markFinish(false)
-                .markOpenCursor(true)
-                .withFullRowOutput(false);
-        DelayableScanCallable scanCallable = callableBuilder.get();
-        TimedCallable<Void> dropCallable = new TimedCallable<Void>() {
-            @Override
-            protected Void doCall(final TimePoints timePoints, Session session) throws Exception {
-                ConcurrencyAtomicsDXLService.hookNextDropTable(
-                        session,
-                        new Runnable() {
-                            @Override
-                            public void run() {
-                                timePoints.mark("DROP: IN");
-                            }
-                        },
-                        new Runnable() {
-                            @Override
-                            public void run() {
-                                timePoints.mark("DROP: OUT");
-                                Timing.sleep(50);
-                            }
-                        }
-                );
-                ddl().dropTable(session, tableName); // will take ~5 seconds
-                assertFalse(
-                       "drop table hook still installed",
-                       ConcurrencyAtomicsDXLService.isDropTableHookInstalled(session)
-               );
-                return null;
-            }
-        };
-
-        ExecutorService executor = Executors.newFixedThreadPool(2);
-        Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
-        Future<TimedResult<Void>> updateFuture = executor.submit(dropCallable);
-
-        // No OldAIS for read only DML when AIS is transactional (DDL lock not strictly related, but good proxy)
-        final boolean expectedRows = !isDDLLockOn();
-        final String[] expectedTimePoints;
-        if(isDDLLockOn()) {
-            expectedTimePoints = new String[] {
-                    "DROP: IN",
-                    "(SCAN: OPEN CURSOR)>",
-                    "DROP: OUT",
-                    "SCAN: exception OldAISException"
-            };
-        } else {
-            expectedTimePoints = new String[] {
-                    "DROP: IN",
-                    "(SCAN: OPEN CURSOR)>",
-                    "<(SCAN: OPEN CURSOR)",
-                    "SCAN: START",
-                    "(SCAN: FIRST)>",
-                    "<(SCAN: FIRST)",
-                    "DROP: OUT"
-            };
-        }
-
-        try {
-            scanFuture.get();
-            // If exception is not thrown, TimePoint comparison will catch it
-        } catch (ExecutionException e) {
-            if (!OldAISException.class.equals(e.getCause().getClass())) {
-                throw new RuntimeException("Expected a OldAISException!", e.getCause());
-            }
-        }
-
-        // If exception is expected then scanFuture.get() would throw, so use ofNull
-        TimedResult<Void> scanResult = TimedResult.ofNull(scanCallable.getTimePoints());
-        TimedResult<Void> updateResult = updateFuture.get();
-
-        new TimePointsComparison(scanResult, updateResult).verify(expectedTimePoints);
-
-        if(expectedRows) {
-            assertTrue("rows were expected!", scanCallable.getRowCount() > 0);
-        } else {
-            assertTrue("rows weren't empty!", scanCallable.getRowCount() == 0);
-        }
-    }
-
-    private Object[] largeEnoughNewRow(int id, int pid, String nameFormat) {
-        return new Object[]{ id, pid, String.format(nameFormat, id) };
-    }
-
-    private void largeEnoughWriteRows(int tableId, int count, String nameFormat) {
-        for(int i = 1; i <= count; ++i) {
-            writeRow(tableId, largeEnoughNewRow(i, i, nameFormat));
-        }
-    }
-
-    /**
-     * Creates a table with enough rows that it takes a while to drop it
-     * @param msForDropping how long (at least) it should take to drop this table
-     * @return the table's id
-     * @throws InvalidOperationException if ever encountered
-     */
-    private int largeEnoughTable(long msForDropping) throws InvalidOperationException {
-        final String NAME_FORMAT_INITIAL = "King Frosty %d";
-        final String NAME_FORMAT_EXPANDING = "King Melty %d";
-        final String NAME_FORMAT_FINAL = "King Snowy %d";
-
-        if(lastLargeEnoughMS != msForDropping) {
-            lastLargeEnoughCount = 0;
-        }
-
-        int parentId = createTable(SCHEMA, TABLE+"parent", "id int not null primary key");
-        writeRow(parentId, 1);
-        final String[] childTableDDL = {"id int not null primary key", "pid int", "name varchar(32)", "UNIQUE(name)",
-                "GROUPING FOREIGN KEY (pid) REFERENCES " +TABLE+"parent(id)"};
-
-        // Use previously computed row count if available
-        int tableId = createTable(SCHEMA, TABLE, childTableDDL);
-        if(lastLargeEnoughCount != 0) {
-            largeEnoughWriteRows(tableId, lastLargeEnoughCount, NAME_FORMAT_FINAL);
-            return tableId;
-        }
-
-        // Start estimate by how long it takes to insert for desired time
-        int rowCount = 1;
-        final long writeStart = System.currentTimeMillis();
-        while (System.currentTimeMillis() - writeStart < msForDropping) {
-            writeRow(tableId, largeEnoughNewRow(rowCount, rowCount, NAME_FORMAT_INITIAL));
-            ++rowCount;
-        }
-
-        for(;;) {
-            final long dropStart = System.currentTimeMillis();
-            ddl().dropTable(session(), new TableName(SCHEMA, TABLE));
-            final long dropTime = System.currentTimeMillis() - dropStart;
-            if(dropTime > msForDropping) {
-                lastLargeEnoughMS = msForDropping;
-                lastLargeEnoughCount = rowCount;
-                break;
-            }
-
-            // Compute how fast we dropped, estimate how many more we need (plus some slop)
-            float rowsPerMS = rowCount / (float)dropTime;
-            float neededMS = (msForDropping - dropTime) * 1.25f;
-            rowCount += (int)(rowsPerMS * neededMS);
-            tableId = createTable(SCHEMA, TABLE, childTableDDL);
-            largeEnoughWriteRows(tableId, rowCount, NAME_FORMAT_EXPANDING);
-        }
-
-        tableId = createTable(SCHEMA, TABLE, childTableDDL);
-        largeEnoughWriteRows(tableId, rowCount, NAME_FORMAT_FINAL);
-        return tableId;
-    }
-
     @Test
     public void dropIndexWhileScanning() throws Exception {
         final int tableId = tableWithTwoRows();
         final int SCAN_WAIT = 5000;
 
-        int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("name").getIndexId();
+        int indexId = ddl().getUserTable(session(), TABLE_NAME).getIndex("name").getIndexId();
 
         TimedCallable<List<NewRow>> scanCallable
                 = new DelayScanCallableBuilder(aisGeneration(), tableId, indexId)
@@ -576,7 +399,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         TimedCallable<Void> dropIndexCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
-                TableName table = new TableName(SCHEMA, TABLE);
+                TableName table = TABLE_NAME;
                 Timing.sleep(2000);
                 timePoints.mark("INDEX: DROP>");
                 ddl().dropTableIndexes(ServiceManagerImpl.newSession(), table, Collections.singleton("name"));
@@ -634,11 +457,10 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         final int NUMBER_OF_ROWS = 100;
         final int initialTableId = createTable(SCHEMA, TABLE, "id int not null primary key", "age int");
         createIndex(SCHEMA, TABLE, "age", "age");
-        final TableName tableName = new TableName(SCHEMA, TABLE);
+        final TableName tableName = TABLE_NAME;
         for(int i=0; i < NUMBER_OF_ROWS; ++i) {
             writeRows(createNewRow(initialTableId, i, i + 1));
         }
-
 
         final Index index = ddl().getUserTable(session(), tableName).getIndex("age");
         final Collection<String> indexNameCollection = Collections.singleton(index.getIndexName().getName());
@@ -650,20 +472,20 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 Timing.sleep(DROP_START_LENGTH);
                 timePoints.mark("DROP: PREPARING");
                 ConcurrencyAtomicsDXLService.hookNextDropIndex(session,
-                        new Runnable() {
-                            @Override
-                            public void run() {
-                                timePoints.mark("INDEX: DROP>");
-                                Timing.sleep(DROP_PAUSE_LENGTH);
-                            }
-                        },
-                        new Runnable() {
-                            @Override
-                            public void run() {
-                                timePoints.mark("INDEX: <DROP");
-                                Timing.sleep(DROP_PAUSE_LENGTH);
-                            }
-                        }
+                                                               new Runnable() {
+                                                                   @Override
+                                                                   public void run() {
+                                                                       timePoints.mark("INDEX: DROP>");
+                                                                       Timing.sleep(DROP_PAUSE_LENGTH);
+                                                                   }
+                                                               },
+                                                               new Runnable() {
+                                                                   @Override
+                                                                   public void run() {
+                                                                       timePoints.mark("INDEX: <DROP");
+                                                                       Timing.sleep(DROP_PAUSE_LENGTH);
+                                                                   }
+                                                               }
                 );
 
                 ddl().dropTableIndexes(session, tableName, indexNameCollection);
@@ -737,5 +559,281 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         new TimePointsComparison(scanResult, dropIndexResult).verify(expected);
         TimedExceptionCatcher.throwIfThrown(scanResult);
         TimedExceptionCatcher.throwIfThrown(dropIndexResult);
+    }
+
+
+    //
+    // Tests below assume DML and DDL can be concurrent (and exit quietly if not possible)
+    //
+
+    @Test
+    public void beginWaitDropScanGroup() throws Exception {
+        beginWaitDropScan(null);
+    }
+
+    @Test
+    public void beginWaitDropScanPK() throws Exception {
+        beginWaitDropScan("PRIMARY");
+    }
+
+    @Test
+    public void beginWaitDropScanIndex() throws Exception {
+        beginWaitDropScan("name");
+    }
+
+
+
+    //
+    // Internal
+    //
+
+    private void newRowsOrdered(List<NewRow> rows, final int fieldIndex) {
+        assertTrue("not enough rows: " + rows, rows.size() > 1);
+        List<NewRow> ordered = new ArrayList<NewRow>(rows);
+        Collections.sort(ordered, new Comparator<NewRow>() {
+            @Override @SuppressWarnings("unchecked")
+            public int compare(NewRow o1, NewRow o2) {
+                Object o1Field = o1.getFields().get(fieldIndex);
+                Object o2Field = o2.getFields().get(fieldIndex);
+                if (o1Field == null) {
+                    return o2Field == null ? 0 : -1;
+                }
+                if (o2Field == null) {
+                    return 1;
+                }
+                Comparable o1Comp = (Comparable)o1Field;
+                Comparable o2Comp = (Comparable)o2Field;
+                return o1Comp.compareTo(o2Comp);
+            }
+        });
+    }
+
+    private void scanWhileDropping(String indexName) throws Exception {
+        final int tableId = largeEnoughTable(5000);
+        final int indexId = ddl().getUserTable(session(), TABLE_NAME).getIndex(indexName).getIndexId();
+
+        DelayScanCallableBuilder callableBuilder = new DelayScanCallableBuilder(aisGeneration(), tableId, indexId)
+                .topOfLoopDelayer(1, 100, "SCAN: FIRST")
+                .initialDelay(2500)
+                .markFinish(false)
+                .markOpenCursor(true)
+                .withFullRowOutput(false);
+        DelayableScanCallable scanCallable = callableBuilder.get();
+        TimedCallable<Void> dropCallable = new TimedCallable<Void>() {
+            @Override
+            protected Void doCall(final TimePoints timePoints, Session session) throws Exception {
+                ConcurrencyAtomicsDXLService.hookNextDropTable(
+                        session,
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                timePoints.mark("DROP: IN");
+                            }
+                        },
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                timePoints.mark("DROP: OUT");
+                                Timing.sleep(50);
+                            }
+                        }
+                );
+                ddl().dropTable(session, TABLE_NAME); // will take ~5 seconds
+                assertFalse(
+                       "drop table hook still installed",
+                       ConcurrencyAtomicsDXLService.isDropTableHookInstalled(session)
+               );
+                return null;
+            }
+        };
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
+        Future<TimedResult<Void>> updateFuture = executor.submit(dropCallable);
+
+        // No OldAIS for read only DML when AIS is transactional (DDL lock not strictly related, but good proxy)
+        final boolean expectedRows = !isDDLLockOn();
+        final String[] expectedTimePoints;
+        if(isDDLLockOn()) {
+            expectedTimePoints = new String[] {
+                    "DROP: IN",
+                    "(SCAN: OPEN CURSOR)>",
+                    "DROP: OUT",
+                    "SCAN: exception OldAISException"
+            };
+        } else {
+            expectedTimePoints = new String[] {
+                    "DROP: IN",
+                    "(SCAN: OPEN CURSOR)>",
+                    "<(SCAN: OPEN CURSOR)",
+                    "SCAN: START",
+                    "(SCAN: FIRST)>",
+                    "<(SCAN: FIRST)",
+                    "DROP: OUT"
+            };
+        }
+
+        try {
+            scanFuture.get();
+            // If exception is not thrown, TimePoint comparison will catch it
+        } catch (ExecutionException e) {
+            if (!OldAISException.class.equals(e.getCause().getClass())) {
+                throw new RuntimeException("Expected a OldAISException!", e.getCause());
+            }
+        }
+
+        // If exception is expected then scanFuture.get() would throw, so use ofNull
+        TimedResult<Void> scanResult = TimedResult.ofNull(scanCallable.getTimePoints());
+        TimedResult<Void> updateResult = updateFuture.get();
+
+        new TimePointsComparison(scanResult, updateResult).verify(expectedTimePoints);
+
+        if(expectedRows) {
+            assertTrue("rows were expected!", scanCallable.getRowCount() > 0);
+        } else {
+            assertTrue("rows weren't empty!", scanCallable.getRowCount() == 0);
+        }
+    }
+
+    private void beginWaitDropScan(String indexName) throws Exception {
+        if(isDDLLockOn()) {
+            return;
+        }
+
+        final int tableId = largeEnoughTable(100);
+        final int indexId = (indexName == null) ? 0 : ddl().getUserTable(session(), TABLE_NAME).getIndex(indexName).getIndexId();
+
+        DelayScanCallableBuilder callableBuilder = new DelayScanCallableBuilder(aisGeneration(), tableId, indexId)
+                .topOfLoopDelayer(1, 100, "SCAN: FIRST")
+                .initialDelay(1000)
+                .markFinish(true)
+                .markOpenCursor(false)
+                .withFullRowOutput(false)
+                .withExplicitTxn(true);
+        DelayableScanCallable scanCallable = callableBuilder.get();
+        TimedCallable<Void> dropCallable = new TimedCallable<Void>() {
+            @Override
+            protected Void doCall(final TimePoints timePoints, Session session) throws Exception {
+                ConcurrencyAtomicsDXLService.hookNextDropTable(
+                        session,
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                timePoints.mark("DROP: IN");
+                            }
+                        },
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                timePoints.mark("DROP: OUT");
+                                Timing.sleep(50);
+                            }
+                        }
+                );
+                ddl().dropTable(session, TABLE_NAME); // will take ~5 seconds
+                assertFalse(
+                        "drop table hook still installed",
+                        ConcurrencyAtomicsDXLService.isDropTableHookInstalled(session)
+                );
+                return null;
+            }
+        };
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        Future<TimedResult<List<NewRow>>> scanFuture = executor.submit(scanCallable);
+        Future<TimedResult<Void>> updateFuture = executor.submit(dropCallable);
+
+        try {
+            scanFuture.get();
+            // If exception is not thrown, TimePoint comparison will catch it
+        } catch (ExecutionException e) {
+            if (!OldAISException.class.equals(e.getCause().getClass())) {
+                throw new RuntimeException("Expected a OldAISException!", e.getCause());
+            }
+        }
+
+        // If exception is expected then scanFuture.get() would throw, so use ofNull
+        TimedResult<List<NewRow>> scanResult = scanFuture.get();
+        TimedResult<Void> updateResult = updateFuture.get();
+
+        new TimePointsComparison(scanResult, updateResult).verify(
+                "TXN: BEGAN",
+                "DROP: IN",
+                "DROP: OUT",
+                "SCAN: START",
+                "(SCAN: FIRST)>",
+                "<(SCAN: FIRST)",
+                "SCAN: FINISH",
+                "TXN: COMMITTED"
+        );
+        assertTrue("rows were expected!", scanCallable.getRowCount() > 0);
+    }
+
+    private Object[] largeEnoughNewRow(int id, int pid, String nameFormat) {
+        return new Object[]{ id, pid, String.format(nameFormat, id) };
+    }
+
+    private void largeEnoughWriteRows(int tableId, int count, String nameFormat) {
+        for(int i = 1; i <= count; ++i) {
+            writeRow(tableId, largeEnoughNewRow(i, i, nameFormat));
+        }
+    }
+
+    /**
+     * Creates a table with enough rows that it takes a while to drop it
+     * @param msForDropping how long (at least) it should take to drop this table
+     * @return the table's id
+     * @throws InvalidOperationException if ever encountered
+     */
+    private int largeEnoughTable(long msForDropping) throws InvalidOperationException {
+        final String NAME_FORMAT_INITIAL = "King Frosty %d";
+        final String NAME_FORMAT_EXPANDING = "King Melty %d";
+        final String NAME_FORMAT_FINAL = "King Snowy %d";
+
+        if(lastLargeEnoughMS != msForDropping) {
+            lastLargeEnoughCount = 0;
+        }
+
+        int parentId = createTable(SCHEMA, TABLE+"parent", "id int not null primary key");
+        writeRow(parentId, 1);
+        final String[] childTableDDL = {"id int not null primary key", "pid int", "name varchar(32)", "UNIQUE(name)",
+                "GROUPING FOREIGN KEY (pid) REFERENCES " +TABLE+"parent(id)"};
+
+        // Use previously computed row count if available
+        int tableId = createTable(SCHEMA, TABLE, childTableDDL);
+        if(lastLargeEnoughCount != 0) {
+            largeEnoughWriteRows(tableId, lastLargeEnoughCount, NAME_FORMAT_FINAL);
+            return tableId;
+        }
+
+        // Start estimate by how long it takes to insert for desired time
+        int rowCount = 1;
+        final long writeStart = System.currentTimeMillis();
+        while (System.currentTimeMillis() - writeStart < msForDropping) {
+            writeRow(tableId, largeEnoughNewRow(rowCount, rowCount, NAME_FORMAT_INITIAL));
+            ++rowCount;
+        }
+
+        for(;;) {
+            final long dropStart = System.currentTimeMillis();
+            ddl().dropTable(session(), TABLE_NAME);
+            final long dropTime = System.currentTimeMillis() - dropStart;
+            if(dropTime > msForDropping) {
+                lastLargeEnoughMS = msForDropping;
+                lastLargeEnoughCount = rowCount;
+                break;
+            }
+
+            // Compute how fast we dropped, estimate how many more we need (plus some slop)
+            float rowsPerMS = rowCount / (float)dropTime;
+            float neededMS = (msForDropping - dropTime) * 1.25f;
+            rowCount += (int)(rowsPerMS * neededMS);
+            tableId = createTable(SCHEMA, TABLE, childTableDDL);
+            largeEnoughWriteRows(tableId, rowCount, NAME_FORMAT_EXPANDING);
+        }
+
+        tableId = createTable(SCHEMA, TABLE, childTableDDL);
+        largeEnoughWriteRows(tableId, rowCount, NAME_FORMAT_FINAL);
+        return tableId;
     }
 }
