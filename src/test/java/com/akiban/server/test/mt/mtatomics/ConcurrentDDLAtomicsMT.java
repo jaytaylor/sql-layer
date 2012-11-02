@@ -1184,7 +1184,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         final NewRow oldRow = (oldCols != null) ? createNewRow(tableId, oldCols) : null;
         final NewRow newRow = (newCols != null) ? createNewRow(tableId, newCols) : null;
 
-        TimedCallable<Void> dmlCallable = new DelayableIUDCallable(iudType, oldRow, newRow, 500, 1000, 0);
+        TimedCallable<Void> dmlCallable = new DelayableIUDCallable(iudType, oldRow, newRow, 500, 1000, 500);
         TimedCallable<Void> ddlCallable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {

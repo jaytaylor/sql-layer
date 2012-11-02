@@ -119,7 +119,7 @@ class DelayableIUDCallable extends TimedCallable<Void> {
                 break;
             }
         } catch(Exception e) {
-            Timing.sleep(500);
+            Timing.sleep(postDelay);
             timePoints.mark(type.exceptionMark(e.getClass()));
             throw e;
         }
