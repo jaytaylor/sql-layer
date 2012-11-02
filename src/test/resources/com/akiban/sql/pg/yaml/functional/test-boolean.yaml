@@ -1,0 +1,13 @@
+# test boolean vs tinyint
+---
+- Statement: SET newtypes to 'true';
+---
+- CreateTable: t (c boolean);
+---
+- Statement: INSERT into t values (1);
+---
+- Statement: SELECT c from t where c IS TRUE;
+- output: [[1]]
+---
+- Statement: SET newtypes to 'true';
+...
