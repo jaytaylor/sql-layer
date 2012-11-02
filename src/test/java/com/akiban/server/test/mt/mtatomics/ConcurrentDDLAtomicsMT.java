@@ -684,13 +684,11 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         public void run(Session session, DDLFunctions ddl) {
             switch(this) {
                 case ALTER_TABLE: {
-                    NewAISBuilder builder = AISBBasedBuilder.create();
-                    builder.userTable(TABLE_NAME).colLong("id", false).colString("name", 32, true).colString("extra", 32, true).pk("id").key("name", "name");
-                    UserTable table = builder.ais().getUserTable(TABLE_NAME);
+                    UserTable altered = joinedTableTemplates(true).get(1);
                     ddl.alterTable(
                             session,
                             TABLE_NAME,
-                            table,
+                            altered,
                             Arrays.asList(TableChange.createModify("extra", "extra")),
                             Collections.<TableChange>emptyList(),
                             null
@@ -845,7 +843,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
             return;
         }
 
-        final int tableId = tableWithTwoRows();
+        final int tableId = createJoinedTablesWithTwoRowsEach().get(1);
         final int indexId = (indexName == null) ? 0 : ddl().getUserTable(session(), TABLE_NAME).getIndex(indexName).getIndexId();
 
         DelayScanCallableBuilder callableBuilder = new DelayScanCallableBuilder(aisGeneration(), tableId, indexId)

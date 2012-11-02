@@ -30,6 +30,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.ais.model.aisb2.NewUserTableBuilder;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
@@ -55,7 +56,9 @@ import static org.junit.Assert.assertEquals;
 class ConcurrentAtomicsBase extends MTBase {
     protected static final String SCHEMA = "cold";
     protected static final String SCHEMA2 = "brisk";
+    protected static final String PARENT = "icy";
     protected static final String TABLE = "frosty";
+    protected static final TableName TABLE_PARENT = new TableName(SCHEMA, PARENT);
     protected static final TableName TABLE_NAME = new TableName(SCHEMA, TABLE);
 
     // ApiTestBase interface
@@ -105,22 +108,52 @@ class ConcurrentAtomicsBase extends MTBase {
         expectFullRows(tableId, endStateExpected.toArray(new NewRow[endStateExpected.size()]));
     }
 
-    protected static UserTable tableWithTwoRowsTemplate() {
-        NewAISBuilder builder = AISBBasedBuilder.create();
-        builder.userTable(TABLE_NAME).
-                colLong("id", false).colString("name", 32, true).colLong("extra", true).
-                pk("id").key("name", "name");
-        return builder.ais().getUserTable(TABLE_NAME);
+    protected static List<UserTable> joinedTableTemplates(boolean altered) {
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.userTable(TABLE_PARENT).colLong("id", false).pk("id");
+        NewUserTableBuilder childBuilder = builder.userTable(TABLE_NAME);
+        childBuilder.colLong("id", false).colString("name", 32, true);
+        if(altered) {
+            childBuilder.colString("extra", 32, true);
+        } else {
+            childBuilder.colLong("extra", true);
+        }
+        childBuilder.pk("id").key("name", "name");
+        childBuilder.joinTo(SCHEMA, PARENT, "__akiban_fk_0").on("id", "id");
+        return Arrays.asList(
+                builder.ais().getUserTable(TABLE_PARENT),
+                builder.ais().getUserTable(TABLE_NAME)
+        );
+    }
+
+    protected List<Integer> createJoinedTables() {
+        List<UserTable> tables = joinedTableTemplates(false);
+        ddl().createTable(session(), tables.get(0));
+        ddl().createTable(session(), tables.get(1));
+        updateAISGeneration();
+        return Arrays.asList(
+                tableId(tables.get(0).getName()),
+                tableId(tables.get(1).getName())
+        );
+    }
+
+    protected List<Integer> createJoinedTablesWithTwoRowsEach() {
+        List<Integer> ids = createJoinedTables();
+        writeRows(
+                createNewRow(ids.get(0), 1L),
+                createNewRow(ids.get(1), 1L, "the snowman", 10L),
+                createNewRow(ids.get(0), 2L),
+                createNewRow(ids.get(1), 2L, "mr melty", 20L)
+        );
+        return ids;
     }
 
     protected int tableWithTwoRows() throws InvalidOperationException {
-        UserTable table = tableWithTwoRowsTemplate();
-        ddl().createTable(session(), table);
-        updateAISGeneration();
-        int id = tableId(TABLE_NAME);
+        int id = createTable(SCHEMA, TABLE, "id int not null primary key", "name varchar(32)");
+        createIndex(SCHEMA, TABLE, "name", "name");
         writeRows(
-            createNewRow(id, 1L, "the snowman", 10L),
-            createNewRow(id, 2L, "mr melty", 20L)
+            createNewRow(id, 1L, "the snowman"),
+            createNewRow(id, 2L, "mr melty")
         );
         return id;
     }
