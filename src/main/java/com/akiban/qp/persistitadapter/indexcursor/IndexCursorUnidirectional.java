@@ -428,9 +428,8 @@ class IndexCursorUnidirectional<S> extends IndexCursor
         int firstSpatialColumn;
         int dimensions;
         if (index.isSpatial()) {
-            TableIndex spatialIndex = (TableIndex) index;
-            firstSpatialColumn = spatialIndex.firstSpatialArgument();
-            dimensions = spatialIndex.dimensions();
+            firstSpatialColumn = index.firstSpatialArgument();
+            dimensions = index.dimensions();
         } else {
             firstSpatialColumn = Integer.MAX_VALUE;
             dimensions = 0;

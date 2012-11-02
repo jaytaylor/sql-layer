@@ -381,23 +381,8 @@ public class ProtobufReader {
                     pbIndex.getIsUnique(),
                     getIndexConstraint(pbIndex)
             );
-            if(pbIndex.hasTreeName()) {
-                tableIndex.setTreeName(pbIndex.getTreeName());
-            }
-            if (pbIndex.hasIndexMethod()) {
-                switch (pbIndex.getIndexMethod()) {
-                case Z_ORDER_LAT_LON:
-                    assert pbIndex.hasFirstSpatialArg() == pbIndex.hasDimensions();
-                    int firstSpatialArg = 0;
-                    int dimensions = Space.LAT_LON_DIMENSIONS;
-                    if (pbIndex.hasFirstSpatialArg()) {
-                        firstSpatialArg = pbIndex.getFirstSpatialArg();
-                        dimensions = pbIndex.getDimensions();
-                    }
-                    tableIndex.markSpatial(firstSpatialArg, dimensions);
-                    break;
-                }
-            }
+            handleTreeName(tableIndex, pbIndex);
+            handleSpatial(tableIndex, pbIndex);
             loadIndexColumns(userTable, tableIndex, pbIndex.getColumnsList());
         }
     }
@@ -414,10 +399,32 @@ public class ProtobufReader {
                     getIndexConstraint(pbIndex),
                     convertJoinTypeOrNull(pbIndex.hasJoinType(), pbIndex.getJoinType())
             );
-            if(pbIndex.hasTreeName()) {
-                groupIndex.setTreeName(pbIndex.getTreeName());
-            }
+            handleTreeName(groupIndex, pbIndex);
+            handleSpatial(groupIndex, pbIndex);
             loadIndexColumns(null, groupIndex, pbIndex.getColumnsList());
+        }
+    }
+
+    private void handleTreeName(Index index, AISProtobuf.Index pbIndex) {
+        if(pbIndex.hasTreeName()) {
+            index.setTreeName(pbIndex.getTreeName());
+        }
+    }
+
+    private void handleSpatial(Index index, AISProtobuf.Index pbIndex) {
+        if (pbIndex.hasIndexMethod()) {
+            switch (pbIndex.getIndexMethod()) {
+                case Z_ORDER_LAT_LON:
+                    assert pbIndex.hasFirstSpatialArg() == pbIndex.hasDimensions();
+                    int firstSpatialArg = 0;
+                    int dimensions = Space.LAT_LON_DIMENSIONS;
+                    if (pbIndex.hasFirstSpatialArg()) {
+                        firstSpatialArg = pbIndex.getFirstSpatialArg();
+                        dimensions = pbIndex.getDimensions();
+                    }
+                    index.markSpatial(firstSpatialArg, dimensions);
+                    break;
+            }
         }
     }
 
