@@ -26,6 +26,7 @@
 
 package com.akiban.server.service.routines;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.SQLJJar;
@@ -38,6 +39,7 @@ import com.akiban.server.error.NoSuchSQLJJarException;
 import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 
@@ -60,6 +62,7 @@ import java.util.Map;
 @Singleton
 public final class RoutineLoaderImpl implements RoutineLoader, Service {
 
+    private final DXLService dxlService;
     private final SchemaManager schemaManager;
     private final Map<TableName,ClassLoader> classLoaders = new HashMap<TableName,ClassLoader>();
     private final Map<TableName,LoadablePlan<?>> loadablePlans = new HashMap<TableName,LoadablePlan<?>>();
@@ -68,10 +71,16 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     private final static Logger logger = LoggerFactory.getLogger(RoutineLoaderImpl.class);
 
     @Inject @SuppressWarnings("unused")
-    public RoutineLoaderImpl(SchemaManager schemaManager, 
+    public RoutineLoaderImpl(DXLService dxlService,
+                             SchemaManager schemaManager,
                              ConfigurationService configService) {
+        this.dxlService = dxlService;
         this.schemaManager = schemaManager;
-        scripts = new ScriptCache(schemaManager, configService);
+        scripts = new ScriptCache(dxlService, configService);
+    }
+
+    private AkibanInformationSchema ais(Session session) {
+        return dxlService.ddlFunctions().getAIS(session);
     }
 
     /* RoutineLoader */
@@ -85,7 +94,7 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
             if (loader != null)
                 return loader;
 
-            SQLJJar sqljJar = schemaManager.getAis(session).getSQLJJar(jarName);
+            SQLJJar sqljJar = ais(session).getSQLJJar(jarName);
             if (sqljJar == null)
                 throw new NoSuchSQLJJarException(jarName);
             loader = new URLClassLoader(new URL[] { sqljJar.getURL() });
@@ -107,7 +116,7 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
         synchronized (loadablePlans) {
             loadablePlan = loadablePlans.get(routineName);
             if (loadablePlan == null) {
-                Routine routine = schemaManager.getAis(session).getRoutine(routineName);
+                Routine routine = ais(session).getRoutine(routineName);
                 if (routine == null)
                     throw new NoSuchRoutineException(routineName);
                 if (routine.getCallingConvention() != Routine.CallingConvention.LOADABLE_PLAN)
@@ -127,8 +136,8 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
             }
         }
         synchronized (loadablePlan) {
-            if (loadablePlan.ais() != schemaManager.getAis(session))
-                loadablePlan.ais(schemaManager.getAis(session));
+            if (loadablePlan.ais() != ais(session))
+                loadablePlan.ais(ais(session));
         }
         return loadablePlan;
     }
@@ -139,7 +148,7 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
             Method javaMethod = javaMethods.get(routineName);
             if (javaMethod != null)
                 return javaMethod;
-            Routine routine = schemaManager.getAis(session).getRoutine(routineName);
+            Routine routine = ais(session).getRoutine(routineName);
             if (routine == null)
                 throw new NoSuchRoutineException(routineName);
             if (routine.getCallingConvention() != Routine.CallingConvention.JAVA)

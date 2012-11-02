@@ -48,8 +48,8 @@ import static com.akiban.server.test.ExpressionGenerators.field;
 
 public class ParentAndChildSkipScanIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         parent = createTable(
             "schema", "parent",
@@ -64,6 +64,11 @@ public class ParentAndChildSkipScanIT extends OperatorITBase
             "y int",
             "grouping foreign key (pid) references parent(pid)");
         createIndex("schema", "child", "y", "y");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         parentRowType = schema.userTableRowType(userTable(parent));
         childRowType = schema.userTableRowType(userTable(child));

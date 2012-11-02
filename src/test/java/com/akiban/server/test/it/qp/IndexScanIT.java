@@ -58,10 +58,9 @@ import static junit.framework.Assert.assertEquals;
 
 public class IndexScanIT extends OperatorITBase
 {
-    @Before
-    public void before()
-    {
-        super.before();
+    @Override
+    protected void setupPostCreateSchema() {
+        super.setupPostCreateSchema();
         use(db);
     }
 

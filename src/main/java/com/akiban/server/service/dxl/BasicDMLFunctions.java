@@ -333,9 +333,9 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         private final LegacyOutputConverter converter;
         private final BufferedLegacyOutputRouter router;
 
-        public PooledConverter(Session session, DMLFunctions dmlFunctions) {
+        public PooledConverter(DMLFunctions dmlFunctions) {
             router = new BufferedLegacyOutputRouter(1024 * 1024, true);
-            converter = new LegacyOutputConverter(session, dmlFunctions);
+            converter = new LegacyOutputConverter(dmlFunctions);
             router.addHandler(converter);
         }
 
@@ -343,9 +343,12 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             return router;
         }
 
-        public void setConverter(RowOutput output, Set<Integer> columns) {
-            converter.setOutput(output);
-            converter.setColumnsToScan(columns);
+        public void setConverter(Session session, RowOutput output, Set<Integer> columns) {
+            converter.reset(session, output, columns);
+        }
+
+        public void clearConverter() {
+            converter.clearSession();
         }
     }
 
@@ -355,10 +358,10 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         PooledConverter converter = convertersPool.poll();
         if (converter == null) {
             logger.debug("Allocating new PooledConverter");
-            converter = new PooledConverter(session, this);
+            converter = new PooledConverter(this);
         }
         try {
-            converter.setConverter(output, columns);
+            converter.setConverter(session, output, columns);
         } catch (NoSuchTableException e) {
             releasePooledConverter(converter);
             throw e;
@@ -370,6 +373,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     }
 
     private void releasePooledConverter(PooledConverter which) {
+        which.clearConverter();
         if (!convertersPool.offer(which)) {
             logger.warn("Failed to release PooledConverter "
                     + which

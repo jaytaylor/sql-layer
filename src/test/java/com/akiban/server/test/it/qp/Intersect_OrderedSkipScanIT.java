@@ -48,8 +48,8 @@ import static com.akiban.server.test.ExpressionGenerators.field;
 
 public class Intersect_OrderedSkipScanIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         parent = createTable(
             "schema", "parent",
@@ -66,6 +66,11 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
             "z int",
             "grouping foreign key (pid) references parent(pid)");
         createIndex("schema", "child", "z", "z");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         parentRowType = schema.userTableRowType(userTable(parent));
         childRowType = schema.userTableRowType(userTable(child));

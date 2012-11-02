@@ -242,7 +242,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         }
         txnService.addCommitCallback(session, new TransactionService.Callback() {
             @Override
-            public void run(Session session) {
+            public void run(Session session, long timestamp) {
                 cache.putAll(updates);
             }
         });
@@ -408,23 +408,18 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
 
     class JmxBean implements IndexStatisticsMXBean {
         @Override
-        public String dumpIndexStatistics(String schema, String toFile) 
-                throws IOException {
+        public String dumpIndexStatistics(String schema, String toFile) throws IOException {
             Session session = sessionService.createSession();
             try {
                 File file = new File(toFile);
                 FileWriter writer = new FileWriter(file);
                 try {
-                    IndexStatisticsServiceImpl.this.dumpIndexStatistics(session, schema, writer);
+                    dumpInternal(session, writer, schema);
                 }
                 finally {
                     writer.close();
                 }
                 return file.getAbsolutePath();
-            }
-            catch (RuntimeException ex) {
-                log.error("Error dumping " + schema, ex);
-                throw ex;
             }
             finally {
                 session.close();
@@ -434,15 +429,11 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         @Override
         public String dumpIndexStatisticsToString(String schema) throws IOException {
             Session session = sessionService.createSession();
+            StringWriter writer = new StringWriter();
             try {
-                StringWriter writer = new StringWriter();
-                IndexStatisticsServiceImpl.this.dumpIndexStatistics(session, schema, writer);
+                dumpInternal(session, writer, schema);
                 writer.close();
                 return writer.toString();
-            }
-            catch (RuntimeException ex) {
-                log.error("Error dumping " + schema, ex);
-                throw ex;
             }
             finally {
                 session.close();
@@ -450,12 +441,17 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         }
 
         @Override
-        public void loadIndexStatistics(String schema, String fromFile) 
-                throws IOException {
+        public void loadIndexStatistics(String schema, String fromFile)  throws IOException {
             Session session = sessionService.createSession();
             try {
                 File file = new File(fromFile);
-                IndexStatisticsServiceImpl.this.loadIndexStatistics(session, schema, file);
+                txnService.beginTransaction(session);
+                try {
+                    IndexStatisticsServiceImpl.this.loadIndexStatistics(session, schema, file);
+                    txnService.commitTransaction(session);
+                } finally {
+                    txnService.rollbackTransactionIfOpen(session);
+                }
             }
             catch (RuntimeException ex) {
                 log.error("Error loading " + schema, ex);
@@ -463,6 +459,20 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             }
             finally {
                 session.close();
+            }
+        }
+
+        private void dumpInternal(Session session, Writer writer, String schema) throws IOException {
+            txnService.beginTransaction(session);
+            try {
+                IndexStatisticsServiceImpl.this.dumpIndexStatistics(session, schema, writer);
+                txnService.commitTransaction(session);
+            }
+            catch (RuntimeException ex) {
+                log.error("Error dumping " + schema, ex);
+                throw ex;
+            } finally {
+                txnService.rollbackTransactionIfOpen(session);
             }
         }
     }

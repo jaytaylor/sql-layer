@@ -48,8 +48,8 @@ import static com.akiban.qp.operator.API.indexScan_Default;
 
 public class NonRootPKIndexScanIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         parent = createTable(
             "schema", "parent",
@@ -63,6 +63,11 @@ public class NonRootPKIndexScanIT extends OperatorITBase
             "pid2 int",
             "primary key(cid)",
             "grouping foreign key (pid1, pid2) references parent(pid1, pid2)");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         parentRowType = schema.userTableRowType(userTable(parent));
         childRowType = schema.userTableRowType(userTable(child));

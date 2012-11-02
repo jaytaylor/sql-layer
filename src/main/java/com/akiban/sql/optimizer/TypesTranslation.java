@@ -111,7 +111,7 @@ public final class TypesTranslation {
         }
 
         String name = descriptor.getFullSQLTypeName();
-        for (com.akiban.ais.model.Type aisType : com.akiban.ais.model.Types.types()) {
+        for (com.akiban.ais.model.Type aisType : Types.types()) {
             if (aisType.name().equalsIgnoreCase(name)) {
                 return aisType.akType();
             }
@@ -189,12 +189,27 @@ public final class TypesTranslation {
         case TypeId.FormatIds.INTERVAL_YEAR_MONTH_ID:
             return ExpressionTypes.INTERVAL_MONTH;
         case TypeId.FormatIds.USERDEFINED_TYPE_ID:
-            try {
-                return ExpressionTypes.newType(AkType.valueOf(sqlType.getFullSQLTypeName().toUpperCase()), 
-                                               sqlType.getPrecision(), sqlType.getScale());
-            }
-            catch (IllegalArgumentException ex) {
-                return null;
+            {
+                AkType akType = null;
+                String name = sqlType.getFullSQLTypeName();
+                for (com.akiban.ais.model.Type aisType : Types.types()) {
+                    if (aisType.name().equalsIgnoreCase(name)) {
+                        akType = aisType.akType();
+                        break;
+                    }
+                }
+                if (akType == null) {
+                    try {
+                        akType = AkType.valueOf(name.toUpperCase());
+                    }
+                    catch (IllegalArgumentException ex) {
+                    }
+                }
+                if (akType != null)
+                    return ExpressionTypes.newType(akType, 
+                                                   sqlType.getPrecision(), sqlType.getScale());
+                else
+                    return null;
             }
         default:
             return null;

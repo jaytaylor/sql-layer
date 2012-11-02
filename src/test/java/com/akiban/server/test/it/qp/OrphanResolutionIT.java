@@ -44,8 +44,8 @@ import static com.akiban.qp.operator.API.*;
 
 public class OrphanResolutionIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         parent = createTable(
             "schema", "parent",
@@ -57,6 +57,11 @@ public class OrphanResolutionIT extends OperatorITBase
             "pid int",
             "cx int",
             "grouping foreign key(pid) references parent(pid)");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         parentRowType = schema.userTableRowType(userTable(parent));
         childRowType = schema.userTableRowType(userTable(child));

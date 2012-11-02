@@ -111,13 +111,15 @@ public class DXLTransactionHook implements DXLFunctionsHook {
             case GET_ROWDEF:
             case GET_SCHEMA_ID:
             case GET_SCHEMA_TIMESTAMP:
-            case OPEN_CURSOR:
-            case GET_CURSOR_STATE:
-            case CLOSE_CURSOR:
-            case GET_CURSORS:
             case CONVERT_NEW_ROW:
             case CONVERT_ROW_DATA:
             case CONVERT_ROW_DATAS:
+            case OPEN_CURSOR:
+                return true;
+
+            case GET_CURSOR_STATE:
+            case CLOSE_CURSOR:
+            case GET_CURSORS:
                 return false;
         }
 
