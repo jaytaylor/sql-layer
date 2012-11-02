@@ -726,6 +726,31 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         dmlWaitAndDDL(IUDType.DELETE, oldChildCols(), null, DDLOp.DROP_TABLE);
     }
 
+    @Test
+    public void insertWithConcurrentCreateTableIndex() throws Exception {
+        dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.CREATE_TABLE_INDEX);
+    }
+// create GI
+    @Test
+    public void insertWithConcurrentDropTableIndex() throws Exception {
+        dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.DROP_TABLE_INDEX);
+    }
+// drop GI
+    @Test
+    public void insertWithConcurrentDropGroup() throws Exception {
+        dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.DROP_GROUP);
+    }
+
+    @Test
+    public void insertWithConcurrentDropSchema() throws Exception {
+        dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.DROP_SCHEMA);
+    }
+
+    @Test
+    public void insertWithConcurrentRenameTable() throws Exception {
+        dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.RENAME_TABLE);
+    }
+
 
     //
     // Internal
@@ -829,12 +854,16 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
             this.runner = runner;
         }
 
+        public boolean waitsOnIUD() {
+            return this != RENAME_TABLE;
+        }
+
         public String inTag() {
-            return name() + ": IN";
+            return name() + ">";
         }
 
         public String outTag() {
-            return name() + ": OUT";
+            return name() + "<";
         }
 
         public void run(Session session, DDLFunctions ddl) {
@@ -1030,13 +1059,22 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
         TimedResult<Void> scanResult = dmlFuture.get();
         TimedResult<Void> updateResult = ddlFuture.get();
-        new TimePointsComparison(scanResult, updateResult).verify(
+
+        final String[] expected = new String[] {
                 iudType.startMark(),
                 iudType.inMark(),
                 ddlOp.inTag(),
                 iudType.outMark(),
                 ddlOp.outTag()
-        );
+        };
+
+        if(!ddlOp.waitsOnIUD()) {
+            String tmp = expected[3];
+            expected[3] = expected[4];
+            expected[4] = tmp;
+        }
+
+        new TimePointsComparison(scanResult, updateResult).verify(expected);
     }
 
     private Object[] largeEnoughNewRow(int id, int pid, String nameFormat) {
