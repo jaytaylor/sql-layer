@@ -569,92 +569,122 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
     @Test
     public void beginWaitDropScanGroup() throws Exception {
-        beginWaitDropScan(DDLOp.DROP_TABLE, null);
+        beginWaitDDLThenScan(DDLOp.DROP_TABLE, null);
     }
 
     @Test
     public void beginWaitDropScanPK() throws Exception {
-        beginWaitDropScan(DDLOp.DROP_TABLE, Index.PRIMARY_KEY_CONSTRAINT);
+        beginWaitDDLThenScan(DDLOp.DROP_TABLE, Index.PRIMARY_KEY_CONSTRAINT);
     }
 
     @Test
     public void beginWaitDropScanIndex() throws Exception {
-        beginWaitDropScan(DDLOp.DROP_TABLE, "name");
+        beginWaitDDLThenScan(DDLOp.DROP_TABLE, "name");
     }
 
     @Test
     public void beginWaitCreateTableIndexScanGrop() throws Exception {
-        beginWaitDropScan(DDLOp.CREATE_TABLE_INDEX, null);
+        beginWaitDDLThenScan(DDLOp.CREATE_TABLE_INDEX, null);
     }
 
     @Test
     public void beginWaitCreateTableIndexScanPK() throws Exception {
-        beginWaitDropScan(DDLOp.CREATE_TABLE_INDEX, Index.PRIMARY_KEY_CONSTRAINT);
+        beginWaitDDLThenScan(DDLOp.CREATE_TABLE_INDEX, Index.PRIMARY_KEY_CONSTRAINT);
     }
 
     @Test
     public void beginWaitCreateTableIndexScanOtherIndex() throws Exception {
-        beginWaitDropScan(DDLOp.CREATE_TABLE_INDEX, "name");
+        beginWaitDDLThenScan(DDLOp.CREATE_TABLE_INDEX, "name");
     }
 
     @Test
     public void beginWaitDropTableIndexScanGroup() throws Exception {
-        beginWaitDropScan(DDLOp.DROP_TABLE_INDEX, null);
+        beginWaitDDLThenScan(DDLOp.DROP_TABLE_INDEX, null);
     }
 
     @Test
     public void beginWaitDropTableIndexScanPK() throws Exception {
-        beginWaitDropScan(DDLOp.DROP_TABLE_INDEX, Index.PRIMARY_KEY_CONSTRAINT);
+        beginWaitDDLThenScan(DDLOp.DROP_TABLE_INDEX, Index.PRIMARY_KEY_CONSTRAINT);
     }
 
     @Test
     public void beginWaitDropTableIndexScanSameIndex() throws Exception {
-        beginWaitDropScan(DDLOp.DROP_TABLE_INDEX, "name");
+        beginWaitDDLThenScan(DDLOp.DROP_TABLE_INDEX, "name");
     }
 
     @Test
     public void beginWaitDropGroupScanGroup() throws Exception {
-        beginWaitDropScan(DDLOp.DROP_GROUP, null);
+        beginWaitDDLThenScan(DDLOp.DROP_GROUP, null);
     }
 
     @Test
     public void beginWaitDropGroupScanPK() throws Exception {
-        beginWaitDropScan(DDLOp.DROP_GROUP, Index.PRIMARY_KEY_CONSTRAINT);
+        beginWaitDDLThenScan(DDLOp.DROP_GROUP, Index.PRIMARY_KEY_CONSTRAINT);
     }
 
     @Test
     public void beginWaitDropGroupScanIndex() throws Exception {
-        beginWaitDropScan(DDLOp.DROP_GROUP, "name");
+        beginWaitDDLThenScan(DDLOp.DROP_GROUP, "name");
     }
 
     @Test
     public void beginWaitDropSchemaScanGroup() throws Exception {
-        beginWaitDropScan(DDLOp.DROP_SCHEMA, null);
+        beginWaitDDLThenScan(DDLOp.DROP_SCHEMA, null);
     }
 
     @Test
     public void beginWaitDropSchemaScanPK() throws Exception {
-        beginWaitDropScan(DDLOp.DROP_SCHEMA, Index.PRIMARY_KEY_CONSTRAINT);
+        beginWaitDDLThenScan(DDLOp.DROP_SCHEMA, Index.PRIMARY_KEY_CONSTRAINT);
     }
 
     @Test
     public void beginWaitDropSchemaScanIndex() throws Exception {
-        beginWaitDropScan(DDLOp.DROP_SCHEMA, "name");
+        beginWaitDDLThenScan(DDLOp.DROP_SCHEMA, "name");
     }
 
     @Test
     public void beginWaitAlterTableScanGroup() throws Exception {
-        beginWaitDropScan(DDLOp.ALTER_TABLE, null);
+        beginWaitDDLThenScan(DDLOp.ALTER_TABLE, null);
     }
 
     @Test
     public void beginWaitAlterTableScanPK() throws Exception {
-        beginWaitDropScan(DDLOp.ALTER_TABLE, Index.PRIMARY_KEY_CONSTRAINT);
+        beginWaitDDLThenScan(DDLOp.ALTER_TABLE, Index.PRIMARY_KEY_CONSTRAINT);
     }
 
     @Test
     public void beginWaitAlterTableScanIndex() throws Exception {
-        beginWaitDropScan(DDLOp.ALTER_TABLE, "name");
+        beginWaitDDLThenScan(DDLOp.ALTER_TABLE, "name");
+    }
+
+    @Test
+    public void beginWaitCreateGroupIndexScanGroup() throws Exception {
+        beginWaitDDLThenScan(DDLOp.CREATE_GROUP_INDEX, null);
+    }
+
+    @Test
+    public void beginWaitCreateGroupIndexScanPK() throws Exception {
+        beginWaitDDLThenScan(DDLOp.CREATE_GROUP_INDEX, Index.PRIMARY_KEY_CONSTRAINT);
+    }
+
+    @Test
+    public void beginWaitCreateGroupIndexScanIndex() throws Exception {
+        beginWaitDDLThenScan(DDLOp.CREATE_GROUP_INDEX, "name");
+    }
+
+    @Test
+    public void beginWaitDropGroupIndexScanGroup() throws Exception {
+        beginWaitDDLThenScan(DDLOp.DROP_GROUP_INDEX, null);
+    }
+
+    @Test
+    public void beginWaitDropGroupIndexScanPK() throws Exception {
+        beginWaitDDLThenScan(DDLOp.DROP_GROUP_INDEX, Index.PRIMARY_KEY_CONSTRAINT);
+    }
+
+    @Test
+    public void beginWaitDropGroupIndexScanIndex() throws Exception {
+        beginWaitDDLThenScan(DDLOp.DROP_GROUP_INDEX, "name");
     }
 
 
@@ -678,52 +708,48 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         }
 
         public String outTag() {
-            return name() + ": IN";
+            return name() + ": OUT";
         }
 
         public void run(Session session, DDLFunctions ddl) {
             switch(this) {
                 case ALTER_TABLE: {
-                    UserTable altered = joinedTableTemplates(true).get(1);
+                    UserTable altered = joinedTableTemplates(true, false, false).get(1);
                     ddl.alterTable(
-                            session,
-                            TABLE_NAME,
-                            altered,
+                            session, TABLE_NAME, altered,
                             Arrays.asList(TableChange.createModify("extra", "extra")),
                             Collections.<TableChange>emptyList(),
                             null
                     );
                 }
                 break;
-
                 case CREATE_TABLE_INDEX: {
-                    NewAISBuilder builder = AISBBasedBuilder.create();
-                    builder.userTable(TABLE_NAME).colLong("extra").key("extra", "extra");
-                    Index index = builder.ais().getUserTable(TABLE_NAME).getIndex("extra");
+                    UserTable table = joinedTableTemplates(false, true, false).get(1);
+                    Index index = table.getIndex("extra");
                     ddl.createIndexes(session, Collections.singleton(index));
                 }
                 break;
-
                 case DROP_TABLE_INDEX:
                     ddl.dropTableIndexes(session, TABLE_NAME, Collections.singleton("name"));
                 break;
-
                 case DROP_TABLE:
                     ddl.dropTable(session, TABLE_NAME);
                 break;
-
                 case DROP_GROUP:
                     ddl.dropGroup(session, TABLE_NAME);
                 break;
-
                 case DROP_SCHEMA:
                     ddl.dropSchema(session, SCHEMA);
                 break;
-
-                case CREATE_GROUP_INDEX:
+                case CREATE_GROUP_INDEX: {
+                    List<UserTable> tables = joinedTableTemplates(false, false, true);
+                    Index index = tables.get(0).getGroup().getIndex("g_i");
+                    ddl.createIndexes(session, Collections.singleton(index));
+                }
+                break;
                 case DROP_GROUP_INDEX:
-                    throw new UnsupportedOperationException();
-
+                    ddl.dropGroupIndexes(session, TABLE_PARENT, Collections.singleton("g_i"));
+                break;
                 default:
                     throw new IllegalStateException("Unknown op: " + this);
             }
@@ -838,12 +864,16 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         }
     }
 
-    private void beginWaitDropScan(final DDLOp op, String indexName) throws Exception {
+    private void beginWaitDDLThenScan(final DDLOp op, String indexName) throws Exception {
         if(isDDLLockOn()) {
             return;
         }
 
         final int tableId = createJoinedTablesWithTwoRowsEach().get(1);
+        if(op == DDLOp.DROP_GROUP_INDEX) {
+            DDLOp.CREATE_GROUP_INDEX.run(session(), ddl());
+            updateAISGeneration();
+        }
         final int indexId = (indexName == null) ? 0 : ddl().getUserTable(session(), TABLE_NAME).getIndex(indexName).getIndexId();
 
         DelayScanCallableBuilder callableBuilder = new DelayScanCallableBuilder(aisGeneration(), tableId, indexId)
@@ -873,9 +903,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
             scanFuture.get();
             // If exception is not thrown, TimePoint comparison will catch it
         } catch (ExecutionException e) {
-            if (!OldAISException.class.equals(e.getCause().getClass())) {
-                throw new RuntimeException("Expected a OldAISException!", e.getCause());
-            }
+            throw new RuntimeException("Unexpected scan exception", e);
         }
 
         // If exception is expected then scanFuture.get() would throw, so use ofNull

@@ -26,6 +26,7 @@
 
 package com.akiban.server.test.mt.mtatomics;
 
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
@@ -108,26 +109,32 @@ class ConcurrentAtomicsBase extends MTBase {
         expectFullRows(tableId, endStateExpected.toArray(new NewRow[endStateExpected.size()]));
     }
 
-    protected static List<UserTable> joinedTableTemplates(boolean altered) {
+    protected static List<UserTable> joinedTableTemplates(boolean alteredChild, boolean extraChildKey, boolean groupIndex) {
         NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
-        builder.userTable(TABLE_PARENT).colLong("id", false).pk("id");
+        builder.userTable(TABLE_PARENT).colLong("id", false).colLong("value", true).pk("id");
         NewUserTableBuilder childBuilder = builder.userTable(TABLE_NAME);
-        childBuilder.colLong("id", false).colString("name", 32, true);
-        if(altered) {
+        childBuilder.colLong("id", false).colString("name", 32, true).
+                pk("id").key("name", "name").
+                joinTo(SCHEMA, PARENT, "__akiban_fk_0").on("id", "id");
+        if(alteredChild) {
             childBuilder.colString("extra", 32, true);
         } else {
             childBuilder.colLong("extra", true);
         }
-        childBuilder.pk("id").key("name", "name");
-        childBuilder.joinTo(SCHEMA, PARENT, "__akiban_fk_0").on("id", "id");
+        if(extraChildKey) {
+            childBuilder.key("extra", "extra");
+        }
+        if(groupIndex) {
+            builder.groupIndex("g_i", Index.JoinType.LEFT).on(TABLE, "extra").and(PARENT, "value");
+        }
         return Arrays.asList(
                 builder.ais().getUserTable(TABLE_PARENT),
                 builder.ais().getUserTable(TABLE_NAME)
         );
     }
 
-    protected List<Integer> createJoinedTables() {
-        List<UserTable> tables = joinedTableTemplates(false);
+    protected List<Integer> createJoinedTables(boolean alteredChild, boolean extraChildKey, boolean groupIndex) {
+        List<UserTable> tables = joinedTableTemplates(alteredChild, extraChildKey, groupIndex);
         ddl().createTable(session(), tables.get(0));
         ddl().createTable(session(), tables.get(1));
         updateAISGeneration();
@@ -138,11 +145,11 @@ class ConcurrentAtomicsBase extends MTBase {
     }
 
     protected List<Integer> createJoinedTablesWithTwoRowsEach() {
-        List<Integer> ids = createJoinedTables();
+        List<Integer> ids = createJoinedTables(false, false, false);
         writeRows(
-                createNewRow(ids.get(0), 1L),
+                createNewRow(ids.get(0), 1L, 100L),
                 createNewRow(ids.get(1), 1L, "the snowman", 10L),
-                createNewRow(ids.get(0), 2L),
+                createNewRow(ids.get(0), 2L, 200L),
                 createNewRow(ids.get(1), 2L, "mr melty", 20L)
         );
         return ids;
