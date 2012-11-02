@@ -42,7 +42,6 @@ public class ServerSessionMonitor implements SessionMonitor {
     private long currentStatementStartTime = -1;
     private long currentStatementEndTime = -1;
     private int rowsProcessed;
-    private int statementCount;
     private long[] lastNanos, totalNanos;
     private MonitorStage currentStage;
     private long currentStageStartNanos;
@@ -51,8 +50,8 @@ public class ServerSessionMonitor implements SessionMonitor {
         this.serverType = serverType;
         this.sessionId = sessionId;
         startTime = System.currentTimeMillis();
-        lastNanos = new long[MonitorStage.values().size()];
-        totalNanos = new long[MonitorStage.values().size()];
+        lastNanos = new long[MonitorStage.values().length];
+        totalNanos = new long[MonitorStage.values().length];
     }
     
     public void setCallerSessionId(int callerSessionId) {
@@ -68,12 +67,13 @@ public class ServerSessionMonitor implements SessionMonitor {
     }
 
     public void startStatement(String statement, long startTime) {
-        if (statement != null)  // TODO: Remove when always passed by PG server.
+        if (statement != null) {  // TODO: Remove when always passed by PG server.
+            statementCount++;
             currentStatement = statement;
+        }
         currentStatementStartTime = startTime;
         currentStatementEndTime = -1;
         rowsProcessed = -1;
-        statementCount++;
     }
 
     public void endStatement(int rowsProcessed) {
@@ -154,6 +154,14 @@ public class ServerSessionMonitor implements SessionMonitor {
 
     public long getTotalTimeStageNanos(MonitorStage stage) {
         return totalNanos[stage.ordinal()];
+    }
+
+    public long getNonIdleTime() {
+        long total = 0;
+        for (int i = 1; i < totalNanos.length; i++) {
+            total += totalNanos[i];
+        }
+        return total;
     }
 
 }

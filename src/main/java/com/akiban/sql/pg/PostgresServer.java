@@ -31,6 +31,7 @@ import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerStatementCache;
 
 import com.akiban.server.error.InvalidPortException;
+import com.akiban.server.service.monitor.MonitorStage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

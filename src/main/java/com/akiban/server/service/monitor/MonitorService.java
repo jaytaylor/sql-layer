@@ -26,6 +26,8 @@
 
 package com.akiban.server.service.monitor;
 
+import java.util.Collection;
+
 public interface MonitorService {
     /** Allocate a unique id for a new session. */
     int allocateSessionId();

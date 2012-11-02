@@ -65,7 +65,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         new HashMap<StoreAdapter.AdapterType, StoreAdapter>();
     protected ServerTransaction transaction;
     protected boolean transactionDefaultReadOnly = false;
-    protected ServerSessionMonitor sessionTracer;
+    protected ServerSessionMonitor sessionMonitor;
 
     protected Long queryTimeoutSec = null;
     protected ServerValueEncoder.ZeroDateTimeBehavior zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.NONE;

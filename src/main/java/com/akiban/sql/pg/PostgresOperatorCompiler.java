@@ -44,7 +44,6 @@ import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.server.error.SQLParseException;
 import com.akiban.server.error.SQLParserInternalException;
-import com.akiban.server.service.EventTypes;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 

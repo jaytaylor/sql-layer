@@ -70,4 +70,7 @@ public interface SessionMonitor {
 
     /** The total time in nanoseconds spent in the given stage. */
     long getTotalTimeStageNanos(MonitorStage stage);
+
+    /** Get total time in nanoseconds not spent idle. */
+    long getNonIdleTime();
 }

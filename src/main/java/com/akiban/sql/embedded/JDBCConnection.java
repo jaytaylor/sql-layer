@@ -30,7 +30,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.AkServerInterface;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerSessionBase;
-import com.akiban.sql.server.ServerSessionTracer;
+import com.akiban.sql.server.ServerSessionMonitor;
 import com.akiban.sql.server.ServerTransaction;
 
 import com.akiban.sql.StandardException;
@@ -73,16 +73,17 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     private List<JDBCResultSet> openResultSets = new ArrayList<JDBCResultSet>();
 
     private static final Logger logger = LoggerFactory.getLogger(JDBCConnection.class);
+    private static final String SERVER_TYPE = "JDBC";
 
     protected JDBCConnection(ServerServiceRequirements reqs, Properties info) {
         super(reqs);
+        sessionMonitor = new ServerSessionMonitor(SERVER_TYPE, reqs.monitor().allocateSessionId());
         inheritFromCall();
         if ((defaultSchemaName != null) &&
             (info.getProperty("database") == null))
             info.put("database", defaultSchemaName);
         setProperties(info);
         session = reqs.sessionService().createSession();
-        sessionTracer = new ServerSessionTracer(0, false);
         commitMode = (transaction != null) ? CommitMode.INHERITED : CommitMode.AUTO;
     }
 
