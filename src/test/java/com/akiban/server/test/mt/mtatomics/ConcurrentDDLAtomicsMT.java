@@ -626,6 +626,21 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         beginWaitDropScan(DDLOp.DROP_GROUP, "name");
     }
 
+    @Test
+    public void beginWaitDropSchemaScanGroup() throws Exception {
+        beginWaitDropScan(DDLOp.DROP_SCHEMA, null);
+    }
+
+    @Test
+    public void beginWaitDropSchemaScanPK() throws Exception {
+        beginWaitDropScan(DDLOp.DROP_SCHEMA, Index.PRIMARY_KEY_CONSTRAINT);
+    }
+
+    @Test
+    public void beginWaitDropSchemaScanIndex() throws Exception {
+        beginWaitDropScan(DDLOp.DROP_SCHEMA, "name");
+    }
+
 
     //
     // Internal
@@ -639,6 +654,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         DROP_GROUP_INDEX,
         DROP_TABLE,
         DROP_GROUP,
+        DROP_SCHEMA
         ;
 
         public String inTag() {
@@ -666,6 +682,9 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 break;
                 case DROP_GROUP:
                     ddl.dropGroup(session, TABLE_NAME);
+                break;
+                case DROP_SCHEMA:
+                    ddl.dropSchema(session, SCHEMA);
                 break;
 
                 case ALTER_TABLE:
