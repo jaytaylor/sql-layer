@@ -467,11 +467,11 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                 @Override
                 protected Object[] createRow(TValidatedOverload data) {
                     return new Object[] {
-                            data.displayName().toLowerCase(), null,
+                            data.displayName().toLowerCase(),
                             lowest(data.getPriorities()),
-                            data.describeInputs(), null,
-                            data.resultStrategy().toString(), null,
-                            data.id(), null,
+                            data.describeInputs(),
+                            data.resultStrategy().toString(),
+                            data.id(),
                     };
                 }
             };
