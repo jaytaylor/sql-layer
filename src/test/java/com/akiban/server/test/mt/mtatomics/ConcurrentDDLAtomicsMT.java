@@ -822,7 +822,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 new Runner() {
                     @Override
                     public void run(Session session, DDLFunctions ddl) {
-                        ddl.dropGroup(session, TABLE_NAME);
+                        ddl.dropGroup(session, TABLE_PARENT);
                     }
                 }
         ),

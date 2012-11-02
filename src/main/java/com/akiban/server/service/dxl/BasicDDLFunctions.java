@@ -795,7 +795,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         try {
             AkibanInformationSchema ais = getAIS(session);
             Group group = ais.getGroup(groupName);
-            if(groupName == null) {
+            if(group == null) {
                 return;
             }
             for(Table table : ais.getUserTables().values()) {
