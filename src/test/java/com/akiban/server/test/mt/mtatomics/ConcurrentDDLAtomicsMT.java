@@ -26,6 +26,7 @@
 
 package com.akiban.server.test.mt.mtatomics;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -71,6 +72,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import static com.akiban.server.test.mt.mtatomics.DelayableIUDCallable.IUDType;
@@ -836,6 +839,81 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
 
     //
+    // Basic concurrent DDL: 1 success and 1 failure
+    //
+
+    // This is a Persistit level w-w conflict due to granularity of stored AIS (schema level). Change as needed.
+    @Test
+    public void createIndexesConcurrentlySameGroup() throws Exception {
+        if(isDDLLockOn()) {
+            return;
+        }
+
+        // Line both up at commit, second will fail
+        final int DDL_PRE_COMMIT_WAIT_1 = 1000;
+        final int DDL_PRE_COMMIT_WAIT_2 = 3000;
+
+        createJoinedTables(false, false, false, false);
+        final List<UserTable> tables = joinedTableTemplates(true, false, true, false);
+        final Index parentIndex = tables.get(0).getIndex("value");
+        final Index childIndex = tables.get(1).getIndex("extra");
+
+        TimedCallable<Void> ddlParentCallbable = new TimedCallable<Void>() {
+            @Override
+            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
+                AtomicInteger fireCount = new AtomicInteger(0);
+                delayInterestingDDLCommit(session, fireCount, DDL_PRE_COMMIT_WAIT_1);
+                timePoints.mark("CREATE INDEX (PARENT)>");
+                ddl().createIndexes(session, Collections.singleton(parentIndex));
+                timePoints.mark("CREATE INDEX (PARENT)<");
+                assertEquals("DDL hook fire count", 2, fireCount.get());
+                return null;
+            }
+        };
+
+        TimedCallable<Void> ddlChildCallable = new TimedCallable<Void>() {
+            @Override
+            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
+                Timing.sleep(500);
+                AtomicInteger fireCount = new AtomicInteger(0);
+                delayInterestingDDLCommit(session, fireCount, DDL_PRE_COMMIT_WAIT_2);
+                timePoints.mark("CREATE INDEX (CHILD)>");
+                ddl().createIndexes(session, Collections.singleton(childIndex));
+                timePoints.mark("CREATE INDEX (CHILD)<");
+                assertEquals("DDL hook fire count", 2, fireCount.get());
+                return null;
+            }
+        };
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        Future<TimedResult<Void>> ddlParentFuture = executor.submit(ddlParentCallbable);
+        Future<TimedResult<Void>> ddlChildFuture = executor.submit(ddlChildCallable);
+
+        TimedResult<Void> ddlParentResult = ddlParentFuture.get();
+
+        try {
+            ddlChildFuture.get();
+            // If exception doesn't throw time points check will catch it
+        } catch(ExecutionException e) {
+            ddlChildCallable.getTimePoints().mark("CHILD EXCEPTION: " + e.getCause().getClass().getSimpleName());
+        }
+
+        final String[] expected = new String[] {
+                "CREATE INDEX (PARENT)>",
+                "CREATE INDEX (CHILD)>",
+                "CREATE INDEX (PARENT)<",
+                "CHILD EXCEPTION: RollbackException"
+        };
+
+        new TimePointsComparison(TimedResult.ofNull(ddlChildCallable.getTimePoints()), ddlParentResult).verify(expected);
+
+        final AkibanInformationSchema ais = ais();
+        assertNotNull("Parent index should exists", ais.getUserTable(TABLE_PARENT).getIndex(parentIndex.getIndexName().getName()));
+        assertNull("Child index shouldn't exist", ais.getUserTable(TABLE_NAME).getIndex(childIndex.getIndexName().getName()));
+    }
+
+
+    //
     // Test helpers
     //
 
@@ -847,7 +925,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 new Runner() {
                     @Override
                     public void run(Session session, DDLFunctions ddl) {
-                        UserTable altered = joinedTableTemplates(true, false, false).get(1);
+                        UserTable altered = joinedTableTemplates(false, true, false, false).get(1);
                         ddl.alterTable(
                                 session, TABLE_NAME, altered,
                                 Arrays.asList(TableChange.createModify("extra", "extra")),
@@ -861,7 +939,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 new Runner() {
                     @Override
                     public void run(Session session, DDLFunctions ddl) {
-                        UserTable table = joinedTableTemplates(false, true, false).get(1);
+                        UserTable table = joinedTableTemplates(false, false, true, false).get(1);
                         Index index = table.getIndex("extra");
                         ddl.createIndexes(session, Collections.singleton(index));
                     }
@@ -871,7 +949,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 new Runner() {
                     @Override
                     public void run(Session session, DDLFunctions ddl) {
-                        List<UserTable> tables = joinedTableTemplates(false, false, true);
+                        List<UserTable> tables = joinedTableTemplates(false, false, false, true);
                         Index index = tables.get(0).getGroup().getIndex("g_i");
                         ddl.createIndexes(session, Collections.singleton(index));
                     }

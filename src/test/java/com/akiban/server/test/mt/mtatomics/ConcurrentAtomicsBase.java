@@ -111,9 +111,13 @@ class ConcurrentAtomicsBase extends MTBase {
         expectFullRows(tableId, endStateExpected.toArray(new NewRow[endStateExpected.size()]));
     }
 
-    protected static List<UserTable> joinedTableTemplates(boolean alteredChild, boolean extraChildKey, boolean groupIndex) {
+    protected static List<UserTable> joinedTableTemplates(boolean extraParentKey, boolean alteredChild, boolean extraChildKey, boolean groupIndex) {
         NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
-        builder.userTable(TABLE_PARENT).colLong("id", false).colLong("value", true).pk("id");
+        NewUserTableBuilder parentBuilder = builder.userTable(TABLE_PARENT);
+        parentBuilder.colLong("id", false).colLong("value", true).pk("id");
+        if(extraParentKey) {
+            parentBuilder.key("value", "value");
+        }
         NewUserTableBuilder childBuilder = builder.userTable(TABLE_NAME);
         childBuilder.colLong("id", false).colString("name", 32, true).
                 pk("id").key("name", "name").
@@ -135,8 +139,8 @@ class ConcurrentAtomicsBase extends MTBase {
         );
     }
 
-    protected List<Integer> createJoinedTables(boolean alteredChild, boolean extraChildKey, boolean groupIndex) {
-        List<UserTable> tables = joinedTableTemplates(alteredChild, extraChildKey, groupIndex);
+    protected List<Integer> createJoinedTables(boolean extraParentKey, boolean alteredChild, boolean extraChildKey, boolean groupIndex) {
+        List<UserTable> tables = joinedTableTemplates(extraParentKey, alteredChild, extraChildKey, groupIndex);
         ddl().createTable(session(), tables.get(0));
         ddl().createTable(session(), tables.get(1));
         updateAISGeneration();
@@ -159,7 +163,7 @@ class ConcurrentAtomicsBase extends MTBase {
     }
 
     protected List<Integer> createJoinedTablesWithTwoRowsEach() {
-        List<Integer> ids = createJoinedTables(false, false, false);
+        List<Integer> ids = createJoinedTables(false, false, false, false);
         writeRows(
                 createNewRow(ids.get(0), 1L, 100L),
                 createNewRow(ids.get(1), oldChildCols()),
