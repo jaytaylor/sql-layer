@@ -27,6 +27,7 @@
 package com.akiban.server.types3.mcompat.mcasts;
 
 import com.akiban.server.types3.TStrongCasts;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
@@ -102,7 +103,7 @@ public final class Strongs {
             MBinary.LONGBLOB
     );
 
-    public static final TStrongCasts fromint = TStrongCasts.from(MNumeric.TINYINT).to(
+    public static final TStrongCasts fromTinyint = TStrongCasts.from(MNumeric.TINYINT).to(
             MNumeric.SMALLINT,
             MNumeric.MEDIUMINT,
             MNumeric.INT,
@@ -113,7 +114,8 @@ public final class Strongs {
             MNumeric.INT_UNSIGNED,
             MNumeric.BIGINT_UNSIGNED,
             MNumeric.DECIMAL,
-            MApproximateNumber.DOUBLE
+            MApproximateNumber.DOUBLE,
+            AkBool.INSTANCE
     );
     public static final TStrongCasts fromSmallint = TStrongCasts.from(MNumeric.SMALLINT).to(
             MNumeric.MEDIUMINT,
