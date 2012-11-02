@@ -57,7 +57,8 @@ public final class MKeyComparables {
         List<TClass> candidates = Arrays.<TClass>asList(
                 MNumeric.TINYINT, MNumeric.SMALLINT, MNumeric.MEDIUMINT, MNumeric.INT, MNumeric.BIGINT,
                 MNumeric.TINYINT_UNSIGNED, MNumeric.SMALLINT_UNSIGNED, MNumeric.MEDIUMINT_UNSIGNED,
-                MNumeric.INT_UNSIGNED, MNumeric.BIGINT_UNSIGNED
+                MNumeric.INT_UNSIGNED
+                // BIGINT UNSIGNED is not here, because its representation is not a signed long
         );
         Set<Set<TClass>> alreadyCreated = new HashSet<Set<TClass>>();
         List<TKeyComparable> results = new ArrayList<TKeyComparable>();
