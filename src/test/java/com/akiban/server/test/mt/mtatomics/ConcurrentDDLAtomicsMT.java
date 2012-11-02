@@ -713,7 +713,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
     }
 
     //
-    // Section 2: Test IUD against a concurrent DROP, then I against all other DDLs
+    // Section 2: Test IUD wait against waiting DROP, then insert against all other DDL
     //
 
     @Test
@@ -777,12 +777,22 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
     }
 
     //
-    // Section 3: Attempt to do IUD while DDL is in progress (DML waits and then gets exception)
+    // Section 3: Test drop against waiting IUD, then all other DDL against waiting INSERT
     //
 
     @Test
-    public void dropTableWithConcurrentInsert() throws Exception {
+    public void dropTableWaitInsert() throws Exception {
         ddlWaitAndDML(IUDType.INSERT, null, newChildCols(), DDLOp.DROP_TABLE);
+    }
+
+    @Test
+    public void dropTableWaitUpdate() throws Exception {
+        ddlWaitAndDML(IUDType.UPDATE, oldChildCols(), newChildCols(), DDLOp.DROP_TABLE);
+    }
+
+    @Test
+    public void dropTableWaitDelete() throws Exception {
+        ddlWaitAndDML(IUDType.DELETE, oldChildCols(), null, DDLOp.DROP_TABLE);
     }
 
 
