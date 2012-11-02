@@ -320,7 +320,7 @@ public class QueryCancelationIT extends PostgresServerITBase
             LOG.debug("CancelSQLThread found {} sessions", server().getCurrentSessions().size());
             Iterator<Integer> i = server().getCurrentSessions().iterator();
             sessionID = i.next();
-            if (SELECT_COUNT.equals(server().getConnection(sessionID).getSqlString())) {
+            if (SELECT_COUNT.equals(server().getConnection(sessionID).getSessionMonitor().getCurrentStatement())) {
                 sessionID = i.next();
             }
            

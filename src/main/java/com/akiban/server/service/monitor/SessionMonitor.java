@@ -56,6 +56,9 @@ public interface SessionMonitor {
     /** The time at which the current statement completed. */
     Date getCurrentStatementEndTime();
 
+    /** The time for which current statement ran. */
+    long getCurrentStatementDuration();
+
     /** The number of rows returned / affected by the last statement
      * or <code>-1</code> if unknown, not applicable or in
      * progress. 

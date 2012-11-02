@@ -42,6 +42,8 @@ import com.akiban.server.error.ErrorCode;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.config.Property;
+import com.akiban.server.service.monitor.MonitorService;
+import com.akiban.server.service.monitor.MonitorStage;
 import com.akiban.server.service.monitor.SessionMonitor;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.types.AkType;
@@ -58,16 +60,20 @@ public class ServerSchemaTablesServiceImpl
     static final TableName SERVER_SESSIONS = new TableName (SCHEMA_NAME, "server_sessions");
     static final TableName SERVER_PARAMETERS = new TableName (SCHEMA_NAME, "server_parameters");
     
-    private final PostgresService manager;
+    private final MonitorService monitor;
+    private final PostgresService postgres;
     private final ConfigurationService configService;
     private final AkServerInterface serverInterface;
     
     @Inject
-    public ServerSchemaTablesServiceImpl (SchemaManager schemaManager, PostgresService manager, 
-            ConfigurationService configService,
-            AkServerInterface serverInterface) {
+    public ServerSchemaTablesServiceImpl (SchemaManager schemaManager, 
+                                          MonitorService monitor, 
+                                          PostgresService postgres, 
+                                          ConfigurationService configService,
+                                          AkServerInterface serverInterface) {
         super(schemaManager);
-        this.manager = manager;
+        this.monitor = monitor;
+        this.postgres = postgres;
         this.configService = configService;
         this.serverInterface = serverInterface;
     }
@@ -123,11 +129,11 @@ public class ServerSchemaTablesServiceImpl
                     return null;
                 }
                 long startTime = System.currentTimeMillis() -  
-                        (manager.getServer().getUptime() / 1000000);
+                        (postgres.getServer().getUptime() / 1000000);
                 ValuesRow row = new ValuesRow (rowType,
                         serverInterface.getServerName(),
                         serverInterface.getServerVersion(),
-                        manager.getServer().isListening() ? "RUNNING" : "CLOSED",
+                        postgres.getServer().isListening() ? "RUNNING" : "CLOSED",
                         startTime,
                         ++rowCounter);
                 ((FromObjectValueSource)row.eval(3)).setExplicitly(startTime/1000, AkType.TIMESTAMP);
@@ -150,11 +156,11 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public long rowCount() {
-            return manager.getServer().getCurrentSessions().size();
+            return monitor.getSessionMonitors().size();
         }
         
         private class Scan extends BaseScan {
-            final Iterator<Integer> sessions = manager.getServer().getCurrentSessions().iterator(); 
+            final Iterator<SessionMonitor> sessions = monitor.getSessionMonitors().iterator(); 
             public Scan(RowType rowType) {
                 super(rowType);
             }
@@ -164,27 +170,16 @@ public class ServerSchemaTablesServiceImpl
                 if (!sessions.hasNext()) {
                     return null;
                 }
-                int sessionID = 0;
-                do {
-                    sessionID = sessions.next();
-                } while (manager.getServer().getConnection(sessionID) == null);
-                
-                SessionTracer trace = manager.getServer().getConnection(sessionID).getSessionTracer();
-                String eventName = null;
-                if (trace.getCurrentEvents().length > 0) {
-                    Event event = (Event)trace.getCurrentEvents()[0];
-                    eventName = event.getName();
-                }
-                        
-                ValuesRow row = new ValuesRow (rowType,
-                        sessionID,
-                        trace.getStartTime().getTime(),
-                        boolResult(trace.isEnabled()),
-                        eventName,
-                        trace.getRemoteAddress(),
-                        trace.getCurrentStatement(),
-                        ++rowCounter);
-                ((FromObjectValueSource)row.eval(1)).setExplicitly(trace.getStartTime().getTime()/1000, AkType.TIMESTAMP);
+                SessionMonitor session = sessions.next();
+                MonitorStage stage = session.getCurrentStage();
+                ValuesRow row = new ValuesRow(rowType,
+                                              session.getSessionId(),
+                                              null, // see below
+                                              (stage == null) ? null : stage.name(),
+                                              session.getRemoteAddress(),
+                                              session.getCurrentStatement(),
+                                              ++rowCounter);
+                ((FromObjectValueSource)row.eval(1)).setExplicitly(session.getStartTime().getTime()/1000, AkType.TIMESTAMP);
                 return row;
             }
         }
@@ -275,7 +270,6 @@ public class ServerSchemaTablesServiceImpl
         builder.userTable(SERVER_SESSIONS)
             .colBigInt("session_id", false)
             .colTimestamp("start_time", false)
-            .colString("instrumentation_enabled", YES_NO_MAX, false)
             .colString("session_status", DESCRIPTOR_MAX, true)
             .colString("remote_address", DESCRIPTOR_MAX, true)
             .colString("last_sql_executed", PATH_MAX, true);
