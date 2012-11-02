@@ -198,7 +198,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         if (localTransaction != null) {
             logger.debug("Auto BEGIN TRANSACTION");
             transaction = localTransaction;
-            reqs.monitor().registerSessionMonitor(sessionMonitor);
+            registerSessionMonitor();
         }
     }
 
@@ -212,7 +212,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             // now.
             localTransaction = transaction;
             transaction = null;
-            reqs.monitor().deregisterSessionMonitor(sessionMonitor);
+            deregisterSessionMonitor();
             logger.debug(success ? "Auto COMMIT TRANSACTION" : "Auto ROLLBACK TRANSACTION");
         }
         super.afterExecute(stmt, localTransaction, success);
@@ -227,7 +227,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         openResultSets.remove(resultSet);
         if (checkAutoCommit()) {
             commitTransaction();
-            reqs.monitor().deregisterSessionMonitor(sessionMonitor);
+            deregisterSessionMonitor();
             logger.debug("Auto COMMIT TRANSACTION");
         }
     }
@@ -236,6 +236,16 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         return ((commitMode == CommitMode.AUTO) && 
                 (transaction != null) &&
                 openResultSets.isEmpty());
+    }
+
+    // Register as a result of beginning a transaction (which is implicit).
+    protected void registerSessionMonitor() {
+        reqs.monitor().registerSessionMonitor(sessionMonitor);
+    }
+
+    // Deregister when transaction is committed, rolled back, or connection closed.
+    protected void deregisterSessionMonitor() {
+        reqs.monitor().deregisterSessionMonitor(sessionMonitor);
     }
 
     protected AkServerInterface getAkServer() {
@@ -313,7 +323,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             throw JDBCException.throwUnwrapped(ex);
         }
         if (openResultSets.isEmpty())
-            reqs.monitor().deregisterSessionMonitor(sessionMonitor);
+            deregisterSessionMonitor();
     }
 
     @Override
@@ -330,6 +340,8 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         catch (RuntimeException ex) {
             throw JDBCException.throwUnwrapped(ex);
         }
+        if (openResultSets.isEmpty())
+            deregisterSessionMonitor();
     }
 
     @Override
@@ -339,6 +351,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         while (!openResultSets.isEmpty()) {
             openResultSets.get(0).close();
         }
+        deregisterSessionMonitor();
         this.closed = true;
     }
 
