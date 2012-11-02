@@ -34,15 +34,21 @@ public interface MonitorMXBean
     /** Disable the query log. */
     void disableQueryLog();
 
-    /** Set the filename for the query log. Must be called before {@link enableQueryLog}. */
+    /** Set the filename for the query log. Must be called before
+     * {@link enableQueryLog}.
+     */
     void setQueryLogFileName(String fileName);
 
     /** Get the current query log or <code>null</code> if not set. */
     String getQueryLogFileName();
 
-    /** Set the time limit on query execution. */
+    /** Set minimum time in milliseconds for a query to be logged or
+     * <code>-1</code> for no limit. 
+     */
     void setExecutionTimeThreshold(long threshold);
 
-    /** Get the time limit on query execution. */
+    /** Get minimum time in milliseconds for a query to be logged or
+     * <code>-1</code> for no limit. 
+     */
     long getExecutionTimeThreshold();
 }
