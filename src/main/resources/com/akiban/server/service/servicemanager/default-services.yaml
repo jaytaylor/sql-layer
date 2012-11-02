@@ -11,7 +11,7 @@
     com.akiban.server.store.SchemaManager : com.akiban.server.store.PersistitStoreSchemaManager
     com.akiban.server.store.Store : com.akiban.qp.persistitadapter.OperatorStore
     com.akiban.sql.pg.PostgresService : com.akiban.sql.pg.PostgresServerManager
-    com.akiban.server.service.instrumentation.InstrumentationService : com.akiban.server.service.instrumentation.InstrumentationServiceImpl
+    com.akiban.server.service.monitor.MonitorService : com.akiban.server.service.monitor.MonitorServiceImpl
     com.akiban.server.service.functions.FunctionsRegistry     : com.akiban.server.service.functions.FunctionsRegistryImpl
     com.akiban.server.store.statistics.IndexStatisticsService : com.akiban.server.store.statistics.IndexStatisticsServiceImpl
     com.akiban.server.service.is.BasicInfoSchemaTablesService : com.akiban.server.service.is.BasicInfoSchemaTablesServiceImpl

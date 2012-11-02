@@ -40,7 +40,7 @@ import com.akiban.server.error.TransactionInProgressException;
 import com.akiban.server.error.TransactionReadOnlyException;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.service.instrumentation.SessionTracer;
+import com.akiban.server.service.monitor.SessionMonitor;
 import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
@@ -65,7 +65,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         new HashMap<StoreAdapter.AdapterType, StoreAdapter>();
     protected ServerTransaction transaction;
     protected boolean transactionDefaultReadOnly = false;
-    protected ServerSessionTracer sessionTracer;
+    protected ServerSessionMonitor sessionTracer;
 
     protected Long queryTimeoutSec = null;
     protected ServerValueEncoder.ZeroDateTimeBehavior zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.NONE;
@@ -176,8 +176,8 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     @Override
-    public SessionTracer getSessionTracer() {
-        return sessionTracer;
+    public SessionMonitor getSessionMonitor() {
+        return sessionMonitor;
      }
 
     @Override

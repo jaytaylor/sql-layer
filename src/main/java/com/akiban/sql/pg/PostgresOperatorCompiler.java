@@ -139,16 +139,7 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
             return null;
         DMLStatementNode dmlStmt = (DMLStatementNode)stmt;
         PlanContext planContext = new ServerPlanContext(this, new PostgresQueryContext(session));
-        BasePlannable result = null;
-        tracer = session.getSessionTracer(); // Don't think this ever changes.
-        try {
-            tracer.beginEvent(EventTypes.COMPILE);
-            result = compile(dmlStmt, params, planContext);
-        } 
-        finally {
-            session.getSessionTracer().endEvent();
-        }
-
+        BasePlannable result = compile(dmlStmt, params, planContext);
         logger.debug("Operator:\n{}", result);
 
         PostgresType[] parameterTypes = null;
