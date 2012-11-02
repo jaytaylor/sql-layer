@@ -1,0 +1,20 @@
+---
+# We'll want a more comprehensive test later, but this is good enough for now.
+# See https://www.pivotaltracker.com/story/show/38877031 
+- CreateTable: decimal_table(id INT NOT NULL PRIMARY KEY, value DECIMAL(5,2));
+---
+- Statement: CREATE INDEX dec_idx on decimal_table(value);
+---
+- Newtypes: false
+---
+- Statement: INSERT INTO decimal_table values (1, 123.45);
+---
+- Newtypes: true
+---
+- Statement: SELECT * FROM decimal_table ORDER BY id;
+- output: [[1, 123.45]]
+---
+- Statement: SELECT * FROM decimal_table ORDER BY value;
+- output: [[1, 123.45]]
+...
+
