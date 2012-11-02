@@ -569,9 +569,8 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         TimedExceptionCatcher.throwIfThrown(dropIndexResult);
     }
 
-
     //
-    // Tests below assume DML and DDL can be concurrent (and exit quietly if not possible)
+    // Newer test below assume DDL and concurrent read work has been completed (checks DDL lock, exist quietly if not)
     //
 
     //
@@ -717,62 +716,62 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
     //
 
     @Test
-    public void insertWithConcurrentDropTable() throws Exception {
+    public void insertWaitDropTable() throws Exception {
         dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.DROP_TABLE);
     }
 
     @Test
-    public void updateWithConcurrentDropTable() throws Exception {
+    public void updateWaitDropTable() throws Exception {
         dmlWaitAndDDL(IUDType.UPDATE, oldChildCols(), newChildCols(), DDLOp.DROP_TABLE);
     }
 
     @Test
-    public void deleteWithConcurrentDropTable() throws Exception {
+    public void deleteWaitDropTable() throws Exception {
         dmlWaitAndDDL(IUDType.DELETE, oldChildCols(), null, DDLOp.DROP_TABLE);
     }
 
     @Test
-    public void insertWithConcurrentCreateTableIndex() throws Exception {
+    public void insertWaitCreateTableIndex() throws Exception {
         dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.CREATE_TABLE_INDEX);
     }
 
     @Test
-    public void insertChildWithConcurrentCreateGroupIndex() throws Exception {
+    public void insertChildWaitCreateGroupIndex() throws Exception {
         dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.CREATE_GROUP_INDEX);
     }
 
     @Test
-    public void insertParentWithConcurrentCreateGroupIndex() throws Exception {
+    public void insertParentWaitCreateGroupIndex() throws Exception {
         dmlWaitAndDDL(IUDType.INSERT, null, newParentCols(), DDLOp.CREATE_GROUP_INDEX);
     }
 
     @Test
-    public void insertWithConcurrentDropTableIndex() throws Exception {
+    public void insertWaitDropTableIndex() throws Exception {
         dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.DROP_TABLE_INDEX);
     }
 
     @Test
-    public void insertChildWithConcurrentDropGroupIndex() throws Exception {
+    public void insertChildWaitDropGroupIndex() throws Exception {
         dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.DROP_GROUP_INDEX);
     }
 
     @Test
-    public void insertParentWithConcurrentDropGroupIndex() throws Exception {
+    public void insertParentWaitDropGroupIndex() throws Exception {
         dmlWaitAndDDL(IUDType.INSERT, null, newParentCols(), DDLOp.DROP_GROUP_INDEX);
     }
 
     @Test
-    public void insertWithConcurrentDropGroup() throws Exception {
+    public void insertWaitDropGroup() throws Exception {
         dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.DROP_GROUP);
     }
 
     @Test
-    public void insertWithConcurrentDropSchema() throws Exception {
+    public void insertWaitDropSchema() throws Exception {
         dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.DROP_SCHEMA);
     }
 
     @Test
-    public void insertWithConcurrentRenameTable() throws Exception {
+    public void insertWaitRenameTable() throws Exception {
         dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.RENAME_TABLE);
     }
 
@@ -795,9 +794,49 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         ddlWaitAndDML(IUDType.DELETE, oldChildCols(), null, DDLOp.DROP_TABLE);
     }
 
+    @Test
+    public void createTableIndexWaitInsert() throws Exception {
+        ddlWaitAndDML(IUDType.INSERT, null, newChildCols(), DDLOp.CREATE_TABLE_INDEX);
+    }
+
+    @Test
+    public void createGroupIndexWaitInsertChild() throws Exception {
+        ddlWaitAndDML(IUDType.INSERT, null, newChildCols(), DDLOp.CREATE_GROUP_INDEX);
+    }
+
+    @Test
+    public void createGroupIndexWaitInsertParent() throws Exception {
+        ddlWaitAndDML(IUDType.INSERT, null, newParentCols(), DDLOp.CREATE_GROUP_INDEX);
+    }
+
+    @Test
+    public void dropTableIndexWaitInsert() throws Exception {
+        ddlWaitAndDML(IUDType.INSERT, null, newChildCols(), DDLOp.DROP_TABLE_INDEX);
+    }
+
+    @Test
+    public void dropGroupIndexWaitInsertChild() throws Exception {
+        ddlWaitAndDML(IUDType.INSERT, null, newChildCols(), DDLOp.DROP_GROUP_INDEX);
+    }
+
+    @Test
+    public void dropGroupIndexWaitInsertParent() throws Exception {
+        ddlWaitAndDML(IUDType.INSERT, null, newParentCols(), DDLOp.DROP_GROUP_INDEX);
+    }
+
+    @Test
+    public void dropGroupWaitInsert() throws Exception {
+        ddlWaitAndDML(IUDType.INSERT, null, newChildCols(), DDLOp.DROP_GROUP);
+    }
+
+    @Test
+    public void dropSchemaWaitInsert() throws Exception {
+        ddlWaitAndDML(IUDType.INSERT, null, newChildCols(), DDLOp.DROP_SCHEMA);
+    }
+
 
     //
-    // Test helper methods
+    // Test helpers
     //
 
     private static enum DDLOp {
