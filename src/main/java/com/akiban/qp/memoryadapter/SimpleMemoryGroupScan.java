@@ -30,7 +30,6 @@ import com.akiban.ais.model.TableName;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
-import com.google.common.base.Function;
 
 import java.util.Iterator;
 
