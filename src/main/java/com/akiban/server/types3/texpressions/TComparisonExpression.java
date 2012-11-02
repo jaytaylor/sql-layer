@@ -36,50 +36,21 @@ import com.akiban.server.types3.pvalue.PValueSource;
 public final class TComparisonExpression extends TComparisonExpressionBase {
 
     @Override
-    protected boolean doEvaluate(TInstance leftInstance, PValueSource leftSource,
-                              TInstance rightInstance, PValueSource rightSource)
+    protected int compare(TInstance leftInstance, PValueSource leftSource,
+                          TInstance rightInstance, PValueSource rightSource)
     {
         TClass tClass = leftInstance.typeClass();
         assert rightInstance.typeClass().compatibleForCompare(tClass)
                 : "type class mismatch: " + leftInstance + " != " + rightInstance;
-        final int cmpI;
         if (collator != null) {
             assert tClass.underlyingType() == PUnderlying.STRING : tClass + ": " + tClass.underlyingType();
             String leftString = leftSource.getString();
             String rightString = rightSource.getString();
-            cmpI = collator.compare(leftString, rightString);
+            return collator.compare(leftString, rightString);
         }
         else {
-            cmpI = TClass.compare(leftInstance, leftSource, rightInstance, rightSource);
+            return TClass.compare(leftInstance, leftSource, rightInstance, rightSource);
         }
-        final Comparison actualComparison;
-        if (cmpI == 0)
-            actualComparison = Comparison.EQ;
-        else if (cmpI < 0)
-            actualComparison = Comparison.LT;
-        else
-            actualComparison = Comparison.GT;
-
-        final boolean result;
-        switch (actualComparison) {
-        case EQ:
-            result = (comparison == Comparison.EQ) || (comparison == Comparison.LE) || (comparison == Comparison.GE);
-            break;
-        case GT:
-            result = (comparison == Comparison.GT || comparison == Comparison.GE || comparison == Comparison.NE);
-            break;
-        case LT:
-            result = (comparison == Comparison.LT || comparison == Comparison.LE || comparison == Comparison.NE);
-            break;
-        default:
-            throw new AssertionError(actualComparison);
-        }
-        return result;
-    }
-
-    @Override
-    protected String comparisonName() {
-        return comparison.toString();
     }
 
     public TComparisonExpression(TPreparedExpression left, Comparison comparison, TPreparedExpression right) {
@@ -88,7 +59,7 @@ public final class TComparisonExpression extends TComparisonExpressionBase {
 
     public TComparisonExpression(TPreparedExpression left, Comparison comparison, TPreparedExpression right,
                                  AkCollator collator) {
-        super(left, right);
+        super(left, comparison, right);
         TClass oneClass = left.resultType().typeClass();
         TClass twoClass = right.resultType().typeClass();
         if (!oneClass.compatibleForCompare(twoClass))
@@ -96,10 +67,8 @@ public final class TComparisonExpression extends TComparisonExpressionBase {
         if (collator != null && oneClass.underlyingType() != PUnderlying.STRING) {
             throw new IllegalArgumentException("collator provided, but " + oneClass + " is not a string type");
         }
-        this.comparison = comparison;
         this.collator = collator;
     }
 
-    private final Comparison comparison;
     private final AkCollator collator;
 }

@@ -30,6 +30,7 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.explain.*;
 import com.akiban.server.explain.std.TExpressionExplainer;
+import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
@@ -41,9 +42,8 @@ import com.akiban.server.types3.pvalue.PValueSources;
 
 public abstract class TComparisonExpressionBase implements TPreparedExpression {
 
-    protected abstract boolean doEvaluate(TInstance leftInstance, PValueSource left,
-                                          TInstance rightInstance, PValueSource right);
-    protected abstract String comparisonName();
+    protected abstract int compare(TInstance leftInstance, PValueSource left,
+                                   TInstance rightInstance, PValueSource right);
 
     @Override
     public TPreptimeValue evaluateConstant(QueryContext queryContext) {
@@ -62,7 +62,7 @@ public abstract class TComparisonExpressionBase implements TPreparedExpression {
         PValueSource resultSource = null;
         boolean nullable;
         if (oneVal != null && twoVal != null) {
-            boolean result = doEvaluate(leftPrep.instance(), oneVal, rightPrep.instance(), twoVal);
+            final boolean result = doEval(leftPrep.instance(), oneVal, rightPrep.instance(), twoVal);
             resultSource = new PValue(result);
             nullable = resultSource.isNull();
         }
@@ -88,22 +88,51 @@ public abstract class TComparisonExpressionBase implements TPreparedExpression {
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context) {
-        String comparisonName = comparisonName();
-        CompoundExplainer ex = new TExpressionExplainer(Type.BINARY_OPERATOR, comparisonName, context, left, right);
-        ex.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance(comparisonName));
+        CompoundExplainer ex = new TExpressionExplainer(Type.BINARY_OPERATOR, comparison.toString(), context, left, right);
+        ex.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance(comparison.toString()));
         return ex;
     }
 
     @Override
     public String toString() {
-        return left + " " + comparisonName() + ' ' + right;
+        return left + " " + comparison + ' ' + right;
     }
 
-    public TComparisonExpressionBase(TPreparedExpression left, TPreparedExpression right) {
+    public TComparisonExpressionBase(TPreparedExpression left, Comparison comparison, TPreparedExpression right) {
         this.left = left;
+        this.comparison = comparison;
         this.right = right;
     }
 
+    private boolean doEval(TInstance leftInstance, PValueSource left, TInstance rightInstance, PValueSource right) {
+        int cmpI = compare(leftInstance, left, rightInstance, right);
+        final Comparison actualComparison;
+
+        if (cmpI == 0)
+            actualComparison = Comparison.EQ;
+        else if (cmpI < 0)
+            actualComparison = Comparison.LT;
+        else
+            actualComparison = Comparison.GT;
+
+        final boolean result;
+        switch (actualComparison) {
+        case EQ:
+            result = (comparison == Comparison.EQ) || (comparison == Comparison.LE) || (comparison == Comparison.GE);
+            break;
+        case GT:
+            result = (comparison == Comparison.GT || comparison == Comparison.GE || comparison == Comparison.NE);
+            break;
+        case LT:
+            result = (comparison == Comparison.LT || comparison == Comparison.LE || comparison == Comparison.NE);
+            break;
+        default:
+            throw new AssertionError(actualComparison);
+        }
+        return result;
+    }
+
+    private final Comparison comparison;
     private final TPreparedExpression left;
     private final TPreparedExpression right;
 
@@ -133,7 +162,7 @@ public abstract class TComparisonExpressionBase implements TPreparedExpression {
                 return;
             }
 
-            boolean result = doEvaluate(leftInstance, leftSource, rightInstance, rightSource);
+            boolean result = doEval(leftInstance, leftSource, rightInstance, rightSource);
             value.putBool(result);
         }
 

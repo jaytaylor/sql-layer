@@ -14,5 +14,18 @@
 ---
 - Statement: SELECT c.name, x.order_date FROM customers c LEFT JOIN (SELECT cid, order_date FROM orders WHERE order_date < '2011-03-01') x ON c.cid = x.cid;
 - output_ordered: [['Smith',null],['Jones','2011-02-28']]
+
+--- # Test joins between signed and unsigned types
+- CreateTable: t_signed(id_signed INT NOT NULL PRIMARY KEY);
+---
+- CreateTable: t_unsigned(id_unsigned INT UNSIGNED NOT NULL PRIMARY KEY);
+---
+- Statement: INSERT INTO t_signed VALUES (-2147483648), (-2), (-1), (0), (1), (2), (2147483647);
+---
+- Statement: INSERT INTO t_unsigned VALUES (0), (1), (2), (4294967295);
+---
+- Statement: SELECT id_signed, id_unsigned FROM t_signed JOIN t_unsigned ON id_signed = id_unsigned
+- output: [[0, 0], [1, 1], [2, 2]]
 ---
 - Statement: SET cbo TO DEFAULT
+...

@@ -41,6 +41,7 @@ import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TComparison;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TKeyComparable;
 import com.akiban.server.types3.TPreptimeValue;
@@ -184,7 +185,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     protected TPreparedExpression compare(TPreparedExpression left, ComparisonCondition comparison, TPreparedExpression right) {
         TKeyComparable keyComparable = comparison.getKeyComparable();
         if (keyComparable != null) {
-            return new TKeyComparisonPreparation(left, right);
+            return new TKeyComparisonPreparation(left, comparison.getOperation(), right, comparison.getKeyComparable());
         }
         else {
             return new TComparisonExpression(left, comparison.getOperation(), right);
@@ -274,19 +275,40 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
 
     private class TKeyComparisonPreparation extends TComparisonExpressionBase {
 
-        private TKeyComparisonPreparation(TPreparedExpression left, TPreparedExpression right) {
-            super(left, right);
+        private TKeyComparisonPreparation(TPreparedExpression left, Comparison op, TPreparedExpression right,
+                                          TKeyComparable comparable)
+        {
+            super(left, op, right);
+            this.comparison = comparable.getComparison();
+            TClass leftIn = tClass(left);
+            TClass rightIn = tClass(right);
+            TClass leftCmp = comparable.getLeftTClass();
+            TClass rightCmp = comparable.getRightTClass();
+            if (leftIn == leftCmp && rightIn == rightCmp) {
+                reverseComparison = false;
+            }
+            else if (rightIn == leftCmp && leftIn == rightCmp) {
+                reverseComparison = true;
+            }
+            else {
+                throw new IllegalArgumentException(
+                        "invalid comparisons: " + left + " and " + right + " against " + comparable);
+            }
+        }
+
+        private TClass tClass(TPreparedExpression left) {
+            TInstance tInstance = left.resultType();
+            return tInstance == null ? null : tInstance.typeClass();
         }
 
         @Override
-        protected boolean doEvaluate(TInstance leftInstance, PValueSource left, TInstance rightInstance,
-                                     PValueSource right) {
-            throw new UnsupportedOperationException(); // TODO
+        protected int compare(TInstance leftInstance, PValueSource left, TInstance rightInstance,
+                                  PValueSource right) {
+            int cmp = comparison.compare(leftInstance, left, rightInstance, right);
+            return reverseComparison ? (-cmp) : cmp;
         }
 
-        @Override
-        protected String comparisonName() {
-            return "==";
-        }
+        private final TComparison comparison;
+        private final boolean reverseComparison;
     }
 }
