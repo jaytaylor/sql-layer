@@ -44,7 +44,7 @@ public final class PersistitValuePValueTarget implements PValueTarget {
     
     @Override
     public boolean supportsCachedObjects() {
-        return true;
+        return false;
     }
 
     @Override
