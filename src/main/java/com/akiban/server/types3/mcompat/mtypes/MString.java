@@ -88,13 +88,13 @@ public class MString extends TString
             case STRING:
                 String inStr = in.getString();
                 String ret;
-                if (expectedLen > inStr.length())
-                    ret = inStr;
-                else
+                if (inStr.length() > expectedLen)
                 {
                     ret = inStr.substring(0, expectedLen);
                     context.reportTruncate(inStr, ret);
                 }
+                else
+                    ret = inStr;
                 out.putString(ret, AkCollatorFactory.getAkCollator(collatorId));
                 break;
                 
@@ -104,9 +104,9 @@ public class MString extends TString
 
                 if (bytes.length > expectedLen)
                 {
+                    truncated = Arrays.copyOf(bytes, expectedLen);
                     context.reportTruncate("BYTES string of length " + bytes.length,
                                            "BYTES string of length " + expectedLen);
-                    truncated = Arrays.copyOf(bytes, expectedLen);
                 }
                 else
                     truncated = bytes;
