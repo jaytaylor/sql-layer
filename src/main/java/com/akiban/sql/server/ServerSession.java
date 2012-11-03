@@ -26,6 +26,7 @@
 
 package com.akiban.sql.server;
 
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.parser.SQLParser;
@@ -40,7 +41,7 @@ import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.service.instrumentation.SessionTracer;
+import com.akiban.server.service.monitor.SessionMonitor;
 import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.KeyCreator;
@@ -103,8 +104,8 @@ public interface ServerSession
     /** Return configured properties. */
     public Properties getCompilerProperties();
 
-    /** Return the object used to trace sessions. */
-    public SessionTracer getSessionTracer();
+    /** Return the object used to monitor sessions. */
+    public SessionMonitor getSessionMonitor();
 
     /** Return an adapter for the session's store. */
     public StoreAdapter getStore();
@@ -114,6 +115,9 @@ public interface ServerSession
 
     /** Return the tree service. */
     public TreeService getTreeService();
+
+    /** Return the transaction service */
+    public TransactionService getTransactionService();
 
     /** Is a transaction open? */
     public boolean isTransactionActive();

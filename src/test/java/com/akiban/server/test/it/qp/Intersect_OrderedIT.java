@@ -51,8 +51,8 @@ import static junit.framework.Assert.fail;
 
 public class Intersect_OrderedIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         parent = createTable(
             "schema", "parent",
@@ -71,6 +71,11 @@ public class Intersect_OrderedIT extends OperatorITBase
             "schema", "alien",
             "aid int not null primary key");
         createIndex("schema", "child", "z", "z");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         parentRowType = schema.userTableRowType(userTable(parent));
         childRowType = schema.userTableRowType(userTable(child));

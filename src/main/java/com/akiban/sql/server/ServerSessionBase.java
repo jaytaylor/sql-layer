@@ -40,9 +40,10 @@ import com.akiban.server.error.TransactionInProgressException;
 import com.akiban.server.error.TransactionReadOnlyException;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.service.instrumentation.SessionTracer;
+import com.akiban.server.service.monitor.SessionMonitor;
 import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.t3expressions.T3RegistryService;
@@ -64,7 +65,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         new HashMap<StoreAdapter.AdapterType, StoreAdapter>();
     protected ServerTransaction transaction;
     protected boolean transactionDefaultReadOnly = false;
-    protected ServerSessionTracer sessionTracer;
+    protected ServerSessionMonitor sessionMonitor;
 
     protected Long queryTimeoutSec = null;
     protected ServerValueEncoder.ZeroDateTimeBehavior zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.NONE;
@@ -175,8 +176,8 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     @Override
-    public SessionTracer getSessionTracer() {
-        return sessionTracer;
+    public SessionMonitor getSessionMonitor() {
+        return sessionMonitor;
      }
 
     @Override
@@ -195,6 +196,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     @Override
     public TreeService getTreeService() {
         return reqs.treeService();
+    }
+
+    @Override
+    public TransactionService getTransactionService() {
+        return reqs.txnService();
     }
 
     @Override
@@ -379,6 +385,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             defaultSchemaName = server.defaultSchemaName;
             transaction = server.transaction;
             transactionDefaultReadOnly = server.transactionDefaultReadOnly;
+            sessionMonitor.setCallerSessionId(server.getSessionMonitor().getSessionId());
         }
     }
 

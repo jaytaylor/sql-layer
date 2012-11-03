@@ -320,11 +320,7 @@ public class AISMerge {
         }
 
         if(index.getIndexMethod() == Index.IndexMethod.Z_ORDER_LAT_LON) {
-            if(!(index instanceof TableIndex) || !(newIndex instanceof TableIndex)) {
-                throw new IllegalStateException("Unexpected non-table spatial index: old=" + index + " new=" + newIndex);
-            }
-            TableIndex spatialIndex = (TableIndex)index;
-            ((TableIndex)newIndex).markSpatial(spatialIndex.firstSpatialArgument(), spatialIndex.dimensions());
+            newIndex.markSpatial(index.firstSpatialArgument(), index.dimensions());
         }
 
         if(curIndex != null) {

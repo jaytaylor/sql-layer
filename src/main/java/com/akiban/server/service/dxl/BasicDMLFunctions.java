@@ -146,7 +146,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     @Override
     public CursorId openCursor(Session session, int knownAIS, ScanRequest request)
     {
-        checkAISGeneration(knownAIS);
+        checkAISGeneration(session, knownAIS);
         logger.trace("opening scan:    {} -> {}", System.identityHashCode(request), request);
         if (request.scanAllColumns()) {
             request = scanAllColumns(session, request);
@@ -162,15 +162,15 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     private void checkAISGeneration(int knownGeneration, Session session, CursorId cursorId) throws OldAISException {
         try {
-            checkAISGeneration(knownGeneration);
+            checkAISGeneration(session, knownGeneration);
         } catch (OldAISException e) {
             closeCursor(session, cursorId);
             throw e;
         }
     }
 
-    private void checkAISGeneration(int knownGeneration) throws OldAISException {
-        int currentGeneration = ddlFunctions.getGeneration();
+    private void checkAISGeneration(Session session, int knownGeneration) throws OldAISException {
+        int currentGeneration = ddlFunctions.getGenerationAsInt(session);
         if (currentGeneration != knownGeneration) {
             throw new OldAISException(knownGeneration, currentGeneration);
         }
@@ -333,9 +333,9 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         private final LegacyOutputConverter converter;
         private final BufferedLegacyOutputRouter router;
 
-        public PooledConverter(Session session, DMLFunctions dmlFunctions) {
+        public PooledConverter(DMLFunctions dmlFunctions) {
             router = new BufferedLegacyOutputRouter(1024 * 1024, true);
-            converter = new LegacyOutputConverter(session, dmlFunctions);
+            converter = new LegacyOutputConverter(dmlFunctions);
             router.addHandler(converter);
         }
 
@@ -343,9 +343,12 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             return router;
         }
 
-        public void setConverter(RowOutput output, Set<Integer> columns) {
-            converter.setOutput(output);
-            converter.setColumnsToScan(columns);
+        public void setConverter(Session session, RowOutput output, Set<Integer> columns) {
+            converter.reset(session, output, columns);
+        }
+
+        public void clearConverter() {
+            converter.clearSession();
         }
     }
 
@@ -355,10 +358,10 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         PooledConverter converter = convertersPool.poll();
         if (converter == null) {
             logger.debug("Allocating new PooledConverter");
-            converter = new PooledConverter(session, this);
+            converter = new PooledConverter(this);
         }
         try {
-            converter.setConverter(output, columns);
+            converter.setConverter(session, output, columns);
         } catch (NoSuchTableException e) {
             releasePooledConverter(converter);
             throw e;
@@ -370,6 +373,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     }
 
     private void releasePooledConverter(PooledConverter which) {
+        which.clearConverter();
         if (!convertersPool.offer(which)) {
             logger.warn("Failed to release PooledConverter "
                     + which
@@ -543,6 +547,13 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     public RowData convertNewRow(NewRow row) {
         logger.trace("converting to RowData: {}", row);
         return row.toRowData();
+    }
+
+    @Override
+    public NewRow wrapRowData(Session session, RowData rowData) {
+        logger.trace("wrapping in NewRow: {}", rowData);
+        RowDef rowDef = ddlFunctions.getRowDef(session, rowData.getRowDefId());
+        return new LegacyRowWrapper(rowDef, rowData);
     }
 
     @Override
@@ -731,7 +742,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     public void truncateTable(final Session session, final int tableId)
     {
         logger.trace("truncating tableId={}", tableId);
-        final int knownAIS = ddlFunctions.getGeneration();
+        final int knownAIS = ddlFunctions.getGenerationAsInt(session);
         final Table table = ddlFunctions.getTable(session, tableId);
         final UserTable utable = table.isUserTable() ? (UserTable)table : null;
 

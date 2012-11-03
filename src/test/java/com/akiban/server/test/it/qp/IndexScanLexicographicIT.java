@@ -63,8 +63,8 @@ import static org.junit.Assert.fail;
 
 public class IndexScanLexicographicIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
 /*
         NetworkService ns = serviceManager().getServiceByClass(NetworkService.class);
@@ -88,6 +88,11 @@ public class IndexScanLexicographicIT extends OperatorITBase
             "b int",
             "c int");
         createIndex("schema", "t", "a", "a", "b", "c", "id");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "a", "b", "c", "id");
@@ -214,10 +219,10 @@ public class IndexScanLexicographicIT extends OperatorITBase
     @Test
     public void test_HiMoreConstrainedThanLo() throws Exception
     {
-        NewRow loRow = new NiceRow(session(), t, store());
+        NewRow loRow = createNewRow(t);
         loRow.put(1, 1); // a = 1
         RowData loRowData = loRow.toRowData();
-        NewRow hiRow = new NiceRow(session(), t, store());
+        NewRow hiRow = createNewRow(t);
         hiRow.put(1, 1); // a = 1
         hiRow.put(2, 18); // b = 18
         RowData hiRowData = hiRow.toRowData();
@@ -232,7 +237,7 @@ public class IndexScanLexicographicIT extends OperatorITBase
                                 new SetColumnSelector(1),
                                 hiRowData,
                                 new SetColumnSelector(1, 2));
-        request.executeDML(dml(), session(), store());
+        request.executeDML(dml(), session());
     }
 
     // For use by this class

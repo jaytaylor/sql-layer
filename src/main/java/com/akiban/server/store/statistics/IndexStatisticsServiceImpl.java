@@ -41,6 +41,7 @@ import com.akiban.server.service.dxl.DXLTransactionHook;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.SchemaManager;
@@ -69,6 +70,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
 
     private final PersistitStore store;
     private final TreeService treeService;
+    private final TransactionService txnService;
     // Following couple only used by JMX method, where there is no context.
     private final SchemaManager schemaManager;
     private final SessionService sessionService;
@@ -80,11 +82,13 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Inject
     public IndexStatisticsServiceImpl(Store store,
                                       TreeService treeService,
+                                      TransactionService txnService,
                                       SchemaManager schemaManager,
                                       SessionService sessionService,
                                       ConfigurationService configurationService) {
         this.store = store.getPersistitStore();
         this.treeService = treeService;
+        this.txnService = txnService;
         this.schemaManager = schemaManager;
         this.sessionService = sessionService;
         this.configurationService = configurationService;
@@ -235,10 +239,10 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             } else {
                 updates.putAll(updatePersistitTableIndexStatistics (session, indexes));
             }
-        }        
-        DXLTransactionHook.addCommitSuccessCallback(session, new Runnable() {
+        }
+        txnService.addCommitCallback(session, new TransactionService.Callback() {
             @Override
-            public void run() {
+            public void run(Session session, long timestamp) {
                 cache.putAll(updates);
             }
         });
@@ -404,23 +408,18 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
 
     class JmxBean implements IndexStatisticsMXBean {
         @Override
-        public String dumpIndexStatistics(String schema, String toFile) 
-                throws IOException {
+        public String dumpIndexStatistics(String schema, String toFile) throws IOException {
             Session session = sessionService.createSession();
             try {
                 File file = new File(toFile);
                 FileWriter writer = new FileWriter(file);
                 try {
-                    IndexStatisticsServiceImpl.this.dumpIndexStatistics(session, schema, writer);
+                    dumpInternal(session, writer, schema);
                 }
                 finally {
                     writer.close();
                 }
                 return file.getAbsolutePath();
-            }
-            catch (RuntimeException ex) {
-                log.error("Error dumping " + schema, ex);
-                throw ex;
             }
             finally {
                 session.close();
@@ -430,15 +429,11 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         @Override
         public String dumpIndexStatisticsToString(String schema) throws IOException {
             Session session = sessionService.createSession();
+            StringWriter writer = new StringWriter();
             try {
-                StringWriter writer = new StringWriter();
-                IndexStatisticsServiceImpl.this.dumpIndexStatistics(session, schema, writer);
+                dumpInternal(session, writer, schema);
                 writer.close();
                 return writer.toString();
-            }
-            catch (RuntimeException ex) {
-                log.error("Error dumping " + schema, ex);
-                throw ex;
             }
             finally {
                 session.close();
@@ -446,12 +441,17 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         }
 
         @Override
-        public void loadIndexStatistics(String schema, String fromFile) 
-                throws IOException {
+        public void loadIndexStatistics(String schema, String fromFile)  throws IOException {
             Session session = sessionService.createSession();
             try {
                 File file = new File(fromFile);
-                IndexStatisticsServiceImpl.this.loadIndexStatistics(session, schema, file);
+                txnService.beginTransaction(session);
+                try {
+                    IndexStatisticsServiceImpl.this.loadIndexStatistics(session, schema, file);
+                    txnService.commitTransaction(session);
+                } finally {
+                    txnService.rollbackTransactionIfOpen(session);
+                }
             }
             catch (RuntimeException ex) {
                 log.error("Error loading " + schema, ex);
@@ -459,6 +459,20 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             }
             finally {
                 session.close();
+            }
+        }
+
+        private void dumpInternal(Session session, Writer writer, String schema) throws IOException {
+            txnService.beginTransaction(session);
+            try {
+                IndexStatisticsServiceImpl.this.dumpIndexStatistics(session, schema, writer);
+                txnService.commitTransaction(session);
+            }
+            catch (RuntimeException ex) {
+                log.error("Error dumping " + schema, ex);
+                throw ex;
+            } finally {
+                txnService.rollbackTransactionIfOpen(session);
             }
         }
     }

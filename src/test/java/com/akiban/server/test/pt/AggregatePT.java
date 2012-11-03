@@ -841,11 +841,10 @@ public class AggregatePT extends ApiTestBase {
 
         @Override
         public void run() {
-            Transaction transaction = treeService().getTransaction(session);
             inputCursor.open();
             open = true;
+            txnService().beginTransaction(session);
             try {
-                transaction.begin();
                 while (open) {
                     Row row = inputCursor.next();
                     if (row == null) 
@@ -854,17 +853,14 @@ public class AggregatePT extends ApiTestBase {
                         row.acquire();
                     queue.put(row);
                 }
-                transaction.commit();
+                txnService().commitTransaction(session);
             }
             catch (InterruptedException ex) {
                 throw new QueryCanceledException(context.getSession());
             }
-            catch (PersistitException ex) {
-                PersistitAdapter.handlePersistitException(session, ex);
-            } 
             finally {
                 inputCursor.close();
-                transaction.end();
+                txnService().commitTransaction(session);
             }
         }
 

@@ -26,10 +26,12 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.server.CacheCounters;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerStatementCache;
 
 import com.akiban.server.error.InvalidPortException;
+import com.akiban.server.service.monitor.MonitorStage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +45,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
@@ -67,13 +70,13 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     private Map<Integer,PostgresServerConnection> connections =
         new HashMap<Integer,PostgresServerConnection>();
     private Thread thread;
-    private final AtomicBoolean instrumentationEnabled = new AtomicBoolean(true);
     // AIS-dependent state
-    private volatile long aisTimestamp = -1;
     private volatile int statementCacheCapacity;
-    private final Map<Object,ServerStatementCache<PostgresStatement>> statementCaches = new HashMap<Object,ServerStatementCache<PostgresStatement>>();
+    private final Map<ObjectLongPair,ServerStatementCache<PostgresStatement>> statementCaches =
+        new HashMap<ObjectLongPair,ServerStatementCache<PostgresStatement>>(); // key and aisGeneration
     // end AIS-dependent state
     private volatile Date overrideCurrentTime;
+    private final CacheCounters cacheCounters = new CacheCounters();
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresServer.class);
 
@@ -150,7 +153,6 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     @Override
     public void run() {
         logger.info("Postgres server listening on port {}", port);
-        int sessionId = 0;
         Random rand = new Random();
         try {
             synchronized(this) {
@@ -160,7 +162,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
             }
             while (running) {
                 Socket sock = socket.accept();
-                sessionId++;
+                int sessionId = reqs.monitor().allocateSessionId();
                 int secret = rand.nextInt();
                 PostgresServerConnection connection = 
                     new PostgresServerConnection(this, sock, sessionId, secret, reqs);
@@ -202,12 +204,12 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     @Override
     public String getSqlString(int sessionId) {
-        return getConnection(sessionId).getSqlString();
+        return getConnection(sessionId).getSessionMonitor().getCurrentStatement();
     }
     
     @Override
     public String getRemoteAddress(int sessionId) {
-        return getConnection(sessionId).getRemoteAddress();
+        return getConnection(sessionId).getSessionMonitor().getRemoteAddress();
     }
 
     @Override
@@ -222,33 +224,34 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         conn.waitAndStop();
     }
 
-    public ServerStatementCache<PostgresStatement> getStatementCache(Object key) {
-        if (statementCacheCapacity <= 0) 
+    void cleanStatementCaches() {
+        long oldestGeneration = reqs.dxl().ddlFunctions().getOldestActiveGeneration();
+        synchronized (statementCaches) {
+            Iterator<ObjectLongPair> it = statementCaches.keySet().iterator();
+            while(it.hasNext()) {
+                if (it.next().longVal < oldestGeneration)
+                    it.remove();
+            }
+        }
+    }
+
+    /** This is the version for use by connections. */
+    public ServerStatementCache<PostgresStatement> getStatementCache(Object key, long aisGeneration) {
+        if (statementCacheCapacity <= 0)
             return null;
 
+        ObjectLongPair fullKey = new ObjectLongPair(key, aisGeneration);
         ServerStatementCache<PostgresStatement> statementCache;
         synchronized (statementCaches) {
             statementCache = statementCaches.get(key);
             if (statementCache == null) {
-                statementCache = new ServerStatementCache<PostgresStatement>(statementCacheCapacity);
-                statementCaches.put(key, statementCache);
+                // No cache => recent DDL, reasonable time to do a little cleaning
+                cleanStatementCaches();
+                statementCache = new ServerStatementCache<PostgresStatement>(cacheCounters, statementCacheCapacity);
+                statementCaches.put(fullKey, statementCache);
             }
         }
         return statementCache;
-    }
-
-    /** This is the version for use by connections. */
-    public ServerStatementCache<PostgresStatement> getStatementCache(Object key, long timestamp) {
-        synchronized (statementCaches) {
-            if (aisTimestamp != timestamp) {
-                assert aisTimestamp < timestamp : timestamp;
-                for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
-                    statementCache.invalidate();
-                }
-                aisTimestamp = timestamp;
-            }
-        }
-        return getStatementCache(key);
     }
 
     @Override
@@ -271,29 +274,18 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     @Override
     public int getStatementCacheHits() {
-        int total = 0;
-        synchronized (statementCaches) {
-            for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
-                total += statementCache.getHits();
-            }        
-        }
-        return total;
+        return cacheCounters.getHits();
     }
 
     @Override
     public int getStatementCacheMisses() {
-        int total = 0;
-        synchronized (statementCaches) {
-            for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
-                total += statementCache.getMisses();
-            }        
-        }
-        return total;
+        return cacheCounters.getMisses();
     }
     
     @Override
     public void resetStatementCache() {
         synchronized (statementCaches) {
+            cacheCounters.reset();
             for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
                 statementCache.reset();
             }        
@@ -307,59 +299,23 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     }
 
     @Override
-    public boolean isInstrumentationEnabled() {
-        return instrumentationEnabled.get();
-    }
-
-    @Override
-    public void enableInstrumentation() {
-        for (PostgresServerConnection conn : connections.values()) {
-            conn.getSessionTracer().enable();
-        }
-        instrumentationEnabled.set(true);
-    }
-
-    @Override
-    public void disableInstrumentation() {
-        for (PostgresServerConnection conn : connections.values()) {
-            conn.getSessionTracer().disable();
-        }
-        instrumentationEnabled.set(false);
-    }
-
-    @Override
-    public boolean isInstrumentationEnabled(int sessionId) {
-        return getConnection(sessionId).isInstrumentationEnabled();
-    }
-
-    @Override
-    public void enableInstrumentation(int sessionId) {
-        getConnection(sessionId).enableInstrumentation();
-    }
-
-    @Override
-    public void disableInstrumentation(int sessionId) {
-        getConnection(sessionId).disableInstrumentation();
-    }
-
-    @Override
     public Date getStartTime(int sessionId) {
-        return getConnection(sessionId).getSessionTracer().getStartTime();
+        return new Date(getConnection(sessionId).getSessionMonitor().getStartTimeMillis());
     }
 
     @Override
     public long getProcessingTime(int sessionId) {
-        return getConnection(sessionId).getSessionTracer().getProcessingTime();
+        return getConnection(sessionId).getSessionMonitor().getNonIdleTimeNanos();
     }
 
     @Override
     public long getEventTime(int sessionId, String eventName) {
-        return getConnection(sessionId).getSessionTracer().getEventTime(eventName);
+        return getConnection(sessionId).getSessionMonitor().getLastTimeStageNanos(MonitorStage.valueOf(eventName));
     }
 
     @Override
     public long getTotalEventTime(int sessionId, String eventName) {
-        return getConnection(sessionId).getSessionTracer().getTotalEventTime(eventName);
+        return getConnection(sessionId).getSessionMonitor().getTotalTimeStageNanos(MonitorStage.valueOf(eventName));
     }
 
     @Override

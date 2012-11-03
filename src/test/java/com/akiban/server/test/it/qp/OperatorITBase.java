@@ -43,9 +43,7 @@ import com.akiban.qp.rowtype.*;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.collation.AkCollator;
-import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.types.AkType;
@@ -53,7 +51,6 @@ import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
-import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.akiban.util.Strings;
 import org.junit.After;
@@ -71,56 +68,55 @@ import static org.junit.Assert.fail;
 
 public class OperatorITBase extends ITBase
 {
-    private Transaction transaction;
-
     @Before
     public void before_beginTransaction() throws PersistitException {
-        transaction = treeService().getTransaction(session());
-        transaction.begin();
+        txnService().beginTransaction(session());
     }
 
     @After
     public void after_endTransaction() throws PersistitException {
-        try {
-            transaction.commit();
-        }
-        finally {
-            transaction.end();
-        }
+        txnService().commitTransaction(session());
     }
 
     @Before
-    public void before() throws InvalidOperationException
-    {
+    public final void runAllSetup() {
+        setupCreateSchema();
+        setupPostCreateSchema();
+    }
+
+    protected void setupCreateSchema() {
         customer = createTable(
-            "schema", "customer",
-            "cid int not null primary key",
-            "name varchar(20)");
+                "schema", "customer",
+                "cid int not null primary key",
+                "name varchar(20)");
         createIndex("schema", "customer", "name", "name");
         order = createTable(
-            "schema", "order",
-            "oid int not null primary key",
-            "cid int",
-            "salesman varchar(20)",
-            "grouping foreign key (cid) references customer(cid)");
+                "schema", "order",
+                "oid int not null primary key",
+                "cid int",
+                "salesman varchar(20)",
+                "grouping foreign key (cid) references customer(cid)");
         createIndex("schema", "order", "salesman", "salesman");
         createIndex("schema", "order", "cid", "cid");
         item = createTable(
-            "schema", "item",
-            "iid int not null primary key",
-            "oid int",
-            "grouping foreign key (oid) references \"order\"(oid)");
+                "schema", "item",
+                "iid int not null primary key",
+                "oid int",
+                "grouping foreign key (oid) references \"order\"(oid)");
         createIndex("schema", "item", "oid", "oid");
         createIndex("schema", "item", "oid2", "oid", "iid");
         address = createTable(
-            "schema", "address",
-            "aid int not null primary key",
-            "cid int",
-            "address varchar(100)",
-            "grouping foreign key (cid) references customer(cid)");
+                "schema", "address",
+                "aid int not null primary key",
+                "cid int",
+                "address varchar(100)",
+                "grouping foreign key (cid) references customer(cid)");
         createIndex("schema", "address", "cid", "cid");
         createIndex("schema", "address", "address", "address");
         createGroupIndex("customer", "cname_ioid", "customer.name,item.oid", Index.JoinType.LEFT);
+    }
+
+    protected void setupPostCreateSchema() {
         schema = new Schema(ais());
         customerRowType = schema.userTableRowType(userTable(customer));
         orderRowType = schema.userTableRowType(userTable(order));
@@ -253,17 +249,34 @@ public class OperatorITBase extends ITBase
         return userTableRowDef.userTable();
     }
 
-    protected IndexRowType indexType(int userTableId, String... searchIndexColumnNamesArray)
+    protected IndexRowType indexType(int userTableId, String... columnNamesArray)
     {
+        List<String> searchIndexColumnNames = Arrays.asList(columnNamesArray);
         UserTable userTable = userTable(userTableId);
         for (Index index : userTable.getIndexesIncludingInternal()) {
             List<String> indexColumnNames = new ArrayList<String>();
             for (IndexColumn indexColumn : index.getKeyColumns()) {
                 indexColumnNames.add(indexColumn.getColumn().getName());
             }
-            List<String> searchIndexColumnNames = Arrays.asList(searchIndexColumnNamesArray);
             if (searchIndexColumnNames.equals(indexColumnNames)) {
                 return schema.userTableRowType(userTable(userTableId)).indexRowType(index);
+            }
+        }
+        return null;
+    }
+
+    protected IndexRowType groupIndexType(TableName groupName, String... columnNamesArray)
+    {
+        List<String> searchIndexColumnNames = Arrays.asList(columnNamesArray);
+        for (Index index : ais().getGroup(groupName).getIndexes()) {
+            List<String> indexColumnNames = new ArrayList<String>();
+            for (IndexColumn indexColumn : index.getKeyColumns()) {
+                Column column = indexColumn.getColumn();
+                indexColumnNames.add(String.format("%s.%s",
+                                                   column.getTable().getName().getTableName(), column.getName()));
+            }
+            if (searchIndexColumnNames.equals(indexColumnNames)) {
+                return schema.indexRowType(index);
             }
         }
         return null;
@@ -319,7 +332,7 @@ public class OperatorITBase extends ITBase
 
     protected RowBase row(int tableId, Object... values /* alternating field position and value */)
     {
-        NiceRow niceRow = new NiceRow(session(), tableId, store());
+        NewRow niceRow = createNewRow(tableId);
         int i = 0;
         while (i < values.length) {
             int position = (Integer) values[i++];

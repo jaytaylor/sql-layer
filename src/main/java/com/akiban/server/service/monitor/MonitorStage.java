@@ -24,25 +24,10 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.common.types;
+package com.akiban.server.service.monitor;
 
-import com.akiban.server.types3.TAttributesDeclaration;
-import com.akiban.server.types3.TFactory;
-import com.akiban.server.types3.TInstance;
-
-public class NoAttrFactory implements TFactory
+/** The processing stages for a query session. */
+public enum MonitorStage
 {
-    private final TInstance instance;
-    
-    public NoAttrFactory(TInstance tInstance)
-    {
-        instance = tInstance;
-    }
-    
-    @Override
-    public TInstance create(TAttributesDeclaration declaration)
-    {
-        declaration.validate(0, 0);
-        return instance;
-    }
+    IDLE, PARSE, OPTIMIZE, EXECUTE, COMMIT
 }

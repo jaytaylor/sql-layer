@@ -454,7 +454,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
 
         ChangeLevel changeLevel;
-        boolean rollBackNeeded = false;
+        boolean success = false;
         boolean oldWasRootAndIsNewGroup = false;
         Set<String> savedSchemas = new HashSet<String>();
         Map<TableName,Integer> savedOrdinals = new HashMap<TableName,Integer>();
@@ -553,44 +553,39 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 default:
                     throw new IllegalStateException("Unhandled ChangeLevel: " + validator.getFinalChangeLevel());
             }
+
+            success = true;
         } catch(Exception e) {
             if(!(e instanceof InvalidOperationException)) {
                 logger.error("Rethrowing exception from failed ALTER", e);
             }
-            rollBackNeeded = true;
             throw throwAlways(e);
         } finally {
-            if(rollBackNeeded) {
-                // All of the data changed was transactional but PSSM changes aren't like that
-                AkibanInformationSchema curAIS = getAIS(session);
-                if(origAIS != curAIS) {
-                    schemaManager().rollbackAIS(session, origAIS, savedOrdinals, savedSchemas);
-
-                    // Tree creation is non-transactional in Persistit. They will be empty (entirely rolled back) but
-                    // still present. Remove them (group and index trees) for cleanliness.
-                    // NB: If sequences can ever be added through alter, need to handle those too.
-
-                    // Be extra careful with null checks.. In a failure state, don't know what was created.
-                    List<TreeLink> links = new ArrayList<TreeLink>();
-                    if(oldWasRootAndIsNewGroup) {
-                        UserTable newTable = curAIS.getUserTable(newDefinition.getName());
-                        if(newTable != null) {
-                            links.add(newTable.getGroup());
-                        }
+            // Tree creation is non-transactional in Persistit. They will be empty (entirely rolled back) but
+            // still present. Remove them (group and index trees) for cleanliness.
+            // NB: If sequences can ever be added through alter, need to handle those too.
+            AkibanInformationSchema curAIS = getAIS(session);
+            if(!success && (origAIS != curAIS)) {
+                // Be extra careful with null checks.. In a failure state, don't know what was created.
+                List<TreeLink> links = new ArrayList<TreeLink>();
+                if(oldWasRootAndIsNewGroup) {
+                    UserTable newTable = curAIS.getUserTable(newDefinition.getName());
+                    if(newTable != null) {
+                        links.add(newTable.getGroup());
                     }
-
-                    for(IndexName name : newIndexTrees) {
-                        UserTable table = curAIS.getUserTable(name.getFullTableName());
-                        if(table != null) {
-                            Index index = table.getIndexIncludingInternal(name.getName());
-                            if((index != null) && (index.indexDef() != null)) {
-                                links.add(index.indexDef());
-                            }
-                        }
-                    }
-
-                    store().removeTrees(session, links);
                 }
+
+                for(IndexName name : newIndexTrees) {
+                    UserTable table = curAIS.getUserTable(name.getFullTableName());
+                    if(table != null) {
+                        Index index = table.getIndexIncludingInternal(name.getName());
+                        if((index != null) && (index.indexDef() != null)) {
+                            links.add(index.indexDef());
+                        }
+                    }
+                }
+
+                store().removeTrees(session, links);
             }
         }
 
@@ -790,7 +785,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     @Override
     public RowDef getRowDef(Session session, int tableId) throws RowDefNotFoundException {
         logger.trace("getting RowDef for {}", tableId);
-        return store().getRowDef(session, tableId);
+        return getAIS(session).getUserTable(tableId).rowDef();
     }
 
     @Override
@@ -800,13 +795,19 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public int getGeneration() {
-        return schemaManager().getSchemaGeneration();
+    public int getGenerationAsInt(Session session) {
+        long full = getGeneration(session);
+        return (int)full ^ (int)(full >>> 32);
     }
 
     @Override
-    public long getTimestamp() {
-        return schemaManager().getUpdateTimestamp();
+    public long getGeneration(Session session) {
+        return getAIS(session).getGeneration();
+    }
+
+    @Override
+    public long getOldestActiveGeneration() {
+        return schemaManager().getOldestActiveAISGeneration();
     }
 
     @Override

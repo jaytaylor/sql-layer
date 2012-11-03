@@ -33,7 +33,6 @@ import com.akiban.server.types3.TBundleID;
 import com.akiban.server.types3.TClassBase;
 import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TParser;
 import com.akiban.server.types3.aksql.AkBundle;
@@ -376,23 +375,12 @@ public class AkInterval extends TClassBase {
     }
 
     @Override
-    public void putSafety(TExecutionContext context, TInstance sourceInstance, PValueSource sourceValue,
-                          TInstance targetInstance, PValueTarget targetValue) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     protected DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
         Boolean isNullable = instance.nullability(); // on separate line to make NPE easier to catch
         int literalFormatId = instance.attribute(formatAttribute);
         IntervalFormat format = formatters[literalFormatId];
         TypeId typeId = format.getTypeId();
         return new DataTypeDescriptor(typeId, isNullable);
-    }
-
-    @Override
-    public TFactory factory() {
-        throw new UnsupportedOperationException();
     }
 
     public TInstance tInstanceFrom(DataTypeDescriptor type) {
@@ -651,6 +639,22 @@ public class AkInterval extends TClassBase {
     static abstract class AkIntervalParser<U> {
 
         public long parse(String string) {
+            // string could be a floating-point number
+            
+            if (units.length == 1)
+            {
+                try
+                {
+                    double val = Double.parseDouble(string);
+                    return parseLong(Math.round(val), (U)units[0]);
+                }
+                catch (NumberFormatException e)
+                {
+                    // does nothing.
+                    // Move on to the next step
+                }
+            }
+
             boolean isNegative = (string.charAt(0) == '-');
             if (isNegative)
                 string = string.substring(1);

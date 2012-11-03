@@ -26,15 +26,17 @@
 
 package com.akiban.sql.embedded;
 
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.server.ServerServiceRequirements;
 
+import com.akiban.server.AkServerInterface;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.service.instrumentation.InstrumentationService;
+import com.akiban.server.service.monitor.MonitorService;
 import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
@@ -56,19 +58,21 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
     private static final Logger logger = LoggerFactory.getLogger(EmbeddedJDBCService.class);
 
     @Inject
-    public EmbeddedJDBCServiceImpl(ConfigurationService config,
+    public EmbeddedJDBCServiceImpl(AkServerInterface akServer,
                                    DXLService dxlService,
-                                   InstrumentationService instrumentation,
+                                   MonitorService monitor,
                                    SessionService sessionService,
                                    Store store,
                                    TreeService treeService,
                                    FunctionsRegistry functionsRegistry,
+                                   ConfigurationService config,
                                    IndexStatisticsService indexStatisticsService,
                                    T3RegistryService overloadResolutionService,
-                                   RoutineLoader routineLoader) {
-        reqs = new ServerServiceRequirements(dxlService, instrumentation, 
+                                   RoutineLoader routineLoader,
+                                   TransactionService txnService) {
+        reqs = new ServerServiceRequirements(akServer, dxlService, monitor, 
                 sessionService, store, treeService, functionsRegistry, 
-                config, indexStatisticsService, overloadResolutionService, routineLoader);
+                config, indexStatisticsService, overloadResolutionService, routineLoader, txnService);
     }
 
     @Override

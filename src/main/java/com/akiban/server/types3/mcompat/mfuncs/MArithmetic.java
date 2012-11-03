@@ -25,7 +25,10 @@
  */
 package com.akiban.server.types3.mcompat.mfuncs;
 
+import com.akiban.server.error.InvalidArgumentTypeException;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.explain.*;
+import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TCustomOverloadResult;
@@ -44,14 +47,18 @@ import com.akiban.server.types3.common.funcs.TArithmetic;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal.Attrs;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
+import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TScalarBase;
 import com.google.common.primitives.Doubles;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public abstract class MArithmetic extends TArithmetic {
@@ -512,30 +519,6 @@ public abstract class MArithmetic extends TArithmetic {
         }
     };
 
-    public static final TScalar MULTIPLY_INTERVAL_SECS = new MArithmetic("times", "*", false, AkInterval.SECONDS, MApproximateNumber.DOUBLE, AkInterval.SECONDS) {
-        @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
-                                  PValueTarget output)
-        {
-            long rawSecs = inputs.get(0).getInt64();
-            double denominator = inputs.get(1).getDouble();
-            double result = rawSecs * denominator;
-            output.putInt64(Math.round(result));
-        }
-    };
-
-    public static final TScalar MULTIPLY_INTERVAL_MONTHS = new MArithmetic("times", "*", false, AkInterval.MONTHS, MApproximateNumber.DOUBLE, AkInterval.MONTHS) {
-        @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
-                                  PValueTarget output)
-        {
-            long rawMonths = inputs.get(0).getInt64();
-            double denominator = inputs.get(1).getDouble();
-            double result = rawMonths * denominator;
-            output.putInt64(Math.round(result));
-        }
-    };
-    
     public static final TScalar MULTIPLY_DECIMAL = new DecimalArithmetic("times", "*", true)
     {
         @Override
@@ -558,6 +541,7 @@ public abstract class MArithmetic extends TArithmetic {
         }
     };
 
+    // mod function
     public static final TScalar MOD_TINYTINT = new MArithmetic("mod", "mod", false, MNumeric.TINYINT, MNumeric.INT, 4)
     {
         @Override
@@ -714,13 +698,25 @@ public abstract class MArithmetic extends TArithmetic {
      */
     static class AlwaysNull extends MArithmetic {
 
+        private final InvalidOperationException warningErr;
+
         AlwaysNull(String overloadName, String infix, boolean associative, TClass operand0, TClass operand1) {
             super(overloadName, infix, associative, operand0, operand1, MString.VARCHAR, 29);
+            warningErr = null;
         }
-
+        
+        AlwaysNull(String overloadName, String infix,
+                   boolean associative, TClass operand0,
+                   TClass operand1, InvalidOperationException err) {
+            super(overloadName, infix, associative, operand0, operand1, MString.VARCHAR, 29);
+            this.warningErr = err;
+        }
+        
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
                                   PValueTarget output) {
+            if (warningErr != null)
+                context.warnClient(warningErr);
             output.putNull();
         }
 
@@ -739,5 +735,219 @@ public abstract class MArithmetic extends TArithmetic {
 
     }
 
+    private static List<TScalar> generateReflexive(List<TScalar> ret, String name, String infix, boolean asso, TClass types[][])
+    {
+        for (TClass pair[] : types)
+        {
+            ret.add(new InvalidTypes(name, infix, asso, pair[0], pair[1]));
+            ret.add(new InvalidTypes(name, infix, asso, pair[1], pair[0]));
+        }
+        
+        return ret;
+    }
+    
+    private static List<TScalar> getDateTimeErrorCases()
+    {
+        
+        String names[][] = new String[][]{ {"times", "*"},
+                                           {"divide", "/"},
+                                           {"div", "div"}};
+        
+        boolean assos[] = new boolean []{true, false, false};
+        assert assos.length == names.length : "names and assos differ in length!";
+        TClass types[][] = new TClass [][] {{MDatetimes.DATE, AkInterval.MONTHS},
+                                            {MDatetimes.DATETIME, AkInterval.MONTHS},
+                                            {MDatetimes.TIME, AkInterval.MONTHS},
+                                            {MDatetimes.TIMESTAMP, AkInterval.MONTHS},
+                                            {MDatetimes.YEAR, AkInterval.MONTHS},
+
+                                            {MDatetimes.DATE, AkInterval.SECONDS},
+                                            {MDatetimes.DATETIME, AkInterval.SECONDS},
+                                            {MDatetimes.TIME, AkInterval.SECONDS},
+                                            {MDatetimes.TIMESTAMP, AkInterval.SECONDS},
+                                            {MDatetimes.YEAR, AkInterval.SECONDS}
+                                           };
+        
+        List<TScalar> ret = new ArrayList<TScalar>(types.length);
+        
+        for (int n = 0, limit = assos.length; n < limit; ++n)
+            generateReflexive(ret, names[n][0], names[n][1], assos[n],types);
+        
+        
+        // <INTERVAL> minus <DATE/TIME>
+        for (TClass pair[] : types)
+            ret.add(new InvalidTypes("minus", "-", false, pair[1], pair[0]));
+        ret.add(new InvalidTypes("minus", "-", false, AkInterval.MONTHS, MString.VARCHAR));
+        ret.add(new InvalidTypes("minus", "-", false, AkInterval.SECONDS, MString.VARCHAR));
+
+        return ret;
+    }
+    public static final List<TScalar> ERRORS = getDateTimeErrorCases();
+    
+    //----------  multiplications
+    public static final TScalar MULT_MONTH_DOUBLE 
+            = new IntervalArith(AkInterval.MONTHS, 0, MApproximateNumber.DOUBLE, 1, IntervalOp.MULT);
+    public static final TScalar MULT_DOUBLE_MONTH 
+            = new IntervalArith(AkInterval.MONTHS, 1, MApproximateNumber.DOUBLE, 0, IntervalOp.MULT);
+    public static final TScalar MULT_SECS_DOUBLE 
+            = new IntervalArith(AkInterval.SECONDS, 0, MApproximateNumber.DOUBLE, 1, IntervalOp.MULT);
+    public static final TScalar MULT_DOUBLE_SECS 
+            = new IntervalArith(AkInterval.SECONDS, 1, MApproximateNumber.DOUBLE, 0, IntervalOp.MULT);
+
+    // divisions
+    public static final TScalar DIVIDE_MONTHS_DOUBLE 
+            = new IntervalArith(AkInterval.MONTHS, 0, MApproximateNumber.DOUBLE, 1, IntervalOp.DIVIDE);
+    public static final TScalar DIVIDE_SECS_DOUBLE 
+            = new IntervalArith(AkInterval.SECONDS, 0, MApproximateNumber.DOUBLE, 1, IntervalOp.DIVIDE);
+
+    // additions
+    public static final TScalar ADD_MONTH
+            = new IntervalArith(AkInterval.MONTHS, 0, AkInterval.MONTHS, 1, IntervalOp.ADD);
+  
+    public static final TScalar ADD_DAY
+            = new IntervalArith(AkInterval.SECONDS, 0, AkInterval.SECONDS, 1, IntervalOp.ADD);
+    
+    // substractions
+    public static final TScalar SUBSTRACT_MONTH
+            = new IntervalArith(AkInterval.MONTHS, 0, AkInterval.MONTHS, 1, IntervalOp.MINUS);
+  
+    public static final TScalar SUBSTRACT_DAY
+            = new IntervalArith(AkInterval.SECONDS, 0, AkInterval.SECONDS, 1, IntervalOp.MINUS);
+    
+    // div (integer division)
+    public static final TScalar DIV_MONTH
+            = new IntervalArith(AkInterval.MONTHS, 0, MApproximateNumber.DOUBLE, 1, IntervalOp.DIV);
+    public static final TScalar DIV_SECS
+            = new IntervalArith(AkInterval.SECONDS, 0, MApproximateNumber.DOUBLE, 1, IntervalOp.DIV);
+    
+    static class InvalidTypes extends  AlwaysNull
+    {
+        private final InvalidArgumentTypeException error;
+        InvalidTypes(String overloadName, String infix, boolean associative, TClass operand0, TClass operand1)
+        {
+            super(overloadName, infix, associative, operand0, operand1);
+            error = new InvalidArgumentTypeException(String.format("Invald Argument Types: %s(<%s>, <%s>)",
+                                                                   overloadName,
+                                                                   operand0,
+                                                                   operand1));
+        }
+        
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
+                                  PValueTarget output)
+        {
+            throw error;
+        }
+    }
+    private static enum IntervalOp
+    {
+        DIV("div") // integer division
+        {
+            @Override
+            long doMath(LazyList<? extends PValueSource> inputs, int pos0, int pos1)
+            {
+                assert pos0 == 0 && pos1 == 1 : "ONLY <INTERVAL> / <NUMERIC> is supported";
+
+                return (long)(inputs.get(0).getInt64() / inputs.get(1).getDouble());
+            }
+        },
+        MULT("times")
+        {
+            @Override
+            long doMath(LazyList<? extends PValueSource> inputs, int pos0, int pos1)
+            {
+                return Math.round(inputs.get(pos0).getInt64()
+                                    * inputs.get(pos1).getDouble());
+            }
+        },
+        DIVIDE("divide")
+        {
+            @Override
+            long doMath(LazyList<? extends PValueSource> inputs, int pos0, int pos1)
+            {
+                assert pos0 == 0 && pos1 == 1 : "ONLY <INTERVAL> / <NUMERIC> is supported";
+
+                return Math.round(inputs.get(0).getInt64()
+                                    / inputs.get(1).getDouble());
+            }
+        },
+        ADD("plus")
+        {
+            @Override
+            long doMath(LazyList<? extends PValueSource> inputs, int pos0, int pos1)
+            {
+                return inputs.get(0).getInt64() + inputs.get(1).getInt64();
+            }
+        },
+        MINUS("minus")
+        {
+            @Override
+            long doMath(LazyList<? extends PValueSource> inputs, int pos0, int pos1)
+            {
+                return inputs.get(0).getInt64() - inputs.get(1).getInt64();
+            }
+        }
+        ;
+        
+        private IntervalOp(String n)
+        {
+            name = n;
+        }
+        
+        final String name;
+        abstract long doMath(LazyList<? extends PValueSource> inputs, int pos0, int pos1);
+    }
+
+    static class IntervalArith extends TScalarBase
+    {
+        private final TClass left, right;
+        protected final int pos0, pos1;
+        private final IntervalOp op;
+        
+        IntervalArith(TClass left,int pos0, TClass right, int pos1, IntervalOp op)
+        {
+           if (!(pos0 == 0 && pos1 == 1
+                   || pos0 == 1 && pos1 == 0))
+               throw new IllegalArgumentException("pos0 and pos1 must be {0, 1}");
+           
+           this.left = left;
+           this.right = right;
+           this.pos0 = pos0;
+           this.pos1 = pos1;
+           this.op = op;
+        }
+        
+        @Override
+        protected void buildInputSets(TInputSetBuilder builder)
+        {
+            builder.covers(left, pos0).covers(right, pos1);
+        }
+
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            output.putInt64(op.doMath(inputs, pos0, pos1));
+        }
+        
+        @Override
+        public String displayName()
+        {
+            return op.name;
+        }
+
+        @Override
+        public TOverloadResult resultType()
+        {
+            return TOverloadResult.custom(new TCustomOverloadResult()
+            {
+                @Override
+                public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
+                {
+                    return inputs.get(pos0).instance();
+                }   
+            });
+        }
+    }
+    
     private static final int DIV_PRECISION_INCREMENT = 4;
 }

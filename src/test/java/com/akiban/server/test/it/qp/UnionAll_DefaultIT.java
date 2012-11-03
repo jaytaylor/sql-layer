@@ -46,8 +46,8 @@ import static com.akiban.server.test.ExpressionGenerators.field;
 
 public class UnionAll_DefaultIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         t = createTable(
             "schema", "t",
@@ -55,6 +55,11 @@ public class UnionAll_DefaultIT extends OperatorITBase
             "x int",
             "primary key(id)");
         createIndex("schema", "t", "tx", "x");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         txIndexRowType = indexType(t, "x");
         tRowType = schema.userTableRowType(userTable(t));

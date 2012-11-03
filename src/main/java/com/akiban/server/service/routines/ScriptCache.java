@@ -31,6 +31,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.server.error.ExternalRoutineInvocationException;
 import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 
@@ -50,15 +51,15 @@ import java.util.Map;
 public class ScriptCache
 {
     public static final String CLASS_PATH = "akserver.routines.script_class_path";
-    private final SchemaManager schemaManager;
+    private final DXLService dxlService;
     private final ConfigurationService configService;
     private final Map<TableName,CacheEntry> cache = new HashMap<TableName,CacheEntry>();
     // Script engine discovery can be fairly expensive, so it is deferred.
     private ScriptEngineManager manager = null;
     private final static Logger logger = LoggerFactory.getLogger(ScriptCache.class);
 
-    public ScriptCache(SchemaManager schemaManager, ConfigurationService configService) {
-        this.schemaManager = schemaManager;
+    public ScriptCache(DXLService dxlService, ConfigurationService configService) {
+        this.dxlService = dxlService;
         this.configService = configService;
     }
 
@@ -118,7 +119,7 @@ public class ScriptCache
         CacheEntry entry = cache.get(routineName);
         if (entry != null)
             return entry;
-        Routine routine = schemaManager.getAis(session).getRoutine(routineName);
+        Routine routine = dxlService.ddlFunctions().getAIS(session).getRoutine(routineName);
         if (null == routine)
             throw new NoSuchRoutineException(routineName);
         ScriptEngine engine = getManager(session).getEngineByName(routine.getLanguage());
@@ -337,6 +338,10 @@ public class ScriptCache
         }
     }
 
+    protected static void setScriptName(TableName routineName, ScriptEngine engine) {
+        engine.getContext().setAttribute(ScriptEngine.FILENAME, routineName.toString(), ScriptContext.ENGINE_SCOPE);
+    }
+
     static class EngineEvaluator implements ScriptEvaluator {
         private final TableName routineName;
         private final ScriptEngine engine;
@@ -346,6 +351,7 @@ public class ScriptCache
             this.routineName = routineName;
             this.engine = engine;
             this.script = script;
+            setScriptName(routineName, engine);
         }
 
         @Override
@@ -373,6 +379,7 @@ public class ScriptCache
         public CompiledEvaluator(TableName routineName, ScriptEngine engine, 
                                  String script, boolean shared) {
             this.routineName = routineName;
+            setScriptName(routineName, engine);
             logger.debug("Compiling {}", routineName);
             try {
                 compiled = ((Compilable)engine).compile(script);
@@ -418,6 +425,7 @@ public class ScriptCache
                        String script, String function) {
             this.routineName = routineName;
             this.function = function;
+            setScriptName(routineName, engine);
             try {
                 if (engine instanceof Compilable) {
                     logger.debug("Compiling and loading {}", routineName);

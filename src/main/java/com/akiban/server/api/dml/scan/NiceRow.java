@@ -46,11 +46,6 @@ public class NiceRow extends NewRow {
     private final Map<Integer,Object> fields;
     private final int tableId;
 
-    public NiceRow(Session session, int tableId, Store store)
-    {
-        this(tableId, rowDef(session, tableId, store));
-    }
-
     public NiceRow(int tableId, RowDef rowDef)
     {
         super(rowDef);

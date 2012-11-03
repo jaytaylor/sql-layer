@@ -252,7 +252,7 @@ public class PersistitStoreIndexStatistics
         while (exchange.traverse(Key.Direction.GT, true)) {
             store.expandRowData(exchange, rowData);
             if (rowData.getRowDefId() == indexStatisticsEntryRowDef.getRowDefId() &&
-                selectedIndex(session, rowData, tableId, indexId)) {
+                selectedIndex(indexStatisticsEntryRowDef, rowData, tableId, indexId)) {
                 store.deleteRow(session, rowData);
             }
         }
@@ -261,16 +261,16 @@ public class PersistitStoreIndexStatistics
         while (exchange.traverse(Key.Direction.GT, true)) {
             store.expandRowData(exchange, rowData);
             if (rowData.getRowDefId() == indexStatisticsRowDef.getRowDefId() &&
-                selectedIndex(session, rowData, tableId, indexId)) {
+                selectedIndex(indexStatisticsRowDef, rowData, tableId, indexId)) {
                 store.deleteRow(session, rowData);
             }
         }
         // TODO: Maintain row counts for index_statistics and index_statistics_entry tables.
     }
 
-    private boolean selectedIndex(Session session, RowData rowData, long tableId, long indexId)
+    private boolean selectedIndex(RowDef rowDef, RowData rowData, long tableId, long indexId)
     {
-        LegacyRowWrapper row = new LegacyRowWrapper(session, rowData, store);
+        LegacyRowWrapper row = new LegacyRowWrapper(rowDef, rowData);
         long rowTableId = (Long) row.get(0);
         long rowIndexId = (Long) row.get(1);
         return rowTableId == tableId && rowIndexId == indexId;

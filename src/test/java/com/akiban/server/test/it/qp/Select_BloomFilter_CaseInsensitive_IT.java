@@ -27,6 +27,7 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
@@ -63,8 +64,8 @@ import static org.junit.Assert.assertTrue;
 
 public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         AkCollatorMySQL.useForTesting();
         // Tables are Driving (D) and Filtering (F). Find Filtering rows with a given test id, yielding
@@ -79,13 +80,18 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
             "test_id int not null",
             "a varchar(10) collate latin1_swedish_ci",
             "b varchar(10) collate latin1_swedish_ci");
-        Index dIndex = createIndex("schema", "driving", "idx_d", "test_id", "a", "b");
-        Index fab = createIndex("schema", "filtering", "idx_fab", "a", "b");
+        createIndex("schema", "driving", "idx_d", "test_id", "a", "b");
+        createIndex("schema", "filtering", "idx_fab", "a", "b");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         dRowType = schema.userTableRowType(userTable(d));
         fRowType = schema.userTableRowType(userTable(f));
-        dIndexRowType = dRowType.indexRowType(dIndex);
-        fabIndexRowType = fRowType.indexRowType(fab);
+        dIndexRowType = indexType(d, "test_id", "a", "b");
+        fabIndexRowType = indexType(f, "a", "b");
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
         ciCollator = dRowType.userTable().getColumn("a").getCollator();
@@ -346,4 +352,5 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     private RowType outputRowType;
     IndexRowType dIndexRowType;
     IndexRowType fabIndexRowType;
+
 }

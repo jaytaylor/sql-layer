@@ -24,19 +24,24 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.test.it.store;
+package com.akiban.server.store;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.service.session.Session;
 import org.junit.Test;
 
 import java.util.Set;
+import java.util.concurrent.CyclicBarrier;
 
-import static com.akiban.server.test.it.store.SchemaManagerIT.*;
 import static com.akiban.server.store.PersistitStoreSchemaManager.SerializationType;
 import static org.junit.Assert.assertEquals;
 
 public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerITBase {
+    private final static String SCHEMA = "my_schema";
+    private final static String T1_NAME = "t1";
+    private final static String T1_DDL = "id int NOT NULL, PRIMARY KEY(id)";
     private static final TableName TABLE_NAME = new TableName(SCHEMA, T1_NAME);
     private static final int ROW_COUNT = 10;
 
@@ -112,5 +117,83 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
 
         safeRestart();
         expectFullRows(tid, rows);
+    }
+
+    @Test
+    public void aisCanBeReloaded() {
+        createAndLoad();
+        pssm.clearAISMap();
+        expectFullRows(tid, rows);
+    }
+
+    @Test
+    public void aisMapCleanup() {
+        final int COUNT = 10;
+        // Create a number of versions
+        for(int i = 0; i < COUNT; ++i) {
+            createTable(SCHEMA, T1_NAME+i, T1_DDL);
+        }
+        // Should be fully cleared after DDL is committed (performed synchronouslyy)
+        assertEquals("AIS map size", 1, pssm.getAISMapSize());
+        pssm.clearUnreferencedAISMap();
+        assertEquals("AIS map size after clearing", 1, pssm.getAISMapSize());
+    }
+
+    @Test
+    public void clearUnreferencedAndOpenTransaction() throws Exception {
+        final int expectedTableCount = ais().getUserTables().size();
+        createTable(SCHEMA, T1_NAME+1, T1_DDL);
+        createTable(SCHEMA, T1_NAME+2, T1_DDL);
+
+        // Construct this sequence:
+        // Session 1: CREATE t1,t2                  BEGIN,CREATE t3,getAIS(),cleanup(),COMMIT
+        // Session 2:               BEGIN,getAIS()                                             COMMIT
+        CyclicBarrier b1 = new CyclicBarrier(2);
+        CyclicBarrier b2 = new CyclicBarrier(2);
+        Thread thread2 = new Thread(new AISReader(b1, b2, expectedTableCount + 2), "TestThread2");
+        thread2.start();
+        b1.await();
+        createTable(SCHEMA, T1_NAME + 3, T1_DDL);
+        txnService().beginTransaction(session());
+        try {
+            AkibanInformationSchema ais = ddl().getAIS(session());
+            assertEquals("Table count after creates", expectedTableCount + 3, ais.getUserTables().size());
+            pssm.clearUnreferencedAISMap();
+            assertEquals("AIS map size after clearing", 2, pssm.getAISMapSize());
+        } finally {
+            txnService().commitTransaction(session());
+        }
+        b2.await();
+        thread2.join();
+    }
+
+
+    private class AISReader implements Runnable {
+        private final CyclicBarrier b1, b2;
+        private final int tableCount;
+
+        public AISReader(CyclicBarrier b1, CyclicBarrier b2, int expectedCount) {
+            this.b1 = b1;
+            this.b2 = b2;
+            this.tableCount = expectedCount;
+        }
+
+        @Override
+        public void run() {
+            Session session = createNewSession();
+            try {
+                txnService().beginTransaction(session);
+                AkibanInformationSchema ais = ddl().getAIS(session);
+                b1.await();
+                assertEquals("Table count (session 2)", tableCount, ais.getUserTables().size());
+                b2.await();
+                txnService().commitTransaction(session);
+            } catch(Exception e) {
+                throw new RuntimeException(e);
+            } finally {
+                txnService().rollbackTransactionIfOpen(session);
+                session.close();
+            }
+        }
     }
 }

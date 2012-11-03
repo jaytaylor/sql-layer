@@ -24,14 +24,8 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service.instrumentation;
+package com.akiban.ais.model;
 
-public interface InstrumentationMXBean
-{
-    void enableQueryLog();
-    void disableQueryLog();
-    void setQueryLogFileName(String fileName);
-    String getQueryLogFileName();
-    void setExecutionTimeThreshold(long threshold);
-    long getExecutionTimeThreshold();
+public interface CacheValueGenerator<V> {
+    V valueFor(AkibanInformationSchema ais);
 }

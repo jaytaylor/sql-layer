@@ -24,10 +24,41 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3;
+package com.akiban.server.store;
 
-public interface TAttributeValues {
-    String stringAt(Attribute attribute, String defaultValue);
-    int intAt(Attribute attribute, int defaultValue);
-    boolean nullable();
+import com.akiban.server.service.config.Property;
+import com.akiban.server.store.PersistitStoreSchemaManager;
+import com.akiban.server.store.SchemaManager;
+import com.akiban.server.test.it.ITBase;
+import org.junit.Before;
+
+import java.util.Collection;
+
+public class PersistitStoreSchemaManagerITBase extends ITBase {
+    protected PersistitStoreSchemaManager pssm;
+
+    private PersistitStoreSchemaManager castToPSSM() {
+        SchemaManager schemaManager = serviceManager().getSchemaManager();
+        if(schemaManager instanceof PersistitStoreSchemaManager) {
+            return (PersistitStoreSchemaManager)schemaManager;
+        } else {
+            throw new IllegalStateException("Expected PersistitStoreSchemaManager!");
+        }
+    }
+
+    @Before
+    public void setUpPSSM() {
+        pssm = castToPSSM();
+    }
+
+    protected void safeRestart() throws Exception {
+        safeRestart(defaultPropertiesToPreserveOnRestart());
+    }
+
+    protected void safeRestart(Collection<Property> properties) throws Exception {
+        pssm = null;
+        safeRestartTestServices(properties);
+        pssm = castToPSSM();
+        updateAISGeneration();
+    }
 }

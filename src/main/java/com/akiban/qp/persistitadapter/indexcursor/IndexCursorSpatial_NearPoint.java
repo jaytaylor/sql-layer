@@ -141,9 +141,8 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         this.iterationHelper = iterationHelper;
         IndexRowType physicalIndexRowType = keyRange.indexRowType().physicalRowType();
         Index index = keyRange.indexRowType().index();
-        TableIndex spatialIndex = (TableIndex) index;
-        SpaceLatLon space = (SpaceLatLon) spatialIndex.space();
-        int latColumn = spatialIndex.firstSpatialArgument();
+        SpaceLatLon space = (SpaceLatLon) index.space();
+        int latColumn = index.firstSpatialArgument();
         int lonColumn = latColumn + 1;
         // The index column selector needs to select all the columns before the z column, and the z column itself.
         IndexRowPrefixSelector indexColumnSelector = new IndexRowPrefixSelector(latColumn + 1);

@@ -320,11 +320,11 @@ public class TParsers
         @Override
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt8(CastUtils.adjustYear(CastUtils.parseInRange(source.getString(),
-                                                                       Long.MAX_VALUE,
-                                                                       Long.MIN_VALUE,
-                                                                       context),
-                                                context));
+            target.putInt16(CastUtils.adjustYear(CastUtils.parseInRange(source.getString(),
+                                                                        Long.MAX_VALUE,
+                                                                        Long.MIN_VALUE,
+                                                                        context),
+                                                 context));
         }
     };
 }

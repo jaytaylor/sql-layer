@@ -64,7 +64,7 @@ public class MDatetimes
     public static final NoAttrTClass TIME = new NoAttrTClass(MBundleID,
             "time", AkCategory.DATE_TIME, FORMAT.TIME, 1, 1, 4, PUnderlying.INT_32, TParsers.TIME, 8, TypeId.TIME_ID);
     public static final NoAttrTClass YEAR = new NoAttrTClass(MBundleID,
-            "year", AkCategory.DATE_TIME, FORMAT.YEAR, 1, 1, 1, PUnderlying.INT_8, TParsers.YEAR, 4, TypeId.YEAR_ID);
+            "year", AkCategory.DATE_TIME, FORMAT.YEAR, 1, 1, 1, PUnderlying.INT_16, TParsers.YEAR, 4, TypeId.YEAR_ID);
     public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(MBundleID,
             "timestamp", AkCategory.DATE_TIME, FORMAT.TIMESTAMP, 1, 1, 4, PUnderlying.INT_32, TParsers.TIMESTAMP, 19, TypeId.TIMESTAMP_ID);
 
@@ -121,11 +121,11 @@ public class MDatetimes
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out)
             {
-                byte raw = source.getInt8();
+                short raw = source.getInt16();
                 if (raw == 0)
                     out.append("0000");
                 else
-                    out.append((raw & 0xff) + 1900);
+                    out.append(raw + 1900);
             }
 
             @Override
@@ -453,11 +453,70 @@ public class MDatetimes
             if (MDatetimes.isValidHrMinSec(ymd, false))
                 return StringType.TIME_ST;
         }
+        else // last attemp, split by any non-alphanumeric and assume the string is a DATE_STR
+        {
+            String parts[] = st.split("\\s++");
+            String dateTk[];
+            String timeTk[];
+            switch(parts.length)
+            {
+                case 2:
+                    if ((dateTk = parts[0].split(st)).length != 3
+                            || (timeTk = parts[1].split(DELIM)).length != 3)
+                        break;
+                    doParse(st,
+                            ymd,
+                            dateTk[0], dateTk[1], dateTk[2],
+                            timeTk[0], timeTk[1], timeTk[2]);
+                    if (isValidDatetime(ymd))
+                        return StringType.DATETIME_ST;
+                    break;
+                case 1:
+                    if ((dateTk = parts[0].split(DELIM)).length != 3)
+                        break;
+                    doParse(st,
+                            ymd,
+                            dateTk[0], dateTk[1], dateTk[2]);
+                    if (isValidDayMonth(ymd))
+                        return StringType.DATE_ST;
+            }
+        }
 
         // anything else is an error
         throw new InvalidDateFormatException("datetime", st);
     }
 
+    private static long adjustYear(long year)
+    {
+        if (year >= 10 && year <= 69)
+            return year + 2000;
+        else if (year >= 70 && year <= 99)
+            return year + 1900;
+        else
+            return year;
+    }
+    
+    private static void doParse(String st, // for error message only
+                                long ymd[],
+                                String year, String month, String day)
+    {
+        try
+        {
+            ymd[YEAR_INDEX] = adjustYear(Long.parseLong(year.trim()));
+            ymd[MONTH_INDEX] = Long.parseLong(month.trim());
+            ymd[DAY_INDEX] = Long.parseLong(day.trim());
+            ymd[HOUR_INDEX] = 0;
+            ymd[MIN_INDEX] = 0;
+            ymd[SEC_INDEX] = 0;
+
+        }
+        catch (NumberFormatException ex)
+        {
+            throw new InvalidDateFormatException("datetime", st);
+        }
+    }
+
+    
     private static void doParse(String st, // for error message only
                                 long ymd[],
                                 String year, String month, String day,
@@ -465,12 +524,12 @@ public class MDatetimes
     {
         try
         {
-            ymd[YEAR_INDEX] = Long.parseLong(year);
-            ymd[MONTH_INDEX] = Long.parseLong(month);
-            ymd[DAY_INDEX] = Long.parseLong(day);
-            ymd[HOUR_INDEX] = Long.parseLong(hour);
-            ymd[MIN_INDEX] = Long.parseLong(minute);
-            ymd[SEC_INDEX] = Long.parseLong(seconds);
+            ymd[YEAR_INDEX] = adjustYear(Long.parseLong(year.trim()));
+            ymd[MONTH_INDEX] = Long.parseLong(month.trim());
+            ymd[DAY_INDEX] = Long.parseLong(day.trim());
+            ymd[HOUR_INDEX] = Long.parseLong(hour.trim());
+            ymd[MIN_INDEX] = Long.parseLong(minute.trim());
+            ymd[SEC_INDEX] = Long.parseLong(seconds.trim());
 
         }
         catch (NumberFormatException ex)
@@ -582,13 +641,32 @@ public class MDatetimes
     
     public static String timeToString(int val)
     {
+        String sign = "";
+        if (val < 0) {
+            val = - val;
+            sign = "-";
+        }
         int h  = (int)(val / DATETIME_HOUR_SCALE);
         int m = (int)(val / DATETIME_MIN_SCALE) % 100;
         int s = (int)val % 100;
-        
-        return String.format("%d:%02d:%02d", h, m, s);
+
+        return String.format("%s%d:%02d:%02d", sign, h, m, s);
     }
 
+    public static void timeToDatetime(long time[])
+    {
+        time[YEAR_INDEX] = adjustYear(time[HOUR_INDEX]);
+        time[MONTH_INDEX] = time[MIN_INDEX];
+        time[DAY_INDEX] = time[SEC_INDEX];
+        
+        // erase the time portion
+        time[HOUR_INDEX] = 0;
+        time[MIN_INDEX] = 0;
+        time[SEC_INDEX] = 0;
+        
+        return;
+    }
+    
     public static int parseTime (String string, TExecutionContext context)
     {
           // (-)HH:MM:SS
@@ -604,7 +682,6 @@ public class MDatetimes
             string = string.substring(1);
         }
 
-        
         // hh:mm:ss
         if (string.length() > 8 )
         {
@@ -973,6 +1050,9 @@ public class MDatetimes
     private static final Pattern TIME_WITHOUT_DAY_PATTERN
             = Pattern.compile("^(([-+]?\\d+):(\\d+):(\\d+)(\\.\\d+)?([+-]\\d+:\\d+)?)?$");
 
+    // delimiter for a date/time/datetime string. MySQL allows almost anything to be the delimiter
+    private static final String DELIM = "\\W";
+    
     // upper and lower limit of TIMESTAMP value
     // as per http://dev.mysql.com/doc/refman/5.5/en/datetime.html
     public static final long TIMESTAMP_MIN = DateTime.parse("1970-01-01T00:00:01Z").getMillis();

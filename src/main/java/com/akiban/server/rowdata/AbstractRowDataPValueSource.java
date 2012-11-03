@@ -28,9 +28,11 @@ package com.akiban.server.rowdata;
 
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.types.*;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.util.WrappingByteSource;
 
 
 abstract class AbstractRowDataPValueSource implements PValueSource {
@@ -62,7 +64,7 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
 
     @Override
     public boolean getBoolean() {
-        return extractLong(Signage.SIGNED) != 0;
+        return extractLong(signage()) != 0;
     }
 
     @Override
@@ -72,27 +74,27 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
 
     @Override
     public byte getInt8() {
-        return (byte) extractLong(Signage.SIGNED);
+        return (byte) extractLong(signage());
     }
 
     @Override
     public short getInt16() {
-        return (short) extractLong(Signage.SIGNED);
+        return (short) extractLong(signage());
     }
 
     @Override
     public char getUInt16() {
-        return (char) extractLong(Signage.SIGNED);
+        return (char) extractLong(signage());
     }
 
     @Override
     public int getInt32() {
-        return (int) extractLong(Signage.SIGNED);
+        return (int) extractLong(signage());
     }
 
     @Override
     public long getInt64() {
-        return extractLong(Signage.SIGNED);
+        return extractLong(signage());
     }
 
     @Override
@@ -161,12 +163,22 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
         long offsetAndWidth = getCheckedOffsetAndWidth();
         final int offset = (int)offsetAndWidth;
         final int width = (int)(offsetAndWidth >>> 32);
-        if (signage == Signage.SIGNED) {
+        if ((signage == Signage.SIGNED) || (width == 8)) {
             return AkServerUtil.getSignedIntegerByWidth(bytes(), offset, width);
         } else {
             assert signage == Signage.UNSIGNED;
             return AkServerUtil.getUnsignedIntegerByWidth(bytes(), offset, width);
         }
+    }
+
+    private Signage signage() {
+        TClass tclass = fieldDef().column().tInstance().typeClass();
+        if (tclass instanceof MNumeric)
+            return ((MNumeric)tclass).isUnsigned() ? Signage.UNSIGNED : Signage.SIGNED;
+        else if (tclass == MDatetimes.YEAR)
+            return Signage.UNSIGNED;
+        else
+            return Signage.SIGNED;
     }
 
     private long getCheckedOffsetAndWidth() {
@@ -178,7 +190,6 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
     }
 
     // object state
-    private final WrappingByteSource byteSource = new WrappingByteSource();
 
     private enum Signage {
         SIGNED, UNSIGNED

@@ -37,12 +37,14 @@ import com.akiban.server.error.CursorIsUnknownException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.google.inject.Inject;
+import com.persistit.Transaction;
 
 import java.util.Collection;
 
@@ -120,8 +122,9 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
 
     @Inject
     public ConcurrencyAtomicsDXLService(SchemaManager schemaManager, Store store, TreeService treeService, SessionService sessionService,
-                                        IndexStatisticsService indexStatisticsService, ConfigurationService configService, T3RegistryService t3Registry) {
-        super(schemaManager, store, treeService, sessionService, indexStatisticsService, configService, t3Registry);
+                                        IndexStatisticsService indexStatisticsService, ConfigurationService configService,
+                                        T3RegistryService t3Registry, TransactionService txnService) {
+        super(schemaManager, store, treeService, sessionService, indexStatisticsService, configService, t3Registry, txnService);
     }
 
     public class ScanhooksDMLFunctions extends BasicDMLFunctions {

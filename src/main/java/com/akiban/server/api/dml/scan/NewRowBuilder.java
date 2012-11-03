@@ -28,6 +28,7 @@ package com.akiban.server.api.dml.scan;
 
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.api.DMLFunctions;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.Store;
 
@@ -38,12 +39,12 @@ public final class NewRowBuilder {
     private final NewRow row;
     private int nextCol = 0;
 
-    public static NewRowBuilder forTable(Session session, int tableId, Store store) {
-        return new NewRowBuilder(new NiceRow(session, tableId, store));
+    public static NewRowBuilder forTable(int tableId, RowDef rowDef) {
+        return new NewRowBuilder(new NiceRow(tableId, rowDef));
     }
 
-    public static NewRowBuilder copyOf(Session session, NewRow row, Store store) {
-        NewRowBuilder builder = forTable(session, row.getTableId(), store);
+    public static NewRowBuilder copyOf(NewRow row) {
+        NewRowBuilder builder = forTable(row.getTableId(), row.getRowDef());
         builder.row().getFields().putAll( row.getFields() );
         return builder;
     }

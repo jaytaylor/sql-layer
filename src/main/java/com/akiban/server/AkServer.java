@@ -57,11 +57,42 @@ import java.lang.management.ManagementFactory;
  */
 public class AkServer implements Service, JmxManageable, AkServerInterface
 {
-    private static final String VERSION_STRING_FILE = "version/akserver_version";
-    public static final String VERSION_STRING = getVersionString();
-    public static final String SHORT_VERSION_STRING = shorten(VERSION_STRING);
-    
     private static final Logger LOG = LoggerFactory.getLogger(AkServer.class.getName());
+
+    private static final String VERSION_STRING_FILE = "version/akserver_version";
+    public static final String VERSION_STRING, SHORT_VERSION_STRING;
+    public static final int VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH;
+    static {
+        String vlong, vshort;
+        int major = 0, minor = 0, patch = 0;
+        try {
+            vlong = Strings.join(Strings.dumpResource(null, VERSION_STRING_FILE));
+        } catch (IOException e) {
+            LOG.warn("Couldn't read resource file");
+            vlong = "Error: " + e;
+        }
+        int endpos = vlong.indexOf('-');
+        if (endpos < 0) endpos = vlong.length();
+        vshort = vlong.substring(0, endpos);
+        String[] nums = vshort.split("\\.");
+        try {
+            if (nums.length > 0)
+                major = Integer.parseInt(nums[0]);
+            if (nums.length > 1)
+                minor = Integer.parseInt(nums[1]);
+            if (nums.length > 2)
+                patch = Integer.parseInt(nums[2]);
+        }
+        catch (NumberFormatException ex) {
+            LOG.warn("Couldn't parse version number: " + vshort);
+        }
+        VERSION_STRING = vlong;
+        SHORT_VERSION_STRING = vshort;
+        VERSION_MAJOR = major; 
+        VERSION_MINOR = minor; 
+        VERSION_PATCH = patch;
+    }
+
     private static final String AKSERVER_NAME_PROP = "akserver.name";
     private static final String PID_FILE_NAME = System.getProperty("akserver.pidfile");
 
@@ -119,15 +150,24 @@ public class AkServer implements Service, JmxManageable, AkServerInterface
         return VERSION_STRING;
     }
 
-    private static String getVersionString()
-    {
-        try {
-            return Strings.join(Strings.dumpResource(null,
-                    VERSION_STRING_FILE));
-        } catch (IOException e) {
-            LOG.warn("Couldn't read resource file");
-            return "Error: " + e;
-        }
+    @Override
+    public String getServerShortVersion() {
+        return SHORT_VERSION_STRING;
+    }
+
+    @Override
+    public int getServerMajorVersion() {
+        return VERSION_MAJOR;
+    }
+
+    @Override
+    public int getServerMinorVersion() {
+        return VERSION_MINOR;
+    }
+
+    @Override
+    public int getServerPatchVersion() {
+        return VERSION_PATCH;
     }
 
     public interface ShutdownMXBean {
@@ -212,23 +252,5 @@ public class AkServer implements Service, JmxManageable, AkServerInterface
         ObjectName name = new ObjectName(ShutdownMXBeanImpl.BEAN_NAME);
         ManagementFactory.getPlatformMBeanServer().invoke(name, "shutdown",
                                                           new Object[0], new String[0]);
-    }
-
-    /**
-     * 
-     * @param version
-     * @return the short version of the string (ie., the part before the first dash ('-');
-     */
-    private static String shorten(String version)
-    {
-        StringBuilder bd = new StringBuilder();
-        char ch;
-        for (int n = 0; n < version.length(); ++n)
-            if ((ch = version.charAt(n)) == '-')
-                return bd.toString();
-            else
-                bd.append(ch);
-        
-        return bd.toString();
     }
 }

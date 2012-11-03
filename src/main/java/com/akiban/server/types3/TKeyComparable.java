@@ -24,16 +24,29 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.common;
+package com.akiban.server.types3;
 
-public class UnitValue {
-    public static final int YEAR = 0;
-    public static final int QUARTER = 1;
-    public static final int MONTH = 2;
-    public static final int WEEK = 3;
-    public static final int DAY = 4;
-    public static final int HOUR = 5;
-    public static final int MINUTE = 6;
-    public static final int SECOND = 7;
-    public static final int MICROSECOND = 8;
+public final class TKeyComparable {
+
+    public TClass getLeftTClass() {
+        return leftTClass;
+    }
+
+    public TClass getRightTClass() {
+        return rightTClass;
+    }
+
+    public TComparison getComparison() {
+        return comparison;
+    }
+
+    public TKeyComparable(TClass leftClass, TClass rightClass, TComparison comparison) {
+        this.leftTClass = leftClass;
+        this.rightTClass = rightClass;
+        this.comparison = comparison;
+    }
+
+    private final TClass leftTClass;
+    private final TClass rightTClass;
+    private final TComparison comparison;
 }

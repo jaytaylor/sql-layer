@@ -50,6 +50,7 @@ import java.util.Collection;
  */
 public interface Store {
 
+    /** Get the RowDef for the given ID. Note, a transaction should be active before calling this. */
     RowDef getRowDef(Session session, int rowDefID);
 
     void writeRow(Session session, RowData rowData) throws PersistitException;

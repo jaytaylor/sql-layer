@@ -126,12 +126,17 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     }
 
     @Override
-    public int getGeneration() {
+    public int getGenerationAsInt(Session session) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public long getTimestamp() {
+    public long getGeneration(Session session) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public long getOldestActiveGeneration() {
         throw new UnsupportedOperationException();
     }
 

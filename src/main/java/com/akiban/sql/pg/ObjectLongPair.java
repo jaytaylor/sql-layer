@@ -24,27 +24,37 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mtypes;
+package com.akiban.sql.pg;
 
-import com.akiban.server.types3.TAttributeValues;
-import com.akiban.server.types3.TAttributesDeclaration;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TFactory;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.common.types.NumericAttribute;
+public class ObjectLongPair {
+    public final Object obj;
+    public final long longVal;
 
-class MNumericFactory implements TFactory {
+    public ObjectLongPair(Object obj, long longVal) {
+        assert obj != null : "Null obj for longVal " + longVal;
+        this.obj = obj;
+        this.longVal = longVal;
+    }
+
     @Override
-    public TInstance create(TAttributesDeclaration declaration) {
-        TAttributeValues vals = declaration.validate(1, 1);
-        int m = vals.intAt(NumericAttribute.WIDTH, DEFAULT_M);
-        return tClass.instance(m, vals.nullable());
+    public String toString() {
+        return "[" + obj + "," + longVal + "]";
     }
 
-    MNumericFactory(TClass tClass) {
-        this.tClass = tClass;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        ObjectLongPair rhs = (ObjectLongPair)o;
+        return (longVal == rhs.longVal) && obj.equals(rhs.obj);
     }
 
-    private final TClass tClass;
-    private static final int DEFAULT_M = 10;
+    @Override
+    public int hashCode() {
+        int result = obj.hashCode();
+        result = 31 * result + (int)(longVal ^ (longVal >>> 32));
+        return result;
+    }
 }

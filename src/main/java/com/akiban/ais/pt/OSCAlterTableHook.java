@@ -64,7 +64,7 @@ public class OSCAlterTableHook
               "enabled".equals(requiredServices.config().getProperty(PROPERTY))))
             return;
 
-        AkibanInformationSchema ais = requiredServices.schemaManager().getAis(session);
+        AkibanInformationSchema ais = requiredServices.dxl().ddlFunctions().getAIS(session);
         UserTable oldDefinition = ais.getUserTable(name);
         if (oldDefinition == null) return;
 

@@ -55,11 +55,6 @@ public final class LegacyRowWrapper extends NewRow
         this(rowDef, null);
     }
 
-    public LegacyRowWrapper(Session session, RowData rowData, Store store)
-    {
-        this(rowDef(session, rowData.getRowDefId(), store), rowData);
-    }
-
     public LegacyRowWrapper(RowDef rowDef, RowData rowData)
     {
         super(rowDef);

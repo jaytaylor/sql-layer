@@ -41,7 +41,9 @@ import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TComparison;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TKeyComparable;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.akfuncs.AkIfElse;
 import com.akiban.server.types3.common.types.StringAttribute;
@@ -49,6 +51,7 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.texpressions.TCastExpression;
 import com.akiban.server.types3.texpressions.TComparisonExpression;
+import com.akiban.server.types3.texpressions.TComparisonExpressionBase;
 import com.akiban.server.types3.texpressions.TInExpression;
 import com.akiban.server.types3.texpressions.TNullExpression;
 import com.akiban.server.types3.texpressions.TPreparedBoundField;
@@ -179,8 +182,14 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     }
 
     @Override
-    protected TPreparedExpression compare(TPreparedExpression left, Comparison comparison, TPreparedExpression right) {
-        return new TComparisonExpression(left, comparison, right);
+    protected TPreparedExpression compare(TPreparedExpression left, ComparisonCondition comparison, TPreparedExpression right) {
+        TKeyComparable keyComparable = comparison.getKeyComparable();
+        if (keyComparable != null) {
+            return new TKeyComparisonPreparation(left, comparison.getOperation(), right, comparison.getKeyComparable());
+        }
+        else {
+            return new TComparisonExpression(left, comparison.getOperation(), right);
+        }
     }
 
     @Override
@@ -262,5 +271,45 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     @Override
     protected Logger logger() {
         return logger;
+    }
+
+    private class TKeyComparisonPreparation extends TComparisonExpressionBase {
+
+        private TKeyComparisonPreparation(TPreparedExpression left, Comparison op, TPreparedExpression right,
+                                          TKeyComparable comparable)
+        {
+            super(left, op, right);
+            this.comparison = comparable.getComparison();
+            TClass leftIn = tClass(left);
+            TClass rightIn = tClass(right);
+            TClass leftCmp = comparable.getLeftTClass();
+            TClass rightCmp = comparable.getRightTClass();
+            if (leftIn == leftCmp && rightIn == rightCmp) {
+                reverseComparison = false;
+            }
+            else if (rightIn == leftCmp && leftIn == rightCmp) {
+                reverseComparison = true;
+            }
+            else {
+                throw new IllegalArgumentException(
+                        "invalid comparisons: " + left + " and " + right + " against " + comparable);
+            }
+        }
+
+        private TClass tClass(TPreparedExpression left) {
+            TInstance tInstance = left.resultType();
+            return tInstance == null ? null : tInstance.typeClass();
+        }
+
+        @Override
+        protected int compare(TInstance leftInstance, PValueSource left, TInstance rightInstance,
+                                  PValueSource right) {
+            return reverseComparison
+                    ? - comparison.compare(rightInstance, right, leftInstance, left)
+                    :   comparison.compare(leftInstance, left, rightInstance, right);
+        }
+
+        private final TComparison comparison;
+        private final boolean reverseComparison;
     }
 }

@@ -24,11 +24,10 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.aisddl;
+package com.akiban.server.types3;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.TableName;
+import com.akiban.server.types3.pvalue.PValueSource;
 
-public interface TableCopier {
-    void copyFullTable(AkibanInformationSchema ais, TableName source, TableName destination);
+public interface TComparison {
+    int compare(TInstance leftInstance, PValueSource left, TInstance rightInstance, PValueSource right);
 }
