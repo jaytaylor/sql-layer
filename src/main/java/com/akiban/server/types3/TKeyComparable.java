@@ -40,9 +40,9 @@ public final class TKeyComparable {
         return comparison;
     }
 
-    public TKeyComparable(TClass narrowerClass, TClass widerClass, TComparison comparison) {
-        this.leftTClass = narrowerClass;
-        this.rightTClass = widerClass;
+    public TKeyComparable(TClass leftClass, TClass rightClass, TComparison comparison) {
+        this.leftTClass = leftClass;
+        this.rightTClass = rightClass;
         this.comparison = comparison;
     }
 
