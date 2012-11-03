@@ -35,7 +35,7 @@
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>1.8</version>
+            <version>1.10</version>
         </dependency>
         <dependency>
             <groupId>com.google.inject</groupId>
@@ -45,7 +45,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>11.0.1</version>
+            <version>13.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.google.inject.extensions</groupId>
@@ -81,13 +81,13 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.6.1</version>
+            <version>1.6.6</version>
         </dependency>
         <dependency>
             <!-- TODO remove this once we get packaging under control, so that we can dynamically set the logger -->
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
-            <version>1.6.1</version>
+            <version>1.6.6</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -111,7 +111,7 @@
         <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
-            <version>2.0</version>
+            <version>2.1</version>
         </dependency>
         <dependency>
             <groupId>com.ibm.icu</groupId>
@@ -150,12 +150,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>2.4.3</version>
+                <version>2.6</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>2.2</version>
+                <version>2.4</version>
                 <executions>
                     <execution>
                         <goals>
@@ -167,7 +167,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>1.5</version>
+                <version>1.7</version>
                 <executions>
                     <execution>
                         <id>reserve-network-port</id>
@@ -197,7 +197,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>2.1.2</version>
+                <version>2.2.1</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -209,31 +209,27 @@
                 </executions>
             </plugin>
             <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.5.1</version>
                 <configuration>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                    <archive>
-                        <manifest>
-                            <mainClass>com.akiban.server.AkServer</mainClass>
-                        </manifest>
-                    </archive>
+                    <excludeArtifactIds>junit,postgresql</excludeArtifactIds>
+                    <excludeTypes>test-jar</excludeTypes>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>make-assembly</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
+                      <id>copy-dependencies</id>
+                      <phase>package</phase>
+                      <goals>
+                          <goal>copy-dependencies</goal>
+                      </goals>
                     </execution>
                 </executions>
             </plugin>
             <plugin>
                 <groupId>com.atlassian.maven.plugins</groupId>
                 <artifactId>maven-clover2-plugin</artifactId>
-                <version>3.0.1</version>
+                <version>3.1.7</version>
                 <configuration>
                     <generateHistorical>true</generateHistorical>
                     <historyDir>/clover/history</historyDir>
@@ -244,7 +240,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.11</version>
+                <version>2.12.4</version>
                 <configuration>
                     <systemPropertyVariables>
                         <akserver.port>${akserver.port}</akserver.port>
@@ -263,7 +259,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>2.11</version>
+                <version>2.12.4</version>
                 <configuration>
                     <systemPropertyVariables>
                         <akserver.port>${akserver.port}</akserver.port>
@@ -289,7 +285,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>findbugs-maven-plugin</artifactId>
-                <version>1.2</version>
+                <version>2.5.2</version>
                 <configuration>
                     <findbugsXmlOutput>true</findbugsXmlOutput>
                     <findbugsXmlWithMessages>true</findbugsXmlWithMessages>
@@ -366,18 +362,19 @@
             </plugin>
             <plugin>
                 <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.7</version>
                 <executions>
                     <execution>
                         <id>protobuf-compile</id>
                         <phase>generate-sources</phase>
                         <configuration>
-                            <tasks>
+                            <target>
                                 <mkdir dir="target/generated-sources/protobuf"/>
                                 <exec executable="protoc" failonerror="true">
                                     <arg value="--java_out=target/generated-sources/protobuf"/>
                                     <arg value="src/main/protobuf/akiban_information_schema.proto"/>
                                 </exec>
-                            </tasks>
+                            </target>
                             <sourceRoot>target/generated-sources</sourceRoot>
                         </configuration>
                         <goals>

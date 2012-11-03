@@ -25,7 +25,7 @@
 # PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
 #
 
-usage="Usage: ./build_packages.sh [debian|redhat|macosx] [... epoch]"
+usage="Usage: ./build_packages.sh [debian|redhat|macosx|binary] [... epoch]"
 if [ $# -lt 1 ]; then
     echo "${usage}"
     exit 1
@@ -53,7 +53,7 @@ case "${target}" in
 esac
 
 mkdir -p target
-mkdir -p packages-common
+mkdir -p packages-common/client
 common_dir="config-files/${target}" # require config-files/dir to be the same as the ${target} variable
 [ -d ${common_dir} ] || \
     { echo "fatal: Couldn't find configuration files in: ${common_dir}"; exit 1; }
@@ -66,17 +66,13 @@ cp ${common_dir}/* packages-common/
 echo "Using akiban-client-tools bazaar branch: ${TOOLS_BRANCH}"
 pushd target && rm -rf akiban-client-tools && \
     bzr branch ${TOOLS_BRANCH} akiban-client-tools && pushd akiban-client-tools
-mvn  -Dmaven.test.skip.exec clean install
-
-# Linux and Mac
+mvn  -Dmaven.test.skip clean install
+rm -f target/*-tests.jar target/*-sources.jar
 cp bin/akdump ../../packages-common/
-cp target/akiban-client-*-SNAPSHOT.jar ../../packages-common/
-cp target/dependency/postgresql.jar ../../packages-common/
+cp target/akiban-client-tools-*.jar ../../packages-common/
+cp target/dependency/* ../../packages-common/client/
 
 popd && popd
-
-# Windows
-# Handled already by Maven / .iss
 
 if [ -z "$2" ] ; then
 	epoch=`date +%s`
@@ -86,15 +82,17 @@ fi
 
 # Handle platform-specific packaging process
 if [ ${platform} == "debian" ]; then
-    cp packages-common/* ${platform}
+    cp -R packages-common/* ${platform}
     mvn -Dmaven.test.skip.exec clean install -DBZR_REVISION=${bzr_revno}
+    mkdir -p ${platform}/server/
+    cp ./target/dependency/* ${platform}/server/
     debuild
 elif [ ${platform} == "redhat" ]; then
     mkdir -p ${PWD}/redhat/rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
     tar_file=${PWD}/redhat/rpmbuild/SOURCES/akserver.tar
     bzr export --format=tar $tar_file
     rm {$PWD}/redhat/akserver/redhat/* # Clear out old files
-    cp packages-common/* ${PWD}/redhat/akserver/redhat
+    cp -R packages-common/* ${PWD}/redhat/akserver/redhat
     pushd redhat
 # bzr st -S outs lines like "? redhat/akserver/redhat/log4j.properties"
 # we want to turn those to just "akserver/redhat/log4j.properties"
@@ -107,6 +105,9 @@ elif [ ${platform} == "redhat" ]; then
     sed -i "10,10s/EPOCH/${epoch}/g" ${PWD}/redhat/akiban-server-${bzr_revno}.spec
     rpmbuild --target=noarch --define "_topdir ${PWD}/redhat/rpmbuild" -ba ${PWD}/redhat/akiban-server-${bzr_revno}.spec
 elif [ ${platform} == "binary" ]; then
+    mvn -Dmaven.test.skip clean install -DBZR_REVISION=${bzr_revno}
+    rm -f ./target/*-tests.jar ./target/*-sources.jar
+
     # For releases only
     # Expects the ${release} to be defined in the env, i.e. through Jenkins
     if [ -z "$release" ]; then
@@ -117,21 +118,24 @@ elif [ ${platform} == "binary" ]; then
     BINARY_TAR_NAME="${BINARY_NAME}.tar.gz"
     
     mkdir -p ${BINARY_NAME}
-    mkdir -p ${BINARY_NAME}/lib
+    mkdir -p ${BINARY_NAME}/lib/server
+    mkdir -p ${BINARY_NAME}/lib/client
     mkdir -p ${BINARY_NAME}/bin
-    cp ./target/akiban-server-*-jar-with*.jar ${BINARY_NAME}/lib
+    cp ./target/akiban-server-*.jar ${BINARY_NAME}/lib
+    cp ./target/dependency/* ${BINARY_NAME}/lib/server/
     cp -R ./conf ${BINARY_NAME}/
+    rm -f ${BINARY_NAME}/conf/config/*.cmd
     cp ./bin/akserver ${BINARY_NAME}/bin
-    cp ./bin/akserver.cmd ${BINARY_NAME}/bin
     cp packages-common/akdump ${BINARY_NAME}/bin
-    cp packages-common/akiban-client-*-SNAPSHOT.jar ${BINARY_NAME}/lib
-    cp packages-common/postgresql.jar ${BINARY_NAME}/lib
+    cp packages-common/akiban-client-*.jar ${BINARY_NAME}/lib
+    cp packages-common/client/* ${BINARY_NAME}/lib/client
     cp ${license} ${BINARY_NAME}/LICENSE.txt
     tar zcf ${BINARY_TAR_NAME} ${BINARY_NAME}    
 elif [ ${platform} == "macosx" ]; then
-    server_jar=target/akiban-server-*-jar-with-dependencies.jar
-    akdump_jar=packages-common/akiban-client-tools-*.jar
-    postgres_jar=packages-common/postgresql.jar
+    server_jar=target/akiban-server-*.jar
+    server_deps=target/dependency
+    client_jar=packages-common/akiban-client-tools-*.jar
+    client_deps=packages-common/client
     akdump_bin=packages-common/akdump
     mac_app='target/Akiban Server.app'
     mac_dmg='target/Akiban Server.dmg'
@@ -144,7 +148,8 @@ elif [ ${platform} == "macosx" ]; then
     rm prototype.txt
     
     # build jar
-    mvn -Dmaven.test.skip.exec clean install -DBZR_REVISION=${bzr_revno}
+    mvn -Dmaven.test.skip clean install -DBZR_REVISION=${bzr_revno}
+    rm -f ./target/*-tests.jar ./target/*-sources.jar
 
     # add ce/ee specific config files to Contents/Resources/config
     rm macosx/Contents/Resources/config/*
@@ -154,12 +159,17 @@ elif [ ${platform} == "macosx" ]; then
     cp -R macosx/Contents "$mac_app"
     mkdir "$mac_app/Contents/MacOS"
     cp /System/Library/Frameworks/JavaVM.framework/Versions/Current/Resources/MacOS/JavaApplicationStub "$mac_app/Contents/MacOS"
-    mkdir -p "$mac_app/Contents/Resources/Java"
+    mkdir -p "$mac_app/Contents/Resources/Java/server"
     cp $server_jar "$mac_app/Contents/Resources/Java"
-    mkdir -p "$mac_app/Contents/Resources/tools/"{lib,bin}
-    cp $akdump_jar "$mac_app/Contents/Resources/tools/lib/"
-    cp $postgres_jar "$mac_app/Contents/Resources/tools/lib/"
+    cp $server_deps/* "$mac_app/Contents/Resources/Java/server/"
+    mkdir -p "$mac_app/Contents/Resources/tools/lib/client"
+    cp $client_jar "$mac_app/Contents/Resources/tools/lib/"
+    cp $client_deps/* "$mac_app/Contents/Resources/tools/lib/client/"
+    mkdir -p "$mac_app/Contents/Resources/tools/bin"
     cp $akdump_bin "$mac_app/Contents/Resources/tools/bin/"
+    # Wildcards are not supported in ClassPath key; expand now.
+    CLASSPATH=$(cd "$mac_app/Contents/Resources/Java"; echo akiban-server-*.jar server/*.jar | sed 's| |:$JAVAROOT/|g')
+    sed "s|@CLASSPATH@|\$JAVAROOT/$CLASSPATH|" macosx/Contents/Info.plist >"$mac_app/Contents/Info.plist"
     SetFile -a B "$mac_app"
     # build disk image template
     rm -rf $inst_temp; mkdir $inst_temp; mkdir "$inst_temp/Akiban Server.app"

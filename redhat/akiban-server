@@ -10,6 +10,7 @@
 . /etc/rc.d/init.d/functions
 
 export JAR_FILE=/usr/share/akiban/akiban-server.jar
+export DEP_DIR=/usr/share/akiban/server
 export AKIBAN_CONF=/etc/akiban
 export AKIBAN_OWNR="akiban"
 NAME="akiban"
@@ -39,7 +40,7 @@ fi
 check_no_process()
 {
     if [ ! -e "$pid_file" ]; then
-        check_pid=`pgrep -f "jar $JAR_FILE"`
+        check_pid=`pgrep -f "cp $JAR_FILE"`
         if [ "$check_pid" != "" ]; then
             return 1
         fi
@@ -58,7 +59,7 @@ case "$1" in
             log_failure_msg "$NAME is already running but no pidfile exists"
             exit 1
         fi
-        su $AKIBAN_OWNR -c "$AKIBAN_PROG -p $pid_file -j $JAR_FILE -c $AKIBAN_CONF" > $log_file 2>&1
+        su $AKIBAN_OWNR -c "$AKIBAN_PROG -p $pid_file -j $JAR_FILE -d $DEP_DIR -c $AKIBAN_CONF" > $log_file 2>&1
         if [ $? -ne 0 ]; then
             log_failure_msg "Starting Akiban"
         fi
