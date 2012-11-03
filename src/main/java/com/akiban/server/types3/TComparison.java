@@ -24,16 +24,10 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.t3expressions;
+package com.akiban.server.types3;
 
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TKeyComparable;
-import com.akiban.server.types3.texpressions.TValidatedAggregator;
-import com.akiban.server.types3.texpressions.TValidatedScalar;
+import com.akiban.server.types3.pvalue.PValueSource;
 
-public interface T3RegistryService {
-    OverloadResolver<TValidatedScalar> getScalarsResolver();
-    OverloadResolver<TValidatedAggregator> getAggregatesResolver();
-    TCastResolver getCastsResolver();
-    TKeyComparable getKeyComparable(TClass left, TClass right);
+public interface TComparison {
+    int compare(TInstance leftInstance, PValueSource left, TInstance rightInstance, PValueSource right);
 }

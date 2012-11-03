@@ -26,75 +26,31 @@
 
 package com.akiban.server.types3.texpressions;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.row.Row;
 import com.akiban.server.collation.AkCollator;
-import com.akiban.server.explain.*;
-import com.akiban.server.explain.std.TExpressionExplainer;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
 
-public final class TComparisonExpression implements TPreparedExpression {
+public final class TComparisonExpression extends TComparisonExpressionBase {
+
     @Override
-    public TPreptimeValue evaluateConstant(QueryContext queryContext) {
-        // First check both sides. If either is a constant null, the result is null
-        TPreptimeValue leftPrep = left.evaluateConstant(queryContext);
-        PValueSource oneVal = leftPrep.value();
-        if (oneVal != null && oneVal.isNull())
-            return new TPreptimeValue(AkBool.INSTANCE.instance(true), PValueSources.getNullSource(PUnderlying.BOOL));
-
-        TPreptimeValue rightPrep = right.evaluateConstant(queryContext);
-        PValueSource twoVal = rightPrep.value();
-        if (twoVal != null && twoVal.isNull())
-            return new TPreptimeValue(AkBool.INSTANCE.instance(true), PValueSources.getNullSource(PUnderlying.BOOL));
-
-        // Neither side is constant null. If both sides are constant, evaluate
-        PValueSource resultSource = null;
-        boolean nullable;
-        if (oneVal != null && twoVal != null) {
-            PValue result = new PValue(PUnderlying.BOOL);
-            doEvaluate(leftPrep.instance(), oneVal, comparison, rightPrep.instance(), twoVal, collator, result);
-            resultSource = result;
-            nullable = resultSource.isNull();
+    protected int compare(TInstance leftInstance, PValueSource leftSource,
+                          TInstance rightInstance, PValueSource rightSource)
+    {
+        TClass tClass = leftInstance.typeClass();
+        assert rightInstance.typeClass().compatibleForCompare(tClass)
+                : "type class mismatch: " + leftInstance + " != " + rightInstance;
+        if (collator != null) {
+            assert tClass.underlyingType() == PUnderlying.STRING : tClass + ": " + tClass.underlyingType();
+            String leftString = leftSource.getString();
+            String rightString = rightSource.getString();
+            return collator.compare(leftString, rightString);
         }
         else {
-            nullable = left.resultType().nullability() || right.resultType().nullability();
+            return TClass.compare(leftInstance, leftSource, rightInstance, rightSource);
         }
-        return new TPreptimeValue(MNumeric.INT.instance(nullable), resultSource);
-    }
-
-    @Override
-    public TInstance resultType() {
-        return AkBool.INSTANCE.instance(left.resultType().nullability() || right.resultType().nullability());
-    }
-
-    @Override
-    public TEvaluatableExpression build() {
-        TInstance leftInstance = left.resultType();
-        TEvaluatableExpression leftEval = left.build();
-        TInstance rightInstance = right.resultType();
-        TEvaluatableExpression rightEval = right.build();
-        return new CompareEvaluation(leftInstance, leftEval, comparison, rightInstance, rightEval, collator);
-    }
-
-    @Override
-    public CompoundExplainer getExplainer(ExplainContext context) {
-        CompoundExplainer ex = new TExpressionExplainer(Type.BINARY_OPERATOR, comparison.name(), context, left, right);
-        ex.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance(comparison.toString()));
-        return ex;
-    }
-
-    @Override
-    public String toString() {
-        return left + " " + comparison + ' ' + right;
     }
 
     public TComparisonExpression(TPreparedExpression left, Comparison comparison, TPreparedExpression right) {
@@ -103,6 +59,7 @@ public final class TComparisonExpression implements TPreparedExpression {
 
     public TComparisonExpression(TPreparedExpression left, Comparison comparison, TPreparedExpression right,
                                  AkCollator collator) {
+        super(left, comparison, right);
         TClass oneClass = left.resultType().typeClass();
         TClass twoClass = right.resultType().typeClass();
         if (!oneClass.compatibleForCompare(twoClass))
@@ -110,122 +67,8 @@ public final class TComparisonExpression implements TPreparedExpression {
         if (collator != null && oneClass.underlyingType() != PUnderlying.STRING) {
             throw new IllegalArgumentException("collator provided, but " + oneClass + " is not a string type");
         }
-        this.left = left;
-        this.comparison = comparison;
-        this.right = right;
         this.collator = collator;
     }
 
-    private final Comparison comparison;
-    private final TPreparedExpression left;
-    private final TPreparedExpression right;
     private final AkCollator collator;
-
-    private static void doEvaluate(TInstance leftInstance, PValueSource leftSource,
-                                   Comparison comparison,
-                                   TInstance rightInstance, PValueSource rightSource,
-                                   AkCollator collator,
-                                   PValue value)
-    {
-        TClass tClass = leftInstance.typeClass();
-        assert rightInstance.typeClass().compatibleForCompare(tClass)
-                : "type class mismatch: " + leftInstance + " != " + rightInstance;
-        final int cmpI;
-        if (collator != null) {
-            assert tClass.underlyingType() == PUnderlying.STRING : tClass + ": " + tClass.underlyingType();
-            String leftString = leftSource.getString();
-            String rightString = rightSource.getString();
-            cmpI = collator.compare(leftString, rightString);
-        }
-        else {
-            cmpI = TClass.compare(leftInstance, leftSource, rightInstance, rightSource);
-        }
-        final Comparison actualComparison;
-        if (cmpI == 0)
-            actualComparison = Comparison.EQ;
-        else if (cmpI < 0)
-            actualComparison = Comparison.LT;
-        else
-            actualComparison = Comparison.GT;
-
-        final boolean result;
-        switch (actualComparison) {
-        case EQ:
-            result = (comparison == Comparison.EQ) || (comparison == Comparison.LE) || (comparison == Comparison.GE);
-            break;
-        case GT:
-            result = (comparison == Comparison.GT || comparison == Comparison.GE || comparison == Comparison.NE);
-            break;
-        case LT:
-            result = (comparison == Comparison.LT || comparison == Comparison.LE || comparison == Comparison.NE);
-            break;
-        default:
-            throw new AssertionError(actualComparison);
-        }
-
-        value.putBool(result);
-    }
-
-    private static class CompareEvaluation implements TEvaluatableExpression {
-
-        @Override
-        public PValueSource resultValue() {
-            if (value == null)
-                throw new IllegalStateException("not evaluated");
-            return value;
-        }
-
-        @Override
-        public void evaluate() {
-            if (value == null)
-                value = new PValue(PUnderlying.BOOL);
-            left.evaluate();
-            PValueSource leftSource = left.resultValue();
-            if (leftSource.isNull()) {
-                value.putNull();
-                return;
-            }
-            right.evaluate();
-            PValueSource rightSource = right.resultValue();
-            if (rightSource.isNull()) {
-                value.putNull();
-                return;
-            }
-
-            doEvaluate(leftInstance, leftSource, comparison, rightInstance, rightSource, collator,  value);
-        }
-
-        @Override
-        public void with(Row row) {
-            left.with(row);
-            right.with(row);
-        }
-
-        @Override
-        public void with(QueryContext context) {
-            left.with(context);
-            right.with(context);
-        }
-
-        private CompareEvaluation(TInstance leftInstance, TEvaluatableExpression left,
-                                  Comparison comparison,
-                                  TInstance rightInstance, TEvaluatableExpression right,
-                                  AkCollator collator)
-        {
-            this.leftInstance = leftInstance;
-            this.left = left;
-            this.comparison = comparison;
-            this.right = right;
-            this.rightInstance = rightInstance;
-            this.collator = collator;
-        }
-
-        private final Comparison comparison;
-        private final TInstance leftInstance;
-        private final TInstance rightInstance;
-        private final TEvaluatableExpression left;
-        private final TEvaluatableExpression right;
-        private final AkCollator collator;
-        private PValue value;
-    }
 }
