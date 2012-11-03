@@ -96,4 +96,15 @@ public final class DDLGeneratorTest {
         assertEquals("create table `schema`.`table`(`c1` int AUTO_INCREMENT) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin",
                      new DDLGenerator().createTable(ais.getTable("schema", "table")));
     }
+
+    @Test
+    public void testTimestampColumn() {
+        AISBuilder builder = new AISBuilder();
+        builder.userTable("schema", "table");
+        builder.column("schema", "table", "c1", 0, "timestamp", null, null, true, false, null, null);
+        builder.basicSchemaIsComplete();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
+        assertEquals("create table `schema`.`table`(`c1` timestamp NULL) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin",
+                     new DDLGenerator().createTable(ais.getTable("schema", "table")));
+    }
 }
