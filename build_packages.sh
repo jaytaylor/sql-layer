@@ -83,7 +83,7 @@ fi
 # Handle platform-specific packaging process
 if [ ${platform} == "debian" ]; then
     cp -R packages-common/* ${platform}
-    mvn -Dmaven.test.skip clean install -DBZR_REVISION=${bzr_revno}
+    mvn -Dmaven.test.skip.exec clean install -DBZR_REVISION=${bzr_revno}
     mkdir -p ${platform}/server/
     cp ./target/dependency/* ${platform}/server/
     debuild
