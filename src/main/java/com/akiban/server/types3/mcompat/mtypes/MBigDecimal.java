@@ -26,11 +26,11 @@
 
 package com.akiban.server.types3.mcompat.mtypes;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.rowdata.ConversionHelperBigDecimal;
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.IllegalNameException;
 import com.akiban.server.types3.PValueIO;
-import com.akiban.server.types3.SimplePValueIO;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TClassBase;
 import com.akiban.server.types3.TExecutionContext;
@@ -186,7 +186,7 @@ public class MBigDecimal extends TClassBase {
             resultPrecision = Math.max(precisionL, precisionR);
         }
         else {
-            int precisionOfSmallerScale, precisionOfLargerScale;
+            int precisionOfSmallerScale;
             if (scaleL > scaleR) {
                 resultScale = scaleL;
                 resultPrecision = scaleL; // might be swapped later
@@ -238,23 +238,40 @@ public class MBigDecimal extends TClassBase {
         }
     };
 
-    private static final PValueIO valueIO = new SimplePValueIO() {
+    private static final PValueIO valueIO = new PValueIO() {
         @Override
-        protected void copy(PValueSource in, TInstance typeInstance, PValueTarget out) {
-            byte[] bytes;
-            if (in.hasRawValue()) {
-                bytes = in.getBytes();
+        public void copyCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
+            if (in.hasCacheValue()) {
+                if (out.supportsCachedObjects())
+                    out.putObject(in.getObject());
+                else
+                    cacher.cacheToValue(in.getObject(), typeInstance, out);
             }
-            else {
-                BigDecimalWrapper value = (BigDecimalWrapper) in.getObject();
-                int precision = typeInstance.attribute(Attrs.PRECISION);
-                int scale = typeInstance.attribute(Attrs.SCALE);
-                bytes = ConversionHelperBigDecimal.bytesFromObject(
-                        value.asBigDecimal(),
-                        precision,
-                        scale);
+            else if (in.hasRawValue()) {
+                out.putBytes(in.getBytes());
             }
-            out.putBytes(bytes);
+            else
+                throw new AssertionError("no value");
+        }
+
+        @Override
+        public void writeCollating(PValueSource in, TInstance typeInstance, PValueTarget out) {
+            BigDecimalWrapper wrapper = getWrapper(in, typeInstance);
+            out.putObject(wrapper.asBigDecimal());
+        }
+
+        @Override
+        public void readCollating(PValueSource in, TInstance typeInstance, PValueTarget out) {
+            BigDecimal bigDecimal = (BigDecimal) in.getObject();
+            int scale = typeInstance.attribute(Attrs.SCALE);
+            int precision = typeInstance.attribute(Attrs.PRECISION);
+            if (precision > bigDecimal.precision())
+                throw new AkibanInternalException("precision of " + bigDecimal + " is greater than " + precision);
+            if (scale < bigDecimal.scale())
+                throw new AkibanInternalException(
+                        "scale of " + bigDecimal + " is smaller than " + scale + "; will result in loss of data");
+            BigDecimalWrapper wrapper = new MBigDecimalWrapper(bigDecimal).round(scale);
+            out.putObject(wrapper);
         }
     };
 }
