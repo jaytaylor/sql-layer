@@ -49,7 +49,6 @@ import com.akiban.server.service.monitor.SessionMonitor;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.sql.pg.PostgresService;
 import com.google.inject.Inject;
 
 public class ServerSchemaTablesServiceImpl
@@ -63,19 +62,16 @@ public class ServerSchemaTablesServiceImpl
     static final TableName SERVER_PARAMETERS = new TableName (SCHEMA_NAME, "server_parameters");
     
     private final MonitorService monitor;
-    private final PostgresService postgres;
     private final ConfigurationService configService;
     private final AkServerInterface serverInterface;
     
     @Inject
     public ServerSchemaTablesServiceImpl (SchemaManager schemaManager, 
                                           MonitorService monitor, 
-                                          PostgresService postgres, 
                                           ConfigurationService configService,
                                           AkServerInterface serverInterface) {
         super(schemaManager);
         this.monitor = monitor;
-        this.postgres = postgres;
         this.configService = configService;
         this.serverInterface = serverInterface;
     }
@@ -132,16 +128,10 @@ public class ServerSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                long startTime = System.currentTimeMillis() -  
-                        (postgres.getServer().getUptime() / 1000000);
                 ValuesRow row = new ValuesRow (rowType,
                         serverInterface.getServerName(),
                         serverInterface.getServerVersion(),
-                        postgres.getServer().isListening() ? "RUNNING" : "CLOSED",
-                        startTime,
                         ++rowCounter);
-                ((FromObjectValueSource)row.eval(3)).setExplicitly(startTime/1000, AkType.TIMESTAMP);
-
                 return row;
             }
         }
@@ -317,8 +307,7 @@ public class ServerSchemaTablesServiceImpl
         
         builder.userTable(SERVER_INSTANCE_SUMMARY)
             .colString("server_name", DESCRIPTOR_MAX, false)
-            .colString("server_version", DESCRIPTOR_MAX, false)
-            .colTimestamp("start_time");
+            .colString("server_version", DESCRIPTOR_MAX, false);
         
         builder.userTable(SERVER_SERVERS)
             .colString("server_type", IDENT_MAX, false)

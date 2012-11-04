@@ -67,7 +67,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     private final ServerServiceRequirements reqs;
     private ServerSocket socket = null;
     private volatile boolean running = false;
-    private volatile long startTime = 0;
+    private volatile long startTimeMillis, startTimeNanos;
     private boolean listening = false;
     private int nconnections = 0;
     private Map<Integer,PostgresServerConnection> connections =
@@ -108,7 +108,8 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         running in its own thread. */
     public void start() {
         running = true;
-        startTime = System.nanoTime();
+        startTimeMillis = System.currentTimeMillis();
+        startTimeNanos = System.nanoTime();
         thread = new Thread(this);
         thread.start();
     }
@@ -327,7 +328,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     @Override
     public long getUptime()
     {
-        return (System.nanoTime() - startTime);
+        return (System.nanoTime() - startTimeNanos);
     }
 
     /** For testing, set the server's idea of the current time. */
@@ -356,7 +357,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
 
     @Override
     public long getStartTimeMillis() {
-        return startTime;
+        return startTimeMillis;
     }
     
     @Override
