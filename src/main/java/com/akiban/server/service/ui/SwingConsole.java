@@ -27,6 +27,8 @@
 package com.akiban.server.service.ui;
 
 import com.akiban.server.service.ServiceManager;
+import com.akiban.server.service.monitor.MonitorService;
+import com.akiban.server.service.monitor.ServerMonitor;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -146,18 +148,7 @@ public class SwingConsole extends JFrame implements WindowListener
                    
                     if (!adjusted)
                     {
-                        int port = 15432;
-                        try
-                        {
-                            port = SwingConsole.this.serviceManager.getPostgresService().getPort();
-                        }
-                        catch (Exception e)
-                        {
-                            StringWriter errors = new StringWriter();
-                            e.printStackTrace(new PrintWriter(errors));
-                            textArea.append("\n" + errors.toString());
-                            return; // no need to try further
-                        }
+                        int port = getPostgresPort();
 
                         if (macOSX)
                             RUN_PSQL_CMD = new String[]
@@ -302,6 +293,20 @@ public class SwingConsole extends JFrame implements WindowListener
             }
             break;
         }
+    }
+
+    // Note that this needs to work even if services didn't start properly.
+    protected int getPostgresPort() {
+        MonitorService service = serviceManager.getMonitorService();
+        if (service != null) {
+            ServerMonitor monitor = service.getServerMonitors().get("Postgres");
+            if (monitor != null) {
+                int port = monitor.getLocalPort();
+                if (port > 0)
+                    return port;
+            }
+        }
+        return 15432;
     }
 
 }

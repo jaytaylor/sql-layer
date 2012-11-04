@@ -52,10 +52,9 @@ import com.akiban.qp.operator.API.Ordering;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.statistics.IndexStatistics;
-import com.akiban.sql.pg.PostgresServerConnection;
-import com.akiban.sql.pg.PostgresServerITBase;
+import com.akiban.sql.ServerSessionITBase;
 
-public class MemoryAdapterIT extends PostgresServerITBase {
+public class MemoryAdapterIT extends ServerSessionITBase {
     private static final TableName TEST_NAME = new TableName (TableName.INFORMATION_SCHEMA, "test");
     private SchemaManager schemaManager;
     private UserTable table;
@@ -91,28 +90,16 @@ public class MemoryAdapterIT extends PostgresServerITBase {
 
     @Test
     public void testGetAdapter() throws Exception {
-        Connection connection = openConnection();
-        Statement executeStatement = connection.createStatement();
-        executeStatement.execute("select 1");
-
-        Set<Integer> connections =  serviceManager().getPostgresService().getServer().getCurrentSessions();
-        assertTrue (!connections.isEmpty());
-        Integer first = connections.iterator().next();
-        assertNotNull (first);
-
-        PostgresServerConnection postgresConn = serviceManager().getPostgresService().getServer().getConnection(first.intValue());
-        assertNotNull(postgresConn);
-        
         table = AISBBasedBuilder.create().userTable(TEST_NAME.getSchemaName(),TEST_NAME.getTableName()).colLong("c1").pk("c1").ais().getUserTable(TEST_NAME);
         MemoryTableFactory factory = new TestFactory (TEST_NAME);
         registerISTable(table, factory);
         UserTable newtable = ais().getUserTable(TEST_NAME);
         
-        StoreAdapter adapter = postgresConn.getStore(newtable);
+        TestSession sqlSession = new TestSession();
+
+        StoreAdapter adapter = sqlSession.getStore(newtable);
         assertNotNull (adapter);
         assertTrue (adapter instanceof MemoryAdapter);
-
-        closeConnection(connection);
     }
 
     private class TestFactory implements MemoryTableFactory {

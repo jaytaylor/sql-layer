@@ -55,7 +55,7 @@ public class PostgresServerITBase extends ITBase
     public static final String USER_PASSWORD = "apassword";
 
     protected Connection openConnection() throws Exception {
-        int port = serviceManager().getPostgresService().getPort();
+        int port = getPostgresService().getPort();
         if (port <= 0) {
             throw new Exception("akserver.postgres.port is not set.");
         }
@@ -68,8 +68,12 @@ public class PostgresServerITBase extends ITBase
         connection.close();
     }
 
+    protected PostgresService getPostgresService() {
+        return serviceManager().getServiceByClass(PostgresService.class);
+    }
+
     protected PostgresServer server() {
-        return serviceManager().getPostgresService().getServer();
+        return getPostgresService().getServer();
     }
 
     // One element connection pool.
