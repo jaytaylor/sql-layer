@@ -163,12 +163,7 @@ public class MDateTimeDiff
             }
         },
         new DateTimeDiff(ArgType.DATETIME, ArgType.VARCHAR, "TIMEDIFF", true, false)
-        {
-            protected void buildInputSets(TInputSetBuilder bd)
-            {
-                bd.covers(MDatetimes.DATETIME, 0).covers(MString.VARCHAR, 1);
-            }
-            
+        {   
             @Override
             int compute(long[] arg0, long[] arg1, TExecutionContext context)
             {
@@ -223,7 +218,7 @@ public class MDateTimeDiff
                 return new int[] {1};
             }
         },
-        
+
         // UNSUPPORTED cases
         new RejectedCase(ArgType.DATE, ArgType.DATETIME, "TIMEDIFF"),
         new RejectedCase(ArgType.DATE, ArgType.TIME, "TIMEDIFF"),
@@ -469,9 +464,18 @@ public class MDateTimeDiff
     
     private static long hmsToMillis(long hms[])
     {
-        return hms[HOUR_INDEX] * MILLIS_PER_HOUR
+        int n = HOUR_INDEX;
+        int sign = 1;
+        
+        while (n < hms.length && hms[n] >= 0)
+            ++n;
+        
+        if (n < hms.length)
+            hms[n] = hms[n] * (sign = -1);
+        
+        return sign * (hms[HOUR_INDEX] * MILLIS_PER_HOUR
                 + hms[MIN_INDEX] * MILLIS_PER_MIN
-                + hms[SEC_INDEX] * MILLIS_PER_SEC;
+                + hms[SEC_INDEX] * MILLIS_PER_SEC);
     }
     
     private static final long MILLIS_PER_SEC = 1000L;

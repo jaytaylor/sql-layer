@@ -1,0 +1,12 @@
+# test bugs 91127
+---
+- Statement: SET newtypes to 'true';
+---
+- Statement: SELECT TIMEDIFF('12:34:55', -17);
+- output: [['12:35:12']]
+---
+- Statement: select timediff('12:30:10', -1712);
+- output: [['12:47:22']]
+---
+- Statement: SET newtypes to DEFAULT
+...
