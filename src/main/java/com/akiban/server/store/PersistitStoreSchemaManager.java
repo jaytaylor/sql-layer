@@ -175,18 +175,17 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         public final AtomicInteger refCount;
         public final AkibanInformationSchema ais;
 
-        public SharedAIS(AkibanInformationSchema ais) {
-            this.refCount = new AtomicInteger(0);
+        public SharedAIS(AkibanInformationSchema ais, int refCount) {
+            this.refCount = new AtomicInteger();
             this.ais = ais;
         }
 
-        public SharedAIS acquire() {
-            refCount.incrementAndGet();
-            return this;
+        public int acquire() {
+            return refCount.incrementAndGet();
         }
 
-        public void release() {
-            refCount.decrementAndGet();
+        public int release() {
+            return refCount.decrementAndGet();
         }
 
         public boolean isShared() {
@@ -200,12 +199,20 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     private static class AISAndTimestamp {
-        public final SharedAIS sAIS;
         public final long timestamp;
+        private final SharedAIS sAIS;
+
+        public AISAndTimestamp(long timestamp) {
+            this(new SharedAIS(null, 0), timestamp);
+        }
 
         public AISAndTimestamp(SharedAIS sAIS, long timestamp) {
             this.sAIS = sAIS;
             this.timestamp = timestamp;
+        }
+
+        public boolean isUsableForStartTime(long startTime) {
+            return startTime > timestamp;
         }
 
         @Override
@@ -233,7 +240,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private static final int PROTOBUF_PSSM_VERSION = 2;
 
     private static final Session.Key<SharedAIS> SESSION_SAIS_KEY = Session.Key.named("SAIS_KEY");
-    private static final AISAndTimestamp AIS_TIMESTAMP_SENTINEL = new AISAndTimestamp(null, Long.MAX_VALUE);
+
+    private static final AISAndTimestamp AIS_TIMESTAMP_SENTINEL = new AISAndTimestamp(Long.MAX_VALUE);
 
     private static final String CREATE_SCHEMA_FORMATTER = "create schema if not exists `%s`;";
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class.getName());
@@ -251,7 +259,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private ReadWriteMap<Long,SharedAIS> aisMap;
     private ReadWriteMap<Integer,Integer> tableVersionMap;
     private AtomicReference<AISAndTimestamp> latestAISCache;
-    private TransactionService.Callback latestCacheClearCallback;
     private TransactionService.Callback enqueueMapClearAndCacheUpdate;
     private BlockingQueue<QueueTask> taskQueue;
     private Thread queueConsumer;
@@ -347,6 +354,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     
     @Override
     public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
+        System.out.println("Creating indexes for timestamp " + txnService.getTransactionStartTimestamp(session));
         AISMerge merge = AISMerge.newForAddIndex(nameGenerator, getAis(session));
         Set<String> schemas = new HashSet<String>();
 
@@ -462,15 +470,15 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 }
 
                 if((dropBehavior == DropBehavior.RESTRICT) && !userTable.getChildJoins().isEmpty()) {
-                    throw new ReferencedTableException (table);
+                    throw new ReferencedTableException(table);
                 }
 
                 TableName name = userTable.getName();
                 tables.add(name);
                 schemas.add(name.getSchemaName());
                 tableIDs.add(userTable.getTableId());
-                for (Column column : userTable.getColumnsIncludingInternal()) {
-                    if (column.getIdentityGenerator() != null) {
+                for(Column column : userTable.getColumnsIncludingInternal()) {
+                    if(column.getIdentityGenerator() != null) {
                         sequences.add(column.getIdentityGenerator().getSequenceName());
                     }
                 }
@@ -647,6 +655,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     @Override
     public AkibanInformationSchema getAis(Session session) {
+        System.out.println("External getAis for timestamp " + txnService.getTransactionStartTimestamp(session));
         return getAISInternal(session).ais;
     }
 
@@ -659,8 +668,11 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         // If the cache's commit timestamp (guaranteed latest) is strictly before our start timestamp, we can use that.
         long startTimestamp = txnService.getTransactionStartTimestamp(session);
         AISAndTimestamp cached = latestAISCache.get();
-        if(cached.timestamp < startTimestamp) {
+        if(cached.isUsableForStartTime(startTimestamp)) {
             local = cached.sAIS;
+            System.out.println("Using cached for timestamp " + txnService.getTransactionStartTimestamp(session) + " got " + cached);
+        } else {
+            System.out.println("Couldn't use cache for timestamp " + txnService.getTransactionStartTimestamp(session));
         }
 
         // Couldn't use the cache, do an always accurate accumulator lookup and check in map.
@@ -668,6 +680,9 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         if(local == null) {
             generation = getGenerationSnapshot(session);
             local = aisMap.get(generation);
+            System.out.println(
+                    "Got snapshot " + generation + " for timestamp " + txnService.getTransactionStartTimestamp(
+                            session) + " and got from map " + local);
         }
 
         // Wasn't in map so need to reload from disk.
@@ -679,11 +694,15 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 local = aisMap.get(generation);
                 if(local == null) {
                     try {
+                        System.out.println("Read from disk for timestamp "+txnService.getTransactionStartTimestamp(session));
                         local = loadAISFromStorage(session, GenValue.SNAPSHOT, GenMap.PUT_NEW);
+                        System.out.println("Read from disk for timestamp "+txnService.getTransactionStartTimestamp(session)+" and got "+local);
                         buildRowDefCache(local.ais);
                     } catch(PersistitException e) {
                         throw wrapPersistitException(session, e);
                     }
+                } else {
+                    System.out.println("Found in map under exclusive for timestamp " + txnService.getTransactionStartTimestamp(session) + " and got " + local);
                 }
             } finally {
                 aisMap.releaseExclusive();
@@ -817,7 +836,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                                                               config.getProperty(DEFAULT_COLLATION));
 
         this.aisMap = ReadWriteMap.wrapNonFair(new HashMap<Long,SharedAIS>());
-        this.latestAISCache = new AtomicReference<AISAndTimestamp>(new AISAndTimestamp(null, Long.MIN_VALUE));
+        this.latestAISCache = new AtomicReference<AISAndTimestamp>(new AISAndTimestamp(Long.MIN_VALUE));
 
         AkibanInformationSchema newAIS = transactionally(
                 sessionService.createSession(),
@@ -855,12 +874,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         this.queueConsumer = new Thread(new QueueConsumer(this.taskQueue), "PSSM_QUEUE");
         this.queueConsumer.start();
 
-        this.latestCacheClearCallback = new TransactionService.Callback() {
-            @Override
-            public void run(Session session, long timestamp) {
-                updateLatestAISCache(AIS_TIMESTAMP_SENTINEL);
-            }
-        };
         this.enqueueMapClearAndCacheUpdate = new Callback() {
             @Override
             public void run(Session session, long timestamp) {
@@ -881,9 +894,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         this.delayedTreeIDGenerator = null;
         this.aisMap = null;
         this.latestAISCache = null;
-        this.latestCacheClearCallback = null;
         this.enqueueMapClearAndCacheUpdate = null;
-        this.latestCacheClearCallback = null;
         this.taskQueue.clear();
         this.taskQueue = null;
         this.queueConsumer = null;
@@ -919,16 +930,16 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 session,
                 new TreeVisitor() {
                     @Override
-                    public void visit(Exchange ex) throws PersistitException{
+                    public void visit(Exchange ex) throws PersistitException {
                         SerializationType typeForVolume = detectSerializationType(session, ex);
                         switch(typeForVolume) {
                             case NONE:
                                 // Empty tree, nothing to do
-                            break;
+                                break;
                             case PROTOBUF:
                                 checkAndSetSerialization(typeForVolume);
                                 loadProtobuf(ex, newAIS);
-                            break;
+                                break;
                             default:
                                 throw new UnsupportedMetadataTypeException(typeForVolume.name());
                         }
@@ -1032,7 +1043,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         newAIS.freeze();
 
         // Constructed with ref count 0, attach bumps to 1
-        final SharedAIS sAIS = new SharedAIS(newAIS);
+        final SharedAIS sAIS = new SharedAIS(newAIS, 0);
         attachToSession(session, sAIS);
 
         if(genMap == GenMap.PUT_NEW) {
@@ -1042,8 +1053,25 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     private void addCallbacksForAISChange(Session session) {
-        txnService.addCallbackOnActive(session, CallbackType.PRE_COMMIT, latestCacheClearCallback);
+        final long startTime = txnService.getTransactionStartTimestamp(session);
+        txnService.addCallbackOnActive(session, CallbackType.PRE_COMMIT, new Callback() {
+            @Override
+            public void run(Session session, long timestamp) {
+                System.out.println("CLEARING for timestamp " + startTime);
+                AIS_TIMESTAMP_SENTINEL.sAIS.acquire();
+                boolean didClear = updateLatestAISCache(AIS_TIMESTAMP_SENTINEL);
+                System.out.println("CLEARING for timestamp " + startTime + " " + didClear);
+            }
+        });
+
         txnService.addCallbackOnActive(session, CallbackType.END, enqueueMapClearAndCacheUpdate);
+
+        txnService.addCallbackOnActive(session, CallbackType.COMMIT, new Callback() {
+            @Override
+            public void run(Session session, long timestamp) {
+                System.out.println("Committed for timestamp " + startTime + " at timestamp " + timestamp);
+            }
+        });
     }
 
     private void saveNewAISInMap(SharedAIS sAIS) {
@@ -1051,35 +1079,26 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         aisMap.putNewKey(generation, sAIS);
     }
 
-    private void updateLatestAISCache(final AISAndTimestamp newCache) {
+    private boolean updateLatestAISCache(final AISAndTimestamp newCache) {
         final long newTs = newCache.timestamp;
         while (true) {
             final AISAndTimestamp latest = latestAISCache.get();
             // Don't set cache if new ts is lower (concurrent DDL)
             if(latest != AIS_TIMESTAMP_SENTINEL) {
-                // Strictly greater, committed after new cache attempt
-                if(latest.timestamp > newTs) {
-                    break;
+                // New timestamp is strictly less, don't overwrite.
+                if(newTs < latest.timestamp) {
+                    return false;
                 }
-                // If matching (and non sentinel), transaction made multiple DDLs/SchemaManager calls.
-                // Take newer generation in that case.
-                if((newCache != AIS_TIMESTAMP_SENTINEL) && (latest.timestamp == newTs)) {
-                    long oldGen = latest.sAIS.ais.getGeneration();
-                    long newGen = newCache.sAIS.ais.getGeneration();
-                    if(oldGen > newGen) {
-                        break;
-                    }
+                // Equal should not happen for non-sentinel, only single newCache attempt per txn in queue task.
+                if(newCache != AIS_TIMESTAMP_SENTINEL) {
+                    assert newTs != latest.timestamp : newCache;
                 }
             }
             // Otherwise update and stop if successful
             if(latestAISCache.compareAndSet(latest, newCache)) {
-                if(latest.sAIS != null) {
-                    latest.sAIS.release();
-                }
-                if(newCache.sAIS != null) {
-                    newCache.sAIS.acquire();
-                }
-                break;
+                latest.sAIS.release();
+                newCache.sAIS.acquire();
+                return true;
             }
         }
     }
@@ -1567,16 +1586,27 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         }
 
         private void doCacheUpdate(Session session) throws PersistitException {
+            // Before a clear is made in the pre-commit hook, the sentinel is acquired. Cache can only be updated when
+            // there is no longer any outstanding changes.
+            // Consider 2 concurrent DDLs A and B. If A and B both clear, then A commits, updates cache
+            // If cache was updated after
+            int newCount = AIS_TIMESTAMP_SENTINEL.sAIS.release();
+            if(newCount > 1) {
+                LOG.debug("Skipping cache update attempt due to multiple outstanding clears: {}", newCount);
+                return;
+            }
+
             txnService.beginTransaction(session);
             try {
                 // AIS from DDL is not put into the aisMap so if no one has read it yet, this sill cause a
                 // reload from disk. No matter where it comes from, always OK to try and update cache.
                 final SharedAIS sAIS = PersistitStoreSchemaManager.this.getAISInternal(session);
 
-                // This transaction does nothing but read (no generation change, no writes, etc) a consistent
-                // view of the AIS. So we can avoid commit callback and update cache immediately.
-                final long timestamp = txnService.getTransactionStartTimestamp(session);
-                updateLatestAISCache(new AISAndTimestamp(sAIS, timestamp));
+                // Attempt to update cache with our start timestamp, because that is what our snapshot is true for
+                final long startTime = txnService.getTransactionStartTimestamp(session);
+                System.out.println("Updating cache from timestamp " + startTime + " for " + sAIS);
+                updateLatestAISCache(new AISAndTimestamp(sAIS, startTime));
+                System.out.println("Updated cache from timestamp " + startTime);
                 txnService.commitTransaction(session);
             } finally {
                 txnService.rollbackTransactionIfOpen(session);

@@ -258,22 +258,24 @@ public class ReadWriteMap<K,V> implements Map<K,V> {
         }
     }
 
+    private static final String UNSUPPORTED_MSG = "Unsupported. Call getWrappedMap after reading JavaDoc.";
+
     /** <b>Unsupported</b>. Use {@link #claimShared()} or {@link #claimExclusive()} and then {@link #getWrappedMap()} */
     @Override
     public Set<K> keySet() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(UNSUPPORTED_MSG);
     }
 
     /** <b>Unsupported</b>. Use {@link #claimShared()} or {@link #claimExclusive()} and then {@link #getWrappedMap()} */
     @Override
     public Collection<V> values() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(UNSUPPORTED_MSG);
     }
 
     /** <b>Unsupported</b>. Use {@link #claimShared()} or {@link #claimExclusive()} and then {@link #getWrappedMap()} */
     @Override
     public Set<Entry<K,V>> entrySet() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(UNSUPPORTED_MSG);
     }
 
     @Override

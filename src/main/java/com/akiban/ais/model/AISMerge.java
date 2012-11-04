@@ -53,8 +53,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 /**
  * AISMerge is designed to merge a single UserTable definition into an existing AIS. The merge process 
@@ -297,7 +295,7 @@ public class AISMerge {
                 }
                 curIndex = newTable.getIndex(indexName.getName());
                 newGroup = newTable.getGroup();
-                Integer newId = findMaxIndexIDInGroup(targetAIS, newGroup) + 1;
+                Integer newId = newIndexID(newGroup);
                 newIndex = TableIndex.create(targetAIS, newTable, indexName.getName(), newId, index.isUnique(),
                                              index.getConstraint());
             }
@@ -310,7 +308,7 @@ public class AISMerge {
                     throw new NoSuchGroupException(gi.getGroup().getName());
                 }
                 curIndex = newGroup.getIndex(indexName.getName());
-                Integer newId = findMaxIndexIDInGroup(targetAIS, newGroup) + 1;
+                Integer newId = newIndexID(newGroup);
                 newIndex = GroupIndex.create(targetAIS, newGroup, indexName.getName(), newId, index.isUnique(),
                                              index.getConstraint(), index.getJoinType());
             }
@@ -375,6 +373,7 @@ public class AISMerge {
         final AISBuilder builder = new AISBuilder(targetAIS, nameGenerator);
         builder.setTableIdOffset(nameGenerator.generateTableID(sourceTable.getName()));
 
+        Group targetGroup = null;
         if (sourceTable.getParentJoin() != null) {
             String parentSchemaName = sourceTable.getParentJoin().getParent().getName().getSchemaName();
             String parentTableName = sourceTable.getParentJoin().getParent().getName().getTableName(); 
@@ -382,11 +381,11 @@ public class AISMerge {
             if (parentTable == null) {
                 throw new JoinToUnknownTableException (sourceTable.getName(), new TableName(parentSchemaName, parentTableName));
             }
-            builder.setIndexIdOffset(computeIndexIDOffset(targetAIS, parentTable.getGroup().getName()));
+            targetGroup = parentTable.getGroup();
         }
 
         // Add the user table to the targetAIS
-        addTable (builder, sourceTable);
+        addTable (builder, sourceTable, targetGroup);
 
         // Joins or group table?
         if (sourceTable.getParentJoin() == null) {
@@ -395,11 +394,14 @@ public class AISMerge {
         } else {
             // Normally there should be only one candidate parent join.
             // But since the AIS supports multiples, so does the merge.
-            // This gets flagged in JoinToOneParent validation. 
+            // This gets flagged in JoinToOneParent validation.
             for (Join join : sourceTable.getCandidateParentJoins()) {
                 addJoin(builder, join, sourceTable);
             }
         }
+
+
+        builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
 
         builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
@@ -422,7 +424,7 @@ public class AISMerge {
         for(IndexName indexName : indexesToFix) {
             UserTable table = targetAIS.getUserTable(indexName.getSchemaName(), indexName.getTableName());
             Index index = table.getIndexIncludingInternal(indexName.getName());
-            index.setIndexId(findMaxIndexIDInGroup(targetAIS, table.getGroup()) + 1);
+            index.setIndexId(newIndexID(table.getGroup()));
             if(!index.isPrimaryKey()) {
                 index.setTreeName(nameGenerator.generateIndexTreeName(index));
             }
@@ -440,7 +442,7 @@ public class AISMerge {
         builder.akibanInformationSchema().freeze();
     }
 
-    private void addTable(AISBuilder builder, final UserTable table) {
+    private void addTable(AISBuilder builder, final UserTable table, final Group targetGroup) {
         
         // I should use TableSubsetWriter(new AISTarget(targetAIS)) or AISCloner.clone()
         // but both assume the UserTable.getAIS() is complete and valid. 
@@ -492,9 +494,11 @@ public class AISMerge {
         }
         
         // indexes/constraints
+        final int rootTableID = (targetGroup != null) ? targetGroup.getRoot().getTableId() : targetTable.getTableId();
         for (TableIndex index : table.getIndexes()) {
             IndexName indexName = index.getIndexName();
-            
+
+            builder.setIndexIdOffset(newIndexID(rootTableID));
             builder.index(schemaName, tableName, 
                     indexName.getName(), 
                     index.isUnique(), 
@@ -511,7 +515,6 @@ public class AISMerge {
 
     private void addNewGroup (AISBuilder builder, UserTable rootTable) {
         TableName groupName = rootTable.getName();
-        builder.basicSchemaIsComplete();
         builder.createGroup(groupName.getTableName(), groupName.getSchemaName());
         builder.addTableToGroup(groupName,
                                 rootTable.getName().getSchemaName(),
@@ -571,38 +574,12 @@ public class AISMerge {
         }
     }
 
-    private static int computeIndexIDOffset (AkibanInformationSchema ais, TableName groupName) {
-        int offset = 1;
-        Group group = ais.getGroup(groupName);
-        for(UserTable table : ais.getUserTables().values()) {
-            if(table.getGroup().equals(group)) {
-                for(Index index : table.getIndexesIncludingInternal()) {
-                    offset = Math.max(offset, index.getIndexId() + 1);
-                }
-            }
-        }
-        for (GroupIndex index : group.getIndexes()) {
-            offset = Math.max(offset, index.getIndexId() + 1); 
-        }
-        return offset;
+    private int newIndexID(Group group) {
+        return newIndexID(group.getRoot().getTableId());
     }
 
-    /**
-     * Find the maximum index ID from all of the indexes within the given group.
-     */
-    public static int findMaxIndexIDInGroup(AkibanInformationSchema ais, Group group) {
-        int maxId = Integer.MIN_VALUE;
-        for(UserTable table : ais.getUserTables().values()) {
-            if(group.equals(table.getGroup())) {
-                for(Index index : table.getIndexesIncludingInternal()) {
-                    maxId = Math.max(index.getIndexId(), maxId);
-                }
-            }
-        }
-        for(Index index : group.getIndexes()) {
-            maxId = Math.max(index.getIndexId(), maxId);
-        }
-        return maxId;
+    private int newIndexID(int rootTableID) {
+        return nameGenerator.generateIndexID(rootTableID);
     }
 
     public static AkibanInformationSchema mergeView(AkibanInformationSchema oldAIS,

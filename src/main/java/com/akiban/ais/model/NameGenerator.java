@@ -33,6 +33,7 @@ public interface NameGenerator
 {
     // Generation
     int generateTableID(TableName name);
+    int generateIndexID(int rootTableID);
     TableName generateIdentitySequenceName(TableName table);
     String generateJoinName(TableName parentTable, TableName childTable, List<JoinColumn> joinIndex);
     String generateJoinName(TableName parentTable, TableName childTable, List<String> pkColNames, List<String> fkColNames);
