@@ -24,9 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.store.statistics;
-
-import com.akiban.sql.pg.PostgresServerFilesITBase;
+package com.akiban.sql.pg;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupIndex;
@@ -34,6 +32,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.store.statistics.IndexStatisticsService;
 
 import org.junit.After;
 import org.junit.Before;

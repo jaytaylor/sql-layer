@@ -24,9 +24,9 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.store.statistics;
+package com.akiban.sql.pg;
 
-import com.akiban.sql.pg.PostgresServerFilesITBase;
+import com.akiban.server.store.statistics.IndexStatisticsService;
 import static com.akiban.sql.TestBase.*;
 
 import org.junit.Before;
