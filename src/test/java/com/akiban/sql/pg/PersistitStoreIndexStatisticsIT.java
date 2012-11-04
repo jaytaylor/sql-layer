@@ -27,6 +27,7 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.store.statistics.IndexStatisticsService;
+import com.akiban.server.store.statistics.IndexStatisticsYamlTest;
 import static com.akiban.sql.TestBase.*;
 
 import org.junit.Before;
@@ -39,9 +40,7 @@ import java.util.concurrent.Callable;
 
 public class PersistitStoreIndexStatisticsIT extends PostgresServerFilesITBase
 {
-    public static final File RESOURCE_DIR = 
-        new File("src/test/resources/"
-                 + PersistitStoreIndexStatisticsIT.class.getPackage().getName().replace('.', '/'));
+    public static final File RESOURCE_DIR = IndexStatisticsYamlTest.RESOURCE_DIR;
     public static final File YAML_FILE = new File(RESOURCE_DIR, "stats.yaml");
     
     private IndexStatisticsService service;

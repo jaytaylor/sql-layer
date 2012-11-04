@@ -33,6 +33,7 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.store.statistics.IndexStatisticsService;
+import com.akiban.server.store.statistics.IndexStatisticsYamlTest;
 
 import org.junit.After;
 import org.junit.Before;
@@ -45,9 +46,7 @@ import java.io.File;
 
 public class IndexStatisticsLifecycleIT extends PostgresServerFilesITBase
 {
-    public static final File RESOURCE_DIR = 
-        new File("src/test/resources/"
-                 + IndexStatisticsLifecycleIT.class.getPackage().getName().replace('.', '/'));
+    public static final File RESOURCE_DIR = IndexStatisticsYamlTest.RESOURCE_DIR;
 
     @Before
     public void loadDatabase() throws Exception {
