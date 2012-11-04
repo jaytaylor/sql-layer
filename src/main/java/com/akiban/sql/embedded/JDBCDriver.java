@@ -43,7 +43,7 @@ public class JDBCDriver implements Driver, ServerMonitor {
     public static final String URL = "jdbc:default:connection";
 
     private final ServerServiceRequirements reqs;
-    private final long startTime = System.currentTimeMillis();
+    private long startTime;
     private int nconnections;
 
     private static final Logger logger = LoggerFactory.getLogger(JDBCDriver.class);
@@ -53,6 +53,7 @@ public class JDBCDriver implements Driver, ServerMonitor {
     }
 
     public void register() throws SQLException {
+        startTime = System.currentTimeMillis();
         DriverManager.registerDriver(this);
         reqs.monitor().registerServerMonitor(this);
     }
