@@ -46,10 +46,9 @@ public final class SchemaTableServiceIT extends ITBase {
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
-                .bind(BasicInfoSchemaTablesService.class, BasicInfoSchemaTablesServiceImpl.class)
-                .bind(StorageSchemaTablesService.class, StorageSchemaTablesServiceImpl.class)
-                .bind(ServerSchemaTablesService.class, ServerSchemaTablesServiceImpl.class)
-                .overrideRequires(getClass().getResource("SchemaTableService-requires.yaml"));
+                .bindAndRequire(BasicInfoSchemaTablesService.class, BasicInfoSchemaTablesServiceImpl.class)
+                .bindAndRequire(StorageSchemaTablesService.class, StorageSchemaTablesServiceImpl.class)
+                .bindAndRequire(ServerSchemaTablesService.class, ServerSchemaTablesServiceImpl.class);
     }
 
     @Override
