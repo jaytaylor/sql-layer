@@ -60,7 +60,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 */
 public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     public static final String SERVER_PROPERTIES_PREFIX = "akserver.postgres.";
-    public static final String SERVER_TYPE = "Postgres";
+    protected static final String SERVER_TYPE = "Postgres";
 
     private final Properties properties;
     private final int port;
@@ -340,6 +340,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     }
 
     /* ServerMonitor */
+
     @Override
     public String getServerType() {
         return SERVER_TYPE;

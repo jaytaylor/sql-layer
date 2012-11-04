@@ -27,6 +27,7 @@
 package com.akiban.sql.embedded;
 
 import com.akiban.sql.server.ServerServiceRequirements;
+import com.akiban.server.service.monitor.ServerMonitor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,10 +39,12 @@ import java.util.*;
 // Driver and wraps this. It can live in a separate .jar file in a
 // class loader that servlets, scripts, etc. have access to and so
 // satisfy java.sql.DriverManager.isDriverAllowed().
-public class JDBCDriver implements Driver {
+public class JDBCDriver implements Driver, ServerMonitor {
     public static final String URL = "jdbc:default:connection";
 
     private final ServerServiceRequirements reqs;
+    private final long startTime = System.currentTimeMillis();
+    private int nconnections;
 
     private static final Logger logger = LoggerFactory.getLogger(JDBCDriver.class);
 
@@ -51,9 +54,11 @@ public class JDBCDriver implements Driver {
 
     public void register() throws SQLException {
         DriverManager.registerDriver(this);
+        reqs.monitor().registerServerMonitor(this);
     }
 
     public void deregister() throws SQLException {
+        reqs.monitor().deregisterServerMonitor(this);
         DriverManager.deregisterDriver(this);
     }
 
@@ -62,6 +67,7 @@ public class JDBCDriver implements Driver {
     @Override
     public Connection connect(String url, Properties info) throws SQLException {
         if (!url.equals(URL)) return null;
+        nconnections++;
         return new JDBCConnection(reqs, info);
     }
 
@@ -97,4 +103,27 @@ public class JDBCDriver implements Driver {
             throws SQLFeatureNotSupportedException {
         throw new SQLFeatureNotSupportedException("Uses LOG4J");
     }
+
+    /* ServerMonitor */
+
+    @Override
+    public String getServerType() {
+        return JDBCConnection.SERVER_TYPE;
+    }
+
+    @Override
+    public int getLocalPort() {
+        return -1;
+    }
+
+    @Override
+    public long getStartTimeMillis() {
+        return startTime;
+    }
+    
+    @Override
+    public int getSessionCount() {
+        return nconnections;
+    }
+
 }
