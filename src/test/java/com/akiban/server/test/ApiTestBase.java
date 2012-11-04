@@ -178,7 +178,8 @@ public class ApiTestBase {
     private static Map<String,String> lastStartupConfigProperties = null;
     private static boolean needServicesRestart = false;
     private boolean types3SwitchSave;
-    
+    protected static Set<Callable<Void>> beforeStopServices = new HashSet<Callable<Void>>();
+
     @Rule
     public static final TestName testName = new TestName();
     
@@ -307,7 +308,9 @@ public class ApiTestBase {
     }
 
     private static void beforeStopServices(boolean crash) throws Exception {
-        com.akiban.sql.pg.PostgresServerITBase.forgetConnection();
+        for (Callable<Void> callable : beforeStopServices) {
+            callable.call();
+        }
     }
 
     public final void stopTestServices() throws Exception {

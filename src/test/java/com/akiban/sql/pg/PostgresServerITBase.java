@@ -39,6 +39,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 
 import java.io.File;
+import java.util.concurrent.Callable;
 
 @Ignore
 public class PostgresServerITBase extends ITBase
@@ -76,11 +77,20 @@ public class PostgresServerITBase extends ITBase
         return getPostgresService().getServer();
     }
 
+    private static final Callable<Void> forgetOnStopServices = new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                forgetConnection();
+                return null;
+            }
+        };
+
     // One element connection pool.
     private static Connection connection = null;
 
     protected Connection getConnection() throws Exception {
         if (connection == null) {
+            beforeStopServices.add(forgetOnStopServices);
             for (int i = 0; i < 6; i++) {
                 if (server().isListening())
                     break;
@@ -105,6 +115,7 @@ public class PostgresServerITBase extends ITBase
         if (connection != null) {
             closeConnection(connection);
             connection = null;
+            beforeStopServices.remove(forgetOnStopServices);
         }
     }
 
