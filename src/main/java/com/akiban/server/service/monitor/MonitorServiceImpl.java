@@ -56,6 +56,8 @@ public class MonitorServiceImpl implements Service, MonitorService, MonitorMXBea
 
     private final ConfigurationService config;
 
+    private Map<String,ServerMonitor> servers;
+
     private AtomicInteger sessionAllocator;
     private Map<Integer,SessionMonitor> sessions;
 
@@ -75,6 +77,8 @@ public class MonitorServiceImpl implements Service, MonitorService, MonitorMXBea
 
     @Override
     public void start() {
+        servers = new ConcurrentHashMap<String,ServerMonitor>();
+
         sessionAllocator = new AtomicInteger();
         sessions = new ConcurrentHashMap<Integer,SessionMonitor>();
 
@@ -106,6 +110,23 @@ public class MonitorServiceImpl implements Service, MonitorService, MonitorMXBea
 
     /* MonitorService interface */
     
+    @Override
+    public void registerServerMonitor(ServerMonitor serverMonitor) {
+        ServerMonitor old = servers.put(serverMonitor.getServerType(), serverMonitor);
+        assert ((old == null) || (old == serverMonitor));
+    }
+
+    @Override
+    public void deregisterServerMonitor(ServerMonitor serverMonitor) {
+        ServerMonitor old = servers.remove(serverMonitor.getServerType());
+        assert ((old == null) || (old == serverMonitor));
+    }
+
+    @Override
+    public Map<String,ServerMonitor> getServerMonitors() {
+        return servers;
+    }
+
     @Override
     public int allocateSessionId() {
         return sessionAllocator.incrementAndGet();
