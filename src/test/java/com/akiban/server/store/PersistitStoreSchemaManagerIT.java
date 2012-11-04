@@ -155,7 +155,8 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
         for(int i = 0; i < COUNT; ++i) {
             createTable(SCHEMA, T1_NAME+i, T1_DDL);
         }
-        // Should be fully cleared after DDL is committed (performed synchronously)
+        // Should be fully cleared after queue is cleared
+        pssm.waitForQueueToEmpty(5000);
         assertEquals("AIS map size", 1, pssm.getAISMapSize());
         pssm.clearUnreferencedAISMap();
         assertEquals("AIS map size after clearing", 1, pssm.getAISMapSize());

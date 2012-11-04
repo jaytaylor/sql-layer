@@ -43,6 +43,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.DelayQueue;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -247,8 +251,10 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private ReadWriteMap<Long,SharedAIS> aisMap;
     private ReadWriteMap<Integer,Integer> tableVersionMap;
     private AtomicReference<AISAndTimestamp> latestAISCache;
-    private TransactionService.Callback latestAISCacheClearCallback;
-    private TransactionService.Callback clearAISMapCallback;
+    private TransactionService.Callback latestCacheClearCallback;
+    private TransactionService.Callback enqueueMapClearAndCacheUpdate;
+    private BlockingQueue<QueueTask> taskQueue;
+    private Thread queueConsumer;
 
     @Inject
     public PersistitStoreSchemaManager(ConfigurationService config, SessionService sessionService,
@@ -641,9 +647,13 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     @Override
     public AkibanInformationSchema getAis(Session session) {
+        return getAISInternal(session).ais;
+    }
+
+    private SharedAIS getAISInternal(Session session) {
         SharedAIS local = session.get(SESSION_SAIS_KEY);
         if(local != null) {
-            return local.ais;
+            return local;
         }
 
         // If the cache's commit timestamp (guaranteed latest) is strictly before our start timestamp, we can use that.
@@ -681,7 +691,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         }
 
         attachToSession(session, local);
-        return local.ais;
+        return local;
     }
 
     /**
@@ -808,18 +818,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
         this.aisMap = ReadWriteMap.wrapNonFair(new HashMap<Long,SharedAIS>());
         this.latestAISCache = new AtomicReference<AISAndTimestamp>(new AISAndTimestamp(null, Long.MIN_VALUE));
-        this.latestAISCacheClearCallback = new TransactionService.Callback() {
-            @Override
-            public void run(Session session, long timestamp) {
-                updateLatestAISCache(AIS_TIMESTAMP_SENTINEL);
-            }
-        };
-        this.clearAISMapCallback = new TransactionService.Callback() {
-            @Override
-            public void run(Session session, long timestamp) {
-                clearUnreferencedAISMap();
-            }
-        };
 
         AkibanInformationSchema newAIS = transactionally(
                 sessionService.createSession(),
@@ -836,6 +834,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                             //LOG.warn("Skipping AIS upgrade");
                         }
                         buildRowDefCache(sAIS.ais);
+                        updateLatestAISCache(new AISAndTimestamp(sAIS, txnService.getTransactionStartTimestamp(session)));
                         return sAIS.ais;
                     }
                 }
@@ -851,10 +850,29 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             }
             tableVersionMap.put(table.getTableId(), table.getVersion());
         }
+
+        this.taskQueue = new DelayQueue<QueueTask>();
+        this.queueConsumer = new Thread(new QueueConsumer(this.taskQueue), "PSSM_QUEUE");
+        this.queueConsumer.start();
+
+        this.latestCacheClearCallback = new TransactionService.Callback() {
+            @Override
+            public void run(Session session, long timestamp) {
+                updateLatestAISCache(AIS_TIMESTAMP_SENTINEL);
+            }
+        };
+        this.enqueueMapClearAndCacheUpdate = new Callback() {
+            @Override
+            public void run(Session session, long timestamp) {
+                taskQueue.offer(new UpdateLatestCacheTask(0, 1000));
+                taskQueue.offer(new ClearAISMapTask(1000, 10000));
+            }
+        };
     }
 
     @Override
     public void stop() {
+        stopConsumer();
         this.rowDefCache = null;
         this.maxAISBufferSize = 0;
         this.skipAISUpgrade = false;
@@ -863,13 +881,36 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         this.delayedTreeIDGenerator = null;
         this.aisMap = null;
         this.latestAISCache = null;
-        this.latestAISCacheClearCallback = null;
-        this.clearAISMapCallback = null;
+        this.latestCacheClearCallback = null;
+        this.enqueueMapClearAndCacheUpdate = null;
+        this.latestCacheClearCallback = null;
+        this.taskQueue.clear();
+        this.taskQueue = null;
+        this.queueConsumer = null;
     }
 
     @Override
     public void crash() {
         stop();
+    }
+
+    private void stopConsumer() {
+        final long endNanoTime = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        if(!taskQueue.offer(new StopTask(0))) {
+            // DelayedQueue is unbounded, should never happen
+            LOG.error("Could not offer StopTask");
+        }
+        for(;;) {
+            long remaining = endNanoTime - System.nanoTime();
+            if(remaining <= 0 || !queueConsumer.isAlive()) {
+                break;
+            }
+            try {
+                queueConsumer.join(100);
+            } catch(InterruptedException e) {
+                LOG.warn("Interrupted while trying to stop QueueConsumer");
+            }
+        }
     }
 
     private SharedAIS loadAISFromStorage(final Session session, GenValue genValue, GenMap genMap) throws PersistitException {
@@ -997,20 +1038,12 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         if(genMap == GenMap.PUT_NEW) {
             saveNewAISInMap(sAIS);
         }
-
-        txnService.addCallbackOnActive(session, CallbackType.PRE_COMMIT, latestAISCacheClearCallback);
-        txnService.addCallbackOnActive(
-                session,
-                CallbackType.COMMIT,
-                new TransactionService.Callback() {
-                    @Override
-                    public void run(Session session, long timestamp) {
-                        updateLatestAISCache(new AISAndTimestamp(sAIS, timestamp));
-                    }
-                }
-        );
-        txnService.addCallbackOnActive(session, CallbackType.END, clearAISMapCallback);
         return sAIS;
+    }
+
+    private void addCallbacksForAISChange(Session session) {
+        txnService.addCallbackOnActive(session, CallbackType.PRE_COMMIT, latestCacheClearCallback);
+        txnService.addCallbackOnActive(session, CallbackType.END, enqueueMapClearAndCacheUpdate);
     }
 
     private void saveNewAISInMap(SharedAIS sAIS) {
@@ -1063,7 +1096,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         GrowableByteBuffer byteBuffer = new GrowableByteBuffer(4096, 4096, maxSize);
         Exchange ex = null;
         try {
-            validateAndFreeze(session, newAIS, GenValue.NEW, GenMap.PUT_NEW);
+            validateAndFreeze(session, newAIS, GenValue.NEW, GenMap.NO_PUT);
             for(String schema : schemaNames) {
                 ex = schemaTreeExchange(session, schema);
                 checkAndSerialize(ex, byteBuffer, newAIS, schema);
@@ -1071,6 +1104,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 ex = null;
             }
             buildRowDefCache(newAIS);
+            addCallbacksForAISChange(session);
         } catch(BufferOverflowException e) {
             throw new AISTooLargeException(maxSize);
         } catch(PersistitException e) {
@@ -1084,8 +1118,9 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     private void unSavedAISChangeWithRowDefs(Session session, AkibanInformationSchema newAIS) {
         try {
-            validateAndFreeze(session, newAIS, GenValue.NEW, GenMap.PUT_NEW);
+            validateAndFreeze(session, newAIS, GenValue.NEW, GenMap.NO_PUT);
             buildRowDefCache(newAIS);
+            addCallbacksForAISChange(session);
         } catch(PersistitException e) {
             throw wrapPersistitException(session, e);
         }
@@ -1183,7 +1218,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     // Package for tests
-    void clearUnreferencedAISMap() {
+    int clearUnreferencedAISMap() {
         aisMap.claimExclusive();
         try {
             Iterator<SharedAIS> it = aisMap.getWrappedMap().values().iterator();
@@ -1193,6 +1228,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                     it.remove();
                 }
             }
+            return aisMap.size();
         } finally {
             aisMap.releaseExclusive();
         }
@@ -1201,6 +1237,17 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     // Package for Tests
     int getAISMapSize() {
         return aisMap.size();
+    }
+
+    // Package for tests
+    void waitForQueueToEmpty(long maxWaitMillis) {
+        while(!taskQueue.isEmpty()) {
+            try {
+                Thread.sleep(maxWaitMillis);
+            } catch(InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private Exchange schemaTreeExchange(Session session, String schema) {
@@ -1428,4 +1475,172 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             }
         }
     };
+
+
+    private abstract class QueueTask implements Delayed {
+        protected final long initialDelay;
+        protected final long rescheduleDelay;
+        protected final long fireAt;
+
+        protected QueueTask(long initialDelay) {
+            this(initialDelay, -1);
+        }
+
+        protected QueueTask(long initialDelay, long rescheduleDelay) {
+            this.initialDelay = initialDelay;
+            this.rescheduleDelay = rescheduleDelay;
+            this.fireAt = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(initialDelay);
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName();
+        }
+
+        @Override
+        public final long getDelay(TimeUnit unit) {
+            long diff = fireAt - System.nanoTime();
+            return unit.convert(diff, TimeUnit.NANOSECONDS);
+        }
+
+        @Override
+        public int compareTo(Delayed o) {
+            if(this == o) {
+                return 0;
+            }
+            long d = getDelay(TimeUnit.NANOSECONDS) - o.getDelay(TimeUnit.NANOSECONDS);
+            return (d == 0) ? 0 : ((d < 0) ? -1 : 1);
+        }
+
+        public boolean stopConsumer() {
+            return false;
+        }
+
+        public boolean shouldReschedule() {
+            return rescheduleDelay >= 0;
+        }
+
+        abstract public QueueTask cloneTask();
+        abstract public boolean runTask() throws Exception;
+    }
+
+    private class StopTask extends QueueTask {
+        public StopTask(long initialDelay) {
+            super(initialDelay);
+        }
+
+        @Override
+        public boolean stopConsumer() {
+            return true;
+        }
+
+        @Override
+        public StopTask cloneTask() {
+            return new StopTask(rescheduleDelay);
+        }
+
+        @Override
+        public boolean runTask() {
+            return true;
+        }
+    }
+
+    private class UpdateLatestCacheTask extends QueueTask {
+        protected UpdateLatestCacheTask(long initialDelay, long rescheduleDelay) {
+            super(initialDelay, rescheduleDelay);
+        }
+
+        @Override
+        public UpdateLatestCacheTask cloneTask() {
+            return new UpdateLatestCacheTask(rescheduleDelay, rescheduleDelay);
+        }
+
+        @Override
+        public boolean runTask() throws PersistitException {
+            Session session = sessionService.createSession();
+            try {
+                doCacheUpdate(session);
+                return true;
+            } finally {
+                session.close();
+            }
+        }
+
+        private void doCacheUpdate(Session session) throws PersistitException {
+            txnService.beginTransaction(session);
+            try {
+                // AIS from DDL is not put into the aisMap so if no one has read it yet, this sill cause a
+                // reload from disk. No matter where it comes from, always OK to try and update cache.
+                final SharedAIS sAIS = PersistitStoreSchemaManager.this.getAISInternal(session);
+
+                // This transaction does nothing but read (no generation change, no writes, etc) a consistent
+                // view of the AIS. So we can avoid commit callback and update cache immediately.
+                final long timestamp = txnService.getTransactionStartTimestamp(session);
+                updateLatestAISCache(new AISAndTimestamp(sAIS, timestamp));
+                txnService.commitTransaction(session);
+            } finally {
+                txnService.rollbackTransactionIfOpen(session);
+            }
+        }
+    }
+
+    private class ClearAISMapTask extends QueueTask {
+        protected ClearAISMapTask(long initialDelay, long rescheduleDelay) {
+            super(initialDelay, rescheduleDelay);
+        }
+
+        @Override
+        public ClearAISMapTask cloneTask() {
+            return new ClearAISMapTask(rescheduleDelay, rescheduleDelay);
+        }
+
+        @Override
+        public boolean runTask() {
+            int remaining = PersistitStoreSchemaManager.this.clearUnreferencedAISMap();
+            return (remaining <= 1); // Success <= 1 entries in aisMap
+        }
+    }
+
+    public static class QueueConsumer implements Runnable {
+        private final BlockingQueue<QueueTask> queue;
+
+        public QueueConsumer(BlockingQueue<QueueTask> queue) {
+            this.queue = queue;
+        }
+
+        @Override
+        public void run() {
+            boolean running = true;
+            while(running) {
+                QueueTask task = null;
+                try {
+                    task = queue.take();
+                    LOG.trace("Running task {}", task);
+                    if(task.runTask()) {
+                        running = !task.stopConsumer();
+                    } else {
+                        if(task.shouldReschedule()) {
+                            LOG.trace("Rescheduling task {}", task);
+                            QueueTask newTask = task.cloneTask();
+                            queue.add(newTask);
+                        }
+                    }
+                } catch(InterruptedException e) {
+                    running = false;
+                } catch(RuntimeException e) {
+                    LOG.error("RuntimeException" + fromTask(task), e);
+                } catch(Exception e) {
+                    LOG.error("Exception" + fromTask(task), e);
+                } catch(Error e) {
+                    LOG.error("Error (aborting consuming)", e);
+                    throw e;
+                }
+            }
+            LOG.trace("Exiting consumer");
+        }
+
+        private static String fromTask(QueueTask task) {
+            return (task != null) ? " from task " + task :  "";
+        }
+    }
 }
