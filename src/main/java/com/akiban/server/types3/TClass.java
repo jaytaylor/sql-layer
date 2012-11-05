@@ -232,6 +232,10 @@ public abstract class TClass {
         return serializationSize;
     }
 
+    public String toString(boolean shorthand) {
+        return shorthand ? name.unqualifiedName() : name.toString();
+    }
+
     // object interface
 
     @Override

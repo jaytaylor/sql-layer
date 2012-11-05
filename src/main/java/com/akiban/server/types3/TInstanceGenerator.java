@@ -54,9 +54,13 @@ public final class TInstanceGenerator {
         return tclass;
     }
 
+    public String toString(boolean shorthand) {
+        return setNullable(true).toStringIgnoringNullability(shorthand);
+    }
+
     @Override
     public String toString() {
-        return setNullable(true).toStringIgnoringNullability();
+        return toString(false);
     }
 
     public TInstanceGenerator(TClass tclass, int... attrs) {
