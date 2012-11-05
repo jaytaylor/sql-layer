@@ -49,7 +49,6 @@ import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AISBuilder;
@@ -265,7 +264,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private ReadWriteMap<Long,SharedAIS> aisMap;
     private ReadWriteMap<Integer,Integer> tableVersionMap;
     private volatile AISAndTimestamp latestAISCache;
-    private TransactionService.Callback enqueueMapClearAndCacheUpdate;
+    private TransactionService.Callback clearLatestCacheCallback;
+    private TransactionService.Callback enqueueClearAndUpdateCallback;
     private BlockingQueue<QueueTask> taskQueue;
     private Thread queueConsumer;
 
@@ -676,9 +676,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         final long startTimestamp = txnService.getTransactionStartTimestamp(session);
         if(cached.isUsableForStartTime(startTimestamp)) {
             local = cached.sAIS;
-            System.out.println("Using cached for timestamp " + txnService.getTransactionStartTimestamp(session) + " got " + cached);
-        } else {
-            System.out.println("Couldn't use cache for timestamp " + txnService.getTransactionStartTimestamp(session));
         }
 
         // Couldn't use the cache, do an always accurate accumulator lookup and check in map.
@@ -686,9 +683,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         if(local == null) {
             generation = getGenerationSnapshot(session);
             local = aisMap.get(generation);
-            System.out.println(
-                    "Got snapshot " + generation + " for timestamp " + txnService.getTransactionStartTimestamp(
-                            session) + " and got from map " + local);
         }
 
         // Wasn't in map so need to reload from disk.
@@ -700,15 +694,11 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 local = aisMap.get(generation);
                 if(local == null) {
                     try {
-                        System.out.println("Read from disk for timestamp "+txnService.getTransactionStartTimestamp(session));
                         local = loadAISFromStorage(session, GenValue.SNAPSHOT, GenMap.PUT_NEW);
-                        System.out.println("Read from disk for timestamp "+txnService.getTransactionStartTimestamp(session)+" and got "+local);
                         buildRowDefCache(local.ais);
                     } catch(PersistitException e) {
                         throw wrapPersistitException(session, e);
                     }
-                } else {
-                    System.out.println("Found in map under exclusive for timestamp " + txnService.getTransactionStartTimestamp(session) + " and got " + local);
                 }
             } finally {
                 aisMap.releaseExclusive();
@@ -879,7 +869,13 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         this.queueConsumer = new Thread(new QueueConsumer(this.taskQueue), "PSSM_QUEUE");
         this.queueConsumer.start();
 
-        this.enqueueMapClearAndCacheUpdate = new Callback() {
+        this.clearLatestCacheCallback = new Callback() {
+            @Override
+            public void run(Session session, long timestamp) {
+                updateLatestAISCache(AIS_TIMESTAMP_SENTINEL);
+            }
+        };
+        this.enqueueClearAndUpdateCallback = new Callback() {
             @Override
             public void run(Session session, long timestamp) {
                 taskQueue.offer(new UpdateLatestCacheTask(0, 1000));
@@ -899,7 +895,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         this.delayedTreeIDGenerator = null;
         this.aisMap = null;
         this.latestAISCache = null;
-        this.enqueueMapClearAndCacheUpdate = null;
+        this.clearLatestCacheCallback = null;
+        this.enqueueClearAndUpdateCallback = null;
         this.taskQueue.clear();
         this.taskQueue = null;
         this.queueConsumer = null;
@@ -1058,28 +1055,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     private void addCallbacksForAISChange(Session session) {
-        final long startTime = txnService.getTransactionStartTimestamp(session);
-        txnService.addCallbackOnActive(session, CallbackType.PRE_COMMIT, new Callback() {
-            @Override
-            public void run(Session session, long timestamp) {
-                System.out.println("CLEARING for timestamp " + startTime);
-                // NB: See comment on variable and usage in task before changing
-                // Need to clear no matter what, synch is to prevent concurrent update to the cache.
-                synchronized(AIS_TIMESTAMP_SENTINEL) {
-                    updateLatestAISCache(AIS_TIMESTAMP_SENTINEL);
-                }
-                //System.out.println("CLEARING for timestamp " + startTime + " " + didClear);
-            }
-        });
-
-        txnService.addCallbackOnActive(session, CallbackType.END, enqueueMapClearAndCacheUpdate);
-
-        txnService.addCallbackOnActive(session, CallbackType.COMMIT, new Callback() {
-            @Override
-            public void run(Session session, long timestamp) {
-                System.out.println("Committed for timestamp " + startTime + " at timestamp " + timestamp);
-            }
-        });
+        txnService.addCallbackOnActive(session, CallbackType.PRE_COMMIT, clearLatestCacheCallback);
+        txnService.addCallbackOnActive(session, CallbackType.END, enqueueClearAndUpdateCallback);
     }
 
     private void saveNewAISInMap(SharedAIS sAIS) {
@@ -1108,7 +1085,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             } else {
                 String latestStr = latestAISCache.toString();
                 String newStr = newCache.toString();
-                throw new IllegalStateException("Transition from non-to-non sentinel: " + latestStr + " => " + newStr);
+                throw new IllegalStateException("Transition from non to non-sentinel: " + latestStr + " => " + newStr);
             }
             latestAISCache.sAIS.release();
             newCache.sAIS.acquire();
