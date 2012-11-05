@@ -8,6 +8,8 @@
 ---
 - Statement: SELECT c IS TRUE, d IS TRUE, e IS TRUE from t;
 - output: [['true', 'true', 'false']]
+---
+- Message: Commented out tests due to bug described in the pivotal story 38991813
 ########
 #--- bug: IS TRUE/FALSE/UNKNOWN is tranformed to == TRUE/FALSE/UKNOWN
 #- Statement: SELECT c from t where c IS TRUE;

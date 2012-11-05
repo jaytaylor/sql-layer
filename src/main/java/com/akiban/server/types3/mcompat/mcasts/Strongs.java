@@ -27,7 +27,6 @@
 package com.akiban.server.types3.mcompat.mcasts;
 
 import com.akiban.server.types3.TStrongCasts;
-import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
