@@ -46,9 +46,11 @@ import com.akiban.server.geophile.Space;
 import com.akiban.server.geophile.SpaceLatLon;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueTargets;
@@ -180,39 +182,37 @@ class IndexCursorSpatial_InBox extends IndexCursor
             long z = zValues[i];
             if (z != -1L) {
                 IndexRowType physicalRowType = keyRange.indexRowType().physicalRowType();
-                ValuesHolderRow zLoRow = new ValuesHolderRow(physicalRowType, Types3Switch.ON);
-                ValuesHolderRow zHiRow = new ValuesHolderRow(physicalRowType, Types3Switch.ON);
+                int indexRowFields = physicalRowType.nFields();
+                SpatialIndexBoundExpressions zLoRow = new SpatialIndexBoundExpressions(indexRowFields);
+                SpatialIndexBoundExpressions zHiRow = new SpatialIndexBoundExpressions(indexRowFields);
                 IndexBound zLo = new IndexBound(zLoRow, indexColumnSelector);
                 IndexBound zHi = new IndexBound(zHiRow, indexColumnSelector);
                 // Take care of any equality restrictions before the spatial fields
                 for (int f = 0; f < latColumn; f++) {
                     if (Types3Switch.ON) {
                         PValueSource eqValueSource = loExpressions.pvalue(f);
-                        PValueTargets.copyFrom(eqValueSource, zLoRow.pvalueAt(f));
-                        PValueTargets.copyFrom(eqValueSource, zHiRow.pvalueAt(f));
+                        zLoRow.value(f, eqValueSource);
+                        zHiRow.value(f, eqValueSource);
                     } else {
                         ValueSource eqValue = loExpressions.eval(f);
-                        zLoRow.holderAt(f).copyFrom(eqValue);
-                        zHiRow.holderAt(f).copyFrom(eqValue);
+                        zLoRow.value(f, eqValue);
+                        zHiRow.value(f, eqValue);
                     }
                 }
-                // lo bound
+                // lo and hi bounds
                 if (Types3Switch.ON) {
-                    zLoRow.pvalueAt(latColumn).underlying(PUnderlying.INT_64);
-                    zLoRow.pvalueAt(latColumn).putInt64(space.zLo(z));
+                    PValue loPValue = new PValue(PUnderlying.INT_64);
+                    PValue hiPValue = new PValue(PUnderlying.INT_64);
+                    loPValue.putInt64(space.zLo(z));
+                    hiPValue.putInt64(space.zHi(z));
+                    zLoRow.value(latColumn, loPValue);
+                    zHiRow.value(latColumn, hiPValue);
                 }
                 else {
-                    zLoRow.holderAt(latColumn).expectType(AkType.LONG);
-                    zLoRow.holderAt(latColumn).putLong(space.zLo(z));
-                }
-                // hi bound
-                if (Types3Switch.ON) {
-                    zHiRow.pvalueAt(latColumn).underlying(PUnderlying.INT_64);
-                    zHiRow.pvalueAt(latColumn).putInt64(space.zHi(z));
-                }
-                else {
-                    zHiRow.holderAt(latColumn).expectType(AkType.LONG);
-                    zHiRow.holderAt(latColumn).putLong(space.zHi(z));
+                    ValueSource loValue = new ValueHolder(AkType.LONG, space.zLo(z));
+                    ValueSource hiValue = new ValueHolder(AkType.LONG, space.zHi(z));
+                    zLoRow.value(latColumn, loValue);
+                    zHiRow.value(latColumn, hiValue);
                 }
                 IndexKeyRange zKeyRange = IndexKeyRange.bounded(physicalRowType, zLo, true, zHi, true);
                 zKeyRanges.add(zKeyRange);
