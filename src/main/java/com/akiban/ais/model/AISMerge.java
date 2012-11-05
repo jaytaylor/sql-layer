@@ -421,6 +421,9 @@ public class AISMerge {
             }
         }
 
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
+
         for(IndexName indexName : indexesToFix) {
             UserTable table = targetAIS.getUserTable(indexName.getSchemaName(), indexName.getTableName());
             Index index = table.getIndexIncludingInternal(indexName.getName());
@@ -430,8 +433,6 @@ public class AISMerge {
             }
         }
 
-        builder.basicSchemaIsComplete();
-        builder.groupingIsComplete();
         builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
         builder.akibanInformationSchema().freeze();
     }

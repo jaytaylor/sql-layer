@@ -174,8 +174,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         public final AtomicInteger refCount;
         public final AkibanInformationSchema ais;
 
-        public SharedAIS(AkibanInformationSchema ais, int refCount) {
-            this.refCount = new AtomicInteger();
+        public SharedAIS(AkibanInformationSchema ais) {
+            this.refCount = new AtomicInteger(0);
             this.ais = ais;
         }
 
@@ -198,12 +198,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     private static class AISAndTimestamp {
+        public final SharedAIS sAIS;
         public final long timestamp;
-        private final SharedAIS sAIS;
-
-        public AISAndTimestamp(long timestamp) {
-            this(new SharedAIS(null, 0), timestamp);
-        }
 
         public AISAndTimestamp(SharedAIS sAIS, long timestamp) {
             this.sAIS = sAIS;
@@ -241,12 +237,14 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private static final Session.Key<SharedAIS> SESSION_SAIS_KEY = Session.Key.named("SAIS_KEY");
 
     /**
-     * This is used as both an "unusable cache" identifier and count for outstanding DDLs. Why are both needed?
-     * Consider two concurrent DDLs, A and B. Both are have pre-committed and cleared the cache. If A commits,
-     * the cache is updated, and then B commits, any reader using the cache based on timestamp alone will get
-     * a stale snapshot. So, the cache can *only* be updated when there are no more outstanding.
+     * <p>This is used as unusable cache identifier, count for outstanding DDLs, and sync object for updating
+     * the latest cache value.</p>
+     * <p>Why are all needed? Consider the simple case two concurrent DDLs, A and B. Both are have pre-committed
+     * and cleared the cache. If A commits, the cache is updated, and then B commits, any reader using the cache
+     * based on timestamp alone will get a stale snapshot. So, the cache can *only* be updated when there are no
+     * more outstanding.</p>
      */
-    private static final AISAndTimestamp AIS_TIMESTAMP_SENTINEL = new AISAndTimestamp(Long.MAX_VALUE);
+    private static final AISAndTimestamp AIS_TIMESTAMP_SENTINEL = new AISAndTimestamp(new SharedAIS(null), Long.MAX_VALUE);
 
     private static final String CREATE_SCHEMA_FORMATTER = "create schema if not exists `%s`;";
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class.getName());
@@ -900,6 +898,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         this.taskQueue.clear();
         this.taskQueue = null;
         this.queueConsumer = null;
+        AIS_TIMESTAMP_SENTINEL.sAIS.refCount.set(0);
     }
 
     @Override
@@ -1045,7 +1044,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         newAIS.freeze();
 
         // Constructed with ref count 0, attach bumps to 1
-        final SharedAIS sAIS = new SharedAIS(newAIS, 0);
+        final SharedAIS sAIS = new SharedAIS(newAIS);
         attachToSession(session, sAIS);
 
         if(genMap == GenMap.PUT_NEW) {
@@ -1083,9 +1082,12 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             } else if(newCache == AIS_TIMESTAMP_SENTINEL) {
                 newCache.sAIS.acquire();
             } else {
-                String latestStr = latestAISCache.toString();
-                String newStr = newCache.toString();
-                throw new IllegalStateException("Transition from non to non-sentinel: " + latestStr + " => " + newStr);
+                // Can happen if pre-commit hook doesn't get called (i.e. failure after SchemaManager call).
+                // In that case, the generation itself should not be changing -- just the timestamp.
+                if(latestAISCache.sAIS.ais.getGeneration() != newCache.sAIS.ais.getGeneration()) {
+                    throw new IllegalStateException("Transition from non to non-sentinel for differing generations: "+
+                                                    latestAISCache.toString() + " => " + newCache.toString());
+                }
             }
             latestAISCache.sAIS.release();
             newCache.sAIS.acquire();

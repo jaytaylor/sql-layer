@@ -50,9 +50,10 @@ public class DefaultNameGenerator implements NameGenerator {
 
     private final Set<String> treeNames;
     private final Set<TableName> sequenceNames;
-    private final SortedSet<Integer> userTableIDSet;
     private final SortedSet<Integer> isTableIDSet;
+    private final SortedSet<Integer> userTableIDSet;
     private final Map<Integer,Integer> indexIDMap;
+
 
     public DefaultNameGenerator() {
         treeNames = new HashSet<String>();
@@ -291,7 +292,7 @@ public class DefaultNameGenerator implements NameGenerator {
         }
 
         public void resetAndVisit(Group group) {
-            maxID = Integer.MIN_VALUE;
+            maxID = 0;
             visitGroup(group);
             group.getRoot().traverseTableAndDescendants(this);
         }
