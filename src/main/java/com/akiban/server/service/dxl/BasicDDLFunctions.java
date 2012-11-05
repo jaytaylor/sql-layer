@@ -465,7 +465,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                                   List<TableChange> origColChanges, List<TableChange> origIndexChanges,
                                   QueryContext context)
     {
-        final List<Integer> tableIDs = new ArrayList<Integer>();
+        final Set<Integer> tableIDs = new HashSet<Integer>();
         final List<TableChange> columnChanges = new ArrayList<TableChange>(origColChanges);
         final List<TableChange> indexChanges = new ArrayList<TableChange>(origIndexChanges);
         final TableChangeValidator validator;
@@ -481,9 +481,24 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 throw new InvalidAlterException(tableName, e.getMessage());
             }
 
+            TableName newParentName = null;
             for(ChangedTableDescription desc : validator.getAllChangedTables()) {
                 UserTable table = getUserTable(session, desc.getOldName());
                 tableIDs.add(table.getTableId());
+                if(desc.getOldName().equals(tableName)) {
+                    newParentName = desc.getParentName();
+                }
+            }
+
+            // If this is a GROUPING change, we need to lock all the way up the old and new branches
+            if(validator.getFinalChangeLevel() == ChangeLevel.GROUP) {
+                // Old branch. Defensive because there can't currently be old parents
+                UserTable parent = origTable.parentTable();
+                collectAncestorTableIDs(tableIDs, parent);
+                // New branch
+                if(newParentName != null) {
+                    collectAncestorTableIDs(tableIDs, getUserTable(session, newParentName));
+                }
             }
 
             txnService.commitTransaction(session);
@@ -491,7 +506,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             txnService.rollbackTransactionIfOpen(session);
         }
 
-        lockTables(session, tableIDs);
+        lockTables(session, new ArrayList<Integer>(tableIDs));
         final ChangeLevel level;
         txnService.beginTransaction(session);
         try {
@@ -933,11 +948,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                         }
                     break;
                     case GROUP:
-                        table = ais.getUserTable(index.leafMostTable().getName());
-                        while(table != null) {
-                            tableIDs.add(table.getTableId());
-                            table = table.parentTable();
-                        }
+                        collectAncestorTableIDs(tableIDs, ais.getUserTable(index.leafMostTable().getName()));
                     break;
                     default:
                         throw new IllegalStateException("Unknown index type: " + index.getIndexType());
@@ -1207,6 +1218,13 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             if (scanTableId == tableId) {
                 cursor.setDDLModified();
             }
+        }
+    }
+
+    private void collectAncestorTableIDs(Collection<Integer> tableIDs, UserTable table) {
+        while(table != null) {
+            tableIDs.add(table.getTableId());
+            table = table.parentTable();
         }
     }
 
