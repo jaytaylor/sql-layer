@@ -241,6 +241,12 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     private static final Session.Key<SharedAIS> SESSION_SAIS_KEY = Session.Key.named("SAIS_KEY");
 
+    /**
+     * This is used as both an "unusable cache" identifier and count for outstanding DDLs. Why are both needed?
+     * Consider two concurrent DDLs, A and B. Both are have pre-committed and cleared the cache. If A commits,
+     * the cache is updated, and then B commits, any reader using the cache based on timestamp alone will get
+     * a stale snapshot. So, the cache can *only* be updated when there are no more outstanding.
+     */
     private static final AISAndTimestamp AIS_TIMESTAMP_SENTINEL = new AISAndTimestamp(Long.MAX_VALUE);
 
     private static final String CREATE_SCHEMA_FORMATTER = "create schema if not exists `%s`;";
@@ -258,7 +264,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private AtomicLong delayedTreeIDGenerator;
     private ReadWriteMap<Long,SharedAIS> aisMap;
     private ReadWriteMap<Integer,Integer> tableVersionMap;
-    private AtomicReference<AISAndTimestamp> latestAISCache;
+    private volatile AISAndTimestamp latestAISCache;
     private TransactionService.Callback enqueueMapClearAndCacheUpdate;
     private BlockingQueue<QueueTask> taskQueue;
     private Thread queueConsumer;
@@ -354,7 +360,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     
     @Override
     public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
-        System.out.println("Creating indexes for timestamp " + txnService.getTransactionStartTimestamp(session));
         AISMerge merge = AISMerge.newForAddIndex(nameGenerator, getAis(session));
         Set<String> schemas = new HashSet<String>();
 
@@ -655,7 +660,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     @Override
     public AkibanInformationSchema getAis(Session session) {
-        System.out.println("External getAis for timestamp " + txnService.getTransactionStartTimestamp(session));
         return getAISInternal(session).ais;
     }
 
@@ -665,9 +669,11 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             return local;
         }
 
-        // If the cache's commit timestamp (guaranteed latest) is strictly before our start timestamp, we can use that.
-        long startTimestamp = txnService.getTransactionStartTimestamp(session);
-        AISAndTimestamp cached = latestAISCache.get();
+        // Latest is a volatile read. Synchronized block is not required because a concurrent transition to
+        // 1) sentinel     => is already a sentinel or DDL is *pre-commit* and doesn't affect our snapshot
+        // 2) non-sentinel => we see sentinel and don't use the cache anyway
+        final AISAndTimestamp cached = latestAISCache;
+        final long startTimestamp = txnService.getTransactionStartTimestamp(session);
         if(cached.isUsableForStartTime(startTimestamp)) {
             local = cached.sAIS;
             System.out.println("Using cached for timestamp " + txnService.getTransactionStartTimestamp(session) + " got " + cached);
@@ -836,7 +842,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                                                               config.getProperty(DEFAULT_COLLATION));
 
         this.aisMap = ReadWriteMap.wrapNonFair(new HashMap<Long,SharedAIS>());
-        this.latestAISCache = new AtomicReference<AISAndTimestamp>(new AISAndTimestamp(Long.MIN_VALUE));
 
         AkibanInformationSchema newAIS = transactionally(
                 sessionService.createSession(),
@@ -853,7 +858,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                             //LOG.warn("Skipping AIS upgrade");
                         }
                         buildRowDefCache(sAIS.ais);
-                        updateLatestAISCache(new AISAndTimestamp(sAIS, txnService.getTransactionStartTimestamp(session)));
+                        latestAISCache = new AISAndTimestamp(sAIS, txnService.getTransactionStartTimestamp(session));
                         return sAIS.ais;
                     }
                 }
@@ -1058,9 +1063,12 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             @Override
             public void run(Session session, long timestamp) {
                 System.out.println("CLEARING for timestamp " + startTime);
-                AIS_TIMESTAMP_SENTINEL.sAIS.acquire();
-                boolean didClear = updateLatestAISCache(AIS_TIMESTAMP_SENTINEL);
-                System.out.println("CLEARING for timestamp " + startTime + " " + didClear);
+                // NB: See comment on variable and usage in task before changing
+                // Need to clear no matter what, synch is to prevent concurrent update to the cache.
+                synchronized(AIS_TIMESTAMP_SENTINEL) {
+                    updateLatestAISCache(AIS_TIMESTAMP_SENTINEL);
+                }
+                //System.out.println("CLEARING for timestamp " + startTime + " " + didClear);
             }
         });
 
@@ -1080,26 +1088,32 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     private boolean updateLatestAISCache(final AISAndTimestamp newCache) {
-        final long newTs = newCache.timestamp;
-        while (true) {
-            final AISAndTimestamp latest = latestAISCache.get();
-            // Don't set cache if new ts is lower (concurrent DDL)
-            if(latest != AIS_TIMESTAMP_SENTINEL) {
-                // New timestamp is strictly less, don't overwrite.
-                if(newTs < latest.timestamp) {
-                    return false;
+        // NB, see comment on variable and other usage before changing
+        // As described in the comment, can't even consider updating cache while there is another outstanding
+        // change. The count is 1 while held in the cache, so >1 means other outstanding changes.
+        // Synchronized block so we can both change counter on sentinel and write to cache.
+        synchronized(AIS_TIMESTAMP_SENTINEL) {
+            if(latestAISCache == AIS_TIMESTAMP_SENTINEL) {
+                if(newCache == AIS_TIMESTAMP_SENTINEL) {
+                    AIS_TIMESTAMP_SENTINEL.sAIS.acquire();
+                } else {
+                    int count = AIS_TIMESTAMP_SENTINEL.sAIS.release();
+                    if(count > 1) {
+                        LOG.debug("Skipping cache update due to multiple outstanding changes:"+ count);
+                        return false;
+                    }
                 }
-                // Equal should not happen for non-sentinel, only single newCache attempt per txn in queue task.
-                if(newCache != AIS_TIMESTAMP_SENTINEL) {
-                    assert newTs != latest.timestamp : newCache;
-                }
-            }
-            // Otherwise update and stop if successful
-            if(latestAISCache.compareAndSet(latest, newCache)) {
-                latest.sAIS.release();
+            } else if(newCache == AIS_TIMESTAMP_SENTINEL) {
                 newCache.sAIS.acquire();
-                return true;
+            } else {
+                String latestStr = latestAISCache.toString();
+                String newStr = newCache.toString();
+                throw new IllegalStateException("Transition from non-to-non sentinel: " + latestStr + " => " + newStr);
             }
+            latestAISCache.sAIS.release();
+            newCache.sAIS.acquire();
+            latestAISCache = newCache;
+            return true;
         }
     }
 
@@ -1586,27 +1600,14 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         }
 
         private void doCacheUpdate(Session session) throws PersistitException {
-            // Before a clear is made in the pre-commit hook, the sentinel is acquired. Cache can only be updated when
-            // there is no longer any outstanding changes.
-            // Consider 2 concurrent DDLs A and B. If A and B both clear, then A commits, updates cache
-            // If cache was updated after
-            int newCount = AIS_TIMESTAMP_SENTINEL.sAIS.release();
-            if(newCount > 1) {
-                LOG.debug("Skipping cache update attempt due to multiple outstanding clears: {}", newCount);
-                return;
-            }
-
             txnService.beginTransaction(session);
             try {
                 // AIS from DDL is not put into the aisMap so if no one has read it yet, this sill cause a
                 // reload from disk. No matter where it comes from, always OK to try and update cache.
                 final SharedAIS sAIS = PersistitStoreSchemaManager.this.getAISInternal(session);
-
-                // Attempt to update cache with our start timestamp, because that is what our snapshot is true for
+                // Attempt to update cache with our start timestamp, because that is what our snapshot is valid for.
                 final long startTime = txnService.getTransactionStartTimestamp(session);
-                System.out.println("Updating cache from timestamp " + startTime + " for " + sAIS);
                 updateLatestAISCache(new AISAndTimestamp(sAIS, startTime));
-                System.out.println("Updated cache from timestamp " + startTime);
                 txnService.commitTransaction(session);
             } finally {
                 txnService.rollbackTransactionIfOpen(session);

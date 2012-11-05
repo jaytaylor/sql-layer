@@ -916,15 +916,9 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 "CREATE INDEX (PARENT)<",
                 "CREATE INDEX (CHILD)<"
         );
-        System.out.println("TEST checking ais");
         final AkibanInformationSchema ais = ais();
-        try {
         assertNotNull("Parent index should exist", ais.getUserTable(SCHEMA, PARENT).getIndex(parentIndex.getIndexName().getName()));
         assertNotNull("Child index should exist", ais.getUserTable(SCHEMA2, TABLE).getIndex(childIndex.getIndexName().getName()));
-        } catch(AssertionError e) {
-            System.out.println("ABORTING");
-            System.exit(1);
-        }
     }
 
 
