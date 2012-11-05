@@ -91,7 +91,7 @@ public abstract class ITBase extends ApiTestBase {
         } finally {
             cursor.close();
         }
-        assertEquals("Scanned row count", expected.length, actualRows.size());
+        assertEquals(expected.length, actualRows.size());
     }
 
     private boolean equal(RowBase expected, RowBase actual, AkCollator[] collators)

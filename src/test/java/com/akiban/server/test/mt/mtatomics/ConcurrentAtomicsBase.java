@@ -126,7 +126,7 @@ class ConcurrentAtomicsBase extends MTBase {
         NewUserTableBuilder childBuilder = builder.userTable(childSchema, TABLE);
         childBuilder.colLong("id", false).colString("name", 32, true).
                 pk("id").key("name", "name").
-                joinTo(parentSchema, PARENT, "__akiban_fk_0").on("id", "id");
+                joinTo(parentSchema, PARENT, "fk_0").on("id", "id");
         if(alteredChild) {
             childBuilder.colString("extra", 32, true);
         } else {

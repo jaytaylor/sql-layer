@@ -481,15 +481,15 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 }
 
                 if((dropBehavior == DropBehavior.RESTRICT) && !userTable.getChildJoins().isEmpty()) {
-                    throw new ReferencedTableException(table);
+                    throw new ReferencedTableException (table);
                 }
 
                 TableName name = userTable.getName();
                 tables.add(name);
                 schemas.add(name.getSchemaName());
                 tableIDs.add(userTable.getTableId());
-                for(Column column : userTable.getColumnsIncludingInternal()) {
-                    if(column.getIdentityGenerator() != null) {
+                for (Column column : userTable.getColumnsIncludingInternal()) {
+                    if (column.getIdentityGenerator() != null) {
                         sequences.add(column.getIdentityGenerator().getSequenceName());
                     }
                 }
@@ -679,9 +679,9 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             return local;
         }
 
-        // Latest is a volatile read. Synchronized block is not required because a concurrent transition to
-        // 1) sentinel     => is already a sentinel or DDL is *pre-commit* and doesn't affect our snapshot
-        // 2) non-sentinel => we see sentinel and don't use the cache anyway
+        // Latest is a volatile read and that is all that is required. If it is a valid cache, it can only
+        // transition to non-valid (pre-committed DDL that doesn't affect out read validity) or the same
+        // snapshot with a higher timestamp. See checks in updateLatestAISCache.
         final AISAndTimestamp cached = latestAISCache;
         final long startTimestamp = txnService.getTransactionStartTimestamp(session);
         if(cached.isUsableForStartTime(startTimestamp)) {
@@ -889,8 +889,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         this.enqueueClearAndUpdateCallback = new Callback() {
             @Override
             public void run(Session session, long timestamp) {
-                taskQueue.offer(new UpdateLatestCacheTask(0, 1000));
-                taskQueue.offer(new ClearAISMapTask(1000, 10000));
+                taskQueue.add(new UpdateLatestCacheTask(0));
+                taskQueue.add(new ClearAISMapTask(1000, 10000));
             }
         };
     }
@@ -945,16 +945,16 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 session,
                 new TreeVisitor() {
                     @Override
-                    public void visit(Exchange ex) throws PersistitException {
+                    public void visit(Exchange ex) throws PersistitException{
                         SerializationType typeForVolume = detectSerializationType(session, ex);
                         switch(typeForVolume) {
                             case NONE:
                                 // Empty tree, nothing to do
-                                break;
+                            break;
                             case PROTOBUF:
                                 checkAndSetSerialization(typeForVolume);
                                 loadProtobuf(ex, newAIS);
-                                break;
+                            break;
                             default:
                                 throw new UnsupportedMetadataTypeException(typeForVolume.name());
                         }
@@ -1280,6 +1280,9 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 new TreeVisitor() {
                     @Override
                     public void visit(final Exchange ex) throws PersistitException {
+                        // Don't reload memory table definitions
+                        ex.clear().append(AIS_MEMORY_TABLE_KEY).remove();
+                        // Clear old trees
                         ex.clear().append(DELAYED_TREE_KEY);
                         KeyFilter filter = new KeyFilter().append(KeyFilter.simpleTerm(DELAYED_TREE_KEY));
                         while(ex.traverse(Key.Direction.GT, filter, Integer.MAX_VALUE)) {
@@ -1439,7 +1442,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         UserTable mergedTable = newAIS.getUserTable(newName);
 
         if(version == null) {
-            version = 0;
+            version = 0; // New user or memory table
         }
         tableVersionMap.putNewKey(mergedTable.getTableId(), version);
         mergedTable.setVersion(version);
@@ -1643,13 +1646,14 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     private class UpdateLatestCacheTask extends QueueTask {
-        protected UpdateLatestCacheTask(long initialDelay, long rescheduleDelay) {
-            super(initialDelay, rescheduleDelay);
+        /** No reschedule as that would mess with the oustanding count **/
+        protected UpdateLatestCacheTask(long initialDelay) {
+            super(initialDelay);
         }
 
         @Override
         public UpdateLatestCacheTask cloneTask() {
-            return new UpdateLatestCacheTask(rescheduleDelay, rescheduleDelay);
+            return new UpdateLatestCacheTask(initialDelay);
         }
 
         @Override

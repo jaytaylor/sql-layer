@@ -27,6 +27,7 @@
 package com.akiban.server.test.it.dxl;
 
 import com.akiban.ais.model.AISBuilder;
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -113,17 +114,19 @@ public class AlterTableCAOIIT extends AlterTableITBase {
     }
 
     private void groupsMatch(TableName name1, TableName... names) {
-        UserTable t1 = getUserTable(name1);
+        AkibanInformationSchema ais = ais();
+        UserTable t1 = ais.getUserTable(name1);
         for(TableName name : names) {
-            UserTable t2 = getUserTable(name);
+            UserTable t2 = ais.getUserTable(name);
             assertSame("Groups match for " + name1 + " and " + name, t1.getGroup(), t2.getGroup());
         }
     }
 
     private void groupsDiffer(TableName name1, TableName... names) {
-        UserTable t1 = getUserTable(name1);
+        AkibanInformationSchema ais = ais();
+        UserTable t1 = ais.getUserTable(name1);
         for(TableName name : names) {
-            UserTable t2 = getUserTable(name);
+            UserTable t2 = ais.getUserTable(name);
             assertNotSame("Groups differ for " + name1 + " and " + name, t1.getGroup(), t2.getGroup());
         }
     }
