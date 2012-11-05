@@ -70,6 +70,8 @@ import com.akiban.server.service.dxl.DXLTestHooks;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.PersistitStoreSchemaManager;
+import com.akiban.server.store.SchemaManager;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.t3expressions.TCastResolver;
 import com.akiban.server.types.ValueSource;
@@ -485,7 +487,16 @@ public class ApiTestBase {
         return aisGeneration;
     }
 
+    protected void waitForStableAIS() {
+        SchemaManager sm = serviceManager().getSchemaManager();
+        if(sm instanceof PersistitStoreSchemaManager) {
+            PersistitStoreSchemaManager pssm = (PersistitStoreSchemaManager) sm;
+            pssm.waitForQueueToEmpty(1000);
+        }
+    }
+
     protected final void updateAISGeneration() {
+        waitForStableAIS();
         aisGeneration = ddl().getGenerationAsInt(session());
     }
 

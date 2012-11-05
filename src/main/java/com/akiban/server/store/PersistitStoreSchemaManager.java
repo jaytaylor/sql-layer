@@ -890,7 +890,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             @Override
             public void run(Session session, long timestamp) {
                 taskQueue.add(new UpdateLatestCacheTask(0));
-                taskQueue.add(new ClearAISMapTask(1000, 10000));
+                taskQueue.add(new ClearAISMapTask(0, 10000));
             }
         };
     }
@@ -1340,14 +1340,21 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     // Package for tests
-    void waitForQueueToEmpty(long maxWaitMillis) {
+    public boolean waitForQueueToEmpty(long maxWaitMillis) {
+        final int SHORT_WAIT_MILLIS = 5;
+        final long endNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(maxWaitMillis);
         while(!taskQueue.isEmpty()) {
+            final long remaining = endNanos - System.nanoTime();
+            if(remaining < 0) {
+                return false;
+            }
             try {
-                Thread.sleep(maxWaitMillis);
+                Thread.sleep(SHORT_WAIT_MILLIS, 0);
             } catch(InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }
+        return true;
     }
 
     private Exchange schemaTreeExchange(Session session, String schema) {
