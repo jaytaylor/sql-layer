@@ -679,7 +679,7 @@ public class AkibanInformationSchema implements Traversable
         sqljJars.remove(jarName);
         Schema schema = getSchema(jarName.getSchemaName());
         if (schema != null) {
-            schema.removeRoutine(jarName.getTableName());
+            schema.removeSQLJJar(jarName.getTableName());
         }
     }
 
