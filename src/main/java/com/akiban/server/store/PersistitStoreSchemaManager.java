@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -226,6 +227,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private static final String AIS_KEY_PREFIX = "by";
     private static final String AIS_METAMODEL_PARENT_KEY = AIS_KEY_PREFIX + "AIS";
     private static final String AIS_PROTOBUF_PARENT_KEY = AIS_KEY_PREFIX + "PBAIS";
+    private static final String AIS_MEMORY_TABLE_KEY = AIS_KEY_PREFIX + "PBMEMAIS";
     private static final String DELAYED_TREE_KEY = "delayedTree";
 
     private static final int SCHEMA_GEN_ACCUM_INDEX = 0;
@@ -266,6 +268,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private TransactionService.Callback enqueueClearAndUpdateCallback;
     private BlockingQueue<QueueTask> taskQueue;
     private Thread queueConsumer;
+    private Map<TableName,MemoryTableFactory> memoryTableFactories;
 
     @Inject
     public PersistitStoreSchemaManager(ConfigurationService config, SessionService sessionService,
@@ -304,6 +307,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         if(factory == null) {
             throw new IllegalArgumentException("MemoryTableFactory may not be null");
         }
+        memoryTableFactories.put(newTable.getName(), factory); // TODO: Fragile?
         transactionally(sessionService.createSession(), new ThrowingRunnable() {
             @Override
             public void run(Session session) throws PersistitException {
@@ -321,6 +325,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 dropTableCommon(session, tableName, DropBehavior.RESTRICT, true, true);
             }
         });
+        memoryTableFactories.remove(tableName);
     }
 
     @Override
@@ -491,8 +496,12 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         final AkibanInformationSchema newAIS = removeTablesFromAIS(session, tables, sequences);
         bumpTableVersions(newAIS, tableIDs);
 
-        saveAISChangeWithRowDefs(session, newAIS, schemas);
-        //deleteTableStatuses(tableIDs); // Cannot transactionally remove IDs easily, so don't
+        if(table.hasMemoryTableFactory()) {
+            unSavedAISChangeWithRowDefs(session, newAIS);
+        } else {
+            saveAISChangeWithRowDefs(session, newAIS, schemas);
+            //deleteTableStatuses(tableIDs); // Cannot transactionally remove IDs easily, so don't
+        }
     }
 
     private void deleteTableStatuses(List<Integer> tableIDs) throws PersistitException {
@@ -830,6 +839,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                                                               config.getProperty(DEFAULT_COLLATION));
 
         this.aisMap = ReadWriteMap.wrapNonFair(new HashMap<Long,SharedAIS>());
+        this.memoryTableFactories = new HashMap<TableName,MemoryTableFactory>();
 
         AkibanInformationSchema newAIS = transactionally(
                 sessionService.createSession(),
@@ -898,6 +908,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         this.taskQueue.clear();
         this.taskQueue = null;
         this.queueConsumer = null;
+        this.memoryTableFactories = null;
         AIS_TIMESTAMP_SENTINEL.sAIS.refCount.set(0);
     }
 
@@ -948,6 +959,12 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 },
                 SCHEMA_TREE_NAME
         );
+        for(Map.Entry<TableName,MemoryTableFactory> entry : memoryTableFactories.entrySet()) {
+            UserTable table = newAIS.getUserTable(entry.getKey());
+            if(table != null) {
+                table.setMemoryTableFactory(entry.getValue());
+            }
+        }
         return validateAndFreeze(session, newAIS, genValue, genMap);
     }
 
@@ -969,6 +986,13 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 throw new UnsupportedMetadataVersionException(PROTOBUF_PSSM_VERSION, storedVersion);
             }
 
+            byte[] storedAIS = ex.getValue().getByteArray();
+            GrowableByteBuffer buffer = GrowableByteBuffer.wrap(storedAIS);
+            reader.loadBuffer(buffer);
+        }
+
+        ex.clear().append(AIS_MEMORY_TABLE_KEY).fetch();
+        if(ex.getValue().isDefined()) {
             byte[] storedAIS = ex.getValue().getByteArray();
             GrowableByteBuffer buffer = GrowableByteBuffer.wrap(storedAIS);
             reader.loadBuffer(buffer);
@@ -1037,6 +1061,41 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         }
     }
 
+    private void saveMemoryTables(Exchange ex, GrowableByteBuffer buffer, AkibanInformationSchema newAIS) throws PersistitException {
+        // Want *just* the memory tables
+        final ProtobufWriter.WriteSelector selector = new ProtobufWriter.TableFilterSelector() {
+            @Override
+            public Columnar getSelected(Columnar columnar) {
+                if(columnar.isAISTable() && ((UserTable)columnar).hasMemoryTableFactory()) {
+                    return columnar;
+                }
+                return null;
+            }
+
+            @Override
+            public boolean isSelected(Sequence sequence) {
+                return false;
+            }
+
+            @Override
+            public boolean isSelected(Routine routine) {
+                return false;
+            }
+
+            @Override
+            public boolean isSelected(SQLJJar sqljJar) {
+                return false;
+            }
+        };
+
+        buffer.clear();
+        new ProtobufWriter(buffer, selector).save(newAIS);
+        buffer.flip();
+        ex.clear().append(AIS_MEMORY_TABLE_KEY);
+        ex.getValue().clear().putByteArray(buffer.array(), buffer.position(), buffer.limit());
+        ex.store();
+    }
+
     private SharedAIS validateAndFreeze(Session session, AkibanInformationSchema newAIS, GenValue genValue, GenMap genMap) {
         newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary(); // TODO: Often redundant, cleanup
         long generation = (genValue == GenValue.NEW) ? getNextGeneration(session) : getGenerationSnapshot(session);
@@ -1096,6 +1155,11 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         }
     }
 
+    private GrowableByteBuffer newByteBufferForSavingAIS() {
+        int maxSize = maxAISBufferSize == 0 ? Integer.MAX_VALUE : maxAISBufferSize;
+        return new GrowableByteBuffer(4096, 4096, maxSize);
+    }
+
     /**
      * Internal helper for saving an AIS change to storage. This includes create, delete, alter, etc.
      *
@@ -1104,8 +1168,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
      * @param schemaNames The schemas affected by the change
      */
     private void saveAISChangeWithRowDefs(Session session, AkibanInformationSchema newAIS, Collection<String> schemaNames) {
-        int maxSize = maxAISBufferSize == 0 ? Integer.MAX_VALUE : maxAISBufferSize;
-        GrowableByteBuffer byteBuffer = new GrowableByteBuffer(4096, 4096, maxSize);
+        GrowableByteBuffer byteBuffer = newByteBufferForSavingAIS();
         Exchange ex = null;
         try {
             validateAndFreeze(session, newAIS, GenValue.NEW, GenMap.NO_PUT);
@@ -1118,7 +1181,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             buildRowDefCache(newAIS);
             addCallbacksForAISChange(session);
         } catch(BufferOverflowException e) {
-            throw new AISTooLargeException(maxSize);
+            throw new AISTooLargeException(byteBuffer.getMaxBurstSize());
         } catch(PersistitException e) {
             throw wrapPersistitException(session, e);
         } finally {
@@ -1128,8 +1191,27 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         }
     }
 
+    private void serializeMemoryTables(Session session, AkibanInformationSchema newAIS) throws PersistitException {
+        GrowableByteBuffer byteBuffer = newByteBufferForSavingAIS();
+        Exchange ex = null;
+        try {
+            Schema schema = newAIS.getSchema(TableName.INFORMATION_SCHEMA);
+            ex = schemaTreeExchange(session, schema.getName());
+            saveMemoryTables(ex, byteBuffer, newAIS);
+            treeService.releaseExchange(session, ex);
+            ex = null;
+        } catch(BufferOverflowException e) {
+            throw new AISTooLargeException(byteBuffer.getMaxBurstSize());
+        } finally {
+            if(ex != null) {
+                treeService.releaseExchange(session, ex);
+            }
+        }
+    }
+
     private void unSavedAISChangeWithRowDefs(Session session, AkibanInformationSchema newAIS) {
         try {
+            serializeMemoryTables(session, newAIS);
             validateAndFreeze(session, newAIS, GenValue.NEW, GenMap.NO_PUT);
             buildRowDefCache(newAIS);
             addCallbacksForAISChange(session);
@@ -1354,7 +1436,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         UserTable mergedTable = newAIS.getUserTable(newName);
 
         if(version == null) {
-            version = 0; // New user table
+            version = 0;
         }
         tableVersionMap.putNewKey(mergedTable.getTableId(), version);
         mergedTable.setVersion(version);
