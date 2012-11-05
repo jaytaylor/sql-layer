@@ -64,6 +64,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -324,11 +325,14 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
     @Test
     public void createTableWhileDroppingAnother() throws Exception {
         largeEnoughTable(5000);
-        final String uniqueTableName = TABLE + "thesnowman";
+        final TableName newTableName = new TableName(SCHEMA2, TABLE + "thesnowman");
 
         NewAISBuilder builder = AISBBasedBuilder.create();
-        builder.userTable(SCHEMA2, uniqueTableName).colLong("id", false).pk("id");
-        final UserTable tableToCreate = builder.ais().getUserTable(SCHEMA2, uniqueTableName);
+        builder.userTable(newTableName).colLong("id", false).pk("id");
+        final UserTable tableToCreate = builder.ais().getUserTable(newTableName);
+
+        Set<TableName> expectedTableNames = new TreeSet<TableName>(ais().getUserTables().keySet());
+        expectedTableNames.remove(TABLE_NAME);
 
         TimedCallable<Void> dropTable = new TimedCallable<Void>() {
             @Override
@@ -379,20 +383,16 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                     "<CREATE",
                     "<DROP"
             };
+            expectedTableNames.add(newTableName);
         }
 
         new TimePointsComparison(dropResult, createResult).verify(expected);
 
-        Set<TableName> userTableNames = new HashSet<TableName>();
-        for (UserTable userTable : ddl().getAIS(session()).getUserTables().values()) {
-            if (!TableName.INFORMATION_SCHEMA.equals(userTable.getName().getSchemaName())) {
-                userTableNames.add(userTable.getName());
-            }
-        }
+        Set<TableName> actualTableNames = new TreeSet<TableName>(ais().getUserTables().keySet());
         assertEquals(
                 "user tables at end",
-                Collections.singleton(new TableName(SCHEMA, TABLE+"parent")),
-                userTableNames
+                expectedTableNames,
+                actualTableNames
         );
     }
 
@@ -918,7 +918,8 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         );
         final AkibanInformationSchema ais = ais();
         assertNotNull("Parent index should exist", ais.getUserTable(SCHEMA, PARENT).getIndex(parentIndex.getIndexName().getName()));
-        assertNotNull("Child index should exist", ais.getUserTable(SCHEMA2, TABLE).getIndex(childIndex.getIndexName().getName()));
+        assertNotNull("Child index should exist",
+                      ais.getUserTable(SCHEMA2, TABLE).getIndex(childIndex.getIndexName().getName()));
     }
 
 
