@@ -111,7 +111,7 @@ class IndexCursorSpatial_InBox extends IndexCursor
         assert keyRange.spatial();
         this.multiCursor = new MultiCursor();
         this.iterationHelper = iterationHelper;
-        TableIndex spatialIndex = (TableIndex) keyRange.indexRowType().index();
+        Index spatialIndex = keyRange.indexRowType().index();
         assert spatialIndex.isSpatial() : spatialIndex;
         this.space = spatialIndex.space();
         this.latColumn = spatialIndex.firstSpatialArgument();

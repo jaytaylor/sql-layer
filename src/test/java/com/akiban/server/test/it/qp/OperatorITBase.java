@@ -258,17 +258,34 @@ public class OperatorITBase extends ITBase
         return userTableRowDef.userTable();
     }
 
-    protected IndexRowType indexType(int userTableId, String... searchIndexColumnNamesArray)
+    protected IndexRowType indexType(int userTableId, String... columnNamesArray)
     {
+        List<String> searchIndexColumnNames = Arrays.asList(columnNamesArray);
         UserTable userTable = userTable(userTableId);
         for (Index index : userTable.getIndexesIncludingInternal()) {
             List<String> indexColumnNames = new ArrayList<String>();
             for (IndexColumn indexColumn : index.getKeyColumns()) {
                 indexColumnNames.add(indexColumn.getColumn().getName());
             }
-            List<String> searchIndexColumnNames = Arrays.asList(searchIndexColumnNamesArray);
             if (searchIndexColumnNames.equals(indexColumnNames)) {
                 return schema.userTableRowType(userTable(userTableId)).indexRowType(index);
+            }
+        }
+        return null;
+    }
+
+    protected IndexRowType groupIndexType(TableName groupName, String... columnNamesArray)
+    {
+        List<String> searchIndexColumnNames = Arrays.asList(columnNamesArray);
+        for (Index index : ais().getGroup(groupName).getIndexes()) {
+            List<String> indexColumnNames = new ArrayList<String>();
+            for (IndexColumn indexColumn : index.getKeyColumns()) {
+                Column column = indexColumn.getColumn();
+                indexColumnNames.add(String.format("%s.%s",
+                                                   column.getTable().getName().getTableName(), column.getName()));
+            }
+            if (searchIndexColumnNames.equals(indexColumnNames)) {
+                return schema.indexRowType(index);
             }
         }
         return null;

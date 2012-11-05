@@ -146,7 +146,7 @@ public abstract class IndexRowType extends AisRowType
                 Column column = indexColumns.get(i).getColumn();
                 akTypes[i] = column.getType().akType();
             }
-            spatialIndexRowType = index.isSpatial() ? new Spatial(schema, tableType, (TableIndex)index) : null;
+            spatialIndexRowType = index.isSpatial() ? new Spatial(schema, tableType, index) : null;
         }
 
         // For a spatial index, the IndexRowType reflects the declared columns. physicalRowType reflects the
@@ -163,14 +163,14 @@ public abstract class IndexRowType extends AisRowType
             return null;
         }
 
-        public Spatial(Schema schema, UserTableRowType tableType, TableIndex index)
+        public Spatial(Schema schema, UserTableRowType tableType, Index index)
         {
             super(schema, tableType, index, index.getAllColumns().size() - index.dimensions() + 1);
             List<IndexColumn> indexColumns = index.getAllColumns();
             int i = 0, t = 0;
             while (i < indexColumns.size()) {
                 if (i == index.firstSpatialArgument()) {
-                    akTypes[t++] = AkType.LONG;;
+                    akTypes[t++] = AkType.LONG;
                     i += index.dimensions();
                 }
                 else {
@@ -182,13 +182,13 @@ public abstract class IndexRowType extends AisRowType
 
         @Override
         public TInstance typeInstanceAt(int i) {
-            int firstSpatial = ((TableIndex)index()).firstSpatialArgument();
+            int firstSpatial = index().firstSpatialArgument();
             if (i < firstSpatial)
                 return super.typeInstanceAt(i);
             else if (i == firstSpatial)
                 return MNumeric.BIGINT.instance(false);
             else
-                return super.typeInstanceAt(i + ((TableIndex)index()).dimensions() - 1);
+                return super.typeInstanceAt(i + index().dimensions() - 1);
         }
     }
 }

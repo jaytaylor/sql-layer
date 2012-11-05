@@ -28,16 +28,9 @@ package com.akiban.sql.server;
 
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.optimizer.OperatorCompiler;
-import com.akiban.sql.optimizer.rule.BaseRule;
-import com.akiban.sql.parser.DMLStatementNode;
-
-import com.akiban.server.service.EventTypes;
-import com.akiban.server.service.instrumentation.SessionTracer;
 
 public abstract class ServerOperatorCompiler extends OperatorCompiler
 {
-    protected SessionTracer tracer;
-
     protected ServerOperatorCompiler() {
     }
 
@@ -63,29 +56,6 @@ public abstract class ServerOperatorCompiler extends OperatorCompiler
         server.getBinderContext().setBinderAndTypeComputer(binder, typeComputer);
 
         server.setAttribute("compiler", this);
-
-        tracer = server.getSessionTracer();
-    }
-
-    @Override
-    protected DMLStatementNode bindAndTransform(DMLStatementNode stmt)  {
-        try {
-            tracer.beginEvent(EventTypes.BIND_AND_GROUP); // TODO: rename.
-            return super.bindAndTransform(stmt);
-        } 
-        finally {
-            tracer.endEvent();
-        }
-    }
-
-    @Override
-    public void beginRule(BaseRule rule) {
-        tracer.beginEvent(rule.getTraceName());
-    }
-
-    @Override
-    public void endRule(BaseRule rule) {
-        tracer.endEvent();
     }
 
 }

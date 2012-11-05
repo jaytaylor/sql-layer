@@ -30,7 +30,7 @@ import com.akiban.server.AkServerInterface;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.instrumentation.InstrumentationService;
+import com.akiban.server.service.monitor.MonitorService;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.servicemanager.ServiceManagerBase;
 import com.akiban.server.service.session.SessionService;
@@ -80,5 +80,5 @@ public interface ServiceManager extends ServiceManagerBase {
 
     boolean serviceIsStarted(Class<?> serviceClass);
     
-    InstrumentationService getInstrumentationService();
+    MonitorService getMonitorService();
 }

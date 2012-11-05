@@ -146,8 +146,9 @@ public class DDLGenerator
             }
         }
         if (column.getNullable() == false) {
-            declaration.append(" NOT NULL");
+            declaration.append(" NOT");
         }
+        declaration.append(" NULL");
         if (column.getInitialAutoIncrementValue() != null) {
             declaration.append(" AUTO_INCREMENT");
         }

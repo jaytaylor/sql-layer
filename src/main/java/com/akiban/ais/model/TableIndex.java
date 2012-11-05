@@ -27,8 +27,6 @@
 package com.akiban.ais.model;
 
 import com.akiban.ais.model.validation.AISInvariants;
-import com.akiban.server.geophile.Space;
-import com.akiban.server.geophile.SpaceLatLon;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -51,14 +49,6 @@ public class TableIndex extends Index
         TableIndex index = new TableIndex(table, indexName, indexId, isUnique, constraint);
         table.addIndex(index);
         return index;
-    }
-
-    public String toString()
-    {
-        return
-            isSpatial()
-            ? super.toString() + space.toString()
-            : super.toString();
     }
 
     /**
@@ -106,7 +96,7 @@ public class TableIndex extends Index
         }
         // Add leafward-biased hkey fields not already included
         int indexColumnPosition = indexColumns.size();
-        hKeyColumns = new ArrayList<IndexColumn>();
+        List<IndexColumn> hKeyColumns = new ArrayList<IndexColumn>();
         HKey hKey = hKey();
         for (HKeySegment hKeySegment : hKey.segments()) {
             // TODO: ordinalMap is null if this function is called while marking an index as spatial.
@@ -188,42 +178,6 @@ public class TableIndex extends Index
         return uniqueAndMayContainNulls;
     }
 
-    @Override
-    public IndexMethod getIndexMethod()
-    {
-        if (space != null)
-            return IndexMethod.Z_ORDER_LAT_LON;
-        else
-            return IndexMethod.NORMAL;
-    }
-
-    public void markSpatial(int firstSpatialArgument, int dimensions)
-    {
-        checkMutability();
-        if (dimensions != Space.LAT_LON_DIMENSIONS) {
-            // Only lat/lon for now
-            throw new IllegalArgumentException();
-        }
-        this.firstSpatialArgument = firstSpatialArgument;
-        this.space = SpaceLatLon.create();
-    }
-
-    public int firstSpatialArgument()
-    {
-        return firstSpatialArgument;
-    }
-
-    public int dimensions()
-    {
-        // Only lat/lon for now
-        return Space.LAT_LON_DIMENSIONS;
-    }
-
-    public Space space()
-    {
-        return space;
-    }
-
     // For a user table index: the user table hkey
     // For a group table index: the hkey of the leafmost user table, but with user table columns replaced by
     // group table columns.
@@ -238,11 +192,6 @@ public class TableIndex extends Index
 
     private final Table table;
     private HKey hKey;
-    private List<IndexColumn> hKeyColumns;
     private IndexToHKey indexToHKey;
     private boolean uniqueAndMayContainNulls;
-    // For a spatial index
-    private Space space;
-    private int firstSpatialArgument;
-
 }

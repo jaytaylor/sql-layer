@@ -24,24 +24,10 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service;
+package com.akiban.server.types3;
 
-public class EventTypes {
-    
-    public static final String PROCESS = "sql: process";
-    
-    public static final String PARSE = "sql: parse";
-    
-    public static final String OPTIMIZE = "sql: optimize";
-    
-    public static final String COMPILE = "sql: optimize: compile";
-    
-    public static final String BIND_AND_GROUP = "sql: optimize: bindandgroup";
-    
-    public static final String PICK_BEST_INDEX = "sql: optimize: pickbestindex";
-    
-    public static final String FLATTEN = "sql: optimize: flatten";
-    
-    public static final String EXECUTE = "sql: execute";
+import com.akiban.server.types3.pvalue.PValueSource;
 
+public interface TComparison {
+    int compare(TInstance leftInstance, PValueSource left, TInstance rightInstance, PValueSource right);
 }

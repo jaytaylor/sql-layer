@@ -166,8 +166,12 @@ public class GroupIndex extends Index
 
     public static GroupIndex create(AkibanInformationSchema ais, Group group, GroupIndex index)
     {
-        return create(ais, group, index.getIndexName().getName(), index.getIndexId(),
-                      index.isUnique(), index.getConstraint(), index.getJoinType());
+        GroupIndex copy = create(ais, group, index.getIndexName().getName(), index.getIndexId(),
+                                 index.isUnique(), index.getConstraint(), index.getJoinType());
+        if (index.getIndexMethod() == IndexMethod.Z_ORDER_LAT_LON) {
+            copy.markSpatial(index.firstSpatialArgument(), index.dimensions());
+        }
+        return copy;
     }
 
     public static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,

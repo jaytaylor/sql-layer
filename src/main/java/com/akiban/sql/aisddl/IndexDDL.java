@@ -32,23 +32,18 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.akiban.ais.AISCloner;
+import com.akiban.ais.model.*;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.server.error.*;
 import com.akiban.sql.parser.*;
+import com.akiban.sql.parser.IndexColumn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.service.session.Session;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.QueryContext;
 
 /** DDL operations on Indices */
@@ -305,7 +300,13 @@ public class IndexDDL
         AISBuilder builder = new AISBuilder();
         clone(builder, ais);
         builder.groupIndex(groupName, indexName, index.getUniqueness(), joinType);
-        
+        GroupIndex groupIndex = builder.akibanInformationSchema().getGroup(groupName).getIndex(indexName);
+        IndexColumnList indexColumns = index.getColumnList();
+        boolean indexIsSpatial = indexColumns.functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON;
+        if (indexIsSpatial) {
+            groupIndex.markSpatial(indexColumns.firstFunctionArg(),
+                                   indexColumns.lastFunctionArg() + 1 - indexColumns.firstFunctionArg());
+        }
         int i = 0;
         String schemaName;
         TableName columnTable;
@@ -334,6 +335,10 @@ public class IndexDDL
             
             builder.groupIndexColumn(groupName, indexName, schemaName, columnTable.getTableName(), columnName, i);
             i++;
+        }
+        // Can't check isSpatialCompatible before the index columns have been added.
+        if (indexIsSpatial && !Index.isSpatialCompatible(groupIndex)) {
+            throw new BadSpatialIndexException(indexName, index);
         }
         builder.basicSchemaIsComplete();
         return builder.akibanInformationSchema().getGroup(groupName).getIndex(indexName);

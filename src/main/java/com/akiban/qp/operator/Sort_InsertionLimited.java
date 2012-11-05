@@ -478,6 +478,8 @@ class Sort_InsertionLimited extends Operator
         }
 
         private Comparable toObject(PValueSource valueSource) {
+            if (valueSource.isNull())
+                return null;
             switch (valueSource.getUnderlyingType()) {
             case BOOL:
                 return valueSource.getBoolean();

@@ -305,7 +305,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         int firstSpatialColumn, dimensions;
         SpecialIndexExpression.Function spatialFunction;
         if (index.getIndex().isSpatial()) {
-            TableIndex spatialIndex = (TableIndex)index.getIndex();
+            Index spatialIndex = index.getIndex();
             firstSpatialColumn = spatialIndex.firstSpatialArgument();
             dimensions = spatialIndex.dimensions();
             assert (dimensions == Space.LAT_LON_DIMENSIONS);

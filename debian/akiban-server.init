@@ -12,6 +12,7 @@
 # Author: Padraig O'Sullivan <posullivan@akiban.com>
 
 export JAR_FILE=/usr/share/akiban/akiban-server.jar
+export DEP_DIR=/usr/share/akiban/server
 export AKIBAN_CONF=/etc/akiban
 export AKIBAN_OWNR=akiban
 SELF=$(cd $(dirname $0); pwd -P)/$(basename $0)
@@ -24,11 +25,14 @@ timeout=60
 AKIBAN_PROG=/usr/sbin/akserver
 DAEMON=/usr/sbin/akserver
 
+# Read configuration variable file if it is present
+[ -r /etc/default/$NAME ] && . /etc/default/$NAME
+
 # /var/run is a tmpfs filesystem on ubuntu
 # on reboot and during upgrades, its contents can be wiped
 if [ ! -d $PIDFILE_DIR ]; then
     mkdir $PIDFILE_DIR
-    chown akiban $PIDFILE_DIR
+    chown $AKIBAN_OWNR $PIDFILE_DIR
 fi
 
 [ -e /usr/share/akiban/akiban-server.jar ] || exit 0
@@ -36,9 +40,6 @@ fi
 
 # read akiban JVM options
 . /etc/akiban/config/jvm.options
-
-# Read configuration variable file if it is present
-[ -r /etc/default/$NAME ] && . /etc/default/$NAME
 
 if [ -z "$JVM_OPTS" ]; then
     echo "Initialization failed; \$JVM_OPTS not set!" >&2
@@ -73,7 +74,7 @@ is_running()
 check_no_process()
 {
     if [ ! -e "$pidfile" ]; then
-        check_pid=`pgrep -f "jar $JAR_FILE"`
+        check_pid=`pgrep -f "cp $JAR_FILE"`
         if [ "$check_pid" != "" ]; then
             return 1
         fi
@@ -95,7 +96,7 @@ case "$1" in
             exit 1
         fi
         log_daemon_msg "Starting $DESC"
-        start_daemon "$DAEMON --chuid $AKIBAN_OWNR" "-p $pidfile" "-j $JAR_FILE" "-c $AKIBAN_CONF" > $log_file 2>&1 &
+        start_daemon "$DAEMON --chuid $AKIBAN_OWNR" "-p $pidfile" "-j $JAR_FILE" "-d $DEP_DIR" "-c $AKIBAN_CONF" > $log_file 2>&1 &
         # we give server 60 seconds to start all services
         attempts=1
         while [ ! -f $pidfile ]

@@ -56,6 +56,27 @@ public final class PValueSources {
     private static final Logger logger = LoggerFactory.getLogger(PValueSources.class);
 
     /**
+     * Gets a long from one of the signed int methods on source. The source instance must have a non-null raw value
+     * of one of the signed INT types.
+     * @param source the source to extract a long from
+     * @return the source's value as a long
+     */
+    public static long getLong(PValueSource source) {
+        switch (source.getUnderlyingType()) {
+        case INT_8:
+            return source.getInt8();
+        case INT_16:
+            return source.getInt16();
+        case INT_32:
+            return source.getInt32();
+        case INT_64:
+            return source.getInt64();
+        default:
+            throw new UnsupportedOperationException(source.getUnderlyingType().name());
+        }
+    }
+
+    /**
      * Converts AkType to TInstance. Doesn't actually have to do with PValueSources, but this is a convenient place
      * to put it.
      * @param akType the input type
