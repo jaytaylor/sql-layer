@@ -114,8 +114,7 @@ public final class Strongs {
             MNumeric.INT_UNSIGNED,
             MNumeric.BIGINT_UNSIGNED,
             MNumeric.DECIMAL,
-            MApproximateNumber.DOUBLE,
-            AkBool.INSTANCE
+            MApproximateNumber.DOUBLE
     );
     public static final TStrongCasts fromSmallint = TStrongCasts.from(MNumeric.SMALLINT).to(
             MNumeric.MEDIUMINT,
