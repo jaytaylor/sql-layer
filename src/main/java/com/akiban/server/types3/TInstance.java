@@ -114,8 +114,8 @@ public final class TInstance {
         return true;
     }
 
-    public String toStringIgnoringNullability(boolean shorthand) {
-        String className = tclass.toString(shorthand);
+    public String toStringIgnoringNullability() {
+        String className = tclass.toString();
         int nattrs = tclass.nAttributes();
         if (nattrs == 0)
             return className;
@@ -133,15 +133,11 @@ public final class TInstance {
         return sb.toString();
     }
 
-    public String toString(boolean shorthand) {
-        return toStringIgnoringNullability(shorthand) + (isNullable ? " NULL" : " NOT NULL");
-    }
-
     // object interface
 
     @Override
     public String toString() {
-        return toStringIgnoringNullability(false) + (isNullable ? " NULL" : " NOT NULL");
+        return toStringIgnoringNullability() + (isNullable ? " NULL" : " NOT NULL");
     }
 
     @Override
