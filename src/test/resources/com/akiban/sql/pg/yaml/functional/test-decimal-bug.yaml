@@ -1,18 +1,4 @@
 # Tests for bug 1070999
-#vnguyen=> set newtypes to 'true';
-#SET newtypes
-#
-#vnguyen=> create table a (c decimal(15, 3));
-#CREATE TABLE
-#
-#vnguyen=> insert into a values (123456789999.123);
-#INSERT 0 1
-#
-#vnguyen=> select c + 3 from a;
-# _SQL_COL_1
-#------------
-# 2065381906 <<<<<<<<<<<<< This should be 123456790002.123
-#(1 row)
 ---
 - Statement: SET newtypes to 'true';
 ---
@@ -22,4 +8,13 @@
 ---
 - Statement: SELECT c + 3 from a;
 - output: [['123456790002.123']]
+---
+- Statement: DELETE from a;
+---
+- Statement: INSERT INTO a values (123456789123.999);
+---
+- Statement: SELECT c + 0.001 from a;
+- output: [['123456789124.000']]
+---
+- Statement: SET newtypes to DEFAULT;
 ...
