@@ -137,7 +137,10 @@ public final class TInstance {
 
     @Override
     public String toString() {
-        return toStringIgnoringNullability() + (isNullable ? " NULL" : " NOT NULL");
+        String result = toStringIgnoringNullability();
+        if (tclass.nAttributes() != 0) // TODO there's no reason to do this except that it's backwards-compatible
+            result += (isNullable ? " NULL" : " NOT NULL"); // with existing tests.
+        return result;
     }
 
     @Override
