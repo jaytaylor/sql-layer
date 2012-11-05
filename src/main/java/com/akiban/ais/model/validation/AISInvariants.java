@@ -89,9 +89,8 @@ public class AISInvariants {
         int firstSpatialInput = Integer.MAX_VALUE;
         int lastSpatialInput = Integer.MIN_VALUE;
         if (index.isSpatial()) {
-            TableIndex spatialIndex = (TableIndex) index;
-            firstSpatialInput = spatialIndex.firstSpatialArgument();
-            lastSpatialInput = firstSpatialInput + spatialIndex.dimensions() - 1;
+            firstSpatialInput = index.firstSpatialArgument();
+            lastSpatialInput = firstSpatialInput + index.dimensions() - 1;
         }
         for(IndexColumn icol : index.getKeyColumns()) {
             int indexColumnPosition = icol.getPosition();

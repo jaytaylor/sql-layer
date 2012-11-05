@@ -322,8 +322,13 @@ public class DefaultFormatter
     protected void appendIndexScanOperator(Attributes atts) {
         append(atts.getAttribute(Label.INDEX));
         if (verbose) {
-            boolean isSpatial = atts.containsKey(Label.INDEX_KIND) && "SPATIAL".equals(atts.getValue(Label.INDEX_KIND));
-            boolean isGroup = atts.containsKey(Label.INDEX_KIND) && "GROUP".equals(atts.getValue(Label.INDEX_KIND));
+            boolean isSpatial = false;
+            boolean isGroup = false;
+            if (atts.containsKey(Label.INDEX_KIND)) {
+                String indexKind = (String) atts.getValue(Label.INDEX_KIND);
+                isSpatial = indexKind.contains("SPATIAL");
+                isGroup = indexKind.contains("GROUP");
+            }
             int ncols = atts.get(Label.COLUMN_NAME).size();
             int nequals = 0;
             if (atts.containsKey(Label.EQUAL_COMPARAND))

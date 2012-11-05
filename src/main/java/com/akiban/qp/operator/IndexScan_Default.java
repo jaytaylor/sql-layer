@@ -29,9 +29,7 @@ package com.akiban.qp.operator;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -39,10 +37,10 @@ import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.explain.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
-import java.util.List;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 /**
 
@@ -234,19 +232,26 @@ class IndexScan_Default extends Operator
                 hiExprs = indexKeyRange.hi().getExplainer(context).get().get(Label.EXPRESSIONS);
             }
             if (indexKeyRange.spatial()) {
-                atts.put(Label.INDEX_KIND, PrimitiveExplainer.getInstance("SPATIAL"));
-                int nequals = indexKeyRange.boundColumns() - ((TableIndex)index).dimensions();
+                if (index.isGroupIndex()) {
+                    atts.remove(Label.INDEX_KIND);
+                    atts.put(Label.INDEX_KIND, PrimitiveExplainer.getInstance("SPATIAL GROUP"));
+                } else {
+                    atts.put(Label.INDEX_KIND, PrimitiveExplainer.getInstance("SPATIAL"));
+                }
+                int nequals = indexKeyRange.boundColumns() - index.dimensions();
                 if (nequals > 0) {
                     for (int i = 0; i < nequals; i++) {
                         atts.put(Label.EQUAL_COMPARAND, loExprs.get(i));
                     }
                     loExprs = loExprs.subList(nequals, loExprs.size());
-                    if (hiExprs != null)
+                    if (hiExprs != null) {
                         hiExprs = hiExprs.subList(nequals, hiExprs.size());
+                    }
                 }
                 atts.put(Label.LOW_COMPARAND, loExprs);
-                if (hiExprs != null)
+                if (hiExprs != null) {
                     atts.put(Label.HIGH_COMPARAND, hiExprs);
+                }
             }
             else {
                 int boundColumns = indexKeyRange.boundColumns();

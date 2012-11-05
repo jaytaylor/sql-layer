@@ -371,6 +371,7 @@ public final class OverloadResolver<V extends TValidatedOverload> {
         return new OverloadException(sb.toString());
     }
 
+    static int c = 0;
     private boolean isCandidate(V overload,
                                 List<? extends TPreptimeValue> inputs,
                                 ScalarsGroup<V> scalarGroups) {

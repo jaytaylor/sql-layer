@@ -480,10 +480,9 @@ public class ProtobufWriter {
             indexBuilder.setTreeName(index.getTreeName());
         }
         if (index.getIndexMethod() == Index.IndexMethod.Z_ORDER_LAT_LON) {
-            TableIndex spatialIndex = (TableIndex) index;
             indexBuilder.
-                    setFirstSpatialArg(spatialIndex.firstSpatialArgument()).
-                    setDimensions(spatialIndex.dimensions());
+                    setFirstSpatialArg(index.firstSpatialArgument()).
+                    setDimensions(index.dimensions());
 
         }
 

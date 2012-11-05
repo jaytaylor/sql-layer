@@ -24,14 +24,32 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service.instrumentation;
+package com.akiban.server.service.monitor;
 
-public interface InstrumentationMXBean
-{
-    void enableQueryLog();
-    void disableQueryLog();
-    void setQueryLogFileName(String fileName);
-    String getQueryLogFileName();
-    void setExecutionTimeThreshold(long threshold);
-    long getExecutionTimeThreshold();
+import java.util.Collection;
+
+public interface MonitorService {
+    /** Allocate a unique id for a new session. */
+    int allocateSessionId();
+
+    /** Register the given session monitor. */
+    void registerSessionMonitor(SessionMonitor sessionMonitor);
+
+    /** Deregister the given session monitor. */
+    void deregisterSessionMonitor(SessionMonitor sessionMonitor);
+
+    /** Get the session monitor for the given session id. */
+    SessionMonitor getSessionMonitor(int sessionId);
+
+    /** Get all known session monitors. */
+    Collection<SessionMonitor> getSessionMonitors();
+    
+    /** Is query logging turned on? */
+    boolean isQueryLogEnabled();
+
+    /** Log the given SQL to the query log. */
+    void logQuery(int sessionId, String sqlText, long duration, int rowsProcessed);
+
+    /** Log last statement from given monitor. */
+    void logQuery(SessionMonitor sessionMonitor);
 }

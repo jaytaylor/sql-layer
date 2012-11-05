@@ -31,7 +31,7 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.instrumentation.InstrumentationService;
+import com.akiban.server.service.monitor.MonitorService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.servicemanager.configuration.BindingsConfigurationLoader;
@@ -169,8 +169,8 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
     }
 
     @Override
-    public InstrumentationService getInstrumentationService() {
-        return getServiceByClass(InstrumentationService.class);
+    public MonitorService getMonitorService() {
+        return getServiceByClass(MonitorService.class);
     }
 
     @Override

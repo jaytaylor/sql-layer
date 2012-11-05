@@ -1211,10 +1211,11 @@ public class ConstantFolder extends BaseRule
             return result;
         }
 
+        @Override
         public int compare(List<ExpressionNode> r1, List<ExpressionNode> r2) {
             for (int i = 0; i < r1.size(); i++) {
-                Comparable o1 = (Comparable)((ConstantExpression)r1.get(i)).getValue();
-                Comparable o2 = (Comparable)((ConstantExpression)r2.get(i)).getValue();
+                Comparable o1 = asComparable(r1.get(i));
+                Comparable o2 = asComparable(r2.get(i));
                 if (o1 == null) {
                     if (o2 != null) {
                         return +1;
@@ -1229,6 +1230,15 @@ public class ConstantFolder extends BaseRule
                 }
             }
             return 0;
+        }
+
+        private Comparable asComparable(ExpressionNode elem) {
+            // TODO Needed because a TKeyComparison may cause the expressions to not be cast to the same type.
+            // This will only work as long as all TKeyComparisons are between integer types.
+            Comparable result = (Comparable)((ConstantExpression) elem).getValue();
+            if (result instanceof Byte || result instanceof Short || result instanceof Integer)
+                result = ((Number)result).longValue();
+            return result;
         }
 
     }

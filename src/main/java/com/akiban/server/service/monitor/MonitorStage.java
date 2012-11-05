@@ -24,32 +24,10 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.pg;
+package com.akiban.server.service.monitor;
 
-import com.akiban.junit.NamedParameterizedRunner;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.runner.RunWith;
-
-@RunWith(NamedParameterizedRunner.class)
-public class PostgresServerInstrumentedIT extends PostgresServerSelectIT {
-
-    @Before
-    public void enableInstrumentation() throws Exception {
-        serviceManager().getPostgresService().getServer().enableInstrumentation();
-    }
-    
-    @After
-    public void disableInstrumentation() throws Exception {
-        serviceManager().getPostgresService().getServer().disableInstrumentation();
-    }
-    
-    public PostgresServerInstrumentedIT(String caseName, 
-                                        String sql, 
-                                        String expected, 
-                                        String error,
-                                        String[] params) {
-        super(caseName, sql, expected, error, params);
-    }
-
+/** The processing stages for a query session. */
+public enum MonitorStage
+{
+    IDLE, PARSE, OPTIMIZE, EXECUTE, COMMIT
 }

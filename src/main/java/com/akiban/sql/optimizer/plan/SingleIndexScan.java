@@ -263,12 +263,11 @@ public final class SingleIndexScan extends IndexScan {
     @Override
     public boolean isAscendingAt(int i) {
         if (index.isSpatial()) {
-            TableIndex spatialIndex = (TableIndex)index;
-            int firstSpatialColumn = spatialIndex.firstSpatialArgument();
+            int firstSpatialColumn = index.firstSpatialArgument();
             if (i == firstSpatialColumn)
                 return true;
             if (i > firstSpatialColumn)
-                i += spatialIndex.dimensions() - 1;
+                i += index.dimensions() - 1;
         }
         return index.getAllColumns().get(i).isAscending();
     }
@@ -276,12 +275,11 @@ public final class SingleIndexScan extends IndexScan {
     @Override
     public boolean isRecoverableAt(int i) {
         if (index.isSpatial()) {
-            TableIndex spatialIndex = (TableIndex)index;
-            int firstSpatialColumn = spatialIndex.firstSpatialArgument();
+            int firstSpatialColumn = index.firstSpatialArgument();
             if (i == firstSpatialColumn)
                 return false;
             if (i > firstSpatialColumn)
-                i += spatialIndex.dimensions() - 1;
+                i += index.dimensions() - 1;
         }
         return index.getAllColumns().get(i).isRecoverable();
     }

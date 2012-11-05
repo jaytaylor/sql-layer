@@ -42,6 +42,7 @@ import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TKeyComparable;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
@@ -591,7 +592,11 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             TInstance leftTInst = tinst(left);
             TInstance rightTInst = tinst(right);
             boolean nullable = isNullable(left) || isNullable(right);
-            if (TClass.comparisonNeedsCasting(leftTInst, rightTInst)) {
+            TKeyComparable keyComparable = registry.getKeyComparable(tclass(leftTInst), tclass(rightTInst));
+            if (keyComparable != null) {
+                expression.setKeyComparable(keyComparable);
+            }
+            else if (TClass.comparisonNeedsCasting(leftTInst, rightTInst)) {
                 boolean needCasts = true;
                 TCastResolver casts = registry.getCastsResolver();
                 if ( (left.getClass() == ColumnExpression.class)&& (right.getClass() == ConstantExpression.class)) {

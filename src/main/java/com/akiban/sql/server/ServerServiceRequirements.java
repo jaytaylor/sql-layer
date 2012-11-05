@@ -30,7 +30,7 @@ import com.akiban.server.AkServerInterface;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.service.instrumentation.InstrumentationService;
+import com.akiban.server.service.monitor.MonitorService;
 import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
@@ -43,7 +43,7 @@ public final class ServerServiceRequirements {
 
     public ServerServiceRequirements(AkServerInterface akServer,
                                      DXLService dxlService,
-                                     InstrumentationService instrumentation,
+                                     MonitorService monitor,
                                      SessionService sessionService,
                                      Store store,
                                      TreeService treeService,
@@ -55,7 +55,7 @@ public final class ServerServiceRequirements {
                                      TransactionService txnService) {
         this.akServer = akServer;
         this.dxlService = dxlService;
-        this.instrumentation = instrumentation;
+        this.monitor = monitor;
         this.sessionService = sessionService;
         this.store = store;
         this.treeService = treeService;
@@ -75,8 +75,8 @@ public final class ServerServiceRequirements {
         return dxlService;
     }
 
-    public InstrumentationService instrumentation() {
-        return instrumentation;
+    public MonitorService monitor() {
+        return monitor;
     }
 
     public SessionService sessionService() {
@@ -117,7 +117,7 @@ public final class ServerServiceRequirements {
 
     private final AkServerInterface akServer;
     private final DXLService dxlService;
-    private final InstrumentationService instrumentation;
+    private final MonitorService monitor;
     private final SessionService sessionService;
     private final Store store;
     private final TreeService treeService;

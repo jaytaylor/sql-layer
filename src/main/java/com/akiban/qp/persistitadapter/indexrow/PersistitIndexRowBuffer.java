@@ -40,11 +40,7 @@ import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.geophile.Space;
 import com.akiban.server.geophile.SpaceLatLon;
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDataPValueSource;
-import com.akiban.server.rowdata.RowDataSource;
-import com.akiban.server.rowdata.RowDataValueSource;
+import com.akiban.server.rowdata.*;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
@@ -52,7 +48,6 @@ import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.util.ArgumentValidation;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -383,9 +378,8 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
                 int indexField = indexToHKey.getIndexRowPosition(i);
                 if (index.isSpatial()) {
                     // A spatial index has a single key column (the z-value), representing the declared spatial key columns.
-                    TableIndex spatialIndex = (TableIndex)index;
-                    if (indexField > spatialIndex.firstSpatialArgument())
-                        indexField -= spatialIndex.dimensions() - 1;
+                    if (indexField > index.firstSpatialArgument())
+                        indexField -= index.dimensions() - 1;
                 }
                 Key keySource;
                 if (indexField < pKeyFields) {
@@ -437,8 +431,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         }
         this.value = value;
         if (index.isSpatial()) {
-            TableIndex spatialIndex = (TableIndex) index;
-            this.nIndexFields = spatialIndex.getAllColumns().size() - spatialIndex.dimensions() + 1;
+            this.nIndexFields = index.getAllColumns().size() - index.dimensions() + 1;
             this.pKeyFields = this.nIndexFields;
             this.spatialHandler = new SpatialHandler();
         } else {
@@ -602,10 +595,9 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         private final int lastSpatialField;
 
         {
-            TableIndex spatialIndex = (TableIndex) index;
-            space = spatialIndex.space();
+            space = index.space();
             dimensions = space.dimensions();
-            assert spatialIndex.dimensions() == dimensions;
+            assert index.dimensions() == dimensions;
             if (Types3Switch.ON) {
                 tinstances = new TInstance[dimensions];
                 types = null;
@@ -617,7 +609,7 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
             fieldDefs = new FieldDef[dimensions];
             coords = new long[dimensions];
             rowDataSource = (Types3Switch.ON) ? new RowDataPValueSource() : new RowDataValueSource();
-            firstSpatialField = spatialIndex.firstSpatialArgument();
+            firstSpatialField = index.firstSpatialArgument();
             lastSpatialField = firstSpatialField + dimensions - 1;
             for (int d = 0; d < dimensions; d++) {
                 IndexColumn indexColumn = index.getKeyColumns().get(firstSpatialField + d);
