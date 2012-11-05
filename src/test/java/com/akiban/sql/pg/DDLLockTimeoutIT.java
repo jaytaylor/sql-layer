@@ -60,6 +60,9 @@ public class DDLLockTimeoutIT extends PostgresServerITBase
 
     @Test
     public void test() throws Exception {
+        if(!DXLReadWriteLockHook.only().isDDLLockEnabled()) {
+            return;
+        }
         Thread queryThread = new QueryThread();
         Thread ddlThread = new DDLThread();
         queryThread.start();
