@@ -1,0 +1,25 @@
+# test boolean vs tinyint
+---
+- Statement: SET newtypes to 'true';
+---
+- CreateTable: t (c boolean, d double, e varchar(32));
+---
+- Statement: INSERT into t values (1, 2.4, 'abc');
+---
+- Statement: SELECT c IS TRUE, d IS TRUE, e IS TRUE from t;
+- output: [['true', 'true', 'false']]
+---
+- Message: Commented out tests due to bug described in the pivotal story 38991813
+########
+#--- bug: IS TRUE/FALSE/UNKNOWN is tranformed to == TRUE/FALSE/UKNOWN
+#- Statement: SELECT c from t where c IS TRUE;
+#- output: [[1]]
+#---
+#- Statement: SELECT d from t WHERE d     IS TRUE;
+#- output: [['2.4']]
+#---
+#- Statement: SELECT e from t WHERE e IS FALSE;
+#- output: [['abc']]
+---
+- Statement: SET newtypes to DEFAULT;
+...

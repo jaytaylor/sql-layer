@@ -47,6 +47,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.service.functions.FunctionsRegistry;
 
+import com.akiban.sql.IncomparableException;
 import java.util.List;
 
 /**
@@ -132,7 +133,18 @@ public class OperatorCompiler extends SchemaRulesContext
         try {
             binder.bind(stmt);
             stmt = (DMLStatementNode)booleanNormalizer.normalize(stmt);
-            typeComputer.compute(stmt);
+            try
+            {
+                typeComputer.compute(stmt);
+                
+            }
+            catch (IncomparableException e) // catch this and let the resolvers decide
+            {
+                if (!this.usesPValues())
+                    throw new SQLParserInternalException(e);  
+                
+            }
+                    
             stmt = subqueryFlattener.flatten(stmt);
             // TODO: Temporary for safety.
             if (Boolean.parseBoolean(getProperty("eliminate-distincts", "true")))
