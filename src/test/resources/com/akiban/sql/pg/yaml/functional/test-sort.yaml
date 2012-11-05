@@ -12,4 +12,9 @@
 - Statement: SELECT d1, d2 FROM
              (SELECT id, CAST(1 AS DECIMAL(2,1)) AS d1, CAST(1 AS DECIMAL(2,1)) AS d2 FROM t1 LIMIT 5) AS x ORDER BY 1;
 - output: [[1.0, 1.0]]
+---
+- Statement: INSERT INTO t1 values (2, NULL)
+---
+- Statement: SELECT name FROM t1 ORDER BY name LIMIT 5
+- output: [[null], ['foo']]
 ...
