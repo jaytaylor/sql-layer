@@ -15,6 +15,9 @@
 ---
 - Statement: INSERT INTO t1 values (2, NULL)
 ---
-- Statement: SELECT name FROM t1 ORDER BY name LIMIT 5
-- output: [[null], ['foo']]
+- Statement: SELECT id, name FROM t1 ORDER BY name LIMIT 5
+- output: [[2, null], [1, 'foo']]
+---
+- Statement: SELECT id, name FROM t1 ORDER BY id LIMIT 5
+- output: [[1, 'foo'], [2, null]]
 ...
