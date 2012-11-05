@@ -26,7 +26,6 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.message.AkibanConnection;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
@@ -40,9 +39,8 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.expression.std.FieldExpression;
-import com.akiban.server.message.ScanRowsRequest;
+import com.akiban.mysql.adapter.message.ScanRowsRequest;
 import com.akiban.server.rowdata.RowData;
-import com.persistit.Transaction;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -66,21 +64,6 @@ public class IndexScanLexicographicIT extends OperatorITBase
     @Override
     protected void setupCreateSchema()
     {
-/*
-        NetworkService ns = serviceManager().getServiceByClass(NetworkService.class);
-        try {
-            connection = new AkibanConnectionImpl(ns.getNetworkHost(), ns.getNetworkPort());
-        } catch (IOException e) {
-            fail();
-        }
-        transaction = serviceManager().getTreeService().getTransaction(session());
-        try {
-            transaction.end();
-            transaction.begin();
-        } catch (PersistitException e) {
-            fail();
-        }
-*/
         t = createTable(
             "schema", "t",
             "id int not null primary key",
@@ -354,6 +337,4 @@ public class IndexScanLexicographicIT extends OperatorITBase
     private int t;
     private RowType tRowType;
     private IndexRowType idxRowType;
-    private AkibanConnection connection;
-    private Transaction transaction;
 }
