@@ -111,9 +111,6 @@ class ConcurrentAtomicsBase extends MTBase {
         expectFullRows(tableId, endStateExpected.toArray(new NewRow[endStateExpected.size()]));
     }
 
-    protected static List<UserTable> joinedTableTemplates(String parentSchema, String childSchema) {
-        return joinedTableTemplates(parentSchema, childSchema, false, false, false, false);
-    }
     protected static List<UserTable> joinedTableTemplates(String parentSchema, String childSchema,
                                                           boolean extraParentKey, boolean alteredChild,
                                                           boolean extraChildKey, boolean groupIndex) {

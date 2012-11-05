@@ -246,7 +246,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
      * based on timestamp alone will get a stale snapshot. So, the cache can *only* be updated when there are no
      * more outstanding.</p>
      */
-    private static final AISAndTimestamp AIS_TIMESTAMP_SENTINEL = new AISAndTimestamp(new SharedAIS(null), Long.MAX_VALUE);
+    private static final AISAndTimestamp CACHE_SENTINEL = new AISAndTimestamp(new SharedAIS(null), Long.MAX_VALUE);
 
     private static final String CREATE_SCHEMA_FORMATTER = "create schema if not exists `%s`;";
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class.getName());
@@ -883,7 +883,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         this.clearLatestCacheCallback = new Callback() {
             @Override
             public void run(Session session, long timestamp) {
-                updateLatestAISCache(AIS_TIMESTAMP_SENTINEL);
+                updateLatestAISCache(CACHE_SENTINEL);
             }
         };
         this.enqueueClearAndUpdateCallback = new Callback() {
@@ -912,7 +912,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         this.taskQueue = null;
         this.queueConsumer = null;
         this.memoryTableFactories = null;
-        AIS_TIMESTAMP_SENTINEL.sAIS.refCount.set(0);
+        CACHE_SENTINEL.sAIS.refCount.set(0);
     }
 
     @Override
@@ -1130,18 +1130,18 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         // As described in the comment, can't even consider updating cache while there is another outstanding
         // change. The count is 1 while held in the cache, so >1 means other outstanding changes.
         // Synchronized block so we can both change counter on sentinel and write to cache.
-        synchronized(AIS_TIMESTAMP_SENTINEL) {
-            if(latestAISCache == AIS_TIMESTAMP_SENTINEL) {
-                if(newCache == AIS_TIMESTAMP_SENTINEL) {
-                    AIS_TIMESTAMP_SENTINEL.sAIS.acquire();
+        synchronized(CACHE_SENTINEL) {
+            if(latestAISCache == CACHE_SENTINEL) {
+                if(newCache == CACHE_SENTINEL) {
+                    CACHE_SENTINEL.sAIS.acquire();
                 } else {
-                    int count = AIS_TIMESTAMP_SENTINEL.sAIS.release();
+                    int count = CACHE_SENTINEL.sAIS.release();
                     if(count > 1) {
                         LOG.debug("Skipping cache update due to multiple outstanding changes:"+ count);
                         return false;
                     }
                 }
-            } else if(newCache == AIS_TIMESTAMP_SENTINEL) {
+            } else if(newCache == CACHE_SENTINEL) {
                 newCache.sAIS.acquire();
             } else {
                 // Can happen if pre-commit hook doesn't get called (i.e. failure after SchemaManager call).
