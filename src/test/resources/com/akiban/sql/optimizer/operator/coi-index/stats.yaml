@@ -441,7 +441,7 @@ Statistics:
     lt: 293
   - distinct: 6
     eq: 114
-    key: [0128]
+    key: ['0128']
     lt: 615
   - distinct: 18
     eq: 112
@@ -449,7 +449,7 @@ Statistics:
     lt: 1743
   - distinct: 0
     eq: 110
-    key: [0148]
+    key: ['0148']
     lt: 0
   - distinct: 3
     eq: 117
@@ -473,7 +473,7 @@ Statistics:
     lt: 482
   - distinct: 32
     eq: 120
-    key: [0195]
+    key: ['0195']
     lt: 3078
   - distinct: 5
     eq: 112
@@ -517,11 +517,11 @@ Statistics:
     lt: 0
   - distinct: 2
     eq: 112
-    key: [0258]
+    key: ['0258']
     lt: 191
   - distinct: 0
     eq: 120
-    key: [0259]
+    key: ['0259']
     lt: 0
   - distinct: 1
     eq: 115
@@ -533,15 +533,15 @@ Statistics:
     lt: 1273
   - distinct: 16
     eq: 120
-    key: [0292]
+    key: ['0292']
     lt: 1538
   - distinct: 0
     eq: 112
-    key: [0293]
+    key: ['0293']
     lt: 0
   - distinct: 5
     eq: 116
-    key: [0299]
+    key: ['0299']
     lt: 483
 Table: items
 Timestamp: 2012-01-18T00:23:43.431Z

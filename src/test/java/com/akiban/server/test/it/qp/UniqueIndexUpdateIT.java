@@ -43,8 +43,8 @@ import static org.junit.Assert.*;
 
 public class UniqueIndexUpdateIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         t = createTable(
             "schema", "t",
@@ -53,6 +53,11 @@ public class UniqueIndexUpdateIT extends OperatorITBase
             "y int",
             "primary key (id)");
         createUniqueIndex("schema", "t", "idx_xy", "x", "y");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         xyIndexRowType = indexType(t, "x", "y");

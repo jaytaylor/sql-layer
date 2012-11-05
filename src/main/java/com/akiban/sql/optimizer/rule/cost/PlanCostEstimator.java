@@ -35,7 +35,6 @@ import static com.akiban.sql.optimizer.rule.cost.CostEstimator.simpleRound;
 import com.akiban.sql.optimizer.plan.*;
 
 import com.akiban.ais.model.Group;
-import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.geophile.SpaceLatLon;
@@ -179,7 +178,7 @@ public class PlanCostEstimator
             int nscans = 1;
             FunctionExpression func = (FunctionExpression)index.getLowComparand();
             List<ExpressionNode> operands = func.getOperands();
-            SpaceLatLon space = (SpaceLatLon)((TableIndex)index.getIndex()).space();
+            SpaceLatLon space = (SpaceLatLon)index.getIndex().space();
             if ("_center".equals(func.getFunction())) {
                 nscans = 2;     // One in each direction.
                 costEstimate = costEstimator.costIndexScan(index.getIndex(),

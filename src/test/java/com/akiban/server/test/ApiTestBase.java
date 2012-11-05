@@ -628,8 +628,9 @@ public class ApiTestBase {
         return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);
     }
 
-    protected final TableIndex createSpatialIndex(String schema, String table, String indexName,
-                                                  int firstSpatialArgument, int dimensions, String... indexCols) {
+    protected final TableIndex createSpatialTableIndex(String schema, String table, String indexName,
+                                                       int firstSpatialArgument, int dimensions,
+                                                       String... indexCols) {
         AkibanInformationSchema tempAIS = AISCloner.clone(createIndexInternal(schema, table, indexName, indexCols));
         TableIndex tempIndex = tempAIS.getUserTable(schema, table).getIndex(indexName);
         tempIndex.markSpatial(firstSpatialArgument, dimensions);
@@ -694,6 +695,19 @@ public class ApiTestBase {
         AkibanInformationSchema ais = ddl().getAIS(session());
         final Index index;
         index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnPairs, joinType);
+        ddl().createIndexes(session(), Collections.singleton(index));
+        return ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);
+    }
+
+    protected final GroupIndex createSpatialGroupIndex(TableName groupName,
+                                                       String indexName,
+                                                       int firstSpatialArgument, int dimensions,
+                                                       String tableColumnPairs,
+                                                       Index.JoinType joinType)
+        throws InvalidOperationException {
+        AkibanInformationSchema ais = ddl().getAIS(session());
+        Index index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnPairs, joinType);
+        index.markSpatial(firstSpatialArgument, dimensions);
         ddl().createIndexes(session(), Collections.singleton(index));
         return ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);
     }

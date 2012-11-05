@@ -41,10 +41,10 @@ import static com.akiban.qp.operator.API.*;
 
 public class LimitIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupPostCreateSchema()
     {
-        super.before();
+        super.setupPostCreateSchema();
         NewRow[] dbRows = new NewRow[]{
             createNewRow(customer, 1L, "northbridge"),
             createNewRow(customer, 2L, "foundation"),

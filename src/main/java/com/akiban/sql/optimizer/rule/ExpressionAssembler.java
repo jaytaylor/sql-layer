@@ -87,7 +87,7 @@ abstract class ExpressionAssembler<T extends Explainable> {
     protected abstract T tryLiteral(ExpressionNode node);
     protected abstract T literal(ConstantExpression expression);
     protected abstract T variable(ParameterExpression expression);
-    protected abstract T compare(T left, Comparison comparison, T right);
+    protected abstract T compare(T left, ComparisonCondition comparison, T right);
     protected abstract T collate(T left, Comparison comparison, T right, AkCollator collator);
     protected abstract AkCollator collator(ComparisonCondition cond, T left, T right);
     protected abstract T in(T lhs, List<T> rhs);
@@ -120,11 +120,12 @@ abstract class ExpressionAssembler<T extends Explainable> {
             ComparisonCondition cond = (ComparisonCondition)node;
             T left = assembleExpression(cond.getLeft(), columnContext, subqueryAssembler);
             T right = assembleExpression(cond.getRight(), columnContext, subqueryAssembler);
-            AkCollator collator = collator(cond, left, right);
+            // never use a collator if we have a KeyComparable
+            AkCollator collator = (cond.getKeyComparable() == null) ? collator(cond, left, right) : null;
             if (collator != null)
                 return collate(left, cond.getOperation(), right, collator);
             else
-                return compare(left, cond.getOperation(), right);
+                return compare(left, cond, right);
         }
         else if (node instanceof FunctionExpression) {
             FunctionExpression funcNode = (FunctionExpression)node;

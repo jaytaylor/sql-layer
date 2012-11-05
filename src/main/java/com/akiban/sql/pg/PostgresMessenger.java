@@ -119,8 +119,7 @@ public class PostgresMessenger implements DataInput, DataOutput
         int code = -1;
         if (hasType) {
             try {
-                waitTap.in();
-                socket.setSoTimeout(IDLE_INTERVAL);
+                beforeIdle();
                 while (true) {
                     try {
                         code = dataInput.read();
@@ -137,8 +136,7 @@ public class PostgresMessenger implements DataInput, DataOutput
                 }
             }
             finally {
-                socket.setSoTimeout(0);
-                waitTap.out();
+                afterIdle();
             }
         }
         else {
@@ -336,6 +334,16 @@ public class PostgresMessenger implements DataInput, DataOutput
     }
     public void writeUTF(String s) throws IOException {
         messageOutput.writeUTF(s);
+    }
+
+    public void beforeIdle() throws IOException {
+        waitTap.in();
+        socket.setSoTimeout(IDLE_INTERVAL);
+    }
+
+    public void afterIdle() throws IOException {
+        socket.setSoTimeout(0);
+        waitTap.out();
     }
 
     /** Called every <code>IDLE_INTERVAL</code> ms. while waiting for a message.

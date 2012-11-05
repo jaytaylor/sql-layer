@@ -62,10 +62,10 @@ import static com.akiban.server.test.ExpressionGenerators.*;
 
 public class Map_NestedLoopsIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupPostCreateSchema()
     {
-        super.before();
+        super.setupPostCreateSchema();
         NewRow[] db = new NewRow[]{
             createNewRow(customer, 1L, "northbridge"), // two orders, two addresses
             createNewRow(order, 100L, 1L, "ori"),

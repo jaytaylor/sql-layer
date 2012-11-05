@@ -28,65 +28,34 @@ package com.akiban.sql.server;
 
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.optimizer.OperatorCompiler;
-import com.akiban.sql.optimizer.rule.BaseRule;
-import com.akiban.sql.parser.DMLStatementNode;
-
-import com.akiban.server.service.EventTypes;
-import com.akiban.server.service.instrumentation.SessionTracer;
 
 public abstract class ServerOperatorCompiler extends OperatorCompiler
 {
-    protected SessionTracer tracer;
-
     protected ServerOperatorCompiler() {
     }
 
     protected void initServer(ServerSession server) {
+        boolean useCBO = server.getBooleanProperty("cbo", true);
+        boolean usePValues = useCBO && server.getBooleanProperty("newtypes", Types3Switch.DEFAULT);
+        // the following is racy, but everything about the Types3Switch is
+        if (usePValues != Types3Switch.ON)
+            Types3Switch.ON = usePValues;
         initProperties(server.getCompilerProperties());
         initAIS(server.getAIS(), server.getDefaultSchemaName());
         initParser(server.getParser());
         initFunctionsRegistry(server.functionsRegistry());
-        boolean usePValues;
-        if (server.getBooleanProperty("cbo", true)) {
-            usePValues = server.getBooleanProperty("newtypes", Types3Switch.DEFAULT);
+        if (useCBO) {
             initCostEstimator(server.costEstimator(this, server.getTreeService()), usePValues);
             if (usePValues)
                 initT3Registry(server.t3RegistryService());
         }
         else {
             initCostEstimator(null, false);
-            usePValues = false;
         }
-        // the following is racy, but everything about the Types3Switch is
-        if (usePValues != Types3Switch.ON)
-            Types3Switch.ON = usePValues;
         
         server.getBinderContext().setBinderAndTypeComputer(binder, typeComputer);
 
         server.setAttribute("compiler", this);
-
-        tracer = server.getSessionTracer();
-    }
-
-    @Override
-    protected DMLStatementNode bindAndTransform(DMLStatementNode stmt)  {
-        try {
-            tracer.beginEvent(EventTypes.BIND_AND_GROUP); // TODO: rename.
-            return super.bindAndTransform(stmt);
-        } 
-        finally {
-            tracer.endEvent();
-        }
-    }
-
-    @Override
-    public void beginRule(BaseRule rule) {
-        tracer.beginEvent(rule.getTraceName());
-    }
-
-    @Override
-    public void endRule(BaseRule rule) {
-        tracer.endEvent();
     }
 
 }

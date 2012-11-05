@@ -84,9 +84,8 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
     private Map<Long, TestRow> indexRowMap = new HashMap<Long, TestRow>();
     private Map<Long, TestRow> indexRowWithIdMap = new HashMap<Long, TestRow>(); // use for jumping
 
-    @Before
     @Override
-    public void before()
+    protected void setupCreateSchema()
     {
         t = createTable(
             "schema", "t",
@@ -95,6 +94,11 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
             "b int",
             "c int");
         createUniqueIndex("schema", "t", "idx", "a", "b", "c");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "a", "b", "c");

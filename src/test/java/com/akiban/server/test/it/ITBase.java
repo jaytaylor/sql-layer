@@ -144,7 +144,7 @@ public abstract class ITBase extends ApiTestBase {
         if (rowType instanceof IndexRowType) {
             Index index = ((IndexRowType)rowType).index();
             if (index.isSpatial()) {
-                space = ((TableIndex)index).space();
+                space = index.space();
             }
         }
         return space;

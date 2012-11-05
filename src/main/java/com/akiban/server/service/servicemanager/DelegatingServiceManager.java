@@ -31,7 +31,7 @@ import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.instrumentation.InstrumentationService;
+import com.akiban.server.service.monitor.MonitorService;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.stats.StatisticsService;
@@ -125,8 +125,8 @@ public abstract class DelegatingServiceManager implements ServiceManager {
     }
 
     @Override
-    public InstrumentationService getInstrumentationService() {
-        return delegate().getInstrumentationService();
+    public MonitorService getMonitorService() {
+        return delegate().getMonitorService();
     }
 
     protected abstract ServiceManager delegate();

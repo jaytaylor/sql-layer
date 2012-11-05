@@ -44,6 +44,8 @@ before the decimal place. So we'll scale both by 10**6.
 
  */
 
+import com.akiban.server.error.OutOfRangeException;
+
 import java.math.BigDecimal;
 
 public class SpaceLatLon extends Space
@@ -71,12 +73,20 @@ public class SpaceLatLon extends Space
 
     public static long scaleLat(BigDecimal lat)
     {
-        return lat.scaleByPowerOfTen(LOG_SCALE).longValue();
+        long latScaled = lat.scaleByPowerOfTen(LOG_SCALE).longValue();
+        if (latScaled < MIN_LAT_SCALED || latScaled > MAX_LAT_SCALED) {
+            throw new OutOfRangeException(String.format("latitude %s", lat));
+        }
+        return latScaled;
     }
 
     public static long scaleLon(BigDecimal lon)
     {
-        return lon.scaleByPowerOfTen(LOG_SCALE).longValue();
+        long lonScaled = lon.scaleByPowerOfTen(LOG_SCALE).longValue();
+        if (lonScaled < MIN_LON_SCALED || lonScaled > MAX_LON_SCALED) {
+            throw new OutOfRangeException(String.format("longitude %s", lon));
+        }
+        return lonScaled;
     }
 
     public static SpaceLatLon create()

@@ -776,9 +776,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         int firstSpatialColumn = Integer.MAX_VALUE;
         int lastSpatialColumn = Integer.MIN_VALUE;
         if (index.getIndexMethod() == Index.IndexMethod.Z_ORDER_LAT_LON) {
-            TableIndex spatialIndex = (TableIndex) index;
-            firstSpatialColumn = spatialIndex.firstSpatialArgument();
-            lastSpatialColumn = firstSpatialColumn + spatialIndex.dimensions() - 1;
+            firstSpatialColumn = index.firstSpatialArgument();
+            lastSpatialColumn = firstSpatialColumn + index.dimensions() - 1;
         }
         str.append("(");
         boolean first = true;

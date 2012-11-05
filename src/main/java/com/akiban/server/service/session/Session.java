@@ -110,6 +110,13 @@ public final class Session
         return deque == null || deque.isEmpty();
     }
 
+    public void removeAll(StackKey<?> key) {
+        Deque deque = get( key.asKey() );
+        if (deque != null) {
+            deque.clear();
+        }
+    }
+
     // "unused" suppression: Key<T> is only used for type inference
     // "unchecked" suppression: we know from the put methods that Object will be of type T
     @SuppressWarnings({"unused", "unchecked"})

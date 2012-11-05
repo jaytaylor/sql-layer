@@ -42,6 +42,7 @@ import com.akiban.server.store.SchemaManager;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TKeyComparable;
 import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.Types3Switch;
@@ -109,6 +110,13 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         return castsResolver;
     }
 
+    @Override
+    public TKeyComparable getKeyComparable(TClass left, TClass right) {
+        if (left == null || right == null)
+            return null;
+        return keyComparableRegistry.getClass(left, right);
+    }
+
     // Service interface
 
     @Override
@@ -137,6 +145,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         scalarsRegistry = null;
         aggreatorsRegistry = null;
         tClasses = null;
+        keyComparableRegistry = null;
     }
 
     @Override
@@ -190,6 +199,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                 null
         );
         aggregatesResolver = new OverloadResolver<TValidatedAggregator>(aggreatorsRegistry, castsResolver);
+
+        keyComparableRegistry = new KeyComparableRegistry(finder);
     }
 
     // class state
@@ -204,6 +215,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     private volatile OverloadResolver<TValidatedAggregator> aggregatesResolver;
     private volatile ResolvablesRegistry<TValidatedScalar> scalarsRegistry;
     private volatile OverloadResolver<TValidatedScalar> scalarsResolver;
+    private volatile KeyComparableRegistry keyComparableRegistry;
 
     private volatile Collection<? extends TClass> tClasses;
 

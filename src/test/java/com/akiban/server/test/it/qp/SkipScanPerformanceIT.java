@@ -53,8 +53,8 @@ import static org.junit.Assert.assertTrue;
 
 public class SkipScanPerformanceIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         t = createTable(
             "schema", "t",
@@ -66,6 +66,11 @@ public class SkipScanPerformanceIT extends OperatorITBase
         createIndex("schema", "t", "idx_x", "x");
         createIndex("schema", "t", "idx_y", "y");
         createIndex("schema", "t", "idx_z", "z");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         tIdIndexRowType = indexType(t, "id");
