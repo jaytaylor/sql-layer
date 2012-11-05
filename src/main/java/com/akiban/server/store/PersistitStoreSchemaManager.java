@@ -362,7 +362,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
     
     @Override
-    public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
+    public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexesToAdd, boolean keepTree) {
         AISMerge merge = AISMerge.newForAddIndex(nameGenerator, getAis(session));
         Set<String> schemas = new HashSet<String>();
 
@@ -370,6 +370,9 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         Collection<Index> newIndexes = new ArrayList<Index>(indexesToAdd.size());
         for(Index proposed : indexesToAdd) {
             Index newIndex = merge.mergeIndex(proposed);
+            if(keepTree) {
+                newIndex.setTreeName(proposed.getTreeName());
+            }
             newIndexes.add(newIndex);
             tableIDs.addAll(newIndex.getAllTableIDs());
             schemas.add(DefaultNameGenerator.schemaNameForIndex(newIndex));

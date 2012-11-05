@@ -970,7 +970,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     Collection<Index> createIndexesInternal(Session session, Collection<? extends Index> indexesToAdd) {
-        Collection<Index> newIndexes = schemaManager().createIndexes(session, indexesToAdd);
+        Collection<Index> newIndexes = schemaManager().createIndexes(session, indexesToAdd, false);
         for(Index index : newIndexes) {
             checkCursorsForDDLModification(session, index.leafMostTable());
         }

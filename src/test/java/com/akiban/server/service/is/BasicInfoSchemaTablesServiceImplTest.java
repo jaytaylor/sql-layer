@@ -690,7 +690,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
-        public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexes) {
+        public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexes, boolean keepTreeNames) {
             throw new UnsupportedOperationException();
         }
 

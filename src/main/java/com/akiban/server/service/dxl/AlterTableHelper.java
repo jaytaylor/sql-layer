@@ -143,20 +143,15 @@ public class AlterTableHelper {
                 Column tempColumn = tempTable.getColumn(tcn.newColumnName);
                 IndexColumn.create(tempIndex,  tempColumn, i, true, null);
             }
+            tempIndex.setTreeName(origIndex.getTreeName());
             indexesToBuild.add(tempIndex);
         }
 
         if(dataChange) {
             ddl.createIndexesInternal(session, indexesToBuild);
         } else {
-            ddl.schemaManager().createIndexes(session, indexesToBuild);
             // Restore old trees
-            Group newGroup = ddl.getAIS(session).getTable(newTable.getName()).getGroup();
-            for(IndexName name : affectedGroupIndexes.keySet()) {
-                Index oldIndex = origGroup.getIndex(name.getName());
-                Index newIndex = newGroup.getIndex(name.getName());
-                newIndex.setTreeName(oldIndex.getTreeName());
-            }
+            ddl.schemaManager().createIndexes(session, indexesToBuild, true);
         }
     }
 }
