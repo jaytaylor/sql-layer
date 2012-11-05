@@ -536,14 +536,13 @@ public abstract class CostEstimator implements TableRowCounts
             determine_type:
             {
                 if (index.isSpatial()) {
-                    TableIndex spatialIndex = (TableIndex)index;
-                    int firstSpatialColumn = spatialIndex.firstSpatialArgument();
+                    int firstSpatialColumn = index.firstSpatialArgument();
                     if (column == firstSpatialColumn) {
                         tInstance = MNumeric.BIGINT.instance(node.getPreptimeValue().isNullable());
                         break determine_type;
                     }
                     else if (column > firstSpatialColumn) {
-                        column += spatialIndex.dimensions() - 1;
+                        column += index.dimensions() - 1;
                     }
                 }
                 tInstance = index.getAllColumns().get(column).getColumn().tInstance();
