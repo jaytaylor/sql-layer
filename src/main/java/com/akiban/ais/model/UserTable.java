@@ -528,18 +528,13 @@ public class UserTable extends Table
                                         getColumns().size(),
                                         Types.BIGINT); // adds column to table
         pkColumn.setNullable(false);
-        // Create an index for the PK column
-        // Starting index should be id 1
-        int maxIndexId = 0;
-        for (Index index : getIndexes()) {
-            if (index.getIndexId() > maxIndexId) {
-                maxIndexId = index.getIndexId();
-            }
-        }
+        // TODO: Needs to be externally provided.
+        // See bug1000804. Since these are never really used, and aren't unique anyway, always use -1
+        int indexID = -1;
         TableIndex pkIndex = TableIndex.create(ais,
                                                this,
                                                Index.PRIMARY_KEY_CONSTRAINT,
-                                               maxIndexId + 1,
+                                               indexID,
                                                true,
                                                Index.PRIMARY_KEY_CONSTRAINT);
         IndexColumn.create(pkIndex, pkColumn, 0, true, null);
