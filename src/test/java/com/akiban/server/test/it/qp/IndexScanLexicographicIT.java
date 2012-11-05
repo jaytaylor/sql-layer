@@ -39,7 +39,6 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.expression.std.FieldExpression;
-import com.akiban.mysql.adapter.message.ScanRowsRequest;
 import com.akiban.server.rowdata.RowData;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -197,32 +196,6 @@ public class IndexScanLexicographicIT extends OperatorITBase
              1001, 1002, 1003, 1004, 1005);
     }
 
-    // Inspired by bug 1005308
-    @Ignore
-    @Test
-    public void test_HiMoreConstrainedThanLo() throws Exception
-    {
-        NewRow loRow = createNewRow(t);
-        loRow.put(1, 1); // a = 1
-        RowData loRowData = loRow.toRowData();
-        NewRow hiRow = createNewRow(t);
-        hiRow.put(1, 1); // a = 1
-        hiRow.put(2, 18); // b = 18
-        RowData hiRowData = hiRow.toRowData();
-        ScanRowsRequest request =
-            new ScanRowsRequest(aisGeneration(),
-                                t,
-                                idxRowType.index().getIndexId(),
-                                (byte) ScanFlag.toRowDataFormat(EnumSet.of(ScanFlag.END_RANGE_EXCLUSIVE,
-                                                                           ScanFlag.LEXICOGRAPHIC)),
-                                null,
-                                loRowData,
-                                new SetColumnSelector(1),
-                                hiRowData,
-                                new SetColumnSelector(1, 2));
-        request.executeDML(dml(), session());
-    }
-
     // For use by this class
 
     private void test(IndexKeyRange keyRange, API.Ordering ordering, int ... expectedIds)
@@ -334,7 +307,7 @@ public class IndexScanLexicographicIT extends OperatorITBase
     private static final boolean INCLUSIVE = true;
     private static final Integer UNSPECIFIED = new Integer(Integer.MIN_VALUE); // Relying on == comparisons
 
-    private int t;
-    private RowType tRowType;
-    private IndexRowType idxRowType;
+    protected int t;
+    protected RowType tRowType;
+    protected IndexRowType idxRowType;
 }
