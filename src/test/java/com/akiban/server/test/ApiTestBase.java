@@ -50,6 +50,7 @@ import java.util.concurrent.Callable;
 
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.*;
+import com.akiban.ais.util.TableChangeValidator;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
@@ -1312,5 +1313,24 @@ public class ApiTestBase {
     
     protected boolean testSupportsPValues() {
         return true;
+    }
+
+    protected void runAlter(TableChangeValidator.ChangeLevel expectedChangeLevel, String defaultSchema, String sql) {
+        runAlter(session(), ddl(), dml(), null, expectedChangeLevel, defaultSchema, sql);
+        updateAISGeneration();
+    }
+
+    protected static void runAlter(Session session, DDLFunctions ddl, DMLFunctions dml, QueryContext context,
+                                   TableChangeValidator.ChangeLevel expectedChangeLevel, String defaultSchema, String sql) {
+        SQLParser parser = new SQLParser();
+        StatementNode node;
+        try {
+            node = parser.parseStatement(sql);
+        } catch(StandardException e) {
+            throw new RuntimeException(e);
+        }
+        assertTrue("is alter node", node instanceof AlterTableNode);
+        TableChangeValidator.ChangeLevel level = AlterTableDDL.alterTable(ddl, dml, session, defaultSchema, (AlterTableNode) node, context);
+        assertEquals("ChangeLevel", expectedChangeLevel, level);
     }
 }

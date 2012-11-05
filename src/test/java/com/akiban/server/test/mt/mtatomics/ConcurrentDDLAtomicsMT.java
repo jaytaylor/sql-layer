@@ -33,6 +33,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.ais.util.TableChange;
+import com.akiban.ais.util.TableChangeValidator;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -922,6 +923,71 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                       ais.getUserTable(SCHEMA2, TABLE).getIndex(childIndex.getIndexName().getName()));
     }
 
+    /*
+     * ALTER ADD GFK needs to lock all the way up and down the branch. Say you have CO and I, with an
+     * orphan O. If C is not locked while alter is taking place than the I row of the adapted C will
+     * still have a null C component in the hkey. This is write-write skew due to snapshot isolation
+     * and PersistitStore#propogateDownGroup. If that is ever fixed, the locking can be more granular.
+     */
+    @Test
+    public void alterAddToGroupOrphanAdoption() throws Exception {
+        if(isDDLLockOn()) {
+            return;
+        }
+
+        int cid = createTable(SCHEMA, "c", "id int not null primary key");
+        int oid = createTable(SCHEMA, "o", "id int not null primary key, cid int, grouping foreign key(cid) references c(id)");
+        int iid = createTable(SCHEMA, "i", "id int not null primary key, oid int"); // Grouped in test
+
+        writeRows(
+                createNewRow(cid, 1L),
+                createNewRow(oid, 1L, 1L),
+                createNewRow(iid, 1L, 1L),
+                createNewRow(cid, 2L),
+                // oid(2,2) Inserted during test
+                createNewRow(iid, 2L, 2L)
+        );
+
+        final NewRow newORow = createNewRow(oid, 2L, 2L);
+        final String alterSql = "ALTER TABLE i ADD GROUPING FOREIGN KEY(oid) REFERENCES o(id)";
+
+        final int POST_DML_WAIT = 1500;
+        TimedCallable<Void> dmlCallable = new DelayableIUDCallable(IUDType.INSERT, null, newORow, 0, 0, POST_DML_WAIT);
+        TimedCallable<Void> ddlCallable = new TimedCallable<Void>() {
+            @Override
+            protected Void doCall(TimePoints timePoints, Session session) throws Exception {
+                Timing.sleep(500);
+                timePoints.mark("ALTER>");
+                runAlter(session, ddl(), dml(), null, TableChangeValidator.ChangeLevel.GROUP, SCHEMA, alterSql);
+                timePoints.mark("ALTER<");
+                return null;
+            }
+        };
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        Future<TimedResult<Void>> dmlFuture = executor.submit(dmlCallable);
+        Future<TimedResult<Void>> ddlFuture = executor.submit(ddlCallable);
+
+        TimedResult<Void> dmlResult = dmlFuture.get();
+        TimedResult<Void> ddlResult = ddlFuture.get();
+
+        new TimePointsComparison(dmlResult, ddlResult).verify(
+                "INSERT: START",
+                "INSERT>",
+                // From before calling ddl().alter(), txn doing useful work doesn't start until after insert finishes
+                "ALTER>",
+                "INSERT<",
+                "ALTER<"
+        );
+
+        // Group scan order so 1 should be before 2. If 2 is first, it has a null hkey component.
+        updateAISGeneration();
+        expectFullRows(
+                iid,
+                createNewRow(iid, 1L, 1L),
+                createNewRow(iid, 2L, 2L)
+        );
+    }
 
     //
     // Test helpers
