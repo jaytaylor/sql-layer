@@ -176,7 +176,7 @@ public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerIT
         Thread thread2 = new Thread(new AISReader(b1, b2, expectedTableCount + 2), "TestThread2");
         thread2.start();
         b1.await();
-            createTable(SCHEMA, T1_NAME + 3, T1_DDL);
+        createTable(SCHEMA, T1_NAME + 3, T1_DDL);
         txnService().beginTransaction(session());
         try {
             AkibanInformationSchema ais = ddl().getAIS(session());
