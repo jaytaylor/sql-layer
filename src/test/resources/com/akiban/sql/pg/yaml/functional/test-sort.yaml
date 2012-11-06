@@ -20,4 +20,8 @@
 ---
 - Statement: SELECT id, name FROM t1 ORDER BY id LIMIT 5
 - output: [[1, 'foo'], [2, null]]
+---
+- Statement: SELECT id, name FROM t1 ORDER BY id LIMIT ?
+- params: [[1]]
+- output: [[1, 'foo']]
 ...
