@@ -521,22 +521,12 @@ public class PostgresServerConnection extends ServerSessionBase
             finally {
                 sessionMonitor.leaveStage();
             }
-            ServerTransaction local = localTransactionIfNone(false); // Worth determining readOnly?
-            try {
-                for (StatementNode stmt : stmts) {
-                    pstmt = generateStatement(stmt, null, null);
-                    if ((statementCache != null) && (stmts.size() == 1))
-                        statementCache.put(sql, pstmt);
-                    pstmt.sendDescription(context, false);
-                    rowsProcessed = executeStatement(pstmt, context, -1);
-                }
-                if (local != null) {
-                    local.commit();
-                    local = null;
-                }
-            } finally {
-                if (local != null)
-                    local.abort();
+            for (StatementNode stmt : stmts) {
+                pstmt = generateStatement(stmt, null, null);
+                if ((statementCache != null) && (stmts.size() == 1))
+                    statementCache.put(sql, pstmt);
+                pstmt.sendDescription(context, false);
+                rowsProcessed = executeStatement(pstmt, context, -1);
             }
         }
         readyForQuery();
@@ -580,17 +570,7 @@ public class PostgresServerConnection extends ServerSessionBase
             finally {
                 sessionMonitor.leaveStage();
             }
-            ServerTransaction local = localTransactionIfNone(true);
-            try {
-                pstmt = generateStatement(stmt, params, paramTypes);
-                if (local != null) {
-                    local.commit();
-                    local = null;
-                }
-            } finally {
-                if (local != null)
-                    local.abort();
-            }
+            pstmt = generateStatement(stmt, params, paramTypes);
             if (statementCache != null)
                 statementCache.put(sql, pstmt);
         }
@@ -855,7 +835,19 @@ public class PostgresServerConnection extends ServerSessionBase
     protected PostgresStatement generateStatement(StatementNode stmt, 
                                                   List<ParameterNode> params,
                                                   int[] paramTypes) {
-        assert reqs.txnService().isTransactionActive(session) : "No txn, costing looks at AIS and index_stat rows";
+        // Costing requires looking at AIS and potentially scanning index_stats rows
+        ServerTransaction local = (transaction == null) ? new ServerTransaction(this, true) : null;
+        try {
+            return generateStatementInternal(stmt, params, paramTypes);
+        } finally {
+            if (local != null)
+                local.commit();
+        }
+    }
+
+    private PostgresStatement generateStatementInternal(StatementNode stmt,
+                                                        List<ParameterNode> params,
+                                                        int[] paramTypes) {
         try {
             sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
             for (PostgresStatementGenerator generator : parsedGenerators) {
@@ -901,12 +893,6 @@ public class PostgresServerConnection extends ServerSessionBase
         messenger.beginMessage(PostgresMessages.EMPTY_QUERY_RESPONSE_TYPE.code());
         messenger.sendMessage();
         readyForQuery();
-    }
-
-    private ServerTransaction localTransactionIfNone(boolean readOnly) {
-        if (transaction == null)
-            return new ServerTransaction(this, readOnly);
-        return null;
     }
 
     @Override
