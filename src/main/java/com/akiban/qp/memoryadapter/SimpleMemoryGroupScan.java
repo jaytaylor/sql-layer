@@ -24,50 +24,38 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3;
+package com.akiban.qp.memoryadapter;
 
-import java.util.Arrays;
+import com.akiban.ais.model.TableName;
+import com.akiban.qp.row.Row;
+import com.akiban.qp.row.ValuesRow;
+import com.akiban.qp.rowtype.RowType;
 
-public final class TInstanceGenerator {
-    public TInstance setNullable(boolean isNullable) {
-        switch (attrs.length) {
-        case 0:
-            return tclass.instance(isNullable);
-        case 1:
-            return tclass.instance(attrs[0], isNullable);
-        case 2:
-            return tclass.instance(attrs[0], attrs[1], isNullable);
-        case 3:
-            return tclass.instance(attrs[0], attrs[1], attrs[2], isNullable);
-        case 4:
-            return tclass.instance(attrs[0], attrs[1], attrs[2], attrs[3], isNullable);
-        default:
-            throw new AssertionError("too many attrs!: " + Arrays.toString(attrs) + " with " + tclass);
-        }
-    }
+import java.util.Iterator;
 
-    int[] attrs() {
-        return Arrays.copyOf(attrs, attrs.length);
-    }
+public abstract class SimpleMemoryGroupScan<T> implements MemoryGroupCursor.GroupScan {
 
-    TClass tClass() {
-        return tclass;
-    }
+    protected abstract Object[] createRow(T data, int hiddenPk);
 
-    public String toString(boolean useShorthand) {
-        return setNullable(true).toStringIgnoringNullability(useShorthand);
+    @Override
+    public Row next() {
+        if (!iterator.hasNext())
+            return null;
+        Object[] rowContents = createRow(iterator.next(), ++hiddenPk);
+        return new ValuesRow(rowType, rowContents);
     }
 
     @Override
-    public String toString() {
-        return toString(false);
+    public void close() {
+        // nothing
     }
 
-    public TInstanceGenerator(TClass tclass, int... attrs) {
-        this.tclass = tclass;
-        this.attrs = Arrays.copyOf(attrs, attrs.length);
+    public SimpleMemoryGroupScan(MemoryAdapter adapter, TableName tableName, Iterator<? extends T> iterator) {
+        this.iterator = iterator;
+        this.rowType = adapter.schema().userTableRowType(adapter.schema().ais().getUserTable(tableName));
     }
-    private final TClass tclass;
 
-    private final int[] attrs;
+    private final Iterator<? extends T> iterator;
+    private final RowType rowType;
+    private int hiddenPk = 0;
 }

@@ -72,14 +72,18 @@ public class TOverloadResult {
 
     // object interface
 
-    @Override
-    public String toString() {
+    public String toString(boolean useShorthand) {
         switch (category) {
         case CUSTOM:    return "custom";
-        case FIXED:     return fixedInstance.toString();
+        case FIXED:     return fixedInstance.toString(useShorthand);
         case PICKING:   return "picking";
         default: throw new AssertionError(category);
         }
+    }
+
+    @Override
+    public String toString() {
+        return toString(false);
     }
 
     // private

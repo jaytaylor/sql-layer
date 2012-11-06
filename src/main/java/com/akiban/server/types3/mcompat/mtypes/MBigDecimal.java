@@ -263,14 +263,17 @@ public class MBigDecimal extends TClassBase {
         @Override
         public void readCollating(PValueSource in, TInstance typeInstance, PValueTarget out) {
             BigDecimal bigDecimal = (BigDecimal) in.getObject();
-            int scale = typeInstance.attribute(Attrs.SCALE);
-            int precision = typeInstance.attribute(Attrs.PRECISION);
-            if (precision > bigDecimal.precision())
-                throw new AkibanInternalException("precision of " + bigDecimal + " is greater than " + precision);
-            if (scale < bigDecimal.scale())
-                throw new AkibanInternalException(
-                        "scale of " + bigDecimal + " is smaller than " + scale + "; will result in loss of data");
-            BigDecimalWrapper wrapper = new MBigDecimalWrapper(bigDecimal).round(scale);
+            int allowedScale = typeInstance.attribute(Attrs.SCALE);
+            int allowedPrecision = typeInstance.attribute(Attrs.PRECISION);
+            if (allowedPrecision < bigDecimal.precision()) {
+                throw new AkibanInternalException("precision of " + bigDecimal.precision()
+                        + " is greater than " + allowedPrecision + " for value " + bigDecimal);
+            }
+            if (allowedScale < bigDecimal.scale()) {
+                throw new AkibanInternalException("scale of " + bigDecimal.scale()
+                        + " is greater than " + allowedScale + " for value " + bigDecimal);
+            }
+            BigDecimalWrapper wrapper = new MBigDecimalWrapper(bigDecimal).round(allowedScale);
             out.putObject(wrapper);
         }
     };
