@@ -27,7 +27,6 @@
 package com.akiban.ais.protobuf;
 
 import com.akiban.ais.model.*;
-import com.akiban.ais.pt.PendingOSC;
 import com.akiban.ais.util.TableChange;
 import com.akiban.server.error.ProtobufWriteException;
 import com.akiban.util.GrowableByteBuffer;

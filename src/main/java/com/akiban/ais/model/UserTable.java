@@ -28,7 +28,6 @@ package com.akiban.ais.model;
 
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.util.ArgumentValidation;
-import com.akiban.ais.pt.PendingOSC;
 
 import java.util.*;
 
