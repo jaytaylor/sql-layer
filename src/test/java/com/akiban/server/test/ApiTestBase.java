@@ -1320,8 +1320,12 @@ public class ApiTestBase {
         return true;
     }
 
+    protected DDLFunctions ddlForAlter() {
+        return ddl();
+    }
+
     protected void runAlter(TableChangeValidator.ChangeLevel expectedChangeLevel, String defaultSchema, String sql) {
-        runAlter(session(), ddl(), dml(), null, expectedChangeLevel, defaultSchema, sql);
+        runAlter(session(), ddlForAlter(), dml(), null, expectedChangeLevel, defaultSchema, sql);
         updateAISGeneration();
     }
 

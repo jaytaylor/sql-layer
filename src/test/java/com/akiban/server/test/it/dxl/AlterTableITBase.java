@@ -131,10 +131,6 @@ public class AlterTableITBase extends ITBase {
         return ChangeLevel.TABLE;
     }
 
-    protected DDLFunctions ddlForAlter() {
-        return ddl();
-    }
-
     protected void runAlter(String sql) {
         runAlter(getDefaultChangeLevel(), SCHEMA, sql);
     }
