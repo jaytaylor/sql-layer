@@ -68,6 +68,7 @@ import com.akiban.server.service.config.TestConfigService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.dxl.DXLTestHookRegistry;
 import com.akiban.server.service.dxl.DXLTestHooks;
+import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
@@ -482,6 +483,10 @@ public class ApiTestBase {
 
     protected final TransactionService txnService() {
         return sm.getServiceByClass(TransactionService.class);
+    }
+
+    protected final LockService lockService() {
+        return sm.getServiceByClass(LockService.class);
     }
 
     protected final int aisGeneration() {
