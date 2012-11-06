@@ -1,0 +1,20 @@
+# Tests for bug 1070999
+---
+- Statement: SET newtypes to 'true';
+---
+- CreateTable: a (c DECIMAL (15, 3));
+---
+- Statement: INSERT INTO a values (123456789999.123);
+---
+- Statement: SELECT c + 3 from a;
+- output: [['123456790002.123']]
+---
+- Statement: DELETE from a;
+---
+- Statement: INSERT INTO a values (123456789123.999);
+---
+- Statement: SELECT c + 0.001 from a;
+- output: [['123456789124.000']]
+---
+- Statement: SET newtypes to DEFAULT;
+...

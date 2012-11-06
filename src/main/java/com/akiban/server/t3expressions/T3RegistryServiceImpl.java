@@ -26,9 +26,19 @@
 
 package com.akiban.server.t3expressions;
 
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.ais.model.aisb2.NewUserTableBuilder;
+import com.akiban.qp.memoryadapter.BasicFactoryBase;
+import com.akiban.qp.memoryadapter.MemoryAdapter;
+import com.akiban.qp.memoryadapter.MemoryGroupCursor;
+import com.akiban.qp.memoryadapter.SimpleMemoryGroupScan;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
+import com.akiban.server.store.SchemaManager;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
@@ -45,7 +55,9 @@ import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Multimap;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -70,6 +82,15 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         T3RegistryServiceImpl registryService = new T3RegistryServiceImpl();
         registryService.start();
         return registryService.getCastsResolver();
+    }
+
+    public T3RegistryServiceImpl() {
+        this(null);
+    }
+
+    @Inject
+    public T3RegistryServiceImpl(SchemaManager schemaManager) {
+        this.schemaManager = schemaManager;
     }
 
     // T3RegistryService interface
@@ -108,6 +129,14 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
             throw new ServiceStartupException("T3Registry");
         }
         start(registry);
+        if (schemaManager != null) {
+            OverloadsTableFactory overloadsTable = new OverloadsTableFactory(
+                    TableName.create(TableName.INFORMATION_SCHEMA, "ak_overloads"));
+            schemaManager.registerMemoryInformationSchemaTable(overloadsTable.userTable(), overloadsTable);
+            CastsTableFactory castsTable = new CastsTableFactory(
+                    TableName.create(TableName.INFORMATION_SCHEMA, "ak_casts"));
+            schemaManager.registerMemoryInformationSchemaTable(castsTable.userTable(), castsTable);
+        }
     }
 
     @Override
@@ -178,6 +207,8 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     private static final Logger logger = LoggerFactory.getLogger(T3RegistryServiceImpl.class);
 
     // object state
+
+    private final SchemaManager schemaManager;
 
     private volatile TCastResolver castsResolver;
     private volatile ResolvablesRegistry<TValidatedAggregator> aggreatorsRegistry;
@@ -355,14 +386,127 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                 int[] o2Priorities = o2.getPriorities();
                 return lowest(o1Priorities) - lowest(o2Priorities);
             }
-
-            private int lowest(int[] ints) {
-                int result = ints[0];
-                for (int i = 1; i < ints.length; ++i)
-                    result = Math.min(result, ints[i]);
-                return result;
-            }
         };
+    }
+
+    private static int lowest(int[] ints) {
+        int result = ints[0];
+        for (int i = 1; i < ints.length; ++i)
+            result = Math.min(result, ints[i]);
+        return result;
+    }
+
+    private abstract class MemTableBase extends BasicFactoryBase {
+
+        protected abstract void buildUserTable(NewUserTableBuilder builder);
+
+        public UserTable userTable() {
+            NewAISBuilder builder = AISBBasedBuilder.create();
+            buildUserTable(builder.userTable(getName()));
+            return builder.ais().getUserTable(getName());
+        }
+
+        protected MemTableBase(TableName tableName) {
+            super(tableName);
+        }
+    }
+
+    private class CastsTableFactory extends MemTableBase {
+
+        @Override
+        protected void buildUserTable(NewUserTableBuilder builder) {
+            builder.colString("source_bundle", 64, false)
+                    .colString("source_type", 64, false)
+                    .colString("target_bundle", 64, false)
+                    .colString("target_type", 64, false)
+                    .colString("is_strong", 3, false)
+                    .colString("is_derived", 3, false);
+        }
+
+        @Override
+        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter) {
+            Collection<Map<TClass, TCast>> castsBySource = castsResolver.castsBySource();
+            Collection<TCast> castsCollections = new ArrayList<TCast>(castsBySource.size());
+            for (Map<?, TCast> castMap : castsBySource) {
+                castsCollections.addAll(castMap.values());
+            }
+            return new SimpleMemoryGroupScan<TCast>(adapter, getName(), castsCollections.iterator()) {
+                @Override
+                protected Object[] createRow(TCast data, int hiddenPk) {
+                    return new Object[] {
+                            data.sourceClass().name().bundleId().name(),
+                            data.sourceClass().name().unqualifiedName(),
+                            data.targetClass().name().bundleId().name(),
+                            data.targetClass().name().unqualifiedName(),
+                            boolResult(castsResolver.isStrong(data)),
+                            boolResult(data instanceof TCastsRegistry.ChainedCast),
+                            hiddenPk
+                    };
+                }
+            };
+        }
+
+        @Override
+        public long rowCount() {
+            long count = 0;
+            for (Map<?,?> castsBySource : castsResolver.castsBySource()) {
+                count += castsBySource.size();
+            }
+            return count;
+        }
+
+        private CastsTableFactory(TableName tableName) {
+            super(tableName);
+        }
+    }
+
+    private class OverloadsTableFactory extends MemTableBase {
+
+        @Override
+        protected void buildUserTable(NewUserTableBuilder builder) {
+            builder.colString("name", 128, false)
+                   .colBigInt("priority_order", false)
+                   .colString("inputs", 256, false)
+                   .colString("output", 256, false)
+                   .colString("internal_impl", 256, false);
+        }
+
+        @Override
+        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter) {
+            Iterator<? extends TValidatedOverload> allOverloads = Iterators.concat(
+                    scalarsRegistry.iterator(),
+                    aggreatorsRegistry.iterator());
+            return new SimpleMemoryGroupScan<TValidatedOverload>(adapter, getName(), allOverloads) {
+                @Override
+                protected Object[] createRow(TValidatedOverload data, int hiddenPk) {
+                    return new Object[] {
+                            data.displayName().toLowerCase(),
+                            lowest(data.getPriorities()),
+                            data.describeInputs(),
+                            data.resultStrategy().toString(true),
+                            data.id(),
+                            hiddenPk
+                    };
+                }
+            };
+        }
+
+        @Override
+        public long rowCount() {
+            return countOverloads(aggreatorsRegistry) + countOverloads(scalarsRegistry);
+        }
+
+        private long countOverloads(ResolvablesRegistry<?> registry) {
+            long count = 0;
+            for (ScalarsGroup<?> group : registry.allScalarsGroups()) {
+                count += group.getOverloads().size();
+            }
+            return count;
+        }
+
+        public OverloadsTableFactory(TableName tableName) {
+            super(tableName);
+        }
     }
 
 }

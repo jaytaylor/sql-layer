@@ -27,7 +27,9 @@
 package com.akiban.server.test.it.store;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -69,11 +71,11 @@ public abstract class AbstractScanBase extends ITBase {
 
     @Before
     public void baseSetUpSuite() throws Exception {
-        loadDDLFromResource(SCHEMA, DDL_FILE_NAME);
+        Set<TableName> created = loadDDLFromResource(SCHEMA, DDL_FILE_NAME);
 
         final AkibanInformationSchema ais = ddl().getAIS(session());
         for (UserTable table : ais.getUserTables().values()) {
-            if (table.getName().getTableName().startsWith("a")) {
+            if (table.getName().getTableName().startsWith("a") && created.contains(table.getName())) {
                 tableMap.put(new TableName(table.getName().getSchemaName(), table.getName().getTableName()), table);
             }
         }
@@ -86,7 +88,7 @@ public abstract class AbstractScanBase extends ITBase {
         tableMap.clear();
     }
 
-    protected void loadDDLFromResource(final String schema, final String resourceName) throws Exception {
+    protected Set<TableName> loadDDLFromResource(final String schema, final String resourceName) throws Exception {
         final BufferedReader reader = new BufferedReader(new InputStreamReader(
                 AkServer.class.getClassLoader().getResourceAsStream(resourceName)));
 
@@ -101,9 +103,12 @@ public abstract class AbstractScanBase extends ITBase {
 
         SchemaFactory schemaFactory = new SchemaFactory(schema);
         AkibanInformationSchema tempAIS = schemaFactory.ais(allStatements.toArray(new String[allStatements.size()]));
+        Set<TableName> created = new HashSet<TableName>();
         for(UserTable table : tempAIS.getUserTables().values()) {
             ddl.createTable(session(), table);
+            created.add(table.getName());
         }
+        return created;
     }
 
     protected void populateTables(DMLFunctions dml) throws Exception {
