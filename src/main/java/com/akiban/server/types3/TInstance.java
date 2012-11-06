@@ -114,11 +114,8 @@ public final class TInstance {
         return true;
     }
 
-    // object interface
-
-    @Override
-    public String toString() {
-        String className = tclass.name().toString();
+    public String toStringIgnoringNullability(boolean useShorthand) {
+        String className = useShorthand ? tclass.name().unqualifiedName() : tclass.name().toString();
         int nattrs = tclass.nAttributes();
         if (nattrs == 0)
             return className;
@@ -133,11 +130,17 @@ public final class TInstance {
                 sb.append(", ");
         }
         sb.append(')');
-        if (isNullable)
-            sb.append(" NULL");
-        else
-            sb.append(" NOT NULL");
         return sb.toString();
+    }
+
+    // object interface
+
+    @Override
+    public String toString() {
+        String result = toStringIgnoringNullability(false);
+        if (tclass.nAttributes() != 0) // TODO there's no reason to do this except that it's backwards-compatible
+            result += (isNullable ? " NULL" : " NOT NULL"); // with existing tests.
+        return result;
     }
 
     @Override

@@ -45,6 +45,7 @@ import com.akiban.sql.types.TypeId;
 import com.google.common.primitives.UnsignedLongs;
 
 import java.lang.reflect.Field;
+import java.math.BigInteger;
 
 public class MNumeric extends SimpleDtdTClass {
 
@@ -202,17 +203,24 @@ public class MNumeric extends SimpleDtdTClass {
 
     public static final TClass DECIMAL = new MBigDecimal("decimal", 11);
 
-    private static final PValueIO bigintUnsignedIO = new SymmetricPValueIO() {
-        @Override
-        protected void symmetricCollationCopy(PValueSource in, TInstance typeInstance, PValueTarget out) {
-            long raw = in.getInt64();
-            raw = raw ^ Long.MIN_VALUE;
-            out.putInt64(raw);
-        }
-
+    private static final PValueIO bigintUnsignedIO = new PValueIO() {
         @Override
         public void copyCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
             out.putInt64(in.getInt64());
+        }
+
+        @Override
+        public void writeCollating(PValueSource in, TInstance typeInstance, PValueTarget out) {
+            String asString = UnsignedLongs.toString(in.getInt64());
+            BigInteger asBigint = new BigInteger(asString);
+            out.putObject(asBigint);
+        }
+
+        @Override
+        public void readCollating(PValueSource in, TInstance typeInstance, PValueTarget out) {
+            BigInteger asBigint = (BigInteger) in.getObject();
+            long asLong = UnsignedLongs.parseUnsignedLong(asBigint.toString());
+            out.putInt64(asLong);
         }
     };
 }
