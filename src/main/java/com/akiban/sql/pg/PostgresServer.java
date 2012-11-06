@@ -32,6 +32,7 @@ import com.akiban.sql.server.ServerStatementCache;
 
 import com.akiban.server.error.InvalidPortException;
 import com.akiban.server.service.monitor.MonitorStage;
+import com.akiban.server.service.monitor.ServerMonitor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,16 +58,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * to process requests.
  * Also keeps global state for shutdown and inter-connection communication like cancel.
 */
-public class PostgresServer implements Runnable, PostgresMXBean {
+public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     public static final String SERVER_PROPERTIES_PREFIX = "akserver.postgres.";
+    protected static final String SERVER_TYPE = "Postgres";
 
     private final Properties properties;
     private final int port;
     private final ServerServiceRequirements reqs;
     private ServerSocket socket = null;
     private volatile boolean running = false;
-    private volatile long startTime = 0;
+    private volatile long startTimeMillis, startTimeNanos;
     private boolean listening = false;
+    private int nconnections = 0;
     private Map<Integer,PostgresServerConnection> connections =
         new HashMap<Integer,PostgresServerConnection>();
     private Thread thread;
@@ -105,7 +108,8 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         running in its own thread. */
     public void start() {
         running = true;
-        startTime = System.nanoTime();
+        startTimeMillis = System.currentTimeMillis();
+        startTimeNanos = System.nanoTime();
         thread = new Thread(this);
         thread.start();
     }
@@ -155,6 +159,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         logger.info("Postgres server listening on port {}", port);
         Random rand = new Random();
         try {
+            reqs.monitor().registerServerMonitor(this);
             synchronized(this) {
                 if (!running) return;
                 socket = new ServerSocket(port);
@@ -166,6 +171,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
                 int secret = rand.nextInt();
                 PostgresServerConnection connection = 
                     new PostgresServerConnection(this, sock, sessionId, secret, reqs);
+                nconnections++;
                 connections.put(sessionId, connection);
                 connection.start();
             }
@@ -182,6 +188,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
                 catch (IOException ex) {
                 }
             }
+            reqs.monitor().deregisterServerMonitor(this);
             running = false;
         }
     }
@@ -321,7 +328,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     @Override
     public long getUptime()
     {
-        return (System.nanoTime() - startTime);
+        return (System.nanoTime() - startTimeNanos);
     }
 
     /** For testing, set the server's idea of the current time. */
@@ -332,4 +339,30 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     public Date getOverrideCurrentTime() {
         return overrideCurrentTime;
     }
+
+    /* ServerMonitor */
+
+    @Override
+    public String getServerType() {
+        return SERVER_TYPE;
+    }
+
+    @Override
+    public int getLocalPort() {
+        if (listening)
+            return port;
+        else
+            return -1;
+    }
+
+    @Override
+    public long getStartTimeMillis() {
+        return startTimeMillis;
+    }
+    
+    @Override
+    public int getSessionCount() {
+        return nconnections;
+    }
+
 }
