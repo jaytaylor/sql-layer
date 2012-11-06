@@ -1397,12 +1397,34 @@ public class PersistitStore implements Store, Service {
     }
 
     private void lockAndCheckVersion(Session session, RowDef rowDef) {
-        int tableID = rowDef.getRowDefId();
+        final LockService.Mode mode = LockService.Mode.SHARED;
+        final int tableID = rowDef.getRowDefId();
+
         // Since this is called on a per-row basis, we can't rely on reentrancy.
-        if(lockService.isTableClaimed(session, LockService.Mode.SHARED, tableID)) {
+        if(lockService.isTableClaimed(session, mode, tableID)) {
             return;
         }
-        lockService.claimTable(session, LockService.Mode.SHARED, tableID);
+
+        /*
+         * No need to retry locks or back off already acquired. Other locker is DDL
+         * and it performs needed backoff to prevent deadlocks.
+         * Note that tryClaim() could be used and if false, throw TableChanged
+         * right away. Instead, desire is for timeout to elapse here so that client
+         * doesn't spin in a try lop.
+         */
+        try {
+            if(session.hasTimeoutAfterNanos()) {
+                long remaining = session.getRemainingNanosBeforeTimeout();
+                if(remaining <= 0 || !lockService.tryClaimTableNanos(session, mode, tableID, remaining)) {
+                    throw new QueryTimedOutException(session.getElapsedMillis());
+                }
+            } else {
+                lockService.claimTableInterruptible(session, mode, tableID);
+            }
+        } catch(InterruptedException e) {
+            throw new QueryCanceledException(session);
+        }
+
         if(schemaManager.hasTableChanged(session, tableID)) {
             // Simple: Release claim so we hit this block again. Could also rollback transaction?
             lockService.releaseTable(session, LockService.Mode.SHARED, tableID);

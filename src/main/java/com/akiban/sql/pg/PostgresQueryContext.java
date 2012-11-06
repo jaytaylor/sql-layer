@@ -32,6 +32,7 @@ public class PostgresQueryContext extends ServerQueryContext<PostgresServerSessi
 {
     public PostgresQueryContext(PostgresServerSession server) {
         super(server);
+        server.getSession().setTimeoutAfterSeconds(getQueryTimeoutSec());
     }
 
     public boolean isColumnBinary(int i) {

@@ -79,6 +79,8 @@ import com.akiban.server.AccumulatorAdapter.AccumInfo;
 import com.akiban.server.error.AlterMadeNoChangeException;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidAlterException;
+import com.akiban.server.error.QueryCanceledException;
+import com.akiban.server.error.QueryTimedOutException;
 import com.akiban.server.error.ViewReferencesExist;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.FieldExpression;
@@ -1229,9 +1231,43 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     private void lockTables(Session session, List<Integer> tableIDs) {
-        Collections.sort(tableIDs); // Lock order: IDs low to high
-        for(Integer id : tableIDs) {
-            lockService.claimTable(session, LockService.Mode.EXCLUSIVE, id);
+        final LockService.Mode mode = LockService.Mode.EXCLUSIVE;
+        /*
+         * Lock order is well defined for DDL, but DML transactions can operate in any
+         * order. Current strategy is to give preference to DML that has already began so
+         * that a DDL doesn't kill off a (potentially large) amount of work and avoid
+         * deadlocks.
+         *
+         * Strategy:
+         * Claim (with timeout) the first table and if there are more, only use
+         * instantaneous claims and back off already acquired locks if unsuccessful.
+         */
+        Collections.sort(tableIDs);
+        final int count = tableIDs.size();
+        for(int i = 0; i < count;) {
+            final int tableID = tableIDs.get(i++);
+            if(i == 0) {
+                try {
+                    if(session.hasTimeoutAfterNanos()) {
+                        final long remaining = session.getRemainingNanosBeforeTimeout();
+                        if(remaining <= 0 || !lockService.tryClaimTableNanos(session, mode, tableID, remaining)) {
+                            throw new QueryTimedOutException(session.getElapsedMillis());
+                        }
+                    } else {
+                        lockService.claimTableInterruptible(session, mode, tableID);
+                    }
+                } catch(InterruptedException e) {
+                    throw new QueryCanceledException(session);
+                }
+            } else {
+                if(!lockService.tryClaimTable(session, mode, tableID)) {
+                    // Didn't get the new lock, unwind previous ones and start over
+                    for(int j = 0; j < i; ++j) {
+                        lockService.releaseTable(session, mode, tableIDs.get(j));
+                    }
+                    i = 0;
+                }
+            }
         }
     }
     

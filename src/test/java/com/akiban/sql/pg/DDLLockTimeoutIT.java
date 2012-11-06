@@ -136,7 +136,7 @@ public class DDLLockTimeoutIT extends PostgresServerITBase
             if (getDXLLock().isDDLLockEnabled())
                 getDXLLock().lock(session, DXLFunction.UNSPECIFIED_DDL_WRITE, -1);
             else
-                lockService().claimTable(session, LockService.Mode.EXCLUSIVE, tableID);
+                lockService().claimTableInterruptible(session, LockService.Mode.EXCLUSIVE, tableID);
         }
 
         private void doUnlock(Session session) throws InterruptedException {

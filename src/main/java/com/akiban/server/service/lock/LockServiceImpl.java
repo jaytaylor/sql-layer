@@ -109,8 +109,22 @@ public class LockServiceImpl implements LockService {
     }
 
     @Override
-    public boolean tryClaimTable(Session session, Mode mode, int tableID, int milliseconds) throws InterruptedException {
-        boolean locked = getLevel(mode, getLock(tableID)).tryLock(milliseconds, TimeUnit.MILLISECONDS);
+    public boolean tryClaimTable(Session session, Mode mode, int tableID) {
+        boolean locked = getLevel(mode, getLock(tableID)).tryLock();
+        if(locked) {
+            trackForUnlock(session, mode, tableID);
+        }
+        return locked;
+    }
+
+    @Override
+    public boolean tryClaimTableMillis(Session session, Mode mode, int tableID, long milliseconds) throws InterruptedException {
+        return tryClaimTableNanos(session, mode, tableID, TimeUnit.MILLISECONDS.toNanos(milliseconds));
+    }
+
+    @Override
+    public boolean tryClaimTableNanos(Session session, Mode mode, int tableID, long nanoseconds) throws InterruptedException {
+        boolean locked = getLevel(mode, getLock(tableID)).tryLock(nanoseconds, TimeUnit.NANOSECONDS);
         if(locked) {
             trackForUnlock(session, mode, tableID);
         }
