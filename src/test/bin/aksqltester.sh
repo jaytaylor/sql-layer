@@ -1,3 +1,4 @@
 #!/bin/bash
-BASEJAR=$(ls $(dirname $0)/../../../target/akiban-server-*.*.*-SNAPSHOT.jar)
-java -cp ${BASEJAR%.jar}-jar-with-dependencies.jar:${BASEJAR%.jar}-tests.jar com.akiban.sql.test.Tester "$@"
+TARGET=$(ls -d $(dirname $0)/../../../target)
+BASEJAR=$(ls ${TARGET}/akiban-server-*.*.*-SNAPSHOT.jar)
+java -cp "${BASEJAR}:${BASEJAR%.jar}-tests.jar:${TARGET}/dependency/*" com.akiban.sql.test.Tester "$@"
