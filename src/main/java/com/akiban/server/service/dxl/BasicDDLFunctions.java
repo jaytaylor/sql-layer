@@ -1262,7 +1262,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             } else {
                 if(!lockService.tryClaimTable(session, mode, tableID)) {
                     // Didn't get the new lock, unwind previous ones and start over
-                    for(int j = 0; j < i; ++j) {
+                    for(int j = 0; j < (i - 1); ++j) {
                         lockService.releaseTable(session, mode, tableIDs.get(j));
                     }
                     i = 0;
