@@ -159,12 +159,16 @@ public final class Session
 
     public long getRemainingNanosBeforeTimeout() {
         requireTimeoutAfterSet();
-        return System.nanoTime() - timeoutAfterNanos;
+        return timeoutAfterNanos - System.nanoTime();
     }
 
     public void setTimeoutAfterSeconds(long seconds) {
-        this.startMarkerNanos = System.nanoTime();
-        this.timeoutAfterNanos = startMarkerNanos + TimeUnit.SECONDS.toNanos(seconds);
+        if(seconds < 0) {
+            this.startMarkerNanos = this.timeoutAfterNanos = UNSET_NANOS;
+        } else {
+            this.startMarkerNanos = System.nanoTime();
+            this.timeoutAfterNanos = startMarkerNanos + TimeUnit.SECONDS.toNanos(seconds);
+        }
     }
 
     @SuppressWarnings("unused") // for <T> parameter; it's only useful for compile-time checking

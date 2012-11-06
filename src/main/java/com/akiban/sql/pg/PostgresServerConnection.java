@@ -883,6 +883,7 @@ public class PostgresServerConnection extends ServerSessionBase
         int rowsProcessed = 0;
         boolean success = false;
         try {
+            session.setTimeoutAfterSeconds(getQueryTimeoutSec());
             sessionMonitor.enterStage(MonitorStage.EXECUTE);
             rowsProcessed = pstmt.execute(context, maxrows);
             success = true;
