@@ -27,7 +27,6 @@
 package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
@@ -36,19 +35,19 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.IndexScanRowState;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.server.api.dml.IndexRowPrefixSelector;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.geophile.SpaceLatLon;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTargets;
 
 import java.math.BigDecimal;
 
@@ -162,10 +161,11 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         }
         zStart = space.shuffle(lat, lon);
         // Cursors going forward from starting z value (inclusive), and backward from the same z value (exclusive)
-        ValuesHolderRow zForwardRow = new ValuesHolderRow(physicalIndexRowType, Types3Switch.ON);
-        ValuesHolderRow zBackwardRow = new ValuesHolderRow(physicalIndexRowType, Types3Switch.ON);
-        ValuesHolderRow zMaxRow = new ValuesHolderRow(physicalIndexRowType, Types3Switch.ON);
-        ValuesHolderRow zMinRow = new ValuesHolderRow(physicalIndexRowType, Types3Switch.ON);
+        int indexRowFields = physicalIndexRowType.nFields();
+        SpatialIndexBoundExpressions zForwardRow = new SpatialIndexBoundExpressions(indexRowFields);
+        SpatialIndexBoundExpressions zBackwardRow = new SpatialIndexBoundExpressions(indexRowFields);
+        SpatialIndexBoundExpressions zMaxRow = new SpatialIndexBoundExpressions(indexRowFields);
+        SpatialIndexBoundExpressions zMinRow = new SpatialIndexBoundExpressions(indexRowFields);
         IndexBound zForward = new IndexBound(zForwardRow, indexColumnSelector);
         IndexBound zBackward = new IndexBound(zBackwardRow, indexColumnSelector);
         IndexBound zMax = new IndexBound(zMaxRow, indexColumnSelector);
@@ -175,37 +175,38 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         for (int f = 0; f < zPosition; f++) {
             if (Types3Switch.ON) {
                 PValueSource eqValueSource = loExpressions.pvalue(f);
-                PValueTargets.copyFrom(eqValueSource, zForwardRow.pvalueAt(f));
-                PValueTargets.copyFrom(eqValueSource, zBackwardRow.pvalueAt(f));
-                PValueTargets.copyFrom(eqValueSource, zMaxRow.pvalueAt(f));
-                PValueTargets.copyFrom(eqValueSource, zMinRow.pvalueAt(f));
+                zForwardRow.value(f, eqValueSource);
+                zBackwardRow.value(f, eqValueSource);
+                zMaxRow.value(f, eqValueSource);
+                zMinRow.value(f, eqValueSource);
             } else {
                 ValueSource eqValue = loExpressions.eval(f);
-                zForwardRow.holderAt(f).copyFrom(eqValue);
-                zBackwardRow.holderAt(f).copyFrom(eqValue);
-                zMaxRow.holderAt(f).copyFrom(eqValue);
-                zMinRow.holderAt(f).copyFrom(eqValue);
+                zForwardRow.value(f, eqValue);
+                zBackwardRow.value(f, eqValue);
+                zMaxRow.value(f, eqValue);
+                zMinRow.value(f, eqValue);
             }
         }
         // Z-value part of bounds
         if (Types3Switch.ON) {
-            zForwardRow.pvalueAt(zPosition).underlying(PUnderlying.INT_64);
-            zForwardRow.pvalueAt(zPosition).putInt64(zStart);
-            zBackwardRow.pvalueAt(zPosition).underlying(PUnderlying.INT_64);
-            zBackwardRow.pvalueAt(zPosition).putInt64(zStart);
-            zMaxRow.pvalueAt(zPosition).underlying(PUnderlying.INT_64);
-            zMaxRow.pvalueAt(zPosition).putInt64(Long.MAX_VALUE);
-            zMinRow.pvalueAt(zPosition).underlying(PUnderlying.INT_64);
-            zMinRow.pvalueAt(zPosition).putInt64(Long.MIN_VALUE);
+            PValue startPValue = new PValue(PUnderlying.INT_64);
+            PValue maxPValue = new PValue(PUnderlying.INT_64);
+            PValue minPValue = new PValue(PUnderlying.INT_64);
+            startPValue.putInt64(zStart);
+            maxPValue.putInt64(Long.MAX_VALUE);
+            minPValue.putInt64(Long.MIN_VALUE);
+            zForwardRow.value(zPosition, startPValue);
+            zBackwardRow.value(zPosition, startPValue);
+            zMaxRow.value(zPosition, maxPValue);
+            zMinRow.value(zPosition, minPValue);
         } else {
-            zForwardRow.holderAt(zPosition).expectType(AkType.LONG);
-            zForwardRow.holderAt(zPosition).putLong(zStart);
-            zBackwardRow.holderAt(zPosition).expectType(AkType.LONG);
-            zBackwardRow.holderAt(zPosition).putLong(zStart);
-            zMaxRow.holderAt(zPosition).expectType(AkType.LONG);
-            zMaxRow.holderAt(zPosition).putLong(Long.MAX_VALUE);
-            zMinRow.holderAt(zPosition).expectType(AkType.LONG);
-            zMinRow.holderAt(zPosition).putLong(Long.MIN_VALUE);
+            ValueSource startValue = new ValueHolder(AkType.LONG, zStart);
+            ValueSource maxValue = new ValueHolder(AkType.LONG, Long.MAX_VALUE);
+            ValueSource minValue = new ValueHolder(AkType.LONG, Long.MIN_VALUE);
+            zForwardRow.value(zPosition, startValue);
+            zBackwardRow.value(zPosition, startValue);
+            zMaxRow.value(zPosition, maxValue);
+            zMinRow.value(zPosition, minValue);
         }
         IndexKeyRange geKeyRange = IndexKeyRange.bounded(physicalIndexRowType, zForward, true, zMax, false);
         IndexKeyRange ltKeyRange = IndexKeyRange.bounded(physicalIndexRowType, zMin, false, zBackward, false);

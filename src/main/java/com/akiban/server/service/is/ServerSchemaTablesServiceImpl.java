@@ -44,11 +44,11 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.config.Property;
 import com.akiban.server.service.monitor.MonitorService;
 import com.akiban.server.service.monitor.MonitorStage;
+import com.akiban.server.service.monitor.ServerMonitor;
 import com.akiban.server.service.monitor.SessionMonitor;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.sql.pg.PostgresService;
 import com.google.inject.Inject;
 
 public class ServerSchemaTablesServiceImpl
@@ -57,23 +57,21 @@ public class ServerSchemaTablesServiceImpl
 
     static final TableName ERROR_CODES = new TableName (SCHEMA_NAME, "error_codes");
     static final TableName SERVER_INSTANCE_SUMMARY = new TableName (SCHEMA_NAME, "server_instance_summary");
+    static final TableName SERVER_SERVERS = new TableName (SCHEMA_NAME, "server_servers");
     static final TableName SERVER_SESSIONS = new TableName (SCHEMA_NAME, "server_sessions");
     static final TableName SERVER_PARAMETERS = new TableName (SCHEMA_NAME, "server_parameters");
     
     private final MonitorService monitor;
-    private final PostgresService postgres;
     private final ConfigurationService configService;
     private final AkServerInterface serverInterface;
     
     @Inject
     public ServerSchemaTablesServiceImpl (SchemaManager schemaManager, 
                                           MonitorService monitor, 
-                                          PostgresService postgres, 
                                           ConfigurationService configService,
                                           AkServerInterface serverInterface) {
         super(schemaManager);
         this.monitor = monitor;
-        this.postgres = postgres;
         this.configService = configService;
         this.serverInterface = serverInterface;
     }
@@ -85,6 +83,8 @@ public class ServerSchemaTablesServiceImpl
         attach (ais, true, ERROR_CODES, ServerErrorCodes.class);
         //SERVER_INSTANCE_SUMMARY
         attach (ais, true, SERVER_INSTANCE_SUMMARY, InstanceSummary.class);
+        //SERVER_SERVERS
+        attach (ais, true, SERVER_SERVERS, Servers.class);
         //SERVER_SESSIONS
         attach (ais, true, SERVER_SESSIONS, Sessions.class);
         //SERVER_PARAMETERS
@@ -128,21 +128,55 @@ public class ServerSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                long startTime = System.currentTimeMillis() -  
-                        (postgres.getServer().getUptime() / 1000000);
                 ValuesRow row = new ValuesRow (rowType,
                         serverInterface.getServerName(),
                         serverInterface.getServerVersion(),
-                        postgres.getServer().isListening() ? "RUNNING" : "CLOSED",
-                        startTime,
                         ++rowCounter);
-                ((FromObjectValueSource)row.eval(3)).setExplicitly(startTime/1000, AkType.TIMESTAMP);
-
                 return row;
             }
         }
     }
     
+    private class Servers extends BasicFactoryBase {
+
+        public Servers(TableName sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan (getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            return monitor.getServerMonitors().size();
+        }
+        
+        private class Scan extends BaseScan {
+            final Iterator<ServerMonitor> servers = monitor.getServerMonitors().values().iterator(); 
+            public Scan(RowType rowType) {
+                super(rowType);
+            }
+
+            @Override
+            public Row next() {
+                if (!servers.hasNext()) {
+                    return null;
+                }
+                ServerMonitor server = servers.next();
+                ValuesRow row = new ValuesRow(rowType,
+                                              server.getServerType(),
+                                              (server.getLocalPort() < 0) ? null : Long.valueOf(server.getLocalPort()),
+                                              null, // see below
+                                              Long.valueOf(server.getSessionCount()),
+                                              ++rowCounter);
+                ((FromObjectValueSource)row.eval(2)).setExplicitly(server.getStartTimeMillis()/1000, AkType.TIMESTAMP);
+                return row;
+            }
+        }
+    }
+
     private class Sessions extends BasicFactoryBase {
 
         public Sessions(TableName sourceTable) {
@@ -273,9 +307,13 @@ public class ServerSchemaTablesServiceImpl
         
         builder.userTable(SERVER_INSTANCE_SUMMARY)
             .colString("server_name", DESCRIPTOR_MAX, false)
-            .colString("server_version", DESCRIPTOR_MAX, false)
-            .colString("instance_status", DESCRIPTOR_MAX, false)
-            .colTimestamp("start_time");
+            .colString("server_version", DESCRIPTOR_MAX, false);
+        
+        builder.userTable(SERVER_SERVERS)
+            .colString("server_type", IDENT_MAX, false)
+            .colBigInt("local_port", true)
+            .colTimestamp("start_time", false)
+            .colBigInt("session_count", true);
         
         builder.userTable(SERVER_SESSIONS)
             .colBigInt("session_id", false)

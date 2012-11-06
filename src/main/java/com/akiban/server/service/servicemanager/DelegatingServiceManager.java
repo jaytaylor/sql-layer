@@ -38,7 +38,6 @@ import com.akiban.server.service.stats.StatisticsService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
-import com.akiban.sql.pg.PostgresService;
 
 public abstract class DelegatingServiceManager implements ServiceManager {
 
@@ -82,11 +81,6 @@ public abstract class DelegatingServiceManager implements ServiceManager {
     @Override
     public TreeService getTreeService() {
         return delegate().getTreeService();
-    }
-
-    @Override
-    public PostgresService getPostgresService() {
-        return delegate().getPostgresService();
     }
 
     @Override

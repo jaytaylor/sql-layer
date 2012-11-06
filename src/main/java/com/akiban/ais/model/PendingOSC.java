@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.ais.pt;
+package com.akiban.ais.model;
 
 import com.akiban.ais.util.TableChange;
 

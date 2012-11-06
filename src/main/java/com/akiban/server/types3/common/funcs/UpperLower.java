@@ -90,7 +90,7 @@ public abstract class UpperLower extends TScalarBase
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(stringType, 0);
+        builder.pickingCovers(stringType, 0);
     }
 
     @Override
@@ -102,14 +102,6 @@ public abstract class UpperLower extends TScalarBase
     @Override
     public TOverloadResult resultType()
     {
-        // actual return type is exactly the same as input type
-        return TOverloadResult.custom(new TCustomOverloadResult()
-        {
-            @Override
-            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
-            {
-                return inputs.get(0).instance();
-            }
-        });
+        return TOverloadResult.picking();
     }
 }

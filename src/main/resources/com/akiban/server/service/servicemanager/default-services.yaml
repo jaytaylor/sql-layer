@@ -4,7 +4,7 @@
     com.akiban.server.service.dxl.DXLService : com.akiban.server.service.dxl.DXLServiceImpl
     com.akiban.server.service.jmx.JmxRegistryService : com.akiban.server.service.jmx.JmxRegistryServiceImpl
     com.akiban.server.service.log4jconfig.Log4JConfigurationService : com.akiban.server.service.log4jconfig.Log4JConfigurationServiceImpl
-    com.akiban.server.service.network.NetworkService : com.akiban.server.service.network.NetworkServiceImpl
+    com.akiban.mysql.adapter.service.NetworkService : com.akiban.mysql.adapter.service.NetworkServiceImpl
     com.akiban.server.service.session.SessionService : com.akiban.server.service.session.SessionServiceImpl
     com.akiban.server.service.stats.StatisticsService : com.akiban.server.service.stats.StatisticsServiceImpl
     com.akiban.server.service.tree.TreeService : com.akiban.server.service.tree.TreeServiceImpl
