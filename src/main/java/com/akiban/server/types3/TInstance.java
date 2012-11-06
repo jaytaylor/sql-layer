@@ -114,8 +114,8 @@ public final class TInstance {
         return true;
     }
 
-    public String toStringIgnoringNullability() {
-        String className = tclass.name().toString();
+    public String toStringIgnoringNullability(boolean useShorthand) {
+        String className = useShorthand ? tclass.name().unqualifiedName() : tclass.name().toString();
         int nattrs = tclass.nAttributes();
         if (nattrs == 0)
             return className;
@@ -137,7 +137,7 @@ public final class TInstance {
 
     @Override
     public String toString() {
-        String result = toStringIgnoringNullability();
+        String result = toStringIgnoringNullability(false);
         if (tclass.nAttributes() != 0) // TODO there's no reason to do this except that it's backwards-compatible
             result += (isNullable ? " NULL" : " NOT NULL"); // with existing tests.
         return result;

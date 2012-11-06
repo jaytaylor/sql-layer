@@ -483,7 +483,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                             data.displayName().toLowerCase(),
                             lowest(data.getPriorities()),
                             data.describeInputs(),
-                            data.resultStrategy().toString(),
+                            data.resultStrategy().toString(true),
                             data.id(),
                             hiddenPk
                     };
@@ -493,7 +493,15 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
         @Override
         public long rowCount() {
-            return aggreatorsRegistry.allScalarsGroups().size() + scalarsRegistry.allScalarsGroups().size();
+            return countOverloads(aggreatorsRegistry) + countOverloads(scalarsRegistry);
+        }
+
+        private long countOverloads(ResolvablesRegistry<?> registry) {
+            long count = 0;
+            for (ScalarsGroup<?> group : registry.allScalarsGroups()) {
+                count += group.getOverloads().size();
+            }
+            return count;
         }
 
         public OverloadsTableFactory(TableName tableName) {

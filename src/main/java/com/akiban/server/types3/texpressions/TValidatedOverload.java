@@ -299,14 +299,14 @@ public class TValidatedOverload implements TOverload {
             TInputSet inputSet = (i == nInputsRaw) ? varargInputSet : inputSetsByPos.get(i);
             String description = map.get(inputSet);
             if (description == null) {
-                TClass inputTClass = inputSet.targetType();
+                TClass inputTClass = inputSet == null ? null : inputSet.targetType();
                 if (inputTClass == null) {
                     description = "T";
                     if (anyCount > 0)
                         description += ('#' + anyCount);
                     ++anyCount;
                 } else {
-                    description = inputTClass.toString();
+                    description = inputTClass.name().unqualifiedName();
                 }
                 map.put(inputSet, description);
             }
