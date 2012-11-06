@@ -34,6 +34,10 @@ import com.akiban.server.explain.*;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
@@ -224,8 +228,14 @@ final class Limit_Default extends Operator
                         PValueSource value = context.getPValue(limit());
                         if (value.isNull())
                             this.limitLeft = Integer.MAX_VALUE;
-                        else
-                            this.limitLeft = value.getInt32();
+                        else {
+                            TInstance tinst = MNumeric.INT.instance(true);
+                            TExecutionContext executionContext = 
+                                new TExecutionContext(null, tinst, context);
+                            PValue pvalue = new PValue(MNumeric.INT.underlyingType());
+                            MNumeric.INT.fromObject(executionContext, value, pvalue);
+                            this.limitLeft = pvalue.getInt32();
+                        }
                     }
                     else {
                         ValueSource value = context.getValue(limit());
