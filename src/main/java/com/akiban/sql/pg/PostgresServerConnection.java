@@ -520,10 +520,17 @@ public class PostgresServerConnection extends ServerSessionBase
             finally {
                 sessionMonitor.leaveStage();
             }
+            boolean singleStmt = (stmts.size() == 1);
             for (StatementNode stmt : stmts) {
-                pstmt = generateStatement(stmt, null, null);
-                if ((statementCache != null) && (stmts.size() == 1))
-                    statementCache.put(sql, pstmt);
+                String stmtSQL;
+                if (singleStmt)
+                    stmtSQL = sql;
+                else
+                    stmtSQL = sql.substring(stmt.getBeginOffset(), 
+                                            stmt.getEndOffset() + 1);
+                pstmt = generateStatement(sql, stmt, null, null);
+                if ((statementCache != null) && singleStmt)
+                    statementCache.put(stmtSQL, pstmt);
                 pstmt.sendDescription(context, false);
                 rowsProcessed = executeStatement(pstmt, context, -1);
             }
@@ -569,7 +576,7 @@ public class PostgresServerConnection extends ServerSessionBase
             finally {
                 sessionMonitor.leaveStage();
             }
-            pstmt = generateStatement(stmt, params, paramTypes);
+            pstmt = generateStatement(sql, stmt, params, paramTypes);
             if (statementCache != null)
                 statementCache.put(sql, pstmt);
         }
@@ -831,26 +838,26 @@ public class PostgresServerConnection extends ServerSessionBase
         statementCache = getStatementCache();
     }
 
-    protected PostgresStatement generateStatement(StatementNode stmt, 
+    protected PostgresStatement generateStatement(String sql, StatementNode stmt, 
                                                   List<ParameterNode> params,
                                                   int[] paramTypes) {
         // Costing requires looking at AIS and potentially scanning index_stats rows
         ServerTransaction local = (transaction == null) ? new ServerTransaction(this, true) : null;
         try {
-            return generateStatementInternal(stmt, params, paramTypes);
+            return generateStatementInternal(sql, stmt, params, paramTypes);
         } finally {
             if (local != null)
                 local.commit();
         }
     }
 
-    private PostgresStatement generateStatementInternal(StatementNode stmt,
+    private PostgresStatement generateStatementInternal(String sql, StatementNode stmt,
                                                         List<ParameterNode> params,
                                                         int[] paramTypes) {
         try {
             sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
             for (PostgresStatementGenerator generator : parsedGenerators) {
-                PostgresStatement pstmt = generator.generate(this, stmt, 
+                PostgresStatement pstmt = generator.generate(this, sql, stmt, 
                                                              params, paramTypes);
                 if (pstmt != null) return pstmt;
             }

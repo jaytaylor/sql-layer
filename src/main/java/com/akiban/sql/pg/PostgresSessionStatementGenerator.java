@@ -41,7 +41,7 @@ public class PostgresSessionStatementGenerator extends PostgresBaseStatementGene
 
     @Override
     public PostgresStatement generate(PostgresServerSession server,
-                                      StatementNode stmt, 
+                                      String sql, StatementNode stmt, 
                                       List<ParameterNode> params, int[] paramTypes)  {
         switch (stmt.getNodeType()) {
         case NodeTypes.SET_SCHEMA_NODE:
