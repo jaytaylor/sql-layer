@@ -76,11 +76,6 @@ class ConcurrentAtomicsBase extends MTBase {
         return uniqueStartupConfigProperties(getClass());
     }
 
-    @Override
-    public void waitForStableAIS() {
-        // Don't artificially wait, these tests are suppose to do things deterministically
-    }
-
     // ConcurrentAtomicsBase interface
 
     protected void scanUpdateConfirm(int tableId,
