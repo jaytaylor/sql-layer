@@ -40,6 +40,7 @@ import com.akiban.sql.optimizer.rule.PlanContext;
 
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.*;
+import com.akiban.sql.server.ServerStatement;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.server.error.SQLParseException;
@@ -60,6 +61,11 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorCompiler.class);
 
+    private static final PostgresStubStatement OPERATOR_COMPILER_STUB = new PostgresStubStatement(
+            ServerStatement.TransactionMode.WRITE_STEP_ISOLATED,
+            ServerStatement.TransactionAbortedMode.NOT_ALLOWED
+    );
+
     protected PostgresOperatorCompiler() {
     }
 
@@ -76,8 +82,8 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
         // This very inefficient reparsing by every generator is actually avoided.
         SQLParser parser = server.getParser();
         try {
-            return generate(server, parser.parseStatement(sql), 
-                            parser.getParameterList(), paramTypes);
+            return generateInitial(server, parser.parseStatement(sql),
+                                   parser.getParameterList(), paramTypes);
         } 
         catch (SQLParserException ex) {
             throw new SQLParseException(ex);
@@ -131,10 +137,18 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
     }
 
     @Override
-    public PostgresStatement generate(PostgresServerSession session,
-                                      StatementNode stmt, 
-                                      List<ParameterNode> params, int[] paramTypes) {
+    public PostgresStatement generateInitial(PostgresServerSession session,
+                                             StatementNode stmt,
+                                             List<ParameterNode> params, int[] paramTypes) {
         if (stmt instanceof CallStatementNode || !(stmt instanceof DMLStatementNode))
+            return null;
+        return OPERATOR_COMPILER_STUB;
+    }
+
+    @Override
+    public PostgresStatement generateFinal(PostgresServerSession session, PostgresStatement pstmt, StatementNode stmt,
+                                           List<ParameterNode> params, int[] paramTypes) {
+        if (pstmt != OPERATOR_COMPILER_STUB)
             return null;
         DMLStatementNode dmlStmt = (DMLStatementNode)stmt;
         PlanContext planContext = new ServerPlanContext(this, new PostgresQueryContext(session));
@@ -163,7 +177,7 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
                         if (pgType == null)
                             pgType = new PostgresType(oid, (short)-1, -1, null, null);
                         else
-                            pgType = new PostgresType(oid,  (short)-1, -1, 
+                            pgType = new PostgresType(oid,  (short)-1, -1,
                                                       pgType.getAkType(),
                                                       pgType.getInstance());
                     }

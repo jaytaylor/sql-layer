@@ -32,6 +32,7 @@ import com.akiban.sql.parser.CallStatementNode;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.StaticMethodCallNode;
+import com.akiban.sql.server.ServerStatement;
 
 import java.util.List;
 
@@ -40,16 +41,29 @@ import java.util.List;
  */
 public class PostgresCallStatementGenerator extends PostgresBaseStatementGenerator
 {
+    private static final PostgresStubStatement CALL_STATEMENT_STUB = new PostgresStubStatement(
+            ServerStatement.TransactionMode.WRITE_STEP_ISOLATED,
+            ServerStatement.TransactionAbortedMode.NOT_ALLOWED
+    );
+
     public PostgresCallStatementGenerator(PostgresServerSession server)
     {
     }
 
     @Override
-    public PostgresStatement generate(PostgresServerSession server,
-                                      StatementNode stmt,
-                                      List<ParameterNode> params, int[] paramTypes)
+    public PostgresStatement generateInitial(PostgresServerSession server,
+                                             StatementNode stmt,
+                                             List<ParameterNode> params, int[] paramTypes)
     {
-        if (stmt instanceof CallStatementNode) {
+        if (stmt instanceof CallStatementNode)
+            return CALL_STATEMENT_STUB;
+        return null;
+    }
+
+    @Override
+    public PostgresStatement generateFinal(PostgresServerSession server, PostgresStatement pstmt, StatementNode stmt,
+                                           List<ParameterNode> params, int[] paramTypes) {
+        if (pstmt != CALL_STATEMENT_STUB) {
             CallStatementNode call = (CallStatementNode)stmt;
             StaticMethodCallNode methodCall = (StaticMethodCallNode)call.methodCall().getJavaValueNode();
             ServerRoutineInvocation invocation =
@@ -67,5 +81,4 @@ public class PostgresCallStatementGenerator extends PostgresBaseStatementGenerat
         }
         return null;
     }
-
 }

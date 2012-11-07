@@ -850,8 +850,8 @@ public class PostgresServerConnection extends ServerSessionBase
         try {
             sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
             for (PostgresStatementGenerator generator : parsedGenerators) {
-                PostgresStatement pstmt = generator.generate(this, stmt, 
-                                                             params, paramTypes);
+                PostgresStatement pstmt = generator.generateInitial(this, stmt,
+                                                                    params, paramTypes);
                 if (pstmt != null) return pstmt;
             }
         }

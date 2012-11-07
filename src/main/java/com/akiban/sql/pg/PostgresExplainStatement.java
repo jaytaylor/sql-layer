@@ -42,8 +42,11 @@ public class PostgresExplainStatement implements PostgresStatement
     private String colName;
     private PostgresType colType;
     private boolean usePVals;
-    
-    public PostgresExplainStatement(List<String> explanation, boolean usePVals) {
+
+    public PostgresExplainStatement() {
+    }
+
+    public void initialize(List<String> explanation, boolean usePVals) {
         this.explanation = explanation;
 
         int maxlen = 32;

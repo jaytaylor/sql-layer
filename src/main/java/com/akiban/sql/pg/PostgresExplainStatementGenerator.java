@@ -54,10 +54,10 @@ public class PostgresExplainStatementGenerator extends PostgresBaseStatementGene
     }
 
     @Override
-    public PostgresStatement generate(PostgresServerSession server,
-                                      StatementNode stmt, 
-                                      List<ParameterNode> params,
-                                      int[] paramTypes)  {
+    public PostgresStatement generateInitial(PostgresServerSession server,
+                                             StatementNode stmt,
+                                             List<ParameterNode> params,
+                                             int[] paramTypes)  {
         if (stmt.getNodeType() != NodeTypes.EXPLAIN_STATEMENT_NODE)
             return null;
         StatementNode innerStmt = ((ExplainStatementNode)stmt).getStatement();
@@ -65,13 +65,23 @@ public class PostgresExplainStatementGenerator extends PostgresBaseStatementGene
             throw new UnsupportedExplainException();
         if (!(innerStmt instanceof DMLStatementNode))
             throw new UnableToExplainException ();
+        return new PostgresExplainStatement();
+    }
+
+    @Override
+    public PostgresStatement generateFinal(PostgresServerSession server, PostgresStatement pstmt,
+                                           StatementNode stmt, List<ParameterNode> params, int[] paramTypes) {
+        if (!(pstmt instanceof PostgresExplainStatement))
+            return null;
         ExplainPlanContext context = new ExplainPlanContext(compiler);
+        StatementNode innerStmt = ((ExplainStatementNode)stmt).getStatement();
         BasePlannable result = compiler.compile((DMLStatementNode)innerStmt, params, context);
         List<String> explain;
         if (compiler instanceof PostgresJsonCompiler)
             explain = Collections.singletonList(result.explainToJson(context.getExplainContext()));
         else
             explain = result.explainPlan(context.getExplainContext(), server.getDefaultSchemaName());
-        return new PostgresExplainStatement(explain, compiler.usesPValues());
+        ((PostgresExplainStatement)pstmt).initialize(explain, compiler.usesPValues());
+        return pstmt;
     }
 }

@@ -41,14 +41,22 @@ public class PostgresDDLStatementGenerator extends PostgresBaseStatementGenerato
     }
 
     @Override
-    public PostgresStatement generate(PostgresServerSession server,
-                                      StatementNode stmt, 
-                                      List<ParameterNode> params,
-                                      int[] paramTypes) {
+    public PostgresStatement generateInitial(PostgresServerSession server,
+                                             StatementNode stmt,
+                                             List<ParameterNode> params,
+                                             int[] paramTypes) {
         if (!(stmt instanceof DDLStatementNode))
             return null;
         if ((params != null) && !params.isEmpty())
             throw new MissingDDLParametersException ();
         return new PostgresDDLStatement((DDLStatementNode)stmt, server.getBooleanProperty("newtypes", Types3Switch.ON));
+    }
+
+    @Override
+    public PostgresStatement generateFinal(PostgresServerSession server, PostgresStatement pstmt, StatementNode stmt,
+                                           List<ParameterNode> params, int[] paramTypes) {
+        if (pstmt instanceof PostgresDDLStatement)
+            return pstmt;
+        return null;
     }
 }

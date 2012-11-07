@@ -26,23 +26,41 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.parser.ParameterNode;
+import com.akiban.sql.server.ServerStatement;
 
-import java.util.List;
+import java.io.IOException;
 
-/** Turn an SQL statement into something executable. */
-public interface PostgresStatementGenerator extends PostgresStatementParser
-{
+public class PostgresStubStatement implements PostgresStatement {
+    private final TransactionMode transactionMode;
+    private final TransactionAbortedMode transactionAbortedMode;
 
-    /** Return executable form of the given parsed statement or
-     * <code>null</code> if this generator cannot handle it. */
-    public PostgresStatement generateInitial(PostgresServerSession server,
-                                             StatementNode stmt,
-                                             List<ParameterNode> params, int[] paramTypes);
+    public PostgresStubStatement(TransactionMode transactionMode, TransactionAbortedMode transactionAbortedMode) {
+        this.transactionMode = transactionMode;
+        this.transactionAbortedMode = transactionAbortedMode;
+    }
 
-    public PostgresStatement generateFinal(PostgresServerSession server,
-                                           PostgresStatement pstmt,
-                                           StatementNode stmt,
-                                           List<ParameterNode> params, int[] paramTypes);
+    @Override
+    public PostgresType[] getParameterTypes() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void sendDescription(PostgresQueryContext context, boolean always) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public TransactionMode getTransactionMode() {
+        return transactionMode;
+    }
+
+    @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        return transactionAbortedMode;
+    }
 }
