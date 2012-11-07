@@ -27,8 +27,6 @@
 package com.akiban.sql.pg;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowPool;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerSessionBase;
 import com.akiban.sql.server.ServerSessionMonitor;
@@ -41,7 +39,6 @@ import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.SQLParserException;
 import com.akiban.sql.parser.StatementNode;
 
-import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -94,6 +91,16 @@ public class PostgresServerConnection extends ServerSessionBase
     private Thread thread;
 
     private volatile String cancelForKillReason, cancelByUser;
+
+    private static class GeneratedResult {
+        public PostgresStatementGenerator generator;
+        public PostgresStatement statement;
+
+        public GeneratedResult(PostgresStatementGenerator generator, PostgresStatement statement) {
+            this.generator = generator;
+            this.statement = statement;
+        }
+    }
 
     public PostgresServerConnection(PostgresServer server, Socket socket, 
                                     int sessionId, int secret,
@@ -521,11 +528,19 @@ public class PostgresServerConnection extends ServerSessionBase
                 sessionMonitor.leaveStage();
             }
             for (StatementNode stmt : stmts) {
-                pstmt = generateStatement(stmt, null, null);
-                if ((statementCache != null) && (stmts.size() == 1))
-                    statementCache.put(sql, pstmt);
-                pstmt.sendDescription(context, false);
-                rowsProcessed = executeStatement(pstmt, context, -1);
+                GeneratedResult res = generateStatement(stmt, null, null);
+                boolean success = false;
+                ServerTransaction local = beforeExecute(res.statement);
+                try {
+                    pstmt = generateStatementFinal(res, stmt, null, null);
+                    if ((statementCache != null) && (stmts.size() == 1))
+                        statementCache.put(sql, pstmt);
+                    pstmt.sendDescription(context, false);
+                    rowsProcessed = executeStatement(pstmt, context, -1);
+                    success = true;
+                } finally {
+                    afterExecute(pstmt, local, success);
+                }
             }
         }
         readyForQuery();
@@ -569,7 +584,15 @@ public class PostgresServerConnection extends ServerSessionBase
             finally {
                 sessionMonitor.leaveStage();
             }
-            pstmt = generateStatement(stmt, params, paramTypes);
+            GeneratedResult res = generateStatement(stmt, params, paramTypes);
+            ServerTransaction local = beforeExecute(res.statement);
+            boolean success = false;
+            try {
+                pstmt = generateStatementFinal(res, stmt, params, paramTypes);
+                success = true;
+            } finally {
+                afterExecute(pstmt, local, success);
+            }
             if (statementCache != null)
                 statementCache.put(sql, pstmt);
         }
@@ -831,34 +854,35 @@ public class PostgresServerConnection extends ServerSessionBase
         statementCache = getStatementCache();
     }
 
-    protected PostgresStatement generateStatement(StatementNode stmt, 
-                                                  List<ParameterNode> params,
-                                                  int[] paramTypes) {
-        // Costing requires looking at AIS and potentially scanning index_stats rows
-        ServerTransaction local = (transaction == null) ? new ServerTransaction(this, true) : null;
-        try {
-            return generateStatementInternal(stmt, params, paramTypes);
-        } finally {
-            if (local != null)
-                local.commit();
-        }
-    }
-
-    private PostgresStatement generateStatementInternal(StatementNode stmt,
-                                                        List<ParameterNode> params,
-                                                        int[] paramTypes) {
+    protected GeneratedResult generateStatement(StatementNode stmt,
+                                                List<ParameterNode> params,
+                                                int[] paramTypes) {
         try {
             sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
             for (PostgresStatementGenerator generator : parsedGenerators) {
                 PostgresStatement pstmt = generator.generateInitial(this, stmt,
                                                                     params, paramTypes);
-                if (pstmt != null) return pstmt;
+                if (pstmt != null)
+                    return new GeneratedResult(generator, pstmt);
             }
         }
         finally {
             sessionMonitor.leaveStage();
         }
         throw new UnsupportedSQLException ("", stmt);
+    }
+
+    protected PostgresStatement generateStatementFinal(GeneratedResult generated,
+                                                       StatementNode stmt,
+                                                       List<ParameterNode> params,
+                                                       int[] paramTypes) {
+        try {
+            sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
+            return generated.generator.generateFinal(this, generated.statement, stmt, params, paramTypes);
+        }
+        finally {
+            sessionMonitor.leaveStage();
+        }
     }
 
     protected int executeStatement(PostgresStatement pstmt, PostgresQueryContext context, int maxrows)
