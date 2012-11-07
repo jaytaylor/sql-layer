@@ -75,7 +75,6 @@ public class PostgresServerConnection extends ServerSessionBase
     private static final Logger logger = LoggerFactory.getLogger(PostgresServerConnection.class);
     private static final InOutTap READ_MESSAGE = Tap.createTimer("PostgresServerConnection: read message");
     private static final InOutTap PROCESS_MESSAGE = Tap.createTimer("PostgresServerConnection: process message");
-    private static final String SERVER_TYPE = "Postgres";
 
     private final PostgresServer server;
     private boolean running = false, ignoreUntilSync = false;
@@ -105,7 +104,7 @@ public class PostgresServerConnection extends ServerSessionBase
         this.socket = socket;
         this.sessionId = sessionId;
         this.secret = secret;
-        this.sessionMonitor = new ServerSessionMonitor(SERVER_TYPE, sessionId);
+        this.sessionMonitor = new ServerSessionMonitor(PostgresServer.SERVER_TYPE, sessionId);
         sessionMonitor.setRemoteAddress(socket.getInetAddress().getHostAddress());
         reqs.monitor().registerSessionMonitor(sessionMonitor);
     }

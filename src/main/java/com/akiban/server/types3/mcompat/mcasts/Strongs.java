@@ -102,7 +102,7 @@ public final class Strongs {
             MBinary.LONGBLOB
     );
 
-    public static final TStrongCasts fromint = TStrongCasts.from(MNumeric.TINYINT).to(
+    public static final TStrongCasts fromTinyint = TStrongCasts.from(MNumeric.TINYINT).to(
             MNumeric.SMALLINT,
             MNumeric.MEDIUMINT,
             MNumeric.INT,

@@ -46,10 +46,9 @@ public final class SchemaTableServiceIT extends ITBase {
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
-                .bind(BasicInfoSchemaTablesService.class, BasicInfoSchemaTablesServiceImpl.class)
-                .bind(StorageSchemaTablesService.class, StorageSchemaTablesServiceImpl.class)
-                .bind(ServerSchemaTablesService.class, ServerSchemaTablesServiceImpl.class)
-                .overrideRequires(getClass().getResource("SchemaTableService-requires.yaml"));
+                .bindAndRequire(BasicInfoSchemaTablesService.class, BasicInfoSchemaTablesServiceImpl.class)
+                .bindAndRequire(StorageSchemaTablesService.class, StorageSchemaTablesServiceImpl.class)
+                .bindAndRequire(ServerSchemaTablesService.class, ServerSchemaTablesServiceImpl.class);
     }
 
     @Override
@@ -71,7 +70,7 @@ public final class SchemaTableServiceIT extends ITBase {
     
     @Test
     public void baseInfoExamine() {
-        assertEquals(34, ais.getUserTables().size());
+        assertEquals(37, ais.getUserTables().size());
         assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.SCHEMATA));
         assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.TABLES));
         assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.COLUMNS));
@@ -110,6 +109,7 @@ public final class SchemaTableServiceIT extends ITBase {
     public void serverExamine() {
         assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_INSTANCE_SUMMARY));
         assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_PARAMETERS));
+        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_SERVERS));
         assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_SESSIONS));
         assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.ERROR_CODES));
     }

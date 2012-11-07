@@ -27,6 +27,8 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.test.it.ITBase;
+import com.akiban.server.service.config.Property;
+import com.akiban.server.service.servicemanager.GuicedServiceManager;
 
 import org.junit.After;
 import static org.junit.Assert.fail;
@@ -39,6 +41,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.concurrent.Callable;
 
 @Ignore
 public class PostgresServerITBase extends ITBase
@@ -54,8 +58,19 @@ public class PostgresServerITBase extends ITBase
     public static final String USER_NAME = "auser";
     public static final String USER_PASSWORD = "apassword";
 
+    @Override
+    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
+        return super.serviceBindingsProvider()
+                .bindAndRequire(PostgresService.class, PostgresServerManager.class);
+    }
+
+    @Override
+    protected Collection<Property> startupConfigProperties() {
+        return uniqueStartupConfigProperties(PostgresServerITBase.class);
+    }
+
     protected Connection openConnection() throws Exception {
-        int port = serviceManager().getPostgresService().getPort();
+        int port = getPostgresService().getPort();
         if (port <= 0) {
             throw new Exception("akserver.postgres.port is not set.");
         }
@@ -68,15 +83,28 @@ public class PostgresServerITBase extends ITBase
         connection.close();
     }
 
-    protected PostgresServer server() {
-        return serviceManager().getPostgresService().getServer();
+    protected PostgresService getPostgresService() {
+        return serviceManager().getServiceByClass(PostgresService.class);
     }
+
+    protected PostgresServer server() {
+        return getPostgresService().getServer();
+    }
+
+    private static final Callable<Void> forgetOnStopServices = new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                forgetConnection();
+                return null;
+            }
+        };
 
     // One element connection pool.
     private static Connection connection = null;
 
     protected Connection getConnection() throws Exception {
         if (connection == null) {
+            beforeStopServices.add(forgetOnStopServices);
             for (int i = 0; i < 6; i++) {
                 if (server().isListening())
                     break;
@@ -101,6 +129,7 @@ public class PostgresServerITBase extends ITBase
         if (connection != null) {
             closeConnection(connection);
             connection = null;
+            beforeStopServices.remove(forgetOnStopServices);
         }
     }
 

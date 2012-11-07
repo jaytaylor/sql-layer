@@ -44,18 +44,13 @@ import com.akiban.server.types3.texpressions.TInputSetBuilder;
 
 public class SequenceCurrentValue extends TScalarBase {
 
-    public static final TScalar[] INSTANCES = SequenceNextValue.create();
-    
-    public static TScalar[] create() {
-        return new TScalar[] {
-            new SequenceCurrentValue(MNumeric.BIGINT)
-        };
-    }
+    public static final TScalar INSTANCE = new SequenceCurrentValue(MNumeric.BIGINT);
+
     protected final TClass inputType;
     
     private static final Logger logger = LoggerFactory.getLogger(SequenceCurrentValue.class);
 
-    public SequenceCurrentValue (TClass returnType) {
+    private SequenceCurrentValue (TClass returnType) {
         this.inputType = returnType;
     }
 

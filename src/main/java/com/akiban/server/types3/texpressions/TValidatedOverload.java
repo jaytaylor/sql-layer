@@ -186,19 +186,19 @@ public class TValidatedOverload implements TOverload {
         return result;
     }
 
+    public String describeInputs() {
+        StringBuilder sb = new StringBuilder();
+        buildInputsDescription(sb);
+        return sb.toString();
+    }
+
     // Redefine toString
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(overload.displayName()).append('(');
-        for (int i = 0, nPos = positionalInputs(), nDesc = inputSetDescriptions.length; i < nDesc; ++i) {
-            sb.append(inputSetDescriptions[i]);
-            if (i == nPos)
-                sb.append("...");
-            if (i+1 < nDesc)
-                sb.append(", ");
-        }
+        buildInputsDescription(sb);
         sb.append(") -> ").append(resultStrategy);
         return sb.toString();
     }
@@ -249,6 +249,16 @@ public class TValidatedOverload implements TOverload {
         this.inputsToInputSetIndex = mapInputsToInputSetIndex(inputSetsByPos, inputSetsCached, varargs);
     }
 
+    private void buildInputsDescription(StringBuilder sb) {
+        for (int i = 0, nPos = positionalInputs(), nDesc = inputSetDescriptions.length; i < nDesc; ++i) {
+            sb.append(inputSetDescriptions[i]);
+            if (i == nPos)
+                sb.append("...");
+            if (i+1 < nDesc)
+                sb.append(", ");
+        }
+    }
+
     private static int[] mapInputsToInputSetIndex(List<TInputSet> inputSetsByPos,
                                                   List<TInputSet> inputSetsCached,
                                                   TInputSet varargs)
@@ -289,14 +299,14 @@ public class TValidatedOverload implements TOverload {
             TInputSet inputSet = (i == nInputsRaw) ? varargInputSet : inputSetsByPos.get(i);
             String description = map.get(inputSet);
             if (description == null) {
-                TClass inputTClass = inputSet.targetType();
+                TClass inputTClass = inputSet == null ? null : inputSet.targetType();
                 if (inputTClass == null) {
                     description = "T";
                     if (anyCount > 0)
                         description += ('#' + anyCount);
                     ++anyCount;
                 } else {
-                    description = inputTClass.toString();
+                    description = inputTClass.name().unqualifiedName();
                 }
                 map.put(inputSet, description);
             }

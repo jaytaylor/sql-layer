@@ -24,22 +24,38 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.aisddl;
+package com.akiban.qp.memoryadapter;
 
-import com.akiban.sql.ServerSessionITBase;
-import com.akiban.sql.parser.DDLStatementNode;
-import com.akiban.sql.parser.StatementNode;
+import com.akiban.ais.model.TableName;
+import com.akiban.qp.row.Row;
+import com.akiban.qp.row.ValuesRow;
+import com.akiban.qp.rowtype.RowType;
 
-public class AISDDLITBase extends ServerSessionITBase {
-    protected void executeDDL(String sql) throws Exception {
-        // Most of the state in this depends on the current AIS, which changes
-        // as a result of this, so it's simplest to just make a new session
-        // every time. Only views need all of the binder state, but
-        // it's just as easy to make the parser this way.
-        TestSession session = new TestSession();
-        StatementNode stmt = session.getParser().parseStatement(sql);
-        assert (stmt instanceof DDLStatementNode) : stmt;
-        AISDDL.execute((DDLStatementNode)stmt, new TestQueryContext(session));
+import java.util.Iterator;
+
+public abstract class SimpleMemoryGroupScan<T> implements MemoryGroupCursor.GroupScan {
+
+    protected abstract Object[] createRow(T data, int hiddenPk);
+
+    @Override
+    public Row next() {
+        if (!iterator.hasNext())
+            return null;
+        Object[] rowContents = createRow(iterator.next(), ++hiddenPk);
+        return new ValuesRow(rowType, rowContents);
     }
 
+    @Override
+    public void close() {
+        // nothing
+    }
+
+    public SimpleMemoryGroupScan(MemoryAdapter adapter, TableName tableName, Iterator<? extends T> iterator) {
+        this.iterator = iterator;
+        this.rowType = adapter.schema().userTableRowType(adapter.schema().ais().getUserTable(tableName));
+    }
+
+    private final Iterator<? extends T> iterator;
+    private final RowType rowType;
+    private int hiddenPk = 0;
 }

@@ -47,7 +47,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
-import com.akiban.ais.pt.PendingOSC;
+import com.akiban.ais.model.PendingOSC;
 import com.akiban.ais.util.TableChange;
 import com.akiban.server.error.ProtobufReadException;
 import com.akiban.server.geophile.Space;

@@ -54,6 +54,15 @@ public final class TInstanceGenerator {
         return tclass;
     }
 
+    public String toString(boolean useShorthand) {
+        return setNullable(true).toStringIgnoringNullability(useShorthand);
+    }
+
+    @Override
+    public String toString() {
+        return toString(false);
+    }
+
     public TInstanceGenerator(TClass tclass, int... attrs) {
         this.tclass = tclass;
         this.attrs = Arrays.copyOf(attrs, attrs.length);

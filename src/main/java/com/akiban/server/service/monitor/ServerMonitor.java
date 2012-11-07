@@ -24,22 +24,18 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.aisddl;
+package com.akiban.server.service.monitor;
 
-import com.akiban.sql.ServerSessionITBase;
-import com.akiban.sql.parser.DDLStatementNode;
-import com.akiban.sql.parser.StatementNode;
+public interface ServerMonitor {
+    /** What kind of server is this? */
+    String getServerType();
 
-public class AISDDLITBase extends ServerSessionITBase {
-    protected void executeDDL(String sql) throws Exception {
-        // Most of the state in this depends on the current AIS, which changes
-        // as a result of this, so it's simplest to just make a new session
-        // every time. Only views need all of the binder state, but
-        // it's just as easy to make the parser this way.
-        TestSession session = new TestSession();
-        StatementNode stmt = session.getParser().parseStatement(sql);
-        assert (stmt instanceof DDLStatementNode) : stmt;
-        AISDDL.execute((DDLStatementNode)stmt, new TestQueryContext(session));
-    }
+    /** The port in use, or <code>-1</code> if not listening or not applicable. */
+    int getLocalPort();
 
+    /** The system time at which this server started. */
+    long getStartTimeMillis();
+    
+    /** The total number of sessions services, including those no longer active. */
+    int getSessionCount();
 }
