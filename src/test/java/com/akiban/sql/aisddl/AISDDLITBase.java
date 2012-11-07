@@ -39,7 +39,7 @@ public class AISDDLITBase extends ServerSessionITBase {
         TestSession session = new TestSession();
         StatementNode stmt = session.getParser().parseStatement(sql);
         assert (stmt instanceof DDLStatementNode) : stmt;
-        AISDDL.execute((DDLStatementNode)stmt, new TestQueryContext(session));
+        AISDDL.execute((DDLStatementNode)stmt, sql, new TestQueryContext(session));
     }
 
 }

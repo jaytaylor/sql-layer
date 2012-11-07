@@ -51,14 +51,21 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.session.Session;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class AISDDL
 {
+    private static final Logger logger = LoggerFactory.getLogger(AISDDL.class);
+
     private AISDDL() {}
     
-    public static void execute(DDLStatementNode ddl, ServerQueryContext<?> context) {
+    public static void execute(DDLStatementNode ddl, String sql, 
+                               ServerQueryContext<?> context) {
         ServerSession server = context.getServer();
         AkibanInformationSchema ais = server.getAIS();
         String schema = server.getDefaultSchemaName();
+        logger.info("DDL in {}: {}", schema, sql);
         DDLFunctions ddlFunctions = server.getDXL().ddlFunctions();
         Session session = server.getSession();
         switch (ddl.getNodeType()) {
