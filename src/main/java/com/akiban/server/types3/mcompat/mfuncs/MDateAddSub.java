@@ -162,6 +162,12 @@ public class MDateAddSub extends TScalarBase
             try
             {
                 stType = MDatetimes.parseDateOrTime(arg0, ymd);
+                if (!MDatetimes.isValidType(stType))
+                {
+                    context.warnClient(new InvalidDateFormatException(stType.name(), arg0));
+                    output.putNull();
+                    return;
+                }
                 millis = secondArg.toMillis(inputs.get(pos1));
             }
             catch (InvalidDateFormatException e)

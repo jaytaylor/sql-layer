@@ -410,12 +410,17 @@ public class MDatetimes
                 seconds = datetime.group(TIME_SECOND_GROUP);
             }
             
-            doParse(st,
-                    ymd,
-                    year, month, day,
-                    hour, minute, seconds);
-            if (isValidDatetime(ymd))
+            
+            
+            if (doParse(ymd,
+                        year, month, day,
+                        hour, minute, seconds) > 0
+                && isValidDatetime(ymd))
                 return ret;
+            else
+                return ret == StringType.DATETIME_ST
+                        ? StringType.INVALID_DATETIME_ST
+                        : StringType.INVALID_DATE_ST;
         }
         else if ((time = TIME_WITH_DAY_PATTERN.matcher(st)).matches())
         {   
@@ -423,13 +428,11 @@ public class MDatetimes
             hour = time.group(MDatetimes.TIME_WITH_DAY_HOUR_GROUP);
             minute = time.group(MDatetimes.TIME_WITH_DAY_MIN_GROUP);
             seconds = time.group(MDatetimes.TIME_WITH_DAY_SEC_GROUP);
-            
-            doParse(st,
-                    ymd,
-                    year, month, day,
-                    hour, minute, seconds);
-            
-            if (MDatetimes.isValidHrMinSec(ymd, false))
+
+            if (doParse(ymd,
+                        year, month, day,
+                        hour, minute, seconds) > 0
+                && MDatetimes.isValidHrMinSec(ymd, false))
             {
                 // adjust DAY to HOUR 
                 int sign = 1;
@@ -439,19 +442,22 @@ public class MDatetimes
                 ymd[DAY_INDEX] = 0;
                 return StringType.TIME_ST;
             }
+            else
+                return StringType.INVALID_TIME_ST;
         }
         else if ((timeNoday = TIME_WITHOUT_DAY_PATTERN.matcher(st)).matches())
         {
             hour = timeNoday.group(MDatetimes.TIME_WITHOUT_DAY_HOUR_GROUP);
             minute = timeNoday.group(MDatetimes.TIME_WITHOUT_DAY_MIN_GROUP);
             seconds = timeNoday.group(MDatetimes.TIME_WITHOUT_DAY_SEC_GROUP);
-            
-            doParse(st,
-                    ymd,
-                    year, month, day,
-                    hour, minute, seconds);
-            if (MDatetimes.isValidHrMinSec(ymd, false))
+
+            if (doParse(ymd,
+                        year, month, day,
+                        hour, minute, seconds) > 0
+                && MDatetimes.isValidHrMinSec(ymd, false))
                 return StringType.TIME_ST;
+            else
+                return StringType.INVALID_TIME_ST;
         }
         else // last attemp, split by any non-alphanumeric and assume the string is a DATE_STR
         {
@@ -464,13 +470,14 @@ public class MDatetimes
                     if ((dateTk = parts[0].split(st)).length != 3
                             || (timeTk = parts[1].split(DELIM)).length != 3)
                         break;
-                    doParse(st,
-                            ymd,
-                            dateTk[0], dateTk[1], dateTk[2],
-                            timeTk[0], timeTk[1], timeTk[2]);
-                    if (isValidDatetime(ymd))
+
+                    if (doParse(ymd,
+                        year, month, day,
+                        hour, minute, seconds) > 0
+                        && isValidDatetime(ymd))
                         return StringType.DATETIME_ST;
-                    break;
+                    else
+                        return StringType.INVALID_DATETIME_ST;
                 case 1:
                     if ((dateTk = parts[0].split(DELIM)).length != 3)
                         break;
@@ -479,10 +486,12 @@ public class MDatetimes
                             dateTk[0], dateTk[1], dateTk[2]);
                     if (isValidDayMonth(ymd))
                         return StringType.DATE_ST;
+                    else
+                        return StringType.INVALID_DATE_ST;
             }
         }
 
-        // anything else is an error
+        // anything else is an error (impossible to parse!)
         throw new InvalidDateFormatException("datetime", st);
     }
 
@@ -517,8 +526,7 @@ public class MDatetimes
     }
 
     
-    private static void doParse(String st, // for error message only
-                                long ymd[],
+    private static int doParse(long ymd[],
                                 String year, String month, String day,
                                 String hour, String minute, String seconds)
     {
@@ -530,11 +538,12 @@ public class MDatetimes
             ymd[HOUR_INDEX] = Long.parseLong(hour.trim());
             ymd[MIN_INDEX] = Long.parseLong(minute.trim());
             ymd[SEC_INDEX] = Long.parseLong(seconds.trim());
+            return 1;
 
         }
         catch (NumberFormatException ex)
         {
-            throw new InvalidDateFormatException("datetime", st);
+            return -1;
         }
     }
 
@@ -1111,10 +1120,19 @@ public class MDatetimes
     public static final int TIME_MAX = 8385959;
     public static final int TIME_MIN = -8385959;
     
+    private static final EnumSet<StringType> validTypes = EnumSet.of(StringType.DATETIME_ST,
+                                                                     StringType.DATE_ST,
+                                                                     StringType.TIME_ST);
+    public static boolean isValidType(StringType stType)
+    {
+        return validTypes.contains(stType);
+    }
     
     public static enum StringType
     {
-        DATE_ST, DATETIME_ST, TIME_ST;
+        DATE_ST, DATETIME_ST, TIME_ST,
+        INVALID_DATE_ST, INVALID_DATETIME_ST, INVALID_TIME_ST,
+        UNPARSABLE
     }
 }
 

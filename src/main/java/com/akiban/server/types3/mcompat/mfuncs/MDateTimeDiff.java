@@ -75,7 +75,7 @@ public class MDateTimeDiff
                 return new int[] {0};
             }
         },
-        new DateTimeDiff(ArgType.TIME, ArgType.VARCHAR, "TIMEDIFF", true, false)
+        new DateTimeDiff(ArgType.TIME, ArgType.TIME_VARCHAR, "TIMEDIFF", true, false)
         {
             @Override
             int compute(long[] arg0, long[] arg1, TExecutionContext context)
@@ -89,7 +89,7 @@ public class MDateTimeDiff
                 return new int[] {1};
             }
         },
-        new DateTimeDiff(ArgType.VARCHAR, ArgType.TIME, "TIMEDIFF", false, true)
+        new DateTimeDiff(ArgType.TIME_VARCHAR, ArgType.TIME, "TIMEDIFF", false, true)
         {
             @Override
             int compute(long[] arg0, long[] arg1, TExecutionContext context)
@@ -112,9 +112,22 @@ public class MDateTimeDiff
                 StringType t0[] = new StringType[1];
                 StringType t1[] = new StringType[1];
 
-                if ((ymd0 = ArgType.VARCHAR.getYMDHMS(inputs.get(0), t0, context)) == null
-                    || (ymd1 = ArgType.VARCHAR.getYMDHMS(inputs.get(1), t1, context)) == null
-                    || t0[0] != t1[0])
+                ymd0 = ArgType.VARCHAR.getYMDHMS(inputs.get(0), t0, context);
+                ymd1 = ArgType.VARCHAR.getYMDHMS(inputs.get(1), t1, context);
+                
+                if (t0[0] == StringType.UNPARSABLE && t1[0] == StringType.TIME_ST)
+                {
+                    ymd0 = new long[] {1970, 1, 1, 0, 0,0};
+                    output.putInt32(substractTime(ymd0, ymd1, context));
+                }
+                else if (t1[0] == StringType.UNPARSABLE && t0[0] == StringType.TIME_ST)
+                {
+                    ymd1 = new long[] {1970, 1, 1, 0, 0,0};
+                    output.putInt32(substractTime(ymd0, ymd1, context));
+                }
+                else if (ymd0 == null || ymd1 == null 
+                         || t0[0] != t1[0] 
+                         || !MDatetimes.isValidType(t0[0]) || !MDatetimes.isValidType(t1[0]))
                     output.putNull();
                 else
                     output.putInt32(t0[0] == StringType.TIME_ST
@@ -327,16 +340,67 @@ public class MDateTimeDiff
             @Override
             long[] getYMDHMS(PValueSource source, StringType[] type, TExecutionContext context)
             {
+                String st = source.getString();
                 long hms[] = new long[6];
                 try
                 {
-                    type[0] = MDatetimes.parseDateOrTime(source.getString(), hms);
-                    return hms;
+                    switch(type[0] = MDatetimes.parseDateOrTime(st, hms))
+                    {
+                        case INVALID_DATE_ST:
+                        case INVALID_DATETIME_ST:
+                        case INVALID_TIME_ST:
+                            context.warnClient(new InvalidDateFormatException("datetime", st));
+                            return null;
+                        case DATE_ST:
+                        case TIME_ST:
+                        case DATETIME_ST:
+                            return hms;
+                        default: 
+                            throw new AkibanInternalException ("Unexpected StringType of: " + type[0]);
+                    }
                 }
                 catch (InvalidDateFormatException e)
                 {
+                    type[0] = StringType.UNPARSABLE;
                     context.warnClient(e);
                     return null;
+                }
+            }
+        },
+        TIME_VARCHAR(MString.VARCHAR)
+        {
+            @Override
+            long[] getYMDHMS(PValueSource source, StringType[] type, TExecutionContext context)
+            {
+                String st = source.getString();
+                long hms[] = new long[6];
+                try
+                {
+                    switch(type[0] = MDatetimes.parseDateOrTime(st, hms))
+                    {
+                        case DATE_ST:
+                        case DATETIME_ST:
+                            return null;
+                        case TIME_ST:
+                            return hms;
+                        case INVALID_DATE_ST:
+                        case INVALID_DATETIME_ST:
+                        case INVALID_TIME_ST:
+                            context.warnClient(new InvalidDateFormatException("datetime", st));
+                            return null;    
+                        default: 
+                            throw new AkibanInternalException ("Unexpected StringType of: " + type[0]);
+                    }
+                }
+                catch (InvalidDateFormatException e)
+                {
+                    // if failed to parse as TIME, return 0 (rathern than NULL)
+                    // because that's how MySQL does it
+                    context.warnClient(e);
+                    type[0] = StringType.TIME_ST;
+                    toZero(hms);
+                    return hms;
+                    
                 }
             }
         }
@@ -347,6 +411,12 @@ public class MDateTimeDiff
         private ArgType(TClass type)
         {
             this.type = type;
+        }
+        
+        protected static void toZero(long hms[])
+        {
+            for (int n = MDatetimes.HOUR_INDEX; n < hms.length; ++n)
+                    hms[n] = 0;
         }
     }
     
@@ -379,7 +449,6 @@ public class MDateTimeDiff
     private abstract static class DateTimeDiff extends TScalarBase
     {
         abstract int compute(long arg0[], long arg1[], TExecutionContext context);
-        
         private final ArgType arg0Type;
         private final boolean exact0;
         
@@ -416,7 +485,7 @@ public class MDateTimeDiff
             long ymd0[], ymd1[];
             StringType t0[] = new StringType[1];
             StringType t1[] = new StringType[1];
-            
+
             if ((ymd0 = arg0Type.getYMDHMS(inputs.get(0), t0, context)) == null
                     || (ymd1 = arg1Type.getYMDHMS(inputs.get(1), t1, context)) == null
                     || t0[0] != t1[0])
