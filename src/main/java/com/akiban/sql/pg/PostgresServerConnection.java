@@ -30,6 +30,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerSessionBase;
 import com.akiban.sql.server.ServerSessionMonitor;
+import com.akiban.sql.server.ServerStatement;
 import com.akiban.sql.server.ServerStatementCache;
 import com.akiban.sql.server.ServerTransaction;
 import com.akiban.sql.server.ServerValueDecoder;
@@ -92,13 +93,24 @@ public class PostgresServerConnection extends ServerSessionBase
 
     private volatile String cancelForKillReason, cancelByUser;
 
-    private static class GeneratedResult {
+    private static class GeneratedPartial {
         public PostgresStatementGenerator generator;
-        public PostgresStatement statement;
+        public PostgresStatement pstmt;
+        public StatementNode stmt;
+        public List<ParameterNode> params;
+        public int[] paramTypes;
 
-        public GeneratedResult(PostgresStatementGenerator generator, PostgresStatement statement) {
+        public GeneratedPartial(PostgresStatementGenerator generator, PostgresStatement pstmt,
+                                StatementNode stmt, List<ParameterNode> params, int[] paramTypes) {
             this.generator = generator;
-            this.statement = statement;
+            this.pstmt = pstmt;
+            this.stmt = stmt;
+            this.params = params;
+            this.paramTypes = paramTypes;
+        }
+
+        public PostgresStatement generateFinal(PostgresServerSession session) {
+            return generator.generateFinal(session, pstmt, stmt, params, paramTypes);
         }
     }
 
@@ -528,11 +540,11 @@ public class PostgresServerConnection extends ServerSessionBase
                 sessionMonitor.leaveStage();
             }
             for (StatementNode stmt : stmts) {
-                GeneratedResult res = generateStatement(stmt, null, null);
+                GeneratedPartial partial = generateStatementPartial(stmt, null, null);
                 boolean success = false;
-                ServerTransaction local = beforeExecute(res.statement);
+                ServerTransaction local = beforeExecute(partial.pstmt);
                 try {
-                    pstmt = generateStatementFinal(res, stmt, null, null);
+                    pstmt = generateStatementFinal(context, partial);
                     if ((statementCache != null) && (stmts.size() == 1))
                         statementCache.put(sql, pstmt);
                     pstmt.sendDescription(context, false);
@@ -584,11 +596,11 @@ public class PostgresServerConnection extends ServerSessionBase
             finally {
                 sessionMonitor.leaveStage();
             }
-            GeneratedResult res = generateStatement(stmt, params, paramTypes);
-            ServerTransaction local = beforeExecute(res.statement);
+            GeneratedPartial partial = generateStatementPartial(stmt, params, paramTypes);
+            ServerTransaction local = beforeExecute(partial.pstmt);
             boolean success = false;
             try {
-                pstmt = generateStatementFinal(res, stmt, params, paramTypes);
+                pstmt = generateStatementFinal(context, partial);
                 success = true;
             } finally {
                 afterExecute(pstmt, local, success);
@@ -854,16 +866,16 @@ public class PostgresServerConnection extends ServerSessionBase
         statementCache = getStatementCache();
     }
 
-    protected GeneratedResult generateStatement(StatementNode stmt,
-                                                List<ParameterNode> params,
-                                                int[] paramTypes) {
+    protected GeneratedPartial generateStatementPartial(StatementNode stmt,
+                                                        List<ParameterNode> params,
+                                                        int[] paramTypes) {
         try {
             sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
             for (PostgresStatementGenerator generator : parsedGenerators) {
                 PostgresStatement pstmt = generator.generateInitial(this, stmt,
                                                                     params, paramTypes);
                 if (pstmt != null)
-                    return new GeneratedResult(generator, pstmt);
+                    return new GeneratedPartial(generator, pstmt, stmt, params, paramTypes);
             }
         }
         finally {
@@ -872,13 +884,14 @@ public class PostgresServerConnection extends ServerSessionBase
         throw new UnsupportedSQLException ("", stmt);
     }
 
-    protected PostgresStatement generateStatementFinal(GeneratedResult generated,
-                                                       StatementNode stmt,
-                                                       List<ParameterNode> params,
-                                                       int[] paramTypes) {
+    protected PostgresStatement generateStatementFinal(PostgresQueryContext context,
+                                                       GeneratedPartial partial) {
         try {
             sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
-            return generated.generator.generateFinal(this, generated.statement, stmt, params, paramTypes);
+            updateAIS(context);
+            PostgresStatement pstmt = partial.generateFinal(this);
+            pstmt.setAISGeneration(ais.getGeneration());
+            return pstmt;
         }
         finally {
             sessionMonitor.leaveStage();
@@ -898,6 +911,11 @@ public class PostgresServerConnection extends ServerSessionBase
         int rowsProcessed = 0;
         boolean success = false;
         try {
+            if (pstmt.getAISGenerationMode() == ServerStatement.AISGenerationMode.NOT_ALLOWED) {
+                updateAIS(context);
+                if (pstmt.getAISGeneration() != ais.getGeneration())
+                    throw new StaleStatementException();
+            }
             session.setTimeoutAfterSeconds(getQueryTimeoutSec());
             sessionMonitor.enterStage(MonitorStage.EXECUTE);
             rowsProcessed = pstmt.execute(context, maxrows);

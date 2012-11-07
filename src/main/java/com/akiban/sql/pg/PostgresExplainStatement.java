@@ -43,6 +43,7 @@ public class PostgresExplainStatement implements PostgresStatement
     private String colName;
     private PostgresType colType;
     private boolean usePVals;
+    private long aisGeneration;
 
     public PostgresExplainStatement() {
     }
@@ -123,6 +124,16 @@ public class PostgresExplainStatement implements PostgresStatement
             messenger.sendMessage();
         }
         return nrows;
+    }
+
+    @Override
+    public void setAISGeneration(long aisGeneration) {
+        this.aisGeneration = aisGeneration;
+    }
+
+    @Override
+    public long getAISGeneration() {
+        return aisGeneration;
     }
 
 }

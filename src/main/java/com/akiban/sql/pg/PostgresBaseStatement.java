@@ -34,6 +34,7 @@ import com.akiban.util.tap.InOutTap;
  */
 public abstract class PostgresBaseStatement implements PostgresStatement
 {
+    protected long aisGeneration;
     protected abstract InOutTap executeTap();
     protected abstract InOutTap acquireLockTap();
 
@@ -54,5 +55,15 @@ public abstract class PostgresBaseStatement implements PostgresStatement
         if (lockSuccess)
             context.unlock(operationType);
         executeTap().out();
+    }
+
+    @Override
+    public void setAISGeneration(long generation) {
+        aisGeneration = generation;
+    }
+
+    @Override
+    public long getAISGeneration() {
+        return aisGeneration;
     }
 }

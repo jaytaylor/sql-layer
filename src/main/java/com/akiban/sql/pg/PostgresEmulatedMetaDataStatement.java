@@ -163,6 +163,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     private Query query;
     private List<String> groups;
     private boolean usePVals;
+    private long aisGeneration;
 
     protected PostgresEmulatedMetaDataStatement(Query query, List<String> groups, boolean usePVals) {
         this.query = query;
@@ -370,6 +371,16 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
           messenger.sendMessage();
         }
         return nrows;
+    }
+
+    @Override
+    public void setAISGeneration(long aisGeneration) {
+        this.aisGeneration = aisGeneration;
+    }
+
+    @Override
+    public long getAISGeneration() {
+        return aisGeneration;
     }
 
     private int odbcLoTypeQuery(PostgresMessenger messenger, int maxrows) {

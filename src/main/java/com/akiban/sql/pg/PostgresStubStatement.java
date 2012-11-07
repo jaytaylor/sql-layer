@@ -55,6 +55,16 @@ public class PostgresStubStatement implements PostgresStatement {
     }
 
     @Override
+    public void setAISGeneration(long aisGeneration) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public long getAISGeneration() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public TransactionMode getTransactionMode() {
         return transactionMode;
     }

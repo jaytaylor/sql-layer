@@ -24,31 +24,10 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.pg;
+package com.akiban.server.error;
 
-import com.akiban.sql.server.ServerStatement;
-
-import java.io.IOException;
-
-/**
- * An SQL statement compiled for use with Postgres server.
- * @see PostgresStatementGenerator
- */
-public interface PostgresStatement extends ServerStatement
-{
-    /** Get the types of any parameters. */
-    public PostgresType[] getParameterTypes();
-
-    /** Send a description message. If <code>always</code>, do so even
-     * if no result set. */
-    public void sendDescription(PostgresQueryContext context, boolean always) throws IOException;
-
-    /** Execute statement and output results. Return number of rows processed. */
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException;
-
-    /** Set generation this statement was created under **/
-    public void setAISGeneration(long aisGeneration);
-
-    /** Get generation this statement was created under **/
-    public long getAISGeneration();
+public class StaleStatementException extends InvalidOperationException {
+    public StaleStatementException() {
+        super(ErrorCode.STALE_STATEMENT);
+    }
 }

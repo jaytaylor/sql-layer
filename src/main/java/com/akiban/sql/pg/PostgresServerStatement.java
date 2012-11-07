@@ -46,6 +46,7 @@ import com.akiban.sql.parser.AlterServerNode;
 public class PostgresServerStatement implements PostgresStatement {
     private static final Logger LOG = LoggerFactory.getLogger(PostgresServerStatement.class);
     private final AlterServerNode statement;
+    private long aisGeneration;
 
     protected PostgresServerStatement (AlterServerNode stmt) {
         this.statement = stmt;
@@ -100,7 +101,17 @@ public class PostgresServerStatement implements PostgresStatement {
         }
         return 0;
     }
-    
+
+    @Override
+    public void setAISGeneration(long aisGeneration) {
+        this.aisGeneration = aisGeneration;
+    }
+
+    @Override
+    public long getAISGeneration() {
+        return aisGeneration;
+    }
+
     protected void doOperation (PostgresServerSession session) throws Exception {
         PostgresServerConnection current = (PostgresServerConnection)session;
         PostgresServer server = current.getServer();

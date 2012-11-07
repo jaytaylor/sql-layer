@@ -64,6 +64,7 @@ public class PostgresSessionStatement implements PostgresStatement
 
     private Operation operation;
     private StatementNode statement;
+    private long aisGeneration;
     
     protected PostgresSessionStatement(Operation operation, StatementNode statement) {
         this.operation = operation;
@@ -119,6 +120,16 @@ public class PostgresSessionStatement implements PostgresStatement
             messenger.sendMessage();
         }
         return 0;
+    }
+
+    @Override
+    public void setAISGeneration(long aisGeneration) {
+        this.aisGeneration = aisGeneration;
+    }
+
+    @Override
+    public long getAISGeneration() {
+        return aisGeneration;
     }
 
     protected void doOperation(PostgresServerSession server) {
