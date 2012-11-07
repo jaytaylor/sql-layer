@@ -36,6 +36,7 @@ import com.akiban.sql.parser.SetSchemaNode;
 import com.akiban.sql.parser.SetTransactionAccessNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.StatementType;
+import com.akiban.sql.server.ServerStatement;
 
 import java.util.Arrays;
 import java.io.IOException;
@@ -100,6 +101,11 @@ public class PostgresSessionStatement implements PostgresStatement
             default:
                 return TransactionAbortedMode.NOT_ALLOWED;
         }
+    }
+
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.ALLOWED;
     }
 
     @Override

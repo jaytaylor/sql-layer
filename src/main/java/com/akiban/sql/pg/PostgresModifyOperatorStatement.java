@@ -36,6 +36,7 @@ import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import java.io.IOException;
 import java.util.List;
 
+import com.akiban.sql.server.ServerStatement;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 import org.slf4j.Logger;
@@ -94,6 +95,11 @@ public class PostgresModifyOperatorStatement extends PostgresDMLStatement
     @Override
     public TransactionAbortedMode getTransactionAbortedMode() {
         return TransactionAbortedMode.NOT_ALLOWED;
+    }
+
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.NOT_ALLOWED;
     }
 
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {

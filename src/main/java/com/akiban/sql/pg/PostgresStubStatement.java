@@ -63,4 +63,9 @@ public class PostgresStubStatement implements PostgresStatement {
     public TransactionAbortedMode getTransactionAbortedMode() {
         return transactionAbortedMode;
     }
+
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        throw new UnsupportedOperationException();
+    }
 }

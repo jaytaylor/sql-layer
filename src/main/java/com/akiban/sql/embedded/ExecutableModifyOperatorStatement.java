@@ -34,6 +34,7 @@ import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.akiban.sql.server.ServerSession;
+import com.akiban.sql.server.ServerStatement;
 import com.akiban.sql.server.ServerTransaction;
 import com.akiban.util.ShareHolder;
 
@@ -116,6 +117,11 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
     @Override
     public TransactionAbortedMode getTransactionAbortedMode() {
         return TransactionAbortedMode.NOT_ALLOWED;
+    }
+
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.NOT_ALLOWED;
     }
 
     static class SpoolCursor implements Cursor {

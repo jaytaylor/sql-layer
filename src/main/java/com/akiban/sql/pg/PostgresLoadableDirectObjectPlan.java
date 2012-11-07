@@ -32,6 +32,7 @@ import com.akiban.sql.server.ServerRoutineInvocation;
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectCursor;
+import com.akiban.sql.server.ServerStatement;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
@@ -82,6 +83,11 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
     @Override
     public TransactionAbortedMode getTransactionAbortedMode() {
         return TransactionAbortedMode.NOT_ALLOWED;
+    }
+
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.ALLOWED;
     }
 
     @Override

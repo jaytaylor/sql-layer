@@ -29,6 +29,7 @@ package com.akiban.sql.pg;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.sql.server.ServerStatement;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 import org.slf4j.Logger;
@@ -70,6 +71,11 @@ public class PostgresOperatorStatement extends PostgresDMLStatement
     @Override
     public TransactionAbortedMode getTransactionAbortedMode() {
         return TransactionAbortedMode.NOT_ALLOWED;
+    }
+
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.NOT_ALLOWED;
     }
 
     @Override

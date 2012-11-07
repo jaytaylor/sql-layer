@@ -142,6 +142,11 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
     }
 
     @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.NOT_ALLOWED;
+    }
+
+    @Override
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();

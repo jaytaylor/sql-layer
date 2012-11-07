@@ -33,6 +33,7 @@ import java.util.Collection;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
+import com.akiban.sql.server.ServerStatement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,6 +58,11 @@ public class PostgresServerStatement implements PostgresStatement {
     @Override
     public TransactionAbortedMode getTransactionAbortedMode() {
         return TransactionAbortedMode.ALLOWED;
+    }
+
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.ALLOWED;
     }
 
     @Override

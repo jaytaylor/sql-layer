@@ -31,6 +31,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.sql.server.ServerStatement;
 import com.akiban.sql.server.ServerValueEncoder;
 
 import java.io.IOException;
@@ -311,6 +312,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     @Override
     public TransactionAbortedMode getTransactionAbortedMode() {
         return TransactionAbortedMode.NOT_ALLOWED;
+    }
+
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.NOT_ALLOWED;
     }
 
     @Override

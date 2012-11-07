@@ -81,5 +81,9 @@ abstract class ExecutableJavaRoutine extends ExecutableCallStatement
     public TransactionAbortedMode getTransactionAbortedMode() {
         return TransactionAbortedMode.NOT_ALLOWED;
     }
-    
+
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.NOT_ALLOWED;
+    }
 }

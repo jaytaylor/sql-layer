@@ -29,6 +29,7 @@ package com.akiban.sql.pg;
 import com.akiban.sql.aisddl.AISDDL;
 import com.akiban.sql.parser.DDLStatementNode;
 
+import com.akiban.sql.server.ServerStatement;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
@@ -78,6 +79,11 @@ public class PostgresDDLStatement extends PostgresBaseStatement
     @Override
     public TransactionAbortedMode getTransactionAbortedMode() {
         return TransactionAbortedMode.NOT_ALLOWED;
+    }
+
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.ALLOWED;
     }
 
     @Override
