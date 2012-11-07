@@ -32,6 +32,7 @@ import com.akiban.server.service.session.Session;
 public interface LockService extends Service {
     enum Mode { SHARED, EXCLUSIVE }
 
+    boolean hasAnyClaims(Session session, Mode mode);
     boolean isTableClaimed(Session session, Mode mode, int tableID);
 
     void claimTable(Session session, Mode mode, int tableID);

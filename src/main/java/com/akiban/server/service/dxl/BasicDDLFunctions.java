@@ -1231,6 +1231,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     private void lockTables(Session session, List<Integer> tableIDs) {
+        // No locks, whatsoever, expected to be held before DDL calls this
+        assert !lockService.hasAnyClaims(session, LockService.Mode.SHARED) : "Shared claims";
+        assert !lockService.hasAnyClaims(session, LockService.Mode.EXCLUSIVE) : "Shared claims";
+
         final LockService.Mode mode = LockService.Mode.EXCLUSIVE;
         /*
          * Lock order is well defined for DDL, but DML transactions can operate in any

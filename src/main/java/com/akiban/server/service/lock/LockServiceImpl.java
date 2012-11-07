@@ -91,6 +91,11 @@ public class LockServiceImpl implements LockService {
     //
 
     @Override
+    public boolean hasAnyClaims(Session session, Mode mode) {
+        return !getOrCreateModeMap(session, mode).isEmpty();
+    }
+
+    @Override
     public boolean isTableClaimed(Session session, Mode mode, int tableID) {
         int[] count = getLockedCount(session, mode, tableID);
         return (count != null) && (count[0] > 0);
