@@ -6,6 +6,8 @@
 #
 # bug: 921124 (not valid / opinion)
 ---
+- Statement: SET newtypes to 'true'
+---
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field, time_field, timestamp_field, varchar_field) VALUES (1, '01:05:06', '2012-01-01 12:31:00', '2012-03-04 18:22:15')
@@ -23,12 +25,6 @@
 - params: [['00:00:01']]
 - output: [['01:05:05']]
 --- #bug 903498
-# NOTE: Not valid. Two arguments of TIMEDIFF must have the same type
-# Or one is a DATE/TIME/DATETIME/TIMESTAMP and the other is a VARCHAR that is
-# convertible to the other's type
-## BUG 921117: TIMEDIFF of mis-matched args return NULL
-- Message: 'The following test is wrong with newtypes! see bug 1064446'
----
 - Statement: select TIMEDIFF(timestamp_field, ?) from all_types;
 - params: [['00:00:01']]
 - output: [[null]]
@@ -98,10 +94,10 @@
 ---
 - Statement: select TIMEDIFF('12:34:55', 17) from all_types;
 - output: [['12:34:38']]
-#--- #921127
-#- Statement: select TIMEDIFF('12:34:55', -17) from all_types;
-#- output: [['12:35:12']]
-#--- Bug : DECIMAL (DOUBLE/FLOAT) not convertible to TIME
+--- #921127
+- Statement: select TIMEDIFF('12:34:55', -17) from all_types;
+- output: [['12:35:12']]
+#--- # Bug : DECIMAL (DOUBLE/FLOAT) not convertible to TIME
 #- Statement: select TIMEDIFF('12:34:55', 17.495) from all_types;
 #- output: [['12:34:37.505000']] #fractional seconds -> not supported yet
 #- output: [['12:34:37']]
