@@ -307,11 +307,11 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         if(factory == null) {
             throw new IllegalArgumentException("MemoryTableFactory may not be null");
         }
-        memoryTableFactories.put(newTable.getName(), factory); // TODO: Fragile?
         transactionally(sessionService.createSession(), new ThrowingRunnable() {
             @Override
             public void run(Session session) throws PersistitException {
                 createTableCommon(session, newTable, true, null, factory);
+                memoryTableFactories.put(newTable.getName(), factory); // TODO: Fragile?
             }
         });
         return newTable.getName();
@@ -1214,8 +1214,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     private void unSavedAISChangeWithRowDefs(Session session, AkibanInformationSchema newAIS) {
         try {
-            serializeMemoryTables(session, newAIS);
             validateAndFreeze(session, newAIS, GenValue.NEW, GenMap.NO_PUT);
+            serializeMemoryTables(session, newAIS);
             buildRowDefCache(newAIS);
             addCallbacksForAISChange(session);
         } catch(PersistitException e) {
@@ -1241,7 +1241,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 if(!k.startsWith(AIS_KEY_PREFIX)) {
                     break;
                 }
-                if(k.equals(AIS_PROTOBUF_PARENT_KEY)) {
+                if(k.equals(AIS_PROTOBUF_PARENT_KEY) || k.equals(AIS_MEMORY_TABLE_KEY)) {
                     hasProtobuf = true;
                 } else if(k.equals(AIS_METAMODEL_PARENT_KEY)) {
                     hasMetaModel = true;
