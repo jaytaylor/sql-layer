@@ -528,7 +528,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 else
                     stmtSQL = sql.substring(stmt.getBeginOffset(), 
                                             stmt.getEndOffset() + 1);
-                pstmt = generateStatement(sql, stmt, null, null);
+                pstmt = generateStatement(stmtSQL, stmt, null, null);
                 if ((statementCache != null) && singleStmt)
                     statementCache.put(stmtSQL, pstmt);
                 pstmt.sendDescription(context, false);
