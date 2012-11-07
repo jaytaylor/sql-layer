@@ -68,6 +68,7 @@ public class PostgresCallStatementGenerator extends PostgresBaseStatementGenerat
                 // The above makes extensive use of the AIS. This doesn't fit well into the
                 // create and then init, so just mark with AIS now.
                 pstmt.setAISGeneration(server.getAIS().getGeneration());
+                return pstmt;
             }
         }
         return null;
