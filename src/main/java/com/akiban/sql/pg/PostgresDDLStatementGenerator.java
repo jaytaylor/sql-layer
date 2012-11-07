@@ -53,10 +53,9 @@ public class PostgresDDLStatementGenerator extends PostgresBaseStatementGenerato
     }
 
     @Override
-    public PostgresStatement generateFinal(PostgresServerSession server, PostgresStatement pstmt, StatementNode stmt,
+    public PostgresStatement generateFinal(PostgresServerSession server, PostgresStatement pstmt,
+                                           StatementNode stmt,
                                            List<ParameterNode> params, int[] paramTypes) {
-        if (pstmt instanceof PostgresDDLStatement)
-            return pstmt;
-        return null;
+        return pstmt;
     }
 }

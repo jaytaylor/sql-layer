@@ -40,7 +40,6 @@ import com.akiban.sql.optimizer.rule.PlanContext;
 
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.*;
-import com.akiban.sql.server.ServerStatement;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.server.error.SQLParseException;
@@ -60,11 +59,6 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
                                       implements PostgresStatementGenerator
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorCompiler.class);
-
-    private static final PostgresStubStatement OPERATOR_COMPILER_STUB = new PostgresStubStatement(
-            ServerStatement.TransactionMode.WRITE_STEP_ISOLATED,
-            ServerStatement.TransactionAbortedMode.NOT_ALLOWED
-    );
 
     protected PostgresOperatorCompiler() {
     }
@@ -142,14 +136,25 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
                                              List<ParameterNode> params, int[] paramTypes) {
         if (stmt instanceof CallStatementNode || !(stmt instanceof DMLStatementNode))
             return null;
-        return OPERATOR_COMPILER_STUB;
+        // Extremely similar to ASTStatementLoader.Loader#toStatement()
+        switch(stmt.getNodeType()) {
+            case NodeTypes.CURSOR_NODE:
+                return generateSelect();
+            case NodeTypes.DELETE_NODE:
+            case NodeTypes.UPDATE_NODE:
+            case NodeTypes.INSERT_NODE:
+                return generateUpdate();
+            default:
+                throw new SQLParserInternalException(
+                        new StandardException("Unsupported statement type: " + stmt.statementToString())
+                );
+        }
     }
 
     @Override
-    public PostgresStatement generateFinal(PostgresServerSession session, PostgresStatement pstmt, StatementNode stmt,
+    public PostgresStatement generateFinal(PostgresServerSession session, PostgresStatement pstmt,
+                                           StatementNode stmt,
                                            List<ParameterNode> params, int[] paramTypes) {
-        if (pstmt != OPERATOR_COMPILER_STUB)
-            return null;
         DMLStatementNode dmlStmt = (DMLStatementNode)stmt;
         PlanContext planContext = new ServerPlanContext(this, new PostgresQueryContext(session));
         BasePlannable result = compile(dmlStmt, params, planContext);
@@ -187,16 +192,28 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
         }
 
         if (result.isUpdate())
-            return generateUpdate((PhysicalUpdate)result, stmt.statementToString(),
+            return generateUpdate(pstmt,
+                                  (PhysicalUpdate)result, stmt.statementToString(),
                                   parameterTypes);
         else
-            return generateSelect((PhysicalSelect)result,
+            return generateSelect(pstmt,
+                                  (PhysicalSelect)result,
                                   parameterTypes);
     }
 
-    protected PostgresStatement generateUpdate(PhysicalUpdate update, String statementType,
+    @Override
+    public boolean needsSetAISGeneration() {
+        return true;
+    }
+
+    protected PostgresStatement generateUpdate() {
+        return new PostgresModifyOperatorStatement();
+    }
+
+    protected PostgresStatement generateUpdate(PostgresStatement pstmt,
+                                               PhysicalUpdate update, String statementType,
                                                PostgresType[] parameterTypes) {
-        
+        PostgresModifyOperatorStatement pmstmt = (PostgresModifyOperatorStatement)pstmt;
         if (update.isReturning()) {
             int ncols = update.getResultColumns().size();
             List<String> columnNames = new ArrayList<String>(ncols);
@@ -206,26 +223,34 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
                 columnNames.add(resultColumn.getName());
                 columnTypes.add(resultColumn.getType());
             }
-            
-            return new PostgresModifyOperatorStatement (statementType, 
-                            (Operator)update.getPlannable(),
-                            update.getResultRowType(),
-                            columnNames, columnTypes,
-                            parameterTypes,
-                            usesPValues(),
-                            update.isRequireStepIsolation());
+
+            pmstmt.init(statementType,
+                        (Operator) update.getPlannable(),
+                        update.getResultRowType(),
+                        columnNames, columnTypes,
+                        parameterTypes,
+                        usesPValues(),
+                        update.isRequireStepIsolation());
         } else { 
-            return new PostgresModifyOperatorStatement(statementType,
-                    (Operator)update.getPlannable(),
-                    parameterTypes,
-                    usesPValues(),
-                    update.isRequireStepIsolation());
-            
+            pmstmt.init(statementType,
+                        (Operator)update.getPlannable(),
+                        parameterTypes,
+                        usesPValues(),
+                        update.isRequireStepIsolation());
         }
+        return pstmt;
     }
 
-    protected PostgresStatement generateSelect(PhysicalSelect select,
+    protected PostgresStatement generateSelect() {
+        return new PostgresOperatorStatement();
+    }
+
+    protected PostgresStatement generateSelect(PostgresStatement pstmt,
+                                               PhysicalSelect select,
                                                PostgresType[] parameterTypes) {
+        assert (pstmt instanceof PostgresOperatorStatement) : pstmt;
+        PostgresOperatorStatement postmt = (PostgresOperatorStatement)pstmt;
+
         int ncols = select.getResultColumns().size();
         List<String> columnNames = new ArrayList<String>(ncols);
         List<PostgresType> columnTypes = new ArrayList<PostgresType>(ncols);
@@ -234,10 +259,11 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
             columnNames.add(resultColumn.getName());
             columnTypes.add(resultColumn.getType());
         }
-        return new PostgresOperatorStatement(select.getResultOperator(),
-                                             select.getResultRowType(),
-                                             columnNames, columnTypes,
-                                             parameterTypes,
-                                             usesPValues());
+        postmt.init(select.getResultOperator(),
+                    select.getResultRowType(),
+                    columnNames, columnTypes,
+                    parameterTypes,
+                    usesPValues());
+        return postmt;
     }
 }

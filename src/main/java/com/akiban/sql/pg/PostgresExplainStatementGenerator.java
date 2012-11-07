@@ -56,8 +56,7 @@ public class PostgresExplainStatementGenerator extends PostgresBaseStatementGene
     @Override
     public PostgresStatement generateInitial(PostgresServerSession server,
                                              StatementNode stmt,
-                                             List<ParameterNode> params,
-                                             int[] paramTypes)  {
+                                             List<ParameterNode> params, int[] paramTypes)  {
         if (stmt.getNodeType() != NodeTypes.EXPLAIN_STATEMENT_NODE)
             return null;
         StatementNode innerStmt = ((ExplainStatementNode)stmt).getStatement();
@@ -70,7 +69,8 @@ public class PostgresExplainStatementGenerator extends PostgresBaseStatementGene
 
     @Override
     public PostgresStatement generateFinal(PostgresServerSession server, PostgresStatement pstmt,
-                                           StatementNode stmt, List<ParameterNode> params, int[] paramTypes) {
+                                           StatementNode stmt,
+                                           List<ParameterNode> params, int[] paramTypes) {
         if (!(pstmt instanceof PostgresExplainStatement))
             return null;
         ExplainPlanContext context = new ExplainPlanContext(compiler);

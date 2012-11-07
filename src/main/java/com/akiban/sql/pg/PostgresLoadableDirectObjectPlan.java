@@ -54,11 +54,8 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
                                                PostgresType[] parameterTypes,
                                                boolean usesPValues)
     {
-        super(null,
-              columnNames, columnTypes,
-              parameterTypes, usesPValues);
+        super.init(null, columnNames, columnTypes, parameterTypes, usesPValues);
         this.invocation = invocation;
-
         plan = loadablePlan.plan();
         outputMode = plan.getOutputMode();
     }

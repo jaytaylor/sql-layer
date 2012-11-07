@@ -53,13 +53,16 @@ public class PostgresOperatorStatement extends PostgresDMLStatement
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresOperatorStatement: execute shared");
     private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresOperatorStatement: acquire shared lock");
 
-    public PostgresOperatorStatement(Operator resultOperator,
+    public PostgresOperatorStatement() {
+    }
+
+    public void init(Operator resultOperator,
                                      RowType resultRowType,
                                      List<String> columnNames,
                                      List<PostgresType> columnTypes,
                                      PostgresType[] parameterTypes,
                                      boolean usesPValues) {
-        super(resultRowType, columnNames, columnTypes, parameterTypes, usesPValues);
+        super.init(resultRowType, columnNames, columnTypes, parameterTypes, usesPValues);
         this.resultOperator = resultOperator;
     }
     

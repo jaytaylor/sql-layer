@@ -33,8 +33,6 @@ import static com.akiban.sql.pg.PostgresJsonStatement.jsonColumnTypes;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.mcompat.mtypes.MString;
 
 import java.util.*;
 
@@ -42,15 +40,18 @@ public class PostgresJsonModifyStatement extends PostgresModifyOperatorStatement
 {
     private List<JsonResultColumn> resultColumns;
 
-    public PostgresJsonModifyStatement(String statementType, Operator resultOperator, RowType resultRowType,
-                                       List<JsonResultColumn> resultColumns,
-                                       PostgresType[] parameterTypes,
-                                       boolean usePValues,
-                                       boolean requireStepIsolation) {
-        super(statementType, resultOperator, resultRowType,
-              // Looks like just one unlimited VARCHAR to the client.
-              jsonColumnNames(), jsonColumnTypes(),
-              parameterTypes, usePValues, requireStepIsolation);
+    public PostgresJsonModifyStatement() {
+    }
+
+    public void init(String statementType, Operator resultOperator, RowType resultRowType,
+                     List<JsonResultColumn> resultColumns,
+                     PostgresType[] parameterTypes,
+                     boolean usePValues,
+                     boolean requireStepIsolation) {
+        super.init(statementType, resultOperator, resultRowType,
+                   // Looks like just one unlimited VARCHAR to the client.
+                   jsonColumnNames(), jsonColumnTypes(),
+                   parameterTypes, usePValues, requireStepIsolation);
         this.resultColumns = resultColumns;
     }
 

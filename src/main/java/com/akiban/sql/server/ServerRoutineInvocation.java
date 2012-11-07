@@ -64,8 +64,8 @@ public class ServerRoutineInvocation
         this.parameterArgs = parameterArgs;
     }
 
-    public static ServerRoutineInvocation of(ServerSession server,
-                                             StaticMethodCallNode methodCall) {
+    private static Routine getRoutine(ServerSession server,
+                                      StaticMethodCallNode methodCall) {
         String schemaName, routineName;
         if (methodCall.getProcedureName() == null) {
             schemaName = null;
@@ -78,7 +78,21 @@ public class ServerRoutineInvocation
         if (schemaName == null) {
             schemaName = server.getDefaultSchemaName();
         }
-        Routine routine = server.getAIS().getRoutine(schemaName, routineName);
+        return server.getAIS().getRoutine(schemaName, routineName);
+    }
+
+    public static Routine.CallingConvention getCallingConvention(ServerSession server,
+                                                                 StaticMethodCallNode methodCall) {
+        Routine routine = getRoutine(server, methodCall);
+        if (routine != null)
+            return routine.getCallingConvention();
+        return null;
+    }
+
+    public static ServerRoutineInvocation of(ServerSession server,
+                                             StaticMethodCallNode methodCall) {
+
+        Routine routine = getRoutine(server, methodCall);
         if (routine == null) return null;
         Object[] constantArgs = null;
         int[] parameterArgs = null;

@@ -139,26 +139,40 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
     }
 
     @Override
-    protected PostgresStatement generateSelect(PhysicalSelect select,
+    protected PostgresStatement generateSelect() {
+        return new PostgresJsonStatement();
+    }
+
+    @Override
+    protected PostgresStatement generateSelect(PostgresStatement pstmt,
+                                               PhysicalSelect select,
                                                PostgresType[] parameterTypes) {
+        PostgresJsonStatement pjstmt = (PostgresJsonStatement)pstmt;
         int ncols = select.getResultColumns().size();
         List<JsonResultColumn> resultColumns = new ArrayList<JsonResultColumn>(ncols);
         for (PhysicalResultColumn physColumn : select.getResultColumns()) {
             JsonResultColumn resultColumn = (JsonResultColumn)physColumn;
             resultColumns.add(resultColumn);
         }
-        return new PostgresJsonStatement(select.getResultOperator(),
-                                         select.getResultRowType(),
-                                         resultColumns,
-                                         parameterTypes,
-                                         usesPValues());
+        pjstmt.init(select.getResultOperator(),
+                    select.getResultRowType(),
+                    resultColumns,
+                    parameterTypes,
+                    usesPValues());
+        return pjstmt;
     }
-    
+
     @Override
-    protected PostgresStatement generateUpdate(PhysicalUpdate update, String statementType,
+    protected PostgresStatement generateUpdate() {
+        return super.generateUpdate(); // To handle !returning, see below
+    }
+
+    @Override
+    protected PostgresStatement generateUpdate(PostgresStatement pstmt,
+                                               PhysicalUpdate update, String statementType,
                                                PostgresType[] parameterTypes) {
         if (!update.isReturning()) {
-            return super.generateUpdate(update, statementType, parameterTypes);
+            return super.generateUpdate(pstmt, update, statementType, parameterTypes);
         }
         else {
             int ncols = update.getResultColumns().size();
@@ -167,13 +181,15 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
                 JsonResultColumn resultColumn = (JsonResultColumn)physColumn;
                 resultColumns.add(resultColumn);
             }
-            return new PostgresJsonModifyStatement(statementType, 
-                                                   (Operator)update.getPlannable(),
-                                                   update.getResultRowType(),
-                                                   resultColumns,
-                                                   parameterTypes,
-                                                   usesPValues(),
-                                                   update.isRequireStepIsolation());
+            PostgresJsonModifyStatement pjmstmt = new PostgresJsonModifyStatement();
+            pjmstmt.init(statementType,
+                        (Operator)update.getPlannable(),
+                        update.getResultRowType(),
+                        resultColumns,
+                        parameterTypes,
+                        usesPValues(),
+                        update.isRequireStepIsolation());
+            return pjmstmt;
         }
     }
 }

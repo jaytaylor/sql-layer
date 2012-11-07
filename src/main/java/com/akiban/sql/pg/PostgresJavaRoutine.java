@@ -104,12 +104,15 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
         }
     }
 
+    protected PostgresJavaRoutine() {
+    }
+
     protected PostgresJavaRoutine(ServerRoutineInvocation invocation,
                                   List<String> columnNames, 
                                   List<PostgresType> columnTypes,
                                   PostgresType[] parameterTypes,
                                   boolean usesPValues) {
-        super(null, columnNames, columnTypes, parameterTypes, usesPValues);
+        super.init(null, columnNames, columnTypes, parameterTypes, usesPValues);
         this.invocation = invocation;
     }
 

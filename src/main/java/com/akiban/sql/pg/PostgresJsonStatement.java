@@ -40,14 +40,17 @@ public class PostgresJsonStatement extends PostgresOperatorStatement
 {
     private List<JsonResultColumn> resultColumns;
 
-    public PostgresJsonStatement(Operator resultOperator, RowType resultRowType,
-                                 List<JsonResultColumn> resultColumns,
-                                 PostgresType[] parameterTypes,
-                                 boolean usePValues) {
-        super(resultOperator, resultRowType,
-              // Looks like just one unlimited VARCHAR to the client.
-              jsonColumnNames(), jsonColumnTypes(),
-              parameterTypes, usePValues);
+    public PostgresJsonStatement() {
+    }
+
+    public void init(Operator resultOperator, RowType resultRowType,
+                     List<JsonResultColumn> resultColumns,
+                     PostgresType[] parameterTypes,
+                     boolean usePValues) {
+        super.init(resultOperator, resultRowType,
+                   // Looks like just one unlimited VARCHAR to the client.
+                   jsonColumnNames(), jsonColumnTypes(),
+                   parameterTypes, usePValues);
         this.resultColumns = resultColumns;
     }
 

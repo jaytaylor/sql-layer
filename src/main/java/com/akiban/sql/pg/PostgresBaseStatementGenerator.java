@@ -57,4 +57,8 @@ public abstract class PostgresBaseStatementGenerator
     public void sessionChanged(PostgresServerSession server) {
     }
 
+    @Override
+    public boolean needsSetAISGeneration() {
+        return true;
+    }
 }

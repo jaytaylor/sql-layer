@@ -77,10 +77,9 @@ public class PostgresSessionStatementGenerator extends PostgresBaseStatementGene
     }
 
     @Override
-    public PostgresStatement generateFinal(PostgresServerSession server, PostgresStatement pstmt, StatementNode stmt,
+    public PostgresStatement generateFinal(PostgresServerSession server, PostgresStatement pstmt,
+                                           StatementNode stmt,
                                            List<ParameterNode> params, int[] paramTypes) {
-        if (pstmt instanceof PostgresServerStatement)
-            return pstmt;
-        return null;
+        return pstmt;
     }
 }

@@ -890,7 +890,8 @@ public class PostgresServerConnection extends ServerSessionBase
             sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
             updateAIS(context);
             PostgresStatement pstmt = partial.generateFinal(this);
-            pstmt.setAISGeneration(ais.getGeneration());
+            if (partial.generator.needsSetAISGeneration())
+                pstmt.setAISGeneration(ais.getGeneration());
             return pstmt;
         }
         finally {

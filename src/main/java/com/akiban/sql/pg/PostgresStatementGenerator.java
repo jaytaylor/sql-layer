@@ -35,14 +35,19 @@ import java.util.List;
 public interface PostgresStatementGenerator extends PostgresStatementParser
 {
 
-    /** Return executable form of the given parsed statement or
-     * <code>null</code> if this generator cannot handle it. */
+    /** Return constructed, but potentially unusable, PostgresStatement for the given parsed
+     *  statement, or <code>null</code> if this generator cannot handle it. */
     public PostgresStatement generateInitial(PostgresServerSession server,
                                              StatementNode stmt,
                                              List<ParameterNode> params, int[] paramTypes);
 
+    /** Finish constructing the given PostgresStatement. This will only be be passed one
+     * that previously came from generateInitial. It is legal to return a different instance. */
     public PostgresStatement generateFinal(PostgresServerSession server,
                                            PostgresStatement pstmt,
                                            StatementNode stmt,
                                            List<ParameterNode> params, int[] paramTypes);
+
+    /** Whether or not setAISGeneration() should be called after generateFinal */
+    public boolean needsSetAISGeneration();
 }

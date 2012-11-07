@@ -41,11 +41,6 @@ import java.util.List;
  */
 public class PostgresCallStatementGenerator extends PostgresBaseStatementGenerator
 {
-    private static final PostgresStubStatement CALL_STATEMENT_STUB = new PostgresStubStatement(
-            ServerStatement.TransactionMode.WRITE_STEP_ISOLATED,
-            ServerStatement.TransactionAbortedMode.NOT_ALLOWED
-    );
-
     public PostgresCallStatementGenerator(PostgresServerSession server)
     {
     }
@@ -55,30 +50,38 @@ public class PostgresCallStatementGenerator extends PostgresBaseStatementGenerat
                                              StatementNode stmt,
                                              List<ParameterNode> params, int[] paramTypes)
     {
-        if (stmt instanceof CallStatementNode)
-            return CALL_STATEMENT_STUB;
+        if (stmt instanceof CallStatementNode) {
+            CallStatementNode call = (CallStatementNode)stmt;
+            StaticMethodCallNode methodCall = (StaticMethodCallNode)call.methodCall().getJavaValueNode();
+            ServerRoutineInvocation invocation = ServerRoutineInvocation.of(server, methodCall);
+            if (invocation != null) {
+                final PostgresStatement pstmt;
+                switch (invocation.getCallingConvention()) {
+                case LOADABLE_PLAN:
+                    pstmt = PostgresLoadablePlan.statement(server, invocation,
+                                                           paramTypes);
+                break;
+                default:
+                    pstmt = PostgresJavaMethod.statement(server, invocation,
+                                                         params, paramTypes);
+                }
+                // The above makes extensive use of the AIS. This doesn't fit well into the
+                // create and then init, so just mark with AIS now.
+                pstmt.setAISGeneration(server.getAIS().getGeneration());
+            }
+        }
         return null;
     }
 
     @Override
-    public PostgresStatement generateFinal(PostgresServerSession server, PostgresStatement pstmt, StatementNode stmt,
+    public PostgresStatement generateFinal(PostgresServerSession server, PostgresStatement pstmt,
+                                           StatementNode stmt,
                                            List<ParameterNode> params, int[] paramTypes) {
-        if (pstmt != CALL_STATEMENT_STUB) {
-            CallStatementNode call = (CallStatementNode)stmt;
-            StaticMethodCallNode methodCall = (StaticMethodCallNode)call.methodCall().getJavaValueNode();
-            ServerRoutineInvocation invocation =
-                ServerRoutineInvocation.of(server, methodCall);
-            if (invocation != null) {
-                switch (invocation.getCallingConvention()) {
-                case LOADABLE_PLAN:
-                    return PostgresLoadablePlan.statement(server, invocation, 
-                                                          paramTypes);
-                default:
-                    return PostgresJavaMethod.statement(server, invocation, 
-                                                        params, paramTypes);
-                }
-            }
-        }
-        return null;
+        return pstmt;
+    }
+
+    @Override
+    public boolean needsSetAISGeneration() {
+        return false;
     }
 }

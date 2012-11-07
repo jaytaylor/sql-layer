@@ -57,12 +57,15 @@ public class PostgresModifyOperatorStatement extends PostgresDMLStatement
     private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresBaseStatement: acquire exclusive lock");
     private static final Logger LOG = LoggerFactory.getLogger(PostgresModifyOperatorStatement.class);
 
-    public PostgresModifyOperatorStatement (String statementType,
-                                    Operator resultsOperator, 
-                                    PostgresType[] parameterTypes,
-                                    boolean usesPValues,
-                                    boolean requireStepIsolation) {
-        super (parameterTypes, usesPValues);
+    public PostgresModifyOperatorStatement() {
+    }
+
+    public void init(String statementType,
+                     Operator resultsOperator,
+                     PostgresType[] parameterTypes,
+                     boolean usesPValues,
+                     boolean requireStepIsolation) {
+        super.init(parameterTypes, usesPValues);
         this.statementType = statementType;
         this.resultOperator = resultsOperator;
         this.requireStepIsolation = requireStepIsolation;
@@ -70,20 +73,21 @@ public class PostgresModifyOperatorStatement extends PostgresDMLStatement
                 
     }
     
-    public PostgresModifyOperatorStatement (String statementType,
-                                    Operator resultOperator,
-                                     RowType resultRowType,
-                                     List<String> columnNames,
-                                     List<PostgresType> columnTypes,
-                                     PostgresType[] parameterTypes,
-                                     boolean usesPValues,
-                                     boolean requireStepIsolation) {
-        super(resultRowType, columnNames, columnTypes, parameterTypes, usesPValues);
+    public void init(String statementType,
+                     Operator resultOperator,
+                     RowType resultRowType,
+                     List<String> columnNames,
+                     List<PostgresType> columnTypes,
+                     PostgresType[] parameterTypes,
+                     boolean usesPValues,
+                     boolean requireStepIsolation) {
+        super.init(resultRowType, columnNames, columnTypes, parameterTypes, usesPValues);
         this.statementType = statementType;
         this.resultOperator = resultOperator;
         this.requireStepIsolation = requireStepIsolation;
         outputResult = true;
     }
+
     @Override
     public TransactionMode getTransactionMode() {
         if (requireStepIsolation)
