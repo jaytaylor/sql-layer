@@ -1321,10 +1321,20 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     int clearUnreferencedAISMap() {
         aisMap.claimExclusive();
         try {
-            Iterator<SharedAIS> it = aisMap.getWrappedMap().values().iterator();
+            int size = aisMap.size();
+            if(size <= 1) {
+                return size;
+            }
+            // Find newest generation
+            Long maxGen = Long.MIN_VALUE;
+            for(Long gen : aisMap.getWrappedMap().keySet()) {
+                maxGen = Math.max(gen, maxGen);
+            }
+            // Remove all unreferenced (except the newest)
+            Iterator<Map.Entry<Long,SharedAIS>> it = aisMap.getWrappedMap().entrySet().iterator();
             while(it.hasNext()) {
-                SharedAIS sAIS = it.next();
-                if(!sAIS.isShared()) {
+                Map.Entry<Long,SharedAIS> entry = it.next();
+                if(!entry.getValue().isShared() && !entry.getKey().equals(maxGen)) {
                     it.remove();
                 }
             }
