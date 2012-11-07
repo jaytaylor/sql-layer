@@ -6,8 +6,6 @@
 #
 # bug: 921124 (not valid / opinion)
 ---
-- Statement: SET newtypes to 'true'
----
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field, time_field, timestamp_field, varchar_field) VALUES (1, '01:05:06', '2012-01-01 12:31:00', '2012-03-04 18:22:15')
@@ -91,12 +89,16 @@
 ---
 - Statement: select TIMEDIFF(5, 2) from all_types;
 - output: [['00:00:03']]
+--- # the following tests ONLY work in test3
+- Statement: SET newtypes to 'true';
 ---
 - Statement: select TIMEDIFF('12:34:55', 17) from all_types;
 - output: [['12:34:38']]
 --- #921127
 - Statement: select TIMEDIFF('12:34:55', -17) from all_types;
 - output: [['12:35:12']]
+---
+- Statement: SET newtypes to DEFAULT
 #--- # Bug : DECIMAL (DOUBLE/FLOAT) not convertible to TIME
 #- Statement: select TIMEDIFF('12:34:55', 17.495) from all_types;
 #- output: [['12:34:37.505000']] #fractional seconds -> not supported yet
