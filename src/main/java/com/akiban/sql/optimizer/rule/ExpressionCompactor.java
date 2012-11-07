@@ -151,7 +151,12 @@ public class ExpressionCompactor extends BaseRule
     }
 
     private static boolean isNullable(ExpressionNode condition) {
-        return Types3Switch.ON ? condition.getPreptimeValue().isNullable() : condition.getSQLtype().isNullable();
+        if (Types3Switch.ON)
+            return condition.getPreptimeValue().isNullable();
+        else if (condition.getSQLtype() != null)
+            return condition.getSQLtype().isNullable();
+        else
+            return true;
     }
 
     static final Comparator<ColumnSource> tableSourceById = 
