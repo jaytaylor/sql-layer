@@ -1065,7 +1065,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     private void saveMemoryTables(Exchange ex, GrowableByteBuffer buffer, AkibanInformationSchema newAIS) throws PersistitException {
-        // Want *just* the memory tables
+        // Want *just* non-persisted memory tables and system routines
         final ProtobufWriter.WriteSelector selector = new ProtobufWriter.TableFilterSelector() {
             @Override
             public Columnar getSelected(Columnar columnar) {
@@ -1082,7 +1082,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
             @Override
             public boolean isSelected(Routine routine) {
-                return false;
+                return TableName.SYS_SCHEMA.equals(routine.getName().getSchemaName()) ||
+                       TableName.SQLJ_SCHEMA.equals(routine.getName().getSchemaName());
             }
 
             @Override
