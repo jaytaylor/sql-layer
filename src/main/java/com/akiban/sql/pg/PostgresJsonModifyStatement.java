@@ -42,7 +42,8 @@ public class PostgresJsonModifyStatement extends PostgresModifyOperatorStatement
 {
     private List<JsonResultColumn> resultColumns;
 
-    public PostgresJsonModifyStatement() {
+    public PostgresJsonModifyStatement(PostgresOperatorCompiler compiler) {
+        super(compiler);
     }
 
     public void init(String statementType, Operator resultOperator, RowType resultRowType,

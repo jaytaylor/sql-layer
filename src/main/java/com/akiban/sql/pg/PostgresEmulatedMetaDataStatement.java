@@ -31,6 +31,8 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.sql.parser.ParameterNode;
+import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.server.ServerValueEncoder;
 
 import java.io.IOException;
@@ -373,6 +375,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     }
 
     @Override
+    public boolean hasAISGeneration() {
+        return aisGeneration != 0;
+    }
+
+    @Override
     public void setAISGeneration(long aisGeneration) {
         this.aisGeneration = aisGeneration;
     }
@@ -380,6 +387,13 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     @Override
     public long getAISGeneration() {
         return aisGeneration;
+    }
+
+    @Override
+    public PostgresStatement finishGenerating(PostgresServerSession server,
+                                              String sql, StatementNode stmt,
+                                              List<ParameterNode> params, int[] paramTypes) {
+        return this;
     }
 
     private int odbcLoTypeQuery(PostgresMessenger messenger, int maxrows) {

@@ -45,9 +45,9 @@ public class PostgresCallStatementGenerator extends PostgresBaseStatementGenerat
     }
 
     @Override
-    public PostgresStatement generateInitial(PostgresServerSession server,
-                                             String sql, StatementNode stmt,
-                                             List<ParameterNode> params, int[] paramTypes)
+    public PostgresStatement generateStub(PostgresServerSession server,
+                                          String sql, StatementNode stmt,
+                                          List<ParameterNode> params, int[] paramTypes)
     {
         if (stmt instanceof CallStatementNode) {
             CallStatementNode call = (CallStatementNode)stmt;
@@ -72,17 +72,5 @@ public class PostgresCallStatementGenerator extends PostgresBaseStatementGenerat
             }
         }
         return null;
-    }
-
-    @Override
-    public PostgresStatement generateFinal(PostgresServerSession server, PostgresStatement pstmt,
-                                           StatementNode stmt,
-                                           List<ParameterNode> params, int[] paramTypes) {
-        return pstmt;
-    }
-
-    @Override
-    public boolean needsSetAISGeneration() {
-        return false;
     }
 }

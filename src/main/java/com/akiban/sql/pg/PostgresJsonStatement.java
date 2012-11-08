@@ -40,7 +40,8 @@ public class PostgresJsonStatement extends PostgresOperatorStatement
 {
     private List<JsonResultColumn> resultColumns;
 
-    public PostgresJsonStatement() {
+    public PostgresJsonStatement(PostgresOperatorCompiler compiler) {
+        super(compiler);
     }
 
     public void init(Operator resultOperator, RowType resultRowType,

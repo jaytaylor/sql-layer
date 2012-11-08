@@ -26,11 +26,19 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.optimizer.OperatorCompiler;
+import com.akiban.sql.optimizer.plan.BasePlannable;
+import com.akiban.sql.optimizer.rule.ExplainPlanContext;
+import com.akiban.sql.parser.DMLStatementNode;
+import com.akiban.sql.parser.ExplainStatementNode;
+import com.akiban.sql.parser.ParameterNode;
+import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.server.ServerValueEncoder;
 
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 
+import java.util.Collections;
 import java.util.List;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -38,16 +46,18 @@ import java.io.IOException;
 /** SQL statement to explain another one. */
 public class PostgresExplainStatement implements PostgresStatement
 {
+    private OperatorCompiler compiler; // Used only to finish generation
     private List<String> explanation;
     private String colName;
     private PostgresType colType;
     private boolean usePVals;
     private long aisGeneration;
 
-    public PostgresExplainStatement() {
+    public PostgresExplainStatement(OperatorCompiler compiler) {
+        this.compiler = compiler;
     }
 
-    public void initialize(List<String> explanation, boolean usePVals) {
+    public void init(List<String> explanation, boolean usePVals) {
         this.explanation = explanation;
 
         int maxlen = 32;
@@ -126,6 +136,11 @@ public class PostgresExplainStatement implements PostgresStatement
     }
 
     @Override
+    public boolean hasAISGeneration() {
+        return aisGeneration != 0;
+    }
+
+    @Override
     public void setAISGeneration(long aisGeneration) {
         this.aisGeneration = aisGeneration;
     }
@@ -135,4 +150,19 @@ public class PostgresExplainStatement implements PostgresStatement
         return aisGeneration;
     }
 
+    @Override
+    public PostgresStatement finishGenerating(PostgresServerSession server, String sql, StatementNode stmt,
+                                              List<ParameterNode> params, int[] paramTypes) {
+        ExplainPlanContext context = new ExplainPlanContext(compiler);
+        StatementNode innerStmt = ((ExplainStatementNode)stmt).getStatement();
+        BasePlannable result = compiler.compile((DMLStatementNode)innerStmt, params, context);
+        List<String> explain;
+        if (compiler instanceof PostgresJsonCompiler)
+            explain = Collections.singletonList(result.explainToJson(context.getExplainContext()));
+        else
+            explain = result.explainPlan(context.getExplainContext(), server.getDefaultSchemaName());
+        init(explain, compiler.usesPValues());
+        compiler = null;
+        return this;
+    }
 }

@@ -26,9 +26,12 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.parser.ParameterNode;
+import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.server.ServerStatement;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * An SQL statement compiled for use with Postgres server.
@@ -46,9 +49,17 @@ public interface PostgresStatement extends ServerStatement
     /** Execute statement and output results. Return number of rows processed. */
     public int execute(PostgresQueryContext context, int maxrows) throws IOException;
 
-    /** Set generation this statement was created under **/
+    /** Whether or not the generation has been set */
+    public boolean hasAISGeneration();
+
+    /** Set generation this statement was created under */
     public void setAISGeneration(long aisGeneration);
 
-    /** Get generation this statement was created under **/
+    /** Get generation this statement was created under */
     public long getAISGeneration();
+
+    /** Finish constructing this statement. Returning a new instance is allowed. */
+    public PostgresStatement finishGenerating(PostgresServerSession server,
+                                              String sql, StatementNode stmt,
+                                              List<ParameterNode> params, int[] paramTypes);
 }

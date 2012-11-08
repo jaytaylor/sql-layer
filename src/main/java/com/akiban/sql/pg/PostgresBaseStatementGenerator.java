@@ -42,8 +42,8 @@ public abstract class PostgresBaseStatementGenerator
         // This very inefficient reparsing by every generator is actually avoided.
         SQLParser parser = server.getParser();
         try {
-            return generateInitial(server, sql, parser.parseStatement(sql),
-                                   parser.getParameterList(), paramTypes);
+            return generateStub(server, sql, parser.parseStatement(sql),
+                                parser.getParameterList(), paramTypes);
         }
         catch (SQLParserException ex) {
             throw new SQLParseException(ex);
@@ -55,10 +55,5 @@ public abstract class PostgresBaseStatementGenerator
 
     @Override
     public void sessionChanged(PostgresServerSession server) {
-    }
-
-    @Override
-    public boolean needsSetAISGeneration() {
-        return true;
     }
 }

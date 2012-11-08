@@ -139,14 +139,14 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
     }
 
     @Override
-    protected PostgresStatement generateSelect() {
-        return new PostgresJsonStatement();
+    protected PostgresBaseOperatorStatement generateSelect() {
+        return new PostgresJsonStatement(this);
     }
 
     @Override
-    protected PostgresStatement generateSelect(PostgresStatement pstmt,
-                                               PhysicalSelect select,
-                                               PostgresType[] parameterTypes) {
+    protected PostgresBaseOperatorStatement generateSelect(PostgresStatement pstmt,
+                                                           PhysicalSelect select,
+                                                           PostgresType[] parameterTypes) {
         PostgresJsonStatement pjstmt = (PostgresJsonStatement)pstmt;
         int ncols = select.getResultColumns().size();
         List<JsonResultColumn> resultColumns = new ArrayList<JsonResultColumn>(ncols);
@@ -163,14 +163,14 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
     }
 
     @Override
-    protected PostgresStatement generateUpdate() {
+    protected PostgresBaseOperatorStatement generateUpdate() {
         return super.generateUpdate(); // To handle !returning, see below
     }
 
     @Override
-    protected PostgresStatement generateUpdate(PostgresStatement pstmt,
-                                               PhysicalUpdate update, String statementType,
-                                               PostgresType[] parameterTypes) {
+    protected PostgresBaseOperatorStatement generateUpdate(PostgresStatement pstmt,
+                                                           PhysicalUpdate update, String statementType,
+                                                           PostgresType[] parameterTypes) {
         if (!update.isReturning()) {
             return super.generateUpdate(pstmt, update, statementType, parameterTypes);
         }
@@ -181,7 +181,7 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
                 JsonResultColumn resultColumn = (JsonResultColumn)physColumn;
                 resultColumns.add(resultColumn);
             }
-            PostgresJsonModifyStatement pjmstmt = new PostgresJsonModifyStatement();
+            PostgresJsonModifyStatement pjmstmt = new PostgresJsonModifyStatement(this);
             pjmstmt.init(statementType,
                         (Operator)update.getPlannable(),
                         update.getResultRowType(),

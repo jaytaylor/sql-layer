@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
  * An SQL modifying DML statement transformed into an operator tree
  * @see PostgresOperatorCompiler
  */
-public class PostgresModifyOperatorStatement extends PostgresDMLStatement
+public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStatement
 {
     private String statementType;
     private Operator resultOperator;
@@ -56,7 +56,8 @@ public class PostgresModifyOperatorStatement extends PostgresDMLStatement
     private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresBaseStatement: acquire exclusive lock");
     private static final Logger LOG = LoggerFactory.getLogger(PostgresModifyOperatorStatement.class);
 
-    public PostgresModifyOperatorStatement() {
+    public PostgresModifyOperatorStatement(PostgresOperatorCompiler compiler) {
+        super(compiler);
     }
 
     public void init(String statementType,

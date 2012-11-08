@@ -43,16 +43,16 @@ import java.io.IOException;
  * An SQL SELECT transformed into an operator tree
  * @see PostgresOperatorCompiler
  */
-public class PostgresOperatorStatement extends PostgresDMLStatement
+public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
 {
-
     private Operator resultOperator;
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorStatement.class);
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresOperatorStatement: execute shared");
     private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresOperatorStatement: acquire shared lock");
 
-    public PostgresOperatorStatement() {
+    public PostgresOperatorStatement(PostgresOperatorCompiler compiler) {
+        super(compiler);
     }
 
     public void init(Operator resultOperator,

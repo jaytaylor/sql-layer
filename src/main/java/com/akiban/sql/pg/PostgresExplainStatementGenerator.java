@@ -54,9 +54,9 @@ public class PostgresExplainStatementGenerator extends PostgresBaseStatementGene
     }
 
     @Override
-    public PostgresStatement generateInitial(PostgresServerSession server,
-                                             String sql, StatementNode stmt,
-                                             List<ParameterNode> params, int[] paramTypes)  {
+    public PostgresStatement generateStub(PostgresServerSession server,
+                                          String sql, StatementNode stmt,
+                                          List<ParameterNode> params, int[] paramTypes)  {
         if (stmt.getNodeType() != NodeTypes.EXPLAIN_STATEMENT_NODE)
             return null;
         StatementNode innerStmt = ((ExplainStatementNode)stmt).getStatement();
@@ -64,22 +64,6 @@ public class PostgresExplainStatementGenerator extends PostgresBaseStatementGene
             throw new UnsupportedExplainException();
         if (!(innerStmt instanceof DMLStatementNode))
             throw new UnableToExplainException ();
-        return new PostgresExplainStatement();
-    }
-
-    @Override
-    public PostgresStatement generateFinal(PostgresServerSession server, PostgresStatement pstmt,
-                                           StatementNode stmt,
-                                           List<ParameterNode> params, int[] paramTypes) {
-        ExplainPlanContext context = new ExplainPlanContext(compiler);
-        StatementNode innerStmt = ((ExplainStatementNode)stmt).getStatement();
-        BasePlannable result = compiler.compile((DMLStatementNode)innerStmt, params, context);
-        List<String> explain;
-        if (compiler instanceof PostgresJsonCompiler)
-            explain = Collections.singletonList(result.explainToJson(context.getExplainContext()));
-        else
-            explain = result.explainPlan(context.getExplainContext(), server.getDefaultSchemaName());
-        ((PostgresExplainStatement)pstmt).initialize(explain, compiler.usesPValues());
-        return pstmt;
+        return new PostgresExplainStatement(compiler);
     }
 }

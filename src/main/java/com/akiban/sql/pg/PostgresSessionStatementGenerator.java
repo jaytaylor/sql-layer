@@ -40,9 +40,9 @@ public class PostgresSessionStatementGenerator extends PostgresBaseStatementGene
     }
 
     @Override
-    public PostgresStatement generateInitial(PostgresServerSession server,
-                                             String sql, StatementNode stmt,
-                                             List<ParameterNode> params, int[] paramTypes)  {
+    public PostgresStatement generateStub(PostgresServerSession server,
+                                          String sql, StatementNode stmt,
+                                          List<ParameterNode> params, int[] paramTypes)  {
         switch (stmt.getNodeType()) {
         case NodeTypes.SET_SCHEMA_NODE:
             return PostgresSessionStatement.Operation.USE.getStatement(stmt);
@@ -74,12 +74,5 @@ public class PostgresSessionStatementGenerator extends PostgresBaseStatementGene
         default:
             return null;
         }
-    }
-
-    @Override
-    public PostgresStatement generateFinal(PostgresServerSession server, PostgresStatement pstmt,
-                                           StatementNode stmt,
-                                           List<ParameterNode> params, int[] paramTypes) {
-        return pstmt;
     }
 }

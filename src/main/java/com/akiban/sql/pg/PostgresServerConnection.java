@@ -27,8 +27,6 @@
 package com.akiban.sql.pg;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowPool;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerSessionBase;
 import com.akiban.sql.server.ServerSessionMonitor;
@@ -42,7 +40,6 @@ import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.SQLParserException;
 import com.akiban.sql.parser.StatementNode;
 
-import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -95,27 +92,6 @@ public class PostgresServerConnection extends ServerSessionBase
     private Thread thread;
 
     private volatile String cancelForKillReason, cancelByUser;
-
-    private static class GeneratedPartial {
-        public PostgresStatementGenerator generator;
-        public PostgresStatement pstmt;
-        public StatementNode stmt;
-        public List<ParameterNode> params;
-        public int[] paramTypes;
-
-        public GeneratedPartial(PostgresStatementGenerator generator, PostgresStatement pstmt,
-                                StatementNode stmt, List<ParameterNode> params, int[] paramTypes) {
-            this.generator = generator;
-            this.pstmt = pstmt;
-            this.stmt = stmt;
-            this.params = params;
-            this.paramTypes = paramTypes;
-        }
-
-        public PostgresStatement generateFinal(PostgresServerSession session) {
-            return generator.generateFinal(session, pstmt, stmt, params, paramTypes);
-        }
-    }
 
     public PostgresServerConnection(PostgresServer server, Socket socket, 
                                     int sessionId, int secret,
@@ -550,11 +526,11 @@ public class PostgresServerConnection extends ServerSessionBase
                 else
                     stmtSQL = sql.substring(stmt.getBeginOffset(),
                                             stmt.getEndOffset() + 1);
-                GeneratedPartial partial = generateStatementPartial(stmtSQL, stmt, null, null);
-                ServerTransaction local = beforeExecute(partial.pstmt);
+                pstmt = generateStatementStub(stmtSQL, stmt, null, null);
+                ServerTransaction local = beforeExecute(pstmt);
                 boolean success = false;
                 try {
-                    pstmt = generateStatementFinal(context, partial);
+                    pstmt = finishGenerating(context, pstmt, stmtSQL, stmt, null, null);
                     if ((statementCache != null) && (stmts.size() == 1))
                         statementCache.put(stmtSQL, pstmt);
                     pstmt.sendDescription(context, false);
@@ -606,14 +582,14 @@ public class PostgresServerConnection extends ServerSessionBase
             finally {
                 sessionMonitor.leaveStage();
             }
-            GeneratedPartial partial = generateStatementPartial(sql, stmt, params, paramTypes);
-            ServerTransaction local = beforeExecute(partial.pstmt);
+            pstmt = generateStatementStub(sql, stmt, params, paramTypes);
+            ServerTransaction local = beforeExecute(pstmt);
             boolean success = false;
             try {
-                pstmt = generateStatementFinal(context, partial);
+                pstmt = finishGenerating(context, pstmt, sql, stmt, params, paramTypes);
                 success = true;
             } finally {
-                afterExecute(partial.pstmt, local, success);
+                afterExecute(pstmt, local, success);
             }
             if (statementCache != null)
                 statementCache.put(sql, pstmt);
@@ -876,29 +852,16 @@ public class PostgresServerConnection extends ServerSessionBase
         statementCache = getStatementCache();
     }
 
-    protected GeneratedPartial generateStatementPartial(String sql, StatementNode stmt,
-                                                  List<ParameterNode> params,
-                                                  int[] paramTypes) {
-        // Costing requires looking at AIS and potentially scanning index_stats rows
-        ServerTransaction local = (transaction == null) ? new ServerTransaction(this, true) : null;
-        try {
-            return generateStatementInternal(sql, stmt, params, paramTypes);
-        } finally {
-            if (local != null)
-                local.commit();
-        }
-    }
-
-    private GeneratedPartial generateStatementInternal(String sql, StatementNode stmt,
-                                                        List<ParameterNode> params,
-                                                        int[] paramTypes) {
+    protected PostgresStatement generateStatementStub(String sql, StatementNode stmt,
+                                                      List<ParameterNode> params,
+                                                      int[] paramTypes) {
         try {
             sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
             for (PostgresStatementGenerator generator : parsedGenerators) {
-                PostgresStatement pstmt = generator.generateInitial(this, sql, stmt,
-                                                                    params, paramTypes);
+                PostgresStatement pstmt = generator.generateStub(this, sql, stmt,
+                                                                 params, paramTypes);
                 if (pstmt != null)
-                    return new GeneratedPartial(generator, pstmt, stmt, params, paramTypes);
+                    return pstmt;
             }
         }
         finally {
@@ -907,15 +870,17 @@ public class PostgresServerConnection extends ServerSessionBase
         throw new UnsupportedSQLException ("", stmt);
     }
 
-    protected PostgresStatement generateStatementFinal(PostgresQueryContext context,
-                                                       GeneratedPartial partial) {
+    protected PostgresStatement finishGenerating(PostgresQueryContext context, PostgresStatement pstmt,
+                                                 String sql, StatementNode stmt,
+                                                 List<ParameterNode> params,
+                                                 int[] paramTypes) {
         try {
             sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
             updateAIS(context);
-            PostgresStatement pstmt = partial.generateFinal(this);
-            if (partial.generator.needsSetAISGeneration())
-                pstmt.setAISGeneration(ais.getGeneration());
-            return pstmt;
+            PostgresStatement newpstmt = pstmt.finishGenerating(this, sql, stmt, params, paramTypes);
+            if (!newpstmt.hasAISGeneration())
+                newpstmt.setAISGeneration(ais.getGeneration());
+            return newpstmt;
         }
         finally {
             sessionMonitor.leaveStage();

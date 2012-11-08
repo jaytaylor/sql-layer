@@ -31,6 +31,7 @@ import static com.akiban.sql.pg.PostgresJsonStatement.jsonColumnTypes;
 import static com.akiban.sql.pg.PostgresServerSession.OutputFormat;
 
 import com.akiban.sql.parser.ParameterNode;
+import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.server.ServerCallContextStack;
 import com.akiban.sql.server.ServerJavaRoutine;
 import com.akiban.sql.server.ServerRoutineInvocation;
@@ -285,5 +286,6 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
         }
         return result;
     }
+
 
 }

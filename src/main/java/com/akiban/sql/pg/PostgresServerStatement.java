@@ -29,10 +29,13 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
+import com.akiban.sql.parser.ParameterNode;
+import com.akiban.sql.parser.StatementNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,6 +105,11 @@ public class PostgresServerStatement implements PostgresStatement {
     }
 
     @Override
+    public boolean hasAISGeneration() {
+        return aisGeneration != 0;
+    }
+
+    @Override
     public void setAISGeneration(long aisGeneration) {
         this.aisGeneration = aisGeneration;
     }
@@ -109,6 +117,13 @@ public class PostgresServerStatement implements PostgresStatement {
     @Override
     public long getAISGeneration() {
         return aisGeneration;
+    }
+
+    @Override
+    public PostgresStatement finishGenerating(PostgresServerSession server,
+                                              String sql, StatementNode stmt,
+                                              List<ParameterNode> params, int[] paramTypes) {
+        return this;
     }
 
     protected void doOperation (PostgresServerSession session) throws Exception {

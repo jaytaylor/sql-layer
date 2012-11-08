@@ -28,15 +28,12 @@ package com.akiban.sql.pg;
 
 import com.akiban.qp.operator.Operator;
 import com.akiban.sql.server.ServerOperatorCompiler;
-import com.akiban.sql.server.ServerPlanContext;
 
 import com.akiban.sql.optimizer.TypesTranslation;
-import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PhysicalSelect;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.PhysicalUpdate;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
-import com.akiban.sql.optimizer.rule.PlanContext;
 
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.*;
@@ -76,8 +73,8 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
         // This very inefficient reparsing by every generator is actually avoided.
         SQLParser parser = server.getParser();
         try {
-            return generateInitial(server, sql, parser.parseStatement(sql),
-                                   parser.getParameterList(), paramTypes);
+            return generateStub(server, sql, parser.parseStatement(sql),
+                                parser.getParameterList(), paramTypes);
         }
         catch (SQLParserException ex) {
             throw new SQLParseException(ex);
@@ -131,9 +128,9 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
     }
 
     @Override
-    public PostgresStatement generateInitial(PostgresServerSession session,
-                                             String sql, StatementNode stmt,
-                                             List<ParameterNode> params, int[] paramTypes) {
+    public PostgresStatement generateStub(PostgresServerSession session,
+                                          String sql, StatementNode stmt,
+                                          List<ParameterNode> params, int[] paramTypes) {
         if (stmt instanceof CallStatementNode || !(stmt instanceof DMLStatementNode))
             return null;
         // Extremely similar to ASTStatementLoader.Loader#toStatement()
@@ -151,68 +148,13 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
         }
     }
 
-    @Override
-    public PostgresStatement generateFinal(PostgresServerSession session, PostgresStatement pstmt,
-                                           StatementNode stmt,
-                                           List<ParameterNode> params, int[] paramTypes) {
-        DMLStatementNode dmlStmt = (DMLStatementNode)stmt;
-        PlanContext planContext = new ServerPlanContext(this, new PostgresQueryContext(session));
-        BasePlannable result = compile(dmlStmt, params, planContext);
-        logger.debug("Operator:\n{}", result);
-
-        PostgresType[] parameterTypes = null;
-        if (result.getParameterTypes() != null) {
-            DataTypeDescriptor[] sqlTypes = result.getParameterTypes();
-            int nparams = sqlTypes.length;
-            parameterTypes = new PostgresType[nparams];
-            for (int i = 0; i < nparams; i++) {
-                PostgresType pgType = null;
-                DataTypeDescriptor sqlType = sqlTypes[i];
-                if (sqlType != null) {
-                    AkType akType = TypesTranslation.sqlTypeToAkType(sqlType);
-                    TInstance tInstance = TypesTranslation.toTInstance(sqlType);
-                    pgType = PostgresType.fromDerby(sqlType, akType, tInstance);
-                }
-                if ((paramTypes != null) && (i < paramTypes.length)) {
-                    // Make a type that has the target that the query wants, with the
-                    // OID that the client proposed to send so that we
-                    // decode it properly.
-                    PostgresType.TypeOid oid = PostgresType.TypeOid.fromOid(paramTypes[i]);
-                    if (oid != null) {
-                        if (pgType == null)
-                            pgType = new PostgresType(oid, (short)-1, -1, null, null);
-                        else
-                            pgType = new PostgresType(oid,  (short)-1, -1, 
-                                                      pgType.getAkType(),
-                                                      pgType.getInstance());
-                    }
-                }
-                parameterTypes[i] = pgType;
-            }
-        }
-
-        if (result.isUpdate())
-            return generateUpdate(pstmt,
-                                  (PhysicalUpdate)result, stmt.statementToString(),
-                                  parameterTypes);
-        else
-            return generateSelect(pstmt,
-                                  (PhysicalSelect)result,
-                                  parameterTypes);
+    protected PostgresBaseOperatorStatement generateUpdate() {
+        return new PostgresModifyOperatorStatement(this);
     }
 
-    @Override
-    public boolean needsSetAISGeneration() {
-        return true;
-    }
-
-    protected PostgresStatement generateUpdate() {
-        return new PostgresModifyOperatorStatement();
-    }
-
-    protected PostgresStatement generateUpdate(PostgresStatement pstmt,
-                                               PhysicalUpdate update, String statementType,
-                                               PostgresType[] parameterTypes) {
+    protected PostgresBaseOperatorStatement generateUpdate(PostgresStatement pstmt,
+                                                           PhysicalUpdate update, String statementType,
+                                                           PostgresType[] parameterTypes) {
         PostgresModifyOperatorStatement pmstmt = (PostgresModifyOperatorStatement)pstmt;
         if (update.isReturning()) {
             int ncols = update.getResultColumns().size();
@@ -238,17 +180,16 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
                         usesPValues(),
                         update.isRequireStepIsolation());
         }
-        return pstmt;
+        return pmstmt;
     }
 
-    protected PostgresStatement generateSelect() {
-        return new PostgresOperatorStatement();
+    protected PostgresBaseOperatorStatement generateSelect() {
+        return new PostgresOperatorStatement(this);
     }
 
-    protected PostgresStatement generateSelect(PostgresStatement pstmt,
-                                               PhysicalSelect select,
-                                               PostgresType[] parameterTypes) {
-        assert (pstmt instanceof PostgresOperatorStatement) : pstmt;
+    protected PostgresBaseOperatorStatement generateSelect(PostgresStatement pstmt,
+                                                           PhysicalSelect select,
+                                                           PostgresType[] parameterTypes) {
         PostgresOperatorStatement postmt = (PostgresOperatorStatement)pstmt;
 
         int ncols = select.getResultColumns().size();
