@@ -493,8 +493,10 @@ public class PostgresServerConnection extends ServerSessionBase
                 // Try special recognition first; only allowed to turn
                 // into one statement.
                 pstmt = parser.parse(this, sql, null);
-                if (pstmt != null)
+                if (pstmt != null) {
+                    pstmt.setAISGeneration(ais.getGeneration());
                     break;
+                }
             }
         }
         int rowsProcessed = 0;
