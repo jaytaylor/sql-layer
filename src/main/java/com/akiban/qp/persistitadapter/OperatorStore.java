@@ -46,6 +46,7 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDataExtractor;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.DelegatingStore;
@@ -249,8 +250,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     // OperatorStore interface
 
     @Inject
-    public OperatorStore(TreeService treeService, ConfigurationService config, SchemaManager schemaManager) {
-        super(new PersistitStore(false, treeService, config, schemaManager));
+    public OperatorStore(TreeService treeService, ConfigurationService config, SchemaManager schemaManager, LockService lockService) {
+        super(new PersistitStore(false, treeService, config, schemaManager, lockService));
         this.treeService = treeService;
         this.config = config;
         this.schemaManager = schemaManager;

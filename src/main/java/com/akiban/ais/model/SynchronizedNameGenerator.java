@@ -72,6 +72,13 @@ public class SynchronizedNameGenerator implements NameGenerator {
     }
 
     @Override
+    public int generateIndexID(int rootTableID) {
+        synchronized(LOCK) {
+            return realNamer.generateIndexID(rootTableID);
+        }
+    }
+
+    @Override
     public String generateGroupTreeName(String schemaName, String groupName) {
         synchronized(LOCK) {
             return realNamer.generateGroupTreeName(schemaName, groupName);

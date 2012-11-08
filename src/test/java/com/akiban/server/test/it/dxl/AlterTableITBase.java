@@ -131,26 +131,12 @@ public class AlterTableITBase extends ITBase {
         return ChangeLevel.TABLE;
     }
 
-    protected DDLFunctions ddlForAlter() {
-        return ddl();
-    }
-
     protected void runAlter(String sql) {
-        runAlter(getDefaultChangeLevel(), sql);
+        runAlter(getDefaultChangeLevel(), SCHEMA, sql);
     }
 
-    protected void runAlter(ChangeLevel expectedChangeLevel, String sql) {
-        SQLParser parser = new SQLParser();
-        StatementNode node;
-        try {
-            node = parser.parseStatement(sql);
-        } catch(StandardException e) {
-            throw new RuntimeException(e);
-        }
-        assertTrue("is alter node", node instanceof AlterTableNode);
-        ChangeLevel level = AlterTableDDL.alterTable(ddlForAlter(), dml(), session(), SCHEMA, (AlterTableNode) node, queryContext());
-        assertEquals("ChangeLevel", expectedChangeLevel, level);
-        updateAISGeneration();
+    protected void runAlter(ChangeLevel changeLevel, String sql) {
+        runAlter(changeLevel, SCHEMA, sql);
     }
 
     protected void runAlter(ChangeLevel expectedChangeLevel, TableName name, UserTable newDefinition,
@@ -168,8 +154,7 @@ public class AlterTableITBase extends ITBase {
         changer.doChange();
         UserTable newTable = aisCopy.getUserTable(newName);
         assertNotNull("Found new table " + newName, oldTable);
-        runAlter(ChangeLevel.METADATA,
-                 oldName, newTable, NO_CHANGES, NO_CHANGES);
+        runAlter(ChangeLevel.METADATA, oldName, newTable, NO_CHANGES, NO_CHANGES);
     }
 
     protected void runRenameColumn(TableName tableName, String oldColName, String newColName) {

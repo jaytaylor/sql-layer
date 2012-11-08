@@ -26,9 +26,12 @@
 
 package com.akiban.ais.model;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -49,6 +52,7 @@ public class DefaultNameGenerator implements NameGenerator {
     private final Set<TableName> sequenceNames;
     private final SortedSet<Integer> isTableIDSet;
     private final SortedSet<Integer> userTableIDSet;
+    private final Map<Integer,Integer> indexIDMap;
 
 
     public DefaultNameGenerator() {
@@ -56,6 +60,7 @@ public class DefaultNameGenerator implements NameGenerator {
         sequenceNames = new HashSet<TableName>();
         userTableIDSet = new TreeSet<Integer>();
         isTableIDSet = new TreeSet<Integer>();
+        indexIDMap = new HashMap<Integer,Integer>();
     }
 
     public DefaultNameGenerator(AkibanInformationSchema ais) {
@@ -63,6 +68,7 @@ public class DefaultNameGenerator implements NameGenerator {
         sequenceNames = new HashSet<TableName>(ais.getSequences().keySet());
         isTableIDSet = collectTableIDs(ais, true);
         userTableIDSet = collectTableIDs(ais, false);
+        indexIDMap = collectMaxIndexIDs(ais);
     }
 
 
@@ -79,6 +85,17 @@ public class DefaultNameGenerator implements NameGenerator {
             }
         }
         return offset;
+    }
+
+    @Override
+    public int generateIndexID(int rootTableID) {
+        Integer current = indexIDMap.get(rootTableID);
+        int newID = 1;
+        if(current != null) {
+            newID += current;
+        }
+        indexIDMap.put(rootTableID, newID);
+        return newID;
     }
 
     @Override
@@ -204,6 +221,16 @@ public class DefaultNameGenerator implements NameGenerator {
         return idSet;
     }
 
+    public static Map<Integer,Integer> collectMaxIndexIDs(AkibanInformationSchema ais) {
+        MaxIndexIDVisitor visitor = new MaxIndexIDVisitor();
+        Map<Integer,Integer> idMap = new HashMap<Integer,Integer>();
+        for(Group group : ais.getGroups().values()) {
+            visitor.resetAndVisit(group);
+            idMap.put(group.getRoot().getTableId(), visitor.getMaxIndexID());
+        }
+        return idMap;
+    }
+
     public static Set<String> collectTreeNames(AkibanInformationSchema ais) {
         Set<String> treeNames = new HashSet<String>();
         for(Group group : ais.getGroups().values()) {
@@ -255,6 +282,39 @@ public class DefaultNameGenerator implements NameGenerator {
                 return ((GroupIndex)index).getGroup().getSchemaName();
             default:
                 throw new IllegalArgumentException("Unknown type: " + index.getIndexType());
+        }
+    }
+
+    private static class MaxIndexIDVisitor extends NopVisitor {
+        private int maxID;
+
+        public MaxIndexIDVisitor() {
+        }
+
+        public void resetAndVisit(Group group) {
+            maxID = 0;
+            visitGroup(group);
+            group.getRoot().traverseTableAndDescendants(this);
+        }
+
+        public int getMaxIndexID() {
+            return maxID;
+        }
+
+        @Override
+        public void visitGroup(Group group) {
+            checkIndexes(group.getIndexes());
+        }
+
+        @Override
+        public void visitUserTable(UserTable table) {
+            checkIndexes(table.getIndexesIncludingInternal());
+        }
+
+        private void checkIndexes(Collection<? extends Index> indexes) {
+            for(Index index : indexes) {
+                maxID = Math.max(maxID, index.getIndexId());
+            }
         }
     }
 }

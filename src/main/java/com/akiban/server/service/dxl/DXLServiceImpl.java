@@ -37,6 +37,7 @@ import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
+import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
@@ -46,6 +47,8 @@ import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.google.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,6 +57,8 @@ import java.util.List;
 import java.util.Map;
 
 public class DXLServiceImpl implements DXLService, Service, JmxManageable {
+    private final static String CONFIG_USE_GLOBAL_LOCK = "akserver.dxl.use_global_lock";
+    private final static Logger LOG = LoggerFactory.getLogger(DXLServiceImpl.class);
 
     private final Object MONITOR = new Object();
 
@@ -67,6 +72,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     private final ConfigurationService configService;
     private final T3RegistryService t3Registry;
     private final TransactionService txnService;
+    private final LockService lockService;
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
@@ -75,7 +81,10 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     @Override
     public void start() {
-        List<DXLFunctionsHook> hooks = getHooks();
+        boolean useGlobalLock = Boolean.parseBoolean(configService.getProperty(CONFIG_USE_GLOBAL_LOCK));
+        DXLReadWriteLockHook.only().setDDLLockEnabled(useGlobalLock);
+        LOG.debug("Using global DDL lock: {}", useGlobalLock);
+        List<DXLFunctionsHook> hooks = getHooks(useGlobalLock);
         BasicDXLMiddleman middleman = BasicDXLMiddleman.create();
         HookableDDLFunctions localDdlFunctions
                 = new HookableDDLFunctions(createDDLFunctions(middleman), hooks,sessionService);
@@ -96,7 +105,8 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     }
 
     DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
-        return new BasicDDLFunctions(middleman, schemaManager, store, treeService, indexStatisticsService, configService, t3Registry);
+        return new BasicDDLFunctions(middleman, schemaManager, store, treeService, indexStatisticsService, configService,
+                                     t3Registry, lockService, txnService);
     }
 
     @Override
@@ -162,9 +172,12 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
         }
     }
 
-    protected List<DXLFunctionsHook> getHooks() {
+    protected List<DXLFunctionsHook> getHooks(boolean useGlobalLock) {
         List<DXLFunctionsHook> hooks = new ArrayList<DXLFunctionsHook>();
-        hooks.add(DXLReadWriteLockHook.only());
+        if(useGlobalLock) {
+            LOG.warn("Global DDL lock is enabled");
+            hooks.add(DXLReadWriteLockHook.only());
+        }
         hooks.add(new DXLTransactionHook(txnService));
         return hooks;
     }
@@ -177,7 +190,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     @Inject
     public DXLServiceImpl(SchemaManager schemaManager, Store store, TreeService treeService, SessionService sessionService,
                           IndexStatisticsService indexStatisticsService, ConfigurationService configService, T3RegistryService t3Registry,
-                          TransactionService txnService) {
+                          TransactionService txnService, LockService lockService) {
         this.schemaManager = schemaManager;
         this.store = store;
         this.treeService = treeService;
@@ -186,6 +199,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
         this.configService = configService;
         this.t3Registry = t3Registry;
         this.txnService = txnService;
+        this.lockService = lockService;
     }
 
     // for use by subclasses
@@ -212,6 +226,14 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
 
     protected final T3RegistryService t3Registry() {
         return t3Registry;
+    }
+
+    protected final TransactionService txnService() {
+        return txnService;
+    }
+
+    protected final LockService lockService() {
+        return lockService;
     }
 
     protected final Session session() {

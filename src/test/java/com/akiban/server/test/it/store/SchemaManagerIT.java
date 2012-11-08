@@ -48,6 +48,7 @@ import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
@@ -339,26 +340,7 @@ public final class SchemaManagerIT extends ITBase {
         final long second = ais().getGeneration();
         assertTrue("timestamp changed", first != second);
     }
-
-    @Test
-    public void tableIDsAreLow() throws Exception {
-        // Test confirming desired behavior, but edit as needed
-        // Purely testing initial table IDs start at 1 and don't change when adding new tables
-        // Partly required by com.akiban.qp.operator.AcenstorLookup_Default creating an array sized by max table id
-        createTableDef(SCHEMA, T1_NAME, T1_DDL);
-        assertTablesInSchema(SCHEMA, T1_NAME);
-        assertEquals("t1 id", 1, getUserTable(SCHEMA, T1_NAME).getTableId().intValue());
-        createTableDef(SCHEMA, T2_NAME, T2_DDL);
-        assertTablesInSchema(SCHEMA, T1_NAME, T2_NAME);
-        assertEquals("t1 id", 1, getUserTable(SCHEMA, T1_NAME).getTableId().intValue());
-        assertEquals("t2 id", 2, getUserTable(SCHEMA, T2_NAME).getTableId().intValue());
-        createTableDef(SCHEMA, T3_CHILD_T1_NAME, T3_CHILD_T1_DDL);
-        assertTablesInSchema(SCHEMA, T1_NAME, T2_NAME, T3_CHILD_T1_NAME);
-        assertEquals("t1 id", 1, getUserTable(SCHEMA, T1_NAME).getTableId().intValue());
-        assertEquals("t2 id", 2, getUserTable(SCHEMA, T2_NAME).getTableId().intValue());
-        assertEquals("t3 id", 3, getUserTable(SCHEMA, T3_CHILD_T1_NAME).getTableId().intValue());
-    }
-
+    
     @Test
     public void schemaStringsSingleTable() throws Exception {
         // Check 1) basic ordering 2) that the statements are 'canonicalized'
@@ -689,6 +671,28 @@ public final class SchemaManagerIT extends ITBase {
         builder.userTable(T1_NAME).colLong("id", false).colLong("pid", true).pk("id").joinTo("information_schema", "p").on("pid", "id");
         registerISTable(builder.unvalidatedAIS().getUserTable(name), new MemoryTableFactoryMock());
         ddl().createTable(session(), builder.unvalidatedAIS().getUserTable(SCHEMA, T1_NAME));
+    }
+
+    @Test
+    public void userAndSystemRoutines() {
+        final TableName sysName = new TableName(TableName.SYS_SCHEMA, "sys");
+        final TableName userName = new TableName(SCHEMA, "user");
+        AkibanInformationSchema temp = new AkibanInformationSchema();
+        final Routine sysR = Routine.create(temp, sysName.getSchemaName(), sysName.getTableName(), "other", Routine.CallingConvention.SQL_ROW);
+        final Routine userR = Routine.create(temp, userName.getSchemaName(), userName.getTableName(), "java", Routine.CallingConvention.JAVA);
+
+        schemaManager.registerSystemRoutine(sysR);
+        assertNotNull("Found sys routine after register", ais().getRoutine(sysName));
+
+        transactionallyUnchecked(new Runnable() {
+            @Override
+            public void run() {
+                schemaManager.createRoutine(session(), userR);
+            }
+        });
+
+        assertNotNull("Found user routine after create", ais().getRoutine(userName));
+        assertNotNull("Found sys routine after user create", ais().getRoutine(sysName));
     }
 
     /**

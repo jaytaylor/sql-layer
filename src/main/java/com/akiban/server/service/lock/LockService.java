@@ -24,27 +24,23 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.ais.model;
+package com.akiban.server.service.lock;
 
-import java.util.List;
-import java.util.Set;
+import com.akiban.server.service.Service;
+import com.akiban.server.service.session.Session;
 
-public interface NameGenerator
-{
-    // Generation
-    int generateTableID(TableName name);
-    int generateIndexID(int rootTableID);
-    TableName generateIdentitySequenceName(TableName table);
-    String generateJoinName(TableName parentTable, TableName childTable, List<JoinColumn> joinIndex);
-    String generateJoinName(TableName parentTable, TableName childTable, List<String> pkColNames, List<String> fkColNames);
-    String generateIndexTreeName(Index index);
-    String generateGroupTreeName(String schemaName, String groupName);
-    String generateSequenceTreeName(Sequence sequence);
+public interface LockService extends Service {
+    enum Mode { SHARED, EXCLUSIVE }
 
-    // Removal
-    void removeTableID(int tableID);
-    void removeTreeName(String treeName);
+    boolean hasAnyClaims(Session session, Mode mode);
+    boolean isTableClaimed(Session session, Mode mode, int tableID);
 
-    // View only (debug/testing)
-    Set<String> getTreeNames();
+    void claimTable(Session session, Mode mode, int tableID);
+    void claimTableInterruptible(Session session, Mode mode, int tableID) throws InterruptedException;
+
+    boolean tryClaimTable(Session session, Mode mode, int tableID);
+    boolean tryClaimTableMillis(Session session, Mode mode, int tableID, long milliseconds) throws InterruptedException;
+    boolean tryClaimTableNanos(Session session, Mode mode, int tableID, long nanoseconds) throws InterruptedException;
+
+    void releaseTable(Session session, Mode mode, int tableID);
 }

@@ -45,6 +45,8 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
 
     private final ReentrantReadWriteLock schemaLock = new ReentrantReadWriteLock(true);
     private final ReentrantReadWriteLock dataLock = new ReentrantReadWriteLock(true);
+    private volatile boolean DDL_LOCK = true;
+
 
     private final static DXLReadWriteLockHook INSTANCE = new DXLReadWriteLockHook();
     private final static boolean DML_LOCK;
@@ -63,8 +65,16 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
         // Having multiple of these introduces the possibility of a deadlock, for all the usual deadlocky reasons
     }
 
-    public boolean isEnabled() {
+    public boolean isDMLLockEnabled() {
         return DML_LOCK;
+    }
+
+    public boolean isDDLLockEnabled() {
+        return DDL_LOCK;
+    }
+
+    public void setDDLLockEnabled(boolean enabled) {
+        DDL_LOCK = enabled;
     }
 
     @Override
@@ -112,6 +122,9 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
     }
 
     private boolean lockSchema(Session session, DXLFunction function, long timeout) throws InterruptedException {
+        if(!DDL_LOCK) {
+            return true; // Successfully locked nothing
+        }
         Lock lock;
         if (DXLType.DDL_FUNCTIONS_WRITE.equals(function.getType())) {
             if (schemaLock.isWriteLocked() && (!schemaLock.isWriteLockedByCurrentThread())) {
@@ -149,6 +162,9 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
 
     private void unlockSchema(Session session, Throwable t)
     {
+        if(!DDL_LOCK) {
+            return;
+        }
         Lock lock = session.pop(SCHEMA_LOCK_KEY);
         if (lock == null) {
             Boolean writeLockWasTaken = session.remove(WRITE_LOCK_TAKEN);

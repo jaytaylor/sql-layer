@@ -26,6 +26,8 @@
 
 package com.akiban.server.test.mt.mtutil;
 
+import org.junit.ComparisonFailure;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -114,10 +116,9 @@ public final class TimePointsComparison {
             expected.add(Collections.singletonList(expectedMessage));
         }
         List<Collection<String>> actual = marks;
-        try {
-            assertEquals("timepoint messages (in order)", expected, actual);
-        } catch (AssertionError e) {
-            throw new RuntimeException(e.getMessage());
+        // For pretty print
+        if(!expected.equals(actual)) {
+            throw new ComparisonFailure("timepoint messages (in order)", expected.toString(), actual.toString());
         }
     }
 

@@ -138,7 +138,7 @@ public interface Store {
      * Delete all data associated with the group. This includes
      * all indexes from all tables, group indexes, and the group itself.
      */
-    void dropGroup(Session session, Group group) throws PersistitException;
+    void dropGroup(Session session, Group group);
 
     /**
      * Truncate the given group. This includes indexes from all tables, group

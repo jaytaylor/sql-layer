@@ -91,7 +91,7 @@ public abstract class DelegatingStore<S extends Store & Service> implements Stor
         delegate.updateRow(session, oldRowData, newRowData, columnSelector, indexes);
     }
 
-    public void dropGroup(Session session, Group group) throws PersistitException {
+    public void dropGroup(Session session, Group group) {
         delegate.dropGroup(session, group);
     }
 

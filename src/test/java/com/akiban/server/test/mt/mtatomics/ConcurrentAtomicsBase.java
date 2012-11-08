@@ -26,6 +26,12 @@
 
 package com.akiban.server.test.mt.mtatomics;
 
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.ais.model.aisb2.NewUserTableBuilder;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
@@ -50,7 +56,13 @@ import static org.junit.Assert.assertEquals;
 
 class ConcurrentAtomicsBase extends MTBase {
     protected static final String SCHEMA = "cold";
+    protected static final String SCHEMA2 = "brisk";
+    protected static final String PARENT = "icy";
     protected static final String TABLE = "frosty";
+    protected static final String TABLE2 = "frosty2";
+    protected static final TableName TABLE_PARENT = new TableName(SCHEMA, PARENT);
+    protected static final TableName TABLE_NAME = new TableName(SCHEMA, TABLE);
+    protected static final TableName TABLE2_NAME = new TableName(SCHEMA, TABLE2);
 
     // ApiTestBase interface
 
@@ -89,7 +101,7 @@ class ConcurrentAtomicsBase extends MTBase {
                                         "SCAN: FINISH"));
 
         // 'update: out' will get blocked until scan is done if top level r/w lock is on
-        if(DXLReadWriteLockHook.only().isEnabled()) {
+        if(DXLReadWriteLockHook.only().isDMLLockEnabled()) {
             timePoints.add(timePoints.remove(3));
         }
 
@@ -97,6 +109,75 @@ class ConcurrentAtomicsBase extends MTBase {
 
         assertEquals("rows scanned (in order)", scanCallableExpected, scanResult.getItem());
         expectFullRows(tableId, endStateExpected.toArray(new NewRow[endStateExpected.size()]));
+    }
+
+    protected static List<UserTable> joinedTableTemplates(String parentSchema, String childSchema,
+                                                          boolean extraParentKey, boolean alteredChild,
+                                                          boolean extraChildKey, boolean groupIndex) {
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        NewUserTableBuilder parentBuilder = builder.userTable(parentSchema, PARENT);
+        parentBuilder.colLong("id", false).colLong("value", true).pk("id");
+        if(extraParentKey) {
+            parentBuilder.key("value", "value");
+        }
+        NewUserTableBuilder childBuilder = builder.userTable(childSchema, TABLE);
+        childBuilder.colLong("id", false).colString("name", 32, true).
+                pk("id").key("name", "name").
+                joinTo(parentSchema, PARENT, "fk_0").on("id", "id");
+        if(alteredChild) {
+            childBuilder.colString("extra", 32, true);
+        } else {
+            childBuilder.colLong("extra", true);
+        }
+        if(extraChildKey) {
+            childBuilder.key("extra", "extra");
+        }
+        if(groupIndex) {
+            builder.groupIndex("g_i", Index.JoinType.LEFT).on(childSchema, TABLE, "extra").and(parentSchema, PARENT, "value");
+        }
+        return Arrays.asList(
+                builder.ais().getUserTable(parentSchema, PARENT),
+                builder.ais().getUserTable(childSchema, TABLE)
+        );
+    }
+
+    protected List<Integer> createJoinedTables(String parentSchema, String childSchema) {
+        return createJoinedTables(parentSchema, childSchema, false, false, false, false);
+    }
+    protected List<Integer> createJoinedTables(String parentSchema, String childSchema,
+                                               boolean extraParentKey, boolean alteredChild,
+                                               boolean extraChildKey, boolean groupIndex) {
+        List<UserTable> tables = joinedTableTemplates(parentSchema, childSchema, extraParentKey, alteredChild, extraChildKey, groupIndex);
+        ddl().createTable(session(), tables.get(0));
+        ddl().createTable(session(), tables.get(1));
+        updateAISGeneration();
+        return Arrays.asList(
+                tableId(tables.get(0).getName()),
+                tableId(tables.get(1).getName())
+        );
+    }
+
+    protected static Object[] newParentCols() {
+        return new Object[] { 100L, 10000L };
+    }
+
+    protected static Object[] newChildCols() {
+        return new Object[] { 100L, "BOBSLED", 1000L };
+    }
+
+    protected static Object[] oldChildCols() {
+        return new Object[] { 1L, "the snowman", 10L };
+    }
+
+    protected List<Integer> createJoinedTablesWithTwoRowsEach() {
+        List<Integer> ids = createJoinedTables(SCHEMA, SCHEMA);
+        writeRows(
+                createNewRow(ids.get(0), 1L, 100L),
+                createNewRow(ids.get(1), oldChildCols()),
+                createNewRow(ids.get(0), 2L, 200L),
+                createNewRow(ids.get(1), 2L, "mr melty", 20L)
+        );
+        return ids;
     }
 
     protected int tableWithTwoRows() throws InvalidOperationException {

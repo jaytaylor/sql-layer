@@ -27,16 +27,21 @@
 package com.akiban.server.service.session;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class Session
 {
+    private final static long UNSET_NANOS = -1;
+
     private final static AtomicLong idGenerator = new AtomicLong(0);
 
     private final Map<Key<?>,Object> map = new HashMap<Key<?>, Object>();
     private final SessionEventListener listener;
     private final long sessionId = idGenerator.getAndIncrement();
     private volatile boolean cancelCurrentQuery = false;
+    private long startMarkerNanos =  UNSET_NANOS;
+    private long timeoutAfterNanos = UNSET_NANOS;
 
     public String toString()
     {
@@ -110,13 +115,6 @@ public final class Session
         return deque == null || deque.isEmpty();
     }
 
-    public void removeAll(StackKey<?> key) {
-        Deque deque = get( key.asKey() );
-        if (deque != null) {
-            deque.clear();
-        }
-    }
-
     // "unused" suppression: Key<T> is only used for type inference
     // "unchecked" suppression: we know from the put methods that Object will be of type T
     @SuppressWarnings({"unused", "unchecked"})
@@ -143,6 +141,34 @@ public final class Session
     public boolean isCurrentQueryCanceled()
     {
         return cancelCurrentQuery;
+    }
+
+    private void requireTimeoutAfterSet() {
+        if(!hasTimeoutAfterNanos()) {
+            throw new IllegalStateException("Timeout nanos not set");
+        }
+    }
+    public boolean hasTimeoutAfterNanos() {
+        return timeoutAfterNanos != UNSET_NANOS;
+    }
+
+    public long getElapsedMillis() {
+        requireTimeoutAfterSet();
+        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startMarkerNanos);
+    }
+
+    public long getRemainingNanosBeforeTimeout() {
+        requireTimeoutAfterSet();
+        return timeoutAfterNanos - System.nanoTime();
+    }
+
+    public void setTimeoutAfterSeconds(long seconds) {
+        if(seconds < 0) {
+            this.startMarkerNanos = this.timeoutAfterNanos = UNSET_NANOS;
+        } else {
+            this.startMarkerNanos = System.nanoTime();
+            this.timeoutAfterNanos = startMarkerNanos + TimeUnit.SECONDS.toNanos(seconds);
+        }
     }
 
     @SuppressWarnings("unused") // for <T> parameter; it's only useful for compile-time checking

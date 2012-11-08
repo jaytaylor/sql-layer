@@ -50,6 +50,7 @@ import java.util.concurrent.Callable;
 
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.*;
+import com.akiban.ais.util.TableChangeValidator;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
@@ -67,9 +68,12 @@ import com.akiban.server.service.config.TestConfigService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.dxl.DXLTestHookRegistry;
 import com.akiban.server.service.dxl.DXLTestHooks;
+import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.PersistitStoreSchemaManager;
+import com.akiban.server.store.SchemaManager;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.t3expressions.TCastResolver;
 import com.akiban.server.types.ValueSource;
@@ -132,7 +136,12 @@ public class ApiTestBase {
         }
     };
 
-    public static class ListRowOutput implements RowOutput {
+    public static interface TestRowOutput extends RowOutput {
+        public int getRowCount();
+        public void clear();
+    }
+
+    public static class ListRowOutput implements TestRowOutput {
         private final List<NewRow> rows = new ArrayList<NewRow>();
         private final List<NewRow> rowsUnmodifiable = Collections.unmodifiableList(rows);
         private int mark = 0;
@@ -146,6 +155,12 @@ public class ApiTestBase {
             return rowsUnmodifiable;
         }
 
+        @Override
+        public int getRowCount() {
+            return rows.size();
+        }
+
+        @Override
         public void clear() {
             rows.clear();
         }
@@ -158,6 +173,36 @@ public class ApiTestBase {
         @Override
         public void rewind() {
             ListUtils.truncate(rows, mark);
+        }
+    }
+
+    public static class CountingRowOutput implements TestRowOutput {
+        private int count = 0;
+        private int mark = 0;
+
+        @Override
+        public void output(NewRow row) {
+            ++count;
+        }
+
+        @Override
+        public void mark() {
+            mark = count;
+        }
+
+        @Override
+        public void rewind() {
+            count = mark;
+        }
+
+        @Override
+        public int getRowCount() {
+            return count;
+        }
+
+        @Override
+        public void clear() {
+            count = 0;
         }
     }
 
@@ -441,6 +486,10 @@ public class ApiTestBase {
 
     protected final TransactionService txnService() {
         return sm.getServiceByClass(TransactionService.class);
+    }
+
+    protected final LockService lockService() {
+        return sm.getServiceByClass(LockService.class);
     }
 
     protected final int aisGeneration() {
@@ -1255,5 +1304,28 @@ public class ApiTestBase {
     
     protected boolean testSupportsPValues() {
         return true;
+    }
+
+    protected DDLFunctions ddlForAlter() {
+        return ddl();
+    }
+
+    protected void runAlter(TableChangeValidator.ChangeLevel expectedChangeLevel, String defaultSchema, String sql) {
+        runAlter(session(), ddlForAlter(), dml(), null, expectedChangeLevel, defaultSchema, sql);
+        updateAISGeneration();
+    }
+
+    protected static void runAlter(Session session, DDLFunctions ddl, DMLFunctions dml, QueryContext context,
+                                   TableChangeValidator.ChangeLevel expectedChangeLevel, String defaultSchema, String sql) {
+        SQLParser parser = new SQLParser();
+        StatementNode node;
+        try {
+            node = parser.parseStatement(sql);
+        } catch(StandardException e) {
+            throw new RuntimeException(e);
+        }
+        assertTrue("is alter node", node instanceof AlterTableNode);
+        TableChangeValidator.ChangeLevel level = AlterTableDDL.alterTable(ddl, dml, session, defaultSchema, (AlterTableNode) node, context);
+        assertEquals("ChangeLevel", expectedChangeLevel, level);
     }
 }

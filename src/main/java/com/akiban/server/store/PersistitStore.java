@@ -46,6 +46,7 @@ import com.akiban.server.error.*;
 import com.akiban.server.rowdata.*;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
@@ -103,11 +104,13 @@ public class PersistitStore implements Store, Service {
 
     private final TreeService treeService;
 
+    private final SchemaManager schemaManager;
+
+    private final LockService lockService;
+
     private TableStatusCache tableStatusCache;
 
     private DisplayFilter originalDisplayFilter;
-
-    private SchemaManager schemaManager;
 
     private volatile IndexStatisticsService indexStatistics;
 
@@ -116,11 +119,12 @@ public class PersistitStore implements Store, Service {
     private int deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
 
     public PersistitStore(boolean updateGroupIndexes, TreeService treeService, ConfigurationService config,
-                          SchemaManager schemaManager) {
+                          SchemaManager schemaManager, LockService lockService) {
         this.updateGroupIndexes = updateGroupIndexes;
         this.treeService = treeService;
         this.config = config;
         this.schemaManager = schemaManager;
+        this.lockService = lockService;
     }
 
     @Override
@@ -351,6 +355,8 @@ public class PersistitStore implements Store, Service {
 
         final RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
         checkNoGroupIndexes(rowDef.table());
+        lockAndCheckVersion(session, rowDef);
+
         Exchange hEx;
         hEx = getExchange(session, rowDef);
         WRITE_ROW_TAP.in();
@@ -452,6 +458,8 @@ public class PersistitStore implements Store, Service {
         int rowDefId = rowData.getRowDefId();
         RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
         checkNoGroupIndexes(rowDef.table());
+        lockAndCheckVersion(session, rowDef);
+
         Exchange hEx = null;
         DELETE_ROW_TAP.in();
         try {
@@ -521,6 +529,8 @@ public class PersistitStore implements Store, Service {
         RowDef rowDef = rowDefFromExplicitOrId(session, oldRowData);
         RowDef newRowDef = rowDefFromExplicitOrId(session, newRowData);
         checkNoGroupIndexes(rowDef.table());
+        lockAndCheckVersion(session, rowDef);
+
         Exchange hEx = null;
         UPDATE_ROW_TAP.in();
         try {
@@ -672,7 +682,7 @@ public class PersistitStore implements Store, Service {
     }
 
     @Override
-    public void dropGroup(Session session, Group group) throws PersistitException {
+    public void dropGroup(Session session, Group group) {
         for(Table table : group.getRoot().getAIS().getUserTables().values()) {
             if(table.getGroup() == group) {
                 removeTrees(session, table);
@@ -1384,6 +1394,42 @@ public class PersistitStore implements Store, Service {
     @Override
     public void setDeferIndexes(final boolean defer) {
         deferIndexes = defer;
+    }
+
+    private void lockAndCheckVersion(Session session, RowDef rowDef) {
+        final LockService.Mode mode = LockService.Mode.SHARED;
+        final int tableID = rowDef.getRowDefId();
+
+        // Since this is called on a per-row basis, we can't rely on reentrancy.
+        if(lockService.isTableClaimed(session, mode, tableID)) {
+            return;
+        }
+
+        /*
+         * No need to retry locks or back off already acquired. Other locker is DDL
+         * and it performs needed backoff to prevent deadlocks.
+         * Note that tryClaim() could be used and if false, throw TableChanged
+         * right away. Instead, desire is for timeout to elapse here so that client
+         * doesn't spin in a try lop.
+         */
+        try {
+            if(session.hasTimeoutAfterNanos()) {
+                long remaining = session.getRemainingNanosBeforeTimeout();
+                if(remaining <= 0 || !lockService.tryClaimTableNanos(session, mode, tableID, remaining)) {
+                    throw new QueryTimedOutException(session.getElapsedMillis());
+                }
+            } else {
+                lockService.claimTableInterruptible(session, mode, tableID);
+            }
+        } catch(InterruptedException e) {
+            throw new QueryCanceledException(session);
+        }
+
+        if(schemaManager.hasTableChanged(session, tableID)) {
+            // Simple: Release claim so we hit this block again. Could also rollback transaction?
+            lockService.releaseTable(session, LockService.Mode.SHARED, tableID);
+            throw new TableChangedByDDLException(rowDef.table().getName());
+        }
     }
 
     public void traverse(Session session, Group group, TreeRecordVisitor visitor) throws PersistitException {
