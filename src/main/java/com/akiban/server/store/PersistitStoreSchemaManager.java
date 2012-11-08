@@ -878,9 +878,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         this.tableVersionMap = ReadWriteMap.wrapNonFair(new HashMap<Integer,Integer>());
 
         for(UserTable table : newAIS.getUserTables().values()) {
-            if(!table.hasVersion()) {
-                table.setVersion(0);
-            }
+            // Note: table.getVersion may be null (pre-1.4.3 volumes)
             tableVersionMap.put(table.getTableId(), table.getVersion());
         }
 
@@ -1411,8 +1409,12 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         if(table == null) {
             throw new IllegalStateException("Unknown table: " + tableID);
         }
-        Integer current = tableVersionMap.get(tableID);
-        return current.compareTo(table.getVersion()) != 0;
+        Integer curVer = tableVersionMap.get(tableID);
+        Integer tableVer = table.getVersion();
+        if(curVer == null) {
+            return tableVer != null;
+        }
+        return !curVer.equals(tableVer);
     }
 
     private Accumulator getGenerationAccumulator(Session session) throws PersistitException {
@@ -1468,8 +1470,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         if(version == null) {
             version = 0; // New user or memory table
         }
-        tableVersionMap.putNewKey(mergedTable.getTableId(), version);
         mergedTable.setVersion(version);
+        tableVersionMap.putNewKey(mergedTable.getTableId(), version);
 
         if(factory == null) {
             saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(newName.getSchemaName()));
@@ -1492,9 +1494,9 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private void bumpTableVersions(AkibanInformationSchema newAIS, Collection<Integer> allTableIDs) {
         for(Integer tableID : allTableIDs) {
             Integer current = tableVersionMap.get(tableID);
-            Integer update = current + 1;
+            Integer update = (current == null) ? 1 : current + 1;
             boolean success = tableVersionMap.compareAndSet(tableID, current, update);
-            // Failed CAS would indicate concurrent DDL on this table, which should be possible
+            // Failed CAS would indicate concurrent DDL on this table, which should not be possible
             if(!success) {
                 throw new IllegalStateException("Unexpected concurrent DDL on table: " + tableID);
             }
