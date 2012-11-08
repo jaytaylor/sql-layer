@@ -603,7 +603,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 pstmt = generateStatementFinal(context, partial);
                 success = true;
             } finally {
-                afterExecute(pstmt, local, success);
+                afterExecute(partial.pstmt, local, success);
             }
             if (statementCache != null)
                 statementCache.put(sql, pstmt);

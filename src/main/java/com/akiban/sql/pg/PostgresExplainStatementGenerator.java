@@ -71,8 +71,6 @@ public class PostgresExplainStatementGenerator extends PostgresBaseStatementGene
     public PostgresStatement generateFinal(PostgresServerSession server, PostgresStatement pstmt,
                                            StatementNode stmt,
                                            List<ParameterNode> params, int[] paramTypes) {
-        if (!(pstmt instanceof PostgresExplainStatement))
-            return null;
         ExplainPlanContext context = new ExplainPlanContext(compiler);
         StatementNode innerStmt = ((ExplainStatementNode)stmt).getStatement();
         BasePlannable result = compiler.compile((DMLStatementNode)innerStmt, params, context);

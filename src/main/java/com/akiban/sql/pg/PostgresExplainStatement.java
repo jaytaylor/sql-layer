@@ -86,7 +86,7 @@ public class PostgresExplainStatement implements PostgresStatement
 
     @Override
     public TransactionMode getTransactionMode() {
-        return TransactionMode.ALLOWED;
+        return TransactionMode.READ;
     }
 
     @Override
