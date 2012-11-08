@@ -57,6 +57,11 @@ import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.ietf.jgss.*;
+import java.security.Principal;
+import java.security.PrivilegedAction;
+import javax.security.auth.Subject;
+
 import java.net.*;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -398,16 +403,26 @@ public class PostgresServerConnection extends ServerSessionBase
         // or error when schema does not exist?
         //updateAIS(null);
 
-        if (Boolean.parseBoolean(properties.getProperty("require_password", "false"))) {
-            messenger.beginMessage(PostgresMessages.AUTHENTICATION_TYPE.code());
-            messenger.writeInt(PostgresMessenger.AUTHENTICATION_CLEAR_TEXT);
-            messenger.sendMessage(true);
+        switch (server.getAuthenticationType()) {
+        case NONE:
+            {
+                String user = properties.getProperty("user");
+                logger.info("Login {}", user);
+                authenticationOkay(user);
+            }
+            break;
+        case CLEAR_TEXT:
+            {
+                messenger.beginMessage(PostgresMessages.AUTHENTICATION_TYPE.code());
+                messenger.writeInt(PostgresMessenger.AUTHENTICATION_CLEAR_TEXT);
+                messenger.sendMessage(true);
+            }
+            break;
+        case GSS:
+            authenticationGSS();
+            break;
         }
-        else {
-            String user = properties.getProperty("user");
-            logger.info("Login {}", user);
-            authenticationOkay(user);
-        }
+
         return true;
     }
 
@@ -477,6 +492,56 @@ public class PostgresServerConnection extends ServerSessionBase
             messenger.sendMessage();
         }
         readyForQuery();
+    }
+
+    protected void authenticationGSS() throws IOException {
+        messenger.beginMessage(PostgresMessages.AUTHENTICATION_TYPE.code());
+        messenger.writeInt(PostgresMessenger.AUTHENTICATION_GSS);
+        messenger.sendMessage(true);
+        
+        final Subject gssLogin = server.getGSSLogin();
+        GSSName authenticated = Subject.doAs(gssLogin, new PrivilegedAction<GSSName>() {
+                                                 @Override
+                                                 public GSSName run() {
+                                                     return gssNegotation(gssLogin);
+                                                 }
+                                             });
+    }
+    
+    protected GSSName gssNegotation(Subject gssLogin) {
+        String serverName = null;
+        Iterator<Principal> iter = gssLogin.getPrincipals().iterator();
+        if (iter.hasNext())
+            serverName = iter.next().getName();
+        try {
+            GSSManager manager = GSSManager.getInstance();
+            GSSCredential serverCreds = 
+                manager.createCredential(manager.createName(serverName, null),
+                                         GSSCredential.INDEFINITE_LIFETIME,
+                                         new Oid("1.2.840.113554.1.2.2"), // krb5
+                                         GSSCredential.ACCEPT_ONLY);
+            GSSContext serverContext = manager.createContext(serverCreds);
+            do {
+                switch (messenger.readMessage(true)) {
+                case PASSWORD_MESSAGE_TYPE:
+                    break;
+                default:
+                    throw new AuthenticationFailedException("Protocol error: not password message");
+                }
+                byte[] token = messenger.getRawMessage(); // Note: note a String.
+                token = serverContext.acceptSecContext(token, 0, token.length);
+                if (token != null) {
+                    messenger.beginMessage(PostgresMessages.AUTHENTICATION_TYPE.code());
+                    messenger.writeInt(PostgresMessenger.AUTHENTICATION_GSS_CONTINUE);
+                    messenger.write(token); // Again, no wrapping.
+                    messenger.sendMessage(true);
+                }
+            } while (!serverContext.isEstablished());
+            return serverContext.getSrcName();
+        }
+        catch (GSSException ex) {
+            throw new AuthenticationFailedException(ex);
+        }
     }
 
     protected void processQuery() throws IOException {
