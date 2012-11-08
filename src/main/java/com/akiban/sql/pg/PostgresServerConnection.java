@@ -322,14 +322,15 @@ public class PostgresServerConnection extends ServerSessionBase
         }
     }
 
-    protected void sendErrorResponse(PostgresMessages type, Exception exception, ErrorCode errorCode, String message)
-        throws Exception
-    {
-        if (type.errorMode() == PostgresMessages.ErrorMode.NONE) throw exception;
+    protected void sendErrorResponse(PostgresMessages type, Exception exception, ErrorCode errorCode, String message) throws Exception {
+        PostgresMessages.ErrorMode errorMode = type.errorMode();
+        if (errorMode == PostgresMessages.ErrorMode.NONE) {
+            throw exception;
+        }
         else {
             messenger.beginMessage(PostgresMessages.ERROR_RESPONSE_TYPE.code());
             messenger.write('S');
-            messenger.writeString((type.errorMode() == PostgresMessages.ErrorMode.FATAL)
+            messenger.writeString((errorMode == PostgresMessages.ErrorMode.FATAL)
                                   ? "FATAL" : "ERROR");
             messenger.write('C');
             messenger.writeString(errorCode.getFormattedValue());
@@ -345,10 +346,16 @@ public class PostgresServerConnection extends ServerSessionBase
             messenger.write(0);
             messenger.sendMessage(true);
         }
-        if (type.errorMode() == PostgresMessages.ErrorMode.EXTENDED)
+        switch (errorMode) {
+        case FATAL:
+            stop();
+            break;
+        case EXTENDED:
             ignoreUntilSync = true;
-        else
+            break;
+        default:
             readyForQuery();
+        }
     }
 
     protected void readyForQuery() throws IOException {
