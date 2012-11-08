@@ -100,7 +100,7 @@ public class MDateTimeDiff
             @Override
             public int[] getPriorities()
             {
-                return new int[] {1};
+                return new int[] {2};
             }
         },
         new DateTimeDiff(ArgType.VARCHAR, ArgType.VARCHAR, "TIMEDIFF")
@@ -187,7 +187,7 @@ public class MDateTimeDiff
             @Override
             public int[] getPriorities()
             {
-                return new int[] {1};
+                return new int[] {2};
             }
         },
         new DateTimeDiff(ArgType.TIMESTAMP, ArgType.VARCHAR, "TIMEDIFF", true, false)
@@ -215,7 +215,7 @@ public class MDateTimeDiff
             @Override
             public int[] getPriorities()
             {
-                return new int[] {1};
+                return new int[] {2};
             }
         },
 
@@ -244,7 +244,7 @@ public class MDateTimeDiff
             @Override
             public int[] getPriorities()
             {
-                return new int[] {2};
+                return new int[] {3};
             }
         },
             
