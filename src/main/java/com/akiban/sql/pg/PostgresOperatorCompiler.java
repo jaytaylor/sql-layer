@@ -182,7 +182,7 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
                         if (pgType == null)
                             pgType = new PostgresType(oid, (short)-1, -1, null, null);
                         else
-                            pgType = new PostgresType(oid,  (short)-1, -1,
+                            pgType = new PostgresType(oid,  (short)-1, -1, 
                                                       pgType.getAkType(),
                                                       pgType.getInstance());
                     }

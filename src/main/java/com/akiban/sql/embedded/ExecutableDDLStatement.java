@@ -28,7 +28,6 @@ package com.akiban.sql.embedded;
 
 import com.akiban.sql.aisddl.AISDDL;
 import com.akiban.sql.parser.DDLStatementNode;
-
 import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 class ExecutableDDLStatement extends ExecutableStatement

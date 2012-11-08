@@ -36,7 +36,6 @@ import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import java.io.IOException;
 import java.util.List;
 
-import com.akiban.sql.server.ServerStatement;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 import org.slf4j.Logger;
@@ -87,7 +86,6 @@ public class PostgresModifyOperatorStatement extends PostgresDMLStatement
         this.requireStepIsolation = requireStepIsolation;
         outputResult = true;
     }
-
     @Override
     public TransactionMode getTransactionMode() {
         if (requireStepIsolation)

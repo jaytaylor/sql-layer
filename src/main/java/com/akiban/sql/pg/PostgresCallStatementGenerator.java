@@ -52,7 +52,8 @@ public class PostgresCallStatementGenerator extends PostgresBaseStatementGenerat
         if (stmt instanceof CallStatementNode) {
             CallStatementNode call = (CallStatementNode)stmt;
             StaticMethodCallNode methodCall = (StaticMethodCallNode)call.methodCall().getJavaValueNode();
-            ServerRoutineInvocation invocation = ServerRoutineInvocation.of(server, methodCall);
+            ServerRoutineInvocation invocation =
+                ServerRoutineInvocation.of(server, methodCall);
             if (invocation != null) {
                 final PostgresStatement pstmt;
                 switch (invocation.getCallingConvention()) {

@@ -943,8 +943,8 @@ public class PostgresServerConnection extends ServerSessionBase
         int rowsProcessed = 0;
         PersistitAdapter persistitAdapter = null;
         if ((transaction != null) &&
-                // As opposed to WRITE_STEP_ISOLATED.
-                (pstmt.getTransactionMode() == PostgresStatement.TransactionMode.WRITE)) {
+            // As opposed to WRITE_STEP_ISOLATED.
+            (pstmt.getTransactionMode() == PostgresStatement.TransactionMode.WRITE)) {
             persistitAdapter = (PersistitAdapter)adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
             persistitAdapter.withStepChanging(false);
         }
