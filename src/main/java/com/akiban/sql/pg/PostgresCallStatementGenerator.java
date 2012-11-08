@@ -32,7 +32,6 @@ import com.akiban.sql.parser.CallStatementNode;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.StaticMethodCallNode;
-import com.akiban.sql.server.ServerStatement;
 
 import java.util.List;
 
