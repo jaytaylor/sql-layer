@@ -61,6 +61,7 @@ import org.ietf.jgss.*;
 import java.security.Principal;
 import java.security.PrivilegedAction;
 import javax.security.auth.Subject;
+import javax.security.auth.login.LoginException;
 
 import java.net.*;
 import javax.net.ssl.SSLSocket;
@@ -499,13 +500,21 @@ public class PostgresServerConnection extends ServerSessionBase
         messenger.writeInt(PostgresMessenger.AUTHENTICATION_GSS);
         messenger.sendMessage(true);
         
-        final Subject gssLogin = server.getGSSLogin();
+        final Subject gssLogin;
+        try {
+            gssLogin = server.getGSSLogin();
+        }
+        catch (LoginException ex) {
+            throw new AuthenticationFailedException(ex); // or is this internal?
+        }
         GSSName authenticated = Subject.doAs(gssLogin, new PrivilegedAction<GSSName>() {
                                                  @Override
                                                  public GSSName run() {
                                                      return gssNegotation(gssLogin);
                                                  }
                                              });
+        logger.info("Login {}", authenticated);
+        authenticationOkay(authenticated.toString());
     }
     
     protected GSSName gssNegotation(Subject gssLogin) {
@@ -528,7 +537,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 default:
                     throw new AuthenticationFailedException("Protocol error: not password message");
                 }
-                byte[] token = messenger.getRawMessage(); // Note: note a String.
+                byte[] token = messenger.getRawMessage(); // Note: not a String.
                 token = serverContext.acceptSecContext(token, 0, token.length);
                 if (token != null) {
                     messenger.beginMessage(PostgresMessages.AUTHENTICATION_TYPE.code());
@@ -541,6 +550,9 @@ public class PostgresServerConnection extends ServerSessionBase
         }
         catch (GSSException ex) {
             throw new AuthenticationFailedException(ex);
+        }
+        catch (IOException ex) {
+            throw new AkibanInternalException("Error reading message", ex);
         }
     }
 
