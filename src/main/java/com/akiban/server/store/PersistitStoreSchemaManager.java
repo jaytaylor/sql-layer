@@ -190,6 +190,10 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             return count;
         }
 
+        public int shareCount() {
+            return refCount.get();
+        }
+
         public boolean isShared() {
             return refCount.get() > 0;
         }
@@ -204,12 +208,9 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         public final SharedAIS sAIS;
         public final long timestamp;
 
-        public AISAndTimestamp(SharedAIS sAIS, long timestamp, boolean acquire) {
+        public AISAndTimestamp(SharedAIS sAIS, long timestamp) {
             this.sAIS = sAIS;
             this.timestamp = timestamp;
-            if(acquire) {
-                this.sAIS.acquire();
-            }
         }
 
         public boolean isUsableForStartTime(long startTime) {
@@ -251,7 +252,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
      * based on timestamp alone will get a stale snapshot. So, the cache can *only* be updated when there are no
      * more outstanding.</p>
      */
-    private static final AISAndTimestamp CACHE_SENTINEL = new AISAndTimestamp(new SharedAIS(null), Long.MAX_VALUE, false);
+    private static final AISAndTimestamp CACHE_SENTINEL = new AISAndTimestamp(new SharedAIS(null), Long.MAX_VALUE);
 
     private static final String CREATE_SCHEMA_FORMATTER = "create schema if not exists `%s`;";
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class.getName());
@@ -865,7 +866,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                         }
                         buildRowDefCache(sAIS.ais);
                         long startTimestamp = txnService.getTransactionStartTimestamp(session);
-                        latestAISCache = new AISAndTimestamp(sAIS, startTimestamp, true);
+                        sAIS.acquire(); // So count while in cache is 1
+                        latestAISCache = new AISAndTimestamp(sAIS, startTimestamp);
                         return sAIS.ais;
                     }
                 }
@@ -1141,16 +1143,14 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             if(latestAISCache == CACHE_SENTINEL) {
                 if(newCache == CACHE_SENTINEL) {
                     CACHE_SENTINEL.sAIS.acquire();
-                } else {
-                    int count = CACHE_SENTINEL.sAIS.release();
-                    if(count > 1) {
-                        LOG.debug("Skipping cache update due to multiple outstanding changes:"+ count);
-                        return false;
-                    }
+                    return true;
                 }
-            } else if(newCache == CACHE_SENTINEL) {
-                newCache.sAIS.acquire();
-            } else {
+                int count = CACHE_SENTINEL.sAIS.shareCount();
+                if(count > 1) {
+                    LOG.debug("Skipping cache update due to multiple outstanding changes: {}", count);
+                    return false;
+                }
+            } else if(newCache != CACHE_SENTINEL) {
                 // Can happen if pre-commit hook doesn't get called (i.e. failure after SchemaManager call).
                 // In that case, the generation itself should not be changing -- just the timestamp.
                 if(latestAISCache.sAIS.ais.getGeneration() != newCache.sAIS.ais.getGeneration()) {
@@ -1699,7 +1699,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 final SharedAIS sAIS = PersistitStoreSchemaManager.this.getAISInternal(session);
                 // Attempt to update cache with our start timestamp, because that is what our snapshot is valid for.
                 final long startTime = txnService.getTransactionStartTimestamp(session);
-                updateLatestAISCache(new AISAndTimestamp(sAIS, startTime, true));
+                updateLatestAISCache(new AISAndTimestamp(sAIS, startTime));
                 txnService.commitTransaction(session);
             } finally {
                 txnService.rollbackTransactionIfOpen(session);
