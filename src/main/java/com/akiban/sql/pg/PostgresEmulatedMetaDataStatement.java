@@ -318,7 +318,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
 
     @Override
     public AISGenerationMode getAISGenerationMode() {
-        return AISGenerationMode.NOT_ALLOWED;
+        return AISGenerationMode.ALLOWED;
     }
 
     @Override
