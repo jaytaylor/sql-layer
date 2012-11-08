@@ -76,9 +76,9 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
         // This very inefficient reparsing by every generator is actually avoided.
         SQLParser parser = server.getParser();
         try {
-            return generateInitial(server, parser.parseStatement(sql),
+            return generateInitial(server, sql, parser.parseStatement(sql),
                                    parser.getParameterList(), paramTypes);
-        } 
+        }
         catch (SQLParserException ex) {
             throw new SQLParseException(ex);
         }
@@ -132,7 +132,7 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
 
     @Override
     public PostgresStatement generateInitial(PostgresServerSession session,
-                                             StatementNode stmt,
+                                             String sql, StatementNode stmt,
                                              List<ParameterNode> params, int[] paramTypes) {
         if (stmt instanceof CallStatementNode || !(stmt instanceof DMLStatementNode))
             return null;

@@ -40,9 +40,9 @@ public class PostgresServerStatementGenerator extends
     
     @Override
     public PostgresStatement generateInitial(PostgresServerSession server,
-                                             StatementNode stmt,
+                                             String sql, StatementNode stmt,
                                              List<ParameterNode> params, int[] paramTypes) {
-        
+
         if (stmt.getNodeType() != NodeTypes.ALTER_SERVER_NODE) 
             return null;
         return new PostgresServerStatement ((AlterServerNode)stmt);

@@ -48,6 +48,7 @@ import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
@@ -670,6 +671,28 @@ public final class SchemaManagerIT extends ITBase {
         builder.userTable(T1_NAME).colLong("id", false).colLong("pid", true).pk("id").joinTo("information_schema", "p").on("pid", "id");
         registerISTable(builder.unvalidatedAIS().getUserTable(name), new MemoryTableFactoryMock());
         ddl().createTable(session(), builder.unvalidatedAIS().getUserTable(SCHEMA, T1_NAME));
+    }
+
+    @Test
+    public void userAndSystemRoutines() {
+        final TableName sysName = new TableName(TableName.SYS_SCHEMA, "sys");
+        final TableName userName = new TableName(SCHEMA, "user");
+        AkibanInformationSchema temp = new AkibanInformationSchema();
+        final Routine sysR = Routine.create(temp, sysName.getSchemaName(), sysName.getTableName(), "other", Routine.CallingConvention.SQL_ROW);
+        final Routine userR = Routine.create(temp, userName.getSchemaName(), userName.getTableName(), "java", Routine.CallingConvention.JAVA);
+
+        schemaManager.registerSystemRoutine(sysR);
+        assertNotNull("Found sys routine after register", ais().getRoutine(sysName));
+
+        transactionallyUnchecked(new Runnable() {
+            @Override
+            public void run() {
+                schemaManager.createRoutine(session(), userR);
+            }
+        });
+
+        assertNotNull("Found user routine after create", ais().getRoutine(userName));
+        assertNotNull("Found sys routine after user create", ais().getRoutine(sysName));
     }
 
     /**

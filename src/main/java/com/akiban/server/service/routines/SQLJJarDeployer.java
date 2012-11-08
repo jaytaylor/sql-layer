@@ -134,9 +134,10 @@ public class SQLJJarDeployer
         int end = contents.indexOf(footer, start);
         if (end < 0)
             throw new InvalidSQLJDeploymentDescriptorException(jarName, "Actions not terminated");
+        String sql = contents.substring(start, end);
         List<StatementNode> stmts;
         try {
-            stmts = server.getParser().parseStatements(contents.substring(start, end));
+            stmts = server.getParser().parseStatements(sql);
         } 
         catch (SQLParserException ex) {
             throw new InvalidSQLJDeploymentDescriptorException(jarName, ex);
@@ -144,7 +145,9 @@ public class SQLJJarDeployer
         catch (StandardException ex) {
             throw new InvalidSQLJDeploymentDescriptorException(jarName, ex);
         }
-        List<DDLStatementNode> ddls = new ArrayList<DDLStatementNode>();
+        int nstmts = stmts.size();
+        List<DDLStatementNode> ddls = new ArrayList<DDLStatementNode>(nstmts);
+        List<String> sqls = new ArrayList<String>(nstmts);
         for (StatementNode stmt : stmts) {
             boolean stmtOkay = false, thisjarOkay = false;
             if (undeploy) {
@@ -188,9 +191,10 @@ public class SQLJJarDeployer
             if (!thisjarOkay)
                 throw new InvalidSQLJDeploymentDescriptorException(jarName, "Must refer to thisjar:");
             ddls.add((DDLStatementNode)stmt);
+            sqls.add(sql.substring(stmt.getBeginOffset(), stmt.getEndOffset() + 1));
         }
-        for (DDLStatementNode ddl : ddls) {
-            AISDDL.execute(ddl, context);
+        for (int i = 0; i < nstmts; i++) {
+            AISDDL.execute(ddls.get(i), sqls.get(i), context);
         }
     }
 }

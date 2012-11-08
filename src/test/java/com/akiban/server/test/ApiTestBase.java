@@ -496,24 +496,7 @@ public class ApiTestBase {
         return aisGeneration;
     }
 
-    protected void waitForStableAIS() {
-        /*
-         * This is a bit unfortunate, but many ITs will do DDL, grab and AIS and hold
-         * onto contents. If they later do identity comparisons, like OperatorITs do,
-         * then they are vulnerable to AIS changes (e.g. aisMap is cleared and then
-         * latest cache gets updated, causing different (identity) AIS for the same
-         * generation). Waiting for no outstanding queue items avoids that and is
-         * generally very quick.
-         */
-        SchemaManager sm = serviceManager().getSchemaManager();
-        if(sm instanceof PersistitStoreSchemaManager) {
-            PersistitStoreSchemaManager pssm = (PersistitStoreSchemaManager) sm;
-            pssm.waitForQueueToEmpty(1000);
-        }
-    }
-
     protected final void updateAISGeneration() {
-        waitForStableAIS();
         aisGeneration = ddl().getGenerationAsInt(session());
     }
 

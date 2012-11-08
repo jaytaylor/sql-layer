@@ -34,11 +34,10 @@ import java.util.List;
 /** Turn an SQL statement into something executable. */
 public interface PostgresStatementGenerator extends PostgresStatementParser
 {
-
     /** Return constructed, but potentially unusable, PostgresStatement for the given parsed
      *  statement, or <code>null</code> if this generator cannot handle it. */
     public PostgresStatement generateInitial(PostgresServerSession server,
-                                             StatementNode stmt,
+                                             String sql, StatementNode stmt,
                                              List<ParameterNode> params, int[] paramTypes);
 
     /** Finish constructing the given PostgresStatement. This will only be be passed one

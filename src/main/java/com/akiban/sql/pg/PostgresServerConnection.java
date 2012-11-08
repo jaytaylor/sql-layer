@@ -542,14 +542,21 @@ public class PostgresServerConnection extends ServerSessionBase
             finally {
                 sessionMonitor.leaveStage();
             }
+            boolean singleStmt = (stmts.size() == 1);
             for (StatementNode stmt : stmts) {
-                GeneratedPartial partial = generateStatementPartial(stmt, null, null);
+                String stmtSQL;
+                if (singleStmt)
+                    stmtSQL = sql;
+                else
+                    stmtSQL = sql.substring(stmt.getBeginOffset(),
+                                            stmt.getEndOffset() + 1);
+                GeneratedPartial partial = generateStatementPartial(stmtSQL, stmt, null, null);
                 ServerTransaction local = beforeExecute(partial.pstmt);
                 boolean success = false;
                 try {
                     pstmt = generateStatementFinal(context, partial);
                     if ((statementCache != null) && (stmts.size() == 1))
-                        statementCache.put(sql, pstmt);
+                        statementCache.put(stmtSQL, pstmt);
                     pstmt.sendDescription(context, false);
                     rowsProcessed = executeStatement(pstmt, context, -1);
                     success = true;
@@ -599,7 +606,7 @@ public class PostgresServerConnection extends ServerSessionBase
             finally {
                 sessionMonitor.leaveStage();
             }
-            GeneratedPartial partial = generateStatementPartial(stmt, params, paramTypes);
+            GeneratedPartial partial = generateStatementPartial(sql, stmt, params, paramTypes);
             ServerTransaction local = beforeExecute(partial.pstmt);
             boolean success = false;
             try {
@@ -869,13 +876,26 @@ public class PostgresServerConnection extends ServerSessionBase
         statementCache = getStatementCache();
     }
 
-    protected GeneratedPartial generateStatementPartial(StatementNode stmt,
+    protected GeneratedPartial generateStatementPartial(String sql, StatementNode stmt,
+                                                  List<ParameterNode> params,
+                                                  int[] paramTypes) {
+        // Costing requires looking at AIS and potentially scanning index_stats rows
+        ServerTransaction local = (transaction == null) ? new ServerTransaction(this, true) : null;
+        try {
+            return generateStatementInternal(sql, stmt, params, paramTypes);
+        } finally {
+            if (local != null)
+                local.commit();
+        }
+    }
+
+    private GeneratedPartial generateStatementInternal(String sql, StatementNode stmt,
                                                         List<ParameterNode> params,
                                                         int[] paramTypes) {
         try {
             sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
             for (PostgresStatementGenerator generator : parsedGenerators) {
-                PostgresStatement pstmt = generator.generateInitial(this, stmt,
+                PostgresStatement pstmt = generator.generateInitial(this, sql, stmt,
                                                                     params, paramTypes);
                 if (pstmt != null)
                     return new GeneratedPartial(generator, pstmt, stmt, params, paramTypes);

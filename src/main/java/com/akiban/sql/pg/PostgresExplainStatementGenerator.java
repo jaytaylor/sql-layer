@@ -55,7 +55,7 @@ public class PostgresExplainStatementGenerator extends PostgresBaseStatementGene
 
     @Override
     public PostgresStatement generateInitial(PostgresServerSession server,
-                                             StatementNode stmt,
+                                             String sql, StatementNode stmt,
                                              List<ParameterNode> params, int[] paramTypes)  {
         if (stmt.getNodeType() != NodeTypes.EXPLAIN_STATEMENT_NODE)
             return null;

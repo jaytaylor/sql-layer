@@ -185,7 +185,13 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         }
 
         public int release() {
-            return refCount.decrementAndGet();
+            int count = refCount.decrementAndGet();
+            assert count >= 0 : count;
+            return count;
+        }
+
+        public int shareCount() {
+            return refCount.get();
         }
 
         public boolean isShared() {
@@ -859,7 +865,9 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                             //LOG.warn("Skipping AIS upgrade");
                         }
                         buildRowDefCache(sAIS.ais);
-                        latestAISCache = new AISAndTimestamp(sAIS, txnService.getTransactionStartTimestamp(session));
+                        long startTimestamp = txnService.getTransactionStartTimestamp(session);
+                        sAIS.acquire(); // So count while in cache is 1
+                        latestAISCache = new AISAndTimestamp(sAIS, startTimestamp);
                         return sAIS.ais;
                     }
                 }
@@ -870,9 +878,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         this.tableVersionMap = ReadWriteMap.wrapNonFair(new HashMap<Integer,Integer>());
 
         for(UserTable table : newAIS.getUserTables().values()) {
-            if(!table.hasVersion()) {
-                table.setVersion(0);
-            }
+            // Note: table.getVersion may be null (pre-1.4.3 volumes)
             tableVersionMap.put(table.getTableId(), table.getVersion());
         }
 
@@ -1065,7 +1071,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     private void saveMemoryTables(Exchange ex, GrowableByteBuffer buffer, AkibanInformationSchema newAIS) throws PersistitException {
-        // Want *just* the memory tables
+        // Want *just* non-persisted memory tables and system routines
         final ProtobufWriter.WriteSelector selector = new ProtobufWriter.TableFilterSelector() {
             @Override
             public Columnar getSelected(Columnar columnar) {
@@ -1082,7 +1088,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
             @Override
             public boolean isSelected(Routine routine) {
-                return false;
+                return TableName.SYS_SCHEMA.equals(routine.getName().getSchemaName()) ||
+                       TableName.SQLJ_SCHEMA.equals(routine.getName().getSchemaName());
             }
 
             @Override
@@ -1134,16 +1141,14 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             if(latestAISCache == CACHE_SENTINEL) {
                 if(newCache == CACHE_SENTINEL) {
                     CACHE_SENTINEL.sAIS.acquire();
-                } else {
-                    int count = CACHE_SENTINEL.sAIS.release();
-                    if(count > 1) {
-                        LOG.debug("Skipping cache update due to multiple outstanding changes:"+ count);
-                        return false;
-                    }
+                    return true;
                 }
-            } else if(newCache == CACHE_SENTINEL) {
-                newCache.sAIS.acquire();
-            } else {
+                int count = CACHE_SENTINEL.sAIS.shareCount();
+                if(count > 1) {
+                    LOG.debug("Skipping cache update due to multiple outstanding changes: {}", count);
+                    return false;
+                }
+            } else if(newCache != CACHE_SENTINEL) {
                 // Can happen if pre-commit hook doesn't get called (i.e. failure after SchemaManager call).
                 // In that case, the generation itself should not be changing -- just the timestamp.
                 if(latestAISCache.sAIS.ais.getGeneration() != newCache.sAIS.ais.getGeneration()) {
@@ -1321,10 +1326,20 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     int clearUnreferencedAISMap() {
         aisMap.claimExclusive();
         try {
-            Iterator<SharedAIS> it = aisMap.getWrappedMap().values().iterator();
+            int size = aisMap.size();
+            if(size <= 1) {
+                return size;
+            }
+            // Find newest generation
+            Long maxGen = Long.MIN_VALUE;
+            for(Long gen : aisMap.getWrappedMap().keySet()) {
+                maxGen = Math.max(gen, maxGen);
+            }
+            // Remove all unreferenced (except the newest)
+            Iterator<Map.Entry<Long,SharedAIS>> it = aisMap.getWrappedMap().entrySet().iterator();
             while(it.hasNext()) {
-                SharedAIS sAIS = it.next();
-                if(!sAIS.isShared()) {
+                Map.Entry<Long,SharedAIS> entry = it.next();
+                if(!entry.getValue().isShared() && !entry.getKey().equals(maxGen)) {
                     it.remove();
                 }
             }
@@ -1394,8 +1409,12 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         if(table == null) {
             throw new IllegalStateException("Unknown table: " + tableID);
         }
-        Integer current = tableVersionMap.get(tableID);
-        return current.compareTo(table.getVersion()) != 0;
+        Integer curVer = tableVersionMap.get(tableID);
+        Integer tableVer = table.getVersion();
+        if(curVer == null) {
+            return tableVer != null;
+        }
+        return !curVer.equals(tableVer);
     }
 
     private Accumulator getGenerationAccumulator(Session session) throws PersistitException {
@@ -1451,8 +1470,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         if(version == null) {
             version = 0; // New user or memory table
         }
-        tableVersionMap.putNewKey(mergedTable.getTableId(), version);
         mergedTable.setVersion(version);
+        tableVersionMap.putNewKey(mergedTable.getTableId(), version);
 
         if(factory == null) {
             saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(newName.getSchemaName()));
@@ -1475,9 +1494,9 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private void bumpTableVersions(AkibanInformationSchema newAIS, Collection<Integer> allTableIDs) {
         for(Integer tableID : allTableIDs) {
             Integer current = tableVersionMap.get(tableID);
-            Integer update = current + 1;
+            Integer update = (current == null) ? 1 : current + 1;
             boolean success = tableVersionMap.compareAndSet(tableID, current, update);
-            // Failed CAS would indicate concurrent DDL on this table, which should be possible
+            // Failed CAS would indicate concurrent DDL on this table, which should not be possible
             if(!success) {
                 throw new IllegalStateException("Unexpected concurrent DDL on table: " + tableID);
             }
