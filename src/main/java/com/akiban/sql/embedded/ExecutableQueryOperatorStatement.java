@@ -29,7 +29,6 @@ package com.akiban.sql.embedded;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
-import com.akiban.sql.server.ServerStatement;
 
 class ExecutableQueryOperatorStatement extends ExecutableOperatorStatement
 {

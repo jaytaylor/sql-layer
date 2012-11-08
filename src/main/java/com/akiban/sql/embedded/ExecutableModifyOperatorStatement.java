@@ -34,7 +34,6 @@ import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.akiban.sql.server.ServerSession;
-import com.akiban.sql.server.ServerStatement;
 import com.akiban.sql.server.ServerTransaction;
 import com.akiban.util.ShareHolder;
 

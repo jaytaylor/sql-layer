@@ -33,6 +33,8 @@ import static com.akiban.sql.pg.PostgresJsonStatement.jsonColumnTypes;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 
 import java.util.*;
 

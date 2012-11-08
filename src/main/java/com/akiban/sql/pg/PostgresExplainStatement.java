@@ -26,7 +26,6 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.sql.server.ServerStatement;
 import com.akiban.sql.server.ServerValueEncoder;
 
 import com.akiban.server.types.AkType;

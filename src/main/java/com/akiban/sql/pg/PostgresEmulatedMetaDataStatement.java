@@ -31,7 +31,6 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.sql.server.ServerStatement;
 import com.akiban.sql.server.ServerValueEncoder;
 
 import java.io.IOException;
