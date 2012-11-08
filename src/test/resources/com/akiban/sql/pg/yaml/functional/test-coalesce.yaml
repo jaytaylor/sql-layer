@@ -204,15 +204,15 @@
 
 ---
 - Statement: SELECT COALESCE(bigint_field, varchar_field, varchar_field) FROM all_types;
-- output_types: !select-engine { all: [BIGINT], newtypes: [VARCHAR] }
+- output_types: !select-engine { all: [BIGINT], sys-mysql: [VARCHAR] }
 
 ---
 - Statement: SELECT COALESCE(bigint_field, date_field, date_field) FROM all_types;
-- output_types: !select-engine { all: [DATE], newtypes: [VARCHAR] }
+- output_types: !select-engine { all: [DATE], sys-mysql: [VARCHAR] }
 
 ---
 - Statement: SELECT COALESCE(bigint_field, integer_field, date_field) FROM all_types;
-- output_types: !select-engine { all: [DATE], newtypes: [VARCHAR] }
+- output_types: !select-engine { all: [DATE], sys-mysql: [VARCHAR] }
 
 ---
 - Statement: SELECT COALESCE(bigint_field, double_field, integer_field) FROM all_types;
@@ -228,7 +228,7 @@
 
 ---
 - Statement: SELECT COALESCE(bigint_field, double_field, varchar_field) FROM all_types;
-- output_types: !select-engine { all: [DOUBLE], newtypes: [VARCHAR] }
+- output_types: !select-engine { all: [DOUBLE], sys-mysql: [VARCHAR] }
 
 ---
 - Statement: SELECT COALESCE(bigint_field, integer_field, smallint_field) FROM all_types;
