@@ -185,7 +185,9 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         }
 
         public int release() {
-            return refCount.decrementAndGet();
+            int count = refCount.decrementAndGet();
+            assert count >= 0 : count;
+            return count;
         }
 
         public boolean isShared() {
@@ -202,9 +204,12 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         public final SharedAIS sAIS;
         public final long timestamp;
 
-        public AISAndTimestamp(SharedAIS sAIS, long timestamp) {
+        public AISAndTimestamp(SharedAIS sAIS, long timestamp, boolean acquire) {
             this.sAIS = sAIS;
             this.timestamp = timestamp;
+            if(acquire) {
+                this.sAIS.acquire();
+            }
         }
 
         public boolean isUsableForStartTime(long startTime) {
@@ -246,7 +251,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
      * based on timestamp alone will get a stale snapshot. So, the cache can *only* be updated when there are no
      * more outstanding.</p>
      */
-    private static final AISAndTimestamp CACHE_SENTINEL = new AISAndTimestamp(new SharedAIS(null), Long.MAX_VALUE);
+    private static final AISAndTimestamp CACHE_SENTINEL = new AISAndTimestamp(new SharedAIS(null), Long.MAX_VALUE, false);
 
     private static final String CREATE_SCHEMA_FORMATTER = "create schema if not exists `%s`;";
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class.getName());
@@ -859,7 +864,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                             //LOG.warn("Skipping AIS upgrade");
                         }
                         buildRowDefCache(sAIS.ais);
-                        latestAISCache = new AISAndTimestamp(sAIS, txnService.getTransactionStartTimestamp(session));
+                        long startTimestamp = txnService.getTransactionStartTimestamp(session);
+                        latestAISCache = new AISAndTimestamp(sAIS, startTimestamp, true);
                         return sAIS.ais;
                     }
                 }
@@ -1693,7 +1699,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 final SharedAIS sAIS = PersistitStoreSchemaManager.this.getAISInternal(session);
                 // Attempt to update cache with our start timestamp, because that is what our snapshot is valid for.
                 final long startTime = txnService.getTransactionStartTimestamp(session);
-                updateLatestAISCache(new AISAndTimestamp(sAIS, startTime));
+                updateLatestAISCache(new AISAndTimestamp(sAIS, startTime, true));
                 txnService.commitTransaction(session);
             } finally {
                 txnService.rollbackTransactionIfOpen(session);
