@@ -42,7 +42,7 @@ public abstract class PostgresBaseStatementGenerator
         // This very inefficient reparsing by every generator is actually avoided.
         SQLParser parser = server.getParser();
         try {
-            return generate(server, parser.parseStatement(sql), 
+            return generate(server, sql, parser.parseStatement(sql), 
                             parser.getParameterList(), paramTypes);
         }
         catch (SQLParserException ex) {

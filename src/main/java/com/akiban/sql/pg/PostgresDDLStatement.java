@@ -47,11 +47,11 @@ public class PostgresDDLStatement extends PostgresBaseStatement
     private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresDDLStatement: acquire shared lock");
 
     private DDLStatementNode ddl;
-    private boolean usePVals;
+    private String sql;
 
-    public PostgresDDLStatement(DDLStatementNode ddl, boolean usePVals) {
+    public PostgresDDLStatement(DDLStatementNode ddl, String sql) {
+        this.sql = sql;
         this.ddl = ddl;
-        this.usePVals = usePVals;
     }
 
     @Override
@@ -88,7 +88,7 @@ public class PostgresDDLStatement extends PostgresBaseStatement
         try {
             lock(context, DXLFunction.UNSPECIFIED_DDL_WRITE);
             lockSuccess = true;
-            AISDDL.execute(ddl, context);
+            AISDDL.execute(ddl, sql, context);
         }
         finally {
             unlock(context, DXLFunction.UNSPECIFIED_DDL_WRITE, lockSuccess);

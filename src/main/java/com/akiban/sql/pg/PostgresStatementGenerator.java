@@ -38,7 +38,7 @@ public interface PostgresStatementGenerator extends PostgresStatementParser
     /** Return executable form of the given parsed statement or
      * <code>null</code> if this generator cannot handle it. */
     public PostgresStatement generate(PostgresServerSession server,
-                                      StatementNode stmt, 
+                                      String sql, StatementNode stmt, 
                                       List<ParameterNode> params, int[] paramTypes);
 
 }
