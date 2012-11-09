@@ -698,25 +698,13 @@ public abstract class MArithmetic extends TArithmetic {
      */
     static class AlwaysNull extends MArithmetic {
 
-        private final InvalidOperationException warningErr;
-
         AlwaysNull(String overloadName, String infix, boolean associative, TClass operand0, TClass operand1) {
             super(overloadName, infix, associative, operand0, operand1, MString.VARCHAR, 29);
-            warningErr = null;
         }
-        
-        AlwaysNull(String overloadName, String infix,
-                   boolean associative, TClass operand0,
-                   TClass operand1, InvalidOperationException err) {
-            super(overloadName, infix, associative, operand0, operand1, MString.VARCHAR, 29);
-            this.warningErr = err;
-        }
-        
+
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
                                   PValueTarget output) {
-            if (warningErr != null)
-                context.warnClient(warningErr);
             output.putNull();
         }
 
