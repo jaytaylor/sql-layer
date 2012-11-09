@@ -42,15 +42,19 @@ public class PostgresJsonModifyStatement extends PostgresModifyOperatorStatement
 {
     private List<JsonResultColumn> resultColumns;
 
-    public PostgresJsonModifyStatement(String statementType, Operator resultOperator, RowType resultRowType,
-                                       List<JsonResultColumn> resultColumns,
-                                       PostgresType[] parameterTypes,
-                                       boolean usePValues,
-                                       boolean requireStepIsolation) {
-        super(statementType, resultOperator, resultRowType,
-              // Looks like just one unlimited VARCHAR to the client.
-              jsonColumnNames(), jsonColumnTypes(),
-              parameterTypes, usePValues, requireStepIsolation);
+    public PostgresJsonModifyStatement(PostgresOperatorCompiler compiler) {
+        super(compiler);
+    }
+
+    public void init(String statementType, Operator resultOperator, RowType resultRowType,
+                     List<JsonResultColumn> resultColumns,
+                     PostgresType[] parameterTypes,
+                     boolean usePValues,
+                     boolean requireStepIsolation) {
+        super.init(statementType, resultOperator, resultRowType,
+                   // Looks like just one unlimited VARCHAR to the client.
+                   jsonColumnNames(), jsonColumnTypes(),
+                   parameterTypes, usePValues, requireStepIsolation);
         this.resultColumns = resultColumns;
     }
 

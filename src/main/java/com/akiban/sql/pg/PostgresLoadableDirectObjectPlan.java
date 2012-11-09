@@ -53,11 +53,8 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
                                                PostgresType[] parameterTypes,
                                                boolean usesPValues)
     {
-        super(null,
-              columnNames, columnTypes,
-              parameterTypes, usesPValues);
+        super.init(null, columnNames, columnTypes, parameterTypes, usesPValues);
         this.invocation = invocation;
-
         plan = loadablePlan.plan();
         outputMode = plan.getOutputMode();
     }
@@ -82,6 +79,11 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
     @Override
     public TransactionAbortedMode getTransactionAbortedMode() {
         return TransactionAbortedMode.NOT_ALLOWED;
+    }
+
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.ALLOWED;
     }
 
     @Override

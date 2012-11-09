@@ -45,9 +45,9 @@ public class PostgresCallStatementGenerator extends PostgresBaseStatementGenerat
     }
 
     @Override
-    public PostgresStatement generate(PostgresServerSession server,
-                                      String sql, StatementNode stmt,
-                                      List<ParameterNode> params, int[] paramTypes)
+    public PostgresStatement generateStub(PostgresServerSession server,
+                                          String sql, StatementNode stmt,
+                                          List<ParameterNode> params, int[] paramTypes)
     {
         if (stmt instanceof CallStatementNode) {
             CallStatementNode call = (CallStatementNode)stmt;
@@ -55,17 +55,22 @@ public class PostgresCallStatementGenerator extends PostgresBaseStatementGenerat
             ServerRoutineInvocation invocation =
                 ServerRoutineInvocation.of(server, methodCall);
             if (invocation != null) {
+                final PostgresStatement pstmt;
                 switch (invocation.getCallingConvention()) {
                 case LOADABLE_PLAN:
-                    return PostgresLoadablePlan.statement(server, invocation, 
-                                                          paramTypes);
+                    pstmt = PostgresLoadablePlan.statement(server, invocation,
+                                                           paramTypes);
+                break;
                 default:
-                    return PostgresJavaMethod.statement(server, invocation, 
-                                                        params, paramTypes);
+                    pstmt = PostgresJavaMethod.statement(server, invocation,
+                                                         params, paramTypes);
                 }
+                // The above makes extensive use of the AIS. This doesn't fit well into the
+                // create and then init, so just mark with AIS now.
+                pstmt.setAISGeneration(server.getAIS().getGeneration());
+                return pstmt;
             }
         }
         return null;
     }
-
 }

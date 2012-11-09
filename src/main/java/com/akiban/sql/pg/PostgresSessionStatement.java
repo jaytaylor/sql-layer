@@ -31,6 +31,7 @@ import com.akiban.server.error.UnsupportedConfigurationException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.aisddl.SchemaDDL;
 import com.akiban.sql.parser.AccessMode;
+import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.SetConfigurationNode;
 import com.akiban.sql.parser.SetSchemaNode;
 import com.akiban.sql.parser.SetTransactionAccessNode;
@@ -39,6 +40,7 @@ import com.akiban.sql.parser.StatementType;
 
 import java.util.Arrays;
 import java.io.IOException;
+import java.util.List;
 
 /** SQL statements that affect session / environment state. */
 public class PostgresSessionStatement implements PostgresStatement
@@ -63,6 +65,7 @@ public class PostgresSessionStatement implements PostgresStatement
 
     private Operation operation;
     private StatementNode statement;
+    private long aisGeneration;
     
     protected PostgresSessionStatement(Operation operation, StatementNode statement) {
         this.operation = operation;
@@ -103,6 +106,11 @@ public class PostgresSessionStatement implements PostgresStatement
     }
 
     @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.ALLOWED;
+    }
+
+    @Override
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         doOperation(server);
@@ -113,6 +121,28 @@ public class PostgresSessionStatement implements PostgresStatement
             messenger.sendMessage();
         }
         return 0;
+    }
+
+    @Override
+    public boolean hasAISGeneration() {
+        return aisGeneration != 0;
+    }
+
+    @Override
+    public void setAISGeneration(long aisGeneration) {
+        this.aisGeneration = aisGeneration;
+    }
+
+    @Override
+    public long getAISGeneration() {
+        return aisGeneration;
+    }
+
+    @Override
+    public PostgresStatement finishGenerating(PostgresServerSession server,
+                                              String sql, StatementNode stmt,
+                                              List<ParameterNode> params, int[] paramTypes) {
+        return this;
     }
 
     protected void doOperation(PostgresServerSession server) {

@@ -118,6 +118,11 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
         return TransactionAbortedMode.NOT_ALLOWED;
     }
 
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.NOT_ALLOWED;
+    }
+
     static class SpoolCursor implements Cursor {
         private List<ShareHolder<Row>> rows = new ArrayList<ShareHolder<Row>>();
         private Iterator<ShareHolder<Row>> iterator;

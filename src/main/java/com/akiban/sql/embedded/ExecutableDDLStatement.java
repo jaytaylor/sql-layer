@@ -62,4 +62,9 @@ class ExecutableDDLStatement extends ExecutableStatement
         return TransactionAbortedMode.NOT_ALLOWED;
     }
 
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.ALLOWED;
+    }
+
 }

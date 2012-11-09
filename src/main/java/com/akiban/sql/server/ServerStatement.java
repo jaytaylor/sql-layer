@@ -50,6 +50,12 @@ public interface ServerStatement
         NOT_ALLOWED,            // Statement never allowed
     }
 
+    public enum AISGenerationMode {
+        ALLOWED,               // Statement can be used under any generation
+        NOT_ALLOWED            // Statement can only be used under one generation
+    }
+
     public TransactionMode getTransactionMode();
     public TransactionAbortedMode getTransactionAbortedMode();
+    public AISGenerationMode getAISGenerationMode();
 }
