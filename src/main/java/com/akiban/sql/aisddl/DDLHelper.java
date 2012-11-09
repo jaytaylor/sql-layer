@@ -37,7 +37,8 @@ public class DDLHelper {
     }
     
     
-    public static TableName toTableName(String schema, String name) {
+    public static TableName toTableName(String schema, String name)
+    {
         return new TableName(schema, name);
     }
 }
