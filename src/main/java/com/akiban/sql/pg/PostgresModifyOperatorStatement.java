@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
  * An SQL modifying DML statement transformed into an operator tree
  * @see PostgresOperatorCompiler
  */
-public class PostgresModifyOperatorStatement extends PostgresDMLStatement
+public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStatement
 {
     private String statementType;
     private Operator resultOperator;
@@ -56,12 +56,16 @@ public class PostgresModifyOperatorStatement extends PostgresDMLStatement
     private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresBaseStatement: acquire exclusive lock");
     private static final Logger LOG = LoggerFactory.getLogger(PostgresModifyOperatorStatement.class);
 
-    public PostgresModifyOperatorStatement (String statementType,
-                                    Operator resultsOperator, 
-                                    PostgresType[] parameterTypes,
-                                    boolean usesPValues,
-                                    boolean requireStepIsolation) {
-        super (parameterTypes, usesPValues);
+    public PostgresModifyOperatorStatement(PostgresOperatorCompiler compiler) {
+        super(compiler);
+    }
+
+    public void init(String statementType,
+                     Operator resultsOperator,
+                     PostgresType[] parameterTypes,
+                     boolean usesPValues,
+                     boolean requireStepIsolation) {
+        super.init(parameterTypes, usesPValues);
         this.statementType = statementType;
         this.resultOperator = resultsOperator;
         this.requireStepIsolation = requireStepIsolation;
@@ -69,15 +73,15 @@ public class PostgresModifyOperatorStatement extends PostgresDMLStatement
                 
     }
     
-    public PostgresModifyOperatorStatement (String statementType,
-                                    Operator resultOperator,
-                                     RowType resultRowType,
-                                     List<String> columnNames,
-                                     List<PostgresType> columnTypes,
-                                     PostgresType[] parameterTypes,
-                                     boolean usesPValues,
-                                     boolean requireStepIsolation) {
-        super(resultRowType, columnNames, columnTypes, parameterTypes, usesPValues);
+    public void init(String statementType,
+                     Operator resultOperator,
+                     RowType resultRowType,
+                     List<String> columnNames,
+                     List<PostgresType> columnTypes,
+                     PostgresType[] parameterTypes,
+                     boolean usesPValues,
+                     boolean requireStepIsolation) {
+        super.init(resultRowType, columnNames, columnTypes, parameterTypes, usesPValues);
         this.statementType = statementType;
         this.resultOperator = resultOperator;
         this.requireStepIsolation = requireStepIsolation;
@@ -94,6 +98,11 @@ public class PostgresModifyOperatorStatement extends PostgresDMLStatement
     @Override
     public TransactionAbortedMode getTransactionAbortedMode() {
         return TransactionAbortedMode.NOT_ALLOWED;
+    }
+
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.NOT_ALLOWED;
     }
 
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {

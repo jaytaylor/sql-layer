@@ -119,7 +119,7 @@ public interface SchemaManager {
      * @param indexes List of index definitions to add.
      * @return List of newly created indexes.
      */
-    Collection<Index> createIndexes(Session session, Collection<? extends Index> indexes);
+    Collection<Index> createIndexes(Session session, Collection<? extends Index> indexes, boolean keepTree);
 
     /**
      * Modifying the existing schema definitions by adding indexes. Both Table and Group indexes are
@@ -226,4 +226,6 @@ public interface SchemaManager {
 
     /** Get oldest AIS generation still in memory */
     long getOldestActiveAISGeneration();
+
+    boolean hasTableChanged(Session session, int tableID);
 }

@@ -65,4 +65,9 @@ class ExecutableQueryOperatorStatement extends ExecutableOperatorStatement
         return TransactionAbortedMode.NOT_ALLOWED;
     }
 
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.NOT_ALLOWED;
+    }
+
 }

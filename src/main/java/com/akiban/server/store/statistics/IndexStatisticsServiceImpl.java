@@ -240,7 +240,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 updates.putAll(updatePersistitTableIndexStatistics (session, indexes));
             }
         }
-        txnService.addCommitCallback(session, new TransactionService.Callback() {
+        txnService.addCallback(session, TransactionService.CallbackType.COMMIT, new TransactionService.Callback() {
             @Override
             public void run(Session session, long timestamp) {
                 cache.putAll(updates);

@@ -598,7 +598,6 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
     private int childOrdinal;
     private IndexRowType cSpatialIndexRowType;
     private IndexRowType pSpatialIndexRowType;
-    private IndexRowType beforeLatLonAfterIndexRowType;
     private SpaceLatLon space;
     private Map<Long, Integer> childZToCid = new TreeMap<Long, Integer>();
     private Map<Long, Integer> parentZToPid = new TreeMap<Long, Integer>();

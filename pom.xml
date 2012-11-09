@@ -229,7 +229,7 @@
             <plugin>
                 <groupId>com.atlassian.maven.plugins</groupId>
                 <artifactId>maven-clover2-plugin</artifactId>
-                <version>3.1.7</version>
+                <version>3.0.1</version>
                 <configuration>
                     <generateHistorical>true</generateHistorical>
                     <historyDir>/clover/history</historyDir>

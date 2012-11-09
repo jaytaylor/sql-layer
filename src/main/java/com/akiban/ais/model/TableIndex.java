@@ -29,6 +29,8 @@ package com.akiban.ais.model;
 import com.akiban.ais.model.validation.AISInvariants;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -153,6 +155,11 @@ public class TableIndex extends Index
     @Override
     public void checkMutability() {
         table.checkMutability();
+    }
+
+    @Override
+    public Collection<Integer> getAllTableIDs() {
+        return Collections.singleton(table.getTableId());
     }
 
     public Table getTable()

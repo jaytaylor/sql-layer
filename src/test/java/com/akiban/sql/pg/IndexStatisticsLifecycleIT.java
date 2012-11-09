@@ -54,7 +54,7 @@ public class IndexStatisticsLifecycleIT extends PostgresServerFilesITBase
     }
 
     protected Statement executeStatement;
-    protected PreparedStatement checkStatement;
+    protected Statement checkStatement;
     protected final String CHECK_SQL = "SELECT header.table_id, header.index_id, COUNT(detail.column_count) AS ndetail FROM "+
             IndexStatisticsService.INDEX_STATISTICS_TABLE_NAME.getDescription() + " header LEFT JOIN " +
             IndexStatisticsService.INDEX_STATISTICS_ENTRY_TABLE_NAME.getDescription() + " detail USING (table_id, index_id) GROUP BY header.table_id, header.index_id";
@@ -62,7 +62,7 @@ public class IndexStatisticsLifecycleIT extends PostgresServerFilesITBase
     @Before
     public void prepareStatements() throws Exception {
         executeStatement = getConnection().createStatement();
-        checkStatement = getConnection().prepareStatement(CHECK_SQL);
+        checkStatement = getConnection().createStatement();
     }
     
     @After
@@ -77,7 +77,7 @@ public class IndexStatisticsLifecycleIT extends PostgresServerFilesITBase
     protected Map<Index,Integer> check() throws Exception {
         Map<Index,Integer> result = new HashMap<Index,Integer>();
         AkibanInformationSchema ais = ddl().getAIS(session());
-        ResultSet rs = checkStatement.executeQuery();
+        ResultSet rs = checkStatement.executeQuery(CHECK_SQL);
         while (rs.next()) {
             int tableId = rs.getInt(1);
             int indexId = rs.getInt(2);

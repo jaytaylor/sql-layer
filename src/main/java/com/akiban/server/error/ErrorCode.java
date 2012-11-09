@@ -98,6 +98,7 @@ public enum ErrorCode {
     UNSUPPORTED_INDEX_PREFIX("0A", "507", Importance.ERROR, UnsupportedIndexPrefixException.class),
     SELECT_EXISTS_ERROR     ("0A", "508", Importance.DEBUG, SelectExistsErrorException.class),
     UNSUPPORTED_GROUP_INDEX_JOIN("0A", "509", Importance.DEBUG, UnsupportedGroupIndexJoinTypeException.class),
+    STALE_STATEMENT         ("0A", "50A", Importance.ERROR, StaleStatementException.class),
     
     // Class 0D - invalid target type specification
     // Class 0E - invalid schema name list specification
@@ -420,6 +421,7 @@ public enum ErrorCode {
     NO_ROWS_UPDATED         ("57", "003", Importance.DEBUG, NoRowsUpdatedException.class),    
     TOO_MANY_ROWS_UPDATED   ("57", "004", Importance.DEBUG, TooManyRowsUpdatedException.class),  
     INSERT_NULL_CHECK       ("57", "005", Importance.DEBUG, InsertNullCheckFailedException.class),
+    TABLE_CHANGED_BY_DDL    ("57", "006", Importance.DEBUG, TableChangedByDDLException.class),
 
     // Class 58 - Query canceled by user
     QUERY_CANCELED          ("58", "000", Importance.ERROR, QueryCanceledException.class),    

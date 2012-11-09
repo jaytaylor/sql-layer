@@ -690,7 +690,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         }
 
         @Override
-        public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexes) {
+        public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexes, boolean keepTreeNames) {
             throw new UnsupportedOperationException();
         }
 
@@ -796,6 +796,11 @@ public class BasicInfoSchemaTablesServiceImplTest {
 
         @Override
         public long getOldestActiveAISGeneration() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean hasTableChanged(Session session, int tableID) {
             throw new UnsupportedOperationException();
         }
     }

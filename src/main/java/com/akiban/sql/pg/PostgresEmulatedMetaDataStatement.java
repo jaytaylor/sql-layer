@@ -31,6 +31,8 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.sql.parser.ParameterNode;
+import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.server.ServerValueEncoder;
 
 import java.io.IOException;
@@ -162,6 +164,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     private Query query;
     private List<String> groups;
     private boolean usePVals;
+    private long aisGeneration;
 
     protected PostgresEmulatedMetaDataStatement(Query query, List<String> groups, boolean usePVals) {
         this.query = query;
@@ -314,6 +317,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     }
 
     @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.ALLOWED;
+    }
+
+    @Override
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
@@ -364,6 +372,28 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
           messenger.sendMessage();
         }
         return nrows;
+    }
+
+    @Override
+    public boolean hasAISGeneration() {
+        return aisGeneration != 0;
+    }
+
+    @Override
+    public void setAISGeneration(long aisGeneration) {
+        this.aisGeneration = aisGeneration;
+    }
+
+    @Override
+    public long getAISGeneration() {
+        return aisGeneration;
+    }
+
+    @Override
+    public PostgresStatement finishGenerating(PostgresServerSession server,
+                                              String sql, StatementNode stmt,
+                                              List<ParameterNode> params, int[] paramTypes) {
+        return this;
     }
 
     private int odbcLoTypeQuery(PostgresMessenger messenger, int maxrows) {

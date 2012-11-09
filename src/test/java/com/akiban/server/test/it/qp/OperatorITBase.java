@@ -80,7 +80,16 @@ public class OperatorITBase extends ITBase
 
     @Before
     public final void runAllSetup() {
-        setupCreateSchema();
+        // DDL cannot be performed in an open transaction, close (and reopen) if one exists
+        boolean wasActive = txnService().isTransactionActive(session());
+        if(wasActive)
+            txnService().commitTransaction(session());
+        try {
+            setupCreateSchema();
+        } finally {
+            if(wasActive)
+                txnService().beginTransaction(session());
+        }
         setupPostCreateSchema();
     }
 
