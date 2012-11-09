@@ -187,8 +187,9 @@ public class AlterTableDDL {
                 } break;
 
                 case NodeTypes.AT_RENAME_NODE:
-                    TableName newName = DDLHelper.toTableName(table.getName().getSchemaName(),
-                                                              ((AlterTableRenameNode)node).getName());
+                    
+                    TableName newName = DDLHelper.convertName(defaultSchema,
+                                                              ((AlterTableRenameNode)node).getNewName());
                     TableName oldName = table.getName();
                     ddl.renameTable(session, oldName, newName);
                     return ChangeLevel.TABLE;

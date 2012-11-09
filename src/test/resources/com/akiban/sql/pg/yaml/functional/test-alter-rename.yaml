@@ -16,5 +16,15 @@
 --- # expect no such table error
 - Statement: SELECT c from t;
 - error: [42501]
+---
+- Statement: ALTER TABLE t2 RENAME dummy.test3;
+---
+- Statement: SELECT c from dummy.test3;
+- output: [[3], [4]]
+--- # now t2 is also not found
+- Statement: SELECT c from t2;
+- error: [42501]
+---
+- DropTable: dummy.test3;
 ...
 

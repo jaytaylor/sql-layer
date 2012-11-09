@@ -35,10 +35,4 @@ public class DDLHelper {
         final String schema = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchema;
         return new TableName(schema, parserName.getTableName());
     }
-    
-    
-    public static TableName toTableName(String schema, String name)
-    {
-        return new TableName(schema, name);
-    }
 }
