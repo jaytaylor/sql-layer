@@ -1143,23 +1143,28 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                     CACHE_SENTINEL.sAIS.acquire();
                     return true;
                 }
-                int count = CACHE_SENTINEL.sAIS.shareCount();
-                if(count > 1) {
+                int count = CACHE_SENTINEL.sAIS.release();
+                if(count > 0) {
                     LOG.debug("Skipping cache update due to multiple outstanding changes: {}", count);
                     return false;
                 }
-            } else if(newCache != CACHE_SENTINEL) {
-                // Can happen if pre-commit hook doesn't get called (i.e. failure after SchemaManager call).
-                // In that case, the generation itself should not be changing -- just the timestamp.
-                if(latestAISCache.sAIS.ais.getGeneration() != newCache.sAIS.ais.getGeneration()) {
-                    throw new IllegalStateException("Transition from non to non-sentinel for differing generations: "+
-                                                    latestAISCache.toString() + " => " + newCache.toString());
+                newCache.sAIS.acquire();
+                latestAISCache = newCache;
+                return true;
+            } else {
+                if(newCache != CACHE_SENTINEL) {
+                    // Can happen if pre-commit hook doesn't get called (i.e. failure after SchemaManager call).
+                    // In that case, the generation itself should not be changing -- just the timestamp.
+                    if(latestAISCache.sAIS.ais.getGeneration() != newCache.sAIS.ais.getGeneration()) {
+                        throw new IllegalStateException("Transition from non to non-sentinel for differing generations: "+
+                                                        latestAISCache.toString() + " => " + newCache.toString());
+                    }
                 }
+                latestAISCache.sAIS.release();
+                newCache.sAIS.acquire();
+                latestAISCache = newCache;
+                return true;
             }
-            latestAISCache.sAIS.release();
-            newCache.sAIS.acquire();
-            latestAISCache = newCache;
-            return true;
         }
     }
 
