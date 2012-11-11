@@ -146,7 +146,7 @@ public class SchemaFactory {
                 int userTableOrdinal = 1;
                 for(RowDef userRowDef : allRowDefs) {
                     int ordinal = userTableOrdinal++;
-                    tableStatusCache.setOrdinal(userRowDef.getRowDefId(), ordinal);
+                    userRowDef.getTableStatus().setOrdinal(ordinal);
                     userRowDef.setOrdinalCache(ordinal);
                     ordinalMap.put(userRowDef.table(), ordinal);
                 }

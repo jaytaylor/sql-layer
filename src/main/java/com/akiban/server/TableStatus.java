@@ -35,6 +35,27 @@ import com.persistit.exception.PersistitInterruptedException;
  * RowDef, and each object refers to the other.
  */
 public interface TableStatus {
+    /** Record that a row has been deleted. */
+    void rowDeleted();
+
+    /** Record that a row has been written. */
+    void rowWritten();
+
+    /** Reset, but do not remove, the state of a table. */
+    void truncate() throws PersistitInterruptedException;
+
+    /** Set the auto-increment value of a given table. */
+    void setAutoIncrement(long value) throws PersistitInterruptedException;
+
+    /** Set the RowDef of a given table.*/
+    void setRowDef(RowDef rowDef);
+
+    /** Create a brand new, unique ID for the given table. */
+    long createNewUniqueID() throws PersistitInterruptedException;
+
+    /** Set the ordinal value of a given table. */
+    void setOrdinal(int value) throws PersistitInterruptedException;
+
     /**
      * @return Current auto-increment value of the assocated table.
      */
