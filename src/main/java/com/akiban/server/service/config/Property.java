@@ -26,7 +26,7 @@
 
 package com.akiban.server.service.config;
 
-public final class Property implements Comparable<Property> {
+final class Property implements Comparable<Property> {
 
     private final String key;
     private final String value;

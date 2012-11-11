@@ -36,7 +36,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.TreeSet;
+import java.util.TreeMap;
 
 import com.akiban.server.error.BadConfigDirectoryException;
 import com.akiban.server.error.ConfigurationPropertiesLoadException;
@@ -97,8 +97,13 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     }
 
     @Override
-    public final Set<Property> getProperties() {
-        return new TreeSet<Property>(internalGetProperties().values());
+    public Map<String, String> getProperties() {
+        Map<String, Property> internalProperties = internalGetProperties();
+        Map<String, String> results = new TreeMap<String, String>();
+        for (Map.Entry<String, Property> entry : internalProperties.entrySet()) {
+            results.put(entry.getKey(), entry.getValue().getValue());
+        }
+        return Collections.unmodifiableMap(results);
     }
 
     @Override
