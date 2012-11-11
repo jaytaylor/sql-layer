@@ -1425,7 +1425,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     public long getOldestActiveAISGeneration() {
         aisMap.claimShared();
         try {
-            long min = Long.MIN_VALUE;
+            long min = Long.MAX_VALUE;
             for(Long l : aisMap.getWrappedMap().keySet()) {
                 min = Math.min(min, l);
             }
