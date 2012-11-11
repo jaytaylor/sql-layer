@@ -51,6 +51,10 @@ public class PostgresJavaMethod extends PostgresJavaRoutine
                                       parameterTypes, usesPValues);
     }
 
+
+    public PostgresJavaMethod() {
+    }
+
     protected PostgresJavaMethod(Method method,
                                  ServerRoutineInvocation invocation,
                                  List<String> columnNames, 

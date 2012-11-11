@@ -40,10 +40,10 @@ public class PostgresDDLStatementGenerator extends PostgresBaseStatementGenerato
     }
 
     @Override
-    public PostgresStatement generate(PostgresServerSession server,
-                                      String sql, StatementNode stmt, 
-                                      List<ParameterNode> params,
-                                      int[] paramTypes) {
+    public PostgresStatement generateStub(PostgresServerSession server,
+                                          String sql, StatementNode stmt,
+                                          List<ParameterNode> params,
+                                          int[] paramTypes) {
         if (!(stmt instanceof DDLStatementNode))
             return null;
         if ((params != null) && !params.isEmpty())

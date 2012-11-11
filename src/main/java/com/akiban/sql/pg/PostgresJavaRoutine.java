@@ -31,6 +31,7 @@ import static com.akiban.sql.pg.PostgresJsonStatement.jsonColumnTypes;
 import static com.akiban.sql.pg.PostgresServerSession.OutputFormat;
 
 import com.akiban.sql.parser.ParameterNode;
+import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.server.ServerCallContextStack;
 import com.akiban.sql.server.ServerJavaRoutine;
 import com.akiban.sql.server.ServerRoutineInvocation;
@@ -104,12 +105,15 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
         }
     }
 
+    protected PostgresJavaRoutine() {
+    }
+
     protected PostgresJavaRoutine(ServerRoutineInvocation invocation,
                                   List<String> columnNames, 
                                   List<PostgresType> columnTypes,
                                   PostgresType[] parameterTypes,
                                   boolean usesPValues) {
-        super(null, columnNames, columnTypes, parameterTypes, usesPValues);
+        super.init(null, columnNames, columnTypes, parameterTypes, usesPValues);
         this.invocation = invocation;
     }
 
@@ -139,6 +143,11 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
     @Override
     public TransactionAbortedMode getTransactionAbortedMode() {
         return TransactionAbortedMode.NOT_ALLOWED;
+    }
+
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.NOT_ALLOWED;
     }
 
     @Override
@@ -277,5 +286,6 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
         }
         return result;
     }
+
 
 }

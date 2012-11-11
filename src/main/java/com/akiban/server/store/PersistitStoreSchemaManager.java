@@ -68,11 +68,19 @@ import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.SQLJJar;
 import com.akiban.ais.model.SynchronizedNameGenerator;
 import com.akiban.ais.model.View;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.ais.protobuf.ProtobufReader;
 import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.ais.util.ChangedTableDescription;
+import com.akiban.qp.memoryadapter.BasicFactoryBase;
+import com.akiban.qp.memoryadapter.MemoryAdapter;
+import com.akiban.qp.memoryadapter.MemoryGroupCursor;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
+import com.akiban.qp.row.Row;
+import com.akiban.qp.row.ValuesRow;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.error.AISTooLargeException;
 import com.akiban.server.error.DuplicateRoutineNameException;
 import com.akiban.server.error.DuplicateSequenceNameException;
@@ -275,6 +283,9 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private BlockingQueue<QueueTask> taskQueue;
     private Thread queueConsumer;
     private Map<TableName,MemoryTableFactory> memoryTableFactories;
+    private AtomicInteger aisCacheMissCount;
+    private AtomicInteger loadAISFromStorageCount;
+    private AtomicInteger delayedTreeCount;
 
     @Inject
     public PersistitStoreSchemaManager(ConfigurationService config, SessionService sessionService,
@@ -697,6 +708,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         // Couldn't use the cache, do an always accurate accumulator lookup and check in map.
         long generation = 0;
         if(local == null) {
+            aisCacheMissCount.incrementAndGet();
             generation = getGenerationSnapshot(session);
             local = aisMap.get(generation);
         }
@@ -709,6 +721,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 // Double check while while under exclusive
                 local = aisMap.get(generation);
                 if(local == null) {
+                    loadAISFromStorageCount.incrementAndGet();
                     try {
                         local = loadAISFromStorage(session, GenValue.SNAPSHOT, GenMap.PUT_NEW);
                         buildRowDefCache(local.ais);
@@ -818,6 +831,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         }
 
         LOG.debug("Delaying removal of tree (until next restart): {}", treeName);
+        delayedTreeCount.incrementAndGet();
         Exchange ex = schemaTreeExchange(session, schema);
         try {
             long id = delayedTreeIDGenerator.incrementAndGet();
@@ -899,6 +913,12 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 taskQueue.add(new ClearAISMapTask(0, 10000));
             }
         };
+
+        this.aisCacheMissCount = new AtomicInteger(0);
+        this.loadAISFromStorageCount = new AtomicInteger(0);
+        this.delayedTreeCount = new AtomicInteger(0);
+
+        registerSummaryTable();
     }
 
     @Override
@@ -918,6 +938,9 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         this.taskQueue = null;
         this.queueConsumer = null;
         this.memoryTableFactories = null;
+        this.aisCacheMissCount = null;
+        this.loadAISFromStorageCount = null;
+        this.delayedTreeCount = null;
         CACHE_SENTINEL.sAIS.refCount.set(0);
     }
 
@@ -1143,23 +1166,28 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                     CACHE_SENTINEL.sAIS.acquire();
                     return true;
                 }
-                int count = CACHE_SENTINEL.sAIS.shareCount();
-                if(count > 1) {
+                int count = CACHE_SENTINEL.sAIS.release();
+                if(count > 0) {
                     LOG.debug("Skipping cache update due to multiple outstanding changes: {}", count);
                     return false;
                 }
-            } else if(newCache != CACHE_SENTINEL) {
-                // Can happen if pre-commit hook doesn't get called (i.e. failure after SchemaManager call).
-                // In that case, the generation itself should not be changing -- just the timestamp.
-                if(latestAISCache.sAIS.ais.getGeneration() != newCache.sAIS.ais.getGeneration()) {
-                    throw new IllegalStateException("Transition from non to non-sentinel for differing generations: "+
-                                                    latestAISCache.toString() + " => " + newCache.toString());
+                newCache.sAIS.acquire();
+                latestAISCache = newCache;
+                return true;
+            } else {
+                if(newCache != CACHE_SENTINEL) {
+                    // Can happen if pre-commit hook doesn't get called (i.e. failure after SchemaManager call).
+                    // In that case, the generation itself should not be changing -- just the timestamp.
+                    if(latestAISCache.sAIS.ais.getGeneration() != newCache.sAIS.ais.getGeneration()) {
+                        throw new IllegalStateException("Transition from non to non-sentinel for differing generations: "+
+                                                        latestAISCache.toString() + " => " + newCache.toString());
+                    }
                 }
+                latestAISCache.sAIS.release();
+                newCache.sAIS.acquire();
+                latestAISCache = newCache;
+                return true;
             }
-            latestAISCache.sAIS.release();
-            newCache.sAIS.acquire();
-            latestAISCache = newCache;
-            return true;
         }
     }
 
@@ -1564,6 +1592,71 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             throw new IllegalStateException("Cannot serialize as " + serializationType);
         }
     }
+
+    private class SchemaManagerSummaryFactory extends BasicFactoryBase {
+        public SchemaManagerSummaryFactory() {
+            super(new TableName(TableName.INFORMATION_SCHEMA, "schema_manager_summary"));
+        }
+
+        private class Scan implements MemoryGroupCursor.GroupScan {
+            private final RowType rowType;
+            private int pkCounter = 0;
+
+            public Scan(RowType rowType) {
+                this.rowType = rowType;
+            }
+
+            @Override
+            public Row next() {
+                if(pkCounter != 0) {
+                    return null;
+                }
+                AISAndTimestamp latest = latestAISCache;
+                return new ValuesRow(rowType,
+                                     aisCacheMissCount.get(),
+                                     delayedTreeCount.get(),
+                                     (latest == CACHE_SENTINEL) ? null : latest.sAIS.ais.getGeneration(),
+                                     (latest == CACHE_SENTINEL) ? null : latest.timestamp,
+                                     loadAISFromStorageCount.get(),
+                                     aisMap.size(),
+                                     CACHE_SENTINEL.sAIS.shareCount(),
+                                     taskQueue.size(),
+                                     ++ pkCounter
+                );
+            }
+
+            @Override
+            public void close() {
+            }
+        }
+
+        @Override
+        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan(getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            return 1;
+        }
+    }
+
+    private void registerSummaryTable() {
+        SchemaManagerSummaryFactory factory = new SchemaManagerSummaryFactory();
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        builder.userTable(factory.getName())
+                .colBigInt("cache_misses", false)
+                .colBigInt("delayed_tree_count", false)
+                .colBigInt("latest_generation", true)
+                .colBigInt("latest_timestamp", true)
+                .colBigInt("load_count", false)
+                .colBigInt("map_size", false)
+                .colBigInt("outstanding_count", false)
+                .colBigInt("task_queue_size", false);
+        UserTable table = builder.ais().getUserTable(factory.getName());
+        registerMemoryInformationSchemaTable(table, factory);
+    }
+
 
     private interface ThrowingCallable<V> {
         public V runAndReturn(Session session) throws PersistitException;

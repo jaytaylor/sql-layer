@@ -27,11 +27,10 @@
 package com.akiban.sql.pg;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowPool;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerSessionBase;
 import com.akiban.sql.server.ServerSessionMonitor;
+import com.akiban.sql.server.ServerStatement;
 import com.akiban.sql.server.ServerStatementCache;
 import com.akiban.sql.server.ServerTransaction;
 import com.akiban.sql.server.ServerValueDecoder;
@@ -41,7 +40,6 @@ import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.SQLParserException;
 import com.akiban.sql.parser.StatementNode;
 
-import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -579,14 +577,16 @@ public class PostgresServerConnection extends ServerSessionBase
                 // Try special recognition first; only allowed to turn
                 // into one statement.
                 pstmt = parser.parse(this, sql, null);
-                if (pstmt != null)
+                if (pstmt != null) {
+                    pstmt.setAISGeneration(ais.getGeneration());
                     break;
+                }
             }
         }
         int rowsProcessed = 0;
         if (pstmt != null) {
             pstmt.sendDescription(context, false);
-            rowsProcessed = executeStatement(pstmt, context, -1);
+            rowsProcessed = executeStatementWithAutoTxn(pstmt, context, -1);
         }
         else {
             // Parse as a _list_ of statements and process each in turn.
@@ -610,13 +610,21 @@ public class PostgresServerConnection extends ServerSessionBase
                 if (singleStmt)
                     stmtSQL = sql;
                 else
-                    stmtSQL = sql.substring(stmt.getBeginOffset(), 
+                    stmtSQL = sql.substring(stmt.getBeginOffset(),
                                             stmt.getEndOffset() + 1);
-                pstmt = generateStatement(stmtSQL, stmt, null, null);
-                if ((statementCache != null) && singleStmt)
-                    statementCache.put(stmtSQL, pstmt);
-                pstmt.sendDescription(context, false);
-                rowsProcessed = executeStatement(pstmt, context, -1);
+                pstmt = generateStatementStub(stmtSQL, stmt, null, null);
+                ServerTransaction local = beforeExecute(pstmt);
+                boolean success = false;
+                try {
+                    pstmt = finishGenerating(context, pstmt, stmtSQL, stmt, null, null);
+                    if ((statementCache != null) && (stmts.size() == 1))
+                        statementCache.put(stmtSQL, pstmt);
+                    pstmt.sendDescription(context, false);
+                    rowsProcessed = executeStatement(pstmt, context, -1);
+                    success = true;
+                } finally {
+                    afterExecute(pstmt, local, success);
+                }
             }
         }
         readyForQuery();
@@ -660,7 +668,15 @@ public class PostgresServerConnection extends ServerSessionBase
             finally {
                 sessionMonitor.leaveStage();
             }
-            pstmt = generateStatement(sql, stmt, params, paramTypes);
+            pstmt = generateStatementStub(sql, stmt, params, paramTypes);
+            ServerTransaction local = beforeExecute(pstmt);
+            boolean success = false;
+            try {
+                pstmt = finishGenerating(context, pstmt, sql, stmt, params, paramTypes);
+                success = true;
+            } finally {
+                afterExecute(pstmt, local, success);
+            }
             if (statementCache != null)
                 statementCache.put(sql, pstmt);
         }
@@ -769,7 +785,7 @@ public class PostgresServerConnection extends ServerSessionBase
         logger.info("Execute: {}", pstmt);
         // TODO: save SQL in prepared statement and get it here.
         sessionMonitor.startStatement(null, startTime);
-        int rowsProcessed = executeStatement(pstmt, context, maxrows);
+        int rowsProcessed = executeStatementWithAutoTxn(pstmt, context, maxrows);
         sessionMonitor.endStatement(rowsProcessed);
         logger.debug("Execute complete");
         if (reqs.monitor().isQueryLogEnabled()) {
@@ -922,28 +938,16 @@ public class PostgresServerConnection extends ServerSessionBase
         statementCache = getStatementCache();
     }
 
-    protected PostgresStatement generateStatement(String sql, StatementNode stmt, 
-                                                  List<ParameterNode> params,
-                                                  int[] paramTypes) {
-        // Costing requires looking at AIS and potentially scanning index_stats rows
-        ServerTransaction local = (transaction == null) ? new ServerTransaction(this, true) : null;
-        try {
-            return generateStatementInternal(sql, stmt, params, paramTypes);
-        } finally {
-            if (local != null)
-                local.commit();
-        }
-    }
-
-    private PostgresStatement generateStatementInternal(String sql, StatementNode stmt,
-                                                        List<ParameterNode> params,
-                                                        int[] paramTypes) {
+    protected PostgresStatement generateStatementStub(String sql, StatementNode stmt,
+                                                      List<ParameterNode> params,
+                                                      int[] paramTypes) {
         try {
             sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
             for (PostgresStatementGenerator generator : parsedGenerators) {
-                PostgresStatement pstmt = generator.generate(this, sql, stmt, 
-                                                             params, paramTypes);
-                if (pstmt != null) return pstmt;
+                PostgresStatement pstmt = generator.generateStub(this, sql, stmt,
+                                                                 params, paramTypes);
+                if (pstmt != null)
+                    return pstmt;
             }
         }
         finally {
@@ -952,8 +956,42 @@ public class PostgresServerConnection extends ServerSessionBase
         throw new UnsupportedSQLException ("", stmt);
     }
 
+    protected PostgresStatement finishGenerating(PostgresQueryContext context, PostgresStatement pstmt,
+                                                 String sql, StatementNode stmt,
+                                                 List<ParameterNode> params,
+                                                 int[] paramTypes) {
+        try {
+            sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
+            updateAIS(context);
+            PostgresStatement newpstmt = pstmt.finishGenerating(this, sql, stmt, params, paramTypes);
+            if (!newpstmt.hasAISGeneration())
+                newpstmt.setAISGeneration(ais.getGeneration());
+            return newpstmt;
+        }
+        finally {
+            sessionMonitor.leaveStage();
+        }
+    }
+
+    protected int executeStatementWithAutoTxn(PostgresStatement pstmt, PostgresQueryContext context, int maxrows)
+            throws IOException {
+        ServerTransaction localTransaction = beforeExecute(pstmt);
+        int rowsProcessed = 0;
+        boolean success = false;
+        try {
+            executeStatement(pstmt, context, maxrows);
+            success = true;
+        }
+        finally {
+            afterExecute(pstmt, localTransaction, success);
+            sessionMonitor.leaveStage();
+        }
+        return rowsProcessed;
+    }
+
     protected int executeStatement(PostgresStatement pstmt, PostgresQueryContext context, int maxrows)
             throws IOException {
+        int rowsProcessed = 0;
         PersistitAdapter persistitAdapter = null;
         if ((transaction != null) &&
             // As opposed to WRITE_STEP_ISOLATED.
@@ -961,17 +999,17 @@ public class PostgresServerConnection extends ServerSessionBase
             persistitAdapter = (PersistitAdapter)adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
             persistitAdapter.withStepChanging(false);
         }
-        ServerTransaction localTransaction = beforeExecute(pstmt);
-        int rowsProcessed = 0;
-        boolean success = false;
         try {
+            if (pstmt.getAISGenerationMode() == ServerStatement.AISGenerationMode.NOT_ALLOWED) {
+                updateAIS(context);
+                if (pstmt.getAISGeneration() != ais.getGeneration())
+                    throw new StaleStatementException();
+            }
             session.setTimeoutAfterSeconds(getQueryTimeoutSec());
             sessionMonitor.enterStage(MonitorStage.EXECUTE);
             rowsProcessed = pstmt.execute(context, maxrows);
-            success = true;
         }
         finally {
-            afterExecute(pstmt, localTransaction, success);
             if (persistitAdapter != null)
                 persistitAdapter.withStepChanging(true); // Keep conservative default.
             sessionMonitor.leaveStage();
