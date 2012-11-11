@@ -36,12 +36,12 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
     private final Map<Integer, InternalTableStatus> tableStatusMap = new HashMap<Integer, InternalTableStatus>();
             
     @Override
-    public synchronized TableStatus getTableStatus(int tableID) {
-        return new InternalTableStatus(null);
+    public synchronized TableStatus createTableStatus(int tableID) {
+        return new InternalTableStatus(tableID, null);
     }
 
     @Override
-    public TableStatus getMemoryTableStatus(int tableID, MemoryTableFactory factory) {
+    public TableStatus getOrCreateMemoryTableStatus(int tableID, MemoryTableFactory factory) {
         return getInternalTableStatus(tableID, factory);
     }
 
@@ -55,13 +55,14 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
     private InternalTableStatus getInternalTableStatus(int tableID, MemoryTableFactory factory) {
         InternalTableStatus ts = tableStatusMap.get(tableID);
         if(ts == null) {
-            ts = new InternalTableStatus(factory);
+            ts = new InternalTableStatus(tableID, factory);
             tableStatusMap.put(tableID, ts);
         }
         return ts;
     }
 
     private static class InternalTableStatus implements TableStatus {
+        private final int expectedID;
         private final MemoryTableFactory factory;
         private long autoIncrement = 0;
         private int ordinal = 0;
@@ -69,7 +70,8 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
         private long uniqueID = 0;
         private RowDef rowDef = null;
 
-        public InternalTableStatus(MemoryTableFactory factory) {
+        public InternalTableStatus(int expectedID, MemoryTableFactory factory) {
+            this.expectedID = expectedID;
             this.factory = factory;
         }
 
@@ -116,6 +118,10 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
 
         @Override
         public synchronized void setRowDef(RowDef rowDef) {
+            if((rowDef != null) && (expectedID != rowDef.getRowDefId())) {
+                throw new IllegalArgumentException("RowDef ID " + rowDef.getRowDefId() +
+                                                   " does not match expected ID " + expectedID);
+            }
             this.rowDef = rowDef;
         }
 

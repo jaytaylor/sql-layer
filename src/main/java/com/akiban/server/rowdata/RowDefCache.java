@@ -157,9 +157,9 @@ public class RowDefCache {
     private RowDef createRowDefCommon(Table table, MemoryTableFactory factory) {
         final TableStatus status;
         if(factory == null) {
-            status = tableStatusCache.getTableStatus(table.getTableId());
+            status = tableStatusCache.createTableStatus(table.getTableId());
         } else {
-            status = tableStatusCache.getMemoryTableStatus(table.getTableId(), factory);
+            status = tableStatusCache.getOrCreateMemoryTableStatus(table.getTableId(), factory);
         }
         return new RowDef(table, status); // Hooks up table's rowDef too
     }

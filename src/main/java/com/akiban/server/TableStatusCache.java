@@ -32,22 +32,23 @@ import com.persistit.exception.PersistitInterruptedException;
 
 public interface TableStatusCache {
     /**
-     * Retrieve the, read-only, view of the table status for a given table.
-     * This method will instantiate a new TableStatus if one does not exist.
+     * Create a new TableStatus that will later be attached to the given
+     * tableID. It will not usable until {@link TableStatus#setRowDef(RowDef)}
+     * is called.
      * @param tableID ID of the table.
      * @return Associated TableStatus.
      */
-    TableStatus getTableStatus(int tableID);
+    TableStatus createTableStatus(int tableID);
 
     /**
-     * Retrieve the, read-only, view of the table status for a given memory
-     * table. This method will instantiate a new TableStatus if one does not
-     * exist.
+     * Retrieve, or create, a new table status for a memory table that will be
+     * serviced by the given factory. Unlike statuses returned from the
+     * {@link #createTableStatus(int)} method, these are saved by the TableStatusCache.
      * @param tableID ID of the table.
      * @param factory Factory providing rowCount.
      * @return Associated TableStatus;
      */
-    TableStatus getMemoryTableStatus(int tableID, MemoryTableFactory factory);
+    TableStatus getOrCreateMemoryTableStatus(int tableID, MemoryTableFactory factory);
 
     /**
      * Clean up any AIS associated state stored by this cache or any of its 

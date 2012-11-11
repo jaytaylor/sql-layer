@@ -47,18 +47,18 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     }
 
     @Override
-    public synchronized TableStatus getTableStatus(int tableID) {
-        return new AccumulatorStatus();
+    public synchronized TableStatus createTableStatus(int tableID) {
+        return new AccumulatorStatus(tableID);
     }
 
     @Override
-    public TableStatus getMemoryTableStatus(int tableID, MemoryTableFactory factory) {
+    public TableStatus getOrCreateMemoryTableStatus(int tableID, MemoryTableFactory factory) {
         MemoryStatus ts = memoryStatuses.get(tableID);
         if(ts == null) {
             if(factory == null) {
                 throw new IllegalArgumentException("Null factory");
             }
-            ts = new MemoryStatus(factory);
+            ts = new MemoryStatus(tableID, factory);
             memoryStatuses.put(tableID, ts);
         }
         return ts;
@@ -75,6 +75,13 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     // Internal
     //
 
+    private static void checkExpectedRowDefID(int expected, RowDef rowDef) {
+        if((rowDef != null) && (expected != rowDef.getRowDefId())) {
+            throw new IllegalArgumentException("RowDef ID " + rowDef.getRowDefId() +
+                                               " does not match expected ID " + expected);
+        }
+    }
+
     private Tree getTreeForRowDef(RowDef rowDef) {
         IndexDef indexDef = rowDef.getPKIndex().indexDef();
         assert indexDef != null : rowDef;
@@ -88,11 +95,16 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     }
 
     private class AccumulatorStatus implements TableStatus {
+        private final int expectedID;
         private volatile RowDef rowDef;
         private volatile AccumulatorAdapter ordinal;
         private volatile AccumulatorAdapter rowCount;
         private volatile AccumulatorAdapter uniqueID;
         private volatile AccumulatorAdapter autoIncrement;
+
+        public AccumulatorStatus(int expectedID) {
+            this.expectedID = expectedID;
+        }
 
         @Override
         public long getAutoIncrement() throws PersistitInterruptedException {
@@ -166,15 +178,18 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
 
         @Override
         public void setRowDef(RowDef rowDef) {
-            if(this.rowDef != null && this.rowDef != rowDef) {
-                throw new IllegalArgumentException("Changed RowDef");
+            if(rowDef == null) {
+                this.rowDef = null;
+                ordinal = rowCount = uniqueID = autoIncrement = null;
+            } else {
+                checkExpectedRowDefID(expectedID, rowDef);
+                this.rowDef = rowDef;
+                Tree tree = getTreeForRowDef(rowDef);
+                ordinal = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ORDINAL, treeService, tree);
+                rowCount = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, tree);
+                uniqueID = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, treeService, tree);
+                autoIncrement = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.AUTO_INC, treeService, tree);
             }
-            this.rowDef = rowDef;
-            Tree tree = getTreeForRowDef(rowDef);
-            ordinal = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ORDINAL, treeService, tree);
-            rowCount = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, tree);
-            uniqueID = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, treeService, tree);
-            autoIncrement = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.AUTO_INC, treeService, tree);
         }
 
         private void internalSetRowCount(long rowCountValue) throws PersistitInterruptedException {
@@ -187,11 +202,13 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     }
 
     private class MemoryStatus implements TableStatus {
+        private final int expectedID;
         private final MemoryTableFactory factory;
         private volatile RowDef rowDef;
         private volatile int ordinal;
 
-        private MemoryStatus(MemoryTableFactory factory) {
+        private MemoryStatus(int expectedID, MemoryTableFactory factory) {
+            this.expectedID = expectedID;
             this.factory = factory;
         }
 
@@ -262,6 +279,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
 
         @Override
         public void setRowDef(RowDef rowDef) {
+            checkExpectedRowDefID(expectedID, rowDef);
             this.rowDef = rowDef;
         }
     }
