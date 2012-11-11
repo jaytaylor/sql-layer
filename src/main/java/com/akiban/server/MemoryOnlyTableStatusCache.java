@@ -36,76 +36,33 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
     private final Map<Integer, InternalTableStatus> tableStatusMap = new HashMap<Integer, InternalTableStatus>();
             
     @Override
-    public synchronized void rowDeleted(int tableID) {
-        getInternalTableStatus(tableID).rowDeleted();
+    public synchronized TableStatus createTableStatus(int tableID) {
+        return new InternalTableStatus(tableID, null);
     }
 
     @Override
-    public synchronized void rowWritten(int tableID) {
-        getInternalTableStatus(tableID).rowWritten();
-    }
-
-    @Override
-    public synchronized void truncate(int tableID) {
-        getInternalTableStatus(tableID).truncate();
-    }
-
-    @Override
-    public synchronized void drop(int tableID) {
-        tableStatusMap.remove(tableID);
-    }
-
-    @Override
-    public synchronized void setAutoIncrement(int tableID, long value) {
-        getInternalTableStatus(tableID).setAutoIncrement(value);
-    }
-
-    @Override
-    public synchronized long createNewUniqueID(int tableID) {
-        return getInternalTableStatus(tableID).createNewUniqueID();
-    }
-
-    @Override
-    public synchronized void setOrdinal(int tableID, int value) {
-        getInternalTableStatus(tableID).setOrdinal(value);
-    }
-
-    @Override
-    public void setRowDef(int tableID, RowDef rowDef) {
-        getInternalTableStatus(tableID).setRowDef(rowDef);
-    }
-
-    @Override
-    public synchronized TableStatus getTableStatus(int tableID) {
-        return getInternalTableStatus(tableID, null);
-    }
-
-    @Override
-    public TableStatus getMemoryTableStatus(int tableID, MemoryTableFactory factory) {
+    public TableStatus getOrCreateMemoryTableStatus(int tableID, MemoryTableFactory factory) {
         return getInternalTableStatus(tableID, factory);
     }
 
     @Override
     public synchronized void detachAIS() {
-        for(Map.Entry<Integer, InternalTableStatus> entry : tableStatusMap.entrySet()) {
-            entry.getValue().setRowDef(null);
+        for(InternalTableStatus status : tableStatusMap.values()) {
+            status.setRowDef(null);
         }
-    }
-
-    private InternalTableStatus getInternalTableStatus(int tableID) {
-        return getInternalTableStatus(tableID, null);
     }
 
     private InternalTableStatus getInternalTableStatus(int tableID, MemoryTableFactory factory) {
         InternalTableStatus ts = tableStatusMap.get(tableID);
         if(ts == null) {
-            ts = new InternalTableStatus(factory);
+            ts = new InternalTableStatus(tableID, factory);
             tableStatusMap.put(tableID, ts);
         }
         return ts;
     }
 
     private static class InternalTableStatus implements TableStatus {
+        private final int expectedID;
         private final MemoryTableFactory factory;
         private long autoIncrement = 0;
         private int ordinal = 0;
@@ -113,7 +70,8 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
         private long uniqueID = 0;
         private RowDef rowDef = null;
 
-        public InternalTableStatus(MemoryTableFactory factory) {
+        public InternalTableStatus(int expectedID, MemoryTableFactory factory) {
+            this.expectedID = expectedID;
             this.factory = factory;
         }
 
@@ -158,35 +116,42 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
             return rowDef;
         }
 
-        synchronized void setRowDef(RowDef rowDef) {
+        @Override
+        public synchronized void setRowDef(RowDef rowDef) {
+            if((rowDef != null) && (expectedID != rowDef.getRowDefId())) {
+                throw new IllegalArgumentException("RowDef ID " + rowDef.getRowDefId() +
+                                                   " does not match expected ID " + expectedID);
+            }
             this.rowDef = rowDef;
         }
 
-        synchronized void rowDeleted() {
+        @Override
+        public synchronized void rowDeleted() {
             rowCount = Math.max(0, rowCount - 1);
         }
 
-        synchronized void rowWritten() {
+        @Override
+        public synchronized void rowWritten() {
             ++rowCount;
         }
 
-        synchronized void setAutoIncrement(long autoIncrement) {
+        @Override
+        public synchronized void setAutoIncrement(long autoIncrement) {
             this.autoIncrement = Math.max(this.autoIncrement, autoIncrement);
         }
 
-        synchronized void setOrdinal(int ordinal) {
+        @Override
+        public synchronized void setOrdinal(int ordinal) {
             this.ordinal = ordinal;
         }
 
-        synchronized void setUniqueID(long uniqueID) {
-            this.uniqueID = Math.max(uniqueID, uniqueID);
-        }
-
-        synchronized long createNewUniqueID() {
+        @Override
+        public synchronized long createNewUniqueID() {
             return ++uniqueID;
         }
 
-        synchronized void truncate() {
+        @Override
+        public synchronized void truncate() {
             autoIncrement = 0;
             uniqueID = 0;
             rowCount = 0;

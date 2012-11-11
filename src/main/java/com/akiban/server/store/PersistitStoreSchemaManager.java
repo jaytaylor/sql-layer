@@ -465,11 +465,15 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         AkibanInformationSchema newAIS = merge.getAIS();
         bumpTableVersions(newAIS, tableIDs);
 
+        // This is hacky. PK trees have to be preserved because there is no way to duplicate
+        // accumulator state that shouldn't change. But ordinals are stored in accumulators
+        // and a new group dictates a new ordinal. Resetting to 0 causes a new one to be assigned.
+        // Although ugly, it is safe because accumulators are transactional.
         for(ChangedTableDescription desc : alteredTables) {
             if(desc.isNewGroup()) {
-                UserTable table = newAIS.getUserTable(desc.getNewName());
+                UserTable oldTable = oldAIS.getUserTable(desc.getOldName());
                 try {
-                    treeService.getTableStatusCache().setOrdinal(table.getTableId(), 0);
+                    oldTable.rowDef().getTableStatus().setOrdinal(0);
                 } catch(PersistitException e) {
                     throw wrapPersistitException(session, e);
                 }
@@ -526,7 +530,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     private void deleteTableStatuses(List<Integer> tableIDs) throws PersistitException {
         for(Integer id : tableIDs) {
-            treeService.getTableStatusCache().drop(id);
+            //treeService.getTableStatusCache().drop(id);
             nameGenerator.removeTableID(id);
         }
     }
@@ -1421,7 +1425,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     public long getOldestActiveAISGeneration() {
         aisMap.claimShared();
         try {
-            long min = Long.MIN_VALUE;
+            long min = Long.MAX_VALUE;
             for(Long l : aisMap.getWrappedMap().keySet()) {
                 min = Math.min(min, l);
             }

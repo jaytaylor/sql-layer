@@ -68,14 +68,14 @@ public class PersistitTransactionService implements TransactionService {
 
     @Override
     public long getTransactionStartTimestamp(Session session) {
-        Transaction txn = getAndSetTransaction(session);
+        Transaction txn = getTransaction(session);
         requireActive(txn);
         return txn.getStartTimestamp();
     }
 
     @Override
     public void beginTransaction(Session session) {
-        Transaction txn = getAndSetTransaction(session);
+        Transaction txn = getTransaction(session);
         requireInactive(txn); // Do not want to use Persistit nesting
         try {
             txn.begin();
@@ -179,11 +179,7 @@ public class PersistitTransactionService implements TransactionService {
     }
 
     private Transaction getTransaction(Session session) {
-        return session.get(TXN_KEY); // Note: Assumes 1 session per thread
-    }
-
-    private Transaction getAndSetTransaction(Session session) {
-        Transaction txn = session.get(TXN_KEY);
+        Transaction txn = session.get(TXN_KEY); // Note: Assumes 1 session per thread
         if(txn == null) {
             txn = treeService.getDb().getTransaction();
             session.put(TXN_KEY, txn);
