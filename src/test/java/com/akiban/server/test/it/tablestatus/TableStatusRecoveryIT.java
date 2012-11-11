@@ -29,6 +29,7 @@ package com.akiban.server.test.it.tablestatus;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
@@ -38,7 +39,6 @@ import org.junit.Test;
 
 import com.akiban.server.TableStatistics;
 import com.akiban.server.TableStatus;
-import com.akiban.server.service.config.Property;
 import com.persistit.Persistit;
 
 public class TableStatusRecoveryIT extends ITBase {
@@ -147,8 +147,8 @@ public class TableStatusRecoveryIT extends ITBase {
         db.force();
         crashTestServices();
 
-        final Property property = new Property("akserver.datapath", datapath);
-        restartTestServices(Collections.singleton(property));
+        final Map<String, String> property = Collections.singletonMap("akserver.datapath", datapath);
+        restartTestServices(property);
     }
     
     private int getOrdinal(final int tableId) throws Exception {

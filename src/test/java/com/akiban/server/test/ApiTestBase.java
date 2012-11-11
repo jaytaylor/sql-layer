@@ -72,8 +72,6 @@ import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
-import com.akiban.server.store.PersistitStoreSchemaManager;
-import com.akiban.server.store.SchemaManager;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.t3expressions.TCastResolver;
 import com.akiban.server.types.ValueSource;
@@ -96,7 +94,6 @@ import org.junit.After;
 import org.junit.Before;
 
 import com.akiban.server.api.dml.scan.RowDataOutput;
-import com.akiban.server.service.config.Property;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.util.ListUtils;
@@ -239,7 +236,7 @@ public class ApiTestBase {
         assertTrue("some row updaters were left over: " + unfinishedRowUpdaters, unfinishedRowUpdaters.isEmpty());
         try {
             ConverterTestUtils.setGlobalTimezone("UTC");
-            Collection<Property> startupConfigProperties = startupConfigProperties();
+            Map<String, String> startupConfigProperties = startupConfigProperties();
             Map<String,String> propertiesForEquality = propertiesForEquality(startupConfigProperties);
             if (needServicesRestart || lastStartupConfigProperties == null ||
                     !lastStartupConfigProperties.equals(propertiesForEquality))
@@ -291,7 +288,7 @@ public class ApiTestBase {
         throw e;
     }
 
-    protected ServiceManager createServiceManager(Collection<Property> startupConfigProperties) {
+    protected ServiceManager createServiceManager(Map<String, String> startupConfigProperties) {
         TestConfigService.setOverrides(startupConfigProperties);
         return new GuicedServiceManager(serviceBindingsProvider());
     }
@@ -376,7 +373,7 @@ public class ApiTestBase {
         lastStartupConfigProperties = null;
     }
     
-    public final void restartTestServices(Collection<Property> properties) throws Exception {
+    public final void restartTestServices(Map<String, String> properties) throws Exception {
         ServiceManagerImpl.setServiceManager(null);
         sm = createServiceManager( properties );
         sm.startServices();
@@ -391,10 +388,10 @@ public class ApiTestBase {
         return sm.getSessionService().createSession();
     }
 
-    protected Collection<Property> defaultPropertiesToPreserveOnRestart() {
-        List<Property> properties = new ArrayList<Property>();
-        properties.add(new Property(TestConfigService.DATA_PATH_KEY, TestConfigService.dataDirectory().getAbsolutePath()));
-        return properties;
+    protected Map<String, String> defaultPropertiesToPreserveOnRestart() {
+        return Collections.singletonMap(
+                TestConfigService.DATA_PATH_KEY,
+                TestConfigService.dataDirectory().getAbsolutePath());
     }
 
     protected boolean defaultDoCleanOnUnload() {
@@ -405,7 +402,7 @@ public class ApiTestBase {
         safeRestartTestServices(defaultPropertiesToPreserveOnRestart());
     }
 
-    public final void safeRestartTestServices(Collection<Property> propertiesToPreserve) throws Exception {
+    public final void safeRestartTestServices(Map<String, String> propertiesToPreserve) throws Exception {
         /*
          * Need this because deleting Trees currently is not transactional.  Therefore after
          * restart we recover the previous trees and forget about the deleteTree operations.
@@ -500,14 +497,14 @@ public class ApiTestBase {
         aisGeneration = ddl().getGenerationAsInt(session());
     }
 
-    protected Collection<Property> startupConfigProperties() {
-        return Collections.emptyList();
+    protected Map<String, String> startupConfigProperties() {
+        return Collections.emptyMap();
     }
 
     // Property.equals() does not include the value.
-    protected Map<String,String> propertiesForEquality(Collection<Property> properties) {
+    protected Map<String,String> propertiesForEquality(Map<String, String> properties) {
         Map<String,String> result = new HashMap<String,String>(properties.size());
-        for (Property p : properties) {
+        for (Map.Entry<String, String> p : properties.entrySet()) {
             result.put(p.getKey(), p.getValue());
         }
         return result;
@@ -518,10 +515,11 @@ public class ApiTestBase {
      * overriding the {@link #startupConfigProperties()} and/or
      * {@link #serviceBindingsProvider()} methods.
      */
-    protected static Collection<Property> uniqueStartupConfigProperties(Class clazz) {
-        final Collection<Property> properties = new ArrayList<Property>();
-        properties.add(new Property("test.services", clazz.getName()));
-        return properties;
+    protected static Map<String, String> uniqueStartupConfigProperties(Class clazz) {
+        return Collections.singletonMap(
+                "test.services",
+                clazz.getName()
+        );
     }
 
     protected AkibanInformationSchema createFromDDL(String schema, String ddl) {

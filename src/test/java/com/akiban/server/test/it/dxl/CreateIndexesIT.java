@@ -28,7 +28,6 @@ package com.akiban.server.test.it.dxl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +56,6 @@ import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.ProtectedIndexException;
 
 import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.config.Property;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.dxl.DXLServiceImpl;
 import com.akiban.server.service.lock.LockService;
@@ -89,7 +87,7 @@ public final class CreateIndexesIT extends ITBase {
     }
 
     @Override
-    protected Collection<Property> startupConfigProperties() {
+    protected Map<String, String> startupConfigProperties() {
         return uniqueStartupConfigProperties(getClass());
     }
 
