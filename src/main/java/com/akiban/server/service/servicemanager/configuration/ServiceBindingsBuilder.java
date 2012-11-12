@@ -29,6 +29,7 @@ package com.akiban.server.service.servicemanager.configuration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -44,12 +45,16 @@ class ServiceBindingsBuilder {
         binding.setImplementingClass(className);
     }
 
-    public Collection<ServiceBinding> getAllBindings() {
+    public Collection<ServiceBinding> getAllBindings(boolean strict) {
         markSectionEnd();
         Collection<ServiceBinding> all = new ArrayList<ServiceBinding>(bindings.values());
-        for (ServiceBinding binding : all) {
-            if (binding.isDirectlyRequired() && (binding.getImplementingClassName() == null) ) {
-                throw new ServiceConfigurationException(binding.getInterfaceName() + " is required but not bound");
+        for (Iterator<ServiceBinding> iter = all.iterator(); iter.hasNext(); ) {
+            ServiceBinding binding = iter.next();
+            if (binding.isDirectlyRequired() && (binding.getImplementingClassName() == null)) {
+                if (strict)
+                    throw new ServiceConfigurationException(binding.getInterfaceName() + " is required but not bound");
+                else
+                    iter.remove();
             }
         }
         return all;

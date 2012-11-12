@@ -81,8 +81,8 @@ public final class DefaultServiceConfigurationHandler implements ServiceConfigur
 
     // DefaultServiceConfigurationHandler interface
 
-    public Collection<ServiceBinding> serviceBindings() {
-        return builder.getAllBindings();
+    public Collection<ServiceBinding> serviceBindings(boolean strict) {
+        return builder.getAllBindings(strict);
     }
 
     public List<String> priorities() {

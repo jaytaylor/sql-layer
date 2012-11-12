@@ -26,7 +26,6 @@
 
 package com.akiban.server.service.plugins;
 
-import com.akiban.server.service.servicemanager.configuration.BindingsConfigurationLoader;
 import com.google.common.base.Supplier;
 
 import java.util.Collection;

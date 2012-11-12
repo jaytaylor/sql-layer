@@ -216,10 +216,11 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         // ... followed by any command-line overrides.
         new PropertyBindings(System.getProperties()).loadInto(configurationHandler);
 
-        final Collection<ServiceBinding> bindings = configurationHandler.serviceBindings();
-
+        Collection<ServiceBinding> bindings = configurationHandler.serviceBindings(false);
         BindingsConfigurationLoader pluginsConfigLoader = getPluginsConfigurationLoader(bindings);
         pluginsConfigLoader.loadInto(configurationHandler);
+
+        bindings = configurationHandler.serviceBindings(true);
 
         try {
             guicer = Guicer.forServices(ServiceManager.class, this,
