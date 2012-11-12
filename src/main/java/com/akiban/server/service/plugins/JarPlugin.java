@@ -26,16 +26,14 @@
 
 package com.akiban.server.service.plugins;
 
-import com.akiban.server.error.ServiceStartupException;
 import com.google.common.io.Closeables;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.Properties;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
@@ -61,6 +59,13 @@ public final class JarPlugin extends Plugin {
     }
 
     @Override
+    public Reader getServiceConfigsReader() throws IOException {
+        JarFile jar = new JarFile(pluginJar);
+        ZipEntry servicesConfig = jar.getEntry(SERVICE_CONFIG_PATH);
+        return new BufferedReader(new InputStreamReader(jar.getInputStream(servicesConfig)));
+    }
+
+    @Override
     public String toString() {
         return pluginJar.getAbsolutePath();
     }
@@ -71,5 +76,5 @@ public final class JarPlugin extends Plugin {
 
     private final File pluginJar;
     private static final String PROPERTY_FILE_PATH = "com/akiban/server/plugin-configuration.properties";
-    private static final Logger logger = LoggerFactory.getLogger(JarPlugin.class);
+    private static final String SERVICE_CONFIG_PATH = "com/akiban/server/plugin-services.yaml";
 }

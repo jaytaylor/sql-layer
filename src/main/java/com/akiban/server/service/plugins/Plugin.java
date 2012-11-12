@@ -26,10 +26,14 @@
 
 package com.akiban.server.service.plugins;
 
+import java.io.IOException;
+import java.io.Reader;
 import java.util.Map;
 import java.util.Properties;
 
 public abstract class Plugin {
+
+    public abstract Reader getServiceConfigsReader() throws IOException;
     protected abstract Properties readPropertiesRaw() throws Exception;
 
     public final Properties readProperties() {

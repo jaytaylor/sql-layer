@@ -27,6 +27,7 @@
 package com.akiban.server.service.servicemanager;
 
 import com.akiban.server.AkServerInterface;
+import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.config.ConfigurationService;
@@ -34,6 +35,8 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.monitor.MonitorService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.jmx.JmxRegistryService;
+import com.akiban.server.service.plugins.Plugin;
+import com.akiban.server.service.plugins.PluginsFinder;
 import com.akiban.server.service.servicemanager.configuration.BindingsConfigurationLoader;
 import com.akiban.server.service.servicemanager.configuration.DefaultServiceConfigurationHandler;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
@@ -214,8 +217,12 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         new PropertyBindings(System.getProperties()).loadInto(configurationHandler);
 
         final Collection<ServiceBinding> bindings = configurationHandler.serviceBindings();
+
+        BindingsConfigurationLoader pluginsConfigLoader = getPluginsConfigurationLoader(bindings);
+        pluginsConfigLoader.loadInto(configurationHandler);
+
         try {
-            guicer = Guicer.forServices(ServiceManager.class, this, 
+            guicer = Guicer.forServices(ServiceManager.class, this,
                                         bindings, configurationHandler.priorities());
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
@@ -223,6 +230,49 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
     }
 
     // private methods
+
+    private BindingsConfigurationLoader getPluginsConfigurationLoader(Collection<ServiceBinding> bindings) {
+        ServiceBinding pluginsFinderBinding = null;
+        for (ServiceBinding binding : bindings) {
+            if (PluginsFinder.class.getCanonicalName().equals(binding.getInterfaceName())) {
+                if (pluginsFinderBinding != null)
+                    throw new ServiceStartupException("multiple bindings found for " + PluginsFinder.class);
+                pluginsFinderBinding = binding;
+            }
+        }
+        if (pluginsFinderBinding == null)
+            return emptyConfigurationLoader;
+        String pluginsFinderClassName = pluginsFinderBinding.getImplementingClassName();
+        Class<?> pluginsFinderClass;
+        try {
+            pluginsFinderClass = Class.forName(pluginsFinderClassName);
+        }
+        catch (ClassNotFoundException e) {
+            throw new ServiceStartupException("couldn't get Class object for " + pluginsFinderClassName);
+        }
+        PluginsFinder pluginsFinder;
+        try {
+            pluginsFinder = (PluginsFinder) pluginsFinderClass.newInstance();
+        }
+        catch (Exception e) {
+            logger.error("while instantiating plugins finder", e);
+            logger.error("plugins finder must have a no-arg constructor, though there may be something else wrong");
+            throw new ServiceStartupException("error while instantiating plugins finder. please check logs");
+        }
+        CompositeConfigurationLoader compositeLoader = new CompositeConfigurationLoader();
+        for (Plugin plugin : pluginsFinder.get()) {
+            try {
+                YamlConfiguration pluginConfig
+                        = new YamlConfiguration(plugin.toString(), plugin.getServiceConfigsReader());
+                compositeLoader.add(pluginConfig);
+            }
+            catch (IOException e) {
+                logger.error("while reading services config for " + plugin, e);
+                throw new ServiceStartupException("error while reading services config for " + plugin);
+            }
+        }
+        return compositeLoader;
+    }
 
     boolean isRequired(Class<?> theClass) {
         return guicer.isRequired(theClass);
@@ -486,6 +536,26 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         }
 
         private final URL url;
+    }
+
+    private static final BindingsConfigurationLoader emptyConfigurationLoader = new BindingsConfigurationLoader() {
+        @Override
+        public void loadInto(ServiceConfigurationHandler config) {}
+    };
+
+    private static class CompositeConfigurationLoader implements BindingsConfigurationLoader {
+
+        public void add(BindingsConfigurationLoader loader) {
+            loaders.add(loader);
+        }
+
+        @Override
+        public void loadInto(ServiceConfigurationHandler config) {
+            for (BindingsConfigurationLoader loader : loaders)
+                loader.loadInto(config);
+        }
+
+        private final List<BindingsConfigurationLoader> loaders = new ArrayList<BindingsConfigurationLoader>();
     }
 
     private static class ManualServiceBinding implements BindingsConfigurationLoader {

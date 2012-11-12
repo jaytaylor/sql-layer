@@ -29,6 +29,7 @@ package com.akiban.server.service.plugins;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
@@ -99,6 +100,11 @@ public final class PluginTest {
         }
 
         @Override
+        public Reader getServiceConfigsReader() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public String toString() {
             return "Dummy" + properties;
         }
@@ -114,6 +120,11 @@ public final class PluginTest {
     private static class ExceptionalPlugin extends Plugin {
         @Override
         protected Properties readPropertiesRaw() throws IOException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Reader getServiceConfigsReader() {
             throw new UnsupportedOperationException();
         }
     }
