@@ -81,10 +81,8 @@ public interface TableStatus {
      */
     long getUniqueID() throws PersistitInterruptedException;
 
-    /**
-     * @return RowDef of the associated table.
-     */
-    RowDef getRowDef();
+    /** @return The table ID this status is for */
+    int getTableID();
 
     void setRowCount(long rowCount);
 }

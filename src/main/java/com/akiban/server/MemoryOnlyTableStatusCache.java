@@ -68,7 +68,6 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
         private int ordinal = 0;
         private long rowCount = 0;
         private long uniqueID = 0;
-        private RowDef rowDef = null;
 
         public InternalTableStatus(int expectedID, MemoryTableFactory factory) {
             this.expectedID = expectedID;
@@ -112,8 +111,8 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public synchronized RowDef getRowDef() {
-            return rowDef;
+        public int getTableID() {
+            return expectedID;
         }
 
         @Override
@@ -122,7 +121,6 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
                 throw new IllegalArgumentException("RowDef ID " + rowDef.getRowDefId() +
                                                    " does not match expected ID " + expectedID);
             }
-            this.rowDef = rowDef;
         }
 
         @Override
