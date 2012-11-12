@@ -96,7 +96,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
 
     private class AccumulatorStatus implements TableStatus {
         private final int expectedID;
-        private volatile RowDef rowDef;
         private volatile AccumulatorAdapter ordinal;
         private volatile AccumulatorAdapter rowCount;
         private volatile AccumulatorAdapter uniqueID;
@@ -142,8 +141,8 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public RowDef getRowDef() {
-            return rowDef;
+        public int getTableID() {
+            return expectedID;
         }
 
         @Override
@@ -179,11 +178,9 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         @Override
         public void setRowDef(RowDef rowDef) {
             if(rowDef == null) {
-                this.rowDef = null;
                 ordinal = rowCount = uniqueID = autoIncrement = null;
             } else {
                 checkExpectedRowDefID(expectedID, rowDef);
-                this.rowDef = rowDef;
                 Tree tree = getTreeForRowDef(rowDef);
                 ordinal = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ORDINAL, treeService, tree);
                 rowCount = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, tree);
@@ -204,7 +201,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     private class MemoryStatus implements TableStatus {
         private final int expectedID;
         private final MemoryTableFactory factory;
-        private volatile RowDef rowDef;
         private volatile int ordinal;
 
         private MemoryStatus(int expectedID, MemoryTableFactory factory) {
@@ -238,8 +234,8 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public RowDef getRowDef() {
-            return rowDef;
+        public int getTableID() {
+            return expectedID;
         }
 
         @Override
@@ -280,7 +276,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         @Override
         public void setRowDef(RowDef rowDef) {
             checkExpectedRowDefID(expectedID, rowDef);
-            this.rowDef = rowDef;
         }
     }
 }
