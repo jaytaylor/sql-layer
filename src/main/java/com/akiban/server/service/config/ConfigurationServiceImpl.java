@@ -56,10 +56,8 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     public static final String CONFIG_DIR_PROP = "akserver.config_dir";
     public static final String CONFIG_SERVER = "/config/server.properties";
 
-    private Map<String,String> properties = null;
+    private volatile Map<String,String> properties = null;
     private final Set<String> requiredKeys = new HashSet<String>();
-
-    private final Object INTERNAL_LOCK = new Object();
     
     private volatile long queryTimeoutSec = -1L; // No timeout
 
@@ -135,12 +133,10 @@ public class ConfigurationServiceImpl implements ConfigurationService,
 
     @Override
     public final void start() throws ServiceStartupException {
-        synchronized (INTERNAL_LOCK) {
-            if (properties == null) {
-                properties = null;
-                Map<String, String> newMap = internalLoadProperties();
-                properties = Collections.unmodifiableMap(newMap);
-            }
+        if (properties == null) {
+            properties = null;
+            Map<String, String> newMap = internalLoadProperties();
+            properties = Collections.unmodifiableMap(newMap);
             String initiallyEnabledTaps = properties.get(INITIALLY_ENABLED_TAPS);
             if (initiallyEnabledTaps != null) {
                 Tap.setInitiallyEnabled(initiallyEnabledTaps);
@@ -153,9 +149,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
         try {
             unloadProperties();
         } finally {
-            synchronized (INTERNAL_LOCK) {
-                properties = null;
-            }
+            properties = null;
         }
     }
     
@@ -163,9 +157,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     @Override
     public void crash() {
         // Note: do not call unloadProperties().
-        synchronized (INTERNAL_LOCK) {
-            properties = null;
-        }
+        properties = null;
     }
 
     @Override
@@ -327,10 +319,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     }
 
     private Map<String, String> internalGetProperties() {
-        final Map<String, String> ret;
-        synchronized (INTERNAL_LOCK) {
-            ret = properties;
-        }
+        final Map<String, String> ret = properties;
         if (ret == null) {
             throw new ServiceNotStartedException("Configuration");
         }
