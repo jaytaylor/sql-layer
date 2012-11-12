@@ -528,8 +528,8 @@ public class UserTable extends Table
                                         Types.BIGINT); // adds column to table
         pkColumn.setNullable(false);
         // TODO: Needs to be externally provided.
-        // See bug1000804. Since these are never really used, and aren't unique anyway, always use -1
-        int indexID = -1;
+        // See bug1000804. Since these are never really used, and aren't unique anyway, always use 0
+        int indexID = 0;
         TableIndex pkIndex = TableIndex.create(ais,
                                                this,
                                                Index.PRIMARY_KEY_CONSTRAINT,
