@@ -337,6 +337,8 @@ public abstract class Index implements Traversable
     private static Integer extractIndexId(Integer idAndFlags) {
         if (idAndFlags == null)
             return null;
+        if (idAndFlags < 0)
+            throw new IllegalArgumentException("Negative idAndFlags: " + idAndFlags);
         return idAndFlags & INDEX_ID_BITS;
     }
 
