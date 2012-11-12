@@ -24,42 +24,34 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service.tree;
+package com.akiban.server.service.plugins;
 
-import static org.junit.Assert.assertNotNull;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 
-import java.util.Properties;
+public final class HomeDirPluginsFinder implements PluginsFinder {
 
-import com.akiban.server.service.config.TestConfigService;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import com.akiban.server.service.Service;
-import com.akiban.server.service.config.ConfigurationService;
-
-public class TreeServiceImplTest {
-
-    private final static int MEGA = 1024 * 1024;
-
-    private TestConfigService configService;
-
-    @Before
-    public void startConfiguration() throws Exception {
-        configService = new TestConfigService();
-        configService.start();
+    @Override
+    public Collection<? extends Plugin> get() {
+        File pluginsFile = new File(pluginsPath);
+        Collection<Plugin> plugins;
+        if (!pluginsFile.exists()) {
+            plugins = Collections.emptyList();
+        }
+        else {
+            File[] files = pluginsFile.listFiles();
+            if (files == null) {
+                throw new RuntimeException("'" + pluginsPath + "' must be a directory");
+            }
+            plugins = new ArrayList<Plugin>(files.length);
+            for (File pluginJar : files) {
+                plugins.add(new JarPlugin(pluginJar));
+            }
+        }
+        return plugins;
     }
 
-    @After
-    public void stopConfiguration() throws Exception {
-        configService.start();
-    }
-
-    @Test
-    public void startupPropertiesTest() throws Exception {
-        final Properties properties = TreeServiceImpl.setupPersistitProperties(configService);
-        assertNotNull(properties.getProperty("datapath"));
-        assertNotNull(properties.getProperty("buffer.memory.16384"));
-    }
-    
+    private static final String pluginsPath = "plugins";
 }

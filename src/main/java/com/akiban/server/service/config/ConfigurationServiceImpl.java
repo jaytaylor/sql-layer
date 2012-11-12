@@ -44,7 +44,10 @@ import com.akiban.server.error.ServiceNotStartedException;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
+import com.akiban.server.service.plugins.Plugin;
+import com.akiban.server.service.plugins.PluginsFinder;
 import com.akiban.util.tap.Tap;
+import com.google.inject.Inject;
 
 public class ConfigurationServiceImpl implements ConfigurationService,
         ConfigurationServiceMXBean, JmxManageable,
@@ -57,9 +60,15 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     public static final String CONFIG_SERVER = "/config/server.properties";
 
     private volatile Map<String,String> properties = null;
+    private final PluginsFinder pluginsFinder;
     private final Set<String> requiredKeys = new HashSet<String>();
-    
+
     private volatile long queryTimeoutSec = -1L; // No timeout
+
+    @Inject
+    public ConfigurationServiceImpl(PluginsFinder pluginsFinder) {
+        this.pluginsFinder = pluginsFinder;
+    }
 
     @Override
     public long queryTimeoutSec()
@@ -134,8 +143,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     @Override
     public final void start() throws ServiceStartupException {
         if (properties == null) {
-            Map<String, String> newMap = internalLoadProperties();
-            properties = Collections.unmodifiableMap(newMap);
+            properties = internalLoadProperties();
             String initiallyEnabledTaps = properties.get(INITIALLY_ENABLED_TAPS);
             if (initiallyEnabledTaps != null) {
                 Tap.setInitiallyEnabled(initiallyEnabledTaps);
@@ -196,10 +204,19 @@ public class ConfigurationServiceImpl implements ConfigurationService,
         Properties props = null;
 
         props = loadResourceProperties(props);
+        for (Plugin plugin : pluginsFinder.get()) {
+            props = loadPluginProperties(props, plugin);
+        }
         props = loadSystemProperties(props);
         props = loadConfigDirProperties(props);
 
         return propertiesToMap(props);
+    }
+
+    private Properties loadPluginProperties(Properties mergeInto, Plugin plugin) {
+        Properties pluginProperties = plugin.readProperties();
+        mergeInto.putAll(pluginProperties);
+        return mergeInto;
     }
 
     /**
