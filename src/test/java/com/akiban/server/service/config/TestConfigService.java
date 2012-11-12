@@ -49,11 +49,6 @@ public class TestConfigService extends ConfigurationServiceImpl {
     }
 
     @Override
-    protected boolean shouldLoadConfigDirProperties() {
-        return false;
-    }
-
-    @Override
     public boolean testing()
     {
         return true;

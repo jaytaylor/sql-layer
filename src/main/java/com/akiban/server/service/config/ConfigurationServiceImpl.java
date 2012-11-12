@@ -134,7 +134,6 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     @Override
     public final void start() throws ServiceStartupException {
         if (properties == null) {
-            properties = null;
             Map<String, String> newMap = internalLoadProperties();
             properties = Collections.unmodifiableMap(newMap);
             String initiallyEnabledTaps = properties.get(INITIALLY_ENABLED_TAPS);
@@ -198,9 +197,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
 
         props = loadResourceProperties(props);
         props = loadSystemProperties(props);
-        if (shouldLoadConfigDirProperties()) {
-            props = loadConfigDirProperties(props);
-        }
+        props = loadConfigDirProperties(props);
 
         return propertiesToMap(props);
     }
@@ -212,10 +209,6 @@ public class ConfigurationServiceImpl implements ConfigurationService,
      */
     protected void unloadProperties() {
 
-    }
-
-    protected boolean shouldLoadConfigDirProperties() {
-        return true;
     }
 
     protected Set<String> getRequiredKeys() {
