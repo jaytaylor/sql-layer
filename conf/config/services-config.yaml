@@ -12,5 +12,4 @@
     - com.akiban.server.service.is.BasicInfoSchemaTablesService
     - com.akiban.server.service.is.StorageSchemaTablesService
     - com.akiban.server.service.is.ServerSchemaTablesService
-    - com.akiban.server.plugins.hello.HelloService
 #   - com.akiban.server.service.ui.SwingConsoleService  # Presents a simple UI
