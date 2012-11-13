@@ -4,7 +4,7 @@
     <groupId>com.akiban</groupId>
     <artifactId>akiban-server</artifactId>
     <packaging>jar</packaging>
-    <version>1.4.3-SNAPSHOT</version>
+    <version>1.4.3</version>
     <name>akiban-server</name>
     <properties>
         <!-- this is the default version number, hudson job sets this to the official number -->
@@ -71,12 +71,12 @@
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-persistit</artifactId>
-            <version>3.2.1-SNAPSHOT</version>
+            <version>3.2.1</version>
         </dependency>
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-sql-parser</artifactId>
-            <version>1.0.10-SNAPSHOT</version>
+            <version>1.0.10</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -98,7 +98,7 @@
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-sql-parser</artifactId>
-            <version>1.0.10-SNAPSHOT</version>
+            <version>1.0.10</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>

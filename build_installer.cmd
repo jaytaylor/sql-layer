@@ -74,7 +74,7 @@ ECHO -tests.jar >target\xclude
 ECHO -sources.jar >>target\xclude
 XCOPY target\akiban-server-*.jar target\isstage\lib /EXCLUDE:target\xclude
 COPY target\dependency\* target\isstage\lib\server
-XCOPY target\client-tools\target\akiban-client-tools-*.jar target\isstage\lib /EXCLUDE:target\xclude
+XCOPY target\client-tools\target\akiban-client-tools-1.3.3.jar target\isstage\lib /EXCLUDE:target\xclude
 COPY target\client-tools\target\dependency\* target\isstage\lib\client
 
 CD target\isstage
