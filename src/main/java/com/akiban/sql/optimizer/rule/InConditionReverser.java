@@ -52,6 +52,7 @@ public class InConditionReverser extends BaseRule
     public void apply(PlanContext planContext) {
         List<TopLevelSubqueryCondition> conds = 
             new ConditionFinder().find(planContext.getPlan());
+        Collections.reverse(conds); // Transform depth first.
         for (TopLevelSubqueryCondition cond : conds) {
             if (cond.subqueryCondition instanceof AnyCondition)
                 convert(cond.select, cond.selectElement, 
