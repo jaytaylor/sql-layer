@@ -33,6 +33,7 @@ import java.util.Properties;
 
 public abstract class Plugin {
 
+    public abstract ClassLoader getClassLoader();
     public abstract Reader getServiceConfigsReader() throws IOException;
     protected abstract Properties readPropertiesRaw() throws Exception;
 

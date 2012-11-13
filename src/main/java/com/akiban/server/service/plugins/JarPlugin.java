@@ -34,11 +34,26 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Properties;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
 public final class JarPlugin extends Plugin {
+
+    @Override
+    public ClassLoader getClassLoader() {
+        URL url;
+        try {
+            url = pluginJar.toURI().toURL();
+        }
+        catch (MalformedURLException e) {
+            throw new PluginException(e);
+        }
+        return new URLClassLoader(new URL[] { url });
+    }
 
     @Override
     protected Properties readPropertiesRaw() throws IOException {

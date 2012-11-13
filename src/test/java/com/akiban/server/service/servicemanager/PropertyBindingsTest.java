@@ -113,7 +113,7 @@ public final class PropertyBindingsTest {
 
     private static class StringsConfig implements ServiceConfigurationHandler {
         @Override
-        public void bind(String interfaceName, String implementingClassName) {
+        public void bind(String interfaceName, String implementingClassName, ClassLoader ignored) {
             messages.add("bind " + interfaceName + " to " + implementingClassName);
         }
 

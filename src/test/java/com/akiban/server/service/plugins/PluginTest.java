@@ -100,6 +100,11 @@ public final class PluginTest {
         }
 
         @Override
+        public ClassLoader getClassLoader() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public Reader getServiceConfigsReader() {
             throw new UnsupportedOperationException();
         }
@@ -118,6 +123,12 @@ public final class PluginTest {
     }
 
     private static class ExceptionalPlugin extends Plugin {
+
+        @Override
+        public ClassLoader getClassLoader() {
+            throw new UnsupportedOperationException();
+        }
+
         @Override
         protected Properties readPropertiesRaw() throws IOException {
             throw new UnsupportedOperationException();

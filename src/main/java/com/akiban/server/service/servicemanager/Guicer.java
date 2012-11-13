@@ -415,8 +415,9 @@ public final class Guicer {
         }
 
         public ResolvedServiceBinding(ServiceBinding serviceBinding) throws ClassNotFoundException {
-            this.serviceInterfaceClass = Class.forName(serviceBinding.getInterfaceName());
-            this.serviceImplementationClass = Class.forName(serviceBinding.getImplementingClassName());
+            ClassLoader loader = serviceBinding.getClassLoader();
+            this.serviceInterfaceClass = Class.forName(serviceBinding.getInterfaceName(), true, loader);
+            this.serviceImplementationClass = Class.forName(serviceBinding.getImplementingClassName(), true, loader);
             if (!this.serviceInterfaceClass.isAssignableFrom(this.serviceImplementationClass)) {
                 throw new IllegalArgumentException(this.serviceInterfaceClass + " is not assignable from "
                         + this.serviceImplementationClass);

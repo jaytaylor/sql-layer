@@ -190,7 +190,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
         // Install the default, no-op JMX registry; this is a special case, since we want to use it
         // as we start each service.
-        configurationHandler.bind(JmxRegistryService.class.getName(), NoOpJmxRegistry.class.getName());
+        configurationHandler.bind(JmxRegistryService.class.getName(), NoOpJmxRegistry.class.getName(), null);
 
         // Next, load each element in the provider...
         for (BindingsConfigurationLoader loader : bindingsConfigurationProvider.loaders()) {
@@ -263,8 +263,10 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         CompositeConfigurationLoader compositeLoader = new CompositeConfigurationLoader();
         for (Plugin plugin : pluginsFinder.get()) {
             try {
-                YamlConfiguration pluginConfig
-                        = new YamlConfiguration(plugin.toString(), plugin.getServiceConfigsReader());
+                YamlConfiguration pluginConfig = new YamlConfiguration(
+                        plugin.toString(),
+                        plugin.getServiceConfigsReader(),
+                        plugin.getClassLoader());
                 compositeLoader.add(pluginConfig);
             }
             catch (IOException e) {
@@ -512,7 +514,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
             }
             RuntimeException exception = null;
             try {
-                new YamlConfiguration(url.toString(), defaultServicesReader).loadInto(config);
+                new YamlConfiguration(url.toString(), defaultServicesReader, null).loadInto(config);
             } catch (RuntimeException e) {
                 exception = e;
             } finally {
@@ -565,7 +567,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
         @Override
         public void loadInto(ServiceConfigurationHandler config) {
-            config.bind(interfaceName, implementationName);
+            config.bind(interfaceName, implementationName, null);
             if (required)
                 config.require(interfaceName);
         }
@@ -601,7 +603,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
                     if (theImpl.length() == 0) {
                         throw new IllegalArgumentException("-D" + property + " doesn't have a valid value");
                     }
-                    config.bind(theInterface, theImpl);
+                    config.bind(theInterface, theImpl, null);
                 } else if (property.startsWith(REQUIRE)) {
                     String theInterface = property.substring(REQUIRE.length());
                     String value = properties.getProperty(property);
