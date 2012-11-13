@@ -55,6 +55,7 @@ import javax.management.ObjectName;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -261,12 +262,17 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
             throw new ServiceStartupException("error while instantiating plugins finder. please check logs");
         }
         CompositeConfigurationLoader compositeLoader = new CompositeConfigurationLoader();
-        for (Plugin plugin : pluginsFinder.get()) {
+        Collection<? extends Plugin> plugins = pluginsFinder.get();
+        List<URL> pluginUrls = new ArrayList<URL>(plugins.size());
+        for (Plugin plugin : plugins)
+            pluginUrls.add(plugin.getClassLoaderURL());
+        ClassLoader pluginsClassloader = new URLClassLoader(pluginUrls.toArray(new URL[pluginUrls.size()]));
+        for (Plugin plugin : plugins) {
             try {
                 YamlConfiguration pluginConfig = new YamlConfiguration(
                         plugin.toString(),
                         plugin.getServiceConfigsReader(),
-                        plugin.getClassLoader());
+                        pluginsClassloader);
                 compositeLoader.add(pluginConfig);
             }
             catch (IOException e) {

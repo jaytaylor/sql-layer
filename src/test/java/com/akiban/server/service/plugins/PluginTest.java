@@ -30,6 +30,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.net.URL;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
@@ -100,7 +101,7 @@ public final class PluginTest {
         }
 
         @Override
-        public ClassLoader getClassLoader() {
+        public URL getClassLoaderURL() {
             throw new UnsupportedOperationException();
         }
 
@@ -125,7 +126,7 @@ public final class PluginTest {
     private static class ExceptionalPlugin extends Plugin {
 
         @Override
-        public ClassLoader getClassLoader() {
+        public URL getClassLoaderURL() {
             throw new UnsupportedOperationException();
         }
 

@@ -28,12 +28,13 @@ package com.akiban.server.service.plugins;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.net.URL;
 import java.util.Map;
 import java.util.Properties;
 
 public abstract class Plugin {
 
-    public abstract ClassLoader getClassLoader();
+    public abstract URL getClassLoaderURL();
     public abstract Reader getServiceConfigsReader() throws IOException;
     protected abstract Properties readPropertiesRaw() throws Exception;
 

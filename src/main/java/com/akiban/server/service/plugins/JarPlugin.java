@@ -44,15 +44,13 @@ import java.util.zip.ZipEntry;
 public final class JarPlugin extends Plugin {
 
     @Override
-    public ClassLoader getClassLoader() {
-        URL url;
+    public URL getClassLoaderURL() {
         try {
-            url = pluginJar.toURI().toURL();
+            return pluginJar.toURI().toURL();
         }
         catch (MalformedURLException e) {
             throw new PluginException(e);
         }
-        return new URLClassLoader(new URL[] { url });
     }
 
     @Override
