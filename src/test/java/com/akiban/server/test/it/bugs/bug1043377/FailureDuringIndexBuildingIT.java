@@ -41,7 +41,6 @@ import com.google.inject.Inject;
 import org.junit.Test;
 import java.util.Collection;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
@@ -62,6 +61,7 @@ public final class FailureDuringIndexBuildingIT extends ITBase {
     public void injectedFailure() throws Throwable {
         final String SCHEMA = "test";
         final String TABLE = "t1";
+        final String INDEX = "lat_lon";
         int tid = createTable(SCHEMA, TABLE, "userID int not null primary key, lat decimal(11,7), lon decimal(11,7)");
         writeRows(
                 createNewRow(tid, 1L, "20.5", "11.0"),
@@ -70,7 +70,7 @@ public final class FailureDuringIndexBuildingIT extends ITBase {
         );
 
         try {
-            createIndex(SCHEMA, TABLE, "lat_lon", "lat", "lon");
+            createIndex(SCHEMA, TABLE, INDEX, "lat", "lon");
             fail("Expected exception");
         } catch(Throwable t) {
             if(t != EXPECTED_EXCEPTION) {
@@ -79,7 +79,7 @@ public final class FailureDuringIndexBuildingIT extends ITBase {
         }
 
         UserTable table = getUserTable(SCHEMA, TABLE);
-        assertNull("Index should not be present", table.getIndex("lat_long"));
+        assertNull("Index should not be present", table.getIndex(INDEX));
     }
 
     public static class ThrowsAfterBuildIndexesStore extends OperatorStore {
