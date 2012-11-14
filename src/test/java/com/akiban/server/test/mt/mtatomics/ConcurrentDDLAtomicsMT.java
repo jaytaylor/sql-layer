@@ -734,6 +734,21 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         dmlWaitAndDDL(IUDType.DELETE, oldChildCols(), null, DDLOp.DROP_TABLE);
     }
 
+    // bug1036269
+    @Test
+    public void insertWaitAlterTable() throws Exception {
+        dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.ALTER_TABLE);
+        // And extra sanity check
+        updateAISGeneration();
+        int tid = tableId(TABLE_NAME);
+        expectFullRows(
+                tid,
+                createNewRow(tid, 1L, "the snowman", "10"),
+                createNewRow(tid, 2L, "mr melty", "20"),
+                createNewRow(tid, 100L, "BOBSLED", "1000")
+        );
+    }
+
     @Test
     public void insertWaitCreateTableIndex() throws Exception {
         dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.CREATE_TABLE_INDEX);
