@@ -61,7 +61,7 @@ get_version()
     dep_dir=$2
     # the JAR file we use to grab the version
     if [ -z "$jar_file" ]; then
-        jar_file="${akiban_home}/target/akiban-server-1.4.3-SNAPSHOT.jar"
+        jar_file="${akiban_home}/target/akiban-server-1.4.4-SNAPSHOT.jar"
     fi
     if [ -z "$dep_dir" ]; then
         dep_dir="${akiban_home}/target/dependency"
@@ -86,7 +86,7 @@ launch_service()
 
     # the JAR file we use to launch the akiban server
     if [ -z "$JAR_FILE" ]; then
-        JAR_FILE="${akiban_home}/target/akiban-server-1.4.3-SNAPSHOT.jar"
+        JAR_FILE="${akiban_home}/target/akiban-server-1.4.4-SNAPSHOT.jar"
     fi
     if [ -z "$DEP_DIR" ]; then
         DEP_DIR="${akiban_home}/target/dependency"

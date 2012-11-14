@@ -1,3 +1,9 @@
+akiban-server (1.4.4) maverick; urgency=low
+
+  * Development Release.
+
+ -- Akiban Build User <build@akiban.com>  Tue, 13 Nov 2012 14:28:18 -0500
+
 akiban-server (1.4.3) oneiric; urgency=low
 
   * Development Release.
