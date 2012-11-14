@@ -192,7 +192,7 @@ public class AlterTableDDL {
                                                               ((AlterTableRenameNode)node).getNewName());
                     TableName oldName = table.getName();
                     ddl.renameTable(session, oldName, newName);
-                    return ChangeLevel.TABLE;
+                    return ChangeLevel.METADATA;
                 default:
                     return null; // Something unsupported
             }
