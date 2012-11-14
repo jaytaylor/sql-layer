@@ -734,7 +734,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         dmlWaitAndDDL(IUDType.DELETE, oldChildCols(), null, DDLOp.DROP_TABLE);
     }
 
-    // bug1036269
+    // bug1036269 and bug1040308
     @Test
     public void insertWaitAlterTable() throws Exception {
         dmlWaitAndDDL(IUDType.INSERT, null, newChildCols(), DDLOp.ALTER_TABLE);
