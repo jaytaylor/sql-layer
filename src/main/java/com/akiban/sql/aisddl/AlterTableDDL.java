@@ -195,6 +195,7 @@ public class AlterTableDDL {
         final AkibanInformationSchema aisCopy = tableCopy.getAIS();
         final AISBuilder builder = new AISBuilder(aisCopy);
 
+        int pos = table.getColumns().size();
         for(ColumnDefinitionNode cdn : columnDefNodes) {
             if(cdn instanceof ModifyColumnNode) {
                 ModifyColumnNode modNode = (ModifyColumnNode) cdn;
@@ -223,8 +224,7 @@ public class AlterTableDDL {
                         throw new IllegalStateException("Unexpected node type: " + modNode);
                 }
             } else {
-                int pos = table.getColumns().size();
-                TableDDL.addColumn(builder, cdn, table.getName().getSchemaName(), table.getName().getTableName(), pos);
+                TableDDL.addColumn(builder, cdn, table.getName().getSchemaName(), table.getName().getTableName(), pos++);
             }
         }
         copyTableIndexes(table, tableCopy, columnChanges, indexChanges);

@@ -1,0 +1,13 @@
+# test adding multiple columns in ALTER TABLE ...
+---
+- CreateTable: t (a integer)
+---
+- Statement: ALTER TABLE t add (b integer, c integer);
+---
+- Statement: INSERT INTO t values (1, 2, 3);
+---
+- Statement: SELECT * from t;
+- output: [[1, 2, 3]]
+---
+- DropTable: t;
+...
