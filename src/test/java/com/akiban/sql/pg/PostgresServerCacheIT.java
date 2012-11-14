@@ -26,7 +26,6 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.server.service.config.Property;
 import com.akiban.server.api.dml.scan.NewRow;
 
 import org.junit.Before;
@@ -36,8 +35,8 @@ import static junit.framework.Assert.*;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
-import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 
 public class PostgresServerCacheIT extends PostgresServerFilesITBase
 {
@@ -49,8 +48,8 @@ public class PostgresServerCacheIT extends PostgresServerFilesITBase
     private int missesBase;
     
     @Override
-    protected Collection<Property> startupConfigProperties() {
-        return Collections.singleton(new Property("akserver.postgres.statementCacheCapacity", CAPACITY));
+    protected Map<String, String> startupConfigProperties() {
+        return Collections.singletonMap("akserver.postgres.statementCacheCapacity", CAPACITY);
     }
 
     @Before

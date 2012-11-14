@@ -29,16 +29,14 @@ package com.akiban.sql.embedded;
 import com.akiban.server.test.it.ITBase;
 
 import com.akiban.server.types3.Types3Switch;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import static junit.framework.Assert.*;
 
 import java.sql.*;
 
-import com.akiban.server.service.config.Property;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
-import java.util.Collection;
+import java.util.Map;
 
 public class EmbeddedJDBCIT extends ITBase
 {
@@ -50,7 +48,7 @@ public class EmbeddedJDBCIT extends ITBase
     }
 
     @Override
-    protected Collection<Property> startupConfigProperties() {
+    protected Map<String, String> startupConfigProperties() {
         return uniqueStartupConfigProperties(getClass());
     }
 

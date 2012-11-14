@@ -26,8 +26,8 @@
 
 package com.akiban.server.service.config;
 
+import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 public interface ConfigurationService
 {
@@ -92,10 +92,10 @@ public interface ConfigurationService
     Properties deriveProperties(String withPrefix);
 
     /**
-     * Get all of the defined properties
-     * @return a set of all defined properties
+     * Get all of the defined properties as an immutable Map.
+     * @return a Map of all defined properties
      */
-    Set<Property> getProperties();
+    Map<String,String> getProperties();
 
     long queryTimeoutSec();
     void queryTimeoutSec(long queryTimeoutSec);

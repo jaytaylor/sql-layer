@@ -30,7 +30,6 @@ import com.akiban.server.AkServerUtil;
 import com.akiban.server.error.ConfigurationPropertiesLoadException;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,16 +41,11 @@ public class TestConfigService extends ConfigurationServiceImpl {
     private static File dataDirectory = null;
     private static int dataDirectoryCounter = 0;
     private static volatile boolean doCleanOnUnload = false;
-    private final Collection<Property> extraProperties;
+    private final Map<String, String> extraProperties;
     File tmpDir;
 
     public TestConfigService() {
         this.extraProperties = getAndClearOverrides();
-    }
-
-    @Override
-    protected boolean shouldLoadConfigDirProperties() {
-        return false;
     }
 
     @Override
@@ -61,21 +55,21 @@ public class TestConfigService extends ConfigurationServiceImpl {
     }
 
     @Override
-    protected Map<String, Property> loadProperties() {
-        Map<String, Property> ret = new HashMap<String, Property>(super.loadProperties());
+    protected Map<String, String> loadProperties() {
+        Map<String, String> ret = new HashMap<String, String>(super.loadProperties());
         makeDataDirectory();
-        ret.put(DATA_PATH_KEY, new Property(DATA_PATH_KEY, dataDirectory.getAbsolutePath()));
-        final int bufferSize = Integer.parseInt(ret.get(BUFFER_SIZE_KEY).getValue());
+        ret.put(DATA_PATH_KEY, dataDirectory.getAbsolutePath());
+        final int bufferSize = Integer.parseInt(ret.get(BUFFER_SIZE_KEY));
         String memoryKey = BUFFER_MEMORY_KEY_PREFIX + "." + bufferSize;
-        ret.put(memoryKey, new Property(memoryKey, UNIT_TEST_PERSISTIT_MEMORY));
-        ret.put(COMMIT_POLICY_KEY, new Property(COMMIT_POLICY_KEY, UNIT_TEST_COMMIT_POLICY));
+        ret.put(memoryKey, UNIT_TEST_PERSISTIT_MEMORY);
+        ret.put(COMMIT_POLICY_KEY, UNIT_TEST_COMMIT_POLICY);
         if (extraProperties != null) {
-            for (final Property property : extraProperties) {
-                ret.put(property.getKey(), property);
+            for (final Map.Entry<String, String> property : extraProperties.entrySet()) {
+                ret.put(property.getKey(), property.getValue());
             }
         }
-        ret.put(JOURNAL_SIZE_KEY, new Property(JOURNAL_SIZE_KEY, Long.toString(UNIT_TEST_PERSISTIT_JOURNAL_SIZE)));
-        ret.put(PARSE_SPATIAL_INDEX, new Property(PARSE_SPATIAL_INDEX, "true"));
+        ret.put(JOURNAL_SIZE_KEY, Long.toString(UNIT_TEST_PERSISTIT_JOURNAL_SIZE));
+        ret.put(PARSE_SPATIAL_INDEX, "true");
         return ret;
     }
 
@@ -120,13 +114,13 @@ public class TestConfigService extends ConfigurationServiceImpl {
         }
     }
 
-    public static void setOverrides(Collection<Property> startupConfigProperties) {
+    public static void setOverrides(Map<String, String> startupConfigProperties) {
         if (!startupConfigPropertiesRef.compareAndSet(null, startupConfigProperties)) {
             throw new IllegalStateException("already set"); // sanity check; feel free to remove if it gets in your way
         }
     }
 
-    private static Collection<Property> getAndClearOverrides() {
+    private static Map<String, String> getAndClearOverrides() {
         return startupConfigPropertiesRef.getAndSet(null);
     }
 
@@ -138,7 +132,8 @@ public class TestConfigService extends ConfigurationServiceImpl {
         doCleanOnUnload = doClean;
     }
 
-    private static final AtomicReference<Collection<Property>> startupConfigPropertiesRef = new AtomicReference<Collection<Property>>();
+    private static final AtomicReference<Map<String, String>> startupConfigPropertiesRef
+            = new AtomicReference<Map<String, String>>();
     public final static String DATA_PATH_KEY = "akserver.datapath";
     private final static String COMMIT_POLICY_KEY = "persistit.txnpolicy";
     private final static String BUFFER_SIZE_KEY = "persistit.buffersize";

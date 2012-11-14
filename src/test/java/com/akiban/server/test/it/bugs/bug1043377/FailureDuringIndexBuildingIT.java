@@ -29,7 +29,6 @@ package com.akiban.server.test.it.bugs.bug1043377;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.OperatorStore;
-import com.akiban.server.service.config.Property;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.session.Session;
@@ -40,6 +39,7 @@ import com.akiban.server.test.it.ITBase;
 import com.google.inject.Inject;
 import org.junit.Test;
 import java.util.Collection;
+import java.util.Map;
 
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
@@ -53,7 +53,7 @@ public final class FailureDuringIndexBuildingIT extends ITBase {
     }
 
     @Override
-    protected Collection<Property> startupConfigProperties() {
+    protected Map<String, String> startupConfigProperties() {
         return uniqueStartupConfigProperties(getClass());
     }
 
