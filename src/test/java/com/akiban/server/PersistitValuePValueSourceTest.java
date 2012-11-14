@@ -26,10 +26,12 @@
 
 package com.akiban.server;
 
+import com.akiban.server.types3.pvalue.PUnderlying;
 import com.persistit.Persistit;
 import com.persistit.Value;
 import org.junit.Test;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -37,18 +39,89 @@ import static org.junit.Assert.assertTrue;
 public final class PersistitValuePValueSourceTest {
     @Test
     public void testSkippingNulls() {
+        PersistitValuePValueSource source = createSource(new ValueInit() {
+            @Override
+            public void putValues(Value value) {
+                value.putNull();
+                value.put(1234L);
+            }
+        });
+
+        readyAndCheck(source, null);
+
+        readyAndCheck(source, PUnderlying.INT_64);
+        assertEquals("source value", 1234L, source.getInt64());
+    }
+
+    @Test
+    public void sameRefTwice() {
+        // see https://bugs.launchpad.net/akiban-persistit/+bug/1073357
+        // The problem happens when a Value has the same object reference twice -- that is, two objects that are
+        // == each other (not just equals). The second object would result in value.getType() == Object, instead of
+        // the value's more specific type.
+        // A String, a Long and a byte[] walk into a bar. Bartender says to them, "I Value you as customers."
+        // The next day they walk back into the same bar, and he says, "now I Object!"
+
+
+        PersistitValuePValueSource source = createSource(new ValueInit() {
+            @Override
+            public void putValues(Value value) {
+                String stringRef = "foo";
+                long longVal = 456L;
+                byte[] bytesRef = new byte[]{1, 2, 3};
+
+                value.put(stringRef);
+                value.put(longVal);
+                value.put(bytesRef);
+
+                value.put(stringRef);
+                value.put(longVal);
+                value.put(bytesRef);
+            }
+        });
+
+        // first set
+        readyAndCheck(source, PUnderlying.STRING);
+        assertEquals("source value", "foo", source.getString());
+
+        readyAndCheck(source, PUnderlying.INT_64);
+        assertEquals("source value", 456L, source.getInt64());
+
+        readyAndCheck(source, PUnderlying.BYTES);
+        assertArrayEquals("source value", new byte[] {1, 2, 3}, source.getBytes());
+
+        // second set
+        readyAndCheck(source, PUnderlying.STRING);
+        assertEquals("source value", "foo", source.getString());
+
+        readyAndCheck(source, PUnderlying.INT_64);
+        assertEquals("source value", 456L, source.getInt64());
+
+        readyAndCheck(source, PUnderlying.BYTES);
+        assertArrayEquals("source value", new byte[] {1, 2, 3}, source.getBytes());
+    }
+
+    private void readyAndCheck(PersistitValuePValueSource source, PUnderlying pUnderlying) {
+        source.getReady();
+        if (pUnderlying == null) {
+            assertTrue("source should be null", source.isNull());
+        }
+        else {
+            assertFalse("source should not be null", source.isNull());
+            assertEquals("source PUnderlying", pUnderlying, source.getUnderlyingType());
+        }
+    }
+
+    private PersistitValuePValueSource createSource(ValueInit values) {
         Value value = new Value((Persistit)null);
         value.setStreamMode(true);
-        value.putNull();
-        value.put(1234L);
-
+        values.putValues(value);
         PersistitValuePValueSource source = new PersistitValuePValueSource();
         source.attach(value);
-        source.getReady();
-        assertTrue("source should be null", source.isNull());
+        return source;
+    }
 
-        source.getReady();
-        assertFalse("source should not be null", source.isNull());
-        assertEquals("source value", 1234L, source.getInt64());
+    private interface ValueInit {
+        void putValues(Value value);
     }
 }
