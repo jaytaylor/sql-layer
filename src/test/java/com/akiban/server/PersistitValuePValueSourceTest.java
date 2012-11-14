@@ -31,6 +31,8 @@ import com.persistit.Persistit;
 import com.persistit.Value;
 import org.junit.Test;
 
+import java.math.BigDecimal;
+
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -101,6 +103,20 @@ public final class PersistitValuePValueSourceTest {
         assertArrayEquals("source value", new byte[] {1, 2, 3}, source.getBytes());
     }
 
+    @Test
+    public void getBigDecimalTwice() {
+        PersistitValuePValueSource source = createSource(new ValueInit() {
+            @Override
+            public void putValues(Value value) {
+                value.putBigDecimal(BigDecimal.ONE);
+            }
+        });
+
+        source.getReady();
+        assertEquals("source value", BigDecimal.ONE, source.getObject());
+        assertEquals("source value", BigDecimal.ONE, source.getObject());
+    }
+
     private void readyAndCheck(PersistitValuePValueSource source, PUnderlying pUnderlying) {
         source.getReady();
         if (pUnderlying == null) {
@@ -115,7 +131,12 @@ public final class PersistitValuePValueSourceTest {
     private PersistitValuePValueSource createSource(ValueInit values) {
         Value value = new Value((Persistit)null);
         value.setStreamMode(true);
+
         values.putValues(value);
+
+        value.setStreamMode(false); // need to reset the Value before reading
+        value.setStreamMode(true);
+
         PersistitValuePValueSource source = new PersistitValuePValueSource();
         source.attach(value);
         return source;
