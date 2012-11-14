@@ -26,13 +26,12 @@
 
 package com.akiban.server.service.tree;
 
-import com.akiban.server.service.config.Property;
 import com.akiban.server.service.tree.TreeServiceImpl.SchemaNode;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.SortedMap;
 
 import static org.junit.Assert.assertEquals;
@@ -40,17 +39,17 @@ import static org.junit.Assert.assertTrue;
 
 public class TreeServiceImplValidIT extends ITBase {
     @Override
-    protected Collection<Property> startupConfigProperties() {
-        final Collection<Property> properties = new ArrayList<Property>();
-        properties.add(new Property("akserver.treespace.a",
+    protected Map<String, String> startupConfigProperties() {
+        final Map<String, String> properties = new HashMap<String, String>();
+        properties.put("akserver.treespace.a",
                                     "drupal*:${datapath}/${schema}.v0,create,pageSize:${buffersize},"
-                                    + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        properties.add(new Property("akserver.treespace.b",
+                                    + "initialSize:10K,extensionSize:1K,maximumSize:10G");
+        properties.put("akserver.treespace.b",
                                     "liveops*:${datapath}/${schema}.v0,create,pageSize:${buffersize},"
-                                    + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        properties.add(new Property("akserver.treespace.c",
+                                    + "initialSize:10K,extensionSize:1K,maximumSize:10G");
+        properties.put("akserver.treespace.c",
                                     "test*/_schema_:${datapath}/${schema}${tree}.v0,create,pageSize:${buffersize},"
-                                    + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
+                                    + "initialSize:10K,extensionSize:1K,maximumSize:10G");
         return properties;
     }
 

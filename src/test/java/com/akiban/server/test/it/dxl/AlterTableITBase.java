@@ -27,11 +27,9 @@
 package com.akiban.server.test.it.dxl;
 
 import com.akiban.ais.AISCloner;
-import com.akiban.ais.model.AISMerge;
 import com.akiban.ais.model.AISTableNameChanger;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
@@ -40,22 +38,14 @@ import com.akiban.ais.util.TableChange;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.service.config.Property;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.test.it.qp.TestRow;
-import com.akiban.sql.StandardException;
-import com.akiban.sql.aisddl.AlterTableDDL;
-import com.akiban.sql.parser.AlterTableNode;
-import com.akiban.sql.parser.SQLParser;
-import com.akiban.sql.parser.StatementNode;
 import org.junit.After;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -67,7 +57,6 @@ import java.util.TreeSet;
 import static com.akiban.ais.util.TableChangeValidator.ChangeLevel;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 public class AlterTableITBase extends ITBase {
     private final static String EXPECTED_VOLUME_NAME = "akiban_data";
@@ -87,7 +76,7 @@ public class AlterTableITBase extends ITBase {
 
     // Workaround for bug1052594 (Persistit brings trees back to life, this deletes data dir)
     @Override
-    protected Collection<Property> startupConfigProperties() {
+    protected Map<String, String> startupConfigProperties() {
         return uniqueStartupConfigProperties(AlterTableITBase.class);
     }
 

@@ -36,7 +36,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.TreeSet;
+import java.util.TreeMap;
 
 import com.akiban.server.error.BadConfigDirectoryException;
 import com.akiban.server.error.ConfigurationPropertiesLoadException;
@@ -56,10 +56,8 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     public static final String CONFIG_DIR_PROP = "akserver.config_dir";
     public static final String CONFIG_SERVER = "/config/server.properties";
 
-    private Map<String,Property> properties = null;
+    private volatile Map<String,String> properties = null;
     private final Set<String> requiredKeys = new HashSet<String>();
-
-    private final Object INTERNAL_LOCK = new Object();
     
     private volatile long queryTimeoutSec = -1L; // No timeout
 
@@ -84,21 +82,26 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     @Override
     public final String getProperty(String propertyName)
             throws PropertyNotDefinedException {
-        Property property = internalGetProperty(propertyName);
+        String property = internalGetProperty(propertyName);
         if (property == null) {
             throw new PropertyNotDefinedException(propertyName);
         }
-        return property.getValue();
+        return property;
     }
 
-    private Property internalGetProperty(String propertyName) {
-        final Map<String, Property> map = internalGetProperties();
+    private String internalGetProperty(String propertyName) {
+        final Map<String, String> map = internalGetProperties();
         return map.get(propertyName);
     }
 
     @Override
-    public final Set<Property> getProperties() {
-        return new TreeSet<Property>(internalGetProperties().values());
+    public Map<String, String> getProperties() {
+        Map<String, String> internalProperties = internalGetProperties();
+        Map<String, String> results = new TreeMap<String, String>();
+        for (Map.Entry<String, String> entry : internalProperties.entrySet()) {
+            results.put(entry.getKey(), entry.getValue());
+        }
+        return Collections.unmodifiableMap(results);
     }
 
     @Override
@@ -116,7 +119,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     @Override
     public Properties deriveProperties(String withPrefix) {
         Properties properties = new Properties();
-        for (Property configProp : internalGetProperties().values()) {
+        for (Map.Entry<String,String> configProp : internalGetProperties().entrySet()) {
             String key = configProp.getKey();
             if (key.startsWith(withPrefix)) {
                 properties.setProperty(
@@ -130,23 +133,12 @@ public class ConfigurationServiceImpl implements ConfigurationService,
 
     @Override
     public final void start() throws ServiceStartupException {
-        synchronized (INTERNAL_LOCK) {
-            if (properties == null) {
-                properties = null;
-                Map<String, Property> newMap = internalLoadProperties();
-                for (Map.Entry<String, Property> entry : newMap.entrySet()) {
-                    if (!entry.getKey().equals(entry.getValue().getKey())) {
-                        throw new ServiceStartupException(
-                                String.format(
-                                        "Invalidly constructed key-value pair: %s -> %s",
-                                        entry.getKey(), entry.getValue()));
-                    }
-                }
-                properties = Collections.unmodifiableMap(newMap);
-            }
-            Property initiallyEnabledTaps = properties.get(INITIALLY_ENABLED_TAPS);
+        if (properties == null) {
+            Map<String, String> newMap = internalLoadProperties();
+            properties = Collections.unmodifiableMap(newMap);
+            String initiallyEnabledTaps = properties.get(INITIALLY_ENABLED_TAPS);
             if (initiallyEnabledTaps != null) {
-                Tap.setInitiallyEnabled(initiallyEnabledTaps.getValue());
+                Tap.setInitiallyEnabled(initiallyEnabledTaps);
             }
         }
     }
@@ -156,9 +148,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
         try {
             unloadProperties();
         } finally {
-            synchronized (INTERNAL_LOCK) {
-                properties = null;
-            }
+            properties = null;
         }
     }
     
@@ -166,9 +156,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     @Override
     public void crash() {
         // Note: do not call unloadProperties().
-        synchronized (INTERNAL_LOCK) {
-            properties = null;
-        }
+        properties = null;
     }
 
     @Override
@@ -177,9 +165,9 @@ public class ConfigurationServiceImpl implements ConfigurationService,
                 ConfigurationServiceMXBean.class);
     }
 
-    private Map<String, Property> internalLoadProperties()
+    private Map<String, String> internalLoadProperties()
             throws ServiceStartupException {
-        Map<String, Property> ret = loadProperties();
+        Map<String, String> ret = loadProperties();
 
         Set<String> missingKeys = new HashSet<String>();
         for (String required : getRequiredKeys()) {
@@ -204,14 +192,12 @@ public class ConfigurationServiceImpl implements ConfigurationService,
      * {@link #unloadProperties()} to clean them up.
      * @return the configuration properties
      */
-    protected Map<String, Property> loadProperties() {
+    protected Map<String, String> loadProperties() {
         Properties props = null;
 
         props = loadResourceProperties(props);
         props = loadSystemProperties(props);
-        if (shouldLoadConfigDirProperties()) {
-            props = loadConfigDirProperties(props);
-        }
+        props = loadConfigDirProperties(props);
 
         return propertiesToMap(props);
     }
@@ -225,20 +211,15 @@ public class ConfigurationServiceImpl implements ConfigurationService,
 
     }
 
-    protected boolean shouldLoadConfigDirProperties() {
-        return true;
-    }
-
     protected Set<String> getRequiredKeys() {
         return requiredKeys;
     }
 
-    private static Map<String, Property> propertiesToMap(
-            Properties properties) {
-        Map<String, Property> ret = new HashMap<String, Property>();
+    private static Map<String, String> propertiesToMap(Properties properties) {
+        Map<String, String> ret = new HashMap<String, String>();
         for (String keyStr : properties.stringPropertyNames()) {
             String value = properties.getProperty(keyStr);
-            ret.put(keyStr, new Property(keyStr, value));
+            ret.put(keyStr, value);
         }
         return ret;
     }
@@ -330,11 +311,8 @@ public class ConfigurationServiceImpl implements ConfigurationService,
                 || key.startsWith("akserver");
     }
 
-    private Map<String, Property> internalGetProperties() {
-        final Map<String, Property> ret;
-        synchronized (INTERNAL_LOCK) {
-            ret = properties;
-        }
+    private Map<String, String> internalGetProperties() {
+        final Map<String, String> ret = properties;
         if (ret == null) {
             throw new ServiceNotStartedException("Configuration");
         }

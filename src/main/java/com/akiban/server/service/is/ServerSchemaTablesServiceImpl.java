@@ -26,6 +26,7 @@
 package com.akiban.server.service.is;
 
 import java.util.Iterator;
+import java.util.Map;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
@@ -41,7 +42,6 @@ import com.akiban.server.AkServerInterface;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.config.Property;
 import com.akiban.server.service.monitor.MonitorService;
 import com.akiban.server.service.monitor.MonitorStage;
 import com.akiban.server.service.monitor.ServerMonitor;
@@ -282,18 +282,18 @@ public class ServerSchemaTablesServiceImpl
         }
 
         private class Scan extends BaseScan {
-            private Iterator<Property> propertyIt;
+            private Iterator<Map.Entry<String,String>> propertyIt;
 
             public Scan(RowType rowType) {
                 super(rowType);
-                propertyIt = configService.getProperties().iterator();
+                propertyIt = configService.getProperties().entrySet().iterator();
             }
 
             @Override
             public Row next() {
                 if (!propertyIt.hasNext())
                     return null;
-                Property prop = propertyIt.next();
+                Map.Entry<String,String> prop = propertyIt.next();
                 return new ValuesRow (rowType,
                                       prop.getKey(),
                                       prop.getValue(),

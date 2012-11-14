@@ -26,11 +26,12 @@
 
 package com.akiban.server.service.config;
 
+import java.util.Map;
 import java.util.Set;
 
 public interface ConfigurationServiceMXBean
 {
-    Set<Property> getProperties();
+    Map<String,String> getProperties();
 
     long getQueryTimeoutSec();
 
