@@ -26,30 +26,16 @@
 
 package com.akiban.sql.server;
 
-import com.akiban.server.service.monitor.MonitorStage;
-import com.akiban.server.service.monitor.SessionMonitor;
+import com.akiban.server.service.monitor.SessionMonitorBase;
 
-public class ServerSessionMonitor implements SessionMonitor {
+public class ServerSessionMonitor extends SessionMonitorBase {
     private final String serverType;
-    private final int sessionId;
-    private final long startTime;
     private int callerSessionId = -1;
     private String remoteAddress;
-    private int statementCount;
-    private String currentStatement;
-    private long currentStatementStartTime = -1;
-    private long currentStatementEndTime = -1;
-    private int rowsProcessed;
-    private long[] lastNanos, totalNanos;
-    private MonitorStage currentStage;
-    private long currentStageStartNanos;
 
     public ServerSessionMonitor(String serverType, int sessionId) {
+        super(sessionId);
         this.serverType = serverType;
-        this.sessionId = sessionId;
-        startTime = System.currentTimeMillis();
-        lastNanos = new long[MonitorStage.values().length];
-        totalNanos = new long[MonitorStage.values().length];
     }
     
     public void setCallerSessionId(int callerSessionId) {
@@ -59,111 +45,22 @@ public class ServerSessionMonitor implements SessionMonitor {
     public void setRemoteAddress(String remoteAddress) {
         this.remoteAddress = remoteAddress;
     }
-    
-    public void startStatement(String statement) {
-        startStatement(statement, System.currentTimeMillis());
-    }
 
-    public void startStatement(String statement, long startTime) {
-        if (statement != null) {  // TODO: Remove when always passed by PG server.
-            statementCount++;
-            currentStatement = statement;
-        }
-        currentStatementStartTime = startTime;
-        currentStatementEndTime = -1;
-        rowsProcessed = -1;
-    }
-
-    public void endStatement(int rowsProcessed) {
-        currentStatementEndTime = System.currentTimeMillis();
-        this.rowsProcessed = rowsProcessed;
-    }
-
-    public long getCurrentStatementDurationMillis() {
-        if (currentStatementEndTime < 0)
-            return -1;
-        else
-            return currentStatementEndTime - currentStatementStartTime;
-    }
-
-    // Caller can sequence all stages and avoid any gaps at the cost of more complicated
-    // exception handling, or just enter & leave and accept a tiny bit
-    // unaccounted for.
-    public void enterStage(MonitorStage stage) {
-        long now = System.nanoTime();
-        if (currentStage != null) {
-            long delta = now - currentStageStartNanos;
-            lastNanos[currentStage.ordinal()] = delta;
-            totalNanos[currentStage.ordinal()] += delta;
-        }
-        currentStage = stage;
-        currentStageStartNanos = now;
-    }
-
-    public void leaveStage() {
-        enterStage(null);
-    }
 
     /* SessionMonitor */
 
-    public int getSessionId() {
-        return sessionId;
-    }
-
+    @Override
     public int getCallerSessionId() {
         return callerSessionId;
     }
 
+    @Override
     public String getServerType() {
         return serverType;
     }
 
+    @Override
     public String getRemoteAddress() {
         return remoteAddress;
     }
-
-    public long getStartTimeMillis() {
-        return startTime;
-    }
-    
-    public int getStatementCount() {
-        return statementCount;
-    }
-
-    public String getCurrentStatement() {
-        return currentStatement;
-    }
-
-    public long getCurrentStatementStartTimeMillis() {
-        return currentStatementStartTime;
-    }
-
-    public long getCurrentStatementEndTimeMillis() {
-        return currentStatementEndTime;
-    }
-
-    public int getRowsProcessed() {
-        return rowsProcessed;
-    }
-
-    public MonitorStage getCurrentStage() {
-        return currentStage;
-    }
-    
-    public long getLastTimeStageNanos(MonitorStage stage) {
-        return lastNanos[stage.ordinal()];
-    }
-
-    public long getTotalTimeStageNanos(MonitorStage stage) {
-        return totalNanos[stage.ordinal()];
-    }
-
-    public long getNonIdleTimeNanos() {
-        long total = 0;
-        for (int i = 1; i < totalNanos.length; i++) {
-            total += totalNanos[i];
-        }
-        return total;
-    }
-
 }
