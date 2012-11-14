@@ -2,6 +2,9 @@
 ---
 - CreateTable: t (a integer)
 ---
+- Statement: ISNERT INTO t values (1, 2, 3);
+- error: [42000]
+---
 - Statement: ALTER TABLE t add (b integer, c integer);
 ---
 - Statement: INSERT INTO t values (1, 2, 3);
