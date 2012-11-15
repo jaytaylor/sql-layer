@@ -26,9 +26,9 @@
 
 package com.akiban.server.test.it.store;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.rowdata.RowData;
@@ -36,8 +36,6 @@ import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.akiban.server.service.config.Property;
 
 import static org.junit.Assert.assertEquals;
 
@@ -47,15 +45,15 @@ public class MultiVolumeStoreIT extends ITBase {
     private final static String TEST2_SCHEMA = "test2";
 
     @Override
-    protected Collection<Property> startupConfigProperties() {
+    protected Map<String, String> startupConfigProperties() {
         // Set up multi-volume treespace policy so we can be sure schema is properly distributed.
-        final Collection<Property> properties = new ArrayList<Property>();
-        properties.add(new Property("akserver.treespace.1",
+        final Map<String, String> properties = new HashMap<String, String>();
+        properties.put("akserver.treespace.1",
                                     "test2/_akiban_customer:${datapath}/${schema}_customer.v0,create,pageSize:"+
-                                    "${buffersize},initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        properties.add(new Property("akserver.treespace.2",
+                                    "${buffersize},initialSize:10K,extensionSize:1K,maximumSize:10G");
+        properties.put("akserver.treespace.2",
                                     "test*:${datapath}/${schema}.v0,create,pageSize:"+
-                                    "${buffersize},initialSize:10K,extensionSize:1K,maximumSize:10G"));
+                                    "${buffersize},initialSize:10K,extensionSize:1K,maximumSize:10G");
         return properties;
     }
 

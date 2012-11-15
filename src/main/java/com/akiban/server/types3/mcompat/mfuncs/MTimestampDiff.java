@@ -132,7 +132,7 @@ public class MTimestampDiff extends TScalarBase
                 {
                     StringType strType = MDatetimes.parseDateOrTime(source.getString(), ymd);
                                 
-                    if (strType == StringType.TIME_ST)
+                    if (strType == StringType.TIME_ST || !MDatetimes.isValidType(strType))
                         error = new InvalidDateFormatException("DATETIME",
                                                                source.getString());
                     else

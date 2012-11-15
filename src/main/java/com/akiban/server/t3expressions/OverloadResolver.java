@@ -308,14 +308,19 @@ public final class OverloadResolver<V extends TValidatedOverload> {
     {
         V mostSpecific = null;
         boolean sawRightArity = false;
-        for (ScalarsGroup<V> scalarsGroup : scalarGroupsByPriority) {
+        
+        Iterator<? extends ScalarsGroup<V>> iter = scalarGroupsByPriority.iterator();
+        ScalarsGroup<V> scalarsGroup;
+        
+        while (iter.hasNext()) {
+            scalarsGroup = iter.next();
             Collection<? extends V> namedOverloads = scalarsGroup.getOverloads();
             List<V> candidates = new ArrayList<V>(namedOverloads.size());
             for (V overload : namedOverloads) {
                 if (!overload.coversNInputs(inputs.size()))
                     continue;
                 sawRightArity = true;
-                if (isCandidate(overload, inputs, scalarsGroup)) {
+                if (isCandidate(overload, inputs, scalarsGroup, iter.hasNext())) {
                     candidates.add(overload);
                 }
             }
@@ -373,7 +378,8 @@ public final class OverloadResolver<V extends TValidatedOverload> {
 
     private boolean isCandidate(V overload,
                                 List<? extends TPreptimeValue> inputs,
-                                ScalarsGroup<V> scalarGroups) {
+                                ScalarsGroup<V> scalarGroups,
+                                boolean hasNext) {
         if (!overload.coversNInputs(inputs.size()))
             return false;
         if (!overload.isCandidate().apply(inputs))
@@ -407,8 +413,11 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                 // If input type is unknown (NULL literal or parameter), assume common type at this position among
                 // all overloads in this group.
                 inputTypeClass = scalarGroups.commonTypeAt(i);
-                if (inputTypeClass == null) {
-                    throw new OverloadException("couldn't resolve overload because of unknown input at position " + i);
+                if (inputTypeClass == null) { // We couldn't resolve it in this group
+                    if (hasNext)              // , but we might find a match in the subsequent ones
+                        return false;
+                    else
+                        throw new OverloadException("couldn't resolve overload because of unknown input at position " + i);
                 }
             }
             else {

@@ -40,7 +40,6 @@ import com.akiban.server.test.mt.MTBase;
 import com.akiban.server.test.mt.mtutil.TimePointsComparison;
 import com.akiban.server.test.mt.mtutil.TimedCallable;
 import com.akiban.server.test.mt.mtutil.TimedResult;
-import com.akiban.server.service.config.Property;
 import com.akiban.server.service.dxl.ConcurrencyAtomicsDXLService;
 import com.akiban.server.service.dxl.DXLService;
 
@@ -48,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -72,7 +72,7 @@ class ConcurrentAtomicsBase extends MTBase {
     }
 
     @Override
-    protected Collection<Property> startupConfigProperties() {
+    protected Map<String, String> startupConfigProperties() {
         return uniqueStartupConfigProperties(getClass());
     }
 

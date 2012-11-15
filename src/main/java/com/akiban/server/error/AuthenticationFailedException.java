@@ -24,48 +24,15 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service.config;
+package com.akiban.server.error;
 
-public final class Property implements Comparable<Property> {
-
-    private final String key;
-    private final String value;
-
-    public Property(String key, String value) {
-        this.key = key;
-        this.value = value;
+public final class AuthenticationFailedException extends InvalidOperationException {
+    public AuthenticationFailedException(String msg) {
+        super(ErrorCode.AUTHENTICATION_FAILED, msg);
     }
 
-    @Deprecated
-    Property(String module, String name, String value) {
-        this(module + '.' + name, value);
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public String getKey() {
-        return key;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return (obj instanceof Property) && key.equals(((Property)obj).key);
-    }
-
-    @Override
-    public int hashCode() {
-        return key.hashCode();
-    }
-
-    @Override
-    public int compareTo(Property o) {
-        return key.compareTo(o.key);
-    }
-
-    @Override
-    public String toString() {
-        return key + " => " + value;
+    public AuthenticationFailedException(Throwable cause) {
+        this(cause.toString());
+        initCause(cause);
     }
 }

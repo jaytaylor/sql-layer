@@ -214,6 +214,7 @@ public enum ErrorCode {
     // Class 26 - invalid SQL statement name
     // Class 27 - triggered data change violation 
     // Class 28 - invalid authorization specification
+    AUTHENTICATION_FAILED   ("28", "000", Importance.DEBUG, AuthenticationFailedException.class),
     // Class 2B - dependent privilege descriptors still exist
     VIEW_REFERENCES_EXIST   ("2B", "000", Importance.DEBUG, ViewReferencesExist.class),
     // Class 2C - invalid character set name 

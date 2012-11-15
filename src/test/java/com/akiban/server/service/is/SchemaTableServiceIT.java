@@ -29,14 +29,13 @@ package com.akiban.server.service.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.service.config.Property;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 
 import com.akiban.server.test.it.ITBase;
@@ -52,7 +51,7 @@ public final class SchemaTableServiceIT extends ITBase {
     }
 
     @Override
-    protected Collection<Property> startupConfigProperties() {
+    protected Map<String, String> startupConfigProperties() {
         return uniqueStartupConfigProperties(getClass());
     }
 
