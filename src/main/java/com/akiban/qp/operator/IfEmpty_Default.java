@@ -214,6 +214,7 @@ class IfEmpty_Default extends Operator
                 atts.put(Label.OPERAND, ex.getExplainer(context));
         }
         atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(context));
+        atts.put(Label.INPUT_PRESERVATION, PrimitiveExplainer.getInstance(inputPreservation.toString()));
         return new CompoundExplainer(Type.IF_EMPTY, atts);
     }
 
