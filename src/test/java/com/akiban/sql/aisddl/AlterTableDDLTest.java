@@ -116,6 +116,23 @@ public class AlterTableDDLTest {
     }
 
     @Test
+    public void addMultipleColumn() throws StandardException
+    {
+        builder.userTable(A_NAME).colBigInt("b", false);
+        parseAndRun("ALTER TABLE a ADD COLUMN (d INT, e INT);");
+        expectColumnChanges("ADD:d", "ADD:e");
+        if (Types3Switch.ON)
+            expectFinalTable(A_NAME, "b MCOMPAT_ BIGINT(21) NOT NULL",
+                                     "d MCOMPAT_ INTEGER(11) NULL",
+                                     "e MCOMPAT_ INTEGER(11) NULL");
+        else
+            expectFinalTable(A_NAME, "b bigint NOT NULL",
+                                     "d int NULL",
+                                     "e int NULL");
+        
+    }
+    
+    @Test
     public void addColumnSingleTableGroupNoPK() throws StandardException {
         builder.userTable(A_NAME).colBigInt("aid", false);
         parseAndRun("ALTER TABLE a ADD COLUMN x INT");
