@@ -27,6 +27,7 @@
 package com.akiban.sql.pg;
 
 import com.akiban.ais.model.Parameter;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Types;
 import com.akiban.server.Quote;
 import com.akiban.server.error.ExternalRoutineInvocationException;
@@ -79,7 +80,8 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
     protected void outputResults(ServerJavaRoutine javaRoutine, AkibanAppender appender) throws IOException {
         encoder.appendString("{");
         boolean first = true;
-        List<Parameter> params = javaRoutine.getInvocation().getRoutine().getParameters();
+        Routine routine = javaRoutine.getInvocation().getRoutine();
+        List<Parameter> params = routine.getParameters();
         for (int i = 0; i < params.size(); i++) {
             Parameter param = params.get(i);
             if (param.getDirection() == Parameter.Direction.IN) continue;
@@ -88,6 +90,11 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
                 name = String.format("arg%d", i+1);
             Object value = javaRoutine.getOutParameter(param, i);
             outputValue(name, value, appender, first);
+            first = false;
+        }
+        if (routine.getReturnValue() != null) {
+            Object value = javaRoutine.getOutParameter(routine.getReturnValue(), -1);
+            outputValue("return", value, appender, first);
             first = false;
         }
         int i = 0;
@@ -166,7 +173,8 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
     protected void outputMetaData(AkibanAppender appender) throws IOException, SQLException {
         encoder.appendString("[");
         boolean first = true;
-        List<Parameter> params = ((PostgresJavaRoutine)statement).getInvocation().getRoutine().getParameters();
+        Routine routine = ((PostgresJavaRoutine)statement).getInvocation().getRoutine();
+        List<Parameter> params = routine.getParameters();
         for (int i = 0; i < params.size(); i++) {
             Parameter param = params.get(i);
             if (param.getDirection() == Parameter.Direction.IN) continue;
@@ -176,6 +184,10 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
             outputParameterMetaData(name, param, appender, first);
             first = false;
         }        
+        if (routine.getReturnValue() != null) {
+            outputParameterMetaData("return", routine.getReturnValue(), appender, first);
+            first = false;
+        }
         int i = 0;
         for (ResultSet resultSet : resultSets) {
             i++;

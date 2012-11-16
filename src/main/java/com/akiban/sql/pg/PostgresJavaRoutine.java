@@ -249,6 +249,9 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
                 name = String.format("col%d", result.size() + 1);
             result.add(name);
         }
+        if (routine.getReturnValue() != null) {
+            result.add("return");
+        }
         return result;
     }
 
@@ -257,6 +260,9 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
         for (Parameter param : routine.getParameters()) {
             if (param.getDirection() == Parameter.Direction.IN) continue;
             result.add(PostgresType.fromAIS(param));
+        }
+        if (routine.getReturnValue() != null) {
+            result.add(PostgresType.fromAIS(routine.getReturnValue()));
         }
         return result;
     }

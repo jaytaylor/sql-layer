@@ -60,10 +60,10 @@ public class PostgresCallStatementGenerator extends PostgresBaseStatementGenerat
                 case LOADABLE_PLAN:
                     pstmt = PostgresLoadablePlan.statement(server, invocation,
                                                            paramTypes);
-                break;
+                    break;
                 default:
-                    pstmt = PostgresJavaMethod.statement(server, invocation,
-                                                         params, paramTypes);
+                    pstmt = PostgresJavaRoutine.statement(server, invocation,
+                                                          params, paramTypes);
                 }
                 // The above makes extensive use of the AIS. This doesn't fit well into the
                 // create and then init, so just mark with AIS now.
