@@ -153,13 +153,16 @@ public class AISBuilder {
         column.setIdentityGenerator(identityGenerator);
     }
 
-    public void index(String schemaName, String tableName, String indexName,
-            Boolean unique, String constraint) {
+    public void index(String schemaName, String tableName, String indexName, Boolean unique, String constraint) {
+        Table table = ais.getTable(schemaName, tableName);
+        int indexID = nameGenerator.generateIndexID(getRooTableID(table));
+        index(schemaName, tableName, indexName, unique, constraint, indexID);
+    }
+
+    public void index(String schemaName, String tableName, String indexName, Boolean unique, String constraint, int indexID) {
         LOG.info("index: " + schemaName + "." + tableName + "." + indexName);
         Table table = ais.getTable(schemaName, tableName);
-        checkFound(table, "creating index", "table",
-                concat(schemaName, tableName));
-        int indexID = nameGenerator.generateIndexID(getRooTableID(table));
+        checkFound(table, "creating index", "table", concat(schemaName, tableName));
         Index index = TableIndex.create(ais, table, indexName, indexID, unique, constraint);
         index.setTreeName(nameGenerator.generateIndexTreeName(index));
     }
@@ -743,13 +746,9 @@ public class AISBuilder {
         table.setGroup(group);
     }
 
-    public void setNextRootTableID(int rootTableID) {
-        nextRootTableID = rootTableID;
-    }
-
     private int getRooTableID(Table table) {
-        if(table == null || nextRootTableID != -1) {
-            return nextRootTableID;
+        if(table == null) {
+            return -1;
         }
         if(table.getGroup() != null && table.getGroup().getRoot() != null) {
             return table.getGroup().getRoot().getTableId();
@@ -815,7 +814,6 @@ public class AISBuilder {
     public final static int MAX_COLUMN_NAME_LENGTH = 64;
 
     private final AkibanInformationSchema ais;
-    private int nextRootTableID = -1;
     private Map<String, ForwardTableReference> forwardReferences = // join name
                                                                    // ->
                                                                    // ForwardTableReference

@@ -491,14 +491,14 @@ public class AISMerge {
         
         // indexes/constraints
         final int rootTableID = (targetGroup != null) ? targetGroup.getRoot().getTableId() : targetTable.getTableId();
-        builder.setNextRootTableID(rootTableID);
         for (TableIndex index : table.getIndexes()) {
             IndexName indexName = index.getIndexName();
 
             builder.index(schemaName, tableName,
                     indexName.getName(), 
                     index.isUnique(), 
-                    index.getConstraint());
+                    index.getConstraint(),
+                    nameGenerator.generateIndexID(rootTableID));
             for (IndexColumn col : index.getKeyColumns()) {
                     builder.indexColumn(schemaName, tableName, index.getIndexName().getName(),
                         col.getColumn().getName(), 

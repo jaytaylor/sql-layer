@@ -275,7 +275,7 @@ public class TableDDLTest {
         builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", "c1", 0, true, null);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
-        
+
         String sql = "Create Table " + DEFAULT_TABLE + " (c1 SERIAL)";
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
@@ -401,7 +401,6 @@ public class TableDDLTest {
         builder.index(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "PRIMARY", "c1", 0, true, 0);
         builder.basicSchemaIsComplete();
-        builder.groupingIsComplete();
     }
 
     /*CREATE TABLE t1 (C1 int NOT NULL UNIQUE) */
