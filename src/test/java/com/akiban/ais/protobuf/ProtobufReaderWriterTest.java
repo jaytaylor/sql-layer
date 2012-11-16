@@ -225,7 +225,7 @@ public class ProtobufReaderWriterTest {
         compareAndAssert(inAIS, outAIS, false);
 
         // Now add an internal PK and run through again
-        t1_1.endTable();
+        t1_1.endTable(builder.getNameGenerator());
         assertNull("Source table should not have declared PK", t1_1.getPrimaryKey());
         assertNotNull("Source table should have internal PK", t1_1.getPrimaryKeyIncludingInternal());
 

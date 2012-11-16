@@ -267,8 +267,6 @@ public class AlterTableDDL {
             }
         }
 
-        tableCopy.endTable();
-
         return ddl.alterTable(session, table.getName(), tableCopy, columnChanges, indexChanges, context);
     }
 

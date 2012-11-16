@@ -202,9 +202,7 @@ public class AISBBasedBuilder
 
         @Override
         public NewAISGroupIndexStarter groupIndex(String indexName, Index.JoinType joinType) {
-            ActualGroupIndexBuilder actual  = new ActualGroupIndexBuilder(aisb.akibanInformationSchema(), defaultSchema);
-            actual.aisb.setTableIdOffset(aisb.getTableIdOffset());
-            actual.aisb.setIndexIdOffset(aisb.getIndexIdOffset());
+            ActualGroupIndexBuilder actual  = new ActualGroupIndexBuilder(aisb, defaultSchema);
             return actual.groupIndex(indexName, joinType);
         }
 
@@ -672,8 +670,8 @@ public class AISBBasedBuilder
 
         // ActualFinisher interface
 
-        public ActualGroupIndexBuilder(AkibanInformationSchema ais, String defaultSchema) {
-            this.aisb = new AISBuilder(ais);
+        public ActualGroupIndexBuilder(AISBuilder aisb, String defaultSchema) {
+            this.aisb = aisb;
             this.defaultSchema = defaultSchema;
         }
 
