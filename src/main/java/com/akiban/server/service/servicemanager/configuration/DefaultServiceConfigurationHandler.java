@@ -34,8 +34,8 @@ public final class DefaultServiceConfigurationHandler implements ServiceConfigur
     // YamlConfigurationStrategy interface
 
     @Override
-    public void bind(String interfaceName, String implementingClassName) {
-        builder.bind(interfaceName, implementingClassName);
+    public void bind(String interfaceName, String implementingClassName, ClassLoader classLoader) {
+        builder.bind(interfaceName, implementingClassName, classLoader);
     }
 
     @Override
@@ -81,8 +81,8 @@ public final class DefaultServiceConfigurationHandler implements ServiceConfigur
 
     // DefaultServiceConfigurationHandler interface
 
-    public Collection<ServiceBinding> serviceBindings() {
-        return builder.getAllBindings();
+    public Collection<ServiceBinding> serviceBindings(boolean strict) {
+        return builder.getAllBindings(strict);
     }
 
     public List<String> priorities() {
