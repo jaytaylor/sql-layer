@@ -335,7 +335,7 @@ public class UserTable extends Table
         return primaryKey;
     }
 
-    public synchronized void endTable()
+    public synchronized void endTable(NameGenerator generator)
     {
         // Creates a PK for a pk-less table.
         if (primaryKey == null) {
@@ -347,7 +347,9 @@ public class UserTable extends Table
                 }
             }
             if (primaryKeyIndex == null) {
-                primaryKeyIndex = createAkibanPrimaryKeyIndex();
+                assert group != null : "Null group: " + this;
+                assert group.getRoot() != null : "Null root: " + group;
+                primaryKeyIndex = createAkibanPrimaryKeyIndex(generator.generateIndexID(group.getRoot().getTableId()));
             }
             assert primaryKeyIndex != null : this;
             primaryKey = new PrimaryKey(primaryKeyIndex);
@@ -519,7 +521,7 @@ public class UserTable extends Table
         }
     }
 
-    private TableIndex createAkibanPrimaryKeyIndex()
+    private TableIndex createAkibanPrimaryKeyIndex(int indexID)
     {
         // Create a column for a PK
         Column pkColumn = Column.create(this,
@@ -527,9 +529,6 @@ public class UserTable extends Table
                                         getColumns().size(),
                                         Types.BIGINT); // adds column to table
         pkColumn.setNullable(false);
-        // TODO: Needs to be externally provided.
-        // See bug1000804. Since these are never really used, and aren't unique anyway, always use 0
-        int indexID = 0;
         TableIndex pkIndex = TableIndex.create(ais,
                                                this,
                                                Index.PRIMARY_KEY_CONSTRAINT,

@@ -72,6 +72,10 @@ public class AISBuilder {
         }
     }
 
+    public NameGenerator getNameGenerator() {
+        return nameGenerator;
+    }
+
     public void setTableIdOffset(int offset) {
         this.tableIdGenerator = offset;
     }
@@ -353,14 +357,6 @@ public class AISBuilder {
 
     public void basicSchemaIsComplete() {
         LOG.info("basicSchemaIsComplete");
-        for (UserTable userTable : ais.getUserTables().values()) {
-            userTable.endTable();
-            // endTable may have created new index, set its tree name if so
-            Index index = userTable.getPrimaryKeyIncludingInternal().getIndex();
-            if (index.getTreeName() == null) {
-                index.setTreeName(nameGenerator.generateIndexTreeName(index));
-            }
-        }
         for (ForwardTableReference forwardTableReference : forwardReferences.values()) {
             UserTable childTable = forwardTableReference.childTable();
             UserTable parentTable = ais.getUserTable(forwardTableReference
@@ -637,6 +633,15 @@ public class AISBuilder {
         // Hook up root tables
         for(Group group : ais.getGroups().values()) {
             setRootIfNeeded(group);
+        }
+        // Create hidden PKs if needed. Needs group hooked up before it can be called (to generate index id).
+        for (UserTable userTable : ais.getUserTables().values()) {
+            userTable.endTable(nameGenerator);
+            // endTable may have created new index, set its tree name if so
+            Index index = userTable.getPrimaryKeyIncludingInternal().getIndex();
+            if (index.getTreeName() == null) {
+                index.setTreeName(nameGenerator.generateIndexTreeName(index));
+            }
         }
     }
 
