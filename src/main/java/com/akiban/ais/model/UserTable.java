@@ -347,9 +347,14 @@ public class UserTable extends Table
                 }
             }
             if (primaryKeyIndex == null) {
-                assert group != null : "Null group: " + this;
-                assert group.getRoot() != null : "Null root: " + group;
-                primaryKeyIndex = createAkibanPrimaryKeyIndex(generator.generateIndexID(group.getRoot().getTableId()));
+                final int rootID;
+                if(group == null) {
+                    rootID = getTableId();
+                } else {
+                    assert group.getRoot() != null : "Null root: " + group;
+                    rootID = group.getRoot().getTableId();
+                }
+                primaryKeyIndex = createAkibanPrimaryKeyIndex(generator.generateIndexID(rootID));
             }
             assert primaryKeyIndex != null : this;
             primaryKey = new PrimaryKey(primaryKeyIndex);

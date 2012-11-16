@@ -62,6 +62,7 @@ public class AISMergeTest {
         b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
         
         b.basicSchemaIsComplete();
+        b.groupingIsComplete();
         
         assertNotNull(s.getUserTable(SCHEMA, TABLE));
         assertNotNull(s.getUserTable(SCHEMA, TABLE).getAIS());
