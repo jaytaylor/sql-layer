@@ -26,6 +26,7 @@
 
 package com.akiban.sql.aisddl;
 
+import com.akiban.sql.parser.AlterTableRenameNode;
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -185,6 +186,13 @@ public class AlterTableDDL {
                     }
                 } break;
 
+                case NodeTypes.AT_RENAME_NODE:
+                    
+                    TableName newName = DDLHelper.convertName(defaultSchema,
+                                                              ((AlterTableRenameNode)node).newName());
+                    TableName oldName = table.getName();
+                    ddl.renameTable(session, oldName, newName);
+                    return ChangeLevel.METADATA;
                 default:
                     return null; // Something unsupported
             }
