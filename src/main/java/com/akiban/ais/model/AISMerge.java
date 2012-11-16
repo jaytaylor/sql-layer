@@ -367,7 +367,6 @@ public class AISMerge {
         LOG.debug("Merging new table {} into targetAIS", sourceTable.getName());
 
         final AISBuilder builder = new AISBuilder(targetAIS, nameGenerator);
-        builder.setTableIdOffset(nameGenerator.generateTableID(sourceTable.getName()));
 
         Group targetGroup = null;
         if (sourceTable.getParentJoin() != null) {
@@ -492,11 +491,11 @@ public class AISMerge {
         
         // indexes/constraints
         final int rootTableID = (targetGroup != null) ? targetGroup.getRoot().getTableId() : targetTable.getTableId();
+        builder.setNextRootTableID(rootTableID);
         for (TableIndex index : table.getIndexes()) {
             IndexName indexName = index.getIndexName();
 
-            builder.setIndexIdOffset(newIndexID(rootTableID));
-            builder.index(schemaName, tableName, 
+            builder.index(schemaName, tableName,
                     indexName.getName(), 
                     index.isUnique(), 
                     index.getConstraint());

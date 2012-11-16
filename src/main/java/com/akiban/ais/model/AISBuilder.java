@@ -49,39 +49,39 @@ public class AISBuilder {
     private static final Logger LOG = LoggerFactory.getLogger(AISBuilder.class);
     // API for creating capturing basic schema information
 
-    public AISBuilder() {
-        this(new AkibanInformationSchema(), new DefaultNameGenerator());
+    // Used when no generator is passed to constructor (i.e. stub or test).
+    // Generate temporary, but unique, IDs until the server assigns them.
+    private static class SimpleGenerator extends DefaultNameGenerator {
+        private int indexID = 1;
+
+        public SimpleGenerator(AkibanInformationSchema ais) {
+            super(ais);
+            indexID = super.getMaxIndexID();
+        }
+
+        @Override
+        public int generateIndexID(int rootTableID) {
+            return indexID++;
+        }
     }
 
-    public AISBuilder(NameGenerator nameGenerator) {
-        this(new AkibanInformationSchema(), nameGenerator);
+
+    public AISBuilder() {
+        this(new AkibanInformationSchema());
     }
 
     public AISBuilder(AkibanInformationSchema ais) {
-        this(ais, new DefaultNameGenerator());
+        this(ais, new SimpleGenerator(ais));
     }
 
     public AISBuilder(AkibanInformationSchema ais, NameGenerator nameGenerator) {
         LOG.trace("creating builder");
         this.ais = ais;
         this.nameGenerator = nameGenerator;
-        if (ais != null) {
-            for (UserTable table : ais.getUserTables().values()) {
-                tableIdGenerator = Math.max(tableIdGenerator, table.getTableId() + 1);
-            }
-        }
     }
 
     public NameGenerator getNameGenerator() {
         return nameGenerator;
-    }
-
-    public void setTableIdOffset(int offset) {
-        this.tableIdGenerator = offset;
-    }
-    
-    public void setIndexIdOffset (int offset) {
-        this.indexIdGenerator = offset;
     }
 
     public void sequence (String schemaName, String sequenceName,
@@ -94,7 +94,7 @@ public class AISBuilder {
     
     public void userTable(String schemaName, String tableName) {
         LOG.info("userTable: " + schemaName + "." + tableName);
-        UserTable.create(ais, schemaName, tableName, tableIdGenerator++);
+        UserTable.create(ais, schemaName, tableName, nameGenerator.generateTableID(new TableName(schemaName, tableName)));
     }
 
     public void userTableInitialAutoIncrement(String schemaName,
@@ -159,7 +159,8 @@ public class AISBuilder {
         Table table = ais.getTable(schemaName, tableName);
         checkFound(table, "creating index", "table",
                 concat(schemaName, tableName));
-        Index index = TableIndex.create(ais, table, indexName, indexIdGenerator++, unique, constraint);
+        int indexID = nameGenerator.generateIndexID(getRooTableID(table));
+        Index index = TableIndex.create(ais, table, indexName, indexID, unique, constraint);
         index.setTreeName(nameGenerator.generateIndexTreeName(index));
     }
 
@@ -176,7 +177,8 @@ public class AISBuilder {
         checkFound(group, "creating group index", "group", groupName);
         setRootIfNeeded(group);
         String constraint = unique ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT;
-        Index index = GroupIndex.create(ais, group, indexName, indexIdGenerator++, unique, constraint, joinType);
+        int indexID = nameGenerator.generateIndexID(getRooTableID(group.getRoot()));
+        Index index = GroupIndex.create(ais, group, indexName, indexID, unique, constraint, joinType);
         index.setTreeName(nameGenerator.generateIndexTreeName(index));
     }
 
@@ -741,12 +743,18 @@ public class AISBuilder {
         table.setGroup(group);
     }
 
-    public int getTableIdOffset() {
-        return tableIdGenerator;
+    public void setNextRootTableID(int rootTableID) {
+        nextRootTableID = rootTableID;
     }
-    
-    public int getIndexIdOffset() {
-        return indexIdGenerator;
+
+    private int getRooTableID(Table table) {
+        if(table == null || nextRootTableID != -1) {
+            return nextRootTableID;
+        }
+        if(table.getGroup() != null && table.getGroup().getRoot() != null) {
+            return table.getGroup().getRoot().getTableId();
+        }
+        return table.getTableId();
     }
 
     /**
@@ -807,15 +815,12 @@ public class AISBuilder {
     public final static int MAX_COLUMN_NAME_LENGTH = 64;
 
     private final AkibanInformationSchema ais;
+    private int nextRootTableID = -1;
     private Map<String, ForwardTableReference> forwardReferences = // join name
                                                                    // ->
                                                                    // ForwardTableReference
     new LinkedHashMap<String, ForwardTableReference>();
     private NameGenerator nameGenerator;
-    // This is temporary. We need unique ids generated here until the
-    // server assigns them.
-    private int tableIdGenerator = 0;
-    private int indexIdGenerator = 1;
 
     // Inner classes
 
