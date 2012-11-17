@@ -274,6 +274,7 @@ public enum ErrorCode {
     NO_SUCH_GROUPING_FK     ("42", "518", Importance.DEBUG, NoSuchGroupingFKException.class),
     NO_SUCH_ROUTINE         ("42", "519", Importance.DEBUG, NoSuchRoutineException.class),
     NO_SUCH_CAST            ("42", "51A", Importance.DEBUG, NoSuchCastException.class),
+    PROCEDURE_CALLED_AS_FUNCTION ("42", "51B", Importance.DEBUG, ProcedureCalledAsFunctionException.class),
 
 
     // Class 44 - with check option violation

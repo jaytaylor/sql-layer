@@ -293,6 +293,10 @@ public final class OverloadResolver<V extends TValidatedOverload> {
         this.castsResolver = castsResolver;
     }
 
+    public boolean isDefined(String name) {
+        return overloadsRegistry.containsKey(name);
+    }
+
     public OverloadResult<V> get(String name, List<? extends TPreptimeValue> inputs)
     {
         Iterable<? extends ScalarsGroup<V>> scalarsGroup = overloadsRegistry.get(name);

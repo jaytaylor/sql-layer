@@ -79,6 +79,10 @@ final class ResolvablesRegistry<V extends TValidatedOverload> implements Iterabl
                 });
     }
 
+    public boolean containsKey(String name) {
+        return overloadsByName.containsKey(name.toLowerCase());
+    }
+
     @Override
     public Iterator<V> iterator() {
         return new InternalIterator();

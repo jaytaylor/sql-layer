@@ -24,18 +24,24 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.t3expressions;
+package com.akiban.sql.optimizer.plan;
 
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TKeyComparable;
-import com.akiban.server.types3.texpressions.TValidatedAggregator;
-import com.akiban.server.types3.texpressions.TValidatedScalar;
+import com.akiban.ais.model.Routine;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.parser.ValueNode;
 
-public interface T3RegistryService {
-    OverloadResolver<TValidatedScalar> getScalarsResolver();
-    OverloadResolver<TValidatedAggregator> getAggregatesResolver();
-    TCastResolver getCastsResolver();
-    TKeyComparable getKeyComparable(TClass left, TClass right);
-    enum FunctionKind { SCALAR, AGGREGATE };
-    FunctionKind getFunctionKind(String name);
+import java.util.List;
+
+public class RoutineCondition extends RoutineExpression implements ConditionExpression
+{
+    public RoutineCondition(Routine routine,
+                            List<ExpressionNode> operands,
+                            DataTypeDescriptor sqlType, ValueNode sqlSource) {
+        super(routine, operands, sqlType, sqlSource);
+    }
+
+    @Override
+    public Implementation getImplementation() {
+        return Implementation.NORMAL;
+    }
 }

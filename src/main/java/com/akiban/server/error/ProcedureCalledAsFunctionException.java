@@ -23,19 +23,17 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.server.error;
 
-package com.akiban.server.t3expressions;
+import com.akiban.ais.model.TableName;
 
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TKeyComparable;
-import com.akiban.server.types3.texpressions.TValidatedAggregator;
-import com.akiban.server.types3.texpressions.TValidatedScalar;
+public class ProcedureCalledAsFunctionException extends BaseSQLException {
+    public ProcedureCalledAsFunctionException(String schemaName, String routineName) {
+        super(ErrorCode.PROCEDURE_CALLED_AS_FUNCTION, schemaName, routineName, null);
+    }
+    
+    public ProcedureCalledAsFunctionException(TableName name) {
+        super(ErrorCode.PROCEDURE_CALLED_AS_FUNCTION, name.getSchemaName(), name.getTableName(), null);
+    }
 
-public interface T3RegistryService {
-    OverloadResolver<TValidatedScalar> getScalarsResolver();
-    OverloadResolver<TValidatedAggregator> getAggregatesResolver();
-    TCastResolver getCastsResolver();
-    TKeyComparable getKeyComparable(TClass left, TClass right);
-    enum FunctionKind { SCALAR, AGGREGATE };
-    FunctionKind getFunctionKind(String name);
 }
