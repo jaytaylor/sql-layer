@@ -51,7 +51,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class ServerJavaRoutineTExpression implements TPreparedExpression {
-    private final Routine routine;
+    protected final Routine routine;
     private final List<? extends TPreparedExpression> operands;
 
     protected ServerJavaRoutineTExpression(Routine routine,
