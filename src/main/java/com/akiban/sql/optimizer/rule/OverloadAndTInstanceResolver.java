@@ -89,6 +89,7 @@ import com.akiban.sql.optimizer.plan.Project;
 import com.akiban.sql.optimizer.plan.ResolvableExpression;
 import com.akiban.sql.optimizer.plan.ResultSet;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
+import com.akiban.sql.optimizer.plan.RoutineExpression;
 import com.akiban.sql.optimizer.plan.Select;
 import com.akiban.sql.optimizer.plan.Sort;
 import com.akiban.sql.optimizer.plan.Subquery;
@@ -253,6 +254,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 n = handleBooleanConstantExpression((BooleanConstantExpression) n);
             else if (n instanceof ConstantExpression)
                 n = handleConstantExpression((ConstantExpression) n);
+            else if (n instanceof RoutineExpression)
+                n = handleRoutineExpression((RoutineExpression) n);
             else
                 logger.warn("unrecognized ExpressionNode subclass: {}", n.getClass());
 
@@ -750,6 +753,12 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         ExpressionNode handleConstantExpression(ConstantExpression expression) {
             // will be lazily loaded as necessary
+            return expression;
+        }
+
+        ExpressionNode handleRoutineExpression(RoutineExpression expression) {
+            TPreptimeValue tpv = new TPreptimeValue(expression.getRoutine().getReturnValue().tInstance());
+            expression.setPreptimeValue(tpv);
             return expression;
         }
 

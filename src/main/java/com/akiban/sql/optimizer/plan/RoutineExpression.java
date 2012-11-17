@@ -27,6 +27,7 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.Routine;
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
@@ -45,6 +46,9 @@ public class RoutineExpression extends BaseExpression
         super(sqlType, sqlSource);
         this.routine = routine;
         this.operands = operands;
+        if (routine.getParameters().size() != operands.size())
+            throw new WrongExpressionArityException(routine.getParameters().size(),
+                                                    operands.size());
     }
 
     public Routine getRoutine() {
