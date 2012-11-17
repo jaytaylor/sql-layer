@@ -33,18 +33,16 @@ import java.lang.reflect.Method;
 import java.util.List;
 
 public class ServerJavaMethodTExpression extends ServerJavaRoutineTExpression {
-    private Method method;
-
     public ServerJavaMethodTExpression(Routine routine,
-                                       Method methods,
                                        List<? extends TPreparedExpression> operands) {
         super(routine, operands);
-        this.method = method;
     }
 
     @Override
     protected ServerJavaRoutine javaRoutine(ServerQueryContext context,
                                             ServerRoutineInvocation invocation) {
+        Method method = context.getServer().getRoutineLoader().
+            loadJavaMethod(context.getSession(), routine.getName());
         return new ServerJavaMethod(context, invocation, method);
     }
 

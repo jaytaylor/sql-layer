@@ -26,7 +26,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
-
+import com.akiban.ais.model.Routine;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
@@ -206,6 +206,15 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
     @Override
     protected Expression assembleBoundFieldExpression(RowType rowType, int rowIndex, int fieldIndex) {
         return boundField(rowType, rowIndex, fieldIndex);
+    }
+
+    @Override
+    protected Expression assembleRoutine(ExpressionNode routineNode, 
+                                         Routine routine,
+                                         List<ExpressionNode> argumentNodes,
+                                         ColumnExpressionContext columnContext,
+                                         SubqueryOperatorAssembler<Expression> subqueryAssembler) {
+        return null;            // TODO: ...
     }
 
     @Override
