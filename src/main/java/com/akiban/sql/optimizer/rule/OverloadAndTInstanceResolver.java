@@ -28,6 +28,7 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.ColumnContainer;
+import com.akiban.ais.model.Routine;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.t3expressions.OverloadResolver;
@@ -757,7 +758,14 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleRoutineExpression(RoutineExpression expression) {
-            TPreptimeValue tpv = new TPreptimeValue(expression.getRoutine().getReturnValue().tInstance());
+            Routine routine = expression.getRoutine();
+            List<ExpressionNode> operands = expression.getOperands();
+            for (int i = 0; i < operands.size(); i++) {
+                ExpressionNode operand = castTo(operands.get(i), routine.getParameters().get(i).tInstance(),
+                                                folder, parametersSync);
+                operands.set(i, operand);
+            }
+            TPreptimeValue tpv = new TPreptimeValue(routine.getReturnValue().tInstance());
             expression.setPreptimeValue(tpv);
             return expression;
         }
