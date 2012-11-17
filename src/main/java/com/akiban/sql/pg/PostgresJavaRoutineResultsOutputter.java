@@ -29,6 +29,7 @@ package com.akiban.sql.pg;
 import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
 import com.akiban.sql.server.ServerJavaRoutine;
+import com.akiban.sql.server.ServerJavaValues;
 
 import java.util.List;
 import java.io.ByteArrayOutputStream;
@@ -54,7 +55,7 @@ public class PostgresJavaRoutineResultsOutputter extends PostgresOutputter<Serve
             output(javaRoutine, param, i, fieldIndex++, usePVals);
         }
         if (routine.getReturnValue() != null) {
-            output(javaRoutine, routine.getReturnValue(), -1, fieldIndex++, usePVals);
+            output(javaRoutine, routine.getReturnValue(), ServerJavaValues.RETURN_VALUE_INDEX, fieldIndex++, usePVals);
         }
         messenger.sendMessage();
     }

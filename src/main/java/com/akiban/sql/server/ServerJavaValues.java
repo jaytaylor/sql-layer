@@ -83,6 +83,8 @@ import java.util.Collections;
  */
 public abstract class ServerJavaValues
 {
+    public static final int RETURN_VALUE_INDEX = -1;
+
     protected abstract int size();
     protected abstract ServerQueryContext getContext();
     protected abstract ValueSource getValue(int index);

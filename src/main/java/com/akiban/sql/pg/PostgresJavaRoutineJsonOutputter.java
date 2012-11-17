@@ -35,6 +35,7 @@ import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.server.ServerJavaRoutine;
+import com.akiban.sql.server.ServerJavaValues;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 import com.akiban.util.AkibanAppender;
@@ -93,7 +94,8 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
             first = false;
         }
         if (routine.getReturnValue() != null) {
-            Object value = javaRoutine.getOutParameter(routine.getReturnValue(), -1);
+            Object value = javaRoutine.getOutParameter(routine.getReturnValue(), 
+                                                       ServerJavaValues.RETURN_VALUE_INDEX);
             outputValue("return", value, appender, first);
             first = false;
         }
