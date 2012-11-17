@@ -512,6 +512,18 @@ public class AISBBasedBuilder
             return this;
         }
 
+        @Override
+        public NewRoutineBuilder deterministic(boolean deterministic) {
+            aisb.routineDeterministic(schema, userTable, deterministic);
+            return this;
+        }
+
+        @Override
+        public NewRoutineBuilder calledOnNullInput(boolean calledOnNullInput) {
+            aisb.routineCalledOnNullInput(schema, userTable, calledOnNullInput);
+            return this;
+        }
+
         // NewSQLJJarBuilder
 
         @Override

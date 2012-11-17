@@ -346,6 +346,24 @@ public class AISBuilder {
         routine.setDynamicResultSets(dynamicResultSets);
     }
 
+    public void routineDeterministic(String schemaName, String routineName,
+                                     boolean deterministic) {
+        LOG.info("deterministic: {} {}", concat(schemaName, routineName), deterministic);
+        Routine routine = ais.getRoutine(schemaName, routineName);
+        checkFound(routine, "deterministic", "routine", 
+                   concat(schemaName, routineName));
+        routine.setDeterministic(deterministic);
+    }
+
+    public void routineCalledOnNullInput(String schemaName, String routineName,
+                                     boolean calledOnNullInput) {
+        LOG.info("called on NULL input: {} {}", concat(schemaName, routineName), calledOnNullInput);
+        Routine routine = ais.getRoutine(schemaName, routineName);
+        checkFound(routine, "calledOnNullInput", "routine", 
+                   concat(schemaName, routineName));
+        routine.setCalledOnNullInput(calledOnNullInput);
+    }
+
     public void sqljJar(String schemaName, String jarName, URL url) {
         LOG.info("SQL/J jar: {}.{} ", schemaName, jarName);
         SQLJJar sqljJar = SQLJJar.create(ais, schemaName, jarName, url);

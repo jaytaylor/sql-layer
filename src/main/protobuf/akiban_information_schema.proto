@@ -198,6 +198,8 @@ message Routine {
     optional bool      protected     = 10; // Routine cannot be altered
     optional RoutineSQLAllowed sqlAllowed = 11; // whether database accessed
     optional int32     dynamicResultSets = 12; // result set values
+    optional bool      deterministic = 13; // same value from same arguments
+    optional bool      calledOnNullInput = 14; // handles null argument specially
 }
 
 message SQLJJar {
