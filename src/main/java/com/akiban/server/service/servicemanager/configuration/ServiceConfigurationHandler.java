@@ -27,7 +27,7 @@
 package com.akiban.server.service.servicemanager.configuration;
 
 public interface ServiceConfigurationHandler {
-    void bind(String interfaceName, String implementingClassName);
+    void bind(String interfaceName, String implementingClassName, ClassLoader classLoader);
     void require(String interfaceName);
     void lock(String interfaceName);
     void mustBeLocked(String interfaceName);

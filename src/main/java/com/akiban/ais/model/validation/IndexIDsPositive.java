@@ -30,38 +30,33 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.error.InvalidIndexIDException;
 
-import com.akiban.server.error.DuplicateIndexIdException;
+import java.util.Collection;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.util.TreeMap;
-
-class IndexIDsUnique implements AISValidation {
+/**
+ * <p>The index ID of zero is special for MySQL adapter. It signifies a
+ * full group scan ("HKEY" scan) and should not overlap with a real ID.</p>
+ *
+ * <p>There are also arrays sized to the max index ID so reject negative too.</p>
+ */
+public class IndexIDsPositive implements AISValidation {
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        Map<Group, Map<Integer, Index>> byGroup = new HashMap<Group, Map<Integer, Index>>();
-        for (UserTable table : ais.getUserTables().values()) {
-            for (Index index : table.getIndexesIncludingInternal()) {
-                checkIndexID(byGroup, table.getGroup(), index, output);
-            }
+        for(UserTable table : ais.getUserTables().values()) {
+            checkIDs(table.getIndexesIncludingInternal(), output);
         }
-        for (Group group : ais.getGroups().values()) {
-            for (Index index : group.getIndexes()) {
-                checkIndexID(byGroup, group, index, output);
-            }
+        for(Group group : ais.getGroups().values()) {
+            checkIDs(group.getIndexes(), output);
         }
     }
-    
-    private static void checkIndexID(Map<Group, Map<Integer, Index>> byGroup, Group group, Index index, AISValidationOutput failures) {
-        Map<Integer, Index> forGroup = byGroup.get(group);
-        if (forGroup == null) {
-            forGroup = new TreeMap<Integer, Index>();
-            byGroup.put(group, forGroup);
-        }
-        Index other = forGroup.put(index.getIndexId(), index);
-        if (other != null) {
-            failures.reportFailure(new AISValidationFailure(new DuplicateIndexIdException(other.getIndexName(), index.getIndexName())));
+
+    private static void checkIDs(Collection<? extends Index> indexes, AISValidationOutput output) {
+        for(Index index : indexes) {
+            int id = index.getIndexId();
+            if(id <= 0) {
+                output.reportFailure(new AISValidationFailure(new InvalidIndexIDException(index.getIndexName(), id)));
+            }
         }
     }
 }

@@ -62,6 +62,7 @@ public class AISMergeTest {
         b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
         
         b.basicSchemaIsComplete();
+        b.groupingIsComplete();
         
         assertNotNull(s.getUserTable(SCHEMA, TABLE));
         assertNotNull(s.getUserTable(SCHEMA, TABLE).getAIS());
@@ -453,7 +454,6 @@ public class AISMergeTest {
          * x+3 -> i_s._akiban_foo
          */
         AISBuilder tb = new AISBuilder(t);
-        tb.setTableIdOffset(DefaultNameGenerator.IS_TABLE_ID_OFFSET);
 
         tb.userTable(SCHEMA, "bar");
         tb.column(SCHEMA, "bar", "id", 0, "INT", null, null, false, false, null, null);
@@ -493,14 +493,12 @@ public class AISMergeTest {
          */
         final String I_S = TableName.INFORMATION_SCHEMA;
         AISBuilder tb = new AISBuilder(t);
-        tb.setTableIdOffset(DefaultNameGenerator.IS_TABLE_ID_OFFSET);
 
         tb.userTable(I_S, "foo");
         tb.column(I_S, "foo", "id", 0, "INT", null, null, false, false, null, null);
         tb.createGroup("foo", I_S);
         tb.addTableToGroup("foo", I_S, "foo");
 
-        tb.setTableIdOffset(tb.getTableIdOffset()+1);
         tb.userTable(SCHEMA, "bar");
         tb.column(SCHEMA, "bar", "id", 0, "INT", null, null, false, false, null, null);
         tb.createGroup("bar", SCHEMA);

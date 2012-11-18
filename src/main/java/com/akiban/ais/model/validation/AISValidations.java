@@ -60,6 +60,7 @@ public final class AISValidations {
     public static final AISValidation INDEX_COLUMN_IS_NOT_PARTIAL = new IndexColumnIsNotPartial();
     public static final AISValidation COLUMN_SIZES_MATCH = new ColumnMaxAndPrefixSizesMatch();
     public static final AISValidation SEQUENCE_VALUES_VALID = new SequenceValuesValid();
+    public static final AISValidation INDEX_IDS_POSITIVE = new IndexIDsPositive();
 
     public static final Collection<AISValidation> LIVE_AIS_VALIDATIONS;
     
@@ -92,7 +93,8 @@ public final class AISValidations {
                 COLLATION_SUPPORTED,
                 INDEX_COLUMN_IS_NOT_PARTIAL,
                 COLUMN_SIZES_MATCH,
-                SEQUENCE_VALUES_VALID
+                SEQUENCE_VALUES_VALID,
+                INDEX_IDS_POSITIVE
                 ));
     }
     

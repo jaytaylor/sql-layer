@@ -37,7 +37,7 @@ final class StringListConfigurationHandler implements ServiceConfigurationHandle
     // YamlConfigurationStrategy interface
 
     @Override
-    public void bind(String interfaceName, String implementingClassName) {
+    public void bind(String interfaceName, String implementingClassName, ClassLoader ignored) {
         say("BIND %s -> %s", interfaceName, implementingClassName);
     }
 

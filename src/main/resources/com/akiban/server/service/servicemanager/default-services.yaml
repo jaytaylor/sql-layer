@@ -23,3 +23,4 @@
     com.akiban.sql.embedded.EmbeddedJDBCService : com.akiban.sql.embedded.EmbeddedJDBCServiceImpl
     com.akiban.server.service.transaction.TransactionService : com.akiban.server.store.PersistitTransactionService
     com.akiban.server.service.lock.LockService : com.akiban.server.service.lock.LockServiceImpl
+    com.akiban.server.service.plugins.PluginsFinder : com.akiban.server.service.plugins.HomeDirPluginsFinder

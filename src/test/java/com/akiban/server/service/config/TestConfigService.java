@@ -28,8 +28,11 @@ package com.akiban.server.service.config;
 
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.error.ConfigurationPropertiesLoadException;
+import com.akiban.server.service.plugins.Plugin;
+import com.akiban.server.service.plugins.PluginsFinder;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,7 +47,15 @@ public class TestConfigService extends ConfigurationServiceImpl {
     private final Map<String, String> extraProperties;
     File tmpDir;
 
+    private static final PluginsFinder emptyPluginsFinder = new PluginsFinder() {
+        @Override
+        public Collection<? extends Plugin> get() {
+            return Collections.emptyList();
+        }
+    };
+
     public TestConfigService() {
+        super(emptyPluginsFinder);
         this.extraProperties = getAndClearOverrides();
     }
 

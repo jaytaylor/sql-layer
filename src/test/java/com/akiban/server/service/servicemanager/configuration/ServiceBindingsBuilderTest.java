@@ -170,7 +170,7 @@ public final class ServiceBindingsBuilderTest {
                                          String interfaceName, String implementingClass,
                                          boolean directlyRequired, boolean locked)
     {
-        List<ServiceBinding> bindings = sorted(builder.getAllBindings());
+        List<ServiceBinding> bindings = sorted(builder.getAllBindings(true));
         assertEquals("bindings count", 1, bindings.size());
         checkBinding("binding", bindings.get(0), interfaceName, implementingClass, directlyRequired, locked);
     }

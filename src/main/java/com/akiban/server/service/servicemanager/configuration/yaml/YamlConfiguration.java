@@ -59,9 +59,10 @@ public final class YamlConfiguration implements BindingsConfigurationLoader {
         }
     }
 
-    public YamlConfiguration(String sourceName, Reader source) {
+    public YamlConfiguration(String sourceName, Reader source, ClassLoader classLoader) {
         this.sourceName = sourceName;
         this.source = source;
+        this.classLoader = classLoader;
     }
 
     // private methods
@@ -118,13 +119,13 @@ public final class YamlConfiguration implements BindingsConfigurationLoader {
 
     private void internalDoBind(ServiceConfigurationHandler config, Map<String,String> bindings) {
         for(Map.Entry<String,String> binding : bindings.entrySet()) {
-            config.bind(binding.getKey(), binding.getValue());
+            config.bind(binding.getKey(), binding.getValue(), classLoader);
         }
     }
 
     private void internalDoBindAndLock(ServiceConfigurationHandler config, Map<String,String> bindings) {
         for(Map.Entry<String,String> binding : bindings.entrySet()) {
-            config.bind(binding.getKey(), binding.getValue());
+            config.bind(binding.getKey(), binding.getValue(), classLoader);
             config.lock(binding.getKey());
         }
     }
@@ -228,6 +229,7 @@ public final class YamlConfiguration implements BindingsConfigurationLoader {
 
     final String sourceName;
     final Reader source;
+    final ClassLoader classLoader;
 
     // nested classes
 
