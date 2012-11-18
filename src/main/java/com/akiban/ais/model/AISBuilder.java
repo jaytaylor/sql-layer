@@ -356,7 +356,7 @@ public class AISBuilder {
     }
 
     public void routineCalledOnNullInput(String schemaName, String routineName,
-                                     boolean calledOnNullInput) {
+                                         boolean calledOnNullInput) {
         LOG.info("called on NULL input: {} {}", concat(schemaName, routineName), calledOnNullInput);
         Routine routine = ais.getRoutine(schemaName, routineName);
         checkFound(routine, "calledOnNullInput", "routine", 
