@@ -22,4 +22,8 @@
 - Statement: SELECT id, test_f2(s, ?) FROM t2
 - params: [['Hello (\w+)']]
 - output: [[1,'World'],[2,'test'],[3,null]]
+---
+# Function as procedure
+- Statement: CALL test_f1(10,3)
+- output: [[1000.0]]
 ...
