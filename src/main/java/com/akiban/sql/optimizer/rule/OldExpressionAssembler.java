@@ -36,6 +36,9 @@ import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.expression.std.InExpression;
 import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.script.ScriptBindingsRoutineExpression;
+import com.akiban.sql.script.ScriptFunctionJavaRoutineExpression;
+import com.akiban.sql.server.ServerJavaMethodExpression;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
@@ -214,7 +217,17 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
                                          List<ExpressionNode> operandNodes,
                                          ColumnExpressionContext columnContext,
                                          SubqueryOperatorAssembler<Expression> subqueryAssembler) {
-        return null;            // TODO: ...
+        List<Expression> inputs = assembleExpressions(operandNodes, columnContext, subqueryAssembler);
+        switch (routine.getCallingConvention()) {
+        case JAVA:
+            return new ServerJavaMethodExpression(routine, inputs);
+        case SCRIPT_FUNCTION_JAVA:
+            return new ScriptFunctionJavaRoutineExpression(routine, inputs);
+        case SCRIPT_BINDINGS:
+            return new ScriptBindingsRoutineExpression(routine, inputs);
+        default:
+            throw new AkibanInternalException("Unimplemented routine " + routine);
+        }
     }
 
     @Override
