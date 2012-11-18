@@ -118,6 +118,8 @@ public class PersistitStore implements Store, Service {
 
     private int deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
 
+    private RowDataValueCoder valueCoder;
+    
     public PersistitStore(boolean updateGroupIndexes, TreeService treeService, ConfigurationService config,
                           SchemaManager schemaManager, LockService lockService) {
         this.updateGroupIndexes = updateGroupIndexes;
@@ -133,7 +135,7 @@ public class PersistitStore implements Store, Service {
         try {
             CoderManager cm = getDb().getCoderManager();
             Management m = getDb().getManagement();
-            cm.registerValueCoder(RowData.class, new RowDataValueCoder());
+            cm.registerValueCoder(RowData.class, valueCoder = new RowDataValueCoder());
             cm.registerKeyCoder(CString.class, new CStringKeyCoder());
             originalDisplayFilter = m.getDisplayFilter();
             m.setDisplayFilter(new RowDataDisplayFilter(originalDisplayFilter));
@@ -1192,7 +1194,7 @@ public class PersistitStore implements Store, Service {
     public void packRowData(final Exchange hEx, final RowDef rowDef,
             final RowData rowData) {
         final Value value = hEx.getValue();
-        value.put(rowData);
+        value.directPut(valueCoder, rowData, null);
         final int at = value.getEncodedSize() - rowData.getInnerSize();
         int storedTableId = treeService.aisToStore(rowDef.getGroup(), rowData.getRowDefId());
         /*
@@ -1206,7 +1208,7 @@ public class PersistitStore implements Store, Service {
     public void expandRowData(final Exchange exchange, final RowData rowData) {
         final Value value = exchange.getValue();
         try {
-            value.get(rowData);
+            value.directGet(valueCoder, rowData, RowData.class, null);
         }
         catch(CorruptRowDataException e) {
             LOG.error("Corrupt RowData at key {}: {}", exchange.getKey(), e.getMessage());
