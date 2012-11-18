@@ -191,7 +191,10 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
         @Override
         protected void setPValue(int index, PValueSource source) {
             assert (index == RETURN_VALUE_INDEX);
-            PValueTargets.copyFrom(source, returnValue);
+            if (source == null)
+                returnValue.putNull();
+            else
+                PValueTargets.copyFrom(source, returnValue);
         }
 
         @Override

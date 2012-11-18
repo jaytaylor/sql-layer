@@ -38,4 +38,8 @@
 - output: [['[{"name":"s","oid":701,"type":double"},{"name":"d","oid":701,"type":double"}]'],['{"s":199.0,"d":1.0}']]
 ---
 - Statement: SET OutputFormat TO DEFAULT;
+---
+# Procedure as function
+- Statement: SELECT test_f1(100,99)
+- error: [4251B]
 ...

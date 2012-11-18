@@ -54,6 +54,7 @@ public abstract class ServerJavaRoutineExpressionEvaluation extends AbstractComp
     @Override
     public ValueSource eval() {
         if (javaRoutine == null) {
+            valueHolder().expectType(routine.getReturnValue().getType().akType());
             RoutineInvocation invocation = new RoutineInvocation(routine, children(), valueHolder());
             javaRoutine = javaRoutine((ServerQueryContext)queryContext(), invocation);
         }
