@@ -53,7 +53,6 @@ import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.UserTable;
 
 import com.akiban.server.error.InsertWrongCountException;
-import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.ProtectedTableDDLException;
 import com.akiban.server.error.SQLParserInternalException;
