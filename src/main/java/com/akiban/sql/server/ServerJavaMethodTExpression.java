@@ -34,8 +34,8 @@ import java.util.List;
 
 public class ServerJavaMethodTExpression extends ServerJavaRoutineTExpression {
     public ServerJavaMethodTExpression(Routine routine,
-                                       List<? extends TPreparedExpression> operands) {
-        super(routine, operands);
+                                       List<? extends TPreparedExpression> inputs) {
+        super(routine, inputs);
     }
 
     @Override

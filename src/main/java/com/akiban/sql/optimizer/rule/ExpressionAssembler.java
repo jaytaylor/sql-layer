@@ -97,7 +97,7 @@ abstract class ExpressionAssembler<T extends Explainable> {
     protected abstract T assembleBoundFieldExpression(RowType rowType, int rowIndex, int fieldIndex);
     protected abstract T assembleRoutine(ExpressionNode routineNode, 
                                          Routine routine,
-                                         List<ExpressionNode> argumentNodes,
+                                         List<ExpressionNode> operandNodes,
                                          ColumnExpressionContext columnContext,
                                          SubqueryOperatorAssembler<T> subqueryAssembler);
 

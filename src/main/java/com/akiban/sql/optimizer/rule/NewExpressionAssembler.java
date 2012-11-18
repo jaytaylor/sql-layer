@@ -233,17 +233,17 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     @Override
     protected TPreparedExpression assembleRoutine(ExpressionNode routineNode, 
                                                   Routine routine,
-                                                  List<ExpressionNode> argumentNodes,
+                                                  List<ExpressionNode> operandNodes,
                                                   ColumnExpressionContext columnContext,
                                                   SubqueryOperatorAssembler<TPreparedExpression> subqueryAssembler) {
-        List<TPreparedExpression> operands = assembleExpressions(argumentNodes, columnContext, subqueryAssembler);
+        List<TPreparedExpression> inputs = assembleExpressions(operandNodes, columnContext, subqueryAssembler);
         switch (routine.getCallingConvention()) {
         case JAVA:
-            return new ServerJavaMethodTExpression(routine, operands);
+            return new ServerJavaMethodTExpression(routine, inputs);
         case SCRIPT_FUNCTION_JAVA:
-            return new ScriptFunctionJavaRoutineTExpression(routine, operands);
+            return new ScriptFunctionJavaRoutineTExpression(routine, inputs);
         case SCRIPT_BINDINGS:
-            return new ScriptBindingsRoutineTExpression(routine, operands);
+            return new ScriptBindingsRoutineTExpression(routine, inputs);
         default:
             throw new AkibanInternalException("Unimplemented routine " + routine);
         }

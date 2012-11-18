@@ -52,21 +52,21 @@ import java.util.List;
 
 public abstract class ServerJavaRoutineTExpression implements TPreparedExpression {
     protected final Routine routine;
-    private final List<? extends TPreparedExpression> operands;
+    private final List<? extends TPreparedExpression> inputs;
 
     protected ServerJavaRoutineTExpression(Routine routine,
-                                           List<? extends TPreparedExpression> operands) {
+                                           List<? extends TPreparedExpression> inputs) {
         this.routine = routine;
-        this.operands = operands;
+        this.inputs = inputs;
     }
 
     @Override
     public TPreptimeValue evaluateConstant(QueryContext context) {
-        List<TPreptimeValue> values = new ArrayList<TPreptimeValue>(operands.size());
+        List<TPreptimeValue> values = new ArrayList<TPreptimeValue>(inputs.size());
         boolean allConstant = true, anyNull = false;
         PValueSource constantSource = null;
-        for (TPreparedExpression operand : operands) {
-            TPreptimeValue value = operand.evaluateConstant(context);
+        for (TPreparedExpression input : inputs) {
+            TPreptimeValue value = input.evaluateConstant(context);
             values.add(value);
             if (value.value() == null) {
                 allConstant = false;
@@ -95,17 +95,17 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
     @Override
     public CompoundExplainer getExplainer(ExplainContext context) {
         CompoundExplainer ex = new TExpressionExplainer(Type.FUNCTION, routine.getName().toString(), context);
-        for (TPreparedExpression operand : operands) {
-            ex.addAttribute(Label.OPERAND, operand.getExplainer(context));
+        for (TPreparedExpression input : inputs) {
+            ex.addAttribute(Label.OPERAND, input.getExplainer(context));
         }
         return ex;
     }
 
     @Override
     public TEvaluatableExpression build() {
-        List<TEvaluatableExpression> evals = new ArrayList<TEvaluatableExpression>(operands.size());
-        for (TPreparedExpression operand : operands) {
-            evals.add(operand.build());
+        List<TEvaluatableExpression> evals = new ArrayList<TEvaluatableExpression>(inputs.size());
+        for (TPreparedExpression input : inputs) {
+            evals.add(input.build());
         }
         return new TEvaluatableJavaRoutine(routine, evals);
     }
@@ -201,12 +201,12 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
     }
 
     static class TPreptimeValueRoutineInvocation extends ValueRoutineInvocation {
-        private List<TPreptimeValue> operands;
+        private List<TPreptimeValue> inputs;
 
         public TPreptimeValueRoutineInvocation(Routine routine,
-                                               List<TPreptimeValue> operands) {
+                                               List<TPreptimeValue> inputs) {
             super(routine);
-            this.operands = operands;
+            this.inputs = inputs;
         }
 
         @Override
@@ -214,24 +214,24 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
             return new ValueInvocationValues(getRoutine(), context, returnValue) {
                     @Override
                     protected int size() {
-                        return operands.size();
+                        return inputs.size();
                     }
 
                     @Override
                     protected PValueSource getPValue(int index) {
-                        return operands.get(index).value();
+                        return inputs.get(index).value();
                     }
                 };
         }
     }
 
     static class TEvaluatableValueRoutineInvocation extends ValueRoutineInvocation {
-        private List<TEvaluatableExpression> operands;
+        private List<TEvaluatableExpression> inputs;
 
         public TEvaluatableValueRoutineInvocation(Routine routine,
-                                                  List<TEvaluatableExpression> operands) {
+                                                  List<TEvaluatableExpression> inputs) {
             super(routine);
-            this.operands = operands;
+            this.inputs = inputs;
         }
 
         @Override
@@ -239,12 +239,12 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
             return new ValueInvocationValues(getRoutine(), context, returnValue) {
                     @Override
                     protected int size() {
-                        return operands.size();
+                        return inputs.size();
                     }
 
                     @Override
                     protected PValueSource getPValue(int index) {
-                        return operands.get(index).resultValue();
+                        return inputs.get(index).resultValue();
                     }
                 };
         }
@@ -252,29 +252,29 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
 
     class TEvaluatableJavaRoutine implements TEvaluatableExpression {
         private Routine routine;
-        private List<TEvaluatableExpression> operands;
+        private List<TEvaluatableExpression> inputs;
         private ValueRoutineInvocation invocation;
         private ServerJavaRoutine javaRoutine;
 
         public TEvaluatableJavaRoutine(Routine routine,
-                                       List<TEvaluatableExpression> operands) {
+                                       List<TEvaluatableExpression> inputs) {
             this.routine = routine;
-            this.operands = operands;
+            this.inputs = inputs;
         }
 
         @Override
         public void with(Row row) {
-            for (TEvaluatableExpression operand : operands) {
-                operand.with(row);
+            for (TEvaluatableExpression input : inputs) {
+                input.with(row);
             }
         }
 
         @Override
         public void with(QueryContext context) {
-            for (TEvaluatableExpression operand : operands) {
-                operand.with(context);
+            for (TEvaluatableExpression input : inputs) {
+                input.with(context);
             }
-            invocation = new TEvaluatableValueRoutineInvocation(routine, operands);
+            invocation = new TEvaluatableValueRoutineInvocation(routine, inputs);
             javaRoutine = javaRoutine((ServerQueryContext)context, invocation);
         }
 
@@ -285,8 +285,8 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
 
         @Override
         public void evaluate() {
-            for (TEvaluatableExpression operand : operands) {
-                operand.evaluate();
+            for (TEvaluatableExpression input : inputs) {
+                input.evaluate();
             }
             ServerJavaRoutineTExpression.this.evaluate(javaRoutine);
         }

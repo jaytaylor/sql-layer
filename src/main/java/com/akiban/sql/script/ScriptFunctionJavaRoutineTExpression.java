@@ -39,8 +39,8 @@ import java.util.List;
 
 public class ScriptFunctionJavaRoutineTExpression extends ServerJavaRoutineTExpression {
     public ScriptFunctionJavaRoutineTExpression(Routine routine,
-                                                List<? extends TPreparedExpression> operands) {
-        super(routine, operands);
+                                                List<? extends TPreparedExpression> inputs) {
+        super(routine, inputs);
     }
 
     @Override
