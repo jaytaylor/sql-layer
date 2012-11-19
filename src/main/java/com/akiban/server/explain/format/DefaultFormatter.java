@@ -531,6 +531,10 @@ public class DefaultFormatter
             if (!atts.valuePairs().isEmpty()) {
                 sb.setLength(sb.length() - 2);
             }
+            String inputOption = (String)atts.getValue(Label.INPUT_PRESERVATION);
+            if (!"KEEP_INPUT".equals(inputOption)) {
+                sb.append(", ").append(inputOption);
+            }
         }
     }
 

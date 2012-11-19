@@ -52,6 +52,7 @@ public class InConditionReverser extends BaseRule
     public void apply(PlanContext planContext) {
         List<TopLevelSubqueryCondition> conds = 
             new ConditionFinder().find(planContext.getPlan());
+        Collections.reverse(conds); // Transform depth first.
         for (TopLevelSubqueryCondition cond : conds) {
             if (cond.subqueryCondition instanceof AnyCondition)
                 convert(cond.select, cond.selectElement, 
@@ -119,12 +120,25 @@ public class InConditionReverser extends BaseRule
                                         joinConditions, hasDistinct))
                 return;
         }
+        ConditionList insideJoinConditions = null;
         if (input instanceof Select) {
             Select inselect = (Select)input;
-            joinConditions.addAll(inselect.getConditions());
+            insideJoinConditions = inselect.getConditions();
             input = inselect.getInput();
         }
         if (input instanceof Joinable) {
+            if (insideJoinConditions != null) {
+                if (input instanceof JoinNode) {
+                    JoinNode insideJoin = (JoinNode)input;
+                    if (insideJoin.getJoinConditions() != null)
+                        insideJoin.getJoinConditions().addAll(insideJoinConditions);
+                    else
+                        insideJoin.setJoinConditions(insideJoinConditions);
+                }
+                else {
+                    joinConditions.addAll(insideJoinConditions);
+                }
+            }
             convertToSemiJoin(select, selectElement, selectInput, 
                               (Joinable)input, joinConditions, 
                               (negated) ? JoinType.ANTI : JoinType.SEMI);

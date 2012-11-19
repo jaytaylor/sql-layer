@@ -1,0 +1,15 @@
+SelectQuery@3ba71336
+  ResultSet@55de5cd2[cid]
+    MapJoin@5208873f()
+      SingleIndexScan@2de7632c(Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740)
+      MapJoin@321ff53f()
+        SingleIndexScan@501e14ce(Index(test.parent.PRIMARY[IndexColumn(id)]), covering/NONE, rows = 100, cost = 69.9260)
+        Project@79a00b08[customers.cid]
+          Select@7a347899[]
+            OnlyIfEmpty@66e80979
+              Select@287c958f[]
+                Flatten@b3ef40d(items)
+                  Select@bc61bb7[customers.name == items.sku]
+                    AncestorLookup@7b45916a(items -> [items])
+                      SingleIndexScan@144e0560(Index(test.items.__akiban_fk_1[IndexColumn(oid)]), NONE, =parent.id, rows = 20, cost = 155.962)
+                      TableSource@64df9d28(items - TableGroup@e42ec0a(customers))

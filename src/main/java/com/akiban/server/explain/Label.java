@@ -74,7 +74,7 @@ public enum Label
     
     // OPTION
     //--------------------------------------------------------------------------
-    LOOK_UP_OPTION(Category.OPTION),
+    INPUT_PRESERVATION(Category.OPTION),
     GROUPING_OPTION(Category.OPTION),
     FLATTEN_OPTION(Category.OPTION), // keep parent, etc 
     SORT_OPTION(Category.OPTION),
