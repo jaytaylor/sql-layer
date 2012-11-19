@@ -26,9 +26,12 @@
 
 package com.akiban.ais.model.validation;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 public final class AISValidations {
     public static final AISValidation CHARACTER_SET_SUPPORTED = new CharacterSetSupported();
@@ -61,10 +64,10 @@ public final class AISValidations {
     public static final AISValidation SEQUENCE_VALUES_VALID = new SequenceValuesValid();
     public static final AISValidation INDEX_IDS_POSITIVE = new IndexIDsPositive();
 
-    public static final Collection<AISValidation> LIVE_AIS_VALIDATIONS;
+    public static final Collection<AISValidation> LIVE_AIS_VALIDATIONS = buildValidationList();
     
-    static {
-        LIVE_AIS_VALIDATIONS = Collections.unmodifiableList(Arrays.asList(
+    private static Collection<AISValidation> buildValidationList() {
+        List<AISValidation> validations = Collections.unmodifiableList(Arrays.asList(
                 TABLE_HAS_PRIMARY_KEY,
                 PRIMARY_KEY_IS_NOT_NULL,
                 SUPPORTED_COLUMN_TYPES,
@@ -94,7 +97,19 @@ public final class AISValidations {
                 COLUMN_SIZES_MATCH,
                 SEQUENCE_VALUES_VALID,
                 INDEX_IDS_POSITIVE
-                ));
+        ));
+
+        // Since we have one instance of the validation that is reused, they may not contain instance data.
+        // Added to prevent something like bug1078746 happening again (instance data changing concurrently).
+        for(AISValidation v : validations) {
+            for(Field f : v.getClass().getDeclaredFields()) {
+                if((f.getModifiers() & Modifier.STATIC) == 0) {
+                    throw new IllegalStateException("Field " + f.getName() + " of " + v.getClass().getName() + " is not static");
+                }
+            }
+        }
+
+        return validations;
     }
     
     private AISValidations () {}

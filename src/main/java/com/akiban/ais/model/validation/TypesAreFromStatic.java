@@ -57,5 +57,5 @@ class TypesAreFromStatic implements AISValidation {
         return Collections.unmodifiableMap(results);
     }
 
-    private final Map<String,Type> staticTypesByName = staticTypesByName();
+    private final static Map<String,Type> staticTypesByName = staticTypesByName();
 }
