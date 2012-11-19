@@ -1,6 +1,6 @@
 # test the `ALTER TABLE ... RENAME` 
 ---
-- CreateTable: t (c int);
+- Statement: CREATE TABLE t (c int);
 ---
 - Statement: INSERT INTO t values (3);
 ---
