@@ -1,4 +1,11 @@
 # test arithmetics with params in Types3
+
+---
+- Message: Suppressed due to bug1079242
+---
+- Properties: sys-aksql
+- suppressed: true
+
 ---
 - Newtypes: true
 ---

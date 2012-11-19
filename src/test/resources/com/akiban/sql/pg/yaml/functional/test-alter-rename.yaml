@@ -1,6 +1,6 @@
 # test the `ALTER TABLE ... RENAME` 
 ---
-- CreateTable: t (c int);
+- Statement: CREATE TABLE t (c int);
 ---
 - Statement: INSERT INTO t values (3);
 ---
@@ -25,6 +25,6 @@
 - Statement: SELECT c from t2;
 - error: [42501]
 ---
-- DropTable: dummy.test3;
+- Statement: DROP TABLE dummy.test3;
 ...
 
