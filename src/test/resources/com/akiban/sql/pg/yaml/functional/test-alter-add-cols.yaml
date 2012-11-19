@@ -1,6 +1,6 @@
 # test adding multiple columns in ALTER TABLE ...
 ---
-- CreateTable: t (a integer)
+- Statement: CREATE TABLE t (a integer)
 ---
 - Statement: ISNERT INTO t values (1, 2, 3);
 - error: [42000]
@@ -12,5 +12,10 @@
 - Statement: SELECT * from t;
 - output: [[1, 2, 3]]
 ---
-- DropTable: t;
+- Statement: ALTER TABLE t add  d int;
+---
+- Statment: DROP TABLE t;
+---
+- Statement: ALTER TABLE foo ADD COLUMN bar INT
+- error: [42501]
 ...

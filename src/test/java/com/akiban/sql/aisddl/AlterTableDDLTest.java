@@ -116,10 +116,10 @@ public class AlterTableDDLTest {
     }
 
     @Test
-    public void addMultipleColumn() throws StandardException
+    public void addMultipleColumns() throws StandardException
     {
         builder.userTable(A_NAME).colBigInt("b", false);
-        parseAndRun("ALTER TABLE a ADD COLUMN (d INT, e INT);");
+        parseAndRun("ALTER TABLE a ADD COLUMN (d INT, e INT)");
         expectColumnChanges("ADD:d", "ADD:e");
         if (Types3Switch.ON)
             expectFinalTable(A_NAME, "b MCOMPAT_ BIGINT(21) NOT NULL",
