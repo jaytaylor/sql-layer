@@ -78,7 +78,7 @@ public final class YamlConfigurationTest {
         int segment = 1;
         do {
             Reader testReader = new InputStreamReader(testIS, "UTF-8");
-            YamlConfiguration yamlConfig = new YamlConfiguration(yamlFileName, testReader, null);
+            YamlConfiguration yamlConfig = new YamlConfiguration(yamlFileName, testReader, getClass().getClassLoader());
             try {
                 yamlConfig.loadInto(stringsConfig);
             } finally {

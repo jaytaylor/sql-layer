@@ -30,9 +30,11 @@ import com.akiban.server.service.servicemanager.configuration.BindingsConfigurat
 import com.akiban.server.service.servicemanager.configuration.ServiceConfigurationHandler;
 import com.akiban.util.Enumerated;
 import com.akiban.util.EnumeratingIterator;
+import com.google.inject.Module;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -91,7 +93,10 @@ public final class YamlConfiguration implements BindingsConfigurationLoader {
                 internalDoBind( config, stringsMap(where, commandValue) );
                 break;
             case BIND_AND_LOCK:
-                internalDoBindAndLock( config, stringsMap(where, commandValue) );
+                internalDoBindAndLock(config, stringsMap(where, commandValue));
+                break;
+            case BIND_MODULES:
+                internalDoBindModules(config, where, commandValue);
                 break;
             case LOCK:
                 internalDoLock( config, strings(where, commandValue) );
@@ -128,6 +133,27 @@ public final class YamlConfiguration implements BindingsConfigurationLoader {
             config.bind(binding.getKey(), binding.getValue(), classLoader);
             config.lock(binding.getKey());
         }
+    }
+
+    private void internalDoBindModules(ServiceConfigurationHandler config, String where, Object commandValue) {
+        List<String> moduleNames = strings(where, commandValue);
+        List<Module> modules = new ArrayList<Module>(moduleNames.size());
+        ClassLoader localClassLoader = (classLoader == null)
+                ? ClassLoader.getSystemClassLoader()
+                : classLoader;
+        for (String moduleName : moduleNames) {
+            try {
+                Class<?> cls = localClassLoader.loadClass(moduleName);
+                Object module = cls.newInstance();
+                if (module instanceof Module)
+                    modules.add((Module)module);
+                else
+                    config.bindModulesError(where, commandValue, "bind-modules includes non-Module: " + cls);
+            } catch (Exception e) {
+                config.bindModulesError(where, commandValue, "error during bind-modules command: " + e);
+            }
+        }
+        config.bindModules(modules);
     }
 
     private void internalDoLock(ServiceConfigurationHandler config, List<String> interfaceNames) {
@@ -168,7 +194,7 @@ public final class YamlConfiguration implements BindingsConfigurationLoader {
     }
 
     private static Command whichCommand(String where, String commandName) {
-        commandName = commandName.toUpperCase().replace(' ', '_');
+        commandName = commandName.toUpperCase().replace(' ', '_').replace('-', '_');
         try {
             return Command.valueOf(commandName);
         } catch (IllegalArgumentException e) {
@@ -236,6 +262,7 @@ public final class YamlConfiguration implements BindingsConfigurationLoader {
     private enum Command {
         BIND,
         BIND_AND_LOCK,
+        BIND_MODULES,
         LOCK,
         REQUIRE,
         REQUIRE_LOCKED,

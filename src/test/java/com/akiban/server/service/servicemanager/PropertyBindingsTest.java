@@ -28,6 +28,7 @@ package com.akiban.server.service.servicemanager;
 
 import com.akiban.server.service.servicemanager.configuration.ServiceConfigurationHandler;
 import com.akiban.server.service.servicemanager.GuicedServiceManager.PropertyBindings;
+import com.google.inject.Module;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -150,6 +151,17 @@ public final class PropertyBindingsTest {
         @Override
         public void unrecognizedCommand(String where, Object command, String message) {
             messages.add("unrecognized command");
+        }
+
+        @Override
+        public void bindModules(List<Module> modules) {
+            for (Module module : modules)
+                messages.add("binding module " + module.getClass());
+        }
+
+        @Override
+        public void bindModulesError(String where, Object command, String message) {
+            messages().add("bind-modules error");
         }
 
         public List<String> messages() {

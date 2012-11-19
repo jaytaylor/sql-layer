@@ -23,22 +23,41 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.server.service.servicemanager.configuration.yaml;
 
-package com.akiban.server.service.servicemanager.configuration;
+import com.google.inject.AbstractModule;
 
-import com.google.inject.Module;
+@SuppressWarnings("unused") // via test-bind-modules
+public final class SampleModules {
 
-import java.util.List;
+    public static class GoodModule extends AbstractModule {
+        @Override
+        protected void configure() {
 
-public interface ServiceConfigurationHandler {
-    void bind(String interfaceName, String implementingClassName, ClassLoader classLoader);
-    void bindModules(List<Module> modules);
-    void require(String interfaceName);
-    void lock(String interfaceName);
-    void mustBeLocked(String interfaceName);
-    void mustBeBound(String interfaceName);
-    void prioritize(String interfaceName);
-    void sectionEnd();
-    void unrecognizedCommand(String where, Object command, String message);
-    void bindModulesError(String where, Object command, String message);
+        }
+    }
+
+    public static class NotAModule {
+        protected void configure() {
+
+        }
+    }
+
+    public static class ArgCtorModule extends AbstractModule {
+        protected void configure() {
+
+        }
+
+        public ArgCtorModule(int i) {}
+    }
+
+    public static class PrivateCtorModule extends AbstractModule {
+        protected void configure() {
+
+        }
+
+        private PrivateCtorModule() {}
+    }
+
+    private SampleModules() {}
 }
