@@ -1,0 +1,5 @@
+- bind-modules:
+    - com.akiban.server.service.servicemanager.configuration.yaml.SampleModules$GoodModule
+    - com.akiban.server.service.servicemanager.configuration.yaml.SampleModules$NotAModule
+    - com.akiban.server.service.servicemanager.configuration.yaml.SampleModules$ArgCtorModule
+    - com.akiban.server.service.servicemanager.configuration.yaml.SampleModules$PrivateCtorModule
