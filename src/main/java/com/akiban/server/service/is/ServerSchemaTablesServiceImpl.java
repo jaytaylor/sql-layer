@@ -25,6 +25,7 @@
  */
 package com.akiban.server.service.is;
 
+import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryPoolMXBean;
 import java.util.Iterator;
@@ -63,7 +64,8 @@ public class ServerSchemaTablesServiceImpl
     static final TableName SERVER_SESSIONS = new TableName (SCHEMA_NAME, "server_sessions");
     static final TableName SERVER_PARAMETERS = new TableName (SCHEMA_NAME, "server_parameters");
     static final TableName SERVER_MEMORY_POOLS = new TableName (SCHEMA_NAME, "server_memory_pools");
-
+    static final TableName SERVER_GARBAGE_COLLECTORS = new TableName (SCHEMA_NAME, "server_garbage_collectors");
+    
     private final MonitorService monitor;
     private final ConfigurationService configService;
     private final AkServerInterface serverInterface;
@@ -94,6 +96,8 @@ public class ServerSchemaTablesServiceImpl
         attach (ais, true, SERVER_PARAMETERS, ServerParameters.class);
         //SERVER_MEMORY_POOLS
         attach (ais, true, SERVER_MEMORY_POOLS, ServerMemoryPools.class);
+        //SERVER_GARBAGE_COLLECTIONS
+        attach (ais, true, SERVER_GARBAGE_COLLECTORS, ServerGarbageCollectors.class);
     }
 
     @Override
@@ -346,6 +350,44 @@ public class ServerSchemaTablesServiceImpl
             }
         }
     }
+    
+    private class ServerGarbageCollectors extends BasicFactoryBase {
+        public ServerGarbageCollectors(TableName sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan (getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            return ManagementFactory.getGarbageCollectorMXBeans().size();
+        }
+
+        private class Scan extends BaseScan {
+            private final Iterator<GarbageCollectorMXBean> it;
+
+            public Scan(RowType rowType) {
+                super(rowType);
+                it = ManagementFactory.getGarbageCollectorMXBeans().iterator();
+            }
+
+            @Override
+            public Row next() {
+                if(!it.hasNext()) {
+                    return null;
+                }
+                GarbageCollectorMXBean pool = it.next();
+                return new ValuesRow (rowType,
+                                      pool.getName(),
+                                      pool.getCollectionCount(),
+                                      pool.getCollectionTime(),
+                                      ++rowCounter);
+            }
+        }
+    }
 
     static AkibanInformationSchema createTablesToRegister() {
         NewAISBuilder builder = AISBBasedBuilder.create();
@@ -388,6 +430,11 @@ public class ServerSchemaTablesServiceImpl
             .colBigInt("used_bytes", false)
             .colBigInt("max_bytes", false)
             .colBigInt("peak_bytes", false);
+
+        builder.userTable(SERVER_GARBAGE_COLLECTORS)
+            .colString("name", IDENT_MAX, false)
+            .colBigInt("total_count", false)
+            .colBigInt("total_milliseconds", false);
 
         return builder.ais(false);
     }
