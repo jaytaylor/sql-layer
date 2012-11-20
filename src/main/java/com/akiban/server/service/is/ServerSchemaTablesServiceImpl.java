@@ -25,6 +25,8 @@
  */
 package com.akiban.server.service.is;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryPoolMXBean;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -60,7 +62,8 @@ public class ServerSchemaTablesServiceImpl
     static final TableName SERVER_SERVERS = new TableName (SCHEMA_NAME, "server_servers");
     static final TableName SERVER_SESSIONS = new TableName (SCHEMA_NAME, "server_sessions");
     static final TableName SERVER_PARAMETERS = new TableName (SCHEMA_NAME, "server_parameters");
-    
+    static final TableName SERVER_MEMORY_POOLS = new TableName (SCHEMA_NAME, "server_memory_pools");
+
     private final MonitorService monitor;
     private final ConfigurationService configService;
     private final AkServerInterface serverInterface;
@@ -89,6 +92,8 @@ public class ServerSchemaTablesServiceImpl
         attach (ais, true, SERVER_SESSIONS, Sessions.class);
         //SERVER_PARAMETERS
         attach (ais, true, SERVER_PARAMETERS, ServerParameters.class);
+        //SERVER_MEMORY_POOLS
+        attach (ais, true, SERVER_MEMORY_POOLS, ServerMemoryPools.class);
     }
 
     @Override
@@ -302,6 +307,46 @@ public class ServerSchemaTablesServiceImpl
         }
     }
     
+    private class ServerMemoryPools extends BasicFactoryBase {
+        public ServerMemoryPools(TableName sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan (getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            return ManagementFactory.getMemoryPoolMXBeans().size();
+        }
+
+        private class Scan extends BaseScan {
+            private final Iterator<MemoryPoolMXBean> it;
+
+            public Scan(RowType rowType) {
+                super(rowType);
+                it = ManagementFactory.getMemoryPoolMXBeans().iterator();
+            }
+
+            @Override
+            public Row next() {
+                if(!it.hasNext()) {
+                    return null;
+                }
+                MemoryPoolMXBean pool = it.next();
+                return new ValuesRow (rowType,
+                                      pool.getName(),
+                                      pool.getType().name(),
+                                      pool.getUsage().getUsed(),
+                                      pool.getUsage().getMax(),
+                                      pool.getPeakUsage().getUsed(),
+                                      ++rowCounter);
+            }
+        }
+    }
+
     static AkibanInformationSchema createTablesToRegister() {
         NewAISBuilder builder = AISBBasedBuilder.create();
         
@@ -336,6 +381,13 @@ public class ServerSchemaTablesServiceImpl
         builder.userTable(SERVER_PARAMETERS)
             .colString("parameter_name", IDENT_MAX, false)
             .colString("current_value", PATH_MAX, false);
+
+        builder.userTable(SERVER_MEMORY_POOLS)
+            .colString("name", IDENT_MAX, false)
+            .colString("type", DESCRIPTOR_MAX, false)
+            .colBigInt("used_bytes", false)
+            .colBigInt("max_bytes", false)
+            .colBigInt("peak_bytes", false);
 
         return builder.ais(false);
     }
