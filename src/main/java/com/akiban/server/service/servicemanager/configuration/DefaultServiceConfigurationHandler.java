@@ -104,7 +104,8 @@ public final class DefaultServiceConfigurationHandler implements ServiceConfigur
     // DefaultServiceConfigurationHandler interface
 
     public Collection<? extends Module> getModules() {
-        return Collections.unmodifiableCollection(modules);
+        Collection<Module> internal = modules == null ? Collections.<Module>emptyList() : modules;
+        return Collections.unmodifiableCollection(internal);
     }
 
     public Collection<ServiceBinding> serviceBindings(boolean strict) {
