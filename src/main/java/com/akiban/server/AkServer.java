@@ -31,6 +31,7 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.store.Store;
+import com.akiban.util.GCMonitor;
 import com.akiban.util.OsUtils;
 import com.akiban.util.Strings;
 import com.google.inject.Inject;
@@ -94,10 +95,13 @@ public class AkServer implements Service, JmxManageable, AkServerInterface
     }
 
     private static final String AKSERVER_NAME_PROP = "akserver.name";
+    private static final String GC_INTERVAL_NAME = "akserver.gc_monitor.interval";
+    private static final String GC_THRESHOLD_NAME = "akserver.gc_monitor.log_threshold_ms";
     private static final String PID_FILE_NAME = System.getProperty("akserver.pidfile");
 
     private final JmxObjectInfo jmxObjectInfo;
     private final ConfigurationService config;
+    private GCMonitor gcMonitor;
 
     @Inject
     public AkServer(Store store, DXLService dxl, SessionService sessionService, ConfigurationService config) {
@@ -111,6 +115,10 @@ public class AkServer implements Service, JmxManageable, AkServerInterface
 
     @Override
     public void start() {
+        int interval = Integer.parseInt(config.getProperty(GC_INTERVAL_NAME));
+        int logThreshold = Integer.parseInt(config.getProperty(GC_THRESHOLD_NAME));
+        gcMonitor = new GCMonitor(interval, logThreshold);
+        gcMonitor.start();
         try {
             Tap.registerMXBean();
         } catch (Exception e) {
@@ -121,6 +129,8 @@ public class AkServer implements Service, JmxManageable, AkServerInterface
     @Override
     public void stop() 
     {
+        gcMonitor.stopRunning();
+        gcMonitor = null;
         try {
             Tap.unregisterMXBean();
         } catch (Exception e) {
