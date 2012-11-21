@@ -915,6 +915,8 @@ public class PersistitStore implements Store, Service {
             throw new PersistitAdapterException(e);
         }
         for (Index index : rowDef.getIndexes()) {
+            if (index.isSpatial())
+                continue;
             TableStatistics.Histogram histogram = indexStatisticsToHistogram(session, 
                                                                              index);
             if (histogram != null) {
