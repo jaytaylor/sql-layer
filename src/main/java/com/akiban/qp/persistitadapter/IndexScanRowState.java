@@ -55,7 +55,8 @@ public class IndexScanRowState implements IterationHelper
     public void closeIteration()
     {
         if (row.isHolding()) {
-            adapter.returnIndexRow(row.get());
+            if (!row.isShared())
+                adapter.returnIndexRow(row.get());
             row.release();
         }
         if (exchange != null) {
