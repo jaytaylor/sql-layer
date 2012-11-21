@@ -96,7 +96,8 @@ public class Union_OrderedIT extends OperatorITBase
                           tXIndexRowType,
                           1,
                           1,
-                          ascending(true));
+                          ascending(true),
+                          false);
         } catch (IllegalArgumentException e) {
         }
         // Second input null
@@ -107,7 +108,8 @@ public class Union_OrderedIT extends OperatorITBase
                           tXIndexRowType,
                           1,
                           1,
-                          ascending(true));
+                          ascending(true),
+                          false);
         } catch (IllegalArgumentException e) {
         }
     }
@@ -123,7 +125,8 @@ public class Union_OrderedIT extends OperatorITBase
                           tXIndexRowType,
                           1,
                           1,
-                          ascending(true));
+                          ascending(true),
+                          false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -135,7 +138,8 @@ public class Union_OrderedIT extends OperatorITBase
                           null,
                           1,
                           1,
-                          ascending(true));
+                          ascending(true),
+                          false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -147,7 +151,8 @@ public class Union_OrderedIT extends OperatorITBase
                           tPidIndexRowType,
                           1,
                           1,
-                          ascending(true));
+                          ascending(true),
+                          false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -164,7 +169,8 @@ public class Union_OrderedIT extends OperatorITBase
                           tXIndexRowType,
                           -1,
                           1,
-                          ascending(true));
+                          ascending(true),
+                          false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -176,7 +182,8 @@ public class Union_OrderedIT extends OperatorITBase
                           tXIndexRowType,
                           1,
                           -1,
-                          ascending(true));
+                          ascending(true),
+                          false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -188,7 +195,8 @@ public class Union_OrderedIT extends OperatorITBase
                           tXIndexRowType,
                           3,
                           1,
-                          ascending(true));
+                          ascending(true),
+                          false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -200,7 +208,8 @@ public class Union_OrderedIT extends OperatorITBase
                           tXIndexRowType,
                           1,
                           3,
-                          ascending(true));
+                          ascending(true),
+                          false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -212,7 +221,8 @@ public class Union_OrderedIT extends OperatorITBase
                           tXIndexRowType,
                           1,
                           2,
-                          ascending(true));
+                          ascending(true),
+                          false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -331,7 +341,8 @@ public class Union_OrderedIT extends OperatorITBase
                 tXIndexRowType,
                 1,
                 1,
-                ascending(ascending));
+                ascending(ascending),
+                false);
         return plan;
     }
 

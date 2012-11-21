@@ -85,6 +85,7 @@ public enum Label
     USED_COLUMNS(Category.OPTION),
     NUM_SKIP(Category.OPTION),
     NUM_COMPARE(Category.OPTION),
+    UNION_OPTION(Category.OPTION),
 
     // TYPE DESCRIPTION
     //--------------------------------------------------------------------------

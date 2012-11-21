@@ -258,8 +258,7 @@ public class DefaultFormatter
         case DISTINCT:
             appendDistinctOperator(name, atts);
             break;
-        case UNION_ALL:
-      //case UNION:
+        case UNION:
             appendUnionOperator(name, atts);
             break;
         default:
@@ -503,6 +502,10 @@ public class DefaultFormatter
 
     protected void appendOrderedOperator(String name, Attributes atts) {
         if (verbose) {
+            if (atts.containsKey(Label.UNION_OPTION) &&
+                "ALL".equals(atts.getValue(Label.UNION_OPTION))) {
+                sb.append("all, ");
+            }
             List<Explainer> skips = atts.get(Label.NUM_SKIP);
             sb.append("skip ");
             append(skips.get(0));

@@ -142,6 +142,7 @@ class Union_Ordered extends Operator
                          int leftOrderingFields,
                          int rightOrderingFields,
                          boolean[] ascending,
+                         boolean outputEqual,
                          boolean usePValues)
     {
         ArgumentValidation.notNull("left", left);
@@ -165,6 +166,7 @@ class Union_Ordered extends Operator
         this.fixedFields = rowType.nFields() - leftOrderingFields;
         this.fieldsToCompare = leftOrderingFields;
         this.ascending = Arrays.copyOf(ascending, ascending.length);
+        this.outputEqual = outputEqual;
         // TODO (in Execution): Check that ascending bits are consistent with IndexCursor directions.
         this.usePValues = usePValues;
     }
@@ -185,6 +187,7 @@ class Union_Ordered extends Operator
     private final int fixedFields;
     private final int fieldsToCompare;
     private final boolean[] ascending;
+    private final boolean outputEqual;
     private final boolean usePValues;
 
     @Override
@@ -195,6 +198,8 @@ class Union_Ordered extends Operator
         atts.put(Label.NUM_COMPARE, PrimitiveExplainer.getInstance(fieldsToCompare));
         atts.put(Label.INPUT_OPERATOR, left.getExplainer(context));
         atts.put(Label.INPUT_OPERATOR, right.getExplainer(context));
+        if (outputEqual)
+            atts.put(Label.UNION_OPTION, PrimitiveExplainer.getInstance("ALL"));
         return new CompoundExplainer(Type.ORDERED, atts);
     }
 
@@ -240,10 +245,11 @@ class Union_Ordered extends Operator
                         next = rightRow.get();
                         nextRightRow();
                     } else {
-                        // left and right rows match. Doesn't matter which one is output.
+                        // left and right rows match. Output at least one.
                         next = leftRow.get();
                         nextLeftRow();
-                        nextRightRow();
+                        if (!outputEqual)
+                            nextRightRow();
                     }
                     if (leftRow.isEmpty() && rightRow.isEmpty()) {
                         close();
