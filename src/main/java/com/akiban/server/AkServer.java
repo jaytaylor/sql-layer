@@ -117,8 +117,10 @@ public class AkServer implements Service, JmxManageable, AkServerInterface
     public void start() {
         int interval = Integer.parseInt(config.getProperty(GC_INTERVAL_NAME));
         int logThreshold = Integer.parseInt(config.getProperty(GC_THRESHOLD_NAME));
-        gcMonitor = new GCMonitor(interval, logThreshold);
-        gcMonitor.start();
+        if(interval > 0) {
+            gcMonitor = new GCMonitor(interval, logThreshold);
+            gcMonitor.start();
+        }
         try {
             Tap.registerMXBean();
         } catch (Exception e) {
@@ -129,8 +131,10 @@ public class AkServer implements Service, JmxManageable, AkServerInterface
     @Override
     public void stop() 
     {
-        gcMonitor.stopRunning();
-        gcMonitor = null;
+        if(gcMonitor != null) {
+            gcMonitor.stopRunning();
+            gcMonitor = null;
+        }
         try {
             Tap.unregisterMXBean();
         } catch (Exception e) {
