@@ -3,7 +3,7 @@ PhysicalSelect[oid:int[INT], cid:int[INT], order_date:date[DATE], iid:int[INT], 
     Flatten_HKeyOrdered(orders INNER items)
       AncestorLookup_Default(Index(items.sku) -> orders, items)
         Intersect_Ordered(skip 1 left, skip 1 right, compare 2)
-          Union_Ordered()
+          Union_Ordered(skip 1, compare 3)
             IndexScan_Default(Index(items.sku), sku = '1234', orders.cid ASC, oid, iid)
             IndexScan_Default(Index(items.sku), sku = '9876', orders.cid ASC, oid, iid)
           IndexScan_Default(Index(orders.order_date), order_date = DATE '2000-10-31')

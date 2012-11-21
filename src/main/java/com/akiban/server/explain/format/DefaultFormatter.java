@@ -259,7 +259,7 @@ public class DefaultFormatter
             appendDistinctOperator(name, atts);
             break;
         case UNION_ALL:
-        case UNION:
+      //case UNION:
             appendUnionOperator(name, atts);
             break;
         default:
@@ -503,11 +503,15 @@ public class DefaultFormatter
 
     protected void appendOrderedOperator(String name, Attributes atts) {
         if (verbose) {
+            List<Explainer> skips = atts.get(Label.NUM_SKIP);
             sb.append("skip ");
-            append(atts.getAttribute(Label.LEFT));
-            sb.append(" left, skip ");
-            append(atts.getAttribute(Label.RIGHT));
-            sb.append(" right, compare ");
+            append(skips.get(0));
+            if (skips.size() > 1) {
+                sb.append(" left, skip ");
+                append(skips.get(1));
+                sb.append(" right");
+            }
+            sb.append(", compare ");
             append(atts.getAttribute(Label.NUM_COMPARE));
             if (name.equals("HKeyUnion")) {
                 sb.append(", shorten to ");

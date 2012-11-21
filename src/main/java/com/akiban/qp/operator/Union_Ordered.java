@@ -191,9 +191,11 @@ class Union_Ordered extends Operator
     public CompoundExplainer getExplainer(ExplainContext context) {
         Attributes atts = new Attributes();
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
+        atts.put(Label.NUM_SKIP, PrimitiveExplainer.getInstance(fixedFields));
+        atts.put(Label.NUM_COMPARE, PrimitiveExplainer.getInstance(fieldsToCompare));
         atts.put(Label.INPUT_OPERATOR, left.getExplainer(context));
         atts.put(Label.INPUT_OPERATOR, right.getExplainer(context));
-        return new CompoundExplainer(Type.UNION, atts);
+        return new CompoundExplainer(Type.ORDERED, atts);
     }
 
     // Inner classes
