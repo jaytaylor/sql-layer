@@ -103,7 +103,8 @@ public class GCMonitor extends Thread {
             long elapsed = info.updateCollectionTime();
             long collections = info.updateCollectionCount();
 
-            if(collections == 0) {
+            // Skip if there were no collections or very few (so as to not log on every startup)
+            if(collections == 0 || info.lastCollectionCount <= 3) {
                 continue;
             }
 
