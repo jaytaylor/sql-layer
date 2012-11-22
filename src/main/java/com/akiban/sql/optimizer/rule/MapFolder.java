@@ -187,18 +187,17 @@ public class MapFolder extends BaseRule
     }
 
     protected void addUpdateInput(DMLStatement update) {
-        System.out.println("??? " + update);
-        System.out.println("=== " + update.getTable());
         BasePlanWithInput node = update;
         while (true) {
             PlanNode input = node.getInput();
-            if (input instanceof BaseUpdateStatement) {
-                node.replaceInput(input, new UpdateInput(input, update.getTable()));
-                return;
-            }
             if (!(input instanceof BasePlanWithInput))
                 break;
             node = (BasePlanWithInput)input;
+            if (node instanceof BaseUpdateStatement) {
+                input = node.getInput();
+                node.replaceInput(input, new UpdateInput(input, update.getSelectTable()));
+                return;
+            }
         }
     }
 
