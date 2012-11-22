@@ -114,12 +114,6 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
             return expressionRow.pvalue(index);
         }
 
-        @Override
-        public int compareTo(BoundExpressions row, int leftStartIndex, int rightStartIndex, int fieldCount)
-        {
-            throw new UnsupportedOperationException();
-        }
-
         ExpressionsAndBindings(RowType rowType, List<Expression> expressions, List<TPreparedExpression> pExprs,
                                QueryContext context)
         {

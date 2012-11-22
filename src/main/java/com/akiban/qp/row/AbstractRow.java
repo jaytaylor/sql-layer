@@ -54,7 +54,7 @@ public abstract class AbstractRow implements Row
      * this row had the smaller value.
      */
     @Override
-    public int compareTo(BoundExpressions row, int leftStartIndex, int rightStartIndex, int fieldCount)
+    public int compareTo(RowBase row, int leftStartIndex, int rightStartIndex, int fieldCount)
     {
         throw new UnsupportedOperationException();
     }

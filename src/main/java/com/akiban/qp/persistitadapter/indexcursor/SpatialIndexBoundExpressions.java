@@ -49,12 +49,6 @@ class SpatialIndexBoundExpressions implements BoundExpressions
         return valueSources[position];
     }
 
-    @Override
-    public int compareTo(BoundExpressions row, int leftStartIndex, int rightStartIndex, int fieldCount)
-    {
-        throw new UnsupportedOperationException();
-    }
-
     // SpatialIndexBoundExpressions interface
 
     public void value(int position, PValueSource valueSource)

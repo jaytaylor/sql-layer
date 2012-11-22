@@ -28,7 +28,6 @@ package com.akiban.qp.operator;
 
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.exec.Plannable;
-import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -373,7 +372,7 @@ final class UnionAll_Default extends Operator {
     private static class MasqueradingRow implements Row {
 
         @Override
-        public int compareTo(BoundExpressions row, int leftStartIndex, int rightStartIndex, int fieldCount)
+        public int compareTo(RowBase row, int leftStartIndex, int rightStartIndex, int fieldCount)
         {
             return delegate.compareTo(row, leftStartIndex, rightStartIndex, fieldCount);
         }
