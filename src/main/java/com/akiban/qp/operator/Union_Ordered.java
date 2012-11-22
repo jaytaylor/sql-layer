@@ -367,6 +367,8 @@ class Union_Ordered extends Operator
         private void nextLeftRowSkip(Row jumpRow, int jumpRowFixedFields, ColumnSelector jumpRowColumnSelector)
         {
             if (leftRow.isHolding()) {
+                int c = leftRow.get().compareTo(jumpRow, fixedFields, fixedFields, fieldsToCompare);
+                if (c >= 0) return;
                 addSuffixToSkipRow(leftSkipRow(),
                                    fixedFields,
                                    jumpRow,
