@@ -32,6 +32,9 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.Quote;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.util.ValueSources;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -56,7 +59,25 @@ public abstract class AbstractRow implements Row
     @Override
     public int compareTo(RowBase row, int leftStartIndex, int rightStartIndex, int fieldCount)
     {
-        throw new UnsupportedOperationException();
+        if (Types3Switch.ON) {
+            for (int i = 0; i < fieldCount; i++) {
+                TInstance leftType = rowType().typeInstanceAt(leftStartIndex + i);
+                PValueSource leftValue = pvalue(leftStartIndex + i);
+                TInstance rightType = ((Row)row).rowType().typeInstanceAt(rightStartIndex + i);
+                PValueSource rightValue = row.pvalue(rightStartIndex + i);
+                int c = TClass.compare(leftType, leftValue, rightType, rightValue);
+                if (c != 0) return (c < 0) ? -(i + 1) : (i + 1);
+            }
+        }
+        else {
+            for (int i = 0; i < fieldCount; i++) {
+                ValueSource leftValue = eval(leftStartIndex + i);
+                ValueSource rightValue = row.eval(rightStartIndex + i);
+                long c = ValueSources.compare(leftValue, rightValue, null);
+                if (c != 0) return (c < 0) ? -(i + 1) : (i + 1);
+            }
+        }
+        return 0;
     }
 
     // RowBase interface
