@@ -950,6 +950,22 @@ public class OperatorAssembler extends BaseRule
             explainContext.putExtraInfo(plan, new CompoundExplainer(Type.EXTRA_INFO, atts));
         }
         
+        protected RowStream assembleUpdateInput(UpdateInput updateInput) {
+            RowStream stream = assembleQuery(updateInput.getInput());
+            TableSource table = updateInput.getTable();
+            UserTableRowType rowType = tableRowType(table);
+            if (stream.rowType != rowType) {
+                int rowIndex = lookupNestedBoundRowIndex(table);
+                ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
+                stream.operator = API.ancestorLookup_Nested(table.getTable().getTable().getGroup(),
+                                                            boundRow.getRowType(),
+                                                            Collections.singletonList(rowType),
+                                                            rowIndex + loopBindingsOffset);
+                stream.rowType = rowType;
+            }
+            return stream;
+        }
+
        // Assemble the top-level query. If there is a ResultSet at
         // the top, it is not handled here, since its meaning is
         // different for the different statement types.
@@ -1007,6 +1023,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleDeleteStatement((DeleteStatement)node);
             else if (node instanceof UpdateStatement)
                 return assembleUpdateStatement((UpdateStatement)node);
+            else if (node instanceof UpdateInput)
+                return assembleUpdateInput((UpdateInput)node);
             else
                 throw new UnsupportedSQLException("Plan node " + node, null);
         }
@@ -2155,6 +2173,19 @@ public class OperatorAssembler extends BaseRule
                 if (fieldIndex >= 0) return rowIndex;
             }
             throw new AkibanInternalException("Outer loop not found " + scan);
+        }
+
+        protected int lookupNestedBoundRowIndex(TableSource table) {
+            // Find the target table's binding position.
+            for (int rowIndex = 0; rowIndex < boundRows.size(); rowIndex++) {
+                ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
+                if (boundRow == null) continue;
+                if ((boundRow instanceof ColumnSourceFieldOffsets) &&
+                    (((ColumnSourceFieldOffsets)boundRow).getSource()) == table) {
+                    return rowIndex;
+                }
+            }
+            throw new AkibanInternalException("Outer loop not found " + table);
         }
     }
 
