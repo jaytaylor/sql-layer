@@ -95,6 +95,16 @@ public class MapFolder extends BaseRule
     public void apply(PlanContext planContext) {
         BaseQuery query = (BaseQuery)planContext.getPlan();
         List<MapJoin> maps = new MapJoinsFinder().find(query);
+        if (maps.isEmpty()) return;
+        if (query instanceof DMLStatement) {
+            DMLStatement update = (DMLStatement)query;
+            switch (update.getType()) {
+            case UPDATE:
+            case DELETE:
+                addUpdateInput(update);
+                break;
+            }
+        }
         for (MapJoin map : maps)
             handleJoinType(map);
         for (MapJoin map : maps)
@@ -167,11 +177,28 @@ public class MapFolder extends BaseRule
                    (parent instanceof AggregateSource) ||
                    (parent instanceof Sort) ||
                    // Captures enough at the edge of the inside.
-                   (child instanceof Project)));
+                   (child instanceof Project) ||
+                   (child instanceof UpdateInput)));
         if (child != map) {
             map.getOutput().replaceInput(map, map.getInner());
             parent.replaceInput(child, map);
             map.setInner(child);
+        }
+    }
+
+    protected void addUpdateInput(DMLStatement update) {
+        System.out.println("??? " + update);
+        System.out.println("=== " + update.getTable());
+        BasePlanWithInput node = update;
+        while (true) {
+            PlanNode input = node.getInput();
+            if (input instanceof BaseUpdateStatement) {
+                node.replaceInput(input, new UpdateInput(input, update.getTable()));
+                return;
+            }
+            if (!(input instanceof BasePlanWithInput))
+                break;
+            node = (BasePlanWithInput)input;
         }
     }
 
