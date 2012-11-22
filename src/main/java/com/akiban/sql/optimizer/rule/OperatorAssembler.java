@@ -732,7 +732,7 @@ public class OperatorAssembler extends BaseRule
             }
             // Returning rows, if the table is not null, the insert is returning rows 
             // which need to be passed to the user. 
-            boolean returning = !(statement.getTable() == null);
+            boolean returning = (statement.getReturningTable() != null);
             return new PhysicalUpdate(stream.operator, getParameterTypes(),
                     stream.rowType,
                     resultColumns,
