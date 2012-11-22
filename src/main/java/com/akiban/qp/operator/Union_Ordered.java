@@ -237,7 +237,7 @@ class Union_Ordered extends Operator
                 Row next = null;
                 if (isActive()) {
                     assert !(leftRow.isEmpty() && rightRow.isEmpty());
-                    long c = compareRows();
+                    int c = compareRows();
                     if (c < 0) {
                         next = leftRow.get();
                         nextLeftRow();
@@ -343,9 +343,9 @@ class Union_Ordered extends Operator
             }
         }
         
-        private long compareRows()
+        private int compareRows()
         {
-            long c;
+            int c;
             assert !closed;
             assert !(leftRow.isEmpty() && rightRow.isEmpty());
             if (leftRow.isEmpty()) {
@@ -354,20 +354,27 @@ class Union_Ordered extends Operator
                 c = -1;
             } else {
                 c = leftRow.get().compareTo(rightRow.get(), fixedFields, fixedFields, fieldsToCompare);
-                if (c != 0) {
-                    int fieldThatDiffers = (int) abs(c) - 1;
-                    if (!ascending[fieldThatDiffers]) {
-                        c = -c;
-                    }
-                }
+                c = adjustComparison(c);
             }
+            return c;
+        }
+
+        private int adjustComparison(int c) 
+        {
+            if (c != 0) {
+                int fieldThatDiffers = abs(c) - 1;
+                if (!ascending[fieldThatDiffers]) {
+                    c = -c;
+                }
+            }            
             return c;
         }
 
         private void nextLeftRowSkip(Row jumpRow, int jumpRowFixedFields, ColumnSelector jumpRowColumnSelector)
         {
             if (leftRow.isHolding()) {
-                int c = leftRow.get().compareTo(jumpRow, fixedFields, fixedFields, fieldsToCompare);
+                int c = leftRow.get().compareTo(jumpRow, fixedFields, jumpRowFixedFields, fieldsToCompare);
+                c = adjustComparison(c);
                 if (c >= 0) return;
                 addSuffixToSkipRow(leftSkipRow(),
                                    fixedFields,
@@ -381,6 +388,9 @@ class Union_Ordered extends Operator
         private void nextRightRowSkip(Row jumpRow, int jumpRowFixedFields, ColumnSelector jumpRowColumnSelector)
         {
             if (rightRow.isHolding()) {
+                int c = rightRow.get().compareTo(jumpRow, fixedFields, jumpRowFixedFields, fieldsToCompare);
+                c = adjustComparison(c);
+                if (c >= 0) return;
                 addSuffixToSkipRow(rightSkipRow(),
                                    fixedFields,
                                    jumpRow,
