@@ -69,7 +69,7 @@ public final class SchemaTableServiceIT extends ITBase {
     
     @Test
     public void baseInfoExamine() {
-        assertEquals(38, ais.getUserTables().size());
+        assertEquals ("Table count", 17, BasicInfoSchemaTablesServiceImpl.createTablesToRegister().getUserTables().size());
         assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.SCHEMATA));
         assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.TABLES));
         assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.COLUMNS));
@@ -91,6 +91,7 @@ public final class SchemaTableServiceIT extends ITBase {
     
     @Test
     public void storageExamine() {
+        assertEquals ("Table count", 11, StorageSchemaTablesServiceImpl.createTablesToRegister().getUserTables().size());
         assertNotNull (ais.getUserTable(StorageSchemaTablesServiceImpl.STORAGE_ALERTS_SUMMARY));
         assertNotNull (ais.getUserTable(StorageSchemaTablesServiceImpl.STORAGE_BUFFER_POOLS));
         assertNotNull (ais.getUserTable(StorageSchemaTablesServiceImpl.STORAGE_CHECKPOINT_SUMMARY));
@@ -106,10 +107,13 @@ public final class SchemaTableServiceIT extends ITBase {
     
     @Test
     public void serverExamine() {
+        assertEquals ("Table count", 7, ServerSchemaTablesServiceImpl.createTablesToRegister().getUserTables().size());
+        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.ERROR_CODES));
         assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_INSTANCE_SUMMARY));
-        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_PARAMETERS));
         assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_SERVERS));
         assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_SESSIONS));
-        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.ERROR_CODES));
+        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_PARAMETERS));
+        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_MEMORY_POOLS));
+        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_GARBAGE_COLLECTORS));
     }
 }
