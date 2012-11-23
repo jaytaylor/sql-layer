@@ -366,8 +366,6 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
             try {
                 if (setContextCl)
                     currentThread.setContextClassLoader(contextClassloader);
-
-                currentThread.setContextClassLoader(contextClassloader);
                 service.start();
                 if (service instanceof JmxManageable && isRequired(JmxRegistryService.class)) {
                     JmxRegistryService registry = (service instanceof JmxRegistryService)
