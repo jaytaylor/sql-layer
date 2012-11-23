@@ -329,7 +329,8 @@ public class SkipScanPerformanceIT extends OperatorITBase
                 tXIndexRowType,
                 1,
                 1,
-                ascending(true)),
+                ascending(true),
+                false),
             indexScan_Default(
                 tXIndexRowType,
                 xEq(x3),
@@ -338,7 +339,8 @@ public class SkipScanPerformanceIT extends OperatorITBase
             tXIndexRowType,
             1,
             1,
-            ascending(true));
+            ascending(true),
+            false);
     }
 
     private Operator intersectXYunionX(int x1, int y, int x2, boolean skip)
@@ -373,7 +375,8 @@ public class SkipScanPerformanceIT extends OperatorITBase
             tXIndexRowType,
             1,
             1,
-            ascending(true));
+            ascending(true),
+            false);
     }
 
     private Operator unionXXintersectY(int x1, int x2, int y, IntersectOption intersectOutput, boolean skip)
@@ -397,7 +400,8 @@ public class SkipScanPerformanceIT extends OperatorITBase
                 tXIndexRowType,
                 1,
                 1,
-                ascending(true)),
+                ascending(true),
+                false),
             indexScan_Default(
                 tYIndexRowType,
                 yEq(y),
