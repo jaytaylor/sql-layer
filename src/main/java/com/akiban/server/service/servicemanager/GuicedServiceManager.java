@@ -359,20 +359,34 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
         @Override
         public void onStart(Service service) {
-            service.start();
-            if (service instanceof JmxManageable && isRequired(JmxRegistryService.class)) {
-                JmxRegistryService registry = (service instanceof JmxRegistryService)
-                        ? (JmxRegistryService) service
-                        : getJmxRegistryService();
-                JmxManageable manageable = (JmxManageable)service;
-                ObjectName objectName = registry.register(manageable);
-                jmxNames.put(manageable.getClass(), objectName);
-                // TODO because our dependency graph is created via Service.start() invocations, if service A uses service B
-                // in stop() but not start(), and service B has already been shut down, service B will be resurrected. Yuck.
-                // I don't know of a good way around this, other than by formalizing our dependency graph via constructor
-                // params (and thus removing ServiceManagerImpl.get() ). Until this is resolved, simplest is to just shrug
-                // our shoulders and not check
-//                assert (ObjectName)old == null : objectName + " has displaced " + old;
+            final Thread currentThread = Thread.currentThread();
+            final ClassLoader oldContextCl = currentThread.getContextClassLoader();
+            ClassLoader contextClassloader = service.getClass().getClassLoader();
+            boolean setContextCl = (contextClassloader != null && contextClassloader != oldContextCl);
+            try {
+                if (setContextCl)
+                    currentThread.setContextClassLoader(contextClassloader);
+
+                currentThread.setContextClassLoader(contextClassloader);
+                service.start();
+                if (service instanceof JmxManageable && isRequired(JmxRegistryService.class)) {
+                    JmxRegistryService registry = (service instanceof JmxRegistryService)
+                            ? (JmxRegistryService) service
+                            : getJmxRegistryService();
+                    JmxManageable manageable = (JmxManageable)service;
+                    ObjectName objectName = registry.register(manageable);
+                    jmxNames.put(manageable.getClass(), objectName);
+                    // TODO because our dependency graph is created via Service.start() invocations, if service A uses service B
+                    // in stop() but not start(), and service B has already been shut down, service B will be resurrected. Yuck.
+                    // I don't know of a good way around this, other than by formalizing our dependency graph via constructor
+                    // params (and thus removing ServiceManagerImpl.get() ). Until this is resolved, simplest is to just shrug
+                    // our shoulders and not check
+    //                assert (ObjectName)old == null : objectName + " has displaced " + old;
+                }
+            }
+            finally {
+                if (setContextCl)
+                    currentThread.setContextClassLoader(oldContextCl);
             }
         }
 
