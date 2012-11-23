@@ -123,6 +123,18 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                               "FROM pg_catalog.pg_class c, pg_catalog.pg_class c2, pg_catalog.pg_index i\\s+" +
                               "WHERE c.oid = '(-?\\d+)' AND c.oid = i.indrelid AND i.indexrelid = c2.oid\\s+" + // 3
                               "ORDER BY i.indisprimary DESC, i.indisunique DESC, c2.relname;?", true),
+        PSQL_DESCRIBE_FOREIGN_KEYS_1("SELECT conname,\\s*" +
+                                     "pg_catalog.pg_get_constraintdef\\(r.oid, true\\) as condef\\s+" +
+                                     "FROM pg_catalog.pg_constraint r\\s+" +
+                                     "WHERE r.conrelid = '(-?\\d+)' AND r.contype = 'f' ORDER BY 1;?", true),
+        PSQL_DESCRIBE_FOREIGN_KEYS_2("SELECT conname, conrelid::pg_catalog.regclass,\\s*" +
+                                    "pg_catalog.pg_get_constraintdef\\(c.oid, true\\) as condef\\s+" +
+                                    "FROM pg_catalog.pg_constraint c\\s+" +
+                                    "WHERE c.confrelid = '(-?\\d+)' AND c.contype = 'f' ORDER BY 1;?", true),
+        PSQL_DESCRIBE_TRIGGERS("SELECT t.tgname, pg_catalog.pg_get_triggerdef\\(t.oid\\), t.tgenabled\\s+" +
+                               "FROM pg_catalog.pg_trigger t\\s+" +
+                               "WHERE t.tgrelid = '(-?\\d+)' AND t.tgconstraint = 0\\s+" +
+                               "ORDER BY 1;?", true),
         PSQL_DESCRIBE_VIEW("SELECT pg_catalog.pg_get_viewdef\\('(-?\\d+)'::pg_catalog.oid, true\\);?", true);
 
         private String sql;
@@ -192,6 +204,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)1, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
     static final PostgresType INDEXDEF_PG_TYPE = 
         new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)1024, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
+    static final PostgresType CONDEF_PG_TYPE = 
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)512, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
     static final PostgresType VIEWDEF_PG_TYPE = 
         new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)32768, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
 
@@ -280,6 +294,21 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 types = new PostgresType[] { IDENT_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, INDEXDEF_PG_TYPE, CHAR0_PG_TYPE, CHAR0_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, INT2_PG_TYPE };
             }
             break;
+        case PSQL_DESCRIBE_FOREIGN_KEYS_1:
+            ncols = 2;
+            names = new String[] { "conname", "condef" };
+            types = new PostgresType[] { IDENT_PG_TYPE, CONDEF_PG_TYPE };
+            break;
+        case PSQL_DESCRIBE_FOREIGN_KEYS_2:
+            ncols = 3;
+            names = new String[] { "conname", "conrelid", "condef" };
+            types = new PostgresType[] { IDENT_PG_TYPE, IDENT_PG_TYPE, CONDEF_PG_TYPE };
+            break;
+        case PSQL_DESCRIBE_TRIGGERS:
+            ncols = 3;
+            names = new String[] { "tgname", "tgdef", "tdenabled" };
+            types = new PostgresType[] { IDENT_PG_TYPE, CONDEF_PG_TYPE, BOOL_PG_TYPE };
+            break;
         case PSQL_DESCRIBE_VIEW:
             ncols = 1;
             names = new String[] { "pg_get_viewdef" };
@@ -361,6 +390,15 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             break;
         case PSQL_DESCRIBE_INDEXES:
             nrows = psqlDescribeIndexesQuery(server, messenger, maxrows, usePVals);
+            break;
+        case PSQL_DESCRIBE_FOREIGN_KEYS_1:
+            nrows = psqlDescribeForeignKeys1Query(server, messenger, maxrows, usePVals);
+            break;
+        case PSQL_DESCRIBE_FOREIGN_KEYS_2:
+            nrows = psqlDescribeForeignKeys2Query(server, messenger, maxrows, usePVals);
+            break;
+        case PSQL_DESCRIBE_TRIGGERS:
+            nrows = psqlDescribeTriggersQuery(server, messenger, maxrows, usePVals);
             break;
         case PSQL_DESCRIBE_VIEW:
             nrows = psqlDescribeViewQuery(server, messenger, maxrows, usePVals);
@@ -641,7 +679,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         writeColumn(messenger, encoder, usePVals, // relhasrules
                     false, BOOL_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relhastriggers
-                    false, BOOL_PG_TYPE);
+                    hasTriggers(table) ? "t" : "f", CHAR1_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relhasoids
                     false, BOOL_PG_TYPE);
         writeColumn(messenger, encoder, usePVals,
@@ -665,7 +703,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         writeColumn(messenger, encoder, usePVals, // relchecks
                     (short)0, INT2_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // reltriggers
-                    (short)0, INT2_PG_TYPE);
+                    hasTriggers(table) ? (short)1 : (short)0, INT2_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relhasrules
                     false, BOOL_PG_TYPE);
         messenger.sendMessage();
@@ -777,6 +815,53 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
+    private int psqlDescribeForeignKeys1Query(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+        int nrows = 0;
+        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+        Columnar columnar = getTableById(server, groups.get(1));
+        if ((columnar == null) || !columnar.isTable()) return 0;
+        Join join = ((UserTable)columnar).getParentJoin();
+        if (join == null) return 0;
+        messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+        messenger.writeShort(2); // 2 columns for this query
+        writeColumn(messenger, encoder, usePVals, // conname
+                    join.getName(), IDENT_PG_TYPE);
+        writeColumn(messenger, encoder, usePVals, // condef
+                    formatCondef(join, false), CONDEF_PG_TYPE);
+        messenger.sendMessage();
+        nrows++;
+        return nrows;
+    }
+
+    private int psqlDescribeForeignKeys2Query(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+        int nrows = 0;
+        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+        Columnar columnar = getTableById(server, groups.get(1));
+        if ((columnar == null) || !columnar.isTable()) return 0;
+        for (Join join : ((UserTable)columnar).getChildJoins()) {
+            messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+            messenger.writeShort(3); // 3 columns for this query
+            writeColumn(messenger, encoder, usePVals, // conname
+                        join.getName(), IDENT_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, // conrelid
+                        join.getChild().getName().getTableName(), IDENT_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, // condef
+                        formatCondef(join, true), CONDEF_PG_TYPE);
+            messenger.sendMessage();
+            nrows++;
+            if ((maxrows > 0) && (nrows >= maxrows)) {
+                break;
+            }
+        }
+        return nrows;
+    }
+
+    private int psqlDescribeTriggersQuery(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+        Columnar columnar = getTableById(server, groups.get(1));
+        return 0;
+    }
+
     private boolean hasIndexes(Columnar table) {
         if (!table.isTable())
             return false;
@@ -788,6 +873,17 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         if (isAkibanPKIndex(indexes.iterator().next()))
             return false;
         return true;
+    }
+
+    private boolean hasTriggers(Columnar table) {
+        if (!table.isTable())
+            return false;
+        UserTable userTable = (UserTable)table;
+        if (userTable.getParentJoin() != null)
+            return true;
+        if (!userTable.getChildJoins().isEmpty())
+            return true;
+        return false;
     }
 
     private boolean isAkibanPKIndex(Index index) {
@@ -837,6 +933,39 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         if (index.isGroupIndex()) {
             str.append(" USING " + index.getJoinType() + " JOIN");
         }
+        return str.toString();
+    }
+
+    private String formatCondef(Join parentJoin, boolean forParent) {
+        StringBuilder str = new StringBuilder();
+        str.append("GROUPING FOREIGN KEY(");
+        boolean first = true;
+        for (JoinColumn joinColumn : parentJoin.getJoinColumns()) {
+            if (first) {
+                first = false;
+            }
+            else {
+                str.append(", ");
+            }
+            str.append(joinColumn.getChild().getName());
+        }
+        str.append(") REFERENCES");
+        if (!forParent) {
+            str.append(" ");
+            str.append(parentJoin.getParent().getName().getTableName());
+        }
+        str.append("(");
+        first = true;
+        for (JoinColumn joinColumn : parentJoin.getJoinColumns()) {
+            if (first) {
+                first = false;
+            }
+            else {
+                str.append(", ");
+            }
+            str.append(joinColumn.getParent().getName());
+        }
+        str.append(")");
         return str.toString();
     }
 
