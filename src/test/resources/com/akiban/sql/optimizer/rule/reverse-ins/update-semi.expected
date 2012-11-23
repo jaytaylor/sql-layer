@@ -1,0 +1,16 @@
+DMLStatement@66c74e0b(items)
+  UpdateStatement@26d4e8e4(items[items.quan = 66])
+    MapJoin@347a2ae()
+      Flatten@431aa2f1(items)
+        GroupScan@54094f30(Group(test.customers), rows = 1, cost = 18942.0)
+          TableSource@430e6777(items - TableGroup@2f2e036a(customers))
+      UpdateInput@75e23c58(items)
+        Select@6405e4a6[]
+          Limit@57e7f1de(LIMIT 1)
+            Select@3cb852e8[]
+              Flatten@9bf9ea2(orders INNER i2)
+                Select@694b1c7c[orders.order_date > 2011-03-02]
+                  BranchLookup@423b46e5(orders -> orders)
+                    SingleIndexScan@41ab865b(Index(test.orders.PRIMARY[IndexColumn(oid)]), NONE, =items.oid, rows = 17, cost = 1716.60)
+                    TableSource@1814fb02(orders - TableGroup@6401e20b(customers))
+                    TableSource@96b4ca8(i2 - TableGroupJoin@379f7378(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))
