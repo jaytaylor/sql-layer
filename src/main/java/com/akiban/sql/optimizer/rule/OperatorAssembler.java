@@ -963,6 +963,7 @@ public class OperatorAssembler extends BaseRule
                                                        boundRow.getRowType(),
                                                        rowIndex + loopBindingsOffset);
                 stream.rowType = rowType;
+                stream.fieldOffsets = new ColumnSourceFieldOffsets(table, stream.rowType);
             }
             return stream;
         }
