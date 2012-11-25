@@ -264,7 +264,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         case PSQL_DESCRIBE_TABLES_3:
             ncols = (groups.get(1) != null) ? 6 : 5;
             names = new String[] { "attname", "format_type", "?column?", "attnotnull", "attnum", "attcollation" };
-            types = new PostgresType[] { IDENT_PG_TYPE, TYPNAME_PG_TYPE, CHAR0_PG_TYPE, BOOL_PG_TYPE, INT2_PG_TYPE, CHAR0_PG_TYPE };
+            types = new PostgresType[] { IDENT_PG_TYPE, TYPNAME_PG_TYPE, CHAR0_PG_TYPE, BOOL_PG_TYPE, INT2_PG_TYPE, IDENT_PG_TYPE };
             break;
         case PSQL_DESCRIBE_TABLES_4A:
         case PSQL_DESCRIBE_TABLES_4B:
@@ -730,9 +730,18 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                         column.getNullable() ? "f" : "t", CHAR1_PG_TYPE);
             writeColumn(messenger, encoder, usePVals, // attnum
                         column.getPosition().shortValue(), INT2_PG_TYPE);
-            if (hasCollation)
+            if (hasCollation) {
+                CharsetAndCollation charAndColl = null;
+                switch (column.getType().akType()) {
+                case VARCHAR:
+                case TEXT:
+                    charAndColl = column.getCharsetAndCollation();
+                    break;
+                }
                 writeColumn(messenger, encoder, usePVals, // attcollation
-                            null, CHAR0_PG_TYPE);
+                            (charAndColl == null) ? null : charAndColl.collation(), 
+                            IDENT_PG_TYPE);
+            }
             messenger.sendMessage();
             nrows++;
             if ((maxrows > 0) && (nrows >= maxrows)) {
