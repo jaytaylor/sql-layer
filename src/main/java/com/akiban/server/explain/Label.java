@@ -38,9 +38,6 @@ public enum Label
     OPERAND(Category.CHILD), // function operand, operands in general
     PROJECTION(Category.CHILD), // list of a expressions
     PREDICATE(Category.CHILD),
-    LEFT(Category.CHILD),
-    RIGHT(Category.CHILD),
-    NUM_COMPARE(Category.CHILD),
     EXPRESSIONS(Category.CHILD),
     BLOOM_FILTER(Category.CHILD),
     HIGH_COMPARAND(Category.CHILD),
@@ -86,6 +83,9 @@ public enum Label
     INDEX_KIND(Category.OPTION),
     ORDER_EFFECTIVENESS(Category.OPTION),
     USED_COLUMNS(Category.OPTION),
+    NUM_SKIP(Category.OPTION),
+    NUM_COMPARE(Category.OPTION),
+    UNION_OPTION(Category.OPTION),
 
     // TYPE DESCRIPTION
     //--------------------------------------------------------------------------

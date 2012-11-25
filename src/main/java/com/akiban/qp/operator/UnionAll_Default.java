@@ -201,6 +201,7 @@ final class UnionAll_Default extends Operator {
         Attributes att = new Attributes();
         
         att.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
+        att.put(Label.UNION_OPTION, PrimitiveExplainer.getInstance("ALL"));
         
         for (Operator op : inputs)
             att.put(Label.INPUT_OPERATOR, op.getExplainer(context));
@@ -209,7 +210,7 @@ final class UnionAll_Default extends Operator {
        
         att.put(Label.OUTPUT_TYPE, outputRowType.getExplainer(context));
         
-        return new CompoundExplainer(Type.UNION_ALL, att);
+        return new CompoundExplainer(Type.UNION, att);
     }
 
     private class Execution extends OperatorExecutionBase implements Cursor {
