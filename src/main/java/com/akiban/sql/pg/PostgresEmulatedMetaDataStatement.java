@@ -124,17 +124,17 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                               "WHERE c.oid = '(-?\\d+)' AND c.oid = i.indrelid AND i.indexrelid = c2.oid\\s+" + // 3
                               "ORDER BY i.indisprimary DESC, i.indisunique DESC, c2.relname;?", true),
         PSQL_DESCRIBE_FOREIGN_KEYS_1("SELECT conname,\\s*" +
-                                     "pg_catalog.pg_get_constraintdef\\(r.oid, true\\) as condef\\s+" +
+                                     "pg_catalog.pg_get_constraintdef\\((?:r.oid, true|oid)\\) as condef\\s+" +
                                      "FROM pg_catalog.pg_constraint r\\s+" +
-                                     "WHERE r.conrelid = '(-?\\d+)' AND r.contype = 'f' ORDER BY 1;?", true),
+                                     "WHERE r.conrelid = '(-?\\d+)' AND r.contype = 'f'(?: ORDER BY 1)?;?", true),
         PSQL_DESCRIBE_FOREIGN_KEYS_2("SELECT conname, conrelid::pg_catalog.regclass,\\s*" +
                                     "pg_catalog.pg_get_constraintdef\\(c.oid, true\\) as condef\\s+" +
                                     "FROM pg_catalog.pg_constraint c\\s+" +
                                     "WHERE c.confrelid = '(-?\\d+)' AND c.contype = 'f' ORDER BY 1;?", true),
-        PSQL_DESCRIBE_TRIGGERS("SELECT t.tgname, pg_catalog.pg_get_triggerdef\\(t.oid\\), t.tgenabled\\s+" +
+        PSQL_DESCRIBE_TRIGGERS("SELECT t.tgname, pg_catalog.pg_get_triggerdef\\(t.oid\\)(, t.tgenabled)?\\s+" + // 1
                                "FROM pg_catalog.pg_trigger t\\s+" +
-                               "WHERE t.tgrelid = '(-?\\d+)' AND t.tgconstraint = 0\\s+" +
-                               "ORDER BY 1;?", true),
+                               "WHERE t.tgrelid = '(-?\\d+)' AND (?:t.tgconstraint = 0\\s+" + // 2
+                               "ORDER BY 1|\\(not tgisconstraint  OR NOT EXISTS  \\(SELECT 1 FROM pg_catalog.pg_depend d    JOIN pg_catalog.pg_constraint c ON \\(d.refclassid = c.tableoid AND d.refobjid = c.oid\\)    WHERE d.classid = t.tableoid AND d.objid = t.oid AND d.deptype = 'i' AND c.contype = 'f'\\)\\));?", true),
         PSQL_DESCRIBE_VIEW("SELECT pg_catalog.pg_get_viewdef\\('(-?\\d+)'::pg_catalog.oid, true\\);?", true);
 
         private String sql;
@@ -305,7 +305,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             types = new PostgresType[] { IDENT_PG_TYPE, IDENT_PG_TYPE, CONDEF_PG_TYPE };
             break;
         case PSQL_DESCRIBE_TRIGGERS:
-            ncols = 3;
+            ncols = (groups.get(1) != null) ? 3 : 2;
             names = new String[] { "tgname", "tgdef", "tdenabled" };
             types = new PostgresType[] { IDENT_PG_TYPE, CONDEF_PG_TYPE, BOOL_PG_TYPE };
             break;
@@ -858,7 +858,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
 
     private int psqlDescribeTriggersQuery(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
-        Columnar columnar = getTableById(server, groups.get(1));
+        Columnar columnar = getTableById(server, groups.get(2));
         return 0;
     }
 
