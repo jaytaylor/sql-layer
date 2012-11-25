@@ -173,6 +173,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         }
     }
 
+    static final boolean LIST_TABLES_BY_GROUP = true;
+
     private Query query;
     private List<String> groups;
     private boolean usePVals;
@@ -243,7 +245,10 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             break;
         case PSQL_LIST_TABLES:
             ncols = 4;
-            names = new String[] { "Schema", "Name", "Type", "Owner" };
+            if (LIST_TABLES_BY_GROUP)
+                names = new String[] { "Schema", "Name", "Type", "Group" };
+            else
+                names = new String[] { "Schema", "Name", "Type", "Owner" };
             types = new PostgresType[] { IDENT_PG_TYPE, IDENT_PG_TYPE, LIST_TYPE_PG_TYPE, IDENT_PG_TYPE };
             break;
         case PSQL_DESCRIBE_TABLES_1:
@@ -543,12 +548,12 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         int nrows = 0;
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
         List<String> types = Arrays.asList(groups.get(1).split(","));
-        List<TableName> names = new ArrayList<TableName>();
+        List<Columnar> tables = new ArrayList<Columnar>();
         AkibanInformationSchema ais = server.getAIS();
         if (types.contains("'r'"))
-            names.addAll(ais.getUserTables().keySet());
+            tables.addAll(ais.getUserTables().values());
         if (types.contains("'v'"))
-            names.addAll(ais.getViews().keySet());
+            tables.addAll(ais.getViews().values());
         boolean noIS = (groups.get(2) != null) || (groups.get(3) != null);
         boolean onlyIS = (groups.get(4) != null);
         Pattern schemaPattern = null, tablePattern = null;
@@ -558,9 +563,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             schemaPattern = Pattern.compile(groups.get(8));
         if (groups.get(9) != null)
             tablePattern = Pattern.compile(groups.get(10));
-        Iterator<TableName> iter = names.iterator();
+        Iterator<Columnar> iter = tables.iterator();
         while (iter.hasNext()) {
-            TableName name = iter.next();
+            TableName name = iter.next().getName();
             boolean keep = true;
             if ((name.getSchemaName().equals(TableName.INFORMATION_SCHEMA) ? noIS : onlyIS) ||
                 ((schemaPattern != null) && 
@@ -569,19 +574,28 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                  !tablePattern.matcher(name.getTableName()).find()))
                 iter.remove();
         }
-        Collections.sort(names);
-        for (TableName name : names) {
+        Collections.sort(tables, LIST_TABLES_BY_GROUP ? tablesByGroup : tablesByName);
+        for (Columnar table : tables) {
+            TableName name = table.getName();
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(4); // 4 columns for this query
             writeColumn(messenger, encoder, usePVals, 
                         name.getSchemaName(), IDENT_PG_TYPE);
             writeColumn(messenger, encoder, usePVals, 
                         name.getTableName(), IDENT_PG_TYPE);
-            String type = (ais.getColumnar(name).isView()) ? "view" : "table";
+            String type = table.isView() ? "view" : "table";
             writeColumn(messenger, encoder, usePVals, 
                         type, LIST_TYPE_PG_TYPE);
+            String ownerGroupName = null;
+            if (LIST_TABLES_BY_GROUP) {
+                if (table.isTable()) {
+                    Group group = ((UserTable)table).getGroup();
+                    if (group != null)
+                        ownerGroupName = group.getName().getTableName();
+                }
+            }
             writeColumn(messenger, encoder, usePVals, 
-                        null, IDENT_PG_TYPE);
+                        ownerGroupName, IDENT_PG_TYPE);
             messenger.sendMessage();
             nrows++;
             if ((maxrows > 0) && (nrows >= maxrows)) {
@@ -590,6 +604,39 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         }
         return nrows;
     }
+
+    private static final Comparator<Columnar> tablesByName = new Comparator<Columnar>() {
+        @Override
+        public int compare(Columnar t1, Columnar t2) {
+            return t1.getName().compareTo(t2.getName());
+        }
+    };
+
+    private static final Comparator<Columnar> tablesByGroup = new Comparator<Columnar>() {
+        @Override
+        public int compare(Columnar t1, Columnar t2) {
+            TableName n1 = t1.getName();
+            TableName n2 = t2.getName();
+            Group g1 = null, g2 = null;
+            Integer d1 = null, d2 = null;
+            if (t1.isTable()) {
+                UserTable ut1 = ((UserTable)t1);
+                g1 = ut1.getGroup();
+                d1 = ut1.getDepth();
+            }
+            if (t2.isTable()) {
+                UserTable ut2 = ((UserTable)t2);
+                g2 = ut2.getGroup();
+                d2 = ut2.getDepth();
+            }
+            if (g1 != g2)
+                return ((g1 == null) ? n1 : g1.getName()).compareTo((g2 == null) ? n2 : g2.getName());
+            if ((d1 != null) && !d1.equals(d2))
+                return d1.compareTo(d2);
+            else
+                return n1.compareTo(n2);
+        }
+    };
 
     private int psqlDescribeTables1Query(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
