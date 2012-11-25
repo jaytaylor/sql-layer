@@ -204,6 +204,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)0, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
     static final PostgresType CHAR1_PG_TYPE = 
         new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)1, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
+    static final PostgresType DEFVAL_PG_TYPE = 
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)128, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
     static final PostgresType INDEXDEF_PG_TYPE = 
         new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)1024, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
     static final PostgresType CONDEF_PG_TYPE = 
@@ -269,7 +271,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         case PSQL_DESCRIBE_TABLES_3:
             ncols = (groups.get(1) != null) ? 6 : 5;
             names = new String[] { "attname", "format_type", "?column?", "attnotnull", "attnum", "attcollation" };
-            types = new PostgresType[] { IDENT_PG_TYPE, TYPNAME_PG_TYPE, CHAR0_PG_TYPE, BOOL_PG_TYPE, INT2_PG_TYPE, IDENT_PG_TYPE };
+            types = new PostgresType[] { IDENT_PG_TYPE, TYPNAME_PG_TYPE, DEFVAL_PG_TYPE, BOOL_PG_TYPE, INT2_PG_TYPE, IDENT_PG_TYPE };
             break;
         case PSQL_DESCRIBE_TABLES_4A:
         case PSQL_DESCRIBE_TABLES_4B:
@@ -770,8 +772,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                         column.getName(), IDENT_PG_TYPE);
             writeColumn(messenger, encoder, usePVals, // format_type
                         column.getTypeDescription(), TYPNAME_PG_TYPE);
+            String defval = column.getDefaultValue();
+            if ((defval != null) && (defval.length() > 128))
+                defval = defval.substring(0, 128);
             writeColumn(messenger, encoder, usePVals, 
-                        null, CHAR0_PG_TYPE);
+                        defval, DEFVAL_PG_TYPE);
             // This should use BOOL_PG_TYPE, except that does true/false, not t/f.
             writeColumn(messenger, encoder, usePVals, // attnotnull
                         column.getNullable() ? "f" : "t", CHAR1_PG_TYPE);
