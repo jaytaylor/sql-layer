@@ -64,6 +64,7 @@ import javax.security.auth.login.LoginException;
 public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     public static final String SERVER_PROPERTIES_PREFIX = "akserver.postgres.";
     protected static final String SERVER_TYPE = "Postgres";
+    private static final String THREAD_NAME_PREFIX = "PostgresServer_Accept-"; // Port is appended
 
     protected static enum AuthenticationType {
         NONE, CLEAR_TEXT, GSS
@@ -119,7 +120,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         running = true;
         startTimeMillis = System.currentTimeMillis();
         startTimeNanos = System.nanoTime();
-        thread = new Thread(this);
+        thread = new Thread(this, THREAD_NAME_PREFIX + getPort());
         thread.start();
     }
 
