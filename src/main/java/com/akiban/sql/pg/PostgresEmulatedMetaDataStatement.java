@@ -70,9 +70,10 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         PSQL_LIST_TABLES("SELECT n.nspname as \"Schema\",\\s*" +
                          "c.relname as \"Name\",\\s*" +
                          "CASE c.relkind WHEN 'r' THEN 'table' WHEN 'v' THEN 'view' WHEN 'i' THEN 'index' WHEN 'S' THEN 'sequence' WHEN 's' THEN 'special' (?:WHEN 'f' THEN 'foreign table' )?END as \"Type\",\\s+" +
-                         "(?:pg_catalog.pg_get_userbyid\\(c.relowner\\)|u.usename) as \"Owner\"\\s+" +
+                         "(?:pg_catalog.pg_get_userbyid\\(c.relowner\\)|u.usename|r.rolname) as \"Owner\"\\s+" +
                          "FROM pg_catalog.pg_class c\\s+" +
                          "(?:LEFT JOIN pg_catalog.pg_user u ON u.usesysid = c.relowner\\s+)?" +
+                         "(?:JOIN pg_catalog.pg_roles r ON r.oid = c.relowner\\s+)?" +
                          "LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace\\s+" +
                          "WHERE c.relkind IN \\((.+)\\)\\s+" + // 1
                          "(AND n.nspname <> 'pg_catalog'\\s+" +
@@ -102,9 +103,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                                "FROM pg_catalog.pg_class c\\s+" +
                                "LEFT JOIN pg_catalog.pg_class tc ON \\(c.reltoastrelid = tc.oid\\)\\s+" +
                                "WHERE c.oid = '(-?\\d+)';?\\s*", true), // 1
-        PSQL_DESCRIBE_TABLES_2X("SELECT relhasindex, relkind, relchecks, reltriggers, relhasrules\\s+" +
+        PSQL_DESCRIBE_TABLES_2X("SELECT relhasindex, relkind, relchecks, reltriggers, relhasrules(,\\s*relhasoids , reltablespace)?\\s+" + // 1
                                "FROM pg_catalog.pg_class\\s+" +
-                               "WHERE oid = '(-?\\d+)';?\\s*", true), // 1
+                               "WHERE oid = '(-?\\d+)';?\\s*", true), // 2
         PSQL_DESCRIBE_TABLES_3("SELECT a.attname,\\s*" +
                                "pg_catalog.format_type\\(a.atttypid, a.atttypmod\\),\\s*" +
                                "\\(SELECT substring\\((?:pg_catalog.pg_get_expr\\(d.adbin, d.adrelid\\)|d.adsrc) for 128\\)\\s*" +
@@ -118,13 +119,13 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         PSQL_DESCRIBE_TABLES_4A("SELECT c.oid::pg_catalog.regclass FROM pg_catalog.pg_class c, pg_catalog.pg_inherits i WHERE c.oid=i.inhparent AND i.inhrelid = '(-?\\d+)' ORDER BY inhseqno;?", true),
         PSQL_DESCRIBE_TABLES_4B("SELECT c.oid::pg_catalog.regclass FROM pg_catalog.pg_class c, pg_catalog.pg_inherits i WHERE c.oid=i.inhrelid AND i.inhparent = '(-?\\d+)' ORDER BY c.oid::pg_catalog.regclass::pg_catalog.text;?", true),
         PSQL_DESCRIBE_TABLES_5("SELECT c.relname FROM pg_catalog.pg_class c, pg_catalog.pg_inherits i WHERE c.oid=i.inhparent AND i.inhrelid = '(-?\\d+)' ORDER BY inhseqno ASC;?", true),
-        PSQL_DESCRIBE_INDEXES("SELECT c2.relname, i.indisprimary, i.indisunique(, i.indisclustered, i.indisvalid)?, pg_catalog.pg_get_indexdef\\(i.indexrelid(?:, 0, true)?\\),?\\s*" + // 1
-                              "(null AS constraintdef, null AS contype, false AS condeferrable, false AS condeferred, )?(?:c2.reltablespace)?\\s+" + // 2
+        PSQL_DESCRIBE_INDEXES("SELECT c2.relname, i.indisprimary, i.indisunique(, i.indisclustered)?(, i.indisvalid)?, pg_catalog.pg_get_indexdef\\(i.indexrelid(?:, 0, true)?\\),?\\s*" + // 1, 2
+                              "(null AS constraintdef, null AS contype, false AS condeferrable, false AS condeferred, )?(?:c2.reltablespace)?\\s+" + // 3
                               "FROM pg_catalog.pg_class c, pg_catalog.pg_class c2, pg_catalog.pg_index i\\s+" +
-                              "WHERE c.oid = '(-?\\d+)' AND c.oid = i.indrelid AND i.indexrelid = c2.oid\\s+" + // 3
+                              "WHERE c.oid = '(-?\\d+)' AND c.oid = i.indrelid AND i.indexrelid = c2.oid\\s+" + // 4
                               "ORDER BY i.indisprimary DESC, i.indisunique DESC, c2.relname;?", true),
         PSQL_DESCRIBE_FOREIGN_KEYS_1("SELECT conname,\\s*" +
-                                     "pg_catalog.pg_get_constraintdef\\((?:r.oid, true|oid)\\) as condef\\s+" +
+                                     "pg_catalog.pg_get_constraintdef\\((?:r.oid, true|oid, true|oid)\\) as condef\\s+" +
                                      "FROM pg_catalog.pg_constraint r\\s+" +
                                      "WHERE r.conrelid = '(-?\\d+)' AND r.contype = 'f'(?: ORDER BY 1)?;?", true),
         PSQL_DESCRIBE_FOREIGN_KEYS_2("SELECT conname, conrelid::pg_catalog.regclass,\\s*" +
@@ -133,8 +134,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                                     "WHERE c.confrelid = '(-?\\d+)' AND c.contype = 'f' ORDER BY 1;?", true),
         PSQL_DESCRIBE_TRIGGERS("SELECT t.tgname, pg_catalog.pg_get_triggerdef\\(t.oid\\)(, t.tgenabled)?\\s+" + // 1
                                "FROM pg_catalog.pg_trigger t\\s+" +
-                               "WHERE t.tgrelid = '(-?\\d+)' AND (?:t.tgconstraint = 0\\s+" + // 2
-                               "ORDER BY 1|\\(not tgisconstraint  OR NOT EXISTS  \\(SELECT 1 FROM pg_catalog.pg_depend d    JOIN pg_catalog.pg_constraint c ON \\(d.refclassid = c.tableoid AND d.refobjid = c.oid\\)    WHERE d.classid = t.tableoid AND d.objid = t.oid AND d.deptype = 'i' AND c.contype = 'f'\\)\\));?", true),
+                               "WHERE t.tgrelid = '(-?\\d+)' AND (?:t.tgconstraint = 0|" + // 2
+                               "\\(not tgisconstraint  OR NOT EXISTS  \\(SELECT 1 FROM pg_catalog.pg_depend d    JOIN pg_catalog.pg_constraint c ON \\(d.refclassid = c.tableoid AND d.refobjid = c.oid\\)    WHERE d.classid = t.tableoid AND d.objid = t.oid AND d.deptype = 'i' AND c.contype = 'f'\\)\\))(?:\\s+ORDER BY 1)?;?", true),
         PSQL_DESCRIBE_VIEW("SELECT pg_catalog.pg_get_viewdef\\('(-?\\d+)'::pg_catalog.oid, true\\);?", true);
 
         private String sql;
@@ -264,9 +265,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             types = new PostgresType[] { INT2_PG_TYPE, CHAR1_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, CHAR0_PG_TYPE, OID_PG_TYPE };
             break;
         case PSQL_DESCRIBE_TABLES_2X:
-            ncols = 5;
-            names = new String[] { "relhasindex", "relkind", "relchecks", "reltriggers", "relhasrules" };
-            types = new PostgresType[] { BOOL_PG_TYPE, CHAR1_PG_TYPE, INT2_PG_TYPE, INT2_PG_TYPE, BOOL_PG_TYPE };
+            ncols = (groups.get(1) != null) ? 7 : 5;
+            names = new String[] { "relhasindex", "relkind", "relchecks", "reltriggers", "relhasrules", "relhasoids", "reltablespace" };
+            types = new PostgresType[] { BOOL_PG_TYPE, CHAR1_PG_TYPE, INT2_PG_TYPE, INT2_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, OID_PG_TYPE };
             break;
         case PSQL_DESCRIBE_TABLES_3:
             ncols = (groups.get(1) != null) ? 6 : 5;
@@ -290,7 +291,12 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 names = new String[] { "relname", "indisprimary", "indisunique", "pg_get_indexdef" };
                 types = new PostgresType[] { IDENT_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, INDEXDEF_PG_TYPE };
             }
-            if (groups.get(2) == null) {
+            else if (groups.get(2) == null) {
+                ncols = 6;
+                names = new String[] { "relname", "indisprimary", "indisunique", "indisclustered", "pg_get_indexdef", "reltablespace" };
+                types = new PostgresType[] { IDENT_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, INDEXDEF_PG_TYPE, INT2_PG_TYPE };
+            }
+            else if (groups.get(3) == null) {
                 ncols = 7;
                 names = new String[] { "relname", "indisprimary", "indisunique", "indisclustered", "indisvalid", "pg_get_indexdef", "reltablespace" };
                 types = new PostgresType[] { IDENT_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, INDEXDEF_PG_TYPE, INT2_PG_TYPE };
@@ -733,7 +739,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                     false, BOOL_PG_TYPE);
         writeColumn(messenger, encoder, usePVals,
                     "", CHAR0_PG_TYPE);
-        writeColumn(messenger, encoder, usePVals, // reltablespacae
+        writeColumn(messenger, encoder, usePVals, // reltablespace
                     0, OID_PG_TYPE);
         messenger.sendMessage();
         return 1;
@@ -741,10 +747,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
 
     private int psqlDescribeTables2XQuery(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
-        Columnar table = getTableById(server, groups.get(1));
+        Columnar table = getTableById(server, groups.get(2));
         if (table == null) return 0;
+        boolean hasTablespace = (groups.get(1) != null);
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
-        messenger.writeShort(5); // 5 columns for this query
+        messenger.writeShort(hasTablespace ? 7 : 5); // 5-7 columns for this query
         writeColumn(messenger, encoder, usePVals, // relhasindex
                     hasIndexes(table) ? "t" : "f", CHAR1_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relkind
@@ -755,6 +762,12 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                     hasTriggers(table) ? (short)1 : (short)0, INT2_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relhasrules
                     false, BOOL_PG_TYPE);
+        if (hasTablespace) {
+            writeColumn(messenger, encoder, usePVals, // relhasoids
+                        false, BOOL_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, // reltablespace
+                        0, OID_PG_TYPE);
+        }
         messenger.sendMessage();
         return 1;
     }
@@ -813,7 +826,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     private int psqlDescribeIndexesQuery(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
-        Columnar columnar = getTableById(server, groups.get(3));
+        Columnar columnar = getTableById(server, groups.get(4));
         if ((columnar == null) || !columnar.isTable()) return 0;
         UserTable table = (UserTable)columnar;
         Map<String,Index> indexes = new TreeMap<String,Index>();
@@ -830,7 +843,10 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         if (groups.get(1) == null) {
             ncols = 4;
         }
-        if (groups.get(2) == null) {
+        else if (groups.get(2) == null) {
+            ncols = 6;
+        }
+        else if (groups.get(3) == null) {
             ncols = 7;
         }
         else {
@@ -838,7 +854,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         }
         for (Index index : indexes.values()) {
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
-            messenger.writeShort(ncols); // 4-7-11 columns for this query
+            messenger.writeShort(ncols); // 4-5-7-11 columns for this query
             writeColumn(messenger, encoder, usePVals, // relname
                         index.getIndexName().getName(), IDENT_PG_TYPE);
             writeColumn(messenger, encoder, usePVals, // indisprimary
@@ -848,8 +864,10 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             if (ncols > 4) {
                 writeColumn(messenger, encoder, usePVals, // indisclustered
                             false, BOOL_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, // indisvalid
-                            "t", CHAR1_PG_TYPE);
+                if (ncols > 6) {
+                    writeColumn(messenger, encoder, usePVals, // indisvalid
+                                "t", CHAR1_PG_TYPE);
+                }
             }
             writeColumn(messenger, encoder, usePVals, // pg_get_indexdef
                         formatIndexdef(index, table), INDEXDEF_PG_TYPE);
@@ -863,7 +881,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 writeColumn(messenger, encoder, usePVals, // condeferred
                             false, BOOL_PG_TYPE);
             }
-            if (ncols > 4) {
+            if (ncols > 5) {
                 writeColumn(messenger, encoder, usePVals, // reltablespace
                             0, OID_PG_TYPE);
             }
