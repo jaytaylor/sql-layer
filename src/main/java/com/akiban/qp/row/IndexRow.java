@@ -50,11 +50,6 @@ public abstract class IndexRow extends AbstractRow
         throw new UnsupportedOperationException();
     }
 
-    public int compareTo(BoundExpressions row, int leftStartIndex, int rightStartIndex, int fieldCount)
-    {
-        throw new UnsupportedOperationException();
-    }
-
     // RowBase interface
 
     public RowType rowType()
