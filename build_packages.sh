@@ -75,6 +75,8 @@ cp target/dependency/* ../../packages-common/client/
 popd && popd
 
 # Add akiban-server-plugins
+mkdir -p packages-common/plugins
+
 [ ! -z "$PLUGINS_BRANCH" ] || PLUGINS_BRANCH="https://github.com/akiban/akiban-server-plugins/archive/master.zip"
 echo "Using akiban-server-plugins git branch: ${PLUGINS_BRANCH}"
 pushd target && rm -rf akiban-server-plugins-master && \
@@ -84,7 +86,7 @@ pushd target && rm -rf akiban-server-plugins-master && \
     pushd akiban-server-plugins-master
 mvn -Dmaven.test.skip=true clean install && \
     pushd http-conductor && mvn -Dmaven.test.skip=true assembly:single && popd
-cp $(find -name 'server-plugins-http-conductor*with-dependencies.jar') ../../packages-common
+cp $(find -name 'server-plugins-http-conductor*with-dependencies.jar') ../../packages-common/plugins
 
 popd && popd
 
@@ -97,7 +99,7 @@ pushd target && rm -rf akiban-rest-plugin && \
     unzip rest.zip && \
     pushd akiban-rest-plugin
 mvn -Dmaven.test.skip=true clean package
-cp $(find -name '*one-jar.jar') ../../packages-common
+cp $(find -name '*one-jar.jar') ../../packages-common/plugins
 
 popd && popd
 
