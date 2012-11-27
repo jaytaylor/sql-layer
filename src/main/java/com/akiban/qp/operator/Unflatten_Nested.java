@@ -204,7 +204,7 @@ class Unflatten_Nested extends Operator
                 checkQueryCancelation();
                 Row row = input.next();
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("AncestorLookup: {}", row == null ? null : row);
+                    LOG.debug("Unflatten: {}", row == null ? null : row);
                 }
                 if (row == null) {
                     close();
