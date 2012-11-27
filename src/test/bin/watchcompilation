@@ -1,0 +1,92 @@
+#!/usr/bin/python
+
+import os
+import sys
+import time
+import threading
+import signal
+
+AKSERVER='com.akiban.server.AkServer'
+START_PROFILING='kill -18 %s'
+MUST_COMPILE='com.persistit.Transaction::isActive'
+monitor = None
+
+def start_profiling(akserver_pid, waited_sec):
+    print 'ASSUMING COMPILATION DONE, after %s sec' % waited_sec
+    os.system(START_PROFILING % akserver_pid)
+
+class HotspotMonitor(threading.Thread):
+
+    def __init__(self, akserver_pid, quiet_time_sec):
+        threading.Thread.__init__(self)
+        self.akserver_pid = akserver_pid
+        self.quiet_time_sec = quiet_time_sec
+        self.compilation_done = False
+        self.start_time = time.time()
+        self.last_compilation_time = None
+        self.must_compile_line_seen = False
+
+    def run(self):
+        while not self.compilation_done:
+            time.sleep(1)
+            if (self.last_compilation_time is not None and
+                time.time() - self.last_compilation_time >= self.quiet_time_sec):
+                self.declare_compilation_done()
+            
+
+    def process_line(self, line):
+        if self.compilation_line(line):
+            if MUST_COMPILE in line:
+                self.must_compile_line_seen = True
+            if self.must_compile_line_seen:
+                self.last_compilation_time = time.time()
+
+    def declare_compilation_done(self):
+        self.compilation_done = True
+        start_profiling(self.akserver_pid, time.time() - self.start_time)
+
+    def compilation_line(self, line):
+        line = line.strip()
+        return line.endswith(" bytes)")
+
+    def stop(self):
+        self.compilation_done = True
+
+def akserver_pid():
+    pid = None
+    while pid is None:
+        for file in os.listdir('/proc'):
+            if file.isdigit():
+                cmdline_file = '/proc/%s/cmdline' % file
+                try:
+                    cmdline = open(cmdline_file).read().strip()
+                    if AKSERVER in cmdline:
+                        print 'AkServer pid: %s' % file
+                        pid = int(file)
+                        break
+                except IOError:
+                    pass
+        if pid is None:
+            time.sleep(1)
+    return pid
+        
+def ctrl_c_handler(signal, frame):
+    global monitor
+    if monitor:
+        monitor.declare_compilation_done()
+    sys.exit(0)
+    
+def main():
+    global monitor
+    signal.signal(signal.SIGINT, ctrl_c_handler)
+    quiet_time_sec = float(sys.argv[1])
+    print 'quiet time: %s sec' % quiet_time_sec 
+    akserver = akserver_pid()
+    monitor = HotspotMonitor(akserver, quiet_time_sec)
+    monitor.start()
+    line = sys.stdin.readline()
+    while line:
+        monitor.process_line(line)
+        line = sys.stdin.readline()
+
+main()

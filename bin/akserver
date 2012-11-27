@@ -36,6 +36,7 @@
 #   -c <dirname>: configuration directory to use
 #   -k: kill an akiban server process
 #   -v: print the version of akiban server
+#   -s: profile using Solaris Studio
 #
 # CONTROLLING STARTUP:
 # 
@@ -109,27 +110,41 @@ launch_service()
     if [ -n "$usegui" ]; then
         akiban_parms="$akiban_parms -Dcom.persistit.showgui=true"
     fi
-    akiban_parms="$akiban_parms -Dservices.config=$AKIBAN_CONF/config/services-config.yaml -Dlog4j.configuration=file:$AKIBAN_CONF/config/log4j.properties $props"
+    akiban_parms="$akiban_parms -Dservices.config=$AKIBAN_CONF/config/services-config.yaml -Dlog4j.configuration=file:$AKIBAN_CONF/config/log4j.properties $print_compilation $props"
 
     CLASSPATH=$JAR_FILE:$DEP_DIR/*
     main_class="com.akiban.server.AkServer"
+    echo "mode: $mode"
+    echo "profile: $profile"
+    echo "akiban_parms: $akiban_parms"
     if [ -n "$mode" ]; then
         if [ "$mode" == "window" ]; then
           akiban_parms="$akiban_parms -Drequire:com.akiban.server.service.ui.SwingConsoleService -Dprioritize:com.akiban.server.service.ui.SwingConsoleService"
           main_class=com.akiban.server.service.ui.AkServerWithSwingConsole
         fi
-        echo $JAVA $JVM_OPTS $akiban_parms -cp "$CLASSPATH" $main_class
-        exec $JAVA $JVM_OPTS $akiban_parms -cp "$CLASSPATH" $main_class
+        if [ $profile ]
+        then
+            echo $profile "$JVM_OPTS $akiban_parms -cp $CLASSPATH" $JAVA  $main_class
+            exec $profile "$JVM_OPTS $akiban_parms -cp $CLASSPATH" $JAVA  $main_class
+        else
+            echo $JAVA $JVM_OPTS $akiban_parms -cp "$CLASSPATH" $main_class
+            exec $JAVA $JVM_OPTS $akiban_parms -cp "$CLASSPATH" $main_class
+        fi
     else
         echo ${akiban_home}
-        exec $JAVA $JVM_OPTS $akiban_parms -cp "$CLASSPATH" $main_class <&- &
+        if [ "$profile" ]
+        then
+            exec $profile "$JVM_OPTS $akiban_parms -cp $CLASSPATH" $JAVA $main_class <&- &
+        else
+            exec $JAVA $JVM_OPTS $akiban_parms -cp "$CLASSPATH" $main_class <&- &
+        fi
     fi
 
     return $?
 }
 
 # Parse any command line options.
-args=`getopt fwkvghj:d:c:p:D: "$@"`
+args=`getopt fwkvghsj:d:c:p:D: "$@"`
 eval set -- "$args"
 
 while true; do
@@ -163,12 +178,13 @@ while true; do
             shift
         ;;
         -h)
-            echo "Usage: $0 [-f] [-g] [-h] [-p pidfile] [-j jarfile]"
+            echo "Usage: $0 [-f] [-g] [-h] [-p pidfile] [-j jarfile] [-k] [-s] [-v]"
             echo "-f launch the akiban server process in the foreground"
             echo "-g launch the persistit admin tool"
             echo "-p specify a pid file"
             echo "-j specify a jar file for the server to use"
             echo "-k kill an akiban server process"
+            echo "-s profile using Solaris Studio"
             echo "-v print akiban server version"
             exit 0
         ;;
@@ -184,6 +200,12 @@ while true; do
             # in their name or arguments too...
             pgrep -u `whoami` -f akiban-server | xargs kill -9
             exit 0
+        ;;
+        -s)
+            profile=`which collect`
+            profile="$profile -y SIGCONT -j on -J "
+            print_compilation="$akiban_parms -XX:+PrintCompilation"
+            shift
         ;;
         -v)
             get_version $jarfile
