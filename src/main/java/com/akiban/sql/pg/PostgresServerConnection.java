@@ -79,6 +79,7 @@ public class PostgresServerConnection extends ServerSessionBase
     private static final Logger logger = LoggerFactory.getLogger(PostgresServerConnection.class);
     private static final InOutTap READ_MESSAGE = Tap.createTimer("PostgresServerConnection: read message");
     private static final InOutTap PROCESS_MESSAGE = Tap.createTimer("PostgresServerConnection: process message");
+    private static final String THREAD_NAME_PREFIX = "PostgresServer_Session-"; // Session ID appended
 
     private final PostgresServer server;
     private boolean running = false, ignoreUntilSync = false;
@@ -115,7 +116,7 @@ public class PostgresServerConnection extends ServerSessionBase
 
     public void start() {
         running = true;
-        thread = new Thread(this);
+        thread = new Thread(this, THREAD_NAME_PREFIX + sessionId);
         thread.start();
     }
 
