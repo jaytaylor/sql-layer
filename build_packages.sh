@@ -74,6 +74,27 @@ cp target/dependency/* ../../packages-common/client/
 
 popd && popd
 
+# Add akiban-server-plugins
+[ ! -z "$PLUGINS_BRANCH" ] || PLUGINS_BRANCH="https://github.com/akiban/akiban-server-plugins.git"
+echo "Using akiban-server-plugins git branch: ${PLUGINS_BRANCH}"
+pushd target && rm -rf akiban-server-plugins && \
+    git clone ${PLUGINS_BRANCH} akiban-server-plugins && pushd akiban-server-plugins
+mvn -Dmaven.test.skip=true clean install && \
+    pushd http-conductor && mvn -Dmaven.test.skip=true assembly:single && popd
+cp $(find -name 'server-plugins-http-conductor*with-dependencies.jar') ../../packages-common
+
+popd && popd
+
+# Add akiban-rest
+[ ! -z "$REST_BRANCH" ] || REST_BRANCH="https://github.com/akiban/akiban-rest.git"
+echo "Using akiban-rest git branch: ${REST_BRANCH}"
+pushd target && rm -rf akiban-rest && \
+    git clone ${REST_BRANCH} akiban-rest && pushd akiban-rest
+mvn -Dmaven.test.skip=true clean package
+cp $(find -name '*one-jar.jar') ../../packages-common
+
+popd && popd
+
 if [ -z "$2" ] ; then
 	epoch=`date +%s`
 else
