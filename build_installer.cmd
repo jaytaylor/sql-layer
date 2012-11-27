@@ -55,12 +55,34 @@ CD client-tools
 call mvn -Dmaven.test.skip clean install
 IF ERRORLEVEL 1 GOTO EOF
 DEL target\*-sources.jar
-CD ..\..
+CD ..
+
+IF NOT DEFINED PLUGINS_BRANCH SET PLUGINS_BRANCH=https://github.com/akiban/akiban-server-plugins.git
+git clone %PLUGINS_BRANCH akiban-server-plugins
+IF ERRORLEVEL 1 GOTO EOF
+CD akiban-server-plugins
+call -Dmaven.test.skip=true clean install
+IF ERRORLEVEL 1 GOTO EOF
+CD http-conductor
+mvn -Dmaven.test.skip=true assembly:single
+IF ERRORLEVEL 1 GOTO EOF
+CD ..
+
+IF NOT DEFINED REST_BRANCH SET REST_BRANCH=https://github.com/akiban/akiban-rest.git
+git clone %REST_BRANCH akiban-rest
+IF ERRORLEVEL 1 GOTO EOF
+CD akiban-rest
+mvn -Dmaven.test.skip=true clean package
+IF ERRORLEVEL 1 GOTO EOF
+CD ..
+
+CD ..
 
 MD target\isstage
 MD target\isstage\bin
 MD target\isstage\config
 MD target\isstage\lib
+MD target\isstage\lib\plugins
 MD target\isstage\lib\server
 MD target\isstage\lib\client
 MD target\isstage\procrun
@@ -73,6 +95,8 @@ COPY windows\%TARGET%\* target\isstage\config
 ECHO -tests.jar >target\xclude
 ECHO -sources.jar >>target\xclude
 XCOPY target\akiban-server-*.jar target\isstage\lib /EXCLUDE:target\xclude
+COPY target\server-plugins-http-conductor*with-dependencies.jar target\isstage\lib\plugins
+COPY target\*one-jar.jar target\isstage\lib\plugins
 COPY target\dependency\* target\isstage\lib\server
 XCOPY target\client-tools\target\akiban-client-tools-*.jar target\isstage\lib /EXCLUDE:target\xclude
 COPY target\client-tools\target\dependency\* target\isstage\lib\client
