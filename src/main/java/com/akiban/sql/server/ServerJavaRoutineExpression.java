@@ -26,51 +26,39 @@
 
 package com.akiban.sql.server;
 
-import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.TableName;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.AbstractCompositeExpression;
 
-public abstract class ServerRoutineInvocation
-{
-    private final Routine routine;
+import java.util.List;
 
-    protected ServerRoutineInvocation(Routine routine) {
+public abstract class ServerJavaRoutineExpression extends AbstractCompositeExpression {
+    protected Routine routine;
+
+    protected ServerJavaRoutineExpression(Routine routine,
+                                          List<? extends Expression> children) {
+        super(routine.getReturnValue().getType().akType(), children);
         this.routine = routine;
     }
 
-    public int size() {
-        return routine.getParameters().size();
+    @Override
+    public String name () {
+        return routine.getName().toString();
     }
 
-    public Routine getRoutine() {
-        return routine;
+    @Override
+    protected void describe(StringBuilder sb) {
+        sb.append(name());
     }
 
-    public Routine.CallingConvention getCallingConvention() {
-        return routine.getCallingConvention();
+    @Override
+    public boolean isConstant() {
+        return routine.isDeterministic() && super.isConstant();
     }
 
-    public TableName getRoutineName() {
-        return routine.getName();
+    @Override
+    public boolean nullIsContaminating() {
+        return !routine.isCalledOnNullInput();
     }
 
-    public Parameter getRoutineParameter(int index) {
-        if (index == ServerJavaValues.RETURN_VALUE_INDEX)
-            return routine.getReturnValue();
-        else
-            return routine.getParameters().get(index);
-    }
-
-    protected AkType getAkType(int index) {
-        return getRoutineParameter(index).getType().akType();
-    }
-
-    protected TInstance getTInstance(int index) {
-        return getRoutineParameter(index).tInstance();
-    }
-
-    public abstract ServerJavaValues asValues(ServerQueryContext queryContext);
-    
 }

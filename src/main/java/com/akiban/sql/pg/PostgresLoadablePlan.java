@@ -26,7 +26,7 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.sql.server.ServerRoutineInvocation;
+import com.akiban.sql.server.ServerCallInvocation;
 
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.loadableplan.LoadableOperator;
@@ -43,7 +43,7 @@ import java.util.List;
 public class PostgresLoadablePlan
 {
     public static PostgresStatement statement(PostgresServerSession server, 
-                                              ServerRoutineInvocation invocation,
+                                              ServerCallInvocation invocation,
                                               int[] paramTypes) {
         LoadablePlan<?> loadablePlan = 
             server.getRoutineLoader().loadLoadablePlan(server.getSession(),
@@ -64,7 +64,7 @@ public class PostgresLoadablePlan
         return null;
     }
 
-    public static PostgresQueryContext setParameters(PostgresQueryContext context, ServerRoutineInvocation invocation, boolean usePVals) {
+    public static PostgresQueryContext setParameters(PostgresQueryContext context, ServerCallInvocation invocation, boolean usePVals) {
         if (!invocation.parametersInOrder()) {
             if (invocation.hasParameters()) {
                 PostgresQueryContext calleeContext = 

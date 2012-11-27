@@ -29,9 +29,9 @@ package com.akiban.sql.pg;
 import com.akiban.server.service.routines.ScriptInvoker;
 import com.akiban.server.service.routines.ScriptPool;
 import com.akiban.sql.script.ScriptFunctionJavaRoutine;
+import com.akiban.sql.server.ServerCallInvocation;
 import com.akiban.sql.server.ServerJavaMethod;
 import com.akiban.sql.server.ServerJavaRoutine;
-import com.akiban.sql.server.ServerRoutineInvocation;
 
 import java.util.List;
 import java.io.IOException;
@@ -41,7 +41,7 @@ public class PostgresScriptFunctionJavaRoutine extends PostgresJavaRoutine
     private ScriptPool<ScriptInvoker> pool;
 
     public static PostgresScriptFunctionJavaRoutine statement(PostgresServerSession server, 
-                                                              ServerRoutineInvocation invocation,
+                                                              ServerCallInvocation invocation,
                                                               List<String> columnNames, 
                                                               List<PostgresType> columnTypes,
                                                               PostgresType[] parameterTypes,
@@ -54,7 +54,7 @@ public class PostgresScriptFunctionJavaRoutine extends PostgresJavaRoutine
     }
 
     protected PostgresScriptFunctionJavaRoutine(ScriptPool<ScriptInvoker> pool,
-                                                ServerRoutineInvocation invocation,
+                                                ServerCallInvocation invocation,
                                                 List<String> columnNames, 
                                                 List<PostgresType> columnTypes,
                                                 PostgresType[] parameterTypes,

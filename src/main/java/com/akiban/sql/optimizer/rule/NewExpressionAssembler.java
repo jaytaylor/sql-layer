@@ -26,6 +26,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.ais.model.Routine;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.qp.operator.API;
@@ -74,6 +75,9 @@ import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
 import com.akiban.sql.optimizer.plan.ResolvableExpression;
+import com.akiban.sql.script.ScriptBindingsRoutineTExpression;
+import com.akiban.sql.script.ScriptFunctionJavaRoutineTExpression;
+import com.akiban.sql.server.ServerJavaMethodTExpression;
 import com.akiban.sql.types.CharacterTypeAttributes;
 import com.akiban.util.SparseArray;
 import org.slf4j.Logger;
@@ -224,6 +228,25 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     @Override
     protected TPreparedExpression assembleBoundFieldExpression(RowType rowType, int rowIndex, int fieldIndex) {
         return new TPreparedBoundField(rowType, rowIndex, fieldIndex);
+    }
+
+    @Override
+    protected TPreparedExpression assembleRoutine(ExpressionNode routineNode, 
+                                                  Routine routine,
+                                                  List<ExpressionNode> operandNodes,
+                                                  ColumnExpressionContext columnContext,
+                                                  SubqueryOperatorAssembler<TPreparedExpression> subqueryAssembler) {
+        List<TPreparedExpression> inputs = assembleExpressions(operandNodes, columnContext, subqueryAssembler);
+        switch (routine.getCallingConvention()) {
+        case JAVA:
+            return new ServerJavaMethodTExpression(routine, inputs);
+        case SCRIPT_FUNCTION_JAVA:
+            return new ScriptFunctionJavaRoutineTExpression(routine, inputs);
+        case SCRIPT_BINDINGS:
+            return new ScriptBindingsRoutineTExpression(routine, inputs);
+        default:
+            throw new AkibanInternalException("Unimplemented routine " + routine);
+        }
     }
 
     @Override

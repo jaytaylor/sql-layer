@@ -33,8 +33,8 @@ import static com.akiban.sql.pg.PostgresServerSession.OutputFormat;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.server.ServerCallContextStack;
+import com.akiban.sql.server.ServerCallInvocation;
 import com.akiban.sql.server.ServerJavaRoutine;
-import com.akiban.sql.server.ServerRoutineInvocation;
 
 import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
@@ -55,10 +55,10 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresJavaRoutine: execute shared");
     private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresJavaRoutine: acquire shared lock");
 
-    protected ServerRoutineInvocation invocation;
+    protected ServerCallInvocation invocation;
 
     public static PostgresStatement statement(PostgresServerSession server, 
-                                              ServerRoutineInvocation invocation,
+                                              ServerCallInvocation invocation,
                                               List<ParameterNode> params, 
                                               int[] paramTypes) {
         Routine routine = invocation.getRoutine();
@@ -108,7 +108,7 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
     protected PostgresJavaRoutine() {
     }
 
-    protected PostgresJavaRoutine(ServerRoutineInvocation invocation,
+    protected PostgresJavaRoutine(ServerCallInvocation invocation,
                                   List<String> columnNames, 
                                   List<PostgresType> columnTypes,
                                   PostgresType[] parameterTypes,
@@ -119,7 +119,7 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
 
     protected abstract ServerJavaRoutine javaRoutine(PostgresQueryContext context);
 
-    public ServerRoutineInvocation getInvocation() {
+    public ServerCallInvocation getInvocation() {
         return invocation;
     }
     
@@ -249,6 +249,9 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
                 name = String.format("col%d", result.size() + 1);
             result.add(name);
         }
+        if (routine.getReturnValue() != null) {
+            result.add("return");
+        }
         return result;
     }
 
@@ -258,10 +261,13 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
             if (param.getDirection() == Parameter.Direction.IN) continue;
             result.add(PostgresType.fromAIS(param));
         }
+        if (routine.getReturnValue() != null) {
+            result.add(PostgresType.fromAIS(routine.getReturnValue()));
+        }
         return result;
     }
 
-    public static PostgresType[] parameterTypes(ServerRoutineInvocation invocation,
+    public static PostgresType[] parameterTypes(ServerCallInvocation invocation,
                                                 int nparams, int[] paramTypes) {
         PostgresType[] result = new PostgresType[nparams];
         for (int i = 0; i < nparams; i++) {

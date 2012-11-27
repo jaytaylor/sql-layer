@@ -26,9 +26,9 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.server.ServerCallInvocation;
 import com.akiban.sql.server.ServerJavaMethod;
 import com.akiban.sql.server.ServerJavaRoutine;
-import com.akiban.sql.server.ServerRoutineInvocation;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -39,7 +39,7 @@ public class PostgresJavaMethod extends PostgresJavaRoutine
     private Method method;
 
     public static PostgresStatement statement(PostgresServerSession server, 
-                                              ServerRoutineInvocation invocation,
+                                              ServerCallInvocation invocation,
                                               List<String> columnNames, 
                                               List<PostgresType> columnTypes,
                                               PostgresType[] parameterTypes,
@@ -56,7 +56,7 @@ public class PostgresJavaMethod extends PostgresJavaRoutine
     }
 
     protected PostgresJavaMethod(Method method,
-                                 ServerRoutineInvocation invocation,
+                                 ServerCallInvocation invocation,
                                  List<String> columnNames, 
                                  List<PostgresType> columnTypes,
                                  PostgresType[] parameterTypes,

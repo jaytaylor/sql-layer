@@ -24,53 +24,24 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.server;
+package com.akiban.sql.optimizer.plan;
 
-import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.TableName;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.parser.ValueNode;
 
-public abstract class ServerRoutineInvocation
+import java.util.List;
+
+public class RoutineCondition extends RoutineExpression implements ConditionExpression
 {
-    private final Routine routine;
-
-    protected ServerRoutineInvocation(Routine routine) {
-        this.routine = routine;
+    public RoutineCondition(Routine routine,
+                            List<ExpressionNode> operands,
+                            DataTypeDescriptor sqlType, ValueNode sqlSource) {
+        super(routine, operands, sqlType, sqlSource);
     }
 
-    public int size() {
-        return routine.getParameters().size();
+    @Override
+    public Implementation getImplementation() {
+        return Implementation.NORMAL;
     }
-
-    public Routine getRoutine() {
-        return routine;
-    }
-
-    public Routine.CallingConvention getCallingConvention() {
-        return routine.getCallingConvention();
-    }
-
-    public TableName getRoutineName() {
-        return routine.getName();
-    }
-
-    public Parameter getRoutineParameter(int index) {
-        if (index == ServerJavaValues.RETURN_VALUE_INDEX)
-            return routine.getReturnValue();
-        else
-            return routine.getParameters().get(index);
-    }
-
-    protected AkType getAkType(int index) {
-        return getRoutineParameter(index).getType().akType();
-    }
-
-    protected TInstance getTInstance(int index) {
-        return getRoutineParameter(index).tInstance();
-    }
-
-    public abstract ServerJavaValues asValues(ServerQueryContext queryContext);
-    
 }

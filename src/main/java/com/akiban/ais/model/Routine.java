@@ -128,6 +128,14 @@ public class Routine
         return dynamicResultSets;
     }
 
+    public boolean isDeterministic() {
+        return deterministic;
+    }
+
+    public boolean isCalledOnNullInput() {
+        return calledOnNullInput;
+    }
+
     protected void checkMutability() {
         ais.checkMutability();
     }
@@ -180,11 +188,23 @@ public class Routine
     }
 
     public void setSQLAllowed(SQLAllowed sqlAllowed) {
+        checkMutability();
         this.sqlAllowed = sqlAllowed;
     }
 
     public void setDynamicResultSets(int dynamicResultSets) {
+        checkMutability();
         this.dynamicResultSets = dynamicResultSets;
+    }
+
+    public void setDeterministic(boolean deterministic) {
+        checkMutability();
+        this.deterministic = deterministic;
+    }
+
+    public void setCalledOnNullInput(boolean calledOnNullInput) {
+        checkMutability();
+        this.calledOnNullInput = calledOnNullInput;
     }
 
     // State
@@ -199,4 +219,5 @@ public class Routine
     protected String definition;
     protected SQLAllowed sqlAllowed;
     protected int dynamicResultSets = 0;
+    protected boolean deterministic, calledOnNullInput;
 }

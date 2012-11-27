@@ -36,7 +36,7 @@ import com.akiban.sql.optimizer.ColumnBinding;
 import com.akiban.sql.parser.CallStatementNode;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.StaticMethodCallNode;
-import com.akiban.sql.server.ServerRoutineInvocation;
+import com.akiban.sql.server.ServerCallInvocation;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,10 +44,10 @@ import java.util.List;
 
 abstract class ExecutableCallStatement extends ExecutableStatement
 {
-    protected ServerRoutineInvocation invocation;
+    protected ServerCallInvocation invocation;
     protected JDBCParameterMetaData parameterMetaData;
 
-    protected ExecutableCallStatement(ServerRoutineInvocation invocation,
+    protected ExecutableCallStatement(ServerCallInvocation invocation,
                                       JDBCParameterMetaData parameterMetaData) {
         this.invocation = invocation;
         this.parameterMetaData = parameterMetaData;
@@ -57,8 +57,8 @@ abstract class ExecutableCallStatement extends ExecutableStatement
                                                           List<ParameterNode> sqlParams,
                                                           EmbeddedQueryContext context) {
         StaticMethodCallNode methodCall = (StaticMethodCallNode)call.methodCall().getJavaValueNode();
-        ServerRoutineInvocation invocation =
-            ServerRoutineInvocation.of(context.getServer(), methodCall);
+        ServerCallInvocation invocation =
+            ServerCallInvocation.of(context.getServer(), methodCall);
         if (invocation != null) {
             JDBCParameterMetaData parameterMetaData = parameterMetaData(invocation, 
                                                                         sqlParams);
@@ -76,13 +76,13 @@ abstract class ExecutableCallStatement extends ExecutableStatement
         throw new UnsupportedSQLException("Unknown routine", call);
     }
 
-    public static JDBCParameterMetaData parameterMetaData(ServerRoutineInvocation invocation) {
+    public static JDBCParameterMetaData parameterMetaData(ServerCallInvocation invocation) {
         List<ParameterType> params = new ArrayList<ParameterType>();
         
         return new JDBCParameterMetaData(params);
     }
 
-    protected static JDBCParameterMetaData parameterMetaData(ServerRoutineInvocation invocation,
+    protected static JDBCParameterMetaData parameterMetaData(ServerCallInvocation invocation,
                                                              List<ParameterNode> sqlParams) {
         int nparams = sqlParams.size();
         ParameterType[] ptypes = new ParameterType[nparams];

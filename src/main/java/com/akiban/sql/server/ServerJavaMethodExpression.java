@@ -26,51 +26,37 @@
 
 package com.akiban.sql.server;
 
-import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.TableName;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionEvaluation;
 
-public abstract class ServerRoutineInvocation
-{
-    private final Routine routine;
+import java.lang.reflect.Method;
+import java.util.List;
 
-    protected ServerRoutineInvocation(Routine routine) {
-        this.routine = routine;
+public class ServerJavaMethodExpression extends ServerJavaRoutineExpression {
+    public ServerJavaMethodExpression(Routine routine,
+                                      List<? extends Expression> inputs) {
+        super(routine, inputs);
     }
 
-    public int size() {
-        return routine.getParameters().size();
+    @Override
+    public ExpressionEvaluation evaluation() {
+        return new InnerEvaluation(routine, childrenEvaluations());
     }
 
-    public Routine getRoutine() {
-        return routine;
+    static class InnerEvaluation extends ServerJavaRoutineExpressionEvaluation {
+        public InnerEvaluation(Routine routine,
+                               List<? extends ExpressionEvaluation> children) {
+            super(routine, children);
+        }
+
+        @Override
+        protected ServerJavaRoutine javaRoutine(ServerQueryContext context,
+                                                ServerRoutineInvocation invocation) {
+            Method method = context.getServer().getRoutineLoader().
+                loadJavaMethod(context.getSession(), routine.getName());
+            return new ServerJavaMethod(context, invocation, method);
+        }
     }
 
-    public Routine.CallingConvention getCallingConvention() {
-        return routine.getCallingConvention();
-    }
-
-    public TableName getRoutineName() {
-        return routine.getName();
-    }
-
-    public Parameter getRoutineParameter(int index) {
-        if (index == ServerJavaValues.RETURN_VALUE_INDEX)
-            return routine.getReturnValue();
-        else
-            return routine.getParameters().get(index);
-    }
-
-    protected AkType getAkType(int index) {
-        return getRoutineParameter(index).getType().akType();
-    }
-
-    protected TInstance getTInstance(int index) {
-        return getRoutineParameter(index).tInstance();
-    }
-
-    public abstract ServerJavaValues asValues(ServerQueryContext queryContext);
-    
 }

@@ -24,53 +24,31 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.server;
+package com.akiban.sql.script;
 
-import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.TableName;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
+import com.akiban.server.service.routines.ScriptEvaluator;
+import com.akiban.server.service.routines.ScriptPool;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.sql.server.ServerJavaRoutine;
+import com.akiban.sql.server.ServerJavaRoutineTExpression;
+import com.akiban.sql.server.ServerQueryContext;
+import com.akiban.sql.server.ServerRoutineInvocation;
 
-public abstract class ServerRoutineInvocation
-{
-    private final Routine routine;
+import java.util.List;
 
-    protected ServerRoutineInvocation(Routine routine) {
-        this.routine = routine;
+public class ScriptBindingsRoutineTExpression extends ServerJavaRoutineTExpression {
+    public ScriptBindingsRoutineTExpression(Routine routine,
+                                            List<? extends TPreparedExpression> inputs) {
+        super(routine, inputs);
     }
 
-    public int size() {
-        return routine.getParameters().size();
+    @Override
+    protected ServerJavaRoutine javaRoutine(ServerQueryContext context,
+                                            ServerRoutineInvocation invocation) {
+        ScriptPool<ScriptEvaluator> pool = context.getServer().getRoutineLoader().
+            getScriptEvaluator(context.getSession(), routine.getName());
+        return new ScriptBindingsRoutine(context, invocation, pool);
     }
 
-    public Routine getRoutine() {
-        return routine;
-    }
-
-    public Routine.CallingConvention getCallingConvention() {
-        return routine.getCallingConvention();
-    }
-
-    public TableName getRoutineName() {
-        return routine.getName();
-    }
-
-    public Parameter getRoutineParameter(int index) {
-        if (index == ServerJavaValues.RETURN_VALUE_INDEX)
-            return routine.getReturnValue();
-        else
-            return routine.getParameters().get(index);
-    }
-
-    protected AkType getAkType(int index) {
-        return getRoutineParameter(index).getType().akType();
-    }
-
-    protected TInstance getTInstance(int index) {
-        return getRoutineParameter(index).tInstance();
-    }
-
-    public abstract ServerJavaValues asValues(ServerQueryContext queryContext);
-    
 }
