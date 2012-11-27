@@ -33,10 +33,7 @@ install: build
 
     # Plugins
     # (Don't symlink, because we don't want to see each jar twice.)
-    dh_install packages-common/server-plugins-http-conductor-1.0-jar-with-dependencies.jar \
-        usr/share/akiban/plugins
-    dh_install packages-common/akiban-rest-0.1.6-SNAPSHOT.one-jar.jar \
-        usr/share/akiban/plugins
+    dh_install packages-common/plugins/* usr/share/akiban/plugins
 
 # Build architecture-independent files here.
 binary-indep: build install
