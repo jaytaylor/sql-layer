@@ -75,10 +75,13 @@ cp target/dependency/* ../../packages-common/client/
 popd && popd
 
 # Add akiban-server-plugins
-[ ! -z "$PLUGINS_BRANCH" ] || PLUGINS_BRANCH="https://github.com/akiban/akiban-server-plugins.git"
+[ ! -z "$PLUGINS_BRANCH" ] || PLUGINS_BRANCH="https://github.com/akiban/akiban-server-plugins/archive/master.zip"
 echo "Using akiban-server-plugins git branch: ${PLUGINS_BRANCH}"
-pushd target && rm -rf akiban-server-plugins && \
-    git clone ${PLUGINS_BRANCH} akiban-server-plugins && pushd akiban-server-plugins
+pushd target && rm -rf akiban-server-plugins-master && \
+    rm akiban-server-plugins.zip && \
+    wget --no-check-certificate -O akiban-server-plugins.zip ${PLUGINS_BRANCH} && \
+    unzip akiban-server-plugins.zip && \
+    pushd akiban-server-plugins-master
 mvn -Dmaven.test.skip=true clean install && \
     pushd http-conductor && mvn -Dmaven.test.skip=true assembly:single && popd
 cp $(find -name 'server-plugins-http-conductor*with-dependencies.jar') ../../packages-common
@@ -86,10 +89,13 @@ cp $(find -name 'server-plugins-http-conductor*with-dependencies.jar') ../../pac
 popd && popd
 
 # Add akiban-rest
-[ ! -z "$REST_BRANCH" ] || REST_BRANCH="https://github.com/akiban/akiban-rest.git"
+[ ! -z "$REST_BRANCH" ] || REST_BRANCH="https://github.com/akiban/akiban-rest/archive/plugin.zip"
 echo "Using akiban-rest git branch: ${REST_BRANCH}"
-pushd target && rm -rf akiban-rest && \
-    git clone ${REST_BRANCH} akiban-rest && pushd akiban-rest
+pushd target && rm -rf akiban-rest-plugin && \
+    rm rest.zip && \
+    wget --no-check-certificate -O rest.zip ${REST_BRANCH} && \
+    unzip rest.zip && \
+    pushd akiban-rest-plugin
 mvn -Dmaven.test.skip=true clean package
 cp $(find -name '*one-jar.jar') ../../packages-common
 
