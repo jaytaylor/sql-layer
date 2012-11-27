@@ -26,7 +26,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
-
+import com.akiban.ais.model.Routine;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
@@ -36,6 +36,9 @@ import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.expression.std.InExpression;
 import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.script.ScriptBindingsRoutineExpression;
+import com.akiban.sql.script.ScriptFunctionJavaRoutineExpression;
+import com.akiban.sql.server.ServerJavaMethodExpression;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
@@ -206,6 +209,25 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
     @Override
     protected Expression assembleBoundFieldExpression(RowType rowType, int rowIndex, int fieldIndex) {
         return boundField(rowType, rowIndex, fieldIndex);
+    }
+
+    @Override
+    protected Expression assembleRoutine(ExpressionNode routineNode, 
+                                         Routine routine,
+                                         List<ExpressionNode> operandNodes,
+                                         ColumnExpressionContext columnContext,
+                                         SubqueryOperatorAssembler<Expression> subqueryAssembler) {
+        List<Expression> inputs = assembleExpressions(operandNodes, columnContext, subqueryAssembler);
+        switch (routine.getCallingConvention()) {
+        case JAVA:
+            return new ServerJavaMethodExpression(routine, inputs);
+        case SCRIPT_FUNCTION_JAVA:
+            return new ScriptFunctionJavaRoutineExpression(routine, inputs);
+        case SCRIPT_BINDINGS:
+            return new ScriptBindingsRoutineExpression(routine, inputs);
+        default:
+            throw new AkibanInternalException("Unimplemented routine " + routine);
+        }
     }
 
     @Override

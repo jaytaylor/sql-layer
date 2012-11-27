@@ -202,9 +202,7 @@ public class AISBBasedBuilder
 
         @Override
         public NewAISGroupIndexStarter groupIndex(String indexName, Index.JoinType joinType) {
-            ActualGroupIndexBuilder actual  = new ActualGroupIndexBuilder(aisb.akibanInformationSchema(), defaultSchema);
-            actual.aisb.setTableIdOffset(aisb.getTableIdOffset());
-            actual.aisb.setIndexIdOffset(aisb.getIndexIdOffset());
+            ActualGroupIndexBuilder actual  = new ActualGroupIndexBuilder(aisb, defaultSchema);
             return actual.groupIndex(indexName, joinType);
         }
 
@@ -512,6 +510,18 @@ public class AISBBasedBuilder
             return this;
         }
 
+        @Override
+        public NewRoutineBuilder deterministic(boolean deterministic) {
+            aisb.routineDeterministic(schema, userTable, deterministic);
+            return this;
+        }
+
+        @Override
+        public NewRoutineBuilder calledOnNullInput(boolean calledOnNullInput) {
+            aisb.routineCalledOnNullInput(schema, userTable, calledOnNullInput);
+            return this;
+        }
+
         // NewSQLJJarBuilder
 
         @Override
@@ -672,8 +682,8 @@ public class AISBBasedBuilder
 
         // ActualFinisher interface
 
-        public ActualGroupIndexBuilder(AkibanInformationSchema ais, String defaultSchema) {
-            this.aisb = new AISBuilder(ais);
+        public ActualGroupIndexBuilder(AISBuilder aisb, String defaultSchema) {
+            this.aisb = aisb;
             this.defaultSchema = defaultSchema;
         }
 

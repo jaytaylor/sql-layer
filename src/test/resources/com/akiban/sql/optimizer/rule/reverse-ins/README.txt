@@ -23,3 +23,5 @@ use-index-row: row value IN uses group index.
 not-exists: NOT EXISTS to anti-join.
 
 not-in: NOT IN to anti-join.
+
+not-in-inner: NOT IN with join inside.

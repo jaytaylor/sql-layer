@@ -214,6 +214,7 @@ public enum ErrorCode {
     // Class 26 - invalid SQL statement name
     // Class 27 - triggered data change violation 
     // Class 28 - invalid authorization specification
+    AUTHENTICATION_FAILED   ("28", "000", Importance.DEBUG, AuthenticationFailedException.class),
     // Class 2B - dependent privilege descriptors still exist
     VIEW_REFERENCES_EXIST   ("2B", "000", Importance.DEBUG, ViewReferencesExist.class),
     // Class 2C - invalid character set name 
@@ -273,6 +274,7 @@ public enum ErrorCode {
     NO_SUCH_GROUPING_FK     ("42", "518", Importance.DEBUG, NoSuchGroupingFKException.class),
     NO_SUCH_ROUTINE         ("42", "519", Importance.DEBUG, NoSuchRoutineException.class),
     NO_SUCH_CAST            ("42", "51A", Importance.DEBUG, NoSuchCastException.class),
+    PROCEDURE_CALLED_AS_FUNCTION ("42", "51B", Importance.DEBUG, ProcedureCalledAsFunctionException.class),
 
 
     // Class 44 - with check option violation
@@ -361,6 +363,7 @@ public enum ErrorCode {
     SEQUENCE_TREE_NAME_NULL ("50", "022", Importance.DEBUG, SequenceTreeNameIsNullException.class),
     ALTER_MADE_NO_CHANGE    ("50", "023", Importance.DEBUG, AlterMadeNoChangeException.class),
     INVALID_ROUTINE         ("50", "024", Importance.DEBUG, InvalidRoutineException.class),
+    INVALID_INDEX_ID        ("50", "025", Importance.DEBUG, InvalidIndexIDException.class),
 
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),

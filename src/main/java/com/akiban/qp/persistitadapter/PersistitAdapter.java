@@ -312,6 +312,7 @@ public class PersistitAdapter extends StoreAdapter
 
     public void returnIndexRow(PersistitIndexRow indexRow)
     {
+        assert !indexRow.isShared();
         indexRowPool.returnIndexRow(this, (IndexRowType) indexRow.rowType(), indexRow);
     }
 

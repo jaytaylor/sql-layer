@@ -52,6 +52,9 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.security.auth.Subject;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 
 /** The PostgreSQL server.
  * Listens of a given port and spawns <code>PostgresServerConnection</code> threads
@@ -61,6 +64,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     public static final String SERVER_PROPERTIES_PREFIX = "akserver.postgres.";
     protected static final String SERVER_TYPE = "Postgres";
+    private static final String THREAD_NAME_PREFIX = "PostgresServer_Accept-"; // Port is appended
+
+    protected static enum AuthenticationType {
+        NONE, CLEAR_TEXT, GSS
+    };
 
     private final Properties properties;
     private final int port;
@@ -80,6 +88,8 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     // end AIS-dependent state
     private volatile Date overrideCurrentTime;
     private final CacheCounters cacheCounters = new CacheCounters();
+    private AuthenticationType authenticationType;
+    private Subject gssLogin;
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresServer.class);
 
@@ -110,7 +120,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         running = true;
         startTimeMillis = System.currentTimeMillis();
         startTimeNanos = System.nanoTime();
-        thread = new Thread(this);
+        thread = new Thread(this, THREAD_NAME_PREFIX + getPort());
         thread.start();
     }
 
@@ -338,6 +348,27 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
 
     public Date getOverrideCurrentTime() {
         return overrideCurrentTime;
+    }
+
+    public synchronized AuthenticationType getAuthenticationType() {
+        if (authenticationType == null) {
+            if (properties.getProperty("gssConfigName") != null)
+                authenticationType = AuthenticationType.GSS;
+            else if (Boolean.parseBoolean(properties.getProperty("require_password", "false")))
+                authenticationType = AuthenticationType.CLEAR_TEXT;
+            else
+                authenticationType = AuthenticationType.NONE;
+        }
+        return authenticationType;
+    }
+
+    public synchronized Subject getGSSLogin() throws LoginException {
+        if (gssLogin == null) {
+            LoginContext lc = new LoginContext(properties.getProperty("gssConfigName"));
+            lc.login();
+            gssLogin = lc.getSubject();
+        }
+        return gssLogin;
     }
 
     /* ServerMonitor */

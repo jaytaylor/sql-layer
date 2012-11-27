@@ -31,7 +31,9 @@ import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.JoinNodeAdditionException;
 import com.akiban.server.error.MultipleJoinsToTableException;
 import com.akiban.server.error.NoSuchColumnException;
+import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.ProcedureCalledAsFunctionException;
 import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.error.SelectExistsErrorException;
 import com.akiban.server.error.SubqueryOneColumnException;
@@ -48,6 +50,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
@@ -65,6 +68,7 @@ public class AISBinder implements Visitor
     private Set<ValueNode> havingClauses;
     private AISBinderContext context;
     private boolean expandViews;
+    private FunctionDefined functionDefined;
 
     public AISBinder(AkibanInformationSchema ais, String defaultSchemaName) {
         this.ais = ais;
@@ -85,6 +89,14 @@ public class AISBinder implements Visitor
 
     public void setAllowSubqueryMultipleColumns(boolean allowSubqueryMultipleColumns) {
         this.allowSubqueryMultipleColumns = allowSubqueryMultipleColumns;
+    }
+
+    public interface FunctionDefined {
+        public boolean isDefined(String name);
+    }
+
+    public void setFunctionDefined(FunctionDefined functionDefined) {
+        this.functionDefined = functionDefined;
     }
 
     public AISBinderContext getContext() {
@@ -137,6 +149,8 @@ public class AISBinder implements Visitor
             case NodeTypes.UNION_NODE:
                 unionNode((UnionNode)node);
                 break;
+            case NodeTypes.JAVA_TO_SQL_VALUE_NODE:
+                javaValueNode(((JavaToSQLValueNode)node).getJavaValueNode());
             }
         }
 
@@ -1171,6 +1185,33 @@ public class AISBinder implements Visitor
             throw new SQLParserInternalException(ex);
         }
         popBindingContext();
+    }
+
+    protected void javaValueNode(JavaValueNode javaValue) {
+        if ((javaValue instanceof StaticMethodCallNode) &&
+            (functionDefined != null)) {
+            StaticMethodCallNode methodCall = (StaticMethodCallNode)javaValue;
+            Routine routine = null;
+            if ((methodCall.getProcedureName() != null) &&
+                (methodCall.getProcedureName().hasSchema())) {
+                // Qualified name is always a routine and an immediate error if not.
+                routine = ais.getRoutine(methodCall.getProcedureName().getSchemaName(),
+                                         methodCall.getProcedureName().getTableName());
+                if (routine == null) {
+                    throw new NoSuchFunctionException(methodCall.getProcedureName().toString());
+                }
+            }
+            else if (!functionDefined.isDefined(methodCall.getMethodName())) {
+                // Unqualified only if not a built-in function and error deferred.
+                routine = ais.getRoutine(defaultSchemaName, methodCall.getMethodName());
+            }
+            if (routine != null) {
+                if (routine.getReturnValue() == null) {
+                    throw new ProcedureCalledAsFunctionException(routine.getName());
+                }
+                methodCall.setUserData(routine);
+            }
+        }
     }
 
     protected static class BindingContext {

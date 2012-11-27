@@ -30,11 +30,10 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
-import com.akiban.server.service.config.Property;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
-import java.util.Collection;
+import java.util.Map;
 
 import static org.junit.Assert.assertNotNull;
 
@@ -49,7 +48,7 @@ public class TableIDCollisionIT extends ITBase {
     }
 
     @Override
-    protected Collection<Property> startupConfigProperties() {
+    protected Map<String, String> startupConfigProperties() {
         // Something unique, since we are messing with IS tables
         return uniqueStartupConfigProperties(getClass());
     }

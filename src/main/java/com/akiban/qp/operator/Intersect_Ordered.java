@@ -249,8 +249,8 @@ class Intersect_Ordered extends Operator
         Attributes atts = new Attributes();
         
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
-        atts.put(Label.LEFT, PrimitiveExplainer.getInstance(leftFixedFields));
-        atts.put(Label.RIGHT, PrimitiveExplainer.getInstance(rightFixedFields));
+        atts.put(Label.NUM_SKIP, PrimitiveExplainer.getInstance(leftFixedFields));
+        atts.put(Label.NUM_SKIP, PrimitiveExplainer.getInstance(rightFixedFields));
         atts.put(Label.NUM_COMPARE, PrimitiveExplainer.getInstance(fieldsToCompare));
         atts.put(Label.JOIN_OPTION, PrimitiveExplainer.getInstance(joinType.name().replace("_JOIN", "")));
         atts.put(Label.INPUT_OPERATOR, left.getExplainer(context));
@@ -297,7 +297,7 @@ class Intersect_Ordered extends Operator
                             nextLeftRow();
                         } else {
                             if (skipScan) {
-                                nextLeftRowSkip(rightRow.get(), rightFixedFields, leftSkipRowColumnSelector);
+                                nextLeftRowSkip(rightRow.get(), rightFixedFields, leftSkipRowColumnSelector, false);
                             } else {
                                 nextLeftRow();
                             }
@@ -309,7 +309,7 @@ class Intersect_Ordered extends Operator
                             nextRightRow();
                         } else {
                             if (skipScan) {
-                                nextRightRowSkip(leftRow.get(), leftFixedFields, rightSkipRowColumnSelector);
+                                nextRightRowSkip(leftRow.get(), leftFixedFields, rightSkipRowColumnSelector, false);
                             } else {
                                 nextRightRow();
                             }
@@ -354,8 +354,8 @@ class Intersect_Ordered extends Operator
                 assert jumpRow.rowType() == rightRowType : jumpRow.rowType();
                 suffixRowFixedFields = rightFixedFields;
             }
-            nextLeftRowSkip(jumpRow, suffixRowFixedFields, jumpRowColumnSelector);
-            nextRightRowSkip(jumpRow, suffixRowFixedFields, jumpRowColumnSelector);
+            nextLeftRowSkip(jumpRow, suffixRowFixedFields, jumpRowColumnSelector, true);
+            nextRightRowSkip(jumpRow, suffixRowFixedFields, jumpRowColumnSelector, true);
             if (leftRow.isEmpty() || rightRow.isEmpty()) {
                 close();
             }
@@ -430,9 +430,9 @@ class Intersect_Ordered extends Operator
             }
         }
 
-        private long compareRows()
+        private int compareRows()
         {
-            long c;
+            int c;
             assert !closed;
             assert !(leftRow.isEmpty() && rightRow.isEmpty());
             if (leftRow.isEmpty()) {
@@ -441,20 +441,32 @@ class Intersect_Ordered extends Operator
                 c = -1;
             } else {
                 c = leftRow.get().compareTo(rightRow.get(), leftFixedFields, rightFixedFields, fieldsToCompare);
-                if (c != 0) {
-                    int fieldThatDiffers = (int) abs(c) - 1;
-                    assert fieldThatDiffers < ascending.length;
-                    if (!ascending[fieldThatDiffers]) {
-                        c = -c;
-                    }
+                c = adjustComparison(c);
+
+            }
+            return c;
+        }
+
+        private int adjustComparison(int c) 
+        {
+            if (c != 0) {
+                int fieldThatDiffers = abs(c) - 1;
+                assert fieldThatDiffers < ascending.length;
+                if (!ascending[fieldThatDiffers]) {
+                    c = -c;
                 }
             }
             return c;
         }
 
-        private void nextLeftRowSkip(Row jumpRow, int jumpRowFixedFields, ColumnSelector jumpRowColumnSelector)
+        private void nextLeftRowSkip(Row jumpRow, int jumpRowFixedFields, ColumnSelector jumpRowColumnSelector, boolean check)
         {
             if (leftRow.isHolding()) {
+                if (check) {
+                    int c = leftRow.get().compareTo(jumpRow, leftFixedFields, jumpRowFixedFields, fieldsToCompare);
+                    c = adjustComparison(c);
+                    if (c >= 0) return;
+                }
                 addSuffixToSkipRow(leftSkipRow(),
                                    leftFixedFields,
                                    jumpRow,
@@ -464,9 +476,14 @@ class Intersect_Ordered extends Operator
             }
         }
 
-        private void nextRightRowSkip(Row jumpRow, int jumpRowFixedFields, ColumnSelector jumpRowColumnSelector)
+        private void nextRightRowSkip(Row jumpRow, int jumpRowFixedFields, ColumnSelector jumpRowColumnSelector, boolean check)
         {
             if (rightRow.isHolding()) {
+                if (check) {
+                    int c = rightRow.get().compareTo(jumpRow, rightFixedFields, jumpRowFixedFields, fieldsToCompare);
+                    c = adjustComparison(c);
+                    if (c >= 0) return;
+                }
                 addSuffixToSkipRow(rightSkipRow(),
                                    rightFixedFields,
                                    jumpRow,

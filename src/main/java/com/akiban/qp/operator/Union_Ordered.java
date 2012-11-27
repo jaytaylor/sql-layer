@@ -142,6 +142,7 @@ class Union_Ordered extends Operator
                          int leftOrderingFields,
                          int rightOrderingFields,
                          boolean[] ascending,
+                         boolean outputEqual,
                          boolean usePValues)
     {
         ArgumentValidation.notNull("left", left);
@@ -165,6 +166,7 @@ class Union_Ordered extends Operator
         this.fixedFields = rowType.nFields() - leftOrderingFields;
         this.fieldsToCompare = leftOrderingFields;
         this.ascending = Arrays.copyOf(ascending, ascending.length);
+        this.outputEqual = outputEqual;
         // TODO (in Execution): Check that ascending bits are consistent with IndexCursor directions.
         this.usePValues = usePValues;
     }
@@ -185,15 +187,20 @@ class Union_Ordered extends Operator
     private final int fixedFields;
     private final int fieldsToCompare;
     private final boolean[] ascending;
+    private final boolean outputEqual;
     private final boolean usePValues;
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context) {
         Attributes atts = new Attributes();
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
+        atts.put(Label.NUM_SKIP, PrimitiveExplainer.getInstance(fixedFields));
+        atts.put(Label.NUM_COMPARE, PrimitiveExplainer.getInstance(fieldsToCompare));
         atts.put(Label.INPUT_OPERATOR, left.getExplainer(context));
         atts.put(Label.INPUT_OPERATOR, right.getExplainer(context));
-        return new CompoundExplainer(Type.UNION, atts);
+        if (outputEqual)
+            atts.put(Label.UNION_OPTION, PrimitiveExplainer.getInstance("ALL"));
+        return new CompoundExplainer(Type.ORDERED, atts);
     }
 
     // Inner classes
@@ -230,7 +237,7 @@ class Union_Ordered extends Operator
                 Row next = null;
                 if (isActive()) {
                     assert !(leftRow.isEmpty() && rightRow.isEmpty());
-                    long c = compareRows();
+                    int c = compareRows();
                     if (c < 0) {
                         next = leftRow.get();
                         nextLeftRow();
@@ -238,10 +245,11 @@ class Union_Ordered extends Operator
                         next = rightRow.get();
                         nextRightRow();
                     } else {
-                        // left and right rows match. Doesn't matter which one is output.
+                        // left and right rows match. Output at least one.
                         next = leftRow.get();
                         nextLeftRow();
-                        nextRightRow();
+                        if (!outputEqual)
+                            nextRightRow();
                     }
                     if (leftRow.isEmpty() && rightRow.isEmpty()) {
                         close();
@@ -335,9 +343,9 @@ class Union_Ordered extends Operator
             }
         }
         
-        private long compareRows()
+        private int compareRows()
         {
-            long c;
+            int c;
             assert !closed;
             assert !(leftRow.isEmpty() && rightRow.isEmpty());
             if (leftRow.isEmpty()) {
@@ -346,19 +354,28 @@ class Union_Ordered extends Operator
                 c = -1;
             } else {
                 c = leftRow.get().compareTo(rightRow.get(), fixedFields, fixedFields, fieldsToCompare);
-                if (c != 0) {
-                    int fieldThatDiffers = (int) abs(c) - 1;
-                    if (!ascending[fieldThatDiffers]) {
-                        c = -c;
-                    }
-                }
+                c = adjustComparison(c);
             }
+            return c;
+        }
+
+        private int adjustComparison(int c) 
+        {
+            if (c != 0) {
+                int fieldThatDiffers = abs(c) - 1;
+                if (!ascending[fieldThatDiffers]) {
+                    c = -c;
+                }
+            }            
             return c;
         }
 
         private void nextLeftRowSkip(Row jumpRow, int jumpRowFixedFields, ColumnSelector jumpRowColumnSelector)
         {
             if (leftRow.isHolding()) {
+                int c = leftRow.get().compareTo(jumpRow, fixedFields, jumpRowFixedFields, fieldsToCompare);
+                c = adjustComparison(c);
+                if (c >= 0) return;
                 addSuffixToSkipRow(leftSkipRow(),
                                    fixedFields,
                                    jumpRow,
@@ -371,6 +388,9 @@ class Union_Ordered extends Operator
         private void nextRightRowSkip(Row jumpRow, int jumpRowFixedFields, ColumnSelector jumpRowColumnSelector)
         {
             if (rightRow.isHolding()) {
+                int c = rightRow.get().compareTo(jumpRow, fixedFields, jumpRowFixedFields, fieldsToCompare);
+                c = adjustComparison(c);
+                if (c >= 0) return;
                 addSuffixToSkipRow(rightSkipRow(),
                                    fixedFields,
                                    jumpRow,

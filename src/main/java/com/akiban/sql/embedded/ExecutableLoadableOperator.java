@@ -36,7 +36,7 @@ import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.parser.CallStatementNode;
 import com.akiban.sql.server.ServerCallContextStack;
-import com.akiban.sql.server.ServerRoutineInvocation;
+import com.akiban.sql.server.ServerCallInvocation;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import java.util.ArrayList;
@@ -44,9 +44,9 @@ import java.util.List;
 
 class ExecutableLoadableOperator extends ExecutableQueryOperatorStatement
 {
-    private ServerRoutineInvocation invocation;
+    private ServerCallInvocation invocation;
 
-    public static ExecutableStatement executableStatement(ServerRoutineInvocation invocation,
+    public static ExecutableStatement executableStatement(ServerCallInvocation invocation,
                                                           JDBCParameterMetaData parameterMetaData,
                                                           CallStatementNode call,
                                                           EmbeddedQueryContext context) {
@@ -62,7 +62,7 @@ class ExecutableLoadableOperator extends ExecutableQueryOperatorStatement
     }
 
     protected ExecutableLoadableOperator(LoadableOperator loadableOperator, 
-                                         ServerRoutineInvocation invocation,
+                                         ServerCallInvocation invocation,
                                          JDBCResultSetMetaData resultSetMetaData,
                                          JDBCParameterMetaData parameterMetaData) {
         super(loadableOperator.plan(), resultSetMetaData, parameterMetaData);
@@ -97,7 +97,7 @@ class ExecutableLoadableOperator extends ExecutableQueryOperatorStatement
         return new JDBCResultSetMetaData(columns);
     }
 
-    protected static EmbeddedQueryContext setParameters(EmbeddedQueryContext context, ServerRoutineInvocation invocation) {
+    protected static EmbeddedQueryContext setParameters(EmbeddedQueryContext context, ServerCallInvocation invocation) {
         if (!invocation.parametersInOrder()) {
             if (invocation.hasParameters()) {
                 EmbeddedQueryContext calleeContext = 

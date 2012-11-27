@@ -77,7 +77,6 @@ import org.junit.Test;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.service.config.Property;
 
 public final class SchemaManagerIT extends ITBase {
     final static String SCHEMA = "my_schema";
@@ -142,15 +141,15 @@ public final class SchemaManagerIT extends ITBase {
     }
     
     @Override
-    protected Collection<Property> startupConfigProperties() {
+    protected Map<String, String> startupConfigProperties() {
         // Set up multi-volume treespace policy so we can be sure schema is properly distributed.
-        final Collection<Property> properties = new ArrayList<Property>();
-        properties.add(new Property("akserver.treespace.a",
+        final Map<String, String> properties = new HashMap<String, String>();
+        properties.put("akserver.treespace.a",
                                     VOL2_PREFIX + "*:${datapath}/${schema}.v0,create,pageSize:${buffersize},"
-                                    + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        properties.add(new Property("akserver.treespace.b",
+                                    + "initialSize:10K,extensionSize:1K,maximumSize:10G");
+        properties.put("akserver.treespace.b",
                                     VOL3_PREFIX + "*:${datapath}/${schema}.v0,create,pageSize:${buffersize},"
-                                    + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
+                                    + "initialSize:10K,extensionSize:1K,maximumSize:10G");
         return properties;
     }
 

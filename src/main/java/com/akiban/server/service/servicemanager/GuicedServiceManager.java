@@ -27,6 +27,7 @@
 package com.akiban.server.service.servicemanager;
 
 import com.akiban.server.AkServerInterface;
+import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.config.ConfigurationService;
@@ -34,6 +35,8 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.monitor.MonitorService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.jmx.JmxRegistryService;
+import com.akiban.server.service.plugins.Plugin;
+import com.akiban.server.service.plugins.PluginsFinder;
 import com.akiban.server.service.servicemanager.configuration.BindingsConfigurationLoader;
 import com.akiban.server.service.servicemanager.configuration.DefaultServiceConfigurationHandler;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
@@ -52,6 +55,7 @@ import javax.management.ObjectName;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -187,7 +191,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
         // Install the default, no-op JMX registry; this is a special case, since we want to use it
         // as we start each service.
-        configurationHandler.bind(JmxRegistryService.class.getName(), NoOpJmxRegistry.class.getName());
+        configurationHandler.bind(JmxRegistryService.class.getName(), NoOpJmxRegistry.class.getName(), null);
 
         // Next, load each element in the provider...
         for (BindingsConfigurationLoader loader : bindingsConfigurationProvider.loaders()) {
@@ -213,16 +217,71 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         // ... followed by any command-line overrides.
         new PropertyBindings(System.getProperties()).loadInto(configurationHandler);
 
-        final Collection<ServiceBinding> bindings = configurationHandler.serviceBindings();
+        Collection<ServiceBinding> bindings = configurationHandler.serviceBindings(false);
+        BindingsConfigurationLoader pluginsConfigLoader = getPluginsConfigurationLoader(bindings);
+        pluginsConfigLoader.loadInto(configurationHandler);
+
+        bindings = configurationHandler.serviceBindings(true);
+
         try {
-            guicer = Guicer.forServices(ServiceManager.class, this, 
-                                        bindings, configurationHandler.priorities());
+            guicer = Guicer.forServices(ServiceManager.class, this,
+                                        bindings, configurationHandler.priorities(), configurationHandler.getModules());
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
 
     // private methods
+
+    private BindingsConfigurationLoader getPluginsConfigurationLoader(Collection<ServiceBinding> bindings) {
+        ServiceBinding pluginsFinderBinding = null;
+        for (ServiceBinding binding : bindings) {
+            if (PluginsFinder.class.getCanonicalName().equals(binding.getInterfaceName())) {
+                if (pluginsFinderBinding != null)
+                    throw new ServiceStartupException("multiple bindings found for " + PluginsFinder.class);
+                pluginsFinderBinding = binding;
+            }
+        }
+        if (pluginsFinderBinding == null)
+            return emptyConfigurationLoader;
+        String pluginsFinderClassName = pluginsFinderBinding.getImplementingClassName();
+        Class<?> pluginsFinderClass;
+        try {
+            pluginsFinderClass = Class.forName(pluginsFinderClassName);
+        }
+        catch (ClassNotFoundException e) {
+            throw new ServiceStartupException("couldn't get Class object for " + pluginsFinderClassName);
+        }
+        PluginsFinder pluginsFinder;
+        try {
+            pluginsFinder = (PluginsFinder) pluginsFinderClass.newInstance();
+        }
+        catch (Exception e) {
+            logger.error("while instantiating plugins finder", e);
+            logger.error("plugins finder must have a no-arg constructor, though there may be something else wrong");
+            throw new ServiceStartupException("error while instantiating plugins finder. please check logs");
+        }
+        CompositeConfigurationLoader compositeLoader = new CompositeConfigurationLoader();
+        Collection<? extends Plugin> plugins = pluginsFinder.get();
+        List<URL> pluginUrls = new ArrayList<URL>(plugins.size());
+        for (Plugin plugin : plugins)
+            pluginUrls.add(plugin.getClassLoaderURL());
+        ClassLoader pluginsClassloader = new URLClassLoader(pluginUrls.toArray(new URL[pluginUrls.size()]));
+        for (Plugin plugin : plugins) {
+            try {
+                YamlConfiguration pluginConfig = new YamlConfiguration(
+                        plugin.toString(),
+                        plugin.getServiceConfigsReader(),
+                        pluginsClassloader);
+                compositeLoader.add(pluginConfig);
+            }
+            catch (IOException e) {
+                logger.error("while reading services config for " + plugin, e);
+                throw new ServiceStartupException("error while reading services config for " + plugin);
+            }
+        }
+        return compositeLoader;
+    }
 
     boolean isRequired(Class<?> theClass) {
         return guicer.isRequired(theClass);
@@ -300,20 +359,32 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
         @Override
         public void onStart(Service service) {
-            service.start();
-            if (service instanceof JmxManageable && isRequired(JmxRegistryService.class)) {
-                JmxRegistryService registry = (service instanceof JmxRegistryService)
-                        ? (JmxRegistryService) service
-                        : getJmxRegistryService();
-                JmxManageable manageable = (JmxManageable)service;
-                ObjectName objectName = registry.register(manageable);
-                jmxNames.put(manageable.getClass(), objectName);
-                // TODO because our dependency graph is created via Service.start() invocations, if service A uses service B
-                // in stop() but not start(), and service B has already been shut down, service B will be resurrected. Yuck.
-                // I don't know of a good way around this, other than by formalizing our dependency graph via constructor
-                // params (and thus removing ServiceManagerImpl.get() ). Until this is resolved, simplest is to just shrug
-                // our shoulders and not check
-//                assert (ObjectName)old == null : objectName + " has displaced " + old;
+            final Thread currentThread = Thread.currentThread();
+            final ClassLoader oldContextCl = currentThread.getContextClassLoader();
+            ClassLoader contextClassloader = service.getClass().getClassLoader();
+            boolean setContextCl = (contextClassloader != null && contextClassloader != oldContextCl);
+            try {
+                if (setContextCl)
+                    currentThread.setContextClassLoader(contextClassloader);
+                service.start();
+                if (service instanceof JmxManageable && isRequired(JmxRegistryService.class)) {
+                    JmxRegistryService registry = (service instanceof JmxRegistryService)
+                            ? (JmxRegistryService) service
+                            : getJmxRegistryService();
+                    JmxManageable manageable = (JmxManageable)service;
+                    ObjectName objectName = registry.register(manageable);
+                    jmxNames.put(manageable.getClass(), objectName);
+                    // TODO because our dependency graph is created via Service.start() invocations, if service A uses service B
+                    // in stop() but not start(), and service B has already been shut down, service B will be resurrected. Yuck.
+                    // I don't know of a good way around this, other than by formalizing our dependency graph via constructor
+                    // params (and thus removing ServiceManagerImpl.get() ). Until this is resolved, simplest is to just shrug
+                    // our shoulders and not check
+    //                assert (ObjectName)old == null : objectName + " has displaced " + old;
+                }
+            }
+            finally {
+                if (setContextCl)
+                    currentThread.setContextClassLoader(oldContextCl);
             }
         }
 
@@ -461,7 +532,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
             }
             RuntimeException exception = null;
             try {
-                new YamlConfiguration(url.toString(), defaultServicesReader).loadInto(config);
+                new YamlConfiguration(url.toString(), defaultServicesReader, null).loadInto(config);
             } catch (RuntimeException e) {
                 exception = e;
             } finally {
@@ -488,13 +559,33 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         private final URL url;
     }
 
+    private static final BindingsConfigurationLoader emptyConfigurationLoader = new BindingsConfigurationLoader() {
+        @Override
+        public void loadInto(ServiceConfigurationHandler config) {}
+    };
+
+    private static class CompositeConfigurationLoader implements BindingsConfigurationLoader {
+
+        public void add(BindingsConfigurationLoader loader) {
+            loaders.add(loader);
+        }
+
+        @Override
+        public void loadInto(ServiceConfigurationHandler config) {
+            for (BindingsConfigurationLoader loader : loaders)
+                loader.loadInto(config);
+        }
+
+        private final List<BindingsConfigurationLoader> loaders = new ArrayList<BindingsConfigurationLoader>();
+    }
+
     private static class ManualServiceBinding implements BindingsConfigurationLoader {
 
         // BindingsConfigurationElement interface
 
         @Override
         public void loadInto(ServiceConfigurationHandler config) {
-            config.bind(interfaceName, implementationName);
+            config.bind(interfaceName, implementationName, null);
             if (required)
                 config.require(interfaceName);
         }
@@ -530,7 +621,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
                     if (theImpl.length() == 0) {
                         throw new IllegalArgumentException("-D" + property + " doesn't have a valid value");
                     }
-                    config.bind(theInterface, theImpl);
+                    config.bind(theInterface, theImpl, null);
                 } else if (property.startsWith(REQUIRE)) {
                     String theInterface = property.substring(REQUIRE.length());
                     String value = properties.getProperty(property);

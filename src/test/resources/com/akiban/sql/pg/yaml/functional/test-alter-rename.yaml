@@ -1,0 +1,30 @@
+# test the `ALTER TABLE ... RENAME` 
+---
+- Statement: CREATE TABLE t (c int);
+---
+- Statement: INSERT INTO t values (3);
+---
+- Statement: SELECT c from t;
+- output: [['3']]
+---
+- Statement: ALTER TABLE t RENAME t2;
+---
+- Statement: INSERT INTO t2 values (4);
+---
+- Statement: SELECT c from t2;
+- output: [[3], [4]]
+--- # expect no such table error
+- Statement: SELECT c from t;
+- error: [42501]
+---
+- Statement: ALTER TABLE t2 RENAME dummy.test3;
+---
+- Statement: SELECT c from dummy.test3;
+- output: [[3], [4]]
+--- # now t2 is also not found
+- Statement: SELECT c from t2;
+- error: [42501]
+---
+- Statement: DROP TABLE dummy.test3;
+...
+

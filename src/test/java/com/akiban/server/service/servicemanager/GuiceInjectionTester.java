@@ -28,6 +28,7 @@ package com.akiban.server.service.servicemanager;
 
 import com.akiban.server.service.servicemanager.configuration.DefaultServiceConfigurationHandler;
 import com.akiban.util.JUnitUtils;
+import com.google.inject.Module;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,7 +41,7 @@ import static org.junit.Assert.assertTrue;
 public final class GuiceInjectionTester {
 
     public <I> GuiceInjectionTester bind(Class<I> anInterface, Class<? extends I> anImplementation) {
-        configHandler.bind(anInterface.getName(), anImplementation.getName());
+        configHandler.bind(anInterface.getName(), anImplementation.getName(), null);
         return this;
     }
 
@@ -62,7 +63,8 @@ public final class GuiceInjectionTester {
         }
         try {
             guicer = Guicer.forServices((Class)serviceManagerInterfaceClass, serviceManager,
-                                        configHandler.serviceBindings(), configHandler.priorities());
+                                        configHandler.serviceBindings(true), configHandler.priorities(),
+                                        Collections.<Module>emptyList());
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }

@@ -117,6 +117,16 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         return keyComparableRegistry.getClass(left, right);
     }
 
+    @Override
+    public FunctionKind getFunctionKind(String name) {
+        if (scalarsResolver.isDefined(name))
+            return FunctionKind.SCALAR;
+        else if (aggregatesResolver.isDefined(name))
+            return FunctionKind.AGGREGATE;
+        else
+            return null;
+    }
+
     // Service interface
 
     @Override

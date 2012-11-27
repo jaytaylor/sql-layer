@@ -30,7 +30,7 @@ import com.akiban.server.service.routines.ScriptEvaluator;
 import com.akiban.server.service.routines.ScriptPool;
 import com.akiban.sql.parser.CallStatementNode;
 import com.akiban.sql.script.ScriptBindingsRoutine;
-import com.akiban.sql.server.ServerRoutineInvocation;
+import com.akiban.sql.server.ServerCallInvocation;
 import com.akiban.sql.server.ServerJavaMethod;
 import com.akiban.sql.server.ServerJavaRoutine;
 
@@ -39,13 +39,13 @@ class ExecutableScriptBindingsRoutine extends ExecutableJavaRoutine
     private ScriptPool<ScriptEvaluator> pool;
 
     protected ExecutableScriptBindingsRoutine(ScriptPool<ScriptEvaluator> pool,
-                                              ServerRoutineInvocation invocation,
+                                              ServerCallInvocation invocation,
                                               JDBCParameterMetaData parameterMetaData) {
         super(invocation, parameterMetaData);
         this.pool = pool;
     }
 
-    public static ExecutableStatement executableStatement(ServerRoutineInvocation invocation,
+    public static ExecutableStatement executableStatement(ServerCallInvocation invocation,
                                                           JDBCParameterMetaData parameterMetaData,
                                                           CallStatementNode call,
                                                           EmbeddedQueryContext context) {

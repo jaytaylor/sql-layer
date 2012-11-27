@@ -65,6 +65,7 @@ public class PostgresMessenger implements DataInput, DataOutput
     private final InputStream inputStream;
     private final OutputStream outputStream;
     private final DataInputStream dataInput;
+    private byte[] rawMessageInput;
     private DataInputStream messageInput;
     private ByteArrayOutputStream byteOutput;
     private DataOutputStream messageOutput;
@@ -153,9 +154,9 @@ public class PostgresMessenger implements DataInput, DataOutput
                 throw new IOException(String.format("Implausible message length (%d) received.", len));
             len -= 4;
             try {
-                byte[] msg = new byte[len];
-                dataInput.readFully(msg, 0, len);
-                messageInput = new DataInputStream(new ByteArrayInputStream(msg));
+                rawMessageInput = new byte[len];
+                dataInput.readFully(rawMessageInput, 0, len);
+                messageInput = new DataInputStream(new ByteArrayInputStream(rawMessageInput));
             } catch (OutOfMemoryError ex) {
                 throw new IOException (String.format("Unable to allocate read buffer of length (%d)", len));
             }
@@ -230,6 +231,11 @@ public class PostgresMessenger implements DataInput, DataOutput
             bs.write(b);
         }
         return bs.toString(encoding);
+    }
+
+    /** Return entire message body. */
+    public byte[] getRawMessage() {
+        return rawMessageInput;
     }
 
     /** Write null-terminated string. */

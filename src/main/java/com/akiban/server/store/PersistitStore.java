@@ -260,7 +260,7 @@ public class PersistitStore implements Store, Service {
                     FieldDef fieldDef = fieldDefs[column.getPosition()];
                     if (insertingRow && column.isAkibanPKColumn()) {
                         // Must be a PK-less table. Use unique id from TableStatus.
-                        uniqueId = tableStatusCache.createNewUniqueID(segmentRowDef.getRowDefId());
+                        uniqueId = segmentRowDef.getTableStatus().createNewUniqueID();
                         hKeyAppender.append(uniqueId);
                         // Write rowId into the value part of the row also.
                         rowData.updateNonNullLong(fieldDef, uniqueId);
@@ -381,10 +381,10 @@ public class PersistitStore implements Store, Service {
                 final long location = rowDef.fieldLocation(rowData, rowDef.getAutoIncrementField());
                 if (location != 0) {
                     long autoIncrementValue = rowData.getIntegerValue((int) location, (int) (location >>> 32));
-                    tableStatusCache.setAutoIncrement(rowDefId, autoIncrementValue);
+                    rowDef.getTableStatus().setAutoIncrement(autoIncrementValue);
                 }
             }
-            tableStatusCache.rowWritten(rowDefId);
+            rowDef.getTableStatus().rowWritten();
             PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
             for (Index index : rowDef.getIndexes()) {
                 insertIntoIndex(session, index, rowData, hEx.getKey(), indexRow, deferIndexes);
@@ -476,7 +476,7 @@ public class PersistitStore implements Store, Service {
 
             // Remove the h-row
             hEx.remove();
-            tableStatusCache.rowDeleted(rowDefId);
+            rowDef.getTableStatus().rowDeleted();
 
             // Remove the indexes, including the PK index
             PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
@@ -669,7 +669,7 @@ public class PersistitStore implements Store, Service {
                 // Delete the current row from the tree. Don't call deleteRow, because we don't need to recompute
                 // the hkey.
                 exchange.remove();
-                tableStatusCache.rowDeleted(descendentRowDefId);
+                descendentRowDef.getTableStatus().rowDeleted();
                 if(deleteIndexes) {
                     for (Index index : descendentRowDef.getIndexes()) {
                         deleteIndex(session, index, descendentRowData, exchange.getKey(), indexRowBuffer);
@@ -698,7 +698,7 @@ public class PersistitStore implements Store, Service {
         for(UserTable table : group.getRoot().getAIS().getUserTables().values()) {
             if(table.getGroup() == group) {
                 indexes.addAll(table.getIndexesIncludingInternal());
-                tableStatusCache.truncate(table.getTableId());
+                table.rowDef().getTableStatus().truncate();
             }
         }
         indexes.addAll(group.getIndexes());
@@ -738,8 +738,8 @@ public class PersistitStore implements Store, Service {
     }
 
     @Override
-    public void truncateTableStatus(final Session session, final int rowDefId) throws RollbackException, PersistitException {
-        tableStatusCache.truncate(rowDefId);
+    public void truncateTableStatus(final Session session, final int rowDefId) throws PersistitException {
+        getRowDef(session, rowDefId).getTableStatus().truncate();
     }
 
     @Override
@@ -915,6 +915,8 @@ public class PersistitStore implements Store, Service {
             throw new PersistitAdapterException(e);
         }
         for (Index index : rowDef.getIndexes()) {
+            if (index.isSpatial())
+                continue;
             TableStatistics.Histogram histogram = indexStatisticsToHistogram(session, 
                                                                              index);
             if (histogram != null) {

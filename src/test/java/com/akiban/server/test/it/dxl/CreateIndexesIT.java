@@ -28,7 +28,6 @@ package com.akiban.server.test.it.dxl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +56,6 @@ import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.ProtectedIndexException;
 
 import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.config.Property;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.dxl.DXLServiceImpl;
 import com.akiban.server.service.lock.LockService;
@@ -89,7 +87,7 @@ public final class CreateIndexesIT extends ITBase {
     }
 
     @Override
-    protected Collection<Property> startupConfigProperties() {
+    protected Map<String, String> startupConfigProperties() {
         return uniqueStartupConfigProperties(getClass());
     }
 
@@ -107,7 +105,7 @@ public final class CreateIndexesIT extends ITBase {
         final UserTable newTable = ais.getUserTable(tableId);
         assertNotNull(newTable);
         final UserTable curTable = getUserTable(tableId);
-        final TableIndex index = TableIndex.create(ais, newTable, indexName, -1, isUnique, isUnique ? "UNIQUE" : "KEY");
+        final TableIndex index = TableIndex.create(ais, newTable, indexName, 0, isUnique, isUnique ? "UNIQUE" : "KEY");
 
         int pos = 0;
         for (String colName : refColumns) {
@@ -198,7 +196,7 @@ public final class CreateIndexesIT extends ITBase {
         int tId = createTable("test", "t", "id int not null primary key");
         AkibanInformationSchema ais = createAISWithTable(tId);
         Table table = ais.getTable("test", "t");
-        Index index = TableIndex.create(ais, table, "id", -1, false, "KEY");
+        Index index = TableIndex.create(ais, table, "id", 0, false, "KEY");
         Column refCol = Column.create(table, "foo", 0, Types.INT);
         IndexColumn.create(index, refCol, 0, true, 0);
         ddl().createIndexes(session(), Arrays.asList(index));
@@ -209,7 +207,7 @@ public final class CreateIndexesIT extends ITBase {
         int tId = createTable("test", "t", "id int not null primary key");
         AkibanInformationSchema ais = createAISWithTable(tId);
         Table table = ais.getTable("test", "t");
-        Index index = TableIndex.create(ais, table, "id", -1, false, "KEY");
+        Index index = TableIndex.create(ais, table, "id", 0, false, "KEY");
         Column refCol = Column.create(table, "id", 0, Types.BLOB);
         IndexColumn.create(index, refCol, 0, true, 0);
         ddl().createIndexes(session(), Arrays.asList(index));

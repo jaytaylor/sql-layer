@@ -28,7 +28,6 @@ package com.akiban.qp.operator;
 
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.exec.Plannable;
-import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -201,6 +200,7 @@ final class UnionAll_Default extends Operator {
         Attributes att = new Attributes();
         
         att.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
+        att.put(Label.UNION_OPTION, PrimitiveExplainer.getInstance("ALL"));
         
         for (Operator op : inputs)
             att.put(Label.INPUT_OPERATOR, op.getExplainer(context));
@@ -209,7 +209,7 @@ final class UnionAll_Default extends Operator {
        
         att.put(Label.OUTPUT_TYPE, outputRowType.getExplainer(context));
         
-        return new CompoundExplainer(Type.UNION_ALL, att);
+        return new CompoundExplainer(Type.UNION, att);
     }
 
     private class Execution extends OperatorExecutionBase implements Cursor {
@@ -372,7 +372,7 @@ final class UnionAll_Default extends Operator {
     private static class MasqueradingRow implements Row {
 
         @Override
-        public int compareTo(BoundExpressions row, int leftStartIndex, int rightStartIndex, int fieldCount)
+        public int compareTo(RowBase row, int leftStartIndex, int rightStartIndex, int fieldCount)
         {
             return delegate.compareTo(row, leftStartIndex, rightStartIndex, fieldCount);
         }

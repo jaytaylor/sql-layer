@@ -1,6 +1,9 @@
-# test bugs 91127
+# test bugs 921127, 921124 in types3
 ---
-- Statement: SET newtypes to 'true';
+- Newtypes: true
+---
+- Statement: SELECT TIMEDIFF('12:30:14', 'TIME TO GO');
+- output: [['12:30:14']]
 ---
 - Statement: SELECT TIMEDIFF('12:34:55', -17);
 - output: [['12:35:12']]
@@ -8,5 +11,5 @@
 - Statement: select timediff('12:30:10', -1712);
 - output: [['12:47:22']]
 ---
-- Statement: SET newtypes to DEFAULT
+- Newtypes: null
 ...

@@ -71,6 +71,14 @@ public class DefaultNameGenerator implements NameGenerator {
         indexIDMap = collectMaxIndexIDs(ais);
     }
 
+    int getMaxIndexID() {
+        int max = 1;
+        for(Integer id : indexIDMap.values()) {
+            max = Math.max(max, id);
+        }
+        return max;
+    }
+
 
     @Override
     public int generateTableID(TableName name) {

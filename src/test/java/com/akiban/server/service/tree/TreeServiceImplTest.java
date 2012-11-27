@@ -42,14 +42,11 @@ public class TreeServiceImplTest {
 
     private final static int MEGA = 1024 * 1024;
 
-    private static class MyConfigService extends TestConfigService {
-    }
-
-    private MyConfigService configService;
+    private TestConfigService configService;
 
     @Before
     public void startConfiguration() throws Exception {
-        configService = new MyConfigService();
+        configService = new TestConfigService();
         configService.start();
     }
 

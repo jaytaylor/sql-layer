@@ -29,14 +29,13 @@ package com.akiban.server.service.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.service.config.Property;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 
 import com.akiban.server.test.it.ITBase;
@@ -52,7 +51,7 @@ public final class SchemaTableServiceIT extends ITBase {
     }
 
     @Override
-    protected Collection<Property> startupConfigProperties() {
+    protected Map<String, String> startupConfigProperties() {
         return uniqueStartupConfigProperties(getClass());
     }
 
@@ -70,7 +69,7 @@ public final class SchemaTableServiceIT extends ITBase {
     
     @Test
     public void baseInfoExamine() {
-        assertEquals(37, ais.getUserTables().size());
+        assertEquals ("Table count", 17, BasicInfoSchemaTablesServiceImpl.createTablesToRegister().getUserTables().size());
         assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.SCHEMATA));
         assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.TABLES));
         assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.COLUMNS));
@@ -92,6 +91,7 @@ public final class SchemaTableServiceIT extends ITBase {
     
     @Test
     public void storageExamine() {
+        assertEquals ("Table count", 11, StorageSchemaTablesServiceImpl.createTablesToRegister().getUserTables().size());
         assertNotNull (ais.getUserTable(StorageSchemaTablesServiceImpl.STORAGE_ALERTS_SUMMARY));
         assertNotNull (ais.getUserTable(StorageSchemaTablesServiceImpl.STORAGE_BUFFER_POOLS));
         assertNotNull (ais.getUserTable(StorageSchemaTablesServiceImpl.STORAGE_CHECKPOINT_SUMMARY));
@@ -107,10 +107,13 @@ public final class SchemaTableServiceIT extends ITBase {
     
     @Test
     public void serverExamine() {
+        assertEquals ("Table count", 7, ServerSchemaTablesServiceImpl.createTablesToRegister().getUserTables().size());
+        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.ERROR_CODES));
         assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_INSTANCE_SUMMARY));
-        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_PARAMETERS));
         assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_SERVERS));
         assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_SESSIONS));
-        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.ERROR_CODES));
+        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_PARAMETERS));
+        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_MEMORY_POOLS));
+        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_GARBAGE_COLLECTORS));
     }
 }

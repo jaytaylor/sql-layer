@@ -89,9 +89,11 @@ public abstract class MDateFormat extends TScalarBase
                 protected long[] getYMDHMS(PValueSource source)
                 {
                     long ret[] = new long[6];
+                    StringType strType = MDatetimes.parseDateOrTime(source.getString(), ret);
                     try
                     {
-                        if(MDatetimes.parseDateOrTime(source.getString(), ret) == StringType.TIME_ST)
+                        if(strType == StringType.TIME_ST
+                                || !MDatetimes.isValidType(strType))
                             return null;
                         else
                             return ret;

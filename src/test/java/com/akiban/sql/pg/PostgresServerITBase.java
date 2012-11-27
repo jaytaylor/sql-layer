@@ -27,12 +27,9 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.test.it.ITBase;
-import com.akiban.server.service.config.Property;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 
-import org.junit.After;
 import static org.junit.Assert.fail;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +38,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 
 import java.io.File;
-import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 @Ignore
@@ -65,7 +62,7 @@ public class PostgresServerITBase extends ITBase
     }
 
     @Override
-    protected Collection<Property> startupConfigProperties() {
+    protected Map<String, String> startupConfigProperties() {
         return uniqueStartupConfigProperties(PostgresServerITBase.class);
     }
 

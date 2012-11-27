@@ -140,7 +140,7 @@ public class RowDefCache {
                         ++nextOrdinal;
                     }
                     ordinal = nextOrdinal++;
-                    tableStatusCache.setOrdinal(rowDef.getRowDefId(), ordinal);
+                    rowDef.getTableStatus().setOrdinal(ordinal);
                 }
                 assigned.add(ordinal);
                 ordinalMap.put(rowDef.table(), ordinal);
@@ -157,9 +157,9 @@ public class RowDefCache {
     private RowDef createRowDefCommon(Table table, MemoryTableFactory factory) {
         final TableStatus status;
         if(factory == null) {
-            status = tableStatusCache.getTableStatus(table.getTableId());
+            status = tableStatusCache.createTableStatus(table.getTableId());
         } else {
-            status = tableStatusCache.getMemoryTableStatus(table.getTableId(), factory);
+            status = tableStatusCache.getOrCreateMemoryTableStatus(table.getTableId(), factory);
         }
         return new RowDef(table, status); // Hooks up table's rowDef too
     }
@@ -216,11 +216,11 @@ public class RowDefCache {
         rowDef.setIndexes(indexList.toArray(new TableIndex[indexList.size()]));
         rowDef.setGroupIndexes(groupIndexList.toArray(new GroupIndex[groupIndexList.size()]));
 
-        tableStatusCache.setRowDef(rowDef.getRowDefId(), rowDef);
+        rowDef.getTableStatus().setRowDef(rowDef);
         Column autoIncColumn = table.getAutoIncrementColumn();
         if(autoIncColumn != null) {
             long initialAutoIncrementValue = autoIncColumn.getInitialAutoIncrementValue();
-            tableStatusCache.setAutoIncrement(table.getTableId(), initialAutoIncrementValue);
+            rowDef.getTableStatus().setAutoIncrement(initialAutoIncrementValue);
         }
 
         return rowDef;

@@ -26,7 +26,11 @@
 
 package com.akiban.server.service.servicemanager.configuration;
 
+import com.google.inject.Module;
+
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public final class DefaultServiceConfigurationHandler implements ServiceConfigurationHandler {
@@ -34,8 +38,15 @@ public final class DefaultServiceConfigurationHandler implements ServiceConfigur
     // YamlConfigurationStrategy interface
 
     @Override
-    public void bind(String interfaceName, String implementingClassName) {
-        builder.bind(interfaceName, implementingClassName);
+    public void bind(String interfaceName, String implementingClassName, ClassLoader classLoader) {
+        builder.bind(interfaceName, implementingClassName, classLoader);
+    }
+
+    @Override
+    public void bindModules(List<Module> modules) {
+        if (this.modules == null)
+            this.modules = new ArrayList<Module>(modules.size());
+        this.modules.addAll(modules);
     }
 
     @Override
@@ -79,10 +90,26 @@ public final class DefaultServiceConfigurationHandler implements ServiceConfigur
         );
     }
 
+    @Override
+    public void bindModulesError(String where, Object command, String message) {
+        throw new ServiceConfigurationException(
+                String.format("bind-modules error at %s: %s (%s)",
+                        where,
+                        message,
+                        command
+                )
+        );
+    }
+
     // DefaultServiceConfigurationHandler interface
 
-    public Collection<ServiceBinding> serviceBindings() {
-        return builder.getAllBindings();
+    public Collection<? extends Module> getModules() {
+        Collection<Module> internal = modules == null ? Collections.<Module>emptyList() : modules;
+        return Collections.unmodifiableCollection(internal);
+    }
+
+    public Collection<ServiceBinding> serviceBindings(boolean strict) {
+        return builder.getAllBindings(strict);
     }
 
     public List<String> priorities() {
@@ -91,4 +118,5 @@ public final class DefaultServiceConfigurationHandler implements ServiceConfigur
 
     // object state
     private final ServiceBindingsBuilder builder = new ServiceBindingsBuilder();
+    private Collection<Module> modules = null;
 }

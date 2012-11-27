@@ -24,48 +24,41 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service.config;
+package com.akiban.sql.server;
 
-public final class Property implements Comparable<Property> {
+import com.akiban.ais.model.Routine;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.AbstractCompositeExpression;
 
-    private final String key;
-    private final String value;
+import java.util.List;
 
-    public Property(String key, String value) {
-        this.key = key;
-        this.value = value;
-    }
+public abstract class ServerJavaRoutineExpression extends AbstractCompositeExpression {
+    protected Routine routine;
 
-    @Deprecated
-    Property(String module, String name, String value) {
-        this(module + '.' + name, value);
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public String getKey() {
-        return key;
+    protected ServerJavaRoutineExpression(Routine routine,
+                                          List<? extends Expression> children) {
+        super(routine.getReturnValue().getType().akType(), children);
+        this.routine = routine;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        return (obj instanceof Property) && key.equals(((Property)obj).key);
+    public String name () {
+        return routine.getName().toString();
     }
 
     @Override
-    public int hashCode() {
-        return key.hashCode();
+    protected void describe(StringBuilder sb) {
+        sb.append(name());
     }
 
     @Override
-    public int compareTo(Property o) {
-        return key.compareTo(o.key);
+    public boolean isConstant() {
+        return routine.isDeterministic() && super.isConstant();
     }
 
     @Override
-    public String toString() {
-        return key + " => " + value;
+    public boolean nullIsContaminating() {
+        return !routine.isCalledOnNullInput();
     }
+
 }

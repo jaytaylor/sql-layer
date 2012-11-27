@@ -43,7 +43,7 @@ public class LookUpOperatorExplainer extends CompoundExplainer
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
         atts.put(Label.ROWTYPE, iRowType.getExplainer(context));
         atts.put(Label.INPUT_TYPE, iRowType.getExplainer(context));
-        atts.put(Label.LOOK_UP_OPTION, PrimitiveExplainer.getInstance((keepInput ? "" : "DO NOT ") + "KEEP INPUT"));
+        atts.put(Label.INPUT_PRESERVATION, PrimitiveExplainer.getInstance((keepInput ? "KEEP_INPUT" : "DISCARD_INPUT")));
         if (null != inputOp)
             atts.put(Label.INPUT_OPERATOR, inputOp.getExplainer(context));
         return atts;

@@ -49,7 +49,8 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
 {
     private String statementType;
     private Operator resultOperator;
-    private boolean requireStepIsolation;
+    // Until fully initialized, play it safe by claiming to need isolation
+    private boolean requireStepIsolation = true;
     private boolean outputResult;
 
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresBaseStatement: execute exclusive");

@@ -33,6 +33,7 @@ import com.akiban.util.Exceptions;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Module;
 import com.google.inject.ProvisionException;
 import com.google.inject.Scopes;
 import com.google.inject.grapher.GrapherModule;
@@ -173,11 +174,15 @@ public final class Guicer {
     public static Guicer forServices(Collection<ServiceBinding> serviceBindings)
             throws ClassNotFoundException 
     {
-        return forServices(null, null, serviceBindings, Collections.<String>emptyList());
+        return forServices(null, null, serviceBindings, Collections.<String>emptyList(),
+                Collections.<Module>emptyList());
     }
 
-    public static <M extends ServiceManagerBase> Guicer forServices(Class<M> serviceManagerInterfaceClass, M serviceManager,
-                                                                    Collection<ServiceBinding> serviceBindings, List<String> priorities)
+    public static <M extends ServiceManagerBase> Guicer forServices(Class<M> serviceManagerInterfaceClass,
+                                                                    M serviceManager,
+                                                                    Collection<ServiceBinding> serviceBindings,
+                                                                    List<String> priorities,
+                                                                    Collection<? extends Module> modules)
             throws ClassNotFoundException 
     {
         ArgumentValidation.notNull("bindings", serviceBindings);
@@ -188,17 +193,17 @@ public final class Guicer {
             }
         }
         return new Guicer(serviceManagerInterfaceClass, serviceManager, 
-                          serviceBindings, priorities);
+                          serviceBindings, priorities, modules);
     }
 
     // private methods
 
     private Guicer(Class<? extends ServiceManagerBase> serviceManagerInterfaceClass, ServiceManagerBase serviceManager,
-                   Collection<ServiceBinding> serviceBindings, List<String> priorities)
+                   Collection<ServiceBinding> serviceBindings, List<String> priorities,
+                   Collection<? extends Module> modules)
     throws ClassNotFoundException
     {
         this.serviceManagerInterfaceClass = serviceManagerInterfaceClass;
-        this.serviceManager = serviceManager;
         
         List<Class<?>> localDirectlyRequiredClasses = new ArrayList<Class<?>>();
         List<ResolvedServiceBinding> resolvedServiceBindings = new ArrayList<ResolvedServiceBinding>();
@@ -227,7 +232,10 @@ public final class Guicer {
 
         AbstractModule module = new ServiceBindingsModule(serviceManagerInterfaceClass, serviceManager,
                                                           resolvedServiceBindings);
-        _injector = Guice.createInjector(module);
+        List<Module> modulesList = new ArrayList<Module>(modules.size() + 1);
+        modulesList.add(module);
+        modulesList.addAll(modules);
+        _injector = Guice.createInjector(modulesList.toArray(new Module[modulesList.size()]));
     }
 
     private void buildDependencies(Class<?> forClass, LinkedHashMap<Class<?>,Object> results, Deque<Object> dependents) {
@@ -378,7 +386,6 @@ public final class Guicer {
     // object state
 
     private final Class<? extends ServiceManagerBase> serviceManagerInterfaceClass;
-    private final ServiceManagerBase serviceManager;
     private final Collection<Class<?>> directlyRequiredClasses;
     private final Set<Object> services;
     private final Injector _injector;
@@ -415,8 +422,9 @@ public final class Guicer {
         }
 
         public ResolvedServiceBinding(ServiceBinding serviceBinding) throws ClassNotFoundException {
-            this.serviceInterfaceClass = Class.forName(serviceBinding.getInterfaceName());
-            this.serviceImplementationClass = Class.forName(serviceBinding.getImplementingClassName());
+            ClassLoader loader = serviceBinding.getClassLoader();
+            this.serviceInterfaceClass = Class.forName(serviceBinding.getInterfaceName(), true, loader);
+            this.serviceImplementationClass = Class.forName(serviceBinding.getImplementingClassName(), true, loader);
             if (!this.serviceInterfaceClass.isAssignableFrom(this.serviceImplementationClass)) {
                 throw new IllegalArgumentException(this.serviceInterfaceClass + " is not assignable from "
                         + this.serviceImplementationClass);

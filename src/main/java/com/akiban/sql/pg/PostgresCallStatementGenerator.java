@@ -26,7 +26,7 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.sql.server.ServerRoutineInvocation;
+import com.akiban.sql.server.ServerCallInvocation;
 
 import com.akiban.sql.parser.CallStatementNode;
 import com.akiban.sql.parser.ParameterNode;
@@ -52,18 +52,18 @@ public class PostgresCallStatementGenerator extends PostgresBaseStatementGenerat
         if (stmt instanceof CallStatementNode) {
             CallStatementNode call = (CallStatementNode)stmt;
             StaticMethodCallNode methodCall = (StaticMethodCallNode)call.methodCall().getJavaValueNode();
-            ServerRoutineInvocation invocation =
-                ServerRoutineInvocation.of(server, methodCall);
+            ServerCallInvocation invocation =
+                ServerCallInvocation.of(server, methodCall);
             if (invocation != null) {
                 final PostgresStatement pstmt;
                 switch (invocation.getCallingConvention()) {
                 case LOADABLE_PLAN:
                     pstmt = PostgresLoadablePlan.statement(server, invocation,
                                                            paramTypes);
-                break;
+                    break;
                 default:
-                    pstmt = PostgresJavaMethod.statement(server, invocation,
-                                                         params, paramTypes);
+                    pstmt = PostgresJavaRoutine.statement(server, invocation,
+                                                          params, paramTypes);
                 }
                 // The above makes extensive use of the AIS. This doesn't fit well into the
                 // create and then init, so just mark with AIS now.

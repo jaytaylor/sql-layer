@@ -27,7 +27,7 @@
 package com.akiban.sql.pg;
 
 import com.akiban.sql.server.ServerCallContextStack;
-import com.akiban.sql.server.ServerRoutineInvocation;
+import com.akiban.sql.server.ServerCallInvocation;
 
 import com.akiban.qp.loadableplan.LoadableOperator;
 import com.akiban.util.tap.InOutTap;
@@ -41,10 +41,10 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadableOperator: execute shared");
     private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadableOperator: acquire shared lock");
 
-    private ServerRoutineInvocation invocation;
+    private ServerCallInvocation invocation;
 
     protected PostgresLoadableOperator(LoadableOperator loadableOperator, 
-                                       ServerRoutineInvocation invocation,
+                                       ServerCallInvocation invocation,
                                        List<String> columnNames, List<PostgresType> columnTypes, 
                                        PostgresType[] parameterTypes,
                                        boolean usesPValues)

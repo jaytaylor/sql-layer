@@ -91,5 +91,9 @@ public abstract class ServerJavaRoutine
                 break;
             }
         }
+        Parameter parameter = invocation.getRoutineParameter(ServerJavaValues.RETURN_VALUE_INDEX);
+        if (parameter != null) {
+            values.setObject(ServerJavaValues.RETURN_VALUE_INDEX, getOutParameter(parameter, ServerJavaValues.RETURN_VALUE_INDEX));
+        }
     }
 }

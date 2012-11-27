@@ -78,6 +78,10 @@ select-14: NOT EXISTS
 
 select-15: index intersection and union
 
+select-15a: intersect two unions (one union all)
+
+select-15i: with different sized integers
+
 select-16: Use a Bloom filter to help with selective semi-join
 
 select-17: Various index uses to show EXPLAIN variation

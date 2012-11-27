@@ -32,6 +32,7 @@ import com.akiban.sql.StandardException;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
+import com.akiban.ais.model.Routine;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.TypesList;
@@ -375,6 +376,10 @@ public class FunctionsTypeComputer extends AISTypeComputer
 
     protected DataTypeDescriptor methodCallNode(MethodCallNode methodCall)
             throws StandardException {
+        if (methodCall.getUserData() != null) {
+            Routine routine = (Routine)methodCall.getUserData();
+            return ColumnBinding.getType(routine.getReturnValue());
+        }
         if ((methodCall.getMethodParameters() == null) ||
             (methodCall.getMethodParameters().length == 0)) {
             return noArgFunction(methodCall.getMethodName());

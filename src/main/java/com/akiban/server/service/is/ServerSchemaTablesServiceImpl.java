@@ -25,7 +25,11 @@
  */
 package com.akiban.server.service.is;
 
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryPoolMXBean;
 import java.util.Iterator;
+import java.util.Map;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
@@ -41,7 +45,6 @@ import com.akiban.server.AkServerInterface;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.config.Property;
 import com.akiban.server.service.monitor.MonitorService;
 import com.akiban.server.service.monitor.MonitorStage;
 import com.akiban.server.service.monitor.ServerMonitor;
@@ -60,6 +63,8 @@ public class ServerSchemaTablesServiceImpl
     static final TableName SERVER_SERVERS = new TableName (SCHEMA_NAME, "server_servers");
     static final TableName SERVER_SESSIONS = new TableName (SCHEMA_NAME, "server_sessions");
     static final TableName SERVER_PARAMETERS = new TableName (SCHEMA_NAME, "server_parameters");
+    static final TableName SERVER_MEMORY_POOLS = new TableName (SCHEMA_NAME, "server_memory_pools");
+    static final TableName SERVER_GARBAGE_COLLECTORS = new TableName (SCHEMA_NAME, "server_garbage_collectors");
     
     private final MonitorService monitor;
     private final ConfigurationService configService;
@@ -89,6 +94,10 @@ public class ServerSchemaTablesServiceImpl
         attach (ais, true, SERVER_SESSIONS, Sessions.class);
         //SERVER_PARAMETERS
         attach (ais, true, SERVER_PARAMETERS, ServerParameters.class);
+        //SERVER_MEMORY_POOLS
+        attach (ais, true, SERVER_MEMORY_POOLS, ServerMemoryPools.class);
+        //SERVER_GARBAGE_COLLECTIONS
+        attach (ais, true, SERVER_GARBAGE_COLLECTORS, ServerGarbageCollectors.class);
     }
 
     @Override
@@ -282,18 +291,18 @@ public class ServerSchemaTablesServiceImpl
         }
 
         private class Scan extends BaseScan {
-            private Iterator<Property> propertyIt;
+            private Iterator<Map.Entry<String,String>> propertyIt;
 
             public Scan(RowType rowType) {
                 super(rowType);
-                propertyIt = configService.getProperties().iterator();
+                propertyIt = configService.getProperties().entrySet().iterator();
             }
 
             @Override
             public Row next() {
                 if (!propertyIt.hasNext())
                     return null;
-                Property prop = propertyIt.next();
+                Map.Entry<String,String> prop = propertyIt.next();
                 return new ValuesRow (rowType,
                                       prop.getKey(),
                                       prop.getValue(),
@@ -302,6 +311,84 @@ public class ServerSchemaTablesServiceImpl
         }
     }
     
+    private class ServerMemoryPools extends BasicFactoryBase {
+        public ServerMemoryPools(TableName sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan (getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            return ManagementFactory.getMemoryPoolMXBeans().size();
+        }
+
+        private class Scan extends BaseScan {
+            private final Iterator<MemoryPoolMXBean> it;
+
+            public Scan(RowType rowType) {
+                super(rowType);
+                it = ManagementFactory.getMemoryPoolMXBeans().iterator();
+            }
+
+            @Override
+            public Row next() {
+                if(!it.hasNext()) {
+                    return null;
+                }
+                MemoryPoolMXBean pool = it.next();
+                return new ValuesRow (rowType,
+                                      pool.getName(),
+                                      pool.getType().name(),
+                                      pool.getUsage().getUsed(),
+                                      pool.getUsage().getMax(),
+                                      pool.getPeakUsage().getUsed(),
+                                      ++rowCounter);
+            }
+        }
+    }
+    
+    private class ServerGarbageCollectors extends BasicFactoryBase {
+        public ServerGarbageCollectors(TableName sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan (getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            return ManagementFactory.getGarbageCollectorMXBeans().size();
+        }
+
+        private class Scan extends BaseScan {
+            private final Iterator<GarbageCollectorMXBean> it;
+
+            public Scan(RowType rowType) {
+                super(rowType);
+                it = ManagementFactory.getGarbageCollectorMXBeans().iterator();
+            }
+
+            @Override
+            public Row next() {
+                if(!it.hasNext()) {
+                    return null;
+                }
+                GarbageCollectorMXBean pool = it.next();
+                return new ValuesRow (rowType,
+                                      pool.getName(),
+                                      pool.getCollectionCount(),
+                                      pool.getCollectionTime(),
+                                      ++rowCounter);
+            }
+        }
+    }
+
     static AkibanInformationSchema createTablesToRegister() {
         NewAISBuilder builder = AISBBasedBuilder.create();
         
@@ -336,6 +423,18 @@ public class ServerSchemaTablesServiceImpl
         builder.userTable(SERVER_PARAMETERS)
             .colString("parameter_name", IDENT_MAX, false)
             .colString("current_value", PATH_MAX, false);
+
+        builder.userTable(SERVER_MEMORY_POOLS)
+            .colString("name", IDENT_MAX, false)
+            .colString("type", DESCRIPTOR_MAX, false)
+            .colBigInt("used_bytes", false)
+            .colBigInt("max_bytes", false)
+            .colBigInt("peak_bytes", false);
+
+        builder.userTable(SERVER_GARBAGE_COLLECTORS)
+            .colString("name", IDENT_MAX, false)
+            .colBigInt("total_count", false)
+            .colBigInt("total_milliseconds", false);
 
         return builder.ais(false);
     }

@@ -27,7 +27,7 @@
 package com.akiban.sql.pg;
 
 import com.akiban.sql.server.ServerCallContextStack;
-import com.akiban.sql.server.ServerRoutineInvocation;
+import com.akiban.sql.server.ServerCallInvocation;
 
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
@@ -43,12 +43,12 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: execute shared");
     private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: acquire shared lock");
 
-    private ServerRoutineInvocation invocation;
+    private ServerCallInvocation invocation;
     private DirectObjectPlan plan;
     private DirectObjectPlan.OutputMode outputMode;
 
     protected PostgresLoadableDirectObjectPlan(LoadableDirectObjectPlan loadablePlan,
-                                               ServerRoutineInvocation invocation,
+                                               ServerCallInvocation invocation,
                                                List<String> columnNames, List<PostgresType> columnTypes, 
                                                PostgresType[] parameterTypes,
                                                boolean usesPValues)

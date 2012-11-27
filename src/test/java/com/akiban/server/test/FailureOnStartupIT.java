@@ -27,7 +27,6 @@
 package com.akiban.server.test;
 
 import com.akiban.qp.persistitadapter.OperatorStore;
-import com.akiban.server.service.config.Property;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.tree.TreeService;
@@ -35,7 +34,7 @@ import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.google.inject.Inject;
 import org.junit.Test;
-import java.util.Collection;
+import java.util.Map;
 
 import static org.junit.Assert.assertFalse;
 
@@ -47,7 +46,7 @@ public final class FailureOnStartupIT extends ApiTestBase {
     }
 
     @Override
-    protected Collection<Property> startupConfigProperties() {
+    protected Map<String, String> startupConfigProperties() {
         return uniqueStartupConfigProperties(getClass());
     }
 

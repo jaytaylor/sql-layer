@@ -631,6 +631,10 @@ public class ProtobufWriter {
             routineBuilder.setSqlAllowed(convertRoutineSQLAllowed(routine.getSQLAllowed()));
         if (routine.getDynamicResultSets() > 0)
             routineBuilder.setDynamicResultSets(routine.getDynamicResultSets());
+        if (routine.isDeterministic())
+            routineBuilder.setDeterministic(routine.isDeterministic());
+        if (routine.isCalledOnNullInput())
+            routineBuilder.setCalledOnNullInput(routine.isCalledOnNullInput());
         schemaBuilder.addRoutines(routineBuilder.build());
     }
 

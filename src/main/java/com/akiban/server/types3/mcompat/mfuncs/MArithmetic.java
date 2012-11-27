@@ -28,7 +28,6 @@ package com.akiban.server.types3.mcompat.mfuncs;
 import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.explain.*;
-import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TCustomOverloadResult;
@@ -171,6 +170,21 @@ public abstract class MArithmetic extends TArithmetic {
             output.putDouble(inputs.get(0).getDouble() + inputs.get(1).getDouble());
         }
     };
+    
+    public static final TScalar ADD_DOUBLE_P2 = new MArithmetic("plus", "+", true, MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE)
+    {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            output.putDouble(inputs.get(0).getDouble() + inputs.get(1).getDouble());
+        }
+        
+        @Override
+        public int[] getPriorities()
+        {
+            return new int[] { 100 }; // if everything else failed, cast both to DOUBLEs
+        }
+    };
 
     // Subtract functions
     public static final TScalar SUBTRACT_TINYINT = new MArithmetic("minus", "-", false, MNumeric.TINYINT, MNumeric.INT, 5) {
@@ -240,6 +254,21 @@ public abstract class MArithmetic extends TArithmetic {
             output.putDouble(inputs.get(0).getDouble() - inputs.get(1).getDouble());
         }
     };
+    
+    public static final TScalar SUBSTRACT_DOUBLE_P2 = new MArithmetic("minus", "-", true, MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE)
+    {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            output.putDouble(inputs.get(0).getDouble() - inputs.get(1).getDouble());
+        }
+        
+        @Override
+        public int[] getPriorities()
+        {
+            return new int[] {100};
+        }
+    };
 
     // (Regular) Divide functions
     public static final TScalar DIVIDE_TINYINT = new MArithmetic("divide", "/", false, MNumeric.TINYINT, MApproximateNumber.DOUBLE)
@@ -307,6 +336,25 @@ public abstract class MArithmetic extends TArithmetic {
         }
     };
 
+    public static final TScalar DIVIDE_DOUBLE_P2 = new MArithmetic("divide", "/", false, MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE)
+    {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            double divisor = inputs.get(1).getDouble();
+            if (Double.compare(divisor, 0) == 0)
+                output.putNull();
+            else
+                output.putDouble(inputs.get(0).getDouble() / divisor);
+        }
+        
+        @Override
+        public int[] getPriorities()
+        {
+            return new int[] {100};
+        }
+    };
+    
     public static final TScalar DIVIDE_DECIMAL = new DecimalArithmetic("divide", "/", false) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
@@ -421,6 +469,26 @@ public abstract class MArithmetic extends TArithmetic {
                 output.putInt64((long)(inputs.get(0).getDouble() / divisor));
         }
     };
+    
+    public static final TScalar DIV_DOUBLE_P2 = new MArithmetic("div", "div", false, MApproximateNumber.DOUBLE, MNumeric.BIGINT, 22)
+    {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            double divisor = inputs.get(1).getDouble();
+            if (Double.compare(divisor, 0) == 0)
+                output.putNull();
+            else
+                output.putInt64((long)(inputs.get(0).getDouble() / divisor));
+        }
+        
+        @Override
+        public int[] getPriorities()
+        {
+            return new int[] {100};
+        }
+    };
+    
     //(String overloadName, String infix, boolean associative, TClass inputType, TInstance resultType)
     public static final TScalar DIV_DECIMAL = new MArithmetic("div", "div", false, MNumeric.DECIMAL, null) {
         @Override
@@ -620,6 +688,25 @@ public abstract class MArithmetic extends TArithmetic {
         }
     };
    
+    public static final TScalar MOD_DOUBLE_P2 = new MArithmetic("mod", "mod", false, MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE)
+    {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            double right = inputs.get(1).getDouble();
+            if (Double.compare(right, 0) == 0)
+                output.putNull();
+            else
+                output.putDouble(inputs.get(0).getDouble() % right);
+        }
+        
+        @Override
+        public int[] getPriorities()
+        {
+            return new int[] {100};
+        }
+    };
+    
     public static final TScalar MOD_DECIMAL = new DecimalArithmetic("mod", "mod", false)
     {
         @Override

@@ -1,0 +1,29 @@
+# Test functions defined as scripts
+---
+- Statement: CREATE FUNCTION test_f1(x DOUBLE, y INT) RETURNS DOUBLE LANGUAGE javascript PARAMETER STYLE variables AS 'Math.pow(x, y)' DETERMINISTIC;
+---
+- Statement: SELECT test_f1(10,3)
+- output: [[1000.0]]
+---
+- Statement: >
+    CREATE FUNCTION test_f2(s VARCHAR(1024), p VARCHAR(128)) RETURNS VARCHAR(1024) AS $$
+      function f2(s, p) {
+        var re = RegExp(p, "i");
+        var match = re.exec(s);
+        if (match != null)
+          return match[1];
+      }
+    $$ LANGUAGE javascript PARAMETER STYLE java EXTERNAL NAME 'f2';
+---
+- CreateTable: t2 (id INT NOT NULL PRIMARY KEY, s VARCHAR(1024))
+---
+- Statement: INSERT INTO t2 VALUES(1, 'Hello World'),(2, 'hello test 2'),(3, 'xyz')
+---
+- Statement: SELECT id, test_f2(s, ?) FROM t2
+- params: [['Hello (\w+)']]
+- output: [[1,'World'],[2,'test'],[3,null]]
+---
+# Function as procedure
+- Statement: CALL test_f1(10,3)
+- output: [[1000.0]]
+...

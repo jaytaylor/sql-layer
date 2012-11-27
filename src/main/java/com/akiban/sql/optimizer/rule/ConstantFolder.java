@@ -26,16 +26,17 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
 import com.akiban.sql.optimizer.rule.OverloadAndTInstanceResolver.ResolvingVisitor;
 
 import com.akiban.server.expression.std.Comparison;
 
+import com.akiban.ais.model.Routine;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValueSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -171,6 +172,8 @@ public class ConstantFolder extends BaseRule
                     return existsCondition((ExistsCondition)expr);
                 else if (expr instanceof AnyCondition)
                     return anyCondition((AnyCondition)expr);
+                else if (expr instanceof RoutineExpression)
+                    return routineExpression((RoutineExpression)expr);
             }
             else if (state == State.AGGREGATES) {
                 if (expr instanceof ColumnExpression)
@@ -420,6 +423,27 @@ public class ConstantFolder extends BaseRule
                     return newConstant(null, AkType.NULL, col);
             }
             return col;
+        }
+
+        protected ExpressionNode routineExpression(RoutineExpression expr) {
+            Routine routine = expr.getRoutine();
+            boolean allConstant = true, anyNull = false;
+            for (ExpressionNode operand : expr.getOperands()) {
+                switch (isConstant(operand)) {
+                case NULL:
+                    anyNull = true;
+                    /* falls through */
+                case VARIABLE:
+                    allConstant = false;
+                    break;
+                }
+            }
+            if (allConstant && routine.isDeterministic())
+                return evalNow(expr);
+            if (anyNull && !routine.isCalledOnNullInput()) {
+                return newBooleanConstant(null, expr);
+            }
+            return expr;
         }
 
         protected void selectNode(Select select) {
@@ -782,6 +806,7 @@ public class ConstantFolder extends BaseRule
                 return expressionAssembler.evalNow(planContext, node);
             }
             catch (Exception ex) {
+                logger.debug("Error evaluating as constant", ex);
             }
             return node;
         }

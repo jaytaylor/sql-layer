@@ -56,17 +56,51 @@ else
     JAVA=`which java`
 fi
 
+infer_jar_file()
+{
+    local loc_local="${akiban_home}/target/akiban-server-1.4.4-SNAPSHOT.jar"
+    local loc_global="/usr/share/akiban/akiban-server.jar"
+
+    # Only infer if passed no argument
+    if [ -z "$1" ]; then
+        # Try local first so you can develop *and* nave a system package installed
+        if [ -f "$loc_local" ]; then
+            echo $loc_local
+        elif [ -f "$loc_global" ]; then
+            echo $loc_global
+        else
+            echo "<UNKNOWN>"
+        fi
+    else
+        echo "$1"
+    fi
+}
+
+infer_dep_dir()
+{
+    local loc_local="${akiban_home}/target/dependency"
+    local loc_global="/usr/share/akiban/server"
+
+    # Only infer if passed no argument
+    if [ -z "$1" ]; then
+        # Try local first so you can develop *and* nave a system package installed
+        if [ -d "$loc_local" ]; then
+            echo $loc_local
+        elif [ -d "$loc_global" ]; then
+            echo $loc_global
+        else
+            echo "<UNKNOWN>"
+        fi
+    else
+        echo "$1"
+    fi
+}
+
+
 get_version()
 {
-    jar_file=$1
-    dep_dir=$2
-    # the JAR file we use to grab the version
-    if [ -z "$jar_file" ]; then
-        jar_file="${akiban_home}/target/akiban-server-1.4.3-SNAPSHOT.jar"
-    fi
-    if [ -z "$dep_dir" ]; then
-        dep_dir="${akiban_home}/target/dependency"
-    fi
+    jar_file=$(infer_jar_file $1)
+    dep_dir=$(infer_dep_dir $2)
     CLASSPATH=$jar_file:$dep_dir/*
 
     server_version=$(exec $JAVA -cp "$CLASSPATH" com.akiban.server.GetVersion)
@@ -81,17 +115,9 @@ launch_service()
     props=$2
     usegui=$3
     pidpath=$4
-    JAR_FILE=$5
-    DEP_DIR=$6
+    JAR_FILE=$(infer_jar_file $5)
+    DEP_DIR=$(infer_dep_dir $6)
     AKIBAN_CONF=$7
-
-    # the JAR file we use to launch the akiban server
-    if [ -z "$JAR_FILE" ]; then
-        JAR_FILE="${akiban_home}/target/akiban-server-1.4.3-SNAPSHOT.jar"
-    fi
-    if [ -z "$DEP_DIR" ]; then
-        DEP_DIR="${akiban_home}/target/dependency"
-    fi
 
     if [ -z "$AKIBAN_CONF" ]; then
         # default AKIBAN_CONF dir
@@ -208,7 +234,7 @@ while true; do
             shift
         ;;
         -v)
-            get_version $jarfile
+            get_version $jarfile $depdir
             exit 0
         ;;
         --)
