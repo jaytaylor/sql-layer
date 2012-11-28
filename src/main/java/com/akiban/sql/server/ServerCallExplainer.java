@@ -30,8 +30,8 @@ import com.akiban.server.explain.*;
 
 public class ServerCallExplainer extends CompoundExplainer
 {
-    public ServerCallExplainer(ServerCallInvocation invocation, Attributes atts, ExplainContext context) {
-        super(Type.PROCEDURE, addAttributes(atts, invocation, context));
+    public ServerCallExplainer(ServerRoutineInvocation invocation, Attributes atts, ExplainContext context) {
+        super(Type.PROCEDURE, addAttributes(atts, (ServerCallInvocation)invocation, context));
     }
 
     private static Attributes addAttributes(Attributes atts, 
