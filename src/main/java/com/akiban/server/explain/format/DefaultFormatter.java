@@ -70,6 +70,9 @@ public class DefaultFormatter
         case OPERATOR:
             appendOperator((CompoundExplainer)explainer, 0);
             break;
+        case PROCEDURE:
+            appendProcedure((CompoundExplainer)explainer, 0);
+            break;
         case ROWTYPE:
             appendRowType((CompoundExplainer)explainer);
             break;
@@ -719,6 +722,30 @@ public class DefaultFormatter
 
     protected void appendUnionOperator(String name, Attributes atts) {
     }
+
+    protected void appendProcedure(CompoundExplainer explainer, int depth) {
+        sb.append("CALL ");
+        Attributes atts = explainer.get();
+        appendTableName(atts);
+        sb.append('[');
+        sb.append(atts.getValue(Label.PROCEDURE_CALLING_CONVENTION));
+        if (atts.containsKey(Label.PROCEDURE_IMPLEMENTATION)) {
+            for (Explainer entry : atts.get(Label.PROCEDURE_IMPLEMENTATION)) {
+                sb.append(", ");
+                append(entry);
+            }            
+        }
+        sb.append(']');
+        sb.append('(');
+        if (atts.containsKey(Label.OPERAND)) {
+            for (Explainer entry : atts.get(Label.OPERAND)) {
+                append(entry);
+                sb.append(", ");
+            }
+            sb.setLength(sb.length()-2);
+        }        
+        sb.append(')');
+    }            
 
     protected void appendRow(CompoundExplainer rEx) {
         Attributes atts = rEx.get();

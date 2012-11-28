@@ -138,6 +138,8 @@ public class ScriptFunctionJavaRoutine extends ServerJavaRoutine
     public CompoundExplainer getExplainer(ExplainContext context) {
         Attributes atts = new Attributes();
         ScriptInvoker invoker = pool.get();
+        atts.put(Label.PROCEDURE_IMPLEMENTATION,
+                 PrimitiveExplainer.getInstance(invoker.getEngineName()));
         atts.put(Label.PROCEDURE_IMPLEMENTATION, 
                  PrimitiveExplainer.getInstance(invoker.getFunctionName()));
         if (invoker.isCompiled())

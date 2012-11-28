@@ -161,7 +161,7 @@ public class PostgresExplainStatement implements PostgresStatement
         StatementNode innerStmt = ((ExplainStatementNode)stmt).getStatement();
         Explainable explainable;
         if (innerStmt instanceof CallStatementNode) {
-            explainable = PostgresCallStatementGenerator.explainable(server, (CallStatementNode)stmt, params, paramTypes);
+            explainable = PostgresCallStatementGenerator.explainable(server, (CallStatementNode)innerStmt, params, paramTypes);
         }
         else {
             BasePlannable result = compiler.compile((DMLStatementNode)innerStmt, params, context);

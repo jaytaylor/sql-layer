@@ -256,6 +256,8 @@ public class ScriptBindingsRoutine extends ServerJavaRoutine
     public CompoundExplainer getExplainer(ExplainContext context) {
         Attributes atts = new Attributes();
         ScriptEvaluator evaluator = pool.get();
+        atts.put(Label.PROCEDURE_IMPLEMENTATION,
+                 PrimitiveExplainer.getInstance(evaluator.getEngineName()));
         if (evaluator.isCompiled())
             atts.put(Label.PROCEDURE_IMPLEMENTATION, 
                      PrimitiveExplainer.getInstance("compiled"));
