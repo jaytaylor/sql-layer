@@ -47,6 +47,7 @@ public class SQLClient implements Runnable
         password = args[argi++];
         sql = args[argi++];
         int repeat = 0, nthreads = 0;
+        boolean printAllTimes = false;
         params = new ArrayList<String>();
         while (argi < args.length) {
             if ("--repeat".equals(args[argi])) {
@@ -57,26 +58,34 @@ public class SQLClient implements Runnable
                 nthreads = Integer.valueOf(args[argi+1]);
                 argi += 2;
             }
+            else if ("--times".equals(args[argi])) {
+                printAllTimes = true;
+                argi += 1;
+            }
             else {
                 params.add(args[argi]);
             }
+        }
+        if (printAllTimes && nthreads > 1) {
+            System.err.println(String.format("--times is incompatible with --threads %s", nthreads));
+            return;
         }
         Class.forName(driver);
         System.out.println(sql);
         long total;
         if ((repeat == 0) || (nthreads == 0)) {
             SQLClient client = new SQLClient(url, user, password, sql,
-                                             params, 0, repeat);
+                                             params, 0, repeat, printAllTimes);
             client.run();
             total = client.time();
         }
         else {
-            new SQLClient(url, user, password, sql, params, 0, 0).run();
+            new SQLClient(url, user, password, sql, params, 0, 0, false).run();
 
             SQLClient[] clients = new SQLClient[nthreads];
             Thread[] threads = new Thread[nthreads];
             for (int i = 0; i < nthreads; i++) {
-                clients[i] = new SQLClient(url, user, password, sql, params, 1, repeat);
+                clients[i] = new SQLClient(url, user, password, sql, params, 1, repeat, false);
                 threads[i] = new Thread(clients[i]);
             }
             for (int i = 0; i < nthreads; i++) {
@@ -97,10 +106,11 @@ public class SQLClient implements Runnable
     private String url, user, password, sql;
     private List<String> params;
     private int start, repeat;
+    private boolean printAllTimes;
     private long time;
 
     public SQLClient(String url, String user, String password, String sql,
-                     List<String> params, int start, int repeat) {
+                     List<String> params, int start, int repeat, boolean printAllTimes) {
         this.url = url;
         this.user = user;
         this.password = password;
@@ -108,6 +118,7 @@ public class SQLClient implements Runnable
         this.params = params;
         this.start = start;
         this.repeat = repeat;
+        this.printAllTimes = printAllTimes;
     }
         
     public long time() {
@@ -122,9 +133,10 @@ public class SQLClient implements Runnable
             for (int i = 0; i < params.size(); i++) {
                 stmt.setString(i + 1, params.get(i));
             }
-            long startTime = -1, endTime;
+            long startTime = -1, endTime, queryStartTime = -1, queryEndTime;
             for (int pass = start; pass <= repeat; pass++) {
                 if (pass == 1) startTime = System.currentTimeMillis();
+                if (printAllTimes) queryStartTime = System.currentTimeMillis();
                 if (stmt.execute()) {
                     ResultSet rs = stmt.getResultSet();
                     ResultSetMetaData md = rs.getMetaData();
@@ -148,6 +160,11 @@ public class SQLClient implements Runnable
                     int count = stmt.getUpdateCount();
                     if (pass == 0)
                         System.out.println(count + " rows updated.");
+                }
+                if (printAllTimes) {
+                    queryEndTime = System.currentTimeMillis();
+                    System.out.println(String.format("%s: pass %s: %s msec",
+                                                     queryEndTime, pass, queryEndTime - queryStartTime));
                 }
             }
             endTime =  System.currentTimeMillis();
