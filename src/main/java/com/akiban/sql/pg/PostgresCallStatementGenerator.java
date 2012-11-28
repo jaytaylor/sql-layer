@@ -33,6 +33,8 @@ import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.StaticMethodCallNode;
 
+import com.akiban.server.explain.Explainable;
+
 import java.util.List;
 
 /**
@@ -59,8 +61,7 @@ public class PostgresCallStatementGenerator extends PostgresBaseStatementGenerat
         final PostgresStatement pstmt;
         switch (invocation.getCallingConvention()) {
         case LOADABLE_PLAN:
-            pstmt = PostgresLoadablePlan.statement(server, invocation,
-                                                   paramTypes);
+            pstmt = PostgresLoadablePlan.statement(server, invocation);
             break;
         default:
             pstmt = PostgresJavaRoutine.statement(server, invocation,
@@ -70,5 +71,19 @@ public class PostgresCallStatementGenerator extends PostgresBaseStatementGenerat
         // create and then init, so just mark with AIS now.
         pstmt.setAISGeneration(server.getAIS().getGeneration());
         return pstmt;
+    }
+
+    public static Explainable explainable(PostgresServerSession server,
+                                          CallStatementNode call, 
+                                          List<ParameterNode> params, int[] paramTypes) {
+        StaticMethodCallNode methodCall = (StaticMethodCallNode)call.methodCall().getJavaValueNode();
+        ServerCallInvocation invocation = ServerCallInvocation.of(server, methodCall);
+        switch (invocation.getCallingConvention()) {
+        case LOADABLE_PLAN:
+            return PostgresLoadablePlan.explainable(server, invocation);
+        default:
+            return PostgresJavaRoutine.explainable(server, invocation,
+                                                   params, paramTypes);
+        }
     }
 }

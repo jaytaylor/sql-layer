@@ -27,12 +27,13 @@
 package com.akiban.sql.server;
 
 import com.akiban.ais.model.Parameter;
+import com.akiban.server.explain.Explainable;
 
 import java.sql.ResultSet;
 import java.util.Queue;
 
 /** A Routine that uses Java native data types in its invocation API. */
-public abstract class ServerJavaRoutine
+public abstract class ServerJavaRoutine implements Explainable
 {
     private ServerQueryContext context;
     private ServerRoutineInvocation invocation;

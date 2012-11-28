@@ -33,7 +33,6 @@ import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.format.DefaultFormatter;
-import com.akiban.server.explain.format.JsonFormatter;
 
 import java.util.*;
 
@@ -84,16 +83,6 @@ public abstract class BasePlannable extends BasePlanNode
         // Do not copy operators.
     }
     
-    public List<String> explainPlan(ExplainContext context, String defaultSchemaName) {
-        DefaultFormatter f = new DefaultFormatter(defaultSchemaName, true);
-        return f.format(plannable.getExplainer(context));
-    }
-    
-    public String explainToJson(ExplainContext context) {
-        JsonFormatter f = new JsonFormatter();
-        return f.format(plannable.getExplainer(context));
-    }
-
     public String explainToString(ExplainContext context, String defaultSchemaName) {
         return withIndentedExplain(new StringBuilder(getClass().getSimpleName()), context, defaultSchemaName);
     }
@@ -112,7 +101,8 @@ public abstract class BasePlannable extends BasePlanNode
     protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName) {
         if (context == null)
             context = new ExplainContext(); // Empty
-        for (String operator : explainPlan(context, defaultSchemaName)) {
+        DefaultFormatter f = new DefaultFormatter(defaultSchemaName, true);
+        for (String operator : f.format(plannable.getExplainer(context))) {
             str.append("\n  ");
             str.append(operator);
         }

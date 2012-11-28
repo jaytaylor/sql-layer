@@ -29,12 +29,16 @@ package com.akiban.sql.pg;
 import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.rule.ExplainPlanContext;
+import com.akiban.sql.parser.CallStatementNode;
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.ExplainStatementNode;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.server.ServerValueEncoder;
 
+import com.akiban.server.explain.Explainable;
+import com.akiban.server.explain.format.DefaultFormatter;
+import com.akiban.server.explain.format.JsonFormatter;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 
@@ -155,12 +159,23 @@ public class PostgresExplainStatement implements PostgresStatement
                                               List<ParameterNode> params, int[] paramTypes) {
         ExplainPlanContext context = new ExplainPlanContext(compiler);
         StatementNode innerStmt = ((ExplainStatementNode)stmt).getStatement();
-        BasePlannable result = compiler.compile((DMLStatementNode)innerStmt, params, context);
+        Explainable explainable;
+        if (innerStmt instanceof CallStatementNode) {
+            explainable = PostgresCallStatementGenerator.explainable(server, (CallStatementNode)stmt, params, paramTypes);
+        }
+        else {
+            BasePlannable result = compiler.compile((DMLStatementNode)innerStmt, params, context);
+            explainable = result.getPlannable();
+        }
         List<String> explain;
-        if (compiler instanceof PostgresJsonCompiler)
-            explain = Collections.singletonList(result.explainToJson(context.getExplainContext()));
-        else
-            explain = result.explainPlan(context.getExplainContext(), server.getDefaultSchemaName());
+        if (compiler instanceof PostgresJsonCompiler) {
+            JsonFormatter f = new JsonFormatter();
+            explain = Collections.singletonList(f.format(explainable.getExplainer(context.getExplainContext())));
+        }
+        else {
+            DefaultFormatter f = new DefaultFormatter(server.getDefaultSchemaName(), true);
+            explain = f.format(explainable.getExplainer(context.getExplainContext()));
+        }
         init(explain, compiler.usesPValues());
         compiler = null;
         return this;

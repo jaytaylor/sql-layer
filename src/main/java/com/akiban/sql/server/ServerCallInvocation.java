@@ -172,6 +172,14 @@ public class ServerCallInvocation extends ServerRoutineInvocation
             return constantArgs.length;
     }
 
+    public int getParameterNumber(int i) {
+        return parameterArgs[i];
+    }
+
+    public Object getConstantValue(int i) {
+        return constantArgs[i];
+    }
+
     @Override
     public ServerJavaValues asValues(ServerQueryContext parameters) {
         return new Values(parameters);
