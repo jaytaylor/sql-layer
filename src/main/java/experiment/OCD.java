@@ -33,6 +33,9 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+
 public class OCD
 {
     public static void main(String[] args) throws Exception
@@ -131,13 +134,13 @@ public class OCD
         }
         int allThreadsQueryCount = 0;
         long allThreadsTotalMsec = 0;
-        int allThreadsMinMsec = 0;
-        int allThreadsMaxMsec = 0;
+        int allThreadsMinMsec = Integer.MAX_VALUE;
+        int allThreadsMaxMsec = Integer.MIN_VALUE;
         for (QueryThread thread : threads) {
             allThreadsQueryCount += thread.queryCount;
             allThreadsTotalMsec += thread.totalMsec;
-            allThreadsMinMsec += thread.minMsec;
-            allThreadsMaxMsec += thread.maxMsec;
+            allThreadsMinMsec = min(allThreadsMinMsec,  thread.minMsec);
+            allThreadsMaxMsec = max(allThreadsMaxMsec, thread.maxMsec);
         }
         double averageMsec = ((double) allThreadsTotalMsec) / allThreadsQueryCount;
         report(String.format("threads: %s\tmin, average, max (msec):\t%s\t%s\t%s",
@@ -241,9 +244,11 @@ public class OCD
         {
             long start = System.currentTimeMillis();
             for (String query : queries) {
-                ResultSet resultSet = statement.executeQuery(query);
-                while (resultSet.next());
-                resultSet.close();
+                if (statement.execute(query)) {
+                    ResultSet resultSet = statement.executeQuery(query);
+                    while (resultSet.next());
+                    resultSet.close();
+                }
             }
             queryCount++;
             int msec = (int) (System.currentTimeMillis() - start);
@@ -271,22 +276,23 @@ public class OCD
         public void run()
         {
             while (true) {
+                count = 0;
                 long intervalStart = System.currentTimeMillis();
                 try {
                     Thread.sleep(REPORTING_INTERVAL_MSEC);
                 } catch (InterruptedException e) {
                     System.err.println("InterruptedException?!");
                 }
+                long intervalStop = System.currentTimeMillis();
+                intervals++;
+                double queriesPerSec;
+                double runningAverage;
+                synchronized (this) {
+                    queriesPerSec = (1000.0 * count) / (intervalStop - intervalStart);
+                    total += count;
+                    runningAverage = (1000.0 * total) / (intervalStop - start);
+                }
                 if (!quiet) {
-                    intervals++;
-                    long intervalStop = System.currentTimeMillis();
-                    double queriesPerSec;
-                    double runningAverage;
-                    synchronized (this) {
-                        queriesPerSec = (1000.0 * count) / (intervalStop - intervalStart);
-                        total += count;
-                        runningAverage = (1000.0 * total) / (intervalStop - start);
-                    }
                     report(String.format("%s: queries/sec: %s\t\t%s", intervals, queriesPerSec, runningAverage));
                 }
             }
@@ -300,7 +306,6 @@ public class OCD
         public synchronized void reset()
         {
             start = System.currentTimeMillis();
-            count = 0;
             intervals = 0;
             total = 0;
         }
