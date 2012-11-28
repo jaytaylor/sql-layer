@@ -70,9 +70,10 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         PSQL_LIST_TABLES("SELECT n.nspname as \"Schema\",\\s*" +
                          "c.relname as \"Name\",\\s*" +
                          "CASE c.relkind WHEN 'r' THEN 'table' WHEN 'v' THEN 'view' WHEN 'i' THEN 'index' WHEN 'S' THEN 'sequence' WHEN 's' THEN 'special' (?:WHEN 'f' THEN 'foreign table' )?END as \"Type\",\\s+" +
-                         "(?:pg_catalog.pg_get_userbyid\\(c.relowner\\)|u.usename) as \"Owner\"\\s+" +
+                         "(?:pg_catalog.pg_get_userbyid\\(c.relowner\\)|u.usename|r.rolname) as \"Owner\"\\s+" +
                          "FROM pg_catalog.pg_class c\\s+" +
                          "(?:LEFT JOIN pg_catalog.pg_user u ON u.usesysid = c.relowner\\s+)?" +
+                         "(?:JOIN pg_catalog.pg_roles r ON r.oid = c.relowner\\s+)?" +
                          "LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace\\s+" +
                          "WHERE c.relkind IN \\((.+)\\)\\s+" + // 1
                          "(AND n.nspname <> 'pg_catalog'\\s+" +
@@ -102,9 +103,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                                "FROM pg_catalog.pg_class c\\s+" +
                                "LEFT JOIN pg_catalog.pg_class tc ON \\(c.reltoastrelid = tc.oid\\)\\s+" +
                                "WHERE c.oid = '(-?\\d+)';?\\s*", true), // 1
-        PSQL_DESCRIBE_TABLES_2X("SELECT relhasindex, relkind, relchecks, reltriggers, relhasrules\\s+" +
+        PSQL_DESCRIBE_TABLES_2X("SELECT relhasindex, relkind, relchecks, reltriggers, relhasrules(,\\s*relhasoids , reltablespace)?\\s+" + // 1
                                "FROM pg_catalog.pg_class\\s+" +
-                               "WHERE oid = '(-?\\d+)';?\\s*", true), // 1
+                               "WHERE oid = '(-?\\d+)';?\\s*", true), // 2
         PSQL_DESCRIBE_TABLES_3("SELECT a.attname,\\s*" +
                                "pg_catalog.format_type\\(a.atttypid, a.atttypmod\\),\\s*" +
                                "\\(SELECT substring\\((?:pg_catalog.pg_get_expr\\(d.adbin, d.adrelid\\)|d.adsrc) for 128\\)\\s*" +
@@ -118,11 +119,23 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         PSQL_DESCRIBE_TABLES_4A("SELECT c.oid::pg_catalog.regclass FROM pg_catalog.pg_class c, pg_catalog.pg_inherits i WHERE c.oid=i.inhparent AND i.inhrelid = '(-?\\d+)' ORDER BY inhseqno;?", true),
         PSQL_DESCRIBE_TABLES_4B("SELECT c.oid::pg_catalog.regclass FROM pg_catalog.pg_class c, pg_catalog.pg_inherits i WHERE c.oid=i.inhrelid AND i.inhparent = '(-?\\d+)' ORDER BY c.oid::pg_catalog.regclass::pg_catalog.text;?", true),
         PSQL_DESCRIBE_TABLES_5("SELECT c.relname FROM pg_catalog.pg_class c, pg_catalog.pg_inherits i WHERE c.oid=i.inhparent AND i.inhrelid = '(-?\\d+)' ORDER BY inhseqno ASC;?", true),
-        PSQL_DESCRIBE_INDEXES("SELECT c2.relname, i.indisprimary, i.indisunique(, i.indisclustered, i.indisvalid)?, pg_catalog.pg_get_indexdef\\(i.indexrelid(?:, 0, true)?\\),?\\s*" + // 1
-                              "(null AS constraintdef, null AS contype, false AS condeferrable, false AS condeferred, )?(?:c2.reltablespace)?\\s+" + // 2
+        PSQL_DESCRIBE_INDEXES("SELECT c2.relname, i.indisprimary, i.indisunique(, i.indisclustered)?(, i.indisvalid)?, pg_catalog.pg_get_indexdef\\(i.indexrelid(?:, 0, true)?\\),?\\s*" + // 1, 2
+                              "(null AS constraintdef, null AS contype, false AS condeferrable, false AS condeferred, )?(?:c2.reltablespace)?\\s+" + // 3
                               "FROM pg_catalog.pg_class c, pg_catalog.pg_class c2, pg_catalog.pg_index i\\s+" +
-                              "WHERE c.oid = '(-?\\d+)' AND c.oid = i.indrelid AND i.indexrelid = c2.oid\\s+" + // 3
+                              "WHERE c.oid = '(-?\\d+)' AND c.oid = i.indrelid AND i.indexrelid = c2.oid\\s+" + // 4
                               "ORDER BY i.indisprimary DESC, i.indisunique DESC, c2.relname;?", true),
+        PSQL_DESCRIBE_FOREIGN_KEYS_1("SELECT conname,\\s*" +
+                                     "pg_catalog.pg_get_constraintdef\\((?:r.oid, true|oid, true|oid)\\) as condef\\s+" +
+                                     "FROM pg_catalog.pg_constraint r\\s+" +
+                                     "WHERE r.conrelid = '(-?\\d+)' AND r.contype = 'f'(?: ORDER BY 1)?;?", true),
+        PSQL_DESCRIBE_FOREIGN_KEYS_2("SELECT conname, conrelid::pg_catalog.regclass,\\s*" +
+                                    "pg_catalog.pg_get_constraintdef\\(c.oid, true\\) as condef\\s+" +
+                                    "FROM pg_catalog.pg_constraint c\\s+" +
+                                    "WHERE c.confrelid = '(-?\\d+)' AND c.contype = 'f' ORDER BY 1;?", true),
+        PSQL_DESCRIBE_TRIGGERS("SELECT t.tgname, pg_catalog.pg_get_triggerdef\\(t.oid\\)(, t.tgenabled)?\\s+" + // 1
+                               "FROM pg_catalog.pg_trigger t\\s+" +
+                               "WHERE t.tgrelid = '(-?\\d+)' AND (?:t.tgconstraint = 0|" + // 2
+                               "\\(not tgisconstraint  OR NOT EXISTS  \\(SELECT 1 FROM pg_catalog.pg_depend d    JOIN pg_catalog.pg_constraint c ON \\(d.refclassid = c.tableoid AND d.refobjid = c.oid\\)    WHERE d.classid = t.tableoid AND d.objid = t.oid AND d.deptype = 'i' AND c.contype = 'f'\\)\\))(?:\\s+ORDER BY 1)?;?", true),
         PSQL_DESCRIBE_VIEW("SELECT pg_catalog.pg_get_viewdef\\('(-?\\d+)'::pg_catalog.oid, true\\);?", true);
 
         private String sql;
@@ -161,6 +174,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         }
     }
 
+    static final boolean LIST_TABLES_BY_GROUP = true;
+
     private Query query;
     private List<String> groups;
     private boolean usePVals;
@@ -190,8 +205,12 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)0, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
     static final PostgresType CHAR1_PG_TYPE = 
         new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)1, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
+    static final PostgresType DEFVAL_PG_TYPE = 
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)128, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
     static final PostgresType INDEXDEF_PG_TYPE = 
         new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)1024, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
+    static final PostgresType CONDEF_PG_TYPE = 
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)512, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
     static final PostgresType VIEWDEF_PG_TYPE = 
         new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)32768, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
 
@@ -229,7 +248,10 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             break;
         case PSQL_LIST_TABLES:
             ncols = 4;
-            names = new String[] { "Schema", "Name", "Type", "Owner" };
+            if (LIST_TABLES_BY_GROUP)
+                names = new String[] { "Schema", "Name", "Type", "Group" };
+            else
+                names = new String[] { "Schema", "Name", "Type", "Owner" };
             types = new PostgresType[] { IDENT_PG_TYPE, IDENT_PG_TYPE, LIST_TYPE_PG_TYPE, IDENT_PG_TYPE };
             break;
         case PSQL_DESCRIBE_TABLES_1:
@@ -243,14 +265,14 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             types = new PostgresType[] { INT2_PG_TYPE, CHAR1_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, CHAR0_PG_TYPE, OID_PG_TYPE };
             break;
         case PSQL_DESCRIBE_TABLES_2X:
-            ncols = 5;
-            names = new String[] { "relhasindex", "relkind", "relchecks", "reltriggers", "relhasrules" };
-            types = new PostgresType[] { BOOL_PG_TYPE, CHAR1_PG_TYPE, INT2_PG_TYPE, INT2_PG_TYPE, BOOL_PG_TYPE };
+            ncols = (groups.get(1) != null) ? 7 : 5;
+            names = new String[] { "relhasindex", "relkind", "relchecks", "reltriggers", "relhasrules", "relhasoids", "reltablespace" };
+            types = new PostgresType[] { BOOL_PG_TYPE, CHAR1_PG_TYPE, INT2_PG_TYPE, INT2_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, OID_PG_TYPE };
             break;
         case PSQL_DESCRIBE_TABLES_3:
             ncols = (groups.get(1) != null) ? 6 : 5;
             names = new String[] { "attname", "format_type", "?column?", "attnotnull", "attnum", "attcollation" };
-            types = new PostgresType[] { IDENT_PG_TYPE, TYPNAME_PG_TYPE, CHAR0_PG_TYPE, BOOL_PG_TYPE, INT2_PG_TYPE, CHAR0_PG_TYPE };
+            types = new PostgresType[] { IDENT_PG_TYPE, TYPNAME_PG_TYPE, DEFVAL_PG_TYPE, BOOL_PG_TYPE, INT2_PG_TYPE, IDENT_PG_TYPE };
             break;
         case PSQL_DESCRIBE_TABLES_4A:
         case PSQL_DESCRIBE_TABLES_4B:
@@ -269,7 +291,12 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 names = new String[] { "relname", "indisprimary", "indisunique", "pg_get_indexdef" };
                 types = new PostgresType[] { IDENT_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, INDEXDEF_PG_TYPE };
             }
-            if (groups.get(2) == null) {
+            else if (groups.get(2) == null) {
+                ncols = 6;
+                names = new String[] { "relname", "indisprimary", "indisunique", "indisclustered", "pg_get_indexdef", "reltablespace" };
+                types = new PostgresType[] { IDENT_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, INDEXDEF_PG_TYPE, INT2_PG_TYPE };
+            }
+            else if (groups.get(3) == null) {
                 ncols = 7;
                 names = new String[] { "relname", "indisprimary", "indisunique", "indisclustered", "indisvalid", "pg_get_indexdef", "reltablespace" };
                 types = new PostgresType[] { IDENT_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, INDEXDEF_PG_TYPE, INT2_PG_TYPE };
@@ -279,6 +306,21 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 names = new String[] { "relname", "indisprimary", "indisunique", "indisclustered", "indisvalid", "pg_get_indexdef", "constraintdef", "contype", "condeferrable", "condeferred", "reltablespace" };
                 types = new PostgresType[] { IDENT_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, INDEXDEF_PG_TYPE, CHAR0_PG_TYPE, CHAR0_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, INT2_PG_TYPE };
             }
+            break;
+        case PSQL_DESCRIBE_FOREIGN_KEYS_1:
+            ncols = 2;
+            names = new String[] { "conname", "condef" };
+            types = new PostgresType[] { IDENT_PG_TYPE, CONDEF_PG_TYPE };
+            break;
+        case PSQL_DESCRIBE_FOREIGN_KEYS_2:
+            ncols = 3;
+            names = new String[] { "conname", "conrelid", "condef" };
+            types = new PostgresType[] { IDENT_PG_TYPE, IDENT_PG_TYPE, CONDEF_PG_TYPE };
+            break;
+        case PSQL_DESCRIBE_TRIGGERS:
+            ncols = (groups.get(1) != null) ? 3 : 2;
+            names = new String[] { "tgname", "tgdef", "tdenabled" };
+            types = new PostgresType[] { IDENT_PG_TYPE, CONDEF_PG_TYPE, BOOL_PG_TYPE };
             break;
         case PSQL_DESCRIBE_VIEW:
             ncols = 1;
@@ -361,6 +403,15 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             break;
         case PSQL_DESCRIBE_INDEXES:
             nrows = psqlDescribeIndexesQuery(server, messenger, maxrows, usePVals);
+            break;
+        case PSQL_DESCRIBE_FOREIGN_KEYS_1:
+            nrows = psqlDescribeForeignKeys1Query(server, messenger, maxrows, usePVals);
+            break;
+        case PSQL_DESCRIBE_FOREIGN_KEYS_2:
+            nrows = psqlDescribeForeignKeys2Query(server, messenger, maxrows, usePVals);
+            break;
+        case PSQL_DESCRIBE_TRIGGERS:
+            nrows = psqlDescribeTriggersQuery(server, messenger, maxrows, usePVals);
             break;
         case PSQL_DESCRIBE_VIEW:
             nrows = psqlDescribeViewQuery(server, messenger, maxrows, usePVals);
@@ -505,12 +556,12 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         int nrows = 0;
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
         List<String> types = Arrays.asList(groups.get(1).split(","));
-        List<TableName> names = new ArrayList<TableName>();
+        List<Columnar> tables = new ArrayList<Columnar>();
         AkibanInformationSchema ais = server.getAIS();
         if (types.contains("'r'"))
-            names.addAll(ais.getUserTables().keySet());
+            tables.addAll(ais.getUserTables().values());
         if (types.contains("'v'"))
-            names.addAll(ais.getViews().keySet());
+            tables.addAll(ais.getViews().values());
         boolean noIS = (groups.get(2) != null) || (groups.get(3) != null);
         boolean onlyIS = (groups.get(4) != null);
         Pattern schemaPattern = null, tablePattern = null;
@@ -520,9 +571,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             schemaPattern = Pattern.compile(groups.get(8));
         if (groups.get(9) != null)
             tablePattern = Pattern.compile(groups.get(10));
-        Iterator<TableName> iter = names.iterator();
+        Iterator<Columnar> iter = tables.iterator();
         while (iter.hasNext()) {
-            TableName name = iter.next();
+            TableName name = iter.next().getName();
             boolean keep = true;
             if ((name.getSchemaName().equals(TableName.INFORMATION_SCHEMA) ? noIS : onlyIS) ||
                 ((schemaPattern != null) && 
@@ -531,19 +582,28 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                  !tablePattern.matcher(name.getTableName()).find()))
                 iter.remove();
         }
-        Collections.sort(names);
-        for (TableName name : names) {
+        Collections.sort(tables, LIST_TABLES_BY_GROUP ? tablesByGroup : tablesByName);
+        for (Columnar table : tables) {
+            TableName name = table.getName();
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(4); // 4 columns for this query
             writeColumn(messenger, encoder, usePVals, 
                         name.getSchemaName(), IDENT_PG_TYPE);
             writeColumn(messenger, encoder, usePVals, 
                         name.getTableName(), IDENT_PG_TYPE);
-            String type = (ais.getColumnar(name).isView()) ? "view" : "table";
+            String type = table.isView() ? "view" : "table";
             writeColumn(messenger, encoder, usePVals, 
                         type, LIST_TYPE_PG_TYPE);
+            String ownerGroupName = null;
+            if (LIST_TABLES_BY_GROUP) {
+                if (table.isTable()) {
+                    Group group = ((UserTable)table).getGroup();
+                    if (group != null)
+                        ownerGroupName = group.getName().getTableName();
+                }
+            }
             writeColumn(messenger, encoder, usePVals, 
-                        null, IDENT_PG_TYPE);
+                        ownerGroupName, IDENT_PG_TYPE);
             messenger.sendMessage();
             nrows++;
             if ((maxrows > 0) && (nrows >= maxrows)) {
@@ -552,6 +612,39 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         }
         return nrows;
     }
+
+    private static final Comparator<Columnar> tablesByName = new Comparator<Columnar>() {
+        @Override
+        public int compare(Columnar t1, Columnar t2) {
+            return t1.getName().compareTo(t2.getName());
+        }
+    };
+
+    private static final Comparator<Columnar> tablesByGroup = new Comparator<Columnar>() {
+        @Override
+        public int compare(Columnar t1, Columnar t2) {
+            TableName n1 = t1.getName();
+            TableName n2 = t2.getName();
+            Group g1 = null, g2 = null;
+            Integer d1 = null, d2 = null;
+            if (t1.isTable()) {
+                UserTable ut1 = ((UserTable)t1);
+                g1 = ut1.getGroup();
+                d1 = ut1.getDepth();
+            }
+            if (t2.isTable()) {
+                UserTable ut2 = ((UserTable)t2);
+                g2 = ut2.getGroup();
+                d2 = ut2.getDepth();
+            }
+            if (g1 != g2)
+                return ((g1 == null) ? n1 : g1.getName()).compareTo((g2 == null) ? n2 : g2.getName());
+            if ((d1 != null) && !d1.equals(d2))
+                return d1.compareTo(d2);
+            else
+                return n1.compareTo(n2);
+        }
+    };
 
     private int psqlDescribeTables1Query(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
@@ -641,12 +734,12 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         writeColumn(messenger, encoder, usePVals, // relhasrules
                     false, BOOL_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relhastriggers
-                    false, BOOL_PG_TYPE);
+                    hasTriggers(table) ? "t" : "f", CHAR1_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relhasoids
                     false, BOOL_PG_TYPE);
         writeColumn(messenger, encoder, usePVals,
                     "", CHAR0_PG_TYPE);
-        writeColumn(messenger, encoder, usePVals, // reltablespacae
+        writeColumn(messenger, encoder, usePVals, // reltablespace
                     0, OID_PG_TYPE);
         messenger.sendMessage();
         return 1;
@@ -654,10 +747,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
 
     private int psqlDescribeTables2XQuery(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
-        Columnar table = getTableById(server, groups.get(1));
+        Columnar table = getTableById(server, groups.get(2));
         if (table == null) return 0;
+        boolean hasTablespace = (groups.get(1) != null);
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
-        messenger.writeShort(5); // 5 columns for this query
+        messenger.writeShort(hasTablespace ? 7 : 5); // 5-7 columns for this query
         writeColumn(messenger, encoder, usePVals, // relhasindex
                     hasIndexes(table) ? "t" : "f", CHAR1_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relkind
@@ -665,9 +759,15 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         writeColumn(messenger, encoder, usePVals, // relchecks
                     (short)0, INT2_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // reltriggers
-                    (short)0, INT2_PG_TYPE);
+                    hasTriggers(table) ? (short)1 : (short)0, INT2_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relhasrules
                     false, BOOL_PG_TYPE);
+        if (hasTablespace) {
+            writeColumn(messenger, encoder, usePVals, // relhasoids
+                        false, BOOL_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, // reltablespace
+                        0, OID_PG_TYPE);
+        }
         messenger.sendMessage();
         return 1;
     }
@@ -685,16 +785,28 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                         column.getName(), IDENT_PG_TYPE);
             writeColumn(messenger, encoder, usePVals, // format_type
                         column.getTypeDescription(), TYPNAME_PG_TYPE);
+            String defval = column.getDefaultValue();
+            if ((defval != null) && (defval.length() > 128))
+                defval = defval.substring(0, 128);
             writeColumn(messenger, encoder, usePVals, 
-                        null, CHAR0_PG_TYPE);
+                        defval, DEFVAL_PG_TYPE);
             // This should use BOOL_PG_TYPE, except that does true/false, not t/f.
             writeColumn(messenger, encoder, usePVals, // attnotnull
                         column.getNullable() ? "f" : "t", CHAR1_PG_TYPE);
             writeColumn(messenger, encoder, usePVals, // attnum
                         column.getPosition().shortValue(), INT2_PG_TYPE);
-            if (hasCollation)
+            if (hasCollation) {
+                CharsetAndCollation charAndColl = null;
+                switch (column.getType().akType()) {
+                case VARCHAR:
+                case TEXT:
+                    charAndColl = column.getCharsetAndCollation();
+                    break;
+                }
                 writeColumn(messenger, encoder, usePVals, // attcollation
-                            null, CHAR0_PG_TYPE);
+                            (charAndColl == null) ? null : charAndColl.collation(), 
+                            IDENT_PG_TYPE);
+            }
             messenger.sendMessage();
             nrows++;
             if ((maxrows > 0) && (nrows >= maxrows)) {
@@ -714,7 +826,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     private int psqlDescribeIndexesQuery(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
-        Columnar columnar = getTableById(server, groups.get(3));
+        Columnar columnar = getTableById(server, groups.get(4));
         if ((columnar == null) || !columnar.isTable()) return 0;
         UserTable table = (UserTable)columnar;
         Map<String,Index> indexes = new TreeMap<String,Index>();
@@ -731,7 +843,10 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         if (groups.get(1) == null) {
             ncols = 4;
         }
-        if (groups.get(2) == null) {
+        else if (groups.get(2) == null) {
+            ncols = 6;
+        }
+        else if (groups.get(3) == null) {
             ncols = 7;
         }
         else {
@@ -739,7 +854,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         }
         for (Index index : indexes.values()) {
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
-            messenger.writeShort(ncols); // 4-7-11 columns for this query
+            messenger.writeShort(ncols); // 4-5-7-11 columns for this query
             writeColumn(messenger, encoder, usePVals, // relname
                         index.getIndexName().getName(), IDENT_PG_TYPE);
             writeColumn(messenger, encoder, usePVals, // indisprimary
@@ -749,8 +864,10 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             if (ncols > 4) {
                 writeColumn(messenger, encoder, usePVals, // indisclustered
                             false, BOOL_PG_TYPE);
-                writeColumn(messenger, encoder, usePVals, // indisvalid
-                            "t", CHAR1_PG_TYPE);
+                if (ncols > 6) {
+                    writeColumn(messenger, encoder, usePVals, // indisvalid
+                                "t", CHAR1_PG_TYPE);
+                }
             }
             writeColumn(messenger, encoder, usePVals, // pg_get_indexdef
                         formatIndexdef(index, table), INDEXDEF_PG_TYPE);
@@ -764,7 +881,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 writeColumn(messenger, encoder, usePVals, // condeferred
                             false, BOOL_PG_TYPE);
             }
-            if (ncols > 4) {
+            if (ncols > 5) {
                 writeColumn(messenger, encoder, usePVals, // reltablespace
                             0, OID_PG_TYPE);
             }
@@ -775,6 +892,53 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             }
         }
         return nrows;
+    }
+
+    private int psqlDescribeForeignKeys1Query(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+        int nrows = 0;
+        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+        Columnar columnar = getTableById(server, groups.get(1));
+        if ((columnar == null) || !columnar.isTable()) return 0;
+        Join join = ((UserTable)columnar).getParentJoin();
+        if (join == null) return 0;
+        messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+        messenger.writeShort(2); // 2 columns for this query
+        writeColumn(messenger, encoder, usePVals, // conname
+                    join.getName(), IDENT_PG_TYPE);
+        writeColumn(messenger, encoder, usePVals, // condef
+                    formatCondef(join, false), CONDEF_PG_TYPE);
+        messenger.sendMessage();
+        nrows++;
+        return nrows;
+    }
+
+    private int psqlDescribeForeignKeys2Query(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+        int nrows = 0;
+        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+        Columnar columnar = getTableById(server, groups.get(1));
+        if ((columnar == null) || !columnar.isTable()) return 0;
+        for (Join join : ((UserTable)columnar).getChildJoins()) {
+            messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+            messenger.writeShort(3); // 3 columns for this query
+            writeColumn(messenger, encoder, usePVals, // conname
+                        join.getName(), IDENT_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, // conrelid
+                        join.getChild().getName().getTableName(), IDENT_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, // condef
+                        formatCondef(join, true), CONDEF_PG_TYPE);
+            messenger.sendMessage();
+            nrows++;
+            if ((maxrows > 0) && (nrows >= maxrows)) {
+                break;
+            }
+        }
+        return nrows;
+    }
+
+    private int psqlDescribeTriggersQuery(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+        Columnar columnar = getTableById(server, groups.get(2));
+        return 0;
     }
 
     private boolean hasIndexes(Columnar table) {
@@ -788,6 +952,17 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         if (isAkibanPKIndex(indexes.iterator().next()))
             return false;
         return true;
+    }
+
+    private boolean hasTriggers(Columnar table) {
+        if (!table.isTable())
+            return false;
+        UserTable userTable = (UserTable)table;
+        if (userTable.getParentJoin() != null)
+            return true;
+        if (!userTable.getChildJoins().isEmpty())
+            return true;
+        return false;
     }
 
     private boolean isAkibanPKIndex(Index index) {
@@ -837,6 +1012,39 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         if (index.isGroupIndex()) {
             str.append(" USING " + index.getJoinType() + " JOIN");
         }
+        return str.toString();
+    }
+
+    private String formatCondef(Join parentJoin, boolean forParent) {
+        StringBuilder str = new StringBuilder();
+        str.append("GROUPING FOREIGN KEY(");
+        boolean first = true;
+        for (JoinColumn joinColumn : parentJoin.getJoinColumns()) {
+            if (first) {
+                first = false;
+            }
+            else {
+                str.append(", ");
+            }
+            str.append(joinColumn.getChild().getName());
+        }
+        str.append(") REFERENCES");
+        if (!forParent) {
+            str.append(" ");
+            str.append(parentJoin.getParent().getName().getTableName());
+        }
+        str.append("(");
+        first = true;
+        for (JoinColumn joinColumn : parentJoin.getJoinColumns()) {
+            if (first) {
+                first = false;
+            }
+            else {
+                str.append(", ");
+            }
+            str.append(joinColumn.getParent().getName());
+        }
+        str.append(")");
         return str.toString();
     }
 

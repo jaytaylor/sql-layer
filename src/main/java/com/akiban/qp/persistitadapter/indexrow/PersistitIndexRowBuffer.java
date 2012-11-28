@@ -27,12 +27,12 @@
 package com.akiban.qp.persistitadapter.indexrow;
 
 import com.akiban.ais.model.*;
-import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.indexcursor.OldExpressionsSortKeyAdapter;
 import com.akiban.qp.persistitadapter.indexcursor.PValueSortKeyAdapter;
 import com.akiban.qp.persistitadapter.indexcursor.SortKeyAdapter;
 import com.akiban.qp.persistitadapter.indexcursor.SortKeyTarget;
+import com.akiban.qp.row.RowBase;
 import com.akiban.qp.row.IndexRow;
 import com.akiban.qp.util.PersistitKey;
 import com.akiban.server.PersistitKeyPValueSource;
@@ -94,13 +94,17 @@ public class PersistitIndexRowBuffer extends IndexRow implements Comparable<Pers
         return compareTo(that, null);
     }
 
-    // BoundExpressions interface
+    // RowBase interface
 
-    public final int compareTo(BoundExpressions row, int thisStartIndex, int thatStartIndex, int fieldCount)
+    @Override
+    public final int compareTo(RowBase row, int thisStartIndex, int thatStartIndex, int fieldCount)
     {
         // The dependence on field positions and fieldCount is a problem for spatial indexes
         if (index.isSpatial()) {
             throw new UnsupportedOperationException(index.toString());
+        }
+        if (!(row instanceof PersistitIndexRowBuffer)) {
+            return super.compareTo(row, thisStartIndex, thatStartIndex, fieldCount);
         }
         // field and byte indexing is as if the pKey and pValue were one contiguous array of bytes. But we switch
         // from pKey to pValue as needed to avoid having to actually copy the bytes into such an array.

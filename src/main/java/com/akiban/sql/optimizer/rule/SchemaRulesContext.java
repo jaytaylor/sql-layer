@@ -76,6 +76,10 @@ public abstract class SchemaRulesContext extends RulesContext
         return schema;
     }
 
+    public AkibanInformationSchema getAIS() {
+        return schema.ais();
+    }
+
     public PhysicalResultColumn getResultColumn(ResultField field) {
         return new PhysicalResultColumn(field.getName());
     }

@@ -69,6 +69,7 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.dxl.DXLTestHookRegistry;
 import com.akiban.server.service.dxl.DXLTestHooks;
 import com.akiban.server.service.lock.LockService;
+import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
@@ -487,6 +488,10 @@ public class ApiTestBase {
 
     protected final LockService lockService() {
         return sm.getServiceByClass(LockService.class);
+    }
+
+    protected final RoutineLoader routineLoader() {
+        return sm.getServiceByClass(RoutineLoader.class);
     }
 
     protected final int aisGeneration() {
@@ -1077,6 +1082,7 @@ public class ApiTestBase {
             TableName name = routine.getName();
             if (!name.getSchemaName().equals(TableName.SQLJ_SCHEMA) &&
                 !name.getSchemaName().equals(TableName.SYS_SCHEMA)) {
+                routineLoader().unloadRoutine(session(), name);
                 ddl().dropRoutine(session(), name);
             }
         }

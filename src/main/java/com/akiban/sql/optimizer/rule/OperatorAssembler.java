@@ -1031,25 +1031,27 @@ public class OperatorAssembler extends BaseRule
                 throw new UnsupportedSQLException("Plan node " + node, null);
         }
         
+        protected enum IntersectionMode { NONE, OUTPUT, SELECT };
+
         protected RowStream assembleIndexScan(IndexScan index) {
-            return assembleIndexScan(index, false, useSkipScan(index));
+            return assembleIndexScan(index, IntersectionMode.NONE, useSkipScan(index));
         }
 
-        protected RowStream assembleIndexScan(IndexScan index, boolean forIntersection, boolean useSkipScan) {
+        protected RowStream assembleIndexScan(IndexScan index, IntersectionMode forIntersection, boolean useSkipScan) {
             if (index instanceof SingleIndexScan)
                 return assembleSingleIndexScan((SingleIndexScan) index, forIntersection);
             else if (index instanceof MultiIndexIntersectScan)
-                return assembleIndexIntersection((MultiIndexIntersectScan) index, useSkipScan);
+                return assembleIndexIntersection((MultiIndexIntersectScan) index, forIntersection, useSkipScan);
             else
                 throw new UnsupportedSQLException("Plan node " + index, null);
         }
 
-        private RowStream assembleIndexIntersection(MultiIndexIntersectScan index, boolean useSkipScan) {
+        private RowStream assembleIndexIntersection(MultiIndexIntersectScan index, IntersectionMode forIntersection, boolean useSkipScan) {
             RowStream stream = new RowStream();
             RowStream outputScan = assembleIndexScan(index.getOutputIndexScan(), 
-                                                     true, useSkipScan);
+                                                     (forIntersection == IntersectionMode.SELECT) ? IntersectionMode.SELECT : IntersectionMode.OUTPUT, useSkipScan);
             RowStream selectorScan = assembleIndexScan(index.getSelectorIndexScan(), 
-                                                       true, useSkipScan);
+                                                       IntersectionMode.SELECT, useSkipScan);
             stream.operator = API.intersect_Ordered(
                     outputScan.operator,
                     selectorScan.operator,
@@ -1071,7 +1073,7 @@ public class OperatorAssembler extends BaseRule
             return stream;
         }
 
-        protected RowStream assembleSingleIndexScan(SingleIndexScan indexScan, boolean forIntersection) {
+        protected RowStream assembleSingleIndexScan(SingleIndexScan indexScan, IntersectionMode forIntersection) {
             RowStream stream = new RowStream();
             Index index = indexScan.getIndex();
             IndexRowType indexRowType = schema.indexRowType(index);
@@ -1125,8 +1127,18 @@ public class OperatorAssembler extends BaseRule
                 // * Index is being intersected.
                 // * Index is effective for query ordering.
                 // ** See also special case in AggregateSplitter.directIndexMinMax().
-                boolean unionOrdered = (range.isAllSingle() && 
-                     (forIntersection || (indexScan.getOrderEffectiveness() != IndexScan.OrderEffectiveness.NONE)));
+                boolean unionOrdered = false, unionOrderedAll = false;
+                if (range.isAllSingle()) {
+                    if (forIntersection != IntersectionMode.NONE) {
+                        unionOrdered = true;
+                        if (forIntersection == IntersectionMode.OUTPUT) {
+                            unionOrderedAll = true;
+                        }
+                    }
+                    else if (indexScan.getOrderEffectiveness() != IndexScan.OrderEffectiveness.NONE) {
+                        unionOrderedAll = unionOrdered = true;
+                    }
+                }
                 for (RangeSegment rangeSegment : range.getSegments()) {
                     Operator scan = API.indexScan_Default(indexRowType,
                                                           assembleIndexKeyRange(indexScan, null, rangeSegment),
@@ -1148,7 +1160,7 @@ public class OperatorAssembler extends BaseRule
                         stream.operator = API.union_Ordered(stream.operator, scan,
                                                             (IndexRowType)stream.rowType, indexRowType,
                                                             nordering, nordering, 
-                                                            ascending,
+                                                            ascending, unionOrderedAll,
                                                             usePValues);
                     }
                     else {

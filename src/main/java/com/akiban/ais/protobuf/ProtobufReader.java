@@ -479,6 +479,10 @@ public class ProtobufReader {
                 routine.setSQLAllowed(convertRoutineSQLAllowed(pbRoutine.getSqlAllowed()));
             if (pbRoutine.hasDynamicResultSets())
                 routine.setDynamicResultSets(pbRoutine.getDynamicResultSets());
+            if (pbRoutine.hasDeterministic())
+                routine.setDeterministic(pbRoutine.getDeterministic());
+            if (pbRoutine.hasCalledOnNullInput())
+                routine.setCalledOnNullInput(pbRoutine.getCalledOnNullInput());
         }
     }
     
@@ -788,7 +792,9 @@ public class ProtobufReader {
                 AISProtobuf.Routine.DESCRIPTION_FIELD_NUMBER,
                 AISProtobuf.Routine.PROTECTED_FIELD_NUMBER,
                 AISProtobuf.Routine.SQLALLOWED_FIELD_NUMBER,
-                AISProtobuf.Routine.DYNAMICRESULTSETS_FIELD_NUMBER
+                AISProtobuf.Routine.DYNAMICRESULTSETS_FIELD_NUMBER,
+                AISProtobuf.Routine.DETERMINISTIC_FIELD_NUMBER,
+                AISProtobuf.Routine.CALLEDONNULLINPUT_FIELD_NUMBER
         );
     }
 

@@ -49,6 +49,7 @@ import com.akiban.sql.types.TypeId;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.UserTable;
 
 import com.akiban.server.error.InsertWrongCountException;
@@ -1603,6 +1604,15 @@ public class ASTStatementLoader extends BaseRule
                     for (JavaValueNode javaValue : methodCall.getMethodParameters()) {
                         operands.add(toExpression(javaValue, null, false, projects));
                     }
+                }
+                Routine routine = (Routine)methodCall.getUserData();
+                if (routine != null) {
+                    if (asCondition)
+                        return new RoutineCondition(routine, operands,
+                                                    valueNode.getType(), valueNode);
+                    else
+                        return new RoutineExpression(routine, operands,
+                                                     valueNode.getType(), valueNode);
                 }
                 if (asCondition)
                     return new FunctionCondition(methodCall.getMethodName(),

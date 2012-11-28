@@ -722,28 +722,30 @@ public class API
                                          IndexRowType leftRowType, IndexRowType rightRowType,
                                          int leftOrderingFields,
                                          int rightOrderingFields,
-                                         boolean[] ascending)
+                                         boolean[] ascending,
+                                         boolean outputEqual)
     {
         return new Union_Ordered(leftInput, rightInput,
                 leftRowType, rightRowType,
                 leftOrderingFields,
                 rightOrderingFields,
-                ascending,
+                ascending, outputEqual,
                 Types3Switch.ON);
     }
 
     public static Operator union_Ordered(Operator leftInput, Operator rightInput,
-                                          IndexRowType leftRowType, IndexRowType rightRowType,
-                                          int leftOrderingFields,
-                                          int rightOrderingFields,
-                                          boolean[] ascending,
-                                          boolean usePValues)
+                                         IndexRowType leftRowType, IndexRowType rightRowType,
+                                         int leftOrderingFields,
+                                         int rightOrderingFields,
+                                         boolean[] ascending,
+                                         boolean outputEqual,
+                                         boolean usePValues)
     {
         return new Union_Ordered(leftInput, rightInput,
                                  leftRowType, rightRowType,
                                  leftOrderingFields,
                                  rightOrderingFields,
-                                 ascending,
+                                 ascending, outputEqual,
                                  usePValues);
     }
 

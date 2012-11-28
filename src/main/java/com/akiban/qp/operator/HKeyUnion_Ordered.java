@@ -191,8 +191,8 @@ class HKeyUnion_Ordered extends Operator
     public CompoundExplainer getExplainer(ExplainContext context) {
         Attributes atts = new Attributes();
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
-        atts.put(Label.LEFT, PrimitiveExplainer.getInstance(leftFields));
-        atts.put(Label.RIGHT, PrimitiveExplainer.getInstance(rightFields));
+        atts.put(Label.NUM_SKIP, PrimitiveExplainer.getInstance(leftFields));
+        atts.put(Label.NUM_SKIP, PrimitiveExplainer.getInstance(rightFields));
         atts.put(Label.NUM_COMPARE, PrimitiveExplainer.getInstance(compareFields));
         atts.put(Label.OUTPUT_TYPE, outputHKeyTableRowType.getExplainer(context));
         return new CompoundExplainer(Type.ORDERED, atts);

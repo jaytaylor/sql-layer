@@ -246,6 +246,10 @@ public class RoutineDDL {
         }
         builder.routineDynamicResultSets(schemaName, routineName,
                                          aliasInfo.getMaxDynamicResultSets());
+        builder.routineDeterministic(schemaName, routineName,
+                                     aliasInfo.isDeterministic());
+        builder.routineCalledOnNullInput(schemaName, routineName,
+                                         aliasInfo.calledOnNullInput());
         
         Routine routine = builder.akibanInformationSchema().getRoutine(tableName);
         ddlFunctions.createRoutine(session, routine);

@@ -30,22 +30,22 @@ import com.akiban.server.service.routines.ScriptInvoker;
 import com.akiban.server.service.routines.ScriptPool;
 import com.akiban.sql.parser.CallStatementNode;
 import com.akiban.sql.script.ScriptFunctionJavaRoutine;
+import com.akiban.sql.server.ServerCallInvocation;
 import com.akiban.sql.server.ServerJavaMethod;
 import com.akiban.sql.server.ServerJavaRoutine;
-import com.akiban.sql.server.ServerRoutineInvocation;
 
 class ExecutableScriptFunctionJavaRoutine extends ExecutableJavaRoutine
 {
     private ScriptPool<ScriptInvoker> pool;
     
     protected ExecutableScriptFunctionJavaRoutine(ScriptPool<ScriptInvoker> pool,
-                                                  ServerRoutineInvocation invocation,
+                                                  ServerCallInvocation invocation,
                                                   JDBCParameterMetaData parameterMetaData) {
         super(invocation, parameterMetaData);
         this.pool = pool;
     }
 
-    public static ExecutableStatement executableStatement(ServerRoutineInvocation invocation,
+    public static ExecutableStatement executableStatement(ServerCallInvocation invocation,
                                                           JDBCParameterMetaData parameterMetaData,
                                                           CallStatementNode call,
                                                           EmbeddedQueryContext context) {

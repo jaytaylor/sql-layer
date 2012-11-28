@@ -38,9 +38,11 @@ import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.InListCondition;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
+import com.akiban.sql.optimizer.plan.RoutineExpression;
 import com.akiban.sql.optimizer.plan.SubqueryExpression;
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.TableName;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
@@ -93,6 +95,12 @@ abstract class ExpressionAssembler<T extends Explainable> {
     protected abstract T in(T lhs, List<T> rhs);
     protected abstract T assembleFieldExpression(RowType rowType, int fieldIndex);
     protected abstract T assembleBoundFieldExpression(RowType rowType, int rowIndex, int fieldIndex);
+    protected abstract T assembleRoutine(ExpressionNode routineNode, 
+                                         Routine routine,
+                                         List<ExpressionNode> operandNodes,
+                                         ColumnExpressionContext columnContext,
+                                         SubqueryOperatorAssembler<T> subqueryAssembler);
+
     protected abstract Logger logger();
 
     public T assembleExpression(ExpressionNode node,
@@ -148,6 +156,12 @@ abstract class ExpressionAssembler<T extends Explainable> {
             List<T> rhs = assembleExpressions(inList.getExpressions(),
                     columnContext, subqueryAssembler);
             return in(lhs, rhs);
+        }
+        else if (node instanceof RoutineExpression) {
+            RoutineExpression routineNode = (RoutineExpression)node;
+            return assembleRoutine(routineNode, routineNode.getRoutine(),
+                                   routineNode.getOperands(),
+                                   columnContext, subqueryAssembler);
         }
         else if (node instanceof SubqueryExpression)
             return subqueryAssembler.assembleSubqueryExpression((SubqueryExpression)node);

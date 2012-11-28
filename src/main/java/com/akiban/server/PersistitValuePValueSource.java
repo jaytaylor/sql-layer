@@ -45,42 +45,18 @@ public final class PersistitValuePValueSource implements PValueSource {
     }
 
     public void getReady() {
-        if (persistitValue.isNull()) {
-            persistitValue.skip(); // need to advance to next object in the stream
+        if (persistitValue.isNull(true)) {
             cacheObject = NULL;
         }
         else {
             Class<?> valueClass = persistitValue.getType();
-            // TODO This is a workaround for bug 1073357. When that's fixed, we should remove this block
-            // and the rawObject field, and we should uncomment the code at the end of this method
-            Object decoded;
-            if (valueClass == Object.class) {
-                decoded = persistitValue.get();
-                if (decoded == null) {
-                    cacheObject = NULL;
-                    return;
-                }
-                valueClass = decoded.getClass();
-            }
-            else {
-                decoded = null;
-            }
-            // end workaround block
-
             PUnderlying rawUnderlying = classesToUnderlying.get(valueClass);
             if (rawUnderlying != null) {
                 pValue.underlying(rawUnderlying);
                 cacheObject = null;
-                rawObject = decoded;
             }
-            // part of the same workaround
-            else {
-                cacheObject = decoded;
-                rawObject = null;
-            }
-// TODO uncomment this when bug 1073357 is fixed.
-//            else
-//                cacheObject = READY_FOR_CACHE;
+            else
+                cacheObject = READY_FOR_CACHE;
         }
     }
     
@@ -191,14 +167,14 @@ public final class PersistitValuePValueSource implements PValueSource {
     @Override
     public byte[] getBytes() {
         if (needsDecoding(PUnderlying.BYTES))
-            pValue.putBytes(rawObject == null ? persistitValue.getByteArray() : (byte[])rawObject);
+            pValue.putBytes(persistitValue.getByteArray());
         return pValue.getBytes();
     }
 
     @Override
     public String getString() {
         if (needsDecoding(PUnderlying.STRING))
-            pValue.putString(rawObject == null ? persistitValue.getString() : (String) rawObject, null);
+            pValue.putString(persistitValue.getString(), null);
         return pValue.getString();
     }
 
@@ -218,7 +194,6 @@ public final class PersistitValuePValueSource implements PValueSource {
     private Value persistitValue;
     private PValue pValue = new PValue();
     private Object cacheObject = null;
-    private Object rawObject;
     
     private static final Object READY_FOR_CACHE = new Object();
     private static final Object NULL = new Object();

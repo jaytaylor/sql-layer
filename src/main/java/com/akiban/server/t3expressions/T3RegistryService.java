@@ -36,4 +36,6 @@ public interface T3RegistryService {
     OverloadResolver<TValidatedAggregator> getAggregatesResolver();
     TCastResolver getCastsResolver();
     TKeyComparable getKeyComparable(TClass left, TClass right);
+    enum FunctionKind { SCALAR, AGGREGATE };
+    FunctionKind getFunctionKind(String name);
 }

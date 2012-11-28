@@ -57,4 +57,8 @@ public interface NewRoutineBuilder {
     NewRoutineBuilder sqlAllowed(SQLAllowed sqlAllowed);
 
     NewRoutineBuilder dynamicResultSets(int dynamicResultSets);
+
+    NewRoutineBuilder deterministic(boolean deterministic);
+
+    NewRoutineBuilder calledOnNullInput(boolean calledOnNullInput);
 }

@@ -96,7 +96,8 @@ public class Union_OrderedIT extends OperatorITBase
                           tXIndexRowType,
                           1,
                           1,
-                          ascending(true));
+                          ascending(true),
+                          false);
         } catch (IllegalArgumentException e) {
         }
         // Second input null
@@ -107,7 +108,8 @@ public class Union_OrderedIT extends OperatorITBase
                           tXIndexRowType,
                           1,
                           1,
-                          ascending(true));
+                          ascending(true),
+                          false);
         } catch (IllegalArgumentException e) {
         }
     }
@@ -123,7 +125,8 @@ public class Union_OrderedIT extends OperatorITBase
                           tXIndexRowType,
                           1,
                           1,
-                          ascending(true));
+                          ascending(true),
+                          false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -135,7 +138,8 @@ public class Union_OrderedIT extends OperatorITBase
                           null,
                           1,
                           1,
-                          ascending(true));
+                          ascending(true),
+                          false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -147,7 +151,8 @@ public class Union_OrderedIT extends OperatorITBase
                           tPidIndexRowType,
                           1,
                           1,
-                          ascending(true));
+                          ascending(true),
+                          false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -164,7 +169,8 @@ public class Union_OrderedIT extends OperatorITBase
                           tXIndexRowType,
                           -1,
                           1,
-                          ascending(true));
+                          ascending(true),
+                          false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -176,7 +182,8 @@ public class Union_OrderedIT extends OperatorITBase
                           tXIndexRowType,
                           1,
                           -1,
-                          ascending(true));
+                          ascending(true),
+                          false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -188,7 +195,8 @@ public class Union_OrderedIT extends OperatorITBase
                           tXIndexRowType,
                           3,
                           1,
-                          ascending(true));
+                          ascending(true),
+                          false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -200,7 +208,8 @@ public class Union_OrderedIT extends OperatorITBase
                           tXIndexRowType,
                           1,
                           3,
-                          ascending(true));
+                          ascending(true),
+                          false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -212,7 +221,8 @@ public class Union_OrderedIT extends OperatorITBase
                           tXIndexRowType,
                           1,
                           2,
-                          ascending(true));
+                          ascending(true),
+                          false);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -223,11 +233,11 @@ public class Union_OrderedIT extends OperatorITBase
     @Test
     public void testBothInputsEmpty()
     {
-        Operator plan = unionPlan(0, 0, true);
+        Operator plan = unionPlan(0, 0, true, false);
         RowBase[] expected = new RowBase[] {
         };
         compareRows(expected, cursor(plan, queryContext));
-        plan = unionPlan(0, 0, false);
+        plan = unionPlan(0, 0, false, false);
         expected = new RowBase[] {
         };
         compareRows(expected, cursor(plan, queryContext));
@@ -236,14 +246,14 @@ public class Union_OrderedIT extends OperatorITBase
     @Test
     public void testLeftEmpty()
     {
-        Operator plan = unionPlan(0, 1, true);
+        Operator plan = unionPlan(0, 1, true, false);
         RowBase[] expected = new RowBase[] {
             row(tRowType, 1L, 1000L),
             row(tRowType, 1L, 1001L),
             row(tRowType, 1L, 1002L),
         };
         compareRows(expected, cursor(plan, queryContext));
-        plan = unionPlan(0, 1, false);
+        plan = unionPlan(0, 1, false, false);
         expected = new RowBase[] {
             row(tRowType, 1L, 1002L),
             row(tRowType, 1L, 1001L),
@@ -255,14 +265,14 @@ public class Union_OrderedIT extends OperatorITBase
     @Test
     public void testRightEmpty()
     {
-        Operator plan = unionPlan(1, 0, true);
+        Operator plan = unionPlan(1, 0, true, false);
         RowBase[] expected = new RowBase[] {
             row(tRowType, 1L, 1000L),
             row(tRowType, 1L, 1001L),
             row(tRowType, 1L, 1002L),
         };
         compareRows(expected, cursor(plan, queryContext));
-        plan = unionPlan(1, 0, false);
+        plan = unionPlan(1, 0, false, false);
         expected = new RowBase[] {
             row(tRowType, 1L, 1002L),
             row(tRowType, 1L, 1001L),
@@ -274,18 +284,28 @@ public class Union_OrderedIT extends OperatorITBase
     @Test
     public void testDuplicates()
     {
-        Operator plan = unionPlan(1, 1, true);
+        Operator plan = unionPlan(1, 1, true, false);
         RowBase[] expected = new RowBase[] {
             row(tRowType, 1L, 1000L),
             row(tRowType, 1L, 1001L),
             row(tRowType, 1L, 1002L),
         };
         compareRows(expected, cursor(plan, queryContext));
-        plan = unionPlan(1, 1, false);
+        plan = unionPlan(1, 1, false, false);
         expected = new RowBase[] {
             row(tRowType, 1L, 1002L),
             row(tRowType, 1L, 1001L),
             row(tRowType, 1L, 1000L),
+        };
+        compareRows(expected, cursor(plan, queryContext));
+        plan = unionPlan(1, 1, true, true);
+        expected = new RowBase[] {
+            row(tRowType, 1L, 1000L),
+            row(tRowType, 1L, 1000L),
+            row(tRowType, 1L, 1001L),
+            row(tRowType, 1L, 1001L),
+            row(tRowType, 1L, 1002L),
+            row(tRowType, 1L, 1002L),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -293,7 +313,7 @@ public class Union_OrderedIT extends OperatorITBase
     @Test
     public void testDisjoint()
     {
-        Operator plan = unionPlan(1, 2, true);
+        Operator plan = unionPlan(1, 2, true, false);
         RowBase[] expected = new RowBase[] {
             row(tRowType, 1L, 1000L),
             row(tRowType, 1L, 1001L),
@@ -303,7 +323,7 @@ public class Union_OrderedIT extends OperatorITBase
             row(tRowType, 2L, 2002L),
         };
         compareRows(expected, cursor(plan, queryContext));
-        plan = unionPlan(1, 2, false);
+        plan = unionPlan(1, 2, false, false);
         expected = new RowBase[] {
             row(tRowType, 2L, 2002L),
             row(tRowType, 2L, 2001L),
@@ -315,7 +335,7 @@ public class Union_OrderedIT extends OperatorITBase
         compareRows(expected, cursor(plan, queryContext));
     }
 
-    private Operator unionPlan(int k1, int k2, boolean ascending)
+    private Operator unionPlan(int k1, int k2, boolean ascending, boolean outputEqual)
     {
         Operator plan =
             union_Ordered(
@@ -331,7 +351,8 @@ public class Union_OrderedIT extends OperatorITBase
                 tXIndexRowType,
                 1,
                 1,
-                ascending(ascending));
+                ascending(ascending),
+                outputEqual);
         return plan;
     }
 

@@ -26,7 +26,7 @@
 
 package com.akiban.sql.embedded;
 
-import com.akiban.sql.server.ServerRoutineInvocation;
+import com.akiban.sql.server.ServerCallInvocation;
 import com.akiban.sql.server.ServerJavaRoutine;
 import com.akiban.sql.server.ServerCallContextStack;
 
@@ -37,7 +37,7 @@ import java.util.Queue;
 abstract class ExecutableJavaRoutine extends ExecutableCallStatement
 {
     
-    protected ExecutableJavaRoutine(ServerRoutineInvocation invocation,
+    protected ExecutableJavaRoutine(ServerCallInvocation invocation,
                                     JDBCParameterMetaData parameterMetaData) {
         super(invocation, parameterMetaData);
     }

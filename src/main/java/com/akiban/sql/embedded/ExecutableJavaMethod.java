@@ -27,7 +27,7 @@
 package com.akiban.sql.embedded;
 
 import com.akiban.sql.parser.CallStatementNode;
-import com.akiban.sql.server.ServerRoutineInvocation;
+import com.akiban.sql.server.ServerCallInvocation;
 import com.akiban.sql.server.ServerJavaMethod;
 import com.akiban.sql.server.ServerJavaRoutine;
 
@@ -38,13 +38,13 @@ class ExecutableJavaMethod extends ExecutableJavaRoutine
     private Method method;
     
     protected ExecutableJavaMethod(Method method,
-                                   ServerRoutineInvocation invocation,
+                                   ServerCallInvocation invocation,
                                    JDBCParameterMetaData parameterMetaData) {
         super(invocation, parameterMetaData);
         this.method = method;
     }
 
-    public static ExecutableStatement executableStatement(ServerRoutineInvocation invocation,
+    public static ExecutableStatement executableStatement(ServerCallInvocation invocation,
                                                           JDBCParameterMetaData parameterMetaData,
                                                           CallStatementNode call,
                                                           EmbeddedQueryContext context) {
