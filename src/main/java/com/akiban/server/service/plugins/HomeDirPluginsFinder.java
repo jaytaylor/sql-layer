@@ -69,7 +69,7 @@ public final class HomeDirPluginsFinder implements PluginsFinder {
         if (!homeDir.isDirectory()) {
             String msg = "not a directory: " + homeDir.getAbsolutePath();
             logger.error(msg);
-            throw new ServiceStartupException(msg);
+            throw new RuntimeException(msg);
         }
         return new File(homeDir, "plugins");
     }
