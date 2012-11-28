@@ -59,21 +59,20 @@ abstract class ExecutableCallStatement extends ExecutableStatement
         StaticMethodCallNode methodCall = (StaticMethodCallNode)call.methodCall().getJavaValueNode();
         ServerCallInvocation invocation =
             ServerCallInvocation.of(context.getServer(), methodCall);
-        if (invocation != null) {
-            JDBCParameterMetaData parameterMetaData = parameterMetaData(invocation, 
-                                                                        sqlParams);
-            switch (invocation.getCallingConvention()) {
-            case LOADABLE_PLAN:
-                return ExecutableLoadableOperator.executableStatement(invocation, parameterMetaData, call, context);
-            case JAVA:
-                return ExecutableJavaMethod.executableStatement(invocation, parameterMetaData, call, context);
-            case SCRIPT_FUNCTION_JAVA:
-                return ExecutableScriptFunctionJavaRoutine.executableStatement(invocation, parameterMetaData, call, context);
-            case SCRIPT_BINDINGS:
-                return ExecutableScriptBindingsRoutine.executableStatement(invocation, parameterMetaData, call, context);
-            }
+        JDBCParameterMetaData parameterMetaData = parameterMetaData(invocation, 
+                                                                    sqlParams);
+        switch (invocation.getCallingConvention()) {
+        case LOADABLE_PLAN:
+            return ExecutableLoadableOperator.executableStatement(invocation, parameterMetaData, call, context);
+        case JAVA:
+            return ExecutableJavaMethod.executableStatement(invocation, parameterMetaData, call, context);
+        case SCRIPT_FUNCTION_JAVA:
+            return ExecutableScriptFunctionJavaRoutine.executableStatement(invocation, parameterMetaData, call, context);
+        case SCRIPT_BINDINGS:
+            return ExecutableScriptBindingsRoutine.executableStatement(invocation, parameterMetaData, call, context);
+        default:
+            throw new UnsupportedSQLException("Unknown routine", call);
         }
-        throw new UnsupportedSQLException("Unknown routine", call);
     }
 
     public static JDBCParameterMetaData parameterMetaData(ServerCallInvocation invocation) {

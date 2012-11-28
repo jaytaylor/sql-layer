@@ -49,28 +49,26 @@ public class PostgresCallStatementGenerator extends PostgresBaseStatementGenerat
                                           String sql, StatementNode stmt,
                                           List<ParameterNode> params, int[] paramTypes)
     {
-        if (stmt instanceof CallStatementNode) {
-            CallStatementNode call = (CallStatementNode)stmt;
-            StaticMethodCallNode methodCall = (StaticMethodCallNode)call.methodCall().getJavaValueNode();
-            ServerCallInvocation invocation =
-                ServerCallInvocation.of(server, methodCall);
-            if (invocation != null) {
-                final PostgresStatement pstmt;
-                switch (invocation.getCallingConvention()) {
-                case LOADABLE_PLAN:
-                    pstmt = PostgresLoadablePlan.statement(server, invocation,
-                                                           paramTypes);
-                    break;
-                default:
-                    pstmt = PostgresJavaRoutine.statement(server, invocation,
-                                                          params, paramTypes);
-                }
-                // The above makes extensive use of the AIS. This doesn't fit well into the
-                // create and then init, so just mark with AIS now.
-                pstmt.setAISGeneration(server.getAIS().getGeneration());
-                return pstmt;
-            }
+        if (!(stmt instanceof CallStatementNode))
+            return null;
+        CallStatementNode call = (CallStatementNode)stmt;
+        StaticMethodCallNode methodCall = (StaticMethodCallNode)call.methodCall().getJavaValueNode();
+        // This will signal error if undefined, so any special handling of
+        // non-AIS CALL statements needs to be tested by an earlier generator.
+        ServerCallInvocation invocation = ServerCallInvocation.of(server, methodCall);
+        final PostgresStatement pstmt;
+        switch (invocation.getCallingConvention()) {
+        case LOADABLE_PLAN:
+            pstmt = PostgresLoadablePlan.statement(server, invocation,
+                                                   paramTypes);
+            break;
+        default:
+            pstmt = PostgresJavaRoutine.statement(server, invocation,
+                                                  params, paramTypes);
         }
-        return null;
+        // The above makes extensive use of the AIS. This doesn't fit well into the
+        // create and then init, so just mark with AIS now.
+        pstmt.setAISGeneration(server.getAIS().getGeneration());
+        return pstmt;
     }
 }

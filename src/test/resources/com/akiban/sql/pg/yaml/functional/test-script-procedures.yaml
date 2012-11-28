@@ -42,4 +42,7 @@
 # Procedure as function
 - Statement: SELECT test_f1(100,99)
 - error: [4251B]
+---
+- Statement: CALL no_such_proc()
+- error: [42519]
 ...
