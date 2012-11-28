@@ -57,6 +57,8 @@
           <string>$APP_PACKAGE/Contents/Resources/config/services-config.yaml</string>
           <key>log4j.configuration</key>
           <string>file:$APP_PACKAGE/Contents/Resources/config/log4j.properties</string>
+          <key>akiban.home</key>
+          <string>$APP_PACKAGE/Contents/Resources/plugins</string>
           <!--
           <key>java.net.preferIPv4Stack</key>
           <string>true</string>

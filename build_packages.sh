@@ -168,6 +168,7 @@ elif [ ${platform} == "macosx" ]; then
     client_jar=packages-common/akiban-client-tools-*.jar
     client_deps=packages-common/client
     akdump_bin=packages-common/akdump
+    plugins_dir=packages-common/plugins
     mac_app='target/Akiban Server.app'
     mac_dmg='target/Akiban Server.dmg'
     inst_temp=/tmp/inst_temp
@@ -198,6 +199,7 @@ elif [ ${platform} == "macosx" ]; then
     cp $client_deps/* "$mac_app/Contents/Resources/tools/lib/client/"
     mkdir -p "$mac_app/Contents/Resources/tools/bin"
     cp $akdump_bin "$mac_app/Contents/Resources/tools/bin/"
+    cp -R $plugins_dir "$mac_app/Contents/Resources/plugins"
     # Wildcards are not supported in ClassPath key; expand now.
     CLASSPATH=$(cd "$mac_app/Contents/Resources/Java"; echo akiban-server-*.jar server/*.jar | sed 's| |:$JAVAROOT/|g')
     sed "s|@CLASSPATH@|\$JAVAROOT/$CLASSPATH|" macosx/Contents/Info.plist >"$mac_app/Contents/Info.plist"
