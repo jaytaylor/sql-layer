@@ -39,10 +39,13 @@ import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
+import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.NoSuchRoutineException;
 
+import com.ibm.icu.text.MessageFormat;
 import java.net.URL;
 import java.util.Collection;
+import java.util.Collections;
 
 public class RoutineDDLIT extends AISDDLITBase {
     @Before
@@ -84,6 +87,13 @@ public class RoutineDDLIT extends AISDDLITBase {
 
         executeDDL("DROP PROCEDURE procb");
         assertNull(ais().getRoutine(SCHEMA_NAME, "procb"));
+    }
+    
+    @Test 
+    public void testDropIfExists() throws Exception {
+        String sql = "DROP PROCEDURE IF EXISTS no_such_proc";
+        executeDDL(sql);
+        assertEquals(Collections.singletonList(MessageFormat.format(ErrorCode.NO_SUCH_ROUTINE.getMessage(), SCHEMA_NAME, "no_such_proc")), getWarnings());
     }
 
 }

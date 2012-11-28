@@ -41,6 +41,7 @@ import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.CreateAliasNode;
 import com.akiban.sql.parser.DropAliasNode;
+import com.akiban.sql.parser.ExistenceCheck;
 
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.RoutineAliasInfo;
@@ -262,9 +263,15 @@ public class RoutineDDL {
                                    DropAliasNode dropRoutine,
                                    QueryContext context) {
         TableName routineName = DDLHelper.convertName(defaultSchemaName, dropRoutine.getObjectName());
+        ExistenceCheck existenceCheck = dropRoutine.getExistenceCheck();
         Routine routine = ddlFunctions.getAIS(session).getRoutine(routineName);
         
         if (routine == null) {
+            if (existenceCheck == ExistenceCheck.IF_EXISTS) {
+                if (context != null)
+                    context.warnClient(new NoSuchRoutineException(routineName));
+                return;
+            }
             throw new NoSuchRoutineException(routineName);
         } 
         routineLoader.unloadRoutine(session, routineName);
