@@ -33,15 +33,17 @@ import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 public class DMLStatement extends BaseStatement {
 
     public DMLStatement(PlanNode input, BaseUpdateStatement.StatementType type, 
-                List<ResultField> results,
-                TableSource table,
-                TableNode targetTable,
-                EquivalenceFinder<ColumnExpression> columnEquivalencies) {
+                        TableSource selectTable,
+                        TableNode targetTable,
+                        List<ResultField> results,
+                        TableSource returningTable,
+                        EquivalenceFinder<ColumnExpression> columnEquivalencies) {
         super(input, columnEquivalencies);
         this.type = type;
-        this.results = results;
-        this.table = table;
+        this.selectTable = selectTable;
         this.targetTable = targetTable;
+        this.results = results;
+        this.returningTable = returningTable;
     }
     
     public BaseUpdateStatement.StatementType getType() {
@@ -52,19 +54,22 @@ public class DMLStatement extends BaseStatement {
         return results;
     }
 
-    public TableSource getTable() { 
-        return table;
+    public TableSource getSelectTable() { 
+        return selectTable;
+    }
+    public TableSource getReturningTable() { 
+        return returningTable;
     }
 
+    public TableNode getTargetTable() {
+        return targetTable;
+    }
+    
     public boolean isRequireStepIsolation() {
         return requireStepIsolation;
     }
     public void setRequireStepIsolation(boolean requireStepIsolation) {
         this.requireStepIsolation = requireStepIsolation;
-    }
-    
-    public TableNode getTargetTable() {
-        return targetTable;
     }
     
     @Override
@@ -85,8 +90,8 @@ public class DMLStatement extends BaseStatement {
     
     private final BaseUpdateStatement.StatementType type; 
     private final List<ResultField> results;
-    private final TableSource table;
-    private boolean requireStepIsolation;
+    private final TableSource selectTable, returningTable;
     private TableNode targetTable;
+    private boolean requireStepIsolation;
 
 }

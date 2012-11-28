@@ -161,6 +161,8 @@ public class ASTStatementLoader extends BaseRule
             ResultSetNode rs = updateNode.getResultSetNode();
             PlanNode query = toQuery((SelectNode)rs);
             TableNode targetTable = getTargetTable(updateNode);
+            TableSource selectTable = getTargetTableSource(updateNode);
+            assert (selectTable.getTable() == targetTable);
             ResultColumnList rcl = rs.getResultColumns();
             List<UpdateColumn> updateColumns = 
                 new ArrayList<UpdateColumn>(rcl.size());
@@ -170,17 +172,18 @@ public class ASTStatementLoader extends BaseRule
                 ExpressionNode value = toExpression(result.getExpression());
                 updateColumns.add(new UpdateColumn(column, value));
             }
-            ReturningValues values = calculateReturningValues (updateNode.getReturningList(),
-                        (FromTable)updateNode.getUserData(),
-                        targetTable.getTable().getColumns().size());
+            ReturningValues values = calculateReturningValues(updateNode.getReturningList(),
+                                                              (FromTable)updateNode.getUserData());
             query = new UpdateStatement(query, targetTable, 
-                        updateColumns, values.table); 
+                                        updateColumns, values.table); 
 
             if (values.row != null) {
-                query = new Project (query, values.row);
+                query = new Project(query, values.row);
             }
-            return new DMLStatement (query, BaseUpdateStatement.StatementType.UPDATE, 
-                    values.results, values.table, targetTable, peekEquivalenceFinder());
+            return new DMLStatement(query, BaseUpdateStatement.StatementType.UPDATE, 
+                                    selectTable, targetTable, 
+                                    values.results, values.table,
+                                    peekEquivalenceFinder());
         }
 
         // INSERT
@@ -217,17 +220,18 @@ public class ASTStatementLoader extends BaseRule
                 }
             }
 
-            ReturningValues values = calculateReturningValues (insertNode.getReturningList(),
-                                (FromTable)insertNode.getUserData(),
-                                targetTable.getTable().getColumns().size());
+            ReturningValues values = calculateReturningValues(insertNode.getReturningList(),
+                                                              (FromTable)insertNode.getUserData());
             
-            query = new InsertStatement (query, targetTable, 
-                    targetColumns, values.table);
+            query = new InsertStatement(query, targetTable, 
+                                        targetColumns, values.table);
             if (values.row != null) {
-                query = new Project (query, values.row);
+                query = new Project(query, values.row);
             }
-            return new DMLStatement (query, BaseUpdateStatement.StatementType.INSERT, 
-                    values.results, values.table, targetTable, peekEquivalenceFinder());
+            return new DMLStatement(query, BaseUpdateStatement.StatementType.INSERT, 
+                                    null, targetTable,
+                                    values.results, values.table, 
+                                    peekEquivalenceFinder());
         }
     
         
@@ -236,17 +240,20 @@ public class ASTStatementLoader extends BaseRule
                 throws StandardException {
             PlanNode query = toQuery((SelectNode)deleteNode.getResultSetNode());
             TableNode targetTable = getTargetTable(deleteNode);
+            TableSource selectTable = getTargetTableSource(deleteNode);
+            assert (selectTable.getTable() == targetTable);
             
             ReturningValues values = calculateReturningValues (deleteNode.getReturningList(), 
-                                        (FromTable)deleteNode.getUserData(),
-                                        targetTable.getTable().getColumns().size());
+                                                               (FromTable)deleteNode.getUserData());
             
             query = new DeleteStatement(query, targetTable, values.table);
             if (values.row != null) {
                 query = new Project (query, values.row);
             }
             return new DMLStatement(query, BaseUpdateStatement.StatementType.DELETE, 
-                    values.results, values.table, targetTable, peekEquivalenceFinder());
+                                    selectTable, targetTable, 
+                                    values.results, values.table, 
+                                    peekEquivalenceFinder());
         }
         
         private class ReturningValues {
@@ -255,7 +262,7 @@ public class ASTStatementLoader extends BaseRule
             public List<ResultField> results = null;
         }
 
-        protected ReturningValues calculateReturningValues (ResultColumnList rcl, FromTable table, int size)
+        protected ReturningValues calculateReturningValues(ResultColumnList rcl, FromTable table)
                 throws StandardException {
             ReturningValues values = new ReturningValues();
             if (rcl != null) {
@@ -1291,6 +1298,12 @@ public class ASTStatementLoader extends BaseRule
             return getTableNode(table);
         }
     
+        protected TableSource getTargetTableSource(DMLModStatementNode statement)
+                throws StandardException {
+            FromTable firstTable = ((SelectNode)statement.getResultSetNode()).getFromList().get(0);
+            return (TableSource)joinNodes.get(firstTable);
+        }
+
         protected Map<Group,TableTree> groups = new HashMap<Group,TableTree>();
         protected Deque<EquivalenceFinder<ColumnExpression>> columnEquivalences
                 = new ArrayDeque<EquivalenceFinder<ColumnExpression>>(1);

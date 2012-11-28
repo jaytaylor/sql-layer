@@ -800,7 +800,6 @@ public class API
 
     // Select_BloomFilter
 
-
     public static Operator select_BloomFilter(Operator input,
                                               Operator onPositive,
                                               List<? extends ExpressionGenerator> filterFields,
@@ -848,6 +847,19 @@ public class API
                 bindingPosition);
     }
 
+    // EmitBoundRow_Nested
+
+    public static Operator emitBoundRow_Nested(Operator input,
+                                               RowType inputRowType,
+                                               RowType outputRowType,
+                                               RowType boundRowType,
+                                               int bindingPosition)
+    {
+        return new EmitBoundRow_Nested(input,
+                                       inputRowType, outputRowType, boundRowType,
+                                       bindingPosition);
+    }
+
     // Insert
     public static UpdatePlannable insert_Default(Operator inputOperator)
     {
@@ -890,6 +902,7 @@ public class API
     {
         return new Delete_Returning(inputOperator, usePValues);
     }
+
     // Execution interface
 
     public static Cursor cursor(Operator root, QueryContext context)

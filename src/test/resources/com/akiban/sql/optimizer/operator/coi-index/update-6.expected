@@ -1,0 +1,12 @@
+PhysicalUpdate/STEP_ISOLATE
+  Update_Returning(items SET quan = 66)
+    Map_NestedLoops()
+      Filter_Default(items)
+        GroupScan_Default(customers)
+      EmitBoundRow_Nested(orders - items -> items)
+        Limit_Default(1)
+          Filter_Default(orders - items)
+            Flatten_HKeyOrdered(orders INNER items)
+              Select_HKeyOrdered(orders.order_date > DATE '2011-03-02')
+                BranchLookup_Default(Index(orders.PRIMARY) -> orders)
+                  IndexScan_Default(Index(orders.PRIMARY), oid = items.oid)

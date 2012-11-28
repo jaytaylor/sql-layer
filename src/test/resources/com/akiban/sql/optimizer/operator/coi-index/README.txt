@@ -91,3 +91,10 @@ update-1: change column to literal
 update-2: change column to expression (column itself)
 
 update-3: update from (unnested) subquery
+
+update-4: returning
+
+update-5: returning with expressions
+
+update-6: update with subquery
+
