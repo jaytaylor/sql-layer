@@ -39,6 +39,12 @@
 ---
 - Statement: SET OutputFormat TO DEFAULT;
 ---
+- Statement: EXPLAIN CALL test_f1(100,?)
+- output: [['CALL test_f1[SCRIPT_FUNCTION_JAVA, Mozilla Rhino, f1, compiled](100, $1)']]
+---
+- Statement: EXPLAIN CALL test_b1(100,?)
+- output: [['CALL test_b1[SCRIPT_BINDINGS, Mozilla Rhino, compiled](100, $1)']]
+---
 # Procedure as function
 - Statement: SELECT test_f1(100,99)
 - error: [4251B]
