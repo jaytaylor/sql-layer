@@ -85,6 +85,16 @@ public class AISMerge {
         }
     }
 
+    private static class IndexInfo {
+        public final Integer id;
+        public final String tree;
+
+        private IndexInfo(Integer id, String tree) {
+            this.id = id;
+            this.tree = tree;
+        }
+    }
+
     private static final Logger LOG = LoggerFactory.getLogger(AISMerge.class);
 
     /* state */
@@ -93,7 +103,7 @@ public class AISMerge {
     private final NameGenerator nameGenerator;
     private final MergeType mergeType;
     private final List<JoinChange> changedJoins;
-    private final Set<IndexName> indexesToFix;
+    private final Map<IndexName,IndexInfo> indexesToFix;
 
 
     /** Legacy test constructor. Creates an AISMerge for adding a table with a new {@link DefaultNameGenerator}. */
@@ -110,7 +120,7 @@ public class AISMerge {
     public static AISMerge newForModifyTable(NameGenerator generator, AkibanInformationSchema sourceAIS,
                                              Collection<ChangedTableDescription> alteredTables) {
         List<JoinChange> changedJoins = new ArrayList<JoinChange>();
-        Set<IndexName> indexesToFix = new HashSet<IndexName>();
+        Map<IndexName,IndexInfo> indexesToFix = new HashMap<IndexName,IndexInfo>();
         AkibanInformationSchema targetAIS = copyAISForModify(sourceAIS, indexesToFix, changedJoins, alteredTables);
         return new AISMerge(generator, targetAIS, null, MergeType.MODIFY_TABLE, changedJoins, indexesToFix);
     }
@@ -121,7 +131,7 @@ public class AISMerge {
     }
 
     private AISMerge(NameGenerator nameGenerator, AkibanInformationSchema targetAIS, UserTable sourceTable,
-                     MergeType mergeType, List<JoinChange> changedJoins, Set<IndexName> indexesToFix) {
+                     MergeType mergeType, List<JoinChange> changedJoins, Map<IndexName,IndexInfo> indexesToFix) {
         this.nameGenerator = nameGenerator;
         this.targetAIS = targetAIS;
         this.sourceTable = sourceTable;
@@ -136,7 +146,7 @@ public class AISMerge {
     }
 
     private static AkibanInformationSchema copyAISForModify(AkibanInformationSchema oldAIS,
-                                                            Set<IndexName> indexesToFix,
+                                                            Map<IndexName,IndexInfo> indexesToFix,
                                                             final List<JoinChange> joinsToFix,
                                                             Collection<ChangedTableDescription> changedTables)
     {
@@ -192,18 +202,21 @@ public class AISMerge {
                 filteredTables.put(desc.getOldName(), newTable);
             }
 
+            // Primary key trees must always be preserved (accum state cannot be duped)
+            Index oldPrimary = oldTable.getPrimaryKeyIncludingInternal().getIndex();
+            Integer oldID = desc.isNewGroup() ? null : oldPrimary.getIndexId();
+            indexesToFix.put(new IndexName(desc.getNewName(), Index.PRIMARY_KEY_CONSTRAINT), new IndexInfo(oldID, oldPrimary.getTreeName()));
+
             for(Index newIndex : indexSearchTable.getIndexesIncludingInternal()) {
+                if(newIndex.isPrimaryKey()) {
+                    continue;
+                }
                 String oldName = desc.getPreserveIndexes().get(newIndex.getIndexName().getName());
                 Index oldIndex = (oldName != null) ? oldTable.getIndexIncludingInternal(oldName) : null;
                 if(oldIndex != null) {
-                    if(oldIndex.isPrimaryKey()) {
-                        // Must also generate a new ID, as we can't rely on the hidden one
-                        indexesToFix.add(newIndex.getIndexName());
-                    }
-                    newIndex.setIndexId(oldIndex.getIndexId());
-                    newIndex.setTreeName(oldIndex.getTreeName());
+                    indexesToFix.put(newIndex.getIndexName(), new IndexInfo(oldIndex.getIndexId(), oldIndex.getTreeName()));
                 } else {
-                    indexesToFix.add(newIndex.getIndexName());
+                    indexesToFix.put(newIndex.getIndexName(), new IndexInfo(null, null));
                 }
             }
 
@@ -419,13 +432,13 @@ public class AISMerge {
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
 
-        for(IndexName indexName : indexesToFix) {
-            UserTable table = targetAIS.getUserTable(indexName.getSchemaName(), indexName.getTableName());
-            Index index = table.getIndexIncludingInternal(indexName.getName());
-            index.setIndexId(newIndexID(table.getGroup()));
-            if(!index.isPrimaryKey()) {
-                index.setTreeName(nameGenerator.generateIndexTreeName(index));
-            }
+        for(Map.Entry<IndexName,IndexInfo> entry : indexesToFix.entrySet()) {
+            IndexName name = entry.getKey();
+            IndexInfo info = entry.getValue();
+            UserTable table = targetAIS.getUserTable(name.getSchemaName(), name.getTableName());
+            Index index = table.getIndexIncludingInternal(name.getName());
+            index.setIndexId((info.id != null) ? info.id : newIndexID(table.getGroup()));
+            index.setTreeName((info.tree != null) ? info.tree : nameGenerator.generateIndexTreeName(index));
         }
 
         builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
