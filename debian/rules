@@ -31,10 +31,6 @@ install: build
 	dh_link usr/share/akiban/akiban-client-tools-1.3.4-SNAPSHOT.jar \
 		usr/share/akiban/akiban-client-tools.jar
 
-    # Plugins
-    # (Don't symlink, because we don't want to see each jar twice.)
-    dh_install packages-common/plugins/* usr/share/akiban/plugins
-
 # Build architecture-independent files here.
 binary-indep: build install
 	dh_testdir

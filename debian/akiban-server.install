@@ -5,6 +5,7 @@ debian/jvm.options etc/akiban/config
 bin/akserver usr/sbin
 debian/akdump usr/bin
 debian/server/* usr/share/akiban/server
-debian/client/* /usr/share/akiban/client
+debian/client/* usr/share/akiban/client
+debian/plugins/* usr/share/akiban/plugins
 debian/LICENSE.txt usr/share/akiban
 debian/*.tag usr/share/akiban

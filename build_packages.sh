@@ -79,8 +79,8 @@ mkdir -p packages-common/plugins
 
 [ ! -z "$PLUGINS_BRANCH" ] || PLUGINS_BRANCH="https://github.com/akiban/akiban-server-plugins/archive/master.zip"
 echo "Using akiban-server-plugins git branch: ${PLUGINS_BRANCH}"
-pushd target && rm -rf akiban-server-plugins-master && \
-    rm akiban-server-plugins.zip && \
+pushd target && rm -rf akiban-server-plugins-master ; \
+    rm akiban-server-plugins.zip ; \
     wget --no-check-certificate -O akiban-server-plugins.zip ${PLUGINS_BRANCH} && \
     unzip akiban-server-plugins.zip && \
     pushd akiban-server-plugins-master
@@ -93,8 +93,8 @@ popd && popd
 # Add akiban-rest
 [ ! -z "$REST_BRANCH" ] || REST_BRANCH="https://github.com/akiban/akiban-rest/archive/plugin.zip"
 echo "Using akiban-rest git branch: ${REST_BRANCH}"
-pushd target && rm -rf akiban-rest-plugin && \
-    rm rest.zip && \
+pushd target && rm -rf akiban-rest-plugin ; \
+    rm rest.zip ; \
     wget --no-check-certificate -O rest.zip ${REST_BRANCH} && \
     unzip rest.zip && \
     pushd akiban-rest-plugin
@@ -115,6 +115,8 @@ if [ ${platform} == "debian" ]; then
     mvn -Dmaven.test.skip.exec clean install -DBZR_REVISION=${bzr_revno}
     mkdir -p ${platform}/server/
     cp ./target/dependency/* ${platform}/server/
+    mkdir -p ${platform}/plugins/
+    cp packages-common/plugins/* ${platform}/plugins
     debuild
 elif [ ${platform} == "redhat" ]; then
     mkdir -p ${PWD}/redhat/rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
