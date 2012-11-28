@@ -606,7 +606,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     // PRIMARY tree *must* be preserved due to accumulators. No way to dup accum state so must do this.
                     List<Index> indexesToTruncate = new ArrayList<Index>();
                     for(ChangedTableDescription desc : validator.getAllChangedTables()) {
-                        desc.getPreserveIndexes().put(Index.PRIMARY_KEY_CONSTRAINT, Index.PRIMARY_KEY_CONSTRAINT);
                         UserTable oldTable = origAIS.getUserTable(desc.getOldName());
                         Index index = oldTable.getPrimaryKeyIncludingInternal().getIndex();
                         indexesToTruncate.add(index);
