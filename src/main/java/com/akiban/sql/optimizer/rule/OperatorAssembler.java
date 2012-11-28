@@ -957,11 +957,11 @@ public class OperatorAssembler extends BaseRule
             if (stream.rowType != rowType) {
                 int rowIndex = lookupNestedBoundRowIndex(table);
                 ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
-                stream.operator = API.unflatten_Nested(stream.operator,
-                                                       stream.rowType,
-                                                       rowType,
-                                                       boundRow.getRowType(),
-                                                       rowIndex + loopBindingsOffset);
+                stream.operator = API.emitBoundRow_Nested(stream.operator,
+                                                          stream.rowType,
+                                                          rowType,
+                                                          boundRow.getRowType(),
+                                                          rowIndex + loopBindingsOffset);
                 stream.rowType = rowType;
                 stream.fieldOffsets = new ColumnSourceFieldOffsets(table, stream.rowType);
             }

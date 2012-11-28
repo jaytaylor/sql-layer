@@ -847,17 +847,17 @@ public class API
                 bindingPosition);
     }
 
-    // Unflatten_Nested
+    // EmitBoundRow_Nested
 
-    public static Operator unflatten_Nested(Operator input,
-                                            RowType inputRowType,
-                                            RowType outputRowType,
-                                            RowType boundRowType,
-                                            int bindingPosition)
+    public static Operator emitBoundRow_Nested(Operator input,
+                                               RowType inputRowType,
+                                               RowType outputRowType,
+                                               RowType boundRowType,
+                                               int bindingPosition)
     {
-        return new Unflatten_Nested(input,
-                                    inputRowType, outputRowType, boundRowType,
-                                    bindingPosition);
+        return new EmitBoundRow_Nested(input,
+                                       inputRowType, outputRowType, boundRowType,
+                                       bindingPosition);
     }
 
     // Insert

@@ -48,7 +48,7 @@ import java.util.*;
 
  <h1>Overview</h1>
 
- Unflatten_Nested recovers a row (or subrow) from a nested loop.
+ EmitBoundRow_Nested recovers a row (or subrow) from a nested loop.
 
  When an <code>UPDATE</code> statement involves complex joins, the row
  to be updated is no longer an immediate input.
@@ -89,7 +89,7 @@ import java.util.*;
 
  */
 
-class Unflatten_Nested extends Operator
+class EmitBoundRow_Nested extends Operator
 {
     // Object interface
 
@@ -127,9 +127,9 @@ class Unflatten_Nested extends Operator
         return describePlan(inputOperator);
     }
 
-    // Unflatten_Nested interface
+    // EmitBoundRow_Nested interface
 
-    public Unflatten_Nested(Operator inputOperator,
+    public EmitBoundRow_Nested(Operator inputOperator,
                             RowType inputRowType,
                             RowType outputRowType,
                             RowType boundRowType,
@@ -158,9 +158,9 @@ class Unflatten_Nested extends Operator
 
     // Class state
 
-    private static final Logger LOG = LoggerFactory.getLogger(Unflatten_Nested.class);
-    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Unflatten_Nested open");
-    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Unflatten_Nested next");
+    private static final Logger LOG = LoggerFactory.getLogger(EmitBoundRow_Nested.class);
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: EmitBoundRow_Nested open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: EmitBoundRow_Nested next");
 
     // Object state
 
@@ -204,7 +204,7 @@ class Unflatten_Nested extends Operator
                 checkQueryCancelation();
                 Row row = input.next();
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Unflatten: {}", row == null ? null : row);
+                    LOG.debug("EmitBoundRow: {}", row == null ? null : row);
                 }
                 if (row == null) {
                     close();

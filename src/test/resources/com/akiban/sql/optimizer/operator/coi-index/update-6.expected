@@ -3,7 +3,7 @@ PhysicalUpdate/STEP_ISOLATE
     Map_NestedLoops()
       Filter_Default(items)
         GroupScan_Default(customers)
-      Unflatten_Nested(orders - items -> items)
+      EmitBoundRow_Nested(orders - items -> items)
         Limit_Default(1)
           Filter_Default(orders - items)
             Flatten_HKeyOrdered(orders INNER items)
