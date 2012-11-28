@@ -81,7 +81,7 @@ mkdir -p packages-common/plugins
 echo "Using akiban-server-plugins git branch: ${PLUGINS_BRANCH}"
 pushd target && rm -rf akiban-server-plugins-master ; \
     rm akiban-server-plugins.zip ; \
-    wget --no-check-certificate -O akiban-server-plugins.zip ${PLUGINS_BRANCH} && \
+    curl -L ${PLUGINS_BRANCH} > akiban-server-plugins.zip && \
     unzip akiban-server-plugins.zip && \
     pushd akiban-server-plugins-master
 mvn -Dmaven.test.skip=true clean install && \
@@ -95,7 +95,7 @@ popd && popd
 echo "Using akiban-rest git branch: ${REST_BRANCH}"
 pushd target && rm -rf akiban-rest-plugin ; \
     rm rest.zip ; \
-    wget --no-check-certificate -O rest.zip ${REST_BRANCH} && \
+    curl -L ${REST_BRANCH} > rest.zip && \
     unzip rest.zip && \
     pushd akiban-rest-plugin
 mvn -Dmaven.test.skip=true clean package
