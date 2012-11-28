@@ -111,6 +111,7 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.session.Session;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.MethodRule;
 import org.junit.rules.TestName;
@@ -234,6 +235,7 @@ public class ApiTestBase {
         types3SwitchSave = Types3Switch.ON;
         Types3Switch.ON &= testSupportsPValues();
         assertTrue("some row updaters were left over: " + unfinishedRowUpdaters, unfinishedRowUpdaters.isEmpty());
+        System.setProperty("akiban.home", System.getProperty("user.home"));
         try {
             ConverterTestUtils.setGlobalTimezone("UTC");
             Map<String, String> startupConfigProperties = startupConfigProperties();

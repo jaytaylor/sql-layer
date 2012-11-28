@@ -26,6 +26,10 @@
 
 package com.akiban.server.service.plugins;
 
+import com.akiban.server.error.ServiceStartupException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,15 +39,14 @@ public final class HomeDirPluginsFinder implements PluginsFinder {
 
     @Override
     public Collection<? extends Plugin> get() {
-        File pluginsFile = new File(pluginsPath);
         Collection<Plugin> plugins;
-        if (!pluginsFile.exists()) {
+        if (!pluginsDir.exists()) {
             plugins = Collections.emptyList();
         }
         else {
-            File[] files = pluginsFile.listFiles();
+            File[] files = pluginsDir.listFiles();
             if (files == null) {
-                throw new RuntimeException("'" + pluginsPath + "' must be a directory");
+                throw new RuntimeException("'" + pluginsDir + "' must be a directory");
             }
             plugins = new ArrayList<Plugin>(files.length);
             for (File pluginJar : files) {
@@ -53,5 +56,22 @@ public final class HomeDirPluginsFinder implements PluginsFinder {
         return plugins;
     }
 
-    private static final String pluginsPath = "plugins";
+    private static final Logger logger = LoggerFactory.getLogger(HomeDirPluginsFinder.class);
+    private static final File pluginsDir = findPluginsDir();
+
+    private static File findPluginsDir() {
+        String homeDirPath = System.getProperty("akiban.home");
+        if (homeDirPath == null) {
+            logger.error("no akiban.home variable set");
+            throw new RuntimeException("no akiban.home variable set");
+        }
+        File homeDir = new File(homeDirPath);
+        if (!homeDir.isDirectory()) {
+            String msg = "not a directory: " + homeDir.getAbsolutePath();
+            logger.error(msg);
+            throw new ServiceStartupException(msg);
+        }
+        return new File(homeDir, "plugins");
+    }
+
 }
