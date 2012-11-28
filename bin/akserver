@@ -140,9 +140,6 @@ launch_service()
 
     CLASSPATH=$JAR_FILE:$DEP_DIR/*
     main_class="com.akiban.server.AkServer"
-    echo "mode: $mode"
-    echo "profile: $profile"
-    echo "akiban_parms: $akiban_parms"
     if [ -n "$mode" ]; then
         if [ "$mode" == "window" ]; then
           akiban_parms="$akiban_parms -Drequire:com.akiban.server.service.ui.SwingConsoleService -Dprioritize:com.akiban.server.service.ui.SwingConsoleService"
