@@ -1,7 +1,6 @@
 # Test smallint overflow
 # Sum of large values overflows 
 # bug 890227
-# Status triaged
 ---
 - CreateTable: t (smallint_field smallint)
 ---
@@ -25,15 +24,15 @@
 - Statement: INSERT INTO t (smallint_field) VALUES (2147483647)
 ---
 - Statement: SELECT sum(smallint_field) FROM t
-- output: [[2147483647]]
+- output: !select-engine { sys-mysql: [[32767]], newtypes: [[32767]], all: [[-1]] }
 ---
 - Statement: INSERT INTO t (smallint_field) VALUES (1)
 ---
 - Statement: SELECT sum(smallint_field) FROM t
-- output: [[2147483648]]
+- output: !select-engine { sys-mysql: [[32768]], newtypes: [[32768]], all: [[0]] }
 ---
 - Statement: INSERT INTO t (smallint_field) VALUES (-1)
 ---
 - Statement: SELECT sum(smallint_field) FROM t
-- output: [[2147483647]]
+- output: !select-engine { sys-mysql: [[32767]], newtypes: [[32767]], all: [[-1]] }
 ...
