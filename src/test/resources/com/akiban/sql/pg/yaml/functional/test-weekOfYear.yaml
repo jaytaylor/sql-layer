@@ -1,44 +1,44 @@
 ## Test the WEEKOFYEAR() function
-# BUG: 902169, 902168
-# Status: triaged
 ---
 - Include: all-types-schema.yaml
+
+# bug 905447
 ---
-- Statement: INSERT INTO all_types (bigint_field) VALUES (1)
----  #bug 905447 (fix released)
-- Statement: select WEEKOFYEAR('1987-01-01 01:15:33') from all_types;
+- Statement: select WEEKOFYEAR('1987-01-01 01:15:33');
 - output: [['1']]
---- ## null or error?
-- Statement: select WEEKOFYEAR('A') from all_types;
-- output: [[null]]
+
+# bug 902168
 ---
-- Statement: select WEEKOFYEAR('1864-02-28') from all_types;
+- Statement: select WEEKOFYEAR('A');
+- output: [[null]]
+
+---
+- Statement: select WEEKOFYEAR('1864-02-28');
 - output: [['8']]
 ---
-- Statement: select WEEKOFYEAR('1900-01-15') from all_types;
+- Statement: select WEEKOFYEAR('1900-01-15');
 - output: [['3']]
 ---
-- Statement: select WEEKOFYEAR('1999-12-31') from all_types;
+- Statement: select WEEKOFYEAR('1999-12-31');
 - output: [[52]]
 ---
-- Statement: select WEEKOFYEAR('1987-03-05') from all_types;
+- Statement: select WEEKOFYEAR('1987-03-05');
 - output: [[10]]
 ---
-- Statement: select WEEKOFYEAR('2000-06-04') from all_types;
+- Statement: select WEEKOFYEAR('2000-06-04');
 - output: [[22]]
 ---
-- Statement: select WEEKOFYEAR('2007-02-03') from all_types;
+- Statement: select WEEKOFYEAR('2007-02-03');
 - output: [[5]]
-#---
-#- Statement: select WEEKOFYEAR('A') from all_types;
-#- output: [[null]]
-#---
-#- Statement: select WEEKOFYEAR(9999999) from all_types;
-#- output: [[null]]
-#   same as week(date, mode 3)
+---
+- Statement:
+- output: !select-engine { sys-mysql: [[null]], newtypes: [[null]], all: [[14]] }
+
+---
+- Message: Skipping tests due to bug1084613
 #---
 #- Include: all-datetime-schema.yaml
-#---  not relevant conversion?
+#---
 #- Statement: select id,WEEKOFYEAR(time_field),WEEKOFYEAR from datetime_matrix where WEEKOFYEAR(time_field) is not null;
 #- row_count: 0
 #---
@@ -47,4 +47,5 @@
 #---
 #- Statement: select id,WEEKOFYEAR(date_field), WEEKOFYEAR from datetime_matrix where WEEKOFYEAR(date_field) <> WEEKOFYEAR and (expected_day < 28);
 #- row_count: 0
+
 ...
