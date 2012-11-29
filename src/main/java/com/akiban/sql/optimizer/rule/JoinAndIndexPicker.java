@@ -482,17 +482,25 @@ public class JoinAndIndexPicker extends BaseRule
     }
 
     static class ValuesPlanClass extends PlanClass {
-        ValuesPlan plan;
+        ValuesPlan plan, nestedPlan;
 
         public ValuesPlanClass(JoinEnumerator enumerator, long bitset, 
-                               ExpressionsSource values) {
+                               ExpressionsSource values, Picker picker) {
             super(enumerator, bitset);
-            this.plan = new ValuesPlan(values, new CostEstimate(values.getExpressions().size(), 0));
+            CostEstimator costEstimator = picker.costEstimator;
+            this.plan = new ValuesPlan(values, costEstimator.costValues(values, false));
+            // Nested also needs to check the join condition with Select.
+            this.nestedPlan = new ValuesPlan(values, costEstimator.costValues(values, true));
         }
 
         @Override
         public Plan bestPlan(Collection<JoinOperator> outsideJoins) {
             return plan;
+        }
+
+        @Override
+        public Plan bestNestedPlan(PlanClass outerPlan, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
+            return nestedPlan;
         }
     }
 
@@ -664,7 +672,7 @@ public class JoinAndIndexPicker extends BaseRule
                 return new SubqueryPlanClass(this, s, subquery, subpicker);
             }
             if (joinable instanceof ExpressionsSource) {
-                return new ValuesPlanClass(this, s, (ExpressionsSource)joinable);
+                return new ValuesPlanClass(this, s, (ExpressionsSource)joinable, picker);
             }
             throw new AkibanInternalException("Unknown join element: " + joinable);
         }

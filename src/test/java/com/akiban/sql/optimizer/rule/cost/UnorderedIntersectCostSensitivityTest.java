@@ -125,7 +125,7 @@ public class UnorderedIntersectCostSensitivityTest
             selectCost *= (double) limit / rows;
             rows = limit;
         }
-        double outputCost = selectCost + costModel.project(tRowType, (int) rows);
+        double outputCost = selectCost + costModel.project(tRowType.nFields(), (int) rows);
         return outputCost;
     }
 
@@ -155,7 +155,7 @@ public class UnorderedIntersectCostSensitivityTest
             filterA *= (double) limit / rows;
             rows = limit;
         }
-        double outputCost = bFilter + cFilter + filterA + costModel.project(tRowType, (int) rows);
+        double outputCost = bFilter + cFilter + filterA + costModel.project(tRowType.nFields(), (int) rows);
 /*
         System.out.println(String.format(
             "OF: limit = %s, a = %s, b = %s: post-filter: %s",
@@ -191,7 +191,7 @@ public class UnorderedIntersectCostSensitivityTest
             ? costModel.sortWithLimit(rows, 1)
             : costModel.sort(rows, false);
         // Project as many rows as required by limit
-        double outputCost = bFilter + cFilter + probeA + sort + costModel.project(tRowType, min(rows, limit));
+        double outputCost = bFilter + cFilter + probeA + sort + costModel.project(tRowType.nFields(), min(rows, limit));
 /*
         System.out.println(String.format(
             "IPS: limit = %s, a = %s, b = %s: post-filter: %s",
