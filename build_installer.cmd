@@ -57,21 +57,23 @@ IF ERRORLEVEL 1 GOTO EOF
 DEL target\*-sources.jar
 CD ..
 
-IF NOT DEFINED PLUGINS_BRANCH SET PLUGINS_BRANCH=https://github.com/akiban/akiban-server-plugins.git
-git clone %PLUGINS_BRANCH akiban-server-plugins
+IF NOT DEFINED PLUGINS_BRANCH SET PLUGINS_BRANCH=https://github.com/akiban/akiban-server-plugins/archive/master.zip
+curl -kLo server-plugins.zip %PLUGINS_BRANCH
 IF ERRORLEVEL 1 GOTO EOF
-CD akiban-server-plugins
+7z x server-pluigins.zip
+CD akiban-server-plugins-master
 call -Dmaven.test.skip=true clean install
 IF ERRORLEVEL 1 GOTO EOF
 CD http-conductor
 mvn -Dmaven.test.skip=true assembly:single
 IF ERRORLEVEL 1 GOTO EOF
-CD ..
+CD ..\..
 
-IF NOT DEFINED REST_BRANCH SET REST_BRANCH=https://github.com/akiban/akiban-rest.git
-git clone %REST_BRANCH akiban-rest
+IF NOT DEFINED REST_BRANCH SET REST_BRANCH=https://github.com/akiban/akiban-rest/archive/plugin.zip
+curl -kLo rest.zip %REST_BRANCH
+7z x rest.zip
 IF ERRORLEVEL 1 GOTO EOF
-CD akiban-rest
+CD akiban-rest-plugin
 mvn -Dmaven.test.skip=true clean package
 IF ERRORLEVEL 1 GOTO EOF
 CD ..
