@@ -1,6 +1,4 @@
 # Test the WEEK() function
-# BUG: 902169, 902168
-# Status: triaged
 ---
 - Include: all-types-schema.yaml
 ---
@@ -29,4 +27,56 @@
 ---
 - Statement: select WEEK('2000-06-04') from all_types;
 - output: [[23]]
+
+# bug 902168
+---
+- Statement: select WEEK('A') from all_types;
+- output: [[null]]
+
+# bug 902169
+---
+- Statement: select WEEK(999999) from all_types;
+- output: !select-engine { sys-mysql: [[null]], newtypes: [[null]], all: [[4]] }
+
+# bug 902243
+---
+- Statement: select week('2008-02-20', 0), week('2008-02-20 22:03:44', 1) from all_types;
+- output: [[7,8]]
+---
+- Statement: select week('2008-02-20', '0'), week('2008-02-20 22:03:44', '1') from all_types;
+- output: [[7,8]]
+
+# bug 902243
+---
+- Statement: select week('2008-02-20', 0) from all_types;
+- output: [[7]]
+---
+- Statement: select week('2008-02-20', '0') from all_types;
+- output: [[7]]
+---
+- Statement: select week('2008-02-20', 1) from all_types;
+- output: [[8]]
+---
+- Statement: select week('2008-02-20', 2) from all_types;
+- output: [[7]]
+---
+- Statement: select week(?, ?) from all_types;
+- params: [['2008-02-20', 2]]
+- output: [[7]]
+
+# bug1084613
+---
+- Message: WEEK invalid range tests disabled due to bug1084613
+#---
+#- Include: all-datetime-schema.yaml
+#---
+#- Statement: select id,WEEK(time_field) from datetime_matrix where WEEK(time_field) is not null;
+#- row_count: 0
+#---
+#- Statement: select id,WEEK(timestamp_field),WEEKOFYEAR from datetime_matrix where WEEK(timestamp_field) <> WEEKOFYEAR;
+#- row_count: 0
+#---
+#- Statement: select id,WEEK(date_field), WEEKOFYEAR from datetime_matrix where WEEK(date_field) <> WEEKOFYEAR;
+#- row_count: 0
+
 ...
