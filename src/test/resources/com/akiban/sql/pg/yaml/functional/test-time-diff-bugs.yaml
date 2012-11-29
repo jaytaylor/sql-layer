@@ -1,6 +1,11 @@
-# test bugs 921127, 921124 in types3
+# Test TIMEDIFF related bugs fixed in  types3
+
 ---
 - Newtypes: true
+---
+- Include: all-types-schema.yaml
+
+# bug 921124
 ---
 - Statement: SELECT TIMEDIFF('12:30:14', 'TIME TO GO');
 - output: [['12:30:14']]
@@ -10,6 +15,44 @@
 ---
 - Statement: select timediff('12:30:10', -1712);
 - output: [['12:47:22']]
+
+# bug 903498 (TIMESTAMP - TIME is invalid)
+---
+- Statement: INSERT INTO all_types (timestamp_field, time_field) VALUES ('2000-01-01 01:05:06', '15:15:15')
+---
+- Statement: select TIMEDIFF(timestamp_field, ?) from all_types;
+- params: [['00:00:01']]
+- output: [[null]]
+
+# bug 921088
+---
+- Statement: select 1 from all_types WHERE TIMEDIFF(time_field, ?) != '01:01:23';
+- params: [['00:00:01']]
+- output: [['1']]
+
+# bug 921095
+---
+- Message: Skipping tests due to bug921095
+#---
+#- Statement: select TIMEDIFF('00:00:01', '12:34:55');
+#- output: [['-12:34:54']]
+#---
+#- Statement: select TIMEDIFF('12:34:55', '23:59:59');
+#- output: [['-11:25:04']]
+
+# bug 921122
+---
+- Statement: select TIMEDIFF('12:34:55', '17.495');
+- output: [[!re '12:34:55([.]\d+)?']]
+
+# bug 921117
+---
+- Statement: select TIMEDIFF('12:34:55', '2012-04-05 01:59:59');
+- output: [['null']]
+---
+- Statement: select TIMEDIFF('2012-04-05 13:59:59', '03:34:55');
+- output: [['null']]
+
 ---
 - Newtypes: null
 ...
