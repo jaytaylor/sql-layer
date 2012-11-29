@@ -281,7 +281,6 @@
 - Statement: INSERT INTO all_types (float_field) VALUES (3.4028234663852886E38)
 ---
 - Statement: SELECT sum(float_field) FROM all_types
-#- output: [[Infinity]]
 - output: [[6.805646932770577E38]]
 ---
 - Statement: DELETE FROM all_types
@@ -322,8 +321,6 @@
 
 ---
 - Statement: DELETE FROM all_types
-
-# Not clear yet how real overflow should behave
 
 # Test NaN
 ---
