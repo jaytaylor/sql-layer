@@ -100,7 +100,7 @@ ECHO -tests.jar >target\xclude
 ECHO -sources.jar >>target\xclude
 XCOPY target\akiban-server-*.jar target\isstage\lib /EXCLUDE:target\xclude
 COPY target\akiban-server-plugins-master\http-conductor\target\server-plugins-http-conductor*with-dependencies.jar target\isstage\lib\plugins
-COPY akiban-rest-plugin\target\*with-dependencies.jar target\isstage\lib\plugins
+COPY target\akiban-rest-plugin\target\*with-dependencies.jar target\isstage\lib\plugins
 COPY target\dependency\* target\isstage\lib\server
 XCOPY target\client-tools\target\akiban-client-tools-*.jar target\isstage\lib /EXCLUDE:target\xclude
 COPY target\client-tools\target\dependency\* target\isstage\lib\client
