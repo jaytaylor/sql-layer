@@ -202,7 +202,7 @@ SET JVM_OPTS=%JVM_OPTS% -Dakserver.config_dir="%AKIBAN_CONF%"
 SET JVM_OPTS=%JVM_OPTS% -Dservices.config="%AKIBAN_CONF%\config\services-config.yaml"
 SET JVM_OPTS=%JVM_OPTS% -Dlog4j.configuration="file:%AKIBAN_LOGCONF%"
 SET JVM_OPTS=%JVM_OPTS% -ea
-SET JVM_OPTS=%JVM_OPTS% -Dakiban.home=%AKIBAN_HOME_DIR%
+SET JVM_OPTS=%JVM_OPTS% -Dakiban.home="%AKIBAN_HOME_DIR%"
 IF DEFINED MAX_HEAP_SIZE SET JVM_OPTS=%JVM_OPTS% -Xms%MAX_HEAP_SIZE%-Xmx%MAX_HEAP_SIZE%
 IF "%VERB%"=="window" GOTO WINDOW_CMD
 java %JVM_OPTS% -cp "%CLASSPATH%" com.akiban.server.AkServer
