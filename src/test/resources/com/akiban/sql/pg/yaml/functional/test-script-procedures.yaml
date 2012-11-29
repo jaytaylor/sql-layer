@@ -51,4 +51,12 @@
 ---
 - Statement: CALL no_such_proc()
 - error: [42519]
+---
+- Statement: DROP PROCEDURE test_f1;
+---
+- Statement: DROP PROCEDURE test_b1;
+---
+- Statement: DROP PROCEDURE test_b2;
+---
+- Statement: DROP PROCEDURE test_b3;
 ...
