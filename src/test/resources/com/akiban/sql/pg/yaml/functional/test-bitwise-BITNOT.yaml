@@ -1,6 +1,4 @@
 # Test the bitwise BITNOT() function
-# Bug(s) 928418: Overflow due to composeType's implementation
-# Status: partially fixed
 ---
 - Properties: sys-mysql
 - suppressed: true
@@ -8,14 +6,16 @@
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (1, 'Level 1');
-#--- #bug 928418: not working now
-#- Statement: SELECT 1 from all_types WHERE BITNOT(?) = 18446744073709551612 ; 
-#- params: [[3]]
-#- output: [[1]]
+# bug928418
+---
+- Statement: SELECT 1 from all_types WHERE BITNOT(?) = 18446744073709551612 ;
+- params: [[3]]
+- output: [[1]]
 ---
 - Statement: SELECT 1 from all_types WHERE 18446744073709551612 = BITNOT(?);
 - params: [[3]]
 - output: [[1]]
+# bug906457
 ---
 - Statement: SELECT BITNOT(?) from all_types;
 - params: [[3]]
