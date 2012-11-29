@@ -111,7 +111,7 @@ FOR %%j IN (lib\akiban-server-*.jar) DO SET JARFILE=%%~nj
 FOR /F "delims=- tokens=3" %%n IN ("%JARFILE%") DO SET VERSION=%%n
 SET INSTALLER=akiban-server-%VERSION%-installer
 
-curl -o procrun.zip -L http://apache.spinellicreations.com/commons/daemon/binaries/windows/commons-daemon-1.0.10-bin-windows.zip
+curl -o procrun.zip -L http://apache.spinellicreations.com/commons/daemon/binaries/windows/commons-daemon-1.0.11-bin-windows.zip
 IF ERRORLEVEL 1 GOTO EOF
 7z x -oprocrun procrun.zip
 IF ERRORLEVEL 1 GOTO EOF
