@@ -99,7 +99,7 @@ pushd target && rm -rf akiban-rest-plugin ; \
     unzip rest.zip && \
     pushd akiban-rest-plugin
 mvn -Dmaven.test.skip=true clean package
-cp $(find . -name '*one-jar.jar') ../../packages-common/plugins
+cp $(find . -name '*with-dependencies.jar') ../../packages-common/plugins
 
 popd && popd
 
