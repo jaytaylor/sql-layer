@@ -26,6 +26,8 @@ in-index: IN that can use index
 
 in-sorted: IN that needs sorting
 
+in-many: IN with lots of values
+
 equals-sorted: Same with = for comparison.
 
 equivalence-1: Equivalence column used in index.
