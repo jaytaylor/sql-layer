@@ -28,6 +28,12 @@ package com.akiban.sql.server;
 
 import com.akiban.ais.model.Parameter;
 import com.akiban.server.error.ExternalRoutineInvocationException;
+import com.akiban.server.explain.Attributes;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Explainable;
+import com.akiban.server.explain.Label;
+import com.akiban.server.explain.PrimitiveExplainer;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
@@ -115,6 +121,14 @@ public class ServerJavaMethod extends ServerJavaRoutine
             }
         }
         return result;
+    }
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context) {
+        Attributes atts = new Attributes();
+        atts.put(Label.PROCEDURE_IMPLEMENTATION, 
+                 PrimitiveExplainer.getInstance(method.toString()));
+        return new ServerCallExplainer(getInvocation(), atts, context);
     }
 
 }

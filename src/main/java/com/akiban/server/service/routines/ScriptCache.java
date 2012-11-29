@@ -355,6 +355,21 @@ public class ScriptCache
         }
 
         @Override
+        public String getEngineName() {
+            return engine.getFactory().getEngineName();
+        }
+
+        @Override
+        public boolean isCompiled() {
+            return false;
+        }
+
+        @Override
+        public boolean isShared() {
+            return false;
+        }
+
+        @Override
         public Bindings getBindings() {
             return engine.getBindings(ScriptContext.ENGINE_SCOPE);
         }
@@ -388,6 +403,21 @@ public class ScriptCache
                 throw new ExternalRoutineInvocationException(routineName, ex);
             }
             this.shared = shared;
+        }
+
+        @Override
+        public String getEngineName() {
+            return compiled.getEngine().getFactory().getEngineName();
+        }
+
+        @Override
+        public boolean isCompiled() {
+            return true;
+        }
+
+        @Override
+        public boolean isShared() {
+            return shared;
         }
 
         @Override
@@ -440,6 +470,21 @@ public class ScriptCache
                 throw new ExternalRoutineInvocationException(routineName, ex);
             }
             invocable = (Invocable)engine;
+        }
+
+        @Override
+        public String getFunctionName() {
+            return function;
+        }
+
+        @Override
+        public String getEngineName() {
+            return ((ScriptEngine)invocable).getFactory().getEngineName();
+        }
+
+        @Override
+        public boolean isCompiled() {
+            return (invocable instanceof Compilable);
         }
 
         @Override

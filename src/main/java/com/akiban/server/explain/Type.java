@@ -72,6 +72,10 @@ public enum Type
     ORDERED(GeneralType.OPERATOR),
     BLOOM_FILTER(GeneralType.OPERATOR),
     
+    // PROCEDURE    
+    //--------------------------------------------------------------------------
+    PROCEDURE(GeneralType.PROCEDURE),
+    
     // ROWTYPE    
     //--------------------------------------------------------------------------
     ROWTYPE(GeneralType.ROWTYPE),
@@ -108,6 +112,7 @@ public enum Type
         AGGREGATOR,
         EXPRESSION,
         OPERATOR,
+        PROCEDURE,
         SCALAR_VALUE,
         ROWTYPE,
         ROW,

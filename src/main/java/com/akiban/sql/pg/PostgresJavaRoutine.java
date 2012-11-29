@@ -39,6 +39,7 @@ import com.akiban.sql.server.ServerJavaRoutine;
 import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
 import com.akiban.server.error.ExternalRoutineInvocationException;
+import com.akiban.server.explain.Explainable;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
@@ -293,5 +294,11 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
         return result;
     }
 
+    public static Explainable explainable(PostgresServerSession server,
+                                          ServerCallInvocation invocation,
+                                          List<ParameterNode> params, int[] paramTypes) {
+        return ((PostgresJavaRoutine)statement(server, invocation, params, paramTypes))
+            .javaRoutine(new PostgresQueryContext(server));
+    }
 
 }

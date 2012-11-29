@@ -26,11 +26,18 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.server.ServerCallExplainer;
 import com.akiban.sql.server.ServerCallInvocation;
 
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.loadableplan.LoadableOperator;
 import com.akiban.qp.loadableplan.LoadablePlan;
+import com.akiban.server.explain.Attributes;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Explainable;
+import com.akiban.server.explain.Label;
+import com.akiban.server.explain.PrimitiveExplainer;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
@@ -43,8 +50,7 @@ import java.util.List;
 public class PostgresLoadablePlan
 {
     public static PostgresStatement statement(PostgresServerSession server, 
-                                              ServerCallInvocation invocation,
-                                              int[] paramTypes) {
+                                              ServerCallInvocation invocation) {
         LoadablePlan<?> loadablePlan = 
             server.getRoutineLoader().loadLoadablePlan(server.getSession(),
                                                        invocation.getRoutineName());
@@ -89,6 +95,22 @@ public class PostgresLoadablePlan
             columnTypes.add(PostgresType.fromDerby(sqlType, akType, tInstance));
         }
         return columnTypes;
+    }
+
+    public static Explainable explainable(PostgresServerSession server, 
+                                          final ServerCallInvocation invocation) {
+        final LoadablePlan<?> loadablePlan = 
+            server.getRoutineLoader().loadLoadablePlan(server.getSession(),
+                                                       invocation.getRoutineName());
+        return new Explainable() {
+                @Override
+                public CompoundExplainer getExplainer(ExplainContext context) {
+                    Attributes atts = new Attributes();
+                    atts.put(Label.PROCEDURE_IMPLEMENTATION, 
+                             PrimitiveExplainer.getInstance(loadablePlan.getClass().getName()));
+                    return new ServerCallExplainer(invocation, atts, context);
+                }
+            };
     }
 
     // All static methods.

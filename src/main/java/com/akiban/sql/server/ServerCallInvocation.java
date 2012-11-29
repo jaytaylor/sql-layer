@@ -34,6 +34,7 @@ import com.akiban.sql.parser.StaticMethodCallNode;
 import com.akiban.sql.parser.ValueNode;
 
 import com.akiban.ais.model.Routine;
+import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
@@ -76,7 +77,8 @@ public class ServerCallInvocation extends ServerRoutineInvocation
             schemaName = server.getDefaultSchemaName();
         }
         Routine routine = server.getAIS().getRoutine(schemaName, routineName);
-        if (routine == null) return null;
+        if (routine == null) 
+            throw new NoSuchRoutineException(schemaName, routineName);
         Object[] constantArgs = null;
         int[] parameterArgs = null;
         JavaValueNode[] margs = methodCall.getMethodParameters();
@@ -168,6 +170,14 @@ public class ServerCallInvocation extends ServerRoutineInvocation
             return 0;
         else
             return constantArgs.length;
+    }
+
+    public int getParameterNumber(int i) {
+        return parameterArgs[i];
+    }
+
+    public Object getConstantValue(int i) {
+        return constantArgs[i];
     }
 
     @Override
