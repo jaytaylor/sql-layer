@@ -1,6 +1,4 @@
 # Test the HOUR() function
-# bug 901875: (fix released)
-# bug 901845: triaged
 ---
 - Include: all-types-schema.yaml
 ---
@@ -143,15 +141,16 @@
 ---
 - Statement: select hour(time_field) from all_types where bigint_field = -99
 - output: [[99]]
-#---
 # bug 901845
-#- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (-999, '-999:04:07')
-#---
-#- Statement: select bigint_field, hour(time_field) from all_types where bigint_field = -999
-#- output: [[-999, 838]]
---- # bug 901875 # command 58
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (-999, '-999:04:07')
+---
+- Statement: select bigint_field, hour(time_field) from all_types where bigint_field = -999
+- output: !select-engine { sys-mysql: [[-999, 838]], newtypes: [[-999, 838]], all: [[-999, null]] }
+# bug 901875
+---
 - Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (838, '838:04:07')
---- #
+---
 - Statement: select bigint_field, hour(time_field) from all_types where bigint_field = 838
 - output: [[838, 838]]
 ---
