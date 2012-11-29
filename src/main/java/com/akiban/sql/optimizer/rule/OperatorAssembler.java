@@ -581,12 +581,7 @@ public class OperatorAssembler extends BaseRule
 
             @Override
             public TPreparedExpression field(RowType rowType, int position) {
-                // if rowType.typeInstanceAt is null, this is either a literal NULL or a paramter whose type isn't
-                // known. The latter should have been prevented from here, so we'll assume a literal NULL. Its value
-                // doesn't matter, so just assume it's a VARCHAR(0).
-                return rowType.typeInstanceAt(position) == null
-                        ? new TNullExpression(MString.VARCHAR.instance(0, true))
-                        : new TPreparedField(rowType.typeInstanceAt(position), position);
+                return new TPreparedField(rowType.typeInstanceAt(position), position);
             }
 
             @Override

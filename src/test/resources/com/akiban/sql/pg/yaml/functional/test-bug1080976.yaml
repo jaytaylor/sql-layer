@@ -4,6 +4,6 @@
 - Statement: select distinct t1.id
              from t1 left outer join t1 child
              on child.parent_id = t1.id
-             and t1.type in ('first', 'second', 'third', 'fourth', 'fifth', 'sixth') where (0 = 1)
+             where (0 = 1)
 - row_count: 0
 ...

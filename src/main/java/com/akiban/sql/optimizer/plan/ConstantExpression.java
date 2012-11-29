@@ -46,6 +46,13 @@ public class ConstantExpression extends BaseExpression
     private Object value;
     private TPreptimeValue preptimeValue;
 
+    public static ConstantExpression typedNull(DataTypeDescriptor sqlType, ValueNode sqlSource, TInstance tInstance) {
+        ConstantExpression result = new ConstantExpression(null, sqlType, AkType.NULL, sqlSource);
+        PValueSource nullSource = PValueSources.getNullSource(tInstance.typeClass().underlyingType());
+        result.preptimeValue = new TPreptimeValue(tInstance, nullSource);
+        return result;
+    }
+
     public ConstantExpression(Object value, 
                               DataTypeDescriptor sqlType, AkType type, ValueNode sqlSource) {
         super(sqlType, type, sqlSource);
