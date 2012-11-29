@@ -66,7 +66,7 @@ CD akiban-server-plugins-master
 call mvn -Dmaven.test.skip=true clean install
 IF ERRORLEVEL 1 GOTO EOF
 CD http-conductor
-mvn -Dmaven.test.skip=true assembly:single
+call mvn -Dmaven.test.skip=true assembly:single
 IF ERRORLEVEL 1 GOTO EOF
 CD ..\..
 
@@ -99,8 +99,8 @@ COPY windows\%TARGET%\* target\isstage\config
 ECHO -tests.jar >target\xclude
 ECHO -sources.jar >>target\xclude
 XCOPY target\akiban-server-*.jar target\isstage\lib /EXCLUDE:target\xclude
-COPY target\server-plugins-http-conductor*with-dependencies.jar target\isstage\lib\plugins
-COPY target\*one-jar.jar target\isstage\lib\plugins
+COPY target\akiban-server-plugins-master\http-conductor\target\server-plugins-http-conductor*with-dependencies.jar target\isstage\lib\plugins
+COPY akiban-rest-plugin\target\*one-jar.jar target\isstage\lib\plugins
 COPY target\dependency\* target\isstage\lib\server
 XCOPY target\client-tools\target\akiban-client-tools-*.jar target\isstage\lib /EXCLUDE:target\xclude
 COPY target\client-tools\target\dependency\* target\isstage\lib\client
