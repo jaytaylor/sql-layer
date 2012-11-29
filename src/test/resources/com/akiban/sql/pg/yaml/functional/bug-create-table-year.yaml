@@ -1,7 +1,0 @@
-# Creating a table with a year field produces a parse exception error
-# code rather than an unsupported data type one.
-# Fix committed/released
----
-- CreateTable: t (year_field year)
-- error: [50008]
-...
