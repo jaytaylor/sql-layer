@@ -76,6 +76,7 @@ popd && popd
 
 # Add akiban-server-plugins
 mkdir -p packages-common/plugins
+rm packages-common/plugins/* # in case this existed from an old build
 
 [ ! -z "$PLUGINS_BRANCH" ] || PLUGINS_BRANCH="https://github.com/akiban/akiban-server-plugins/archive/master.zip"
 echo "Using akiban-server-plugins git branch: ${PLUGINS_BRANCH}"
