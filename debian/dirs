@@ -1,6 +1,7 @@
 usr/share/akiban
 usr/share/akiban/server
 usr/share/akiban/client
+usr/share/akiban/plugins
 etc/akiban
 etc/akiban/config
 var/lib/akiban

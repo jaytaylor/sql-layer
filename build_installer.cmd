@@ -55,12 +55,38 @@ CD client-tools
 call mvn -Dmaven.test.skip clean install
 IF ERRORLEVEL 1 GOTO EOF
 DEL target\*-sources.jar
+CD ..
+
+IF NOT DEFINED PLUGINS_BRANCH SET PLUGINS_BRANCH=https://github.com/akiban/akiban-server-plugins/archive/master.zip
+curl -kLo server-plugins.zip %PLUGINS_BRANCH%
+IF ERRORLEVEL 1 GOTO EOF
+call 7z x server-plugins.zip
+IF ERRORLEVEL 1 GOTO EOF
+CD akiban-server-plugins-master
+call mvn -Dmaven.test.skip=true clean install
+IF ERRORLEVEL 1 GOTO EOF
+CD http-conductor
+call mvn -Dmaven.test.skip=true assembly:single
+IF ERRORLEVEL 1 GOTO EOF
 CD ..\..
+
+IF NOT DEFINED REST_BRANCH SET REST_BRANCH=https://github.com/akiban/akiban-rest/archive/plugin.zip
+curl -kLo rest.zip %REST_BRANCH%
+IF ERRORLEVEL 1 GOTO EOF
+call 7z x rest.zip
+IF ERRORLEVEL 1 GOTO EOF
+CD akiban-rest-plugin
+call mvn -Dmaven.test.skip=true clean package
+IF ERRORLEVEL 1 GOTO EOF
+CD ..
+
+CD ..
 
 MD target\isstage
 MD target\isstage\bin
 MD target\isstage\config
 MD target\isstage\lib
+MD target\isstage\lib\plugins
 MD target\isstage\lib\server
 MD target\isstage\lib\client
 MD target\isstage\procrun
@@ -73,6 +99,8 @@ COPY windows\%TARGET%\* target\isstage\config
 ECHO -tests.jar >target\xclude
 ECHO -sources.jar >>target\xclude
 XCOPY target\akiban-server-*.jar target\isstage\lib /EXCLUDE:target\xclude
+COPY target\akiban-server-plugins-master\http-conductor\target\server-plugins-http-conductor*with-dependencies.jar target\isstage\lib\plugins
+COPY target\akiban-rest-plugin\target\*with-dependencies.jar target\isstage\lib\plugins
 COPY target\dependency\* target\isstage\lib\server
 XCOPY target\client-tools\target\akiban-client-tools-*.jar target\isstage\lib /EXCLUDE:target\xclude
 COPY target\client-tools\target\dependency\* target\isstage\lib\client
@@ -83,7 +111,7 @@ FOR %%j IN (lib\akiban-server-*.jar) DO SET JARFILE=%%~nj
 FOR /F "delims=- tokens=3" %%n IN ("%JARFILE%") DO SET VERSION=%%n
 SET INSTALLER=akiban-server-%VERSION%-installer
 
-curl -o procrun.zip -L http://apache.spinellicreations.com/commons/daemon/binaries/windows/commons-daemon-1.0.10-bin-windows.zip
+curl -o procrun.zip -L http://apache.spinellicreations.com/commons/daemon/binaries/windows/commons-daemon-1.0.11-bin-windows.zip
 IF ERRORLEVEL 1 GOTO EOF
 7z x -oprocrun procrun.zip
 IF ERRORLEVEL 1 GOTO EOF

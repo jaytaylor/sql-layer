@@ -74,6 +74,36 @@ cp target/dependency/* ../../packages-common/client/
 
 popd && popd
 
+# Add akiban-server-plugins
+mkdir -p packages-common/plugins
+rm packages-common/plugins/* # in case this existed from an old build
+
+[ ! -z "$PLUGINS_BRANCH" ] || PLUGINS_BRANCH="https://github.com/akiban/akiban-server-plugins/archive/master.zip"
+echo "Using akiban-server-plugins git branch: ${PLUGINS_BRANCH}"
+pushd target && rm -rf akiban-server-plugins-master ; \
+    rm akiban-server-plugins.zip ; \
+    curl -kLo akiban-server-plugins.zip ${PLUGINS_BRANCH} && \
+    unzip akiban-server-plugins.zip && \
+    pushd akiban-server-plugins-master
+mvn -Dmaven.test.skip=true clean install && \
+    pushd http-conductor && mvn -Dmaven.test.skip=true assembly:single && popd
+cp $(find . -name 'server-plugins-http-conductor*with-dependencies.jar') ../../packages-common/plugins
+
+popd && popd
+
+# Add akiban-rest
+[ ! -z "$REST_BRANCH" ] || REST_BRANCH="https://github.com/akiban/akiban-rest/archive/plugin.zip"
+echo "Using akiban-rest git branch: ${REST_BRANCH}"
+pushd target && rm -rf akiban-rest-plugin ; \
+    rm rest.zip ; \
+    curl -kL -o rest.zip ${REST_BRANCH} && \
+    unzip rest.zip && \
+    pushd akiban-rest-plugin
+mvn -Dmaven.test.skip=true clean package
+cp $(find . -name '*with-dependencies.jar') ../../packages-common/plugins
+
+popd && popd
+
 if [ -z "$2" ] ; then
 	epoch=`date +%s`
 else
@@ -86,6 +116,8 @@ if [ ${platform} == "debian" ]; then
     mvn -Dmaven.test.skip.exec clean install -DBZR_REVISION=${bzr_revno}
     mkdir -p ${platform}/server/
     cp ./target/dependency/* ${platform}/server/
+    mkdir -p ${platform}/plugins/
+    cp packages-common/plugins/* ${platform}/plugins
     debuild
 elif [ ${platform} == "redhat" ]; then
     mkdir -p ${PWD}/redhat/rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
@@ -137,6 +169,7 @@ elif [ ${platform} == "macosx" ]; then
     client_jar=packages-common/akiban-client-tools-*.jar
     client_deps=packages-common/client
     akdump_bin=packages-common/akdump
+    plugins_dir=packages-common/plugins
     mac_app='target/Akiban Server.app'
     mac_dmg='target/Akiban Server.dmg'
     inst_temp=/tmp/inst_temp
@@ -167,6 +200,7 @@ elif [ ${platform} == "macosx" ]; then
     cp $client_deps/* "$mac_app/Contents/Resources/tools/lib/client/"
     mkdir -p "$mac_app/Contents/Resources/tools/bin"
     cp $akdump_bin "$mac_app/Contents/Resources/tools/bin/"
+    cp -R $plugins_dir "$mac_app/Contents/Resources/plugins"
     # Wildcards are not supported in ClassPath key; expand now.
     CLASSPATH=$(cd "$mac_app/Contents/Resources/Java"; echo akiban-server-*.jar server/*.jar | sed 's| |:$JAVAROOT/|g')
     sed "s|@CLASSPATH@|\$JAVAROOT/$CLASSPATH|" macosx/Contents/Info.plist >"$mac_app/Contents/Info.plist"
