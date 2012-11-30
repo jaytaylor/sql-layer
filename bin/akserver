@@ -159,6 +159,7 @@ launch_service()
             exec $JAVA $JVM_OPTS $akiban_parms -cp "$CLASSPATH" $main_class
         fi
     else
+        echo ${AKIBAN_HOME}
         if [ "$profile" ]
         then
             exec $profile "$JVM_OPTS $akiban_parms -cp $CLASSPATH" $JAVA $main_class <&- &
