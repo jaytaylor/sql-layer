@@ -7,7 +7,7 @@
     <key>CFBundleIdentifier</key>
     <string>com.akiban.server</string>
     <key>CFBundleVersion</key>
-    <string>1.4.4</string>
+    <string>1.4.5</string>
     <key>CFBundleAllowMixedLocalizations</key>
     <string>true</string>
     <key>CFBundleExecutable</key>
@@ -19,7 +19,7 @@
     <key>CFBundleSignature</key>
     <string>????</string>
     <key>CFBundleGetInfoString</key>
-    <string>Akiban Server 1.4.4</string>
+    <string>Akiban Server 1.4.5</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleIconFile</key>
