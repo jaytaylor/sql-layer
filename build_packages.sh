@@ -69,7 +69,7 @@ pushd target && rm -rf akiban-client-tools && \
 mvn  -Dmaven.test.skip clean install
 rm -f target/*-tests.jar target/*-sources.jar
 cp bin/akdump ../../packages-common/
-cp target/akiban-client-tools-*.jar ../../packages-common/
+cp target/akiban-client-tools-1.3.3.jar ../../packages-common/
 cp target/dependency/* ../../packages-common/client/
 
 popd && popd
@@ -166,7 +166,7 @@ elif [ ${platform} == "binary" ]; then
 elif [ ${platform} == "macosx" ]; then
     server_jar=target/akiban-server-*.jar
     server_deps=target/dependency
-    client_jar=packages-common/akiban-client-tools-*.jar
+    client_jar=packages-common/akiban-client-tools-1.3.3.jar
     client_deps=packages-common/client
     akdump_bin=packages-common/akdump
     plugins_dir=packages-common/plugins
