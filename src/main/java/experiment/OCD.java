@@ -118,6 +118,7 @@ public class OCD
         }
         while (newThreads < threads.size()) {
             QueryThread queryThread = threads.remove(threads.size() - 1);
+            queryThread.go();
             queryThread.shutdown();
             queryThread.join();
         }
