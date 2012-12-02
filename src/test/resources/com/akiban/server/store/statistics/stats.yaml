@@ -16,6 +16,10 @@ Statistics:
     eq: 1
     key: ["\x81"]
     lt: 300
+  - distinct: 0
+    eq: 1
+    key: ["\u2603"]
+    lt: 300
 Table: parent
 Timestamp: 2010-01-01T00:00:00Z
 ---
