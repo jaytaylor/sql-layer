@@ -366,12 +366,15 @@ public class IndexStatisticsYamlLoader
                     if (convertToType(akType)) {
                         keyValue = PValueSources.toObject(keySource, akType);
                     }
+                    else if (keySource.isNull()) {
+                        keyValue = null;
+                    }
                     else {
                         StringBuilder str = new StringBuilder();
                         tInstance.format(keySource, AkibanAppender.of(str));
                         keyValue = str.toString();
                     }
-                    if (!willUseBinaryTag(keyValue)) {
+                    if (willUseBinaryTag(keyValue)) {
                         // Otherwise it would be ambiguous when reading.
                         keyValue = getRawSegment(key, i);
                     }
@@ -410,7 +413,7 @@ public class IndexStatisticsYamlLoader
                     valueTarget.expectType(convertToType(akType) ? akType : AkType.VARCHAR);
                     Converters.convert(keySource, valueTarget);
                     keyValue = valueTarget.lastConvertedValue();
-                    if (!willUseBinaryTag(keyValue)) {
+                    if (willUseBinaryTag(keyValue)) {
                         // Otherwise it would be ambiguous when reading.
                         keyValue = getRawSegment(key, i);
                     }
@@ -462,7 +465,7 @@ public class IndexStatisticsYamlLoader
         if (value instanceof byte[])
             return true;
         if (value instanceof String)
-            return !org.yaml.snakeyaml.reader.StreamReader.NON_PRINTABLE
+            return org.yaml.snakeyaml.reader.StreamReader.NON_PRINTABLE
                 .matcher((String)value).find();
         return false;
     }
