@@ -44,7 +44,14 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 
 import com.akiban.server.error.AkibanInternalException;
@@ -181,7 +188,42 @@ public class IndexStatisticsYamlLoader
             firstSpatialColumn = index.firstSpatialArgument();
         }
         key.clear();
-        if (false) {
+        if (Types3Switch.ON) {
+            PersistitKeyPValueTarget keyTarget = new PersistitKeyPValueTarget();
+            keyTarget.attach(key);
+            for (int i = 0; i < columnCount; i++) {
+                TInstance tInstance;
+                AkType akType; 
+                AkCollator collator;
+                if (i == firstSpatialColumn) {
+                    tInstance = MNumeric.BIGINT.instance(true);
+                    akType = AkType.LONG;
+                    collator = null;
+                }
+                else {
+                    int offset = i;
+                    if (i > firstSpatialColumn) {
+                        offset += index.dimensions() - 1;
+                    }
+                    Column column = index.getKeyColumns().get(offset).getColumn();
+                    tInstance = column.tInstance();
+                    akType = column.getType().akType();
+                    collator = column.getCollator();
+                }
+                // For example, for DECIMAL, values[i] will be a
+                // String, pvalue will be a its VARCHAR, and pvalue2
+                // will be a BigDecimalWrapper, which only
+                // MBigDecimal.writeCollating knows how to unwrap into
+                // a Key.
+                TPreptimeValue pvalue = PValueSources.fromObject(values.get(i), akType);
+                TExecutionContext context = new TExecutionContext(null,
+                                                                  Collections.singletonList(pvalue.instance()),
+                                                                  tInstance,
+                                                                  null, null, null, null);
+                PValue pvalue2 = new PValue(tInstance.typeClass().underlyingType());
+                tInstance.typeClass().fromObject(context, pvalue.value(), pvalue2);
+                tInstance.writeCollating(pvalue2, keyTarget);
+            }
         }
         else {
             FromObjectValueSource valueSource = new FromObjectValueSource();
@@ -266,7 +308,36 @@ public class IndexStatisticsYamlLoader
             firstSpatialColumn = index.firstSpatialArgument();
         }
         List<Object> result = new ArrayList<Object>(columnCount);
-        if (false) {
+        if (Types3Switch.ON) {
+            for (int i = 0; i < columnCount; i++) {
+                TInstance tInstance;
+                AkType akType; 
+                if (i == firstSpatialColumn) {
+                    tInstance = MNumeric.BIGINT.instance(true);
+                    akType = AkType.LONG;
+                }
+                else {
+                    int offset = i;
+                    if (i > firstSpatialColumn) {
+                        offset += index.dimensions() - 1;
+                    }
+                    Column column = index.getKeyColumns().get(offset).getColumn();
+                    tInstance = column.tInstance();
+                    akType = column.getType().akType();
+                }
+                Object keyValue;
+                PersistitKeyPValueSource keySource = new PersistitKeyPValueSource(tInstance);
+                keySource.attach(key, i, tInstance);
+                if (convertToType(akType)) {
+                    keyValue = PValueSources.toObject(keySource, akType);
+                }
+                else {
+                    StringBuilder str = new StringBuilder();
+                    tInstance.format(keySource, AkibanAppender.of(str));
+                    keyValue = str.toString();
+                }
+                result.add(keyValue);
+            }
         }
         else {
             PersistitKeyValueSource keySource = new PersistitKeyValueSource();
