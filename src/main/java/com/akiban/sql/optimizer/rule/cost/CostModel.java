@@ -105,9 +105,9 @@ public class CostModel
         return nRows * (SELECT_PER_ROW + EXPRESSION_PER_FIELD);
     }
 
-    public double project(RowType rowType, int nRows)
+    public double project(int nFields, int nRows)
     {
-        return nRows * (PROJECT_PER_ROW + rowType.nFields() * EXPRESSION_PER_FIELD);
+        return nRows * (PROJECT_PER_ROW + nFields * EXPRESSION_PER_FIELD);
     }
 
     public double distinct(int nRows)

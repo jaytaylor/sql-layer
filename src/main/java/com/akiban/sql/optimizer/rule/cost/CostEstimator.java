@@ -992,6 +992,15 @@ public abstract class CostEstimator implements TableRowCounts
         return new CostEstimate(nrows, model.fullGroupScan(schema.userTableRowType(root)));
     }
 
+    public CostEstimate costValues(ExpressionsSource values, boolean selectToo) {
+        int nfields = values.nFields();
+        int nrows = values.getExpressions().size();
+        double cost = model.project(nfields, nrows);
+        if (selectToo)
+            cost += model.select(nrows);
+        return new CostEstimate(nrows, cost);
+    }
+
     public CostEstimate costBloomFilter(CostEstimate loaderCost,
                                         CostEstimate inputCost,
                                         CostEstimate checkCost,
