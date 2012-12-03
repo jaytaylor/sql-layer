@@ -1657,7 +1657,7 @@ class YamlTester {
     }
 
     /** An assertion error that includes context information. */
-    class ContextAssertionError extends AssertionError {
+    private class ContextAssertionError extends AssertionError {
 	ContextAssertionError(String failedStatement, String message) {
 	    super(context(failedStatement) + message);
 	}
