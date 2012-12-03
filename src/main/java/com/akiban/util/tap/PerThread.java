@@ -105,8 +105,9 @@ abstract class PerThread extends Tap
     {
         Map<String, TapReport> cumulativeReports = new HashMap<String, TapReport>();
         for (Tap tap : threadMap.values()) {
-            assert tap.getReports() != null; // because tap is not a Dispatch or Null.
-            for (TapReport tapReport : tap.getReports()) {
+            TapReport[] tapReports = tap.getReports();
+            assert tapReports != null; // because tap is not a Dispatch or Null.
+            for (TapReport tapReport : tapReports) {
                 String tapName = tapReport.getName();
                 TapReport cumulativeReport = cumulativeReports.get(tapName);
                 if (cumulativeReport == null) {
@@ -219,6 +220,14 @@ abstract class PerThread extends Tap
     
     private static class Recursive extends PerThread
     {
+        // Tap interface
+
+        @Override
+        public boolean isSubsidiary()
+        {
+            return true;
+        }
+
         // PerThread interface
 
         Tap threadTap()

@@ -42,6 +42,13 @@ public class RecursiveTapTest
         Tap.DISPATCHES.clear();
         createTaps();
     }
+
+    @Test
+    public void testTapStructure()
+    {
+        assertTrue(a.internal() instanceof Dispatch);
+        assertTrue(b.internal() instanceof Dispatch);
+    }
     
     @Test
     public void testEnableRoot() throws InterruptedException
@@ -197,7 +204,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(2, 3, 1, 2);
+        expect(2, 2, 3, 1, 2);
         enableTaps();
         aba();
     }
@@ -223,7 +230,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(1, 1, 1, 2);
+        expect(2, 1, 1, 1, 2);
         enableTaps();
         aba();
     }
@@ -249,7 +256,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(1, 1, 0, 0);
+        expect(2, 1, 1, 0, 0);
         enableTaps();
         aba();
     }
@@ -275,7 +282,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(0, 0, 0, 0);
+        expect(2, 0, 0, 0, 0);
         enableTaps();
         aba();
     }
@@ -301,7 +308,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(0, 0, 0, 0);
+        expect(2, 0, 0, 0, 0);
         enableTaps();
         aba();
     }
@@ -327,7 +334,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(0, 0, 0, 0);
+        expect(1, 0, 0, 0, 0);
         enableTaps();
         aba();
     }
@@ -353,7 +360,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */ enableTaps();
-        expect(0, 0, 0, 0);
+        expect(1, 0, 0, 0, 0);
         enableTaps();
         aba();
     }
@@ -379,7 +386,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(1, 1, 1, 2);
+        expect(2, 1, 1, 1, 2);
         enableTaps();
         aba();
     }
@@ -405,7 +412,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(1, 1, 0, 0);
+        expect(2, 1, 1, 0, 0);
         enableTaps();
         aba();
     }
@@ -431,7 +438,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(0, 0, 0, 0);
+        expect(2, 0, 0, 0, 0);
         enableTaps();
         aba();
     }
@@ -457,7 +464,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(0, 0, 0, 0);
+        expect(2, 0, 0, 0, 0);
         enableTaps();
         aba();
     }
@@ -483,7 +490,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(0, 0, 0, 0);
+        expect(1, 0, 0, 0, 0);
         enableTaps();
         aba();
     }
@@ -509,7 +516,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */ enableTaps();
-        expect(0, 0, 0, 0);
+        expect(1, 0, 0, 0, 0);
         enableTaps();
         aba();
     }
@@ -535,7 +542,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(1, 1, 0, 0);
+        expect(2, 1, 1, 0, 0);
         enableTaps();
         aba();
     }
@@ -561,7 +568,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(0, 0, 0, 0);
+        expect(2, 0, 0, 0, 0);
         enableTaps();
         aba();
     }
@@ -587,7 +594,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(0, 0, 0, 0);
+        expect(2, 0, 0, 0, 0);
         enableTaps();
         aba();
     }
@@ -613,7 +620,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(0, 0, 0, 0);
+        expect(2, 0, 0, 0, 0);
         enableTaps();
         aba();
     }
@@ -639,7 +646,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */ enableTaps();
-        expect(0, 0, 0, 0);
+        expect(2, 0, 0, 0, 0);
         enableTaps();
         aba();
     }
@@ -665,7 +672,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(0, 0, 0, 0);
+        expect(2, 0, 0, 0, 0);
         enableTaps();
         aba();
     }
@@ -691,7 +698,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(0, 0, 0, 0);
+        expect(2, 0, 0, 0, 0);
         enableTaps();
         aba();
     }
@@ -717,7 +724,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(0, 0, 0, 0);
+        expect(2, 0, 0, 0, 0);
         enableTaps();
         aba();
     }
@@ -743,7 +750,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */ enableTaps();
-        expect(0, 0, 0, 0);
+        expect(2, 0, 0, 0, 0);
         enableTaps();
         aba();
     }
@@ -769,7 +776,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(0, 0, 0, 0);
+        expect(2, 0, 0, 0, 0);
         enableTaps();
         aba();
     }
@@ -795,7 +802,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(0, 0, 0, 0);
+        expect(2, 0, 0, 0, 0);
         enableTaps();
         aba();
     }
@@ -821,7 +828,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */ enableTaps();
-        expect(0, 0, 0, 0);
+        expect(2, 0, 0, 0, 0);
         enableTaps();
         aba();
     }
@@ -847,7 +854,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(0, 0, 0, 0);
+        expect(2, 0, 0, 0, 0);
         enableTaps();
         aba();
     }
@@ -873,7 +880,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */ enableTaps();
-        expect(0, 0, 0, 0);
+        expect(2, 0, 0, 0, 0);
         enableTaps();
         aba();
     }
@@ -899,7 +906,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */ disableTaps(); enableTaps();
-        expect(0, 0, 0, 0);
+        expect(2, 0, 0, 0, 0);
     }
 
     private void aba() throws InterruptedException
@@ -915,7 +922,7 @@ public class RecursiveTapTest
             b.out();
         sleep();
         a.out();
-        expect(2, 3, 1, 2);
+        expect(2, 2, 3, 1, 2);
     }
 
     private void createTaps()
@@ -925,10 +932,12 @@ public class RecursiveTapTest
         enableTaps();
     }
 
-    private void expect(int aCount, int aTicks, int bCount, int bTicks)
+    // nTaps: number of taps touched (via in or out) while taps are enabled. The root tap (a) is enabled even if
+    // not touched.
+    private void expect(int nTaps, int aCount, int aTicks, int bCount, int bTicks)
     {
         TapReport[] tapReports = Tap.getReport(ROOT_TAP);
-        assertEquals(2, tapReports.length);
+        assertEquals(nTaps, tapReports.length);
         for (TapReport report : tapReports) {
             if (report.getName().equals("a")) {
                 assertEquals(

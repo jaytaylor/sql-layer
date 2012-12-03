@@ -153,11 +153,18 @@ public abstract class Tap
     public void disable()
     {}
 
+    public boolean isSubsidiary()
+    {
+        return false;
+    }
+
     public InOutTap createSubsidiaryTap(String name, InOutTap outermostRecursiveTapWrapper)
     {
-        Dispatch outermostPerDispatch = (Dispatch) outermostRecursiveTapWrapper.internal();
-        PerThread outermostPerThread = (PerThread) outermostPerDispatch.enabledTap();
-        return new InOutTap(PerThread.createRecursivePerThread(name, outermostPerThread));
+        Dispatch outermostDispatch = (Dispatch) outermostRecursiveTapWrapper.internal();
+        PerThread outermostPerThread = (PerThread) outermostDispatch.enabledTap();
+        Dispatch recursiveDispatch = add(PerThread.createRecursivePerThread(name, outermostPerThread));
+        outermostDispatch.addSubsidiaryDispatch(recursiveDispatch);
+        return new InOutTap(recursiveDispatch);
     }
 
     public static PointTap createCount(String name)
@@ -193,9 +200,9 @@ public abstract class Tap
     public static void setEnabled(String regExPattern, boolean enabled)
     {
         Pattern pattern = Pattern.compile(regExPattern);
-        for (Dispatch tap : dispatchesCopy()) {
-            if (pattern.matcher(tap.getName()).matches()) {
-                tap.setEnabled(enabled);
+        for (Dispatch dispatch : dispatchesCopy()) {
+            if (pattern.matcher(dispatch.getName()).matches()) {
+                dispatch.setEnabled(enabled);
             }
         }
     }
@@ -246,10 +253,11 @@ public abstract class Tap
     {
         List<TapReport> reports = new ArrayList<TapReport>();
         Pattern pattern = Pattern.compile(regExPattern);
-        for (Dispatch tap : dispatchesCopy()) {
-            if (pattern.matcher(tap.getName()).matches()) {
-                if (tap.getReports() != null) {
-                    for (TapReport tapReport : tap.getReports()) {
+        for (Dispatch dispatch : dispatchesCopy()) {
+            if (pattern.matcher(dispatch.getName()).matches() && !dispatch.isSubsidiary()) {
+                TapReport[] dispatchReports = dispatch.getReports();
+                if (dispatchReports != null) {
+                    for (TapReport tapReport : dispatchReports) {
                         reports.add(tapReport);
                     }
                 }
