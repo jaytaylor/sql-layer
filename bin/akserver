@@ -62,7 +62,7 @@ fi
 
 infer_jar_file()
 {
-    local loc_local="${AKIBAN_HOME}/target/akiban-server-1.4.4-SNAPSHOT.jar"
+    local loc_local="${akiban_home}/target/akiban-server-1.4.5-SNAPSHOT.jar"
     local loc_global="/usr/share/akiban/akiban-server.jar"
 
     # Only infer if passed no argument

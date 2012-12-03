@@ -817,7 +817,12 @@ public class ConstantFolder extends BaseRule
         }
         
         protected ExpressionNode newConstant(Object value, AkType akType, ExpressionNode source) {
-            return newExpression(new ConstantExpression(value, source.getSQLtype(), akType, source.getSQLsource()));
+            return (value == null)
+                ? newExpression(ConstantExpression.typedNull(
+                                                            source.getSQLtype(),
+                                                            source.getSQLsource(),
+                                                            source.getPreptimeValue().instance()))
+                : newExpression(new ConstantExpression(value, source.getSQLtype(), akType, source.getSQLsource()));
         }
 
         protected ConditionExpression newBooleanConstant(Boolean value, ExpressionNode source) {

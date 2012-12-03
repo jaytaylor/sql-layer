@@ -1,6 +1,0 @@
-# Specifying COLLATE  for column fails
-# Bug 901348: COLLATE not supported
-# Status triaged
----
-- CreateTable: t (v varchar(32) COLLATE latin1_cs)
-...

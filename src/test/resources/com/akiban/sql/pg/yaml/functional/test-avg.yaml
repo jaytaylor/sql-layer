@@ -1,9 +1,7 @@
 # Test the AVG aggregate function
 # Related bug(s): 
 #           905492: AVG of intergral values produces wrong result (due to integer division)
-#               => fix commited
 #           Bug 973449: (in test framewrok): precision and scales are not preserved.
-# Status: confirmed
 ---
 - Include: all-types-schema.yaml
 ---
@@ -101,8 +99,9 @@
     all: [[0.0, 0, 0.0, 0.0, 0.0, 0, 0.0, 0.0]],
     newtypes: [[0.0, '0.0000', 0.0, 0.0, 0.0, '0.0000', 0.0, 0.0]]
     }
+
 # Do boolean specially
-# Returns incorrect results -- see bug-avg-boolean.yaml
+# BUGS: 905492
 ---
 - Statement: INSERT INTO all_types (boolean_field) VALUES (0)
 --- 

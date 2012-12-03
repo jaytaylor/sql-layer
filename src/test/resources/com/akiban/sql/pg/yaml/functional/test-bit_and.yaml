@@ -1,5 +1,23 @@
 # Test the bitwise AND function
-# Related bug(s) 906453
+
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field) VALUES (1),(2),(3);
+---
+- Statement: SELECT BIT_AND(bigint_field) FROM all_types
+- output: [[0]]
+
+---
+- Newtypes: true
+#bug 906453
+---
+- Statement: SELECT BIT_AND(?)
+- params: [[100]]
+- output: [[100]]
+---
+- Newtypes: null
+
 ---
 - Include: all-classes-schema.yaml
 ---  
@@ -9,25 +27,6 @@
 - Statement: SELECT Dept, Level, BIT_AND(ClassID) AS BitwiseAND FROM Classes GROUP BY Dept, Level ORDER BY DEPT, LEVEL;
 - output: [['ANTH','Lower',992],['ANTH','Upper',992],['ENGL','Lower',1011],['ENGL','Upper',1000],['MATH',Lower,992],['MATH','Upper',1003]]
 ---
-- Include: all-types-schema.yaml
----
-- Statement: INSERT INTO all_types (bigint_field) VALUES (1),(2),(3);
----
-#bug 906453
-# - Statement: SELECT BIT_AND(?) FROM all_types 
-# - params: [[100]]
-# - output: [[1]]
-# ---
-# - Statement: SELECT BIT_AND(NULL) FROM all_types 
-# - output: [['18446744073709551615']]
-# ---
-
-# --- Not a bug, but a bad case 
-#UNSUPPORTED_SQL: Unsupported SQL Aggregate not allowed in WHERE : (bit_and($1) = 100) AND TRUE
-# - Statement: SELECT 44 FROM all_types where BIT_AND(?) = 100 
-# - params: [[100]]
-# - output: [[44]]
-# ---
 - Statement: INSERT INTO Classes VALUES
       (2002, 'ANTH', 'Upper', -25),
       (2003, 'MATH', 'Upper', -18),
