@@ -48,10 +48,10 @@
 # bug 921117
 ---
 - Statement: select TIMEDIFF('12:34:55', '2012-04-05 01:59:59');
-- output: [['null']]
+- output: [[null]]
 ---
 - Statement: select TIMEDIFF('2012-04-05 13:59:59', '03:34:55');
-- output: [['null']]
+- output: [[null]]
 
 ---
 - Newtypes: null
