@@ -31,7 +31,7 @@
 - Statement: select WEEKOFYEAR('2007-02-03');
 - output: [[5]]
 ---
-- Statement:
+- Statement: select WEEKOFYEAR(9999999);
 - output: !select-engine { sys-mysql: [[null]], newtypes: [[null]], all: [[14]] }
 
 ---

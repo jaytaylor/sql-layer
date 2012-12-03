@@ -617,9 +617,8 @@ class YamlTester {
 
     private void statementCommand(Object value, List<Object> sequence)
 	    throws SQLException {
-	if (value != null) {
-	    new StatementCommand(value, sequence).execute();
-	}
+        assertNotNull("Statement value cannot be null (e.g. null, empty, no matching select-engine)", value);
+        new StatementCommand(string(value, "Statement value"), sequence).execute();
     }
 
     private class StatementCommand extends AbstractStatementCommand {
@@ -644,8 +643,8 @@ class YamlTester {
 	 */
 	private int outputRow = 0;
 
-	StatementCommand(Object value, List<Object> sequence) {
-	    super(string(value, "Statement value"));
+	StatementCommand(String value, List<Object> sequence) {
+	    super(value);
 	    for (int i = 1; i < sequence.size(); i++) {
 		Entry<Object, Object> map = onlyEntry(sequence.get(i),
 			"Statement attribute");
@@ -1658,7 +1657,7 @@ class YamlTester {
     }
 
     /** An assertion error that includes context information. */
-    private class ContextAssertionError extends AssertionError {
+    class ContextAssertionError extends AssertionError {
 	ContextAssertionError(String failedStatement, String message) {
 	    super(context(failedStatement) + message);
 	}

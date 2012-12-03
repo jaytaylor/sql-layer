@@ -124,7 +124,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 
     @Test
     public void testSelectEngineNoMatch() throws Exception {
-	testYaml("- Statement: !select-engine { foo: bar }");
+	testYamlFail("- Statement: !select-engine { foo: bar }"); // Empty statement
     }
 
     @Test
@@ -148,9 +148,9 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     @Test
     public void testSelectEngineKeyItOverAllPrecedenceNull() throws Exception {
 	testYaml("---\n" +
-                 "- Statement: !select-engine { it: null, all: oops }");
+                 "- Statement: !select-engine { it: select null, all: oops }");
 	testYaml("---\n" +
-                 "- Statement: !select-engine { all: oops, it: null }");
+                 "- Statement: !select-engine { all: oops, it: select null }");
 	testYamlFail("---\n" +
                      "- Statement: !select-engine { it: oops, all: null }");
 	testYamlFail("---\n" +
@@ -169,9 +169,9 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     @Test
     public void testSelectEngineKeyAllNull() throws Exception {
 	testYaml("---\n" +
-                 "- Statement: !select-engine { all: null, foo: oops }");
+                 "- Statement: !select-engine { all: select null, foo: oops }");
 	testYaml("---\n" +
-                 "- Statement: !select-engine { foo: oops, all: null }");
+                 "- Statement: !select-engine { foo: oops, all: select null }");
     }
 
     /* Test Include */
@@ -529,12 +529,12 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 
     @Test
     public void testStatementNoValue() throws Exception {
-	testYaml("- Statement:");
+	testYamlFail("- Statement:"); // Empty statement
     }
 
     @Test
     public void testStatementNullValue() throws Exception {
-	testYaml("- Statement: null");
+	testYamlFail("- Statement: null"); // Empty statement
     }
 
     @Test
@@ -572,7 +572,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 
     @Test
     public void testStatementSelectEngineNoMatch() throws Exception {
-	testYaml("- Statement: !select-engine { sys: MORP }");
+	testYamlFail("- Statement: !select-engine { sys: MORP }"); // Empty statement
     }
 
     /* Test Statement params */
