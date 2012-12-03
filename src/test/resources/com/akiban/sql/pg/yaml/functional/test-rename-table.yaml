@@ -5,7 +5,7 @@
 - Properties: sys-mysql
 - suppressed: true
 ---
-- CreateTable: t1 (id INT NOT NULL PRIMARY KEY)
+- Statement: CREATE TABLE t1 (id INT NOT NULL PRIMARY KEY)
 ---
 - Statement: INSERT INTO t1 VALUES (1), (10), (100)
 ---
@@ -23,11 +23,11 @@
 # Each component in COI
 #
 ---
-- CreateTable: c (id INT NOT NULL PRIMARY KEY)
+- Statement: CREATE TABLE c (id INT NOT NULL PRIMARY KEY)
 ---
-- CreateTable: o (id INT NOT NULL PRIMARY KEY, cid INT, GROUPING FOREIGN KEY(cid) REFERENCES c(id))
+- Statement: CREATE TABLE o (id INT NOT NULL PRIMARY KEY, cid INT, GROUPING FOREIGN KEY(cid) REFERENCES c(id))
 ---
-- CreateTable: i (id INT NOT NULL PRIMARY KEY, oid INT, GROUPING FOREIGN KEY(oid) REFERENCES o(id))
+- Statement: CREATE TABLE i (id INT NOT NULL PRIMARY KEY, oid INT, GROUPING FOREIGN KEY(oid) REFERENCES o(id))
 ---
 - Statement: INSERT INTO c VALUES (1)
 ---
