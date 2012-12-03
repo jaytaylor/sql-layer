@@ -45,9 +45,13 @@
 #
 #   JVM_OPTS -- Additional arguments to the JVM for heap size, etc
 #   AKIBAN_CONF -- Directory containing configuration files.
+#   AKIBAN_HOME -- Directory passed as akiban.home (e.g. plugin loading)
 #
 
-akiban_home=$(cd $(dirname $0)/..; pwd -P)
+# Use AKIBAN_HOME if set, otherwise assume source checkout
+if [ -z "$AKIBAN_HOME" ]; then
+    AKIBAN_HOME=$(cd $(dirname $0)/..; pwd -P)
+fi
 
 # Use JAVA_HOME if set, otherwise look for java in PATH
 if [ -x $JAVA_HOME/bin/java ]; then
@@ -78,7 +82,7 @@ infer_jar_file()
 
 infer_dep_dir()
 {
-    local loc_local="${akiban_home}/target/dependency"
+    local loc_local="${AKIBAN_HOME}/target/dependency"
     local loc_global="/usr/share/akiban/server"
 
     # Only infer if passed no argument
@@ -120,10 +124,8 @@ launch_service()
     AKIBAN_CONF=$7
 
     if [ -z "$AKIBAN_CONF" ]; then
-        # default AKIBAN_CONF dir
-        AKIBAN_CONF="${akiban_home}/conf"
+        AKIBAN_CONF="${AKIBAN_HOME}/conf"
     fi
-    akiban_parms="-Dakserver.config_dir=$AKIBAN_CONF"
 
     if [ -n "$pidpath" ]; then
         akiban_parms="$akiban_parms -Dakserver.pidfile=$pidpath"
@@ -136,7 +138,10 @@ launch_service()
     if [ -n "$usegui" ]; then
         akiban_parms="$akiban_parms -Dcom.persistit.showgui=true"
     fi
-    akiban_parms="$akiban_parms -Dservices.config=$AKIBAN_CONF/config/services-config.yaml -Dlog4j.configuration=file:$AKIBAN_CONF/config/log4j.properties $print_compilation $props"
+
+    akiban_parms="$akiban_parms -Dakiban.home=$AKIBAN_HOME -Dakserver.config_dir=$AKIBAN_CONF"
+    akiban_parms="$akiban_parms -Dservices.config=$AKIBAN_CONF/config/services-config.yaml -Dlog4j.configuration=file:$AKIBAN_CONF/config/log4j.properties"
+    akiban_parms="$akiban_parms $print_compilation $props"
 
     CLASSPATH=$JAR_FILE:$DEP_DIR/*
     main_class="com.akiban.server.AkServer"
@@ -154,7 +159,7 @@ launch_service()
             exec $JAVA $JVM_OPTS $akiban_parms -cp "$CLASSPATH" $main_class
         fi
     else
-        echo ${akiban_home}
+        echo ${AKIBAN_HOME}
         if [ "$profile" ]
         then
             exec $profile "$JVM_OPTS $akiban_parms -cp $CLASSPATH" $JAVA $main_class <&- &

@@ -30,11 +30,9 @@ calculate_heap_size()
         Linux)
             system_memory_in_mb=`free -m | awk '/Mem:/ {print $2}'`
             MAX_HEAP_SIZE=$((system_memory_in_mb / 2))M
-            return 0
         ;;
         *)
             MAX_HEAP_SIZE=1024M
-            return 1
         ;;
     esac
 }
@@ -104,6 +102,4 @@ JMX_PORT="8082"
 JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.port=$JMX_PORT" 
 JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.ssl=false" 
 JVM_OPTS="$JVM_OPTS -Dcom.sun.management.jmxremote.authenticate=false" 
-
-JVM_OPTS="$JVM_OPTS -Dakiban.home=/usr/share/akiban"
 
