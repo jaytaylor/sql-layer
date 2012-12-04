@@ -1,0 +1,17 @@
+---
+- CreateTable: vc(name varchar(5))
+---
+- Statement: INSERT INTO vc values ('12345678'), ('abcd'), ('STUVW'), ('efghij');
+- warnings_count: 2
+---
+- Statement: SELECT name FROM vc
+- output: [['12345'], ['abcd'], ['STUVW'], ['efghi']]
+---
+- CreateTable: c(name varchar(5))
+---
+- Statement: INSERT INTO c values ('12345678'), ('abcd'), ('STUVW'), ('efghij');
+- warnings_count: 2
+---
+- Statement: SELECT name FROM c
+- output: [['12345'], ['abcd'], ['STUVW'], ['efghi']]
+...

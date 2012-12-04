@@ -1,9 +1,0 @@
----
-- CreateTable: t(name varchar(5))
----
-- Statement: INSERT INTO t values ('12345678'), ('abcd'), ('STUVW'), ('efghij');
-- warnings_count: 2
----
-- Statement: SELECT name FROM t
-- output: [['12345'], ['abcd'], ['STUVW'], ['efghi']]
-...
