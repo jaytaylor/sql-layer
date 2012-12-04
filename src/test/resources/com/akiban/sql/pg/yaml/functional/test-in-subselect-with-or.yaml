@@ -1,0 +1,9 @@
+---
+- CreateTable: t1(col_1 int);
+---
+- CreateTable: t2(col_2 int);
+---
+- Statement: insert into t1 values (1)
+---
+- Statement: select * from t1 where col_1 in (select col_2 from t2) or col_1 = 1;
+...
