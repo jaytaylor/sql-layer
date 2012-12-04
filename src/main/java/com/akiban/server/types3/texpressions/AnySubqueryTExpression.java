@@ -70,25 +70,25 @@ public final class AnySubqueryTExpression extends SubqueryTExpression {
         @Override
         protected void doEval(PValueTarget out) {
             evaluation.with(queryContext());
-            boolean sawAnyRows = false;
+            Boolean result = Boolean.FALSE;
             while (true) {
                 Row row = next();
-                if (row == null) {
-                    if (!sawAnyRows)
-                        out.putBool(false);
-                    break;
-                }
+                if (row == null) break;
                 evaluation.with(row);
                 evaluation.evaluate();
                 if (evaluation.resultValue().isNull()) {
-                    out.putNull();
-                    sawAnyRows = true;
+                    result = null;
                 }
                 else if (evaluation.resultValue().getBoolean()) {
-                    out.putBool(true);
+                    result = Boolean.TRUE;
                     break;
                 }
             }
+            if (result == null)
+                out.putNull();
+            else
+                out.putBool(result == Boolean.TRUE);
+
         }
 
         private InnerEvaluatable(Operator subquery, TEvaluatableExpression evaluation, RowType outerRowType,
