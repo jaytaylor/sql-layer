@@ -34,6 +34,7 @@ import com.akiban.sql.server.ServerStatement;
 import com.akiban.sql.server.ServerStatementCache;
 import com.akiban.sql.server.ServerTransaction;
 import com.akiban.sql.server.ServerValueDecoder;
+import com.akiban.sql.server.ServerValueEncoder;
 
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.ParameterNode;
@@ -85,6 +86,8 @@ public class PostgresServerConnection extends ServerSessionBase
     private boolean running = false, ignoreUntilSync = false;
     private Socket socket;
     private PostgresMessenger messenger;
+    private ServerValueEncoder valueEncoder;
+    private ServerValueDecoder valueDecoder;
     private OutputFormat outputFormat = OutputFormat.TABLE;
     private int sessionId, secret;
     private int version;
@@ -727,7 +730,8 @@ public class PostgresServerConnection extends ServerSessionBase
         PostgresStatement pstmt = preparedStatements.get(stmtName);
         PostgresBoundQueryContext bound = new PostgresBoundQueryContext(this, pstmt);
         if (params != null) {
-            ServerValueDecoder decoder = new ServerValueDecoder(messenger.getEncoding());
+            if (valueDecoder == null)
+                valueDecoder = new ServerValueDecoder(messenger.getEncoding());
             PostgresType[] parameterTypes = null;
             boolean usePValues = false;
             if (pstmt instanceof PostgresBaseStatement) {
@@ -743,9 +747,9 @@ public class PostgresServerConnection extends ServerSessionBase
                 if ((paramsBinary != null) && (i < paramsBinary.length))
                     binary = paramsBinary[i];
                 if (usePValues)
-                    decoder.decodePValue(params[i], pgType, binary, bound, i);
+                    valueDecoder.decodePValue(params[i], pgType, binary, bound, i);
                 else
-                    decoder.decodeValue(params[i], pgType, binary, bound, i);
+                    valueDecoder.decodeValue(params[i], pgType, binary, bound, i);
             }
         }
         bound.setColumnBinary(resultsBinary, defaultResultsBinary);
@@ -1082,9 +1086,19 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     @Override
+    public ServerValueEncoder getValueEncoder() {
+        if (valueEncoder == null)
+            valueEncoder = new ServerValueEncoder(messenger.getEncoding(), 
+                                                  getZeroDateTimeBehavior());
+        return valueEncoder;
+    }
+
+    @Override
     protected boolean propertySet(String key, String value) {
         if ("client_encoding".equals(key)) {
             messenger.setEncoding(value);
+            valueEncoder = null; // These depend on the encoding.
+            valueDecoder = null;
             return true;
         }
         if ("OutputFormat".equals(key) ||
@@ -1097,6 +1111,9 @@ public class PostgresServerConnection extends ServerSessionBase
             if (parsedGenerators != null)
                 rebuildCompiler();
             return true;
+        }
+        if ("zeroDateTimeBehavior".equals(key)) {
+            valueEncoder = null; // Also depends on this.
         }
         return super.propertySet(key, value);
     }
