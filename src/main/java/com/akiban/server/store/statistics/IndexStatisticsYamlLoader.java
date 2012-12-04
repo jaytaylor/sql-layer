@@ -29,17 +29,30 @@ package com.akiban.server.store.statistics;
 import static com.akiban.server.store.statistics.IndexStatistics.*;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 
+import com.akiban.server.PersistitKeyPValueSource;
+import com.akiban.server.PersistitKeyPValueTarget;
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.PersistitKeyValueTarget;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 
 import com.akiban.server.error.AkibanInternalException;
@@ -60,8 +73,6 @@ public class IndexStatisticsYamlLoader
     private String defaultSchema;
 
     private final Key key;
-    private final PersistitKeyValueSource keySource = new PersistitKeyValueSource();
-    private final PersistitKeyValueTarget keyTarget = new PersistitKeyValueTarget();
     
     public static final String TABLE_NAME_KEY = "Table";
     public static final String INDEX_NAME_KEY = "Index";
@@ -86,8 +97,8 @@ public class IndexStatisticsYamlLoader
 
     public IndexStatisticsYamlLoader(AkibanInformationSchema ais, String defaultSchema, KeyCreator keyCreator) {
         this.ais = ais;
-        key = keyCreator.createKey();
         this.defaultSchema = defaultSchema;
+        key = keyCreator.createKey();
     }
     
     public Map<Index,IndexStatistics> load(File file, boolean statsIgnoreMissingIndexes) throws IOException {
@@ -173,20 +184,100 @@ public class IndexStatisticsYamlLoader
     protected Key encodeKey(Index index, int columnCount, List<?> values) {
         if (values.size() != columnCount)
             throw new AkibanInternalException("Key values do not match column count");
-        FromObjectValueSource valueSource = new FromObjectValueSource();
+        int firstSpatialColumn = Integer.MAX_VALUE;
+        if (index.isSpatial()) {
+            firstSpatialColumn = index.firstSpatialArgument();
+        }
         key.clear();
-        keyTarget.attach(key);
-        for (int i = 0; i < columnCount; i++) {
-            if (index.isSpatial()) {
-                keyTarget.expectingType(AkType.LONG, null);
+        if (Types3Switch.ON) {
+            PersistitKeyPValueTarget keyTarget = new PersistitKeyPValueTarget();
+            keyTarget.attach(key);
+            for (int i = 0; i < columnCount; i++) {
+                Object value = values.get(i);
+                if (value instanceof byte[]) {
+                    appendRawSegment((byte[])value);
+                    continue;
+                }
+                TInstance tInstance;
+                AkType akType; 
+                AkCollator collator;
+                if (i == firstSpatialColumn) {
+                    tInstance = MNumeric.BIGINT.instance(true);
+                    akType = AkType.LONG;
+                    collator = null;
+                }
+                else {
+                    int offset = i;
+                    if (i > firstSpatialColumn) {
+                        offset += index.dimensions() - 1;
+                    }
+                    Column column = index.getKeyColumns().get(offset).getColumn();
+                    tInstance = column.tInstance();
+                    akType = column.getType().akType();
+                    collator = column.getCollator();
+                }
+                // For example, for DECIMAL, value will be a
+                // String, pvalue will be a its VARCHAR, and pvalue2
+                // will be a BigDecimalWrapper, which only
+                // MBigDecimal.writeCollating knows how to unwrap into
+                // a Key.
+                TPreptimeValue pvalue = PValueSources.fromObject(value, akType);
+                TExecutionContext context = new TExecutionContext(null,
+                                                                  Collections.singletonList(pvalue.instance()),
+                                                                  tInstance,
+                                                                  null, null, null, null);
+                PValue pvalue2 = new PValue(tInstance.typeClass().underlyingType());
+                tInstance.typeClass().fromObject(context, pvalue.value(), pvalue2);
+                tInstance.writeCollating(pvalue2, keyTarget);
             }
-            else {
-                keyTarget.expectingType(index.getKeyColumns().get(i).getColumn());
+        }
+        else {
+            FromObjectValueSource valueSource = new FromObjectValueSource();
+            PersistitKeyValueTarget keyTarget = new PersistitKeyValueTarget();
+            keyTarget.attach(key);
+            for (int i = 0; i < columnCount; i++) {
+                Object value = values.get(i);
+                if (value instanceof byte[]) {
+                    appendRawSegment((byte[])value);
+                    continue;
+                }
+                AkType akType; 
+                AkCollator collator;
+                if (i == firstSpatialColumn) {
+                    akType = AkType.LONG;
+                    collator = null;
+                }
+                else {
+                    int offset = i;
+                    if (i > firstSpatialColumn) {
+                        offset += index.dimensions() - 1;
+                    }
+                    Column column = index.getKeyColumns().get(offset).getColumn();
+                    akType = column.getType().akType();
+                    collator = column.getCollator();
+                }
+                valueSource.setReflectively(value);
+                keyTarget.expectingType(akType, collator);
+                Converters.convert(valueSource, keyTarget);
             }
-            valueSource.setReflectively(values.get(i));
-            Converters.convert(valueSource, keyTarget);
         }
         return key;
+    }
+
+    protected void appendRawSegment(byte[] encoded) {
+        assert (findNul(encoded) == encoded.length - 1) : Arrays.toString(encoded);
+        int size = key.getEncodedSize();
+        key.setEncodedSize(size + encoded.length);
+        System.arraycopy(encoded, 0, key.getEncodedBytes(), size, encoded.length);
+    }
+
+    protected static int findNul(byte[] encoded) {
+        for (int i = 0; i < encoded.length; i++) {
+            if (encoded[i] == 0) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     public void dump(Map<Index,IndexStatistics> stats, Writer writer) throws IOException {
@@ -208,7 +299,7 @@ public class IndexStatisticsYamlLoader
         map.put(SAMPLED_COUNT_KEY, indexStatistics.getSampledCount());
         List<Object> stats = new ArrayList<Object>();
         int nkeys = index.getKeyColumns().size();
-        if (index.isSpatial()) nkeys = 1;
+        if (index.isSpatial()) nkeys -= index.dimensions() - 1;
         for (int i = 0; i < nkeys; i++) {
             Histogram histogram = indexStatistics.getHistogram(i + 1);
             if (histogram == null) continue;
@@ -239,18 +330,96 @@ public class IndexStatisticsYamlLoader
     protected List<Object> decodeKey(Index index, int columnCount, byte[] bytes) {
         key.setEncodedSize(bytes.length);
         System.arraycopy(bytes, 0, key.getEncodedBytes(), 0, bytes.length);
-        ToObjectValueTarget valueTarget = new ToObjectValueTarget();
+        int firstSpatialColumn = Integer.MAX_VALUE;
+        if (index.isSpatial()) {
+            firstSpatialColumn = index.firstSpatialArgument();
+        }
         List<Object> result = new ArrayList<Object>(columnCount);
-        for (int i = 0; i < columnCount; i++) {
-            if (index.isSpatial()) {
-                keySource.attach(key, i, AkType.LONG);
+        if (Types3Switch.ON) {
+            for (int i = 0; i < columnCount; i++) {
+                TInstance tInstance;
+                AkType akType; 
+                boolean useRawSegment;
+                if (i == firstSpatialColumn) {
+                    tInstance = MNumeric.BIGINT.instance(true);
+                    akType = AkType.LONG;
+                    useRawSegment = false;
+                }
+                else {
+                    int offset = i;
+                    if (i > firstSpatialColumn) {
+                        offset += index.dimensions() - 1;
+                    }
+                    Column column = index.getKeyColumns().get(offset).getColumn();
+                    tInstance = column.tInstance();
+                    akType = column.getType().akType();
+                    AkCollator collator = column.getCollator();
+                    useRawSegment = ((collator != null) && !collator.isRecoverable());
+                }
+                Object keyValue;
+                if (useRawSegment) {
+                    keyValue = getRawSegment(key, i);
+                }
+                else {
+                    PersistitKeyPValueSource keySource = new PersistitKeyPValueSource(tInstance);
+                    keySource.attach(key, i, tInstance);
+                    if (convertToType(akType)) {
+                        keyValue = PValueSources.toObject(keySource, akType);
+                    }
+                    else if (keySource.isNull()) {
+                        keyValue = null;
+                    }
+                    else {
+                        StringBuilder str = new StringBuilder();
+                        tInstance.format(keySource, AkibanAppender.of(str));
+                        keyValue = str.toString();
+                    }
+                    if (willUseBinaryTag(keyValue)) {
+                        // Otherwise it would be ambiguous when reading.
+                        keyValue = getRawSegment(key, i);
+                    }
+                }
+                result.add(keyValue);
             }
-            else {
-                keySource.attach(key, index.getKeyColumns().get(i));
+        }
+        else {
+            PersistitKeyValueSource keySource = new PersistitKeyValueSource();
+            ToObjectValueTarget valueTarget = new ToObjectValueTarget();
+            for (int i = 0; i < columnCount; i++) {
+                AkType akType; 
+                AkCollator collator;
+                boolean useRawSegment;
+                if (i == firstSpatialColumn) {
+                    akType = AkType.LONG;
+                    collator = null;
+                    useRawSegment = false;
+                }
+                else {
+                    int offset = i;
+                    if (i > firstSpatialColumn) {
+                        offset += index.dimensions() - 1;
+                    }
+                    Column column = index.getKeyColumns().get(offset).getColumn();
+                    akType = column.getType().akType();
+                    collator = column.getCollator();
+                    useRawSegment = ((collator != null) && !collator.isRecoverable());
+                }
+                Object keyValue;
+                if (useRawSegment) {
+                    keyValue = getRawSegment(key, i);
+                }
+                else {
+                    keySource.attach(key, i, akType, collator);
+                    valueTarget.expectType(convertToType(akType) ? akType : AkType.VARCHAR);
+                    Converters.convert(keySource, valueTarget);
+                    keyValue = valueTarget.lastConvertedValue();
+                    if (willUseBinaryTag(keyValue)) {
+                        // Otherwise it would be ambiguous when reading.
+                        keyValue = getRawSegment(key, i);
+                    }
+                }
+                result.add(keyValue);
             }
-            valueTarget.expectType(convertToType(keySource.getConversionType()));
-            Converters.convert(keySource, valueTarget);
-            result.add(valueTarget.lastConvertedValue());
         }
         return result;
     }
@@ -261,17 +430,44 @@ public class IndexStatisticsYamlLoader
      * internal value isn't friendly (<code>Date</code> is a <code>Long</code>) 
      * or isn't standard (<code>Decimal</code> turns into <code>!!float</code>).
      */
-    protected static AkType convertToType(AkType sourceType) {
+    protected static boolean convertToType(AkType sourceType) {
         switch (sourceType) {
         case DOUBLE:
         case FLOAT:
         case INT:
         case LONG:
         case BOOL:
-            return sourceType;
+            return true;
         default:
-            return AkType.VARCHAR;
+            return false;
         }
+    }
+
+    /** If a collated key isn't recoverable, we output the raw collating bytes. 
+     * Return the given segment, <em>including</em> the terminating NUL byte.
+     */
+    protected static byte[] getRawSegment(Key key, int depth) {
+        key.indexTo(depth);
+        byte[] encoded = key.getEncodedBytes();
+        int start = key.getIndex();
+        int end = start;
+        while (encoded[end++] != 0);
+        byte[] result = new byte[end - start];
+        System.arraycopy(encoded, start, result, 0, result.length);
+        return result;
+    }
+
+    /** If an ordinary key segment value would write to YAML as a
+     * binary array, couldn't tell it from a raw segment. So, need to
+     * encode it raw, too.
+     */
+    protected static boolean willUseBinaryTag(Object value) {
+        if (value instanceof byte[])
+            return true;
+        if (value instanceof String)
+            return org.yaml.snakeyaml.reader.StreamReader.NON_PRINTABLE
+                .matcher((String)value).find();
+        return false;
     }
 
 }
