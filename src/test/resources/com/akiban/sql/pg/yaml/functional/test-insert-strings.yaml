@@ -1,4 +1,6 @@
 ---
+- Newtypes: true
+---
 - CreateTable: vc(name varchar(5))
 ---
 - Statement: INSERT INTO vc values ('12345678'), ('abcd'), ('STUVW'), ('efghij');
