@@ -447,6 +447,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return this;
     }
 
+    @Override
+    public boolean putInCache() {
+        return false;
+    }
+
     private int odbcLoTypeQuery(PostgresMessenger messenger, int maxrows) {
         return 0;
     }

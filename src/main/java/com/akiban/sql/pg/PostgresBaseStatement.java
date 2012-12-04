@@ -83,4 +83,9 @@ public abstract class PostgresBaseStatement implements PostgresStatement
                                               List<ParameterNode> params, int[] paramTypes) {
         return this;
     }
+
+    @Override
+    public boolean putInCache() {
+        return true;
+    }
 }

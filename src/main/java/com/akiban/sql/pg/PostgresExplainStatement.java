@@ -180,4 +180,10 @@ public class PostgresExplainStatement implements PostgresStatement
         compiler = null;
         return this;
     }
+
+    @Override
+    public boolean putInCache() {
+        return false;
+    }
+
 }

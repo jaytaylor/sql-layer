@@ -618,7 +618,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 boolean success = false;
                 try {
                     pstmt = finishGenerating(context, pstmt, stmtSQL, stmt, null, null);
-                    if ((statementCache != null) && (stmts.size() == 1))
+                    if ((statementCache != null) && singleStmt && pstmt.putInCache())
                         statementCache.put(stmtSQL, pstmt);
                     pstmt.sendDescription(context, false);
                     rowsProcessed = executeStatement(pstmt, context, -1);
@@ -678,8 +678,9 @@ public class PostgresServerConnection extends ServerSessionBase
             } finally {
                 afterExecute(pstmt, local, success);
             }
-            if (statementCache != null)
+            if ((statementCache != null) && pstmt.putInCache()) {
                 statementCache.put(sql, pstmt);
+            }
         }
         preparedStatements.put(stmtName, pstmt);
         messenger.beginMessage(PostgresMessages.PARSE_COMPLETE_TYPE.code());

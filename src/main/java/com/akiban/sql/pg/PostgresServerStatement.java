@@ -126,6 +126,11 @@ public class PostgresServerStatement implements PostgresStatement {
         return this;
     }
 
+    @Override
+    public boolean putInCache() {
+        return false;
+    }
+
     protected void doOperation (PostgresServerSession session) throws Exception {
         PostgresServerConnection current = (PostgresServerConnection)session;
         PostgresServer server = current.getServer();
