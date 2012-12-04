@@ -27,6 +27,7 @@
 package com.akiban.sql.pg;
 
 import com.akiban.sql.server.ServerSession;
+import com.akiban.sql.server.ServerValueEncoder;
 
 /** A Postgres server session. */
 public interface PostgresServerSession extends ServerSession
@@ -36,6 +37,9 @@ public interface PostgresServerSession extends ServerSession
 
     /** Return the messenger used to communicate with client. */
     public PostgresMessenger getMessenger();
+
+    /** Return an encoder of values as bytes / strings. */
+    public ServerValueEncoder getValueEncoder();
 
     public enum OutputFormat { TABLE, JSON, JSON_WITH_META_DATA };
 
