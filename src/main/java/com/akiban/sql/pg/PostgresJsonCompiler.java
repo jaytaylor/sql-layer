@@ -183,12 +183,13 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
             }
             PostgresJsonModifyStatement pjmstmt = new PostgresJsonModifyStatement(this);
             pjmstmt.init(statementType,
-                        (Operator)update.getPlannable(),
-                        update.getResultRowType(),
-                        resultColumns,
-                        parameterTypes,
-                        usesPValues(),
-                        update.isRequireStepIsolation());
+                         (Operator)update.getPlannable(),
+                         update.getResultRowType(),
+                         resultColumns,
+                         parameterTypes,
+                         usesPValues(),
+                         update.isRequireStepIsolation(),
+                         update.putInCache());
             return pjmstmt;
         }
     }

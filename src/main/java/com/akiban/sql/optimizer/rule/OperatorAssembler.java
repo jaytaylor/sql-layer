@@ -734,10 +734,11 @@ public class OperatorAssembler extends BaseRule
             // which need to be passed to the user. 
             boolean returning = (statement.getReturningTable() != null);
             return new PhysicalUpdate(stream.operator, getParameterTypes(),
-                    stream.rowType,
-                    resultColumns,
-                    returning,
-                    statement.isRequireStepIsolation());
+                                      stream.rowType,
+                                      resultColumns,
+                                      returning,
+                                      statement.isRequireStepIsolation(),
+                                      true);
         }
 
         protected RowStream assembleInsertStatement (InsertStatement insert) {

@@ -52,6 +52,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
     // Until fully initialized, play it safe by claiming to need isolation
     private boolean requireStepIsolation = true;
     private boolean outputResult;
+    private boolean putInCache = true;
 
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresBaseStatement: execute exclusive");
     private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresBaseStatement: acquire exclusive lock");
@@ -65,13 +66,14 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
                      Operator resultsOperator,
                      PostgresType[] parameterTypes,
                      boolean usesPValues,
-                     boolean requireStepIsolation) {
+                     boolean requireStepIsolation,
+                     boolean putInCache) {
         super.init(parameterTypes, usesPValues);
         this.statementType = statementType;
         this.resultOperator = resultsOperator;
         this.requireStepIsolation = requireStepIsolation;
         outputResult = false;
-                
+        this.putInCache = putInCache;
     }
     
     public void init(String statementType,
@@ -81,13 +83,16 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
                      List<PostgresType> columnTypes,
                      PostgresType[] parameterTypes,
                      boolean usesPValues,
-                     boolean requireStepIsolation) {
+                     boolean requireStepIsolation,
+                     boolean putInCache) {
         super.init(resultRowType, columnNames, columnTypes, parameterTypes, usesPValues);
         this.statementType = statementType;
         this.resultOperator = resultOperator;
         this.requireStepIsolation = requireStepIsolation;
         outputResult = true;
+        this.putInCache = putInCache;
     }
+
     @Override
     public TransactionMode getTransactionMode() {
         if (requireStepIsolation)
@@ -104,6 +109,11 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
     @Override
     public AISGenerationMode getAISGenerationMode() {
         return AISGenerationMode.NOT_ALLOWED;
+    }
+
+    @Override
+    public boolean putInCache() {
+        return putInCache;
     }
 
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {

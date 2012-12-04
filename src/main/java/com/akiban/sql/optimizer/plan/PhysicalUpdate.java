@@ -42,13 +42,15 @@ public class PhysicalUpdate extends BasePlannable
 {
     private boolean requireStepIsolation;
     private boolean returning;
+    private boolean putInCache;
 
-    public PhysicalUpdate (Operator resultsOperator, 
-                            DataTypeDescriptor[] paramterTypes,
-                            RowType rowType, 
-                            List<PhysicalResultColumn> resultColumns,
-                            boolean returning, 
-                            boolean requireStepIsolation) {
+    public PhysicalUpdate(Operator resultsOperator, 
+                          DataTypeDescriptor[] paramterTypes,
+                          RowType rowType, 
+                          List<PhysicalResultColumn> resultColumns,
+                          boolean returning, 
+                          boolean requireStepIsolation,
+                          boolean putInCache) {
         super (resultsOperator, paramterTypes, rowType, resultColumns);
         this.requireStepIsolation = requireStepIsolation;
         this.returning = returning;
@@ -64,6 +66,10 @@ public class PhysicalUpdate extends BasePlannable
     
     public boolean isReturning() { 
         return returning;
+    }
+
+    public boolean putInCache() {
+        return putInCache;
     }
 
     @Override

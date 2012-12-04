@@ -172,13 +172,15 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
                         columnNames, columnTypes,
                         parameterTypes,
                         usesPValues(),
-                        update.isRequireStepIsolation());
+                        update.isRequireStepIsolation(),
+                        update.putInCache());
         } else { 
             pmstmt.init(statementType,
                         (Operator)update.getPlannable(),
                         parameterTypes,
                         usesPValues(),
-                        update.isRequireStepIsolation());
+                        update.isRequireStepIsolation(),
+                        update.putInCache());
         }
         return pmstmt;
     }
