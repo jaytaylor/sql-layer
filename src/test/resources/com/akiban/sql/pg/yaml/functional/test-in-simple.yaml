@@ -16,7 +16,7 @@
 - Statement: SELECT (bigint_field, (1, 2, (bigint_field, double_field))) IN ((2, (1, bigint_field, (2, 2)))) from all_types;
 - output: [['false'], ['true'], ['false']]
 ---
-- Statement: SELECT bigint_field in (null) from all_types
+- Statement: SELECT bigint_field from all_types WHERE bigint_field in (null)
 - row_count: 0
 ---
 - Statement: SELECT   1 IN (1, 2, 3, 4);
