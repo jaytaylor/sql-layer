@@ -56,6 +56,19 @@ public class MString extends TString
         return pvalueIO;
     }
 
+    @Override
+    public void selfCast(TExecutionContext context, TInstance sourceInstance, PValueSource source,
+                         TInstance targetInstance, PValueTarget target) {
+        int maxTargetLen = targetInstance.attribute(StringAttribute.LENGTH);
+        String sourceString = source.getString();
+        if (sourceString.length() > maxTargetLen) {
+            String truncated = sourceString.substring(0, maxTargetLen);
+            context.reportTruncate(sourceString, truncated);
+            sourceString = truncated;
+        }
+        target.putString(sourceString, null);
+    }
+
     private MString(TypeId typeId, String name, int fixedSize) {
         super(typeId, MBundle.INSTANCE, name, -1, fixedSize);
     }
