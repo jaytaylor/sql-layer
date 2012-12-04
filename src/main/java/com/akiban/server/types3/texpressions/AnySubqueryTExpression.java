@@ -70,13 +70,19 @@ public final class AnySubqueryTExpression extends SubqueryTExpression {
         @Override
         protected void doEval(PValueTarget out) {
             evaluation.with(queryContext());
+            boolean sawAnyRows = false;
             while (true) {
                 Row row = next();
-                if (row == null) break;
+                if (row == null) {
+                    if (!sawAnyRows)
+                        out.putBool(false);
+                    break;
+                }
                 evaluation.with(row);
                 evaluation.evaluate();
                 if (evaluation.resultValue().isNull()) {
                     out.putNull();
+                    sawAnyRows = true;
                 }
                 else if (evaluation.resultValue().getBoolean()) {
                     out.putBool(true);
