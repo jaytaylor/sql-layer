@@ -54,6 +54,7 @@ public class PhysicalUpdate extends BasePlannable
         super (resultsOperator, paramterTypes, rowType, resultColumns);
         this.requireStepIsolation = requireStepIsolation;
         this.returning = returning;
+        this.putInCache = putInCache;
     }
     
     public UpdatePlannable getUpdatePlannable() {
@@ -83,6 +84,8 @@ public class PhysicalUpdate extends BasePlannable
             str.append(Arrays.toString(getParameterTypes()));
         if (requireStepIsolation)
             str.append("/STEP_ISOLATE");
+        if (!putInCache)
+            str.append("/NO_CACHE");
         return super.withIndentedExplain(str, context, defaultSchemaName);
     }
 
