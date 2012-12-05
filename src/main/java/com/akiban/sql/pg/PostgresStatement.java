@@ -62,4 +62,7 @@ public interface PostgresStatement extends ServerStatement
     public PostgresStatement finishGenerating(PostgresServerSession server,
                                               String sql, StatementNode stmt,
                                               List<ParameterNode> params, int[] paramTypes);
+
+    /** Should this statement be put into the statement cache? */
+    public boolean putInCache();
 }

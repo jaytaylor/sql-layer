@@ -86,6 +86,11 @@ public class PostgresDDLStatement extends PostgresBaseStatement
     }
 
     @Override
+    public boolean putInCache() {
+        return false;
+    }
+
+    @Override
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();

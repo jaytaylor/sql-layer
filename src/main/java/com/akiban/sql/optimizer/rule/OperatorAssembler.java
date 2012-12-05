@@ -734,10 +734,11 @@ public class OperatorAssembler extends BaseRule
             // which need to be passed to the user. 
             boolean returning = (statement.getReturningTable() != null);
             return new PhysicalUpdate(stream.operator, getParameterTypes(),
-                    stream.rowType,
-                    resultColumns,
-                    returning,
-                    statement.isRequireStepIsolation());
+                                      stream.rowType,
+                                      resultColumns,
+                                      returning,
+                                      statement.isRequireStepIsolation(),
+                                      returning || !isBulkInsert(planQuery));
         }
 
         protected RowStream assembleInsertStatement (InsertStatement insert) {
@@ -888,7 +889,24 @@ public class OperatorAssembler extends BaseRule
             }
             explainContext.putExtraInfo(plan, new CompoundExplainer(Type.EXTRA_INFO, atts));
         }
-        
+
+        protected boolean isBulkInsert(PlanNode planQuery) {
+            if (!(planQuery instanceof InsertStatement))
+                return false;
+            PlanNode insertSource = ((InsertStatement)planQuery).getInput();
+            if (!(insertSource instanceof ExpressionsSource))
+                return false;
+            for (List<ExpressionNode> exprs : ((ExpressionsSource)insertSource).getExpressions()) {
+                if (exprs.isEmpty()) return false; // Must want just generated columns.
+                for (ExpressionNode expr : exprs) {
+                    if (!(expr instanceof ConstantExpression)) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
         protected RowStream assembleUpdateStatement (UpdateStatement updateStatement) {
             UPDATE_COUNT.hit();
             RowStream stream = assembleQuery (updateStatement.getInput());

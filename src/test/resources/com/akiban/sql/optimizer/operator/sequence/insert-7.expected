@@ -1,4 +1,4 @@
-PhysicalUpdate
+PhysicalUpdate/NO_CACHE
   Insert_Returning(INTO customers(customer_id, customer_name, customer_title, primary_payment_code))
     Project_Default(COALESCE(CAST(Field(0) AS INT), CAST(NEXTVAL('test', '_sequence-1615118567') AS INT)), Field(1), Field(2), CAST(Field(3) AS VARCHAR), CAST('C' AS VARCHAR), CAST(NULL AS VARCHAR))
       ValuesScan_Default([1, 'THOMAS', 'NONE', NULL])

@@ -145,6 +145,11 @@ public class PostgresSessionStatement implements PostgresStatement
         return this;
     }
 
+    @Override
+    public boolean putInCache() {
+        return false;
+    }
+
     protected void doOperation(PostgresServerSession server) {
         switch (operation) {
         case USE:
