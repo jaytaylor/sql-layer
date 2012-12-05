@@ -35,18 +35,32 @@
            ['    Select_HKeyOrdered(t.s == $1)'],
            ['      GroupScan_Default(t)']]
 ---
-- Statement: EXPLAIN SELECT id FROM t WHERE s = ?
+- Statement: SELECT id FROM t WHERE s = 1
 ---
-- Statement: EXPLAIN SELECT id FROM t WHERE s = ?
+- Statement: SELECT id FROM t WHERE s = 1
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheMisses
-# INSERT, EXPLAIN
-- output: [['2']]
+# INSERT, EXPLAIN, SELECT
+- output: [['3']]
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheHits
-# EXPLAIN x 2
+# SELECT
+- output: [['1']]
+---
+- Statement: INSERT INTO t VALUES(1, CURRENT_DATE)
+---
+- Statement: INSERT INTO t VALUES(1, CURRENT_DATE)
+---
+- JMX: com.akiban:type=PostgresServer
+- get: StatementCacheMisses
+# INSERT
+- output: [['4']]
+---
+- JMX: com.akiban:type=PostgresServer
+- get: StatementCacheHits
+# INSERT
 - output: [['2']]
 ---
 # AIS change
@@ -60,7 +74,7 @@
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheMisses
 # CREATE, EXPLAIN
-- output: [['4']]
+- output: [['6']]
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheHits
@@ -74,14 +88,19 @@
            ['  AncestorLookup_Default(Index(t.t_s) -> t)'],
            ['    IndexScan_Default(Index(t.t_s), s = $1)']]
 ---
+- Statement: SELECT id FROM t WHERE s = 1
+---
+- Statement: SELECT id FROM t WHERE s = 1
+---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheMisses
-# SET, EXPLAIN
-- output: [['6']]
+# SET, EXPLAIN, SELECT
+- output: [['9']]
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheHits
-- output: [['2']]
+# SELECT
+- output: [['3']]
 ---
 - Statement: DROP INDEX t_s
 ---
