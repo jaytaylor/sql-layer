@@ -609,6 +609,10 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     // So, try to cast the const to the column's type. To do this, CAST(Const -> Column) must be
                     // indexFriendly, *and* casting this result back to the original Const type must equal the same
                     // const.
+                    if (rightTInst == null) {
+                        // literal null, so a comparison always returns UNKNOWN
+                        return new BooleanConstantExpression(null);
+                    }
                     if (casts.isIndexFriendly(tclass(leftTInst), tclass(rightTInst))) {
                         TInstance columnType = tinst(left);
                         TInstance constType = tinst(right);
