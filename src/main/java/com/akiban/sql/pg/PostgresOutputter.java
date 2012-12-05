@@ -49,8 +49,7 @@ public abstract class PostgresOutputter<T>
         columnTypes = statement.getColumnTypes();
         if (columnTypes != null)
             ncols = columnTypes.size();
-        encoder = new ServerValueEncoder(messenger.getEncoding(), 
-                                         server.getZeroDateTimeBehavior());
+        encoder = server.getValueEncoder();
     }
 
     public void beforeData() throws IOException {}

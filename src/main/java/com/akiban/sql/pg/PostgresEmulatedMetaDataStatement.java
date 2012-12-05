@@ -367,54 +367,55 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
+        ServerValueEncoder encoder = server.getValueEncoder();
         int nrows = 0;
         switch (query) {
         case ODBC_LO_TYPE_QUERY:
-            nrows = odbcLoTypeQuery(messenger, maxrows);
+            nrows = odbcLoTypeQuery(messenger, encoder, maxrows);
             break;
         case SEQUEL_B_TYPE_QUERY:
-            nrows = sequelBTypeQuery(messenger, maxrows, usePVals);
+            nrows = sequelBTypeQuery(messenger, encoder, maxrows, usePVals);
             break;
         case NPGSQL_TYPE_QUERY:
-            nrows = npgsqlTypeQuery(messenger, maxrows, usePVals);
+            nrows = npgsqlTypeQuery(messenger, encoder, maxrows, usePVals);
             break;
         case PSQL_LIST_SCHEMAS:
-            nrows = psqlListSchemasQuery(server, messenger, maxrows, usePVals);
+            nrows = psqlListSchemasQuery(server, messenger, encoder, maxrows, usePVals);
             break;
         case PSQL_LIST_TABLES:
-            nrows = psqlListTablesQuery(server, messenger, maxrows, usePVals);
+            nrows = psqlListTablesQuery(server, messenger, encoder, maxrows, usePVals);
             break;
         case PSQL_DESCRIBE_TABLES_1:
-            nrows = psqlDescribeTables1Query(server, messenger, maxrows, usePVals);
+            nrows = psqlDescribeTables1Query(server, messenger, encoder, maxrows, usePVals);
             break;
         case PSQL_DESCRIBE_TABLES_2:
-            nrows = psqlDescribeTables2Query(server, messenger, maxrows, usePVals);
+            nrows = psqlDescribeTables2Query(server, messenger, encoder, maxrows, usePVals);
             break;
         case PSQL_DESCRIBE_TABLES_2X:
-            nrows = psqlDescribeTables2XQuery(server, messenger, maxrows, usePVals);
+            nrows = psqlDescribeTables2XQuery(server, messenger, encoder, maxrows, usePVals);
             break;
         case PSQL_DESCRIBE_TABLES_3:
-            nrows = psqlDescribeTables3Query(server, messenger, maxrows, usePVals);
+            nrows = psqlDescribeTables3Query(server, messenger, encoder, maxrows, usePVals);
             break;
         case PSQL_DESCRIBE_TABLES_4A:
         case PSQL_DESCRIBE_TABLES_4B:
         case PSQL_DESCRIBE_TABLES_5:
-            nrows = psqlDescribeTables4Query(server, messenger, maxrows, usePVals);
+            nrows = psqlDescribeTables4Query(server, messenger, encoder, maxrows, usePVals);
             break;
         case PSQL_DESCRIBE_INDEXES:
-            nrows = psqlDescribeIndexesQuery(server, messenger, maxrows, usePVals);
+            nrows = psqlDescribeIndexesQuery(server, messenger, encoder, maxrows, usePVals);
             break;
         case PSQL_DESCRIBE_FOREIGN_KEYS_1:
-            nrows = psqlDescribeForeignKeys1Query(server, messenger, maxrows, usePVals);
+            nrows = psqlDescribeForeignKeys1Query(server, messenger, encoder, maxrows, usePVals);
             break;
         case PSQL_DESCRIBE_FOREIGN_KEYS_2:
-            nrows = psqlDescribeForeignKeys2Query(server, messenger, maxrows, usePVals);
+            nrows = psqlDescribeForeignKeys2Query(server, messenger, encoder, maxrows, usePVals);
             break;
         case PSQL_DESCRIBE_TRIGGERS:
-            nrows = psqlDescribeTriggersQuery(server, messenger, maxrows, usePVals);
+            nrows = psqlDescribeTriggersQuery(server, messenger, encoder, maxrows, usePVals);
             break;
         case PSQL_DESCRIBE_VIEW:
-            nrows = psqlDescribeViewQuery(server, messenger, maxrows, usePVals);
+            nrows = psqlDescribeViewQuery(server, messenger, encoder, maxrows, usePVals);
             break;
         }
         {        
@@ -452,7 +453,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return false;
     }
 
-    private int odbcLoTypeQuery(PostgresMessenger messenger, int maxrows) {
+    private int odbcLoTypeQuery(PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows) {
         return 0;
     }
 
@@ -474,9 +475,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         }
     }
 
-    private int sequelBTypeQuery(PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+    private int sequelBTypeQuery(PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
-        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
         for (PostgresType.TypeOid pgtype : PostgresType.TypeOid.values()) {
             if (pgtype.getType() == PostgresType.TypeOid.TypType.BASE) {
                 messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
@@ -495,9 +495,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
-    private int npgsqlTypeQuery(PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+    private int npgsqlTypeQuery(PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
-        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
         List<String> types = new ArrayList<String>();
         for (String type : groups.get(1).split(",")) {
             if ((type.charAt(0) == '\'') && (type.charAt(type.length()-1) == '\''))
@@ -522,9 +521,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
-    private int psqlListSchemasQuery(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+    private int psqlListSchemasQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
-        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
         AkibanInformationSchema ais = server.getAIS();
         List<String> names = new ArrayList<String>(ais.getSchemas().keySet());
         boolean noIS = (groups.get(1) != null);
@@ -557,9 +555,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
-    private int psqlListTablesQuery(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+    private int psqlListTablesQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
-        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
         List<String> types = Arrays.asList(groups.get(1).split(","));
         List<Columnar> tables = new ArrayList<Columnar>();
         AkibanInformationSchema ais = server.getAIS();
@@ -651,9 +648,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         }
     };
 
-    private int psqlDescribeTables1Query(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+    private int psqlDescribeTables1Query(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
-        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
         Map<Integer,TableName> nonTableNames = null;
         List<TableName> names = new ArrayList<TableName>();
         AkibanInformationSchema ais = server.getAIS();
@@ -724,8 +720,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         }
     }
 
-    private int psqlDescribeTables2Query(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
-        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+    private int psqlDescribeTables2Query(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
         Columnar table = getTableById(server, groups.get(1));
         if (table == null) return 0;
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
@@ -750,8 +745,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return 1;
     }
 
-    private int psqlDescribeTables2XQuery(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
-        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+    private int psqlDescribeTables2XQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
         Columnar table = getTableById(server, groups.get(2));
         if (table == null) return 0;
         boolean hasTablespace = (groups.get(1) != null);
@@ -777,9 +771,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return 1;
     }
 
-    private int psqlDescribeTables3Query(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+    private int psqlDescribeTables3Query(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
-        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
         Columnar table = getTableById(server, groups.get(2));
         if (table == null) return 0;
         boolean hasCollation = (groups.get(1) != null);
@@ -821,16 +814,14 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
-    private int psqlDescribeTables4Query(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
-        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+    private int psqlDescribeTables4Query(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
         Columnar table = getTableById(server, groups.get(1));
         if (table == null) return 0;
         return 0;
     }
 
-    private int psqlDescribeIndexesQuery(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+    private int psqlDescribeIndexesQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
-        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
         Columnar columnar = getTableById(server, groups.get(4));
         if ((columnar == null) || !columnar.isTable()) return 0;
         UserTable table = (UserTable)columnar;
@@ -899,9 +890,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
-    private int psqlDescribeForeignKeys1Query(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+    private int psqlDescribeForeignKeys1Query(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
-        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
         Columnar columnar = getTableById(server, groups.get(1));
         if ((columnar == null) || !columnar.isTable()) return 0;
         Join join = ((UserTable)columnar).getParentJoin();
@@ -917,9 +907,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
-    private int psqlDescribeForeignKeys2Query(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+    private int psqlDescribeForeignKeys2Query(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
-        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
         Columnar columnar = getTableById(server, groups.get(1));
         if ((columnar == null) || !columnar.isTable()) return 0;
         for (Join join : ((UserTable)columnar).getChildJoins()) {
@@ -940,8 +929,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
-    private int psqlDescribeTriggersQuery(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
-        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+    private int psqlDescribeTriggersQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
         Columnar columnar = getTableById(server, groups.get(2));
         return 0;
     }
@@ -1053,8 +1041,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return str.toString();
     }
 
-    private int psqlDescribeViewQuery(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
-        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+    private int psqlDescribeViewQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
         Columnar table = getTableById(server, groups.get(1));
         if ((table == null) || !table.isView()) return 0;
         View view = (View)table;

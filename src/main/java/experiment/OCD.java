@@ -207,7 +207,9 @@ public class OCD
                 }
             }
             try {
-                statement.close();
+                for (PreparedStatement statement : statements) {
+                    statement.close();
+                }
                 connection.close();
             } catch (SQLException e) {
                 System.err.println(String.format("Caught error shutting down: %s", e.getMessage()));
@@ -238,15 +240,19 @@ public class OCD
         public QueryThread() throws SQLException
         {
             connection = DriverManager.getConnection(url);
-            statement = connection.createStatement();
+            statements = new PreparedStatement[queries.length];
+            for (int q = 0; q < queries.length; q++) {
+                statements[q] = connection.prepareStatement(queries[q]);
+            }
         }
 
         private void runQueries() throws SQLException
         {
             long start = System.currentTimeMillis();
-            for (String query : queries) {
-                if (statement.execute(query)) {
-                    ResultSet resultSet = statement.executeQuery(query);
+            for (PreparedStatement statement : statements) {
+                boolean hasResultSet = statement.execute();
+                if (hasResultSet) {
+                    ResultSet resultSet = statement.getResultSet();
                     while (resultSet.next());
                     resultSet.close();
                 }
@@ -263,7 +269,7 @@ public class OCD
         }
 
         private Connection connection;
-        private Statement statement;
+        private PreparedStatement[] statements;
         private volatile boolean shutdown = false;
         private volatile boolean paused = true;
         private volatile int queryCount;

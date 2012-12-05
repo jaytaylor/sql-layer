@@ -116,7 +116,7 @@ public class PostgresExplainStatement implements PostgresStatement
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
-        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+        ServerValueEncoder encoder = server.getValueEncoder();
         int nrows = 0;
         for (String row : explanation) {
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());

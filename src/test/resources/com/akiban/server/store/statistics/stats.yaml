@@ -14,8 +14,41 @@ Statistics:
     lt: 900
   - distinct: 300
     eq: 1
-    key: ["\x81"]
+    key:
+    - !!binary |-
+      gMKBAA==
     lt: 300
+  - distinct: 0
+    eq: 1
+    key: ["\u2603"]
+    lt: 0
+Table: parent
+Timestamp: 2010-01-01T00:00:00Z
+---
+Index: name_sv
+RowCount: 1600
+SampledCount: 100
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 200
+    eq: 1
+    key:
+    - !!binary |-
+      wgJCQkIA
+    lt: 500
+  - distinct: 100
+    eq: 1
+    key:
+    - !!binary |-
+      wgJOTk4A
+    lt: 900
+  - distinct: 0
+    eq: 1
+    key:
+    - !!binary |-
+      wgJbW1sA
+    lt: 0
 Table: parent
 Timestamp: 2010-01-01T00:00:00Z
 ---

@@ -36,6 +36,8 @@ class HotspotMonitor(threading.Thread):
 
     def process_line(self, line):
         if self.compilation_line(line):
+            if MUST_COMPILE in line:
+                self.must_compile_line_seen = True
             if self.must_compile_line_seen:
                 self.last_compilation_time = time.time()
 
@@ -80,6 +82,11 @@ def main():
     quiet_time_sec = float(sys.argv[1])
     print 'quiet time: %s sec' % quiet_time_sec 
     akserver = akserver_pid()
-    start_profiling(akserver, 0)
+    monitor = HotspotMonitor(akserver, quiet_time_sec)
+    monitor.start()
+    line = sys.stdin.readline()
+    while line:
+        monitor.process_line(line)
+        line = sys.stdin.readline()
 
 main()
