@@ -73,6 +73,7 @@ public class JoinAndIndexPicker extends BaseRule
         Joinable joinable;
         BaseQuery query;
         QueryIndexGoal queryGoal;
+        ConditionList originalSubqueryWhereConditions;
 
         public Picker(Joinable joinable, BaseQuery query,
                       SchemaRulesContext rulesContext,
@@ -203,8 +204,11 @@ public class JoinAndIndexPicker extends BaseRule
         public Plan subqueryPlan(Set<ColumnSource> subqueryBoundTables,
                                  Collection<JoinOperator> subqueryJoins,
                                  Collection<JoinOperator> subqueryOutsideJoins) {
-            if (queryGoal == null)
+            if (queryGoal == null) {
                 queryGoal = determineQueryIndexGoal(joinable);
+                if (queryGoal.getWhereConditions() != null)
+                    originalSubqueryWhereConditions = new ConditionList(queryGoal.getWhereConditions());
+            }
             if (joinable instanceof TableGroupJoinTree) {
                 TableGroupJoinTree tables = (TableGroupJoinTree)joinable;
                 GroupIndexGoal groupGoal = new GroupIndexGoal(queryGoal, tables);
@@ -216,6 +220,12 @@ public class JoinAndIndexPicker extends BaseRule
                 return new GroupPlan(groupGoal, JoinableBitSet.of(0), scan, costEstimate, conditionSources, true);
             }
             if (joinable instanceof JoinNode) {
+                if ((originalSubqueryWhereConditions != null) &&
+                    (originalSubqueryWhereConditions.size() != queryGoal.getWhereConditions().size())) {
+                    // Restore possible join conditions for new enumerator.
+                    queryGoal.getWhereConditions().clear();
+                    queryGoal.getWhereConditions().addAll(originalSubqueryWhereConditions);
+                }
                 return new JoinEnumerator(this, subqueryBoundTables, subqueryJoins, subqueryOutsideJoins).run((JoinNode)joinable, queryGoal.getWhereConditions()).bestPlan(Collections.<JoinOperator>emptyList());
             }
             if (joinable instanceof SubquerySource) {
