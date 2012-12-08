@@ -16,3 +16,4 @@ outer-bare: outer join without conditions unmolested
 
 parent-only: all conditions on other tables
 
+cascade: 
