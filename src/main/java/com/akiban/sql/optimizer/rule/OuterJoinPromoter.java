@@ -196,33 +196,40 @@ public class OuterJoinPromoter extends BaseRule
         for (ConditionExpression condition : select.getConditions()) {
             required.gatherRequired(condition);
         }
-        Set<ColumnSource> sources = required.getRequired();
-        if (sources.isEmpty()) return;
-        promoteOuterJoins((Joinable)select.getInput(), sources);
+        if (required.getRequired().isEmpty()) return;
+        promoteOuterJoins((Joinable)select.getInput(), required);
     }
 
     protected boolean promoteOuterJoins(Joinable joinable,
-                                        Collection<ColumnSource> required) {
-        if (required.contains(joinable))
+                                        RequiredSources required) {
+        if (required.getRequired().contains(joinable))
             return true;
         if (joinable instanceof JoinNode) {
             JoinNode join = (JoinNode)joinable;
-            boolean lp = promoteOuterJoins(join.getLeft(), required);
-            boolean rp = promoteOuterJoins(join.getRight(), required);
-            boolean promoted = false;
-            switch (join.getJoinType()) {
-            case LEFT:
-                promoted = rp;
-                break;
-            case RIGHT:
-                promoted = lp;
-                break;
+            while (true) {
+                boolean lp = promoteOuterJoins(join.getLeft(), required);
+                boolean rp = promoteOuterJoins(join.getRight(), required);
+                boolean promoted = false;
+                switch (join.getJoinType()) {
+                case LEFT:
+                    promoted = rp;
+                    break;
+                case RIGHT:
+                    promoted = lp;
+                    break;
+                }
+                if (promoted) {
+                    join.setJoinType(JoinType.INNER);
+                    promotedOuterJoin(join);
+                    int sizeBefore = required.getRequired().size();
+                    for (ConditionExpression condition : join.getJoinConditions()) {
+                        required.gatherRequired(condition);
+                    }
+                    if (sizeBefore < required.getRequired().size())
+                        continue;
+                }
+                return lp || rp;
             }
-            if (promoted) {
-                join.setJoinType(JoinType.INNER);
-                promotedOuterJoin(join);
-            }
-            return lp || rp;
         }
         return false;
     }
