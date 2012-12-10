@@ -260,7 +260,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 }
             }
             catch (PersistitInterruptedException ex) {
-                log.info("interrupt while analyzing " + index, ex);
+                log.debug("interrupt while analyzing " + index, ex);
                 throw new QueryCanceledException(session);
             }
             catch (PersistitException ex) {
