@@ -52,6 +52,8 @@ import com.akiban.server.service.monitor.SessionMonitor;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
+import com.akiban.util.tap.Tap;
+import com.akiban.util.tap.TapReport;
 import com.google.inject.Inject;
 
 public class ServerSchemaTablesServiceImpl
@@ -65,6 +67,7 @@ public class ServerSchemaTablesServiceImpl
     static final TableName SERVER_PARAMETERS = new TableName (SCHEMA_NAME, "server_parameters");
     static final TableName SERVER_MEMORY_POOLS = new TableName (SCHEMA_NAME, "server_memory_pools");
     static final TableName SERVER_GARBAGE_COLLECTORS = new TableName (SCHEMA_NAME, "server_garbage_collectors");
+    static final TableName SERVER_TAPS = new TableName (SCHEMA_NAME, "server_taps");
     
     private final MonitorService monitor;
     private final ConfigurationService configService;
@@ -98,6 +101,8 @@ public class ServerSchemaTablesServiceImpl
         attach (ais, true, SERVER_MEMORY_POOLS, ServerMemoryPools.class);
         //SERVER_GARBAGE_COLLECTIONS
         attach (ais, true, SERVER_GARBAGE_COLLECTORS, ServerGarbageCollectors.class);
+        //SERVER_TAPS
+        attach (ais, true, SERVER_TAPS, ServerTaps.class);
     }
 
     @Override
@@ -389,6 +394,51 @@ public class ServerSchemaTablesServiceImpl
         }
     }
 
+    private class ServerTaps extends BasicFactoryBase {
+        private TapReport[] getAllReports() {
+            return Tap.getReport(".*");
+        }
+
+        public ServerTaps(TableName sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan (getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            return getAllReports().length;
+        }
+
+        private class Scan extends BaseScan {
+            private final TapReport[] reports;
+            private int it = 0;
+
+            public Scan(RowType rowType) {
+                super(rowType);
+                reports = getAllReports();
+            }
+
+            @Override
+            public Row next() {
+                if(it >= reports.length) {
+                    return null;
+                }
+                TapReport report = reports[it++];
+                return new ValuesRow (rowType,
+                                      report.getName(),
+                                      report.getInCount(),
+                                      report.getOutCount(),
+                                      report.getCumulativeTime(),
+                                      ++rowCounter);
+            }
+        }
+    }
+
+
     static AkibanInformationSchema createTablesToRegister() {
         NewAISBuilder builder = AISBBasedBuilder.create();
         
@@ -435,6 +485,12 @@ public class ServerSchemaTablesServiceImpl
             .colString("name", IDENT_MAX, false)
             .colBigInt("total_count", false)
             .colBigInt("total_milliseconds", false);
+
+        builder.userTable(SERVER_TAPS)
+            .colString("tap_name", IDENT_MAX, false)
+            .colBigInt("in_count", false)
+            .colBigInt("out_count", false)
+            .colBigInt("total_nanoseconds", false);
 
         return builder.ais(false);
     }
