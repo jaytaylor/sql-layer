@@ -92,7 +92,7 @@ cp $(find . -name 'server-plugins-http-conductor*with-dependencies.jar') ../../p
 popd && popd
 
 # Add akiban-rest
-[ ! -z "$REST_BRANCH" ] || REST_BRANCH="https://github.com/akiban/akiban-rest/archive/plugin.zip"
+[ ! -z "$REST_BRANCH" ] || REST_BRANCH="https://github.com/akiban/akiban-rest/archive/akiban-rest-0.2.2.zip"
 echo "Using akiban-rest git branch: ${REST_BRANCH}"
 pushd target && rm -rf akiban-rest-plugin ; \
     rm rest.zip ; \
