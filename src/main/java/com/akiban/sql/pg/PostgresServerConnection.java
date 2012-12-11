@@ -193,7 +193,7 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     protected void topLevel() throws IOException, Exception {
-        logger.info("Connect from {}" + socket.getRemoteSocketAddress());
+        logger.debug("Connect from {}" + socket.getRemoteSocketAddress());
         boolean startupComplete = false;
         try {
             while (running) {
@@ -410,7 +410,7 @@ public class PostgresServerConnection extends ServerSessionBase
         case NONE:
             {
                 String user = properties.getProperty("user");
-                logger.info("Login {}", user);
+                logger.debug("Login {}", user);
                 authenticationOkay(user);
             }
             break;
@@ -464,7 +464,7 @@ public class PostgresServerConnection extends ServerSessionBase
     protected void processPasswordMessage() throws IOException {
         String user = properties.getProperty("user");
         String pass = messenger.readString();
-        logger.info("Login {}/{}", user, pass);
+        logger.debug("Login {}/{}", user, pass);
         authenticationOkay(user);
     }
     
@@ -515,7 +515,7 @@ public class PostgresServerConnection extends ServerSessionBase
                                                      return gssNegotation(gssLogin);
                                                  }
                                              });
-        logger.info("Login {}", authenticated);
+        logger.debug("Login {}", authenticated);
         authenticationOkay(authenticated.toString());
     }
     
@@ -561,7 +561,7 @@ public class PostgresServerConnection extends ServerSessionBase
     protected void processQuery() throws IOException {
         long startTime = System.currentTimeMillis();
         String sql = messenger.readString();
-        logger.info("Query: {}", sql);
+        logger.debug("Query: {}", sql);
 
         if (sql.length() == 0) {
             emptyQuery();
@@ -647,7 +647,7 @@ public class PostgresServerConnection extends ServerSessionBase
         for (int i = 0; i < nparams; i++)
             paramTypes[i] = messenger.readInt();
         sessionMonitor.startStatement(sql);
-        logger.info("Parse: {}", sql);
+        logger.debug("Parse: {}", sql);
         
         PostgresQueryContext context = new PostgresQueryContext(this);
         updateAIS(context);
@@ -788,7 +788,7 @@ public class PostgresServerConnection extends ServerSessionBase
         int maxrows = messenger.readInt();
         PostgresBoundQueryContext context = boundPortals.get(portalName);
         PostgresStatement pstmt = context.getStatement();
-        logger.info("Execute: {}", pstmt);
+        logger.debug("Execute: {}", pstmt);
         // TODO: save SQL in prepared statement and get it here.
         sessionMonitor.startStatement(null, startTime);
         int rowsProcessed = executeStatementWithAutoTxn(pstmt, context, maxrows);
