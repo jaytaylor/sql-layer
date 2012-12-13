@@ -34,8 +34,9 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TInstanceGenerator;
 import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -47,6 +48,7 @@ import java.util.Date;
 public class NoArgFuncs
 {
     static final int USER_NAME_LENGTH = 77;
+    static final int SCHEMA_NAME_LENGTH = 128;
 
     public static final TScalar SHORT_SERVER_VERSION = new NoArgExpression("version", true)
     {
@@ -209,27 +211,23 @@ public class NoArgFuncs
         }
     };
 
-    public static final TScalar CUR_USER;
+    public static final TScalar CURRENT_USER = new NoArgExpression("CURRENT_USER", true) 
+    {
+        @Override
+        public TClass resultTClass() {
+            return MString.VARCHAR;
+        }
 
-    static {
-        CUR_USER = new NoArgExpression("CURRENT_USER", true) {
+        @Override
+        protected int[] resultAttrs() {
+            return new int[] { USER_NAME_LENGTH };
+        }
 
-            @Override
-            public TClass resultTClass() {
-                return MString.VARCHAR;
-            }
-
-            @Override
-            protected int[] resultAttrs() {
-                return new int[] { USER_NAME_LENGTH };
-            }
-
-            @Override
-            public void evaluate(TExecutionContext context, PValueTarget target) {
-                target.putString(context.getCurrentUser(), null);
-            }
-        };
-    }
+        @Override
+        public void evaluate(TExecutionContext context, PValueTarget target) {
+            target.putString(context.getCurrentUser(), null);
+        }
+    };
 
     public static final TScalar SESSION_USER = new NoArgExpression("SESSION_USER", true)
     {
@@ -266,6 +264,39 @@ public class NoArgFuncs
         public void evaluate(TExecutionContext context, PValueTarget target)
         {
             target.putString(context.getSystemUser(), null);
+        }
+    };
+    
+    public static final TScalar CURRENT_SCHEMA = new NoArgExpression("CURRENT_SCHEMA", true)
+    {
+        @Override
+        public TClass resultTClass() {
+            return MString.VARCHAR;
+        }
+
+        @Override
+        protected int[] resultAttrs() {
+            return new int[] { SCHEMA_NAME_LENGTH };
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueTarget target)
+        {
+            target.putString(context.getCurrentSchema(), null);
+        }
+    };
+    
+    public static final TScalar CURRENT_SESSION_ID = new NoArgExpression("CURRENT_SESSION_ID", true)
+    {
+        @Override
+        public TClass resultTClass() {
+            return MNumeric.INT;
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueTarget target)
+        {
+            target.putInt32(context.getSessionId());
         }
     };
 }
