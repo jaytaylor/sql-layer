@@ -33,6 +33,7 @@ import com.akiban.qp.rowtype.ProjectedUserTableRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.*;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
@@ -139,11 +140,12 @@ class Project_Default extends Operator
         this.inputOperator = inputOperator;
         this.rowType = rowType;
         this.pExpressions = pExpressions;
+        this.tInstances = TInstance.createTInstances(pExpressions);
         this.projections = projections;
-        projectType = rowType.schema().newProjectType(this.projections, pExpressions);
+        this.projectType = rowType.schema().newProjectType(this.projections, pExpressions);
     }
 
-    // Project_Default constructor, returns ProjectedUserTableRowType rows 
+    // Project_Default constructor, returns ProjectedUserTableRowType rows
     public Project_Default(Operator inputOperator, RowType inputRowType,
             RowType projectTableRowType, List<? extends Expression> projections, List<? extends TPreparedExpression> pExpressions)
     {
@@ -167,6 +169,7 @@ class Project_Default extends Operator
                                                     projections,
                                                     pExpressions);
         this.pExpressions = pExpressions; // TODO defensively copy once the old expressions are gone (until then, this may NPE)
+        this.tInstances = TInstance.createTInstances(pExpressions);
     }
 
 
@@ -181,6 +184,7 @@ class Project_Default extends Operator
     protected final RowType rowType;
     protected final List<? extends Expression> projections;
     private final List<? extends TPreparedExpression> pExpressions;
+    private final List<? extends TInstance> tInstances;
     protected ProjectedRowType projectType;
 
     @Override
@@ -232,7 +236,7 @@ class Project_Default extends Operator
                 if ((inputRow = input.next()) != null) {
                     projectedRow =
                         inputRow.rowType() == rowType
-                        ? new ProjectedRow(projectType, inputRow, context, projections, pExpressions)
+                        ? new ProjectedRow(projectType, inputRow, context, projections, pExpressions, tInstances)
                         : inputRow;
                 }
                 if (projectedRow == null) {
