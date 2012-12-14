@@ -101,6 +101,12 @@ public class PostgresExecuteStatement extends PostgresBaseCursorStatement
     }
 
     @Override
+    public void sendDescription(PostgresQueryContext context, boolean always) 
+            throws IOException {
+        // Execute will do it.
+    }
+
+    @Override
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         return server.executePreparedStatement(this, maxrows);

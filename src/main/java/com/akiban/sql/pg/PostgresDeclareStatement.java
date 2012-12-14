@@ -45,8 +45,8 @@ public class PostgresDeclareStatement extends PostgresBaseCursorStatement
                                               List<ParameterNode> params, int[] paramTypes) {
         DeclareStatementNode declare = (DeclareStatementNode)stmt;
         this.name = declare.getName();
-        this.sql = sql.substring(stmt.getBeginOffset(), stmt.getEndOffset() + 1);
         this.stmt = declare.getStatement();
+        this.sql = sql.substring(this.stmt.getBeginOffset(), this.stmt.getEndOffset() + 1);
         return this;
     }
     

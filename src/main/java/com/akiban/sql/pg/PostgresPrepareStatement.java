@@ -45,8 +45,8 @@ public class PostgresPrepareStatement extends PostgresBaseCursorStatement
                                               List<ParameterNode> params, int[] paramTypes) {
         PrepareStatementNode prepare = (PrepareStatementNode)stmt;
         this.name = prepare.getName();
-        this.sql = sql.substring(stmt.getBeginOffset(), stmt.getEndOffset() + 1);
         this.stmt = prepare.getStatement();
+        this.sql = sql.substring(this.stmt.getBeginOffset(), this.stmt.getEndOffset() + 1);
         return this;
     }
     
