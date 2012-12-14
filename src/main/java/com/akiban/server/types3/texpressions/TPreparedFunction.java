@@ -45,6 +45,8 @@ import java.util.List;
 
 public final class TPreparedFunction implements TPreparedExpression {
 
+    private TExecutionContext context;
+    
     @Override
     public TInstance resultType() {
         return resultType;
@@ -75,7 +77,10 @@ public final class TPreparedFunction implements TPreparedExpression {
                 overload,
                 resultType,
                 children,
-                preptimeContext.createExecutionContext());
+                context == null 
+                    ? context = preptimeContext.createExecutionContext()
+                    : context
+                );
     }
 
     @Override

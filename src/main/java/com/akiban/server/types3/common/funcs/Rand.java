@@ -62,7 +62,10 @@ public abstract class Rand extends TScalarBase {
                 @Override
                 protected long getSeed(LazyList<? extends PValueSource> inputs)
                 {
-                    return inputs.get(0).getInt64();
+                    PValueSource input = inputs.get(0);
+                    if (input.isNull())
+                        return System.currentTimeMillis();
+                    else return input.getInt64();
                 }
 
                 @Override
@@ -87,6 +90,18 @@ public abstract class Rand extends TScalarBase {
     }
 
     @Override
+    protected boolean nullContaminates(int inputIndex)
+    {
+        return false;
+    }
+    
+    @Override
+    protected boolean neverConstant()
+    {
+        return true;
+    }
+    
+    @Override
     public String displayName() {
         return "RAND";
     }
@@ -103,14 +118,13 @@ public abstract class Rand extends TScalarBase {
     
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget out)
-    { 
+    {
         Random rand;
         if (context.hasExectimeObject(RAND_INDEX))
             rand = (Random) context.exectimeObjectAt(RAND_INDEX);
         else
             context.putExectimeObject(RAND_INDEX,
                                       rand = new Random(getSeed(inputs)));
-
         out.putDouble(rand.nextDouble());
     }
 }
