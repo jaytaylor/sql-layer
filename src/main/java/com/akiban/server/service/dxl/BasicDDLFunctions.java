@@ -453,7 +453,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             while((oldRow = cursor.next()) != null) {
                 RowType oldType = oldRow.rowType();
                 if(oldType == origTableType) {
-                    Row newRow = new ProjectedRow(newTableType, oldRow, queryContext, projections, pProjections);
+                    Row newRow = new ProjectedRow(newTableType,
+                                                  oldRow,
+                                                  queryContext,
+                                                  projections,
+                                                  pProjections,
+                                                  TInstance.createTInstances(pProjections));
                     queryContext.checkConstraints(newRow, usePValues);
                     adapter.alterRow(oldRow, newRow, oldTypeIndexes, groupChange, usePValues);
                 } else {
