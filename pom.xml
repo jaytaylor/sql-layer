@@ -76,7 +76,7 @@
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-sql-parser</artifactId>
-            <version>1.0.12-SNAPSHOT</version>
+            <version>1.0.13-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -98,7 +98,7 @@
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-sql-parser</artifactId>
-            <version>1.0.12-SNAPSHOT</version>
+            <version>1.0.13-SNAPSHOT</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
