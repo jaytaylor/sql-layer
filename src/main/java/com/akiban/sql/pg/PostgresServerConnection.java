@@ -1128,7 +1128,8 @@ public class PostgresServerConnection extends ServerSessionBase
     @Override
     public void closeBoundPortal(String name) {
         PostgresBoundQueryContext bound = boundPortals.remove(name);
-        bound.close();
+        if (bound != null)
+            bound.close();
     }
 
     @Override
