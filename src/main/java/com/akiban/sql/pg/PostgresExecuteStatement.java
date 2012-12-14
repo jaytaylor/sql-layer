@@ -26,23 +26,47 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.optimizer.TypesTranslation;
+import com.akiban.sql.parser.ConstantNode;
 import com.akiban.sql.parser.ExecuteStatementNode;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.StatementNode;
+import com.akiban.sql.parser.ValueNode;
 
+import com.akiban.server.error.UnsupportedSQLException;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.FromObjectValueSource;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValueSources;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.io.IOException;
 
 public class PostgresExecuteStatement extends PostgresBaseCursorStatement
 {
     private String name;
+    private List<ValueSource> paramValues;
+    private List<TPreptimeValue> paramPValues; 
 
     public String getName() {
         return name;
     }
 
     public void setParameters(PostgresBoundQueryContext context) {
-        
+        if (paramPValues != null) {
+            for (int i = 0; i < paramPValues.size(); i++) {
+                context.setPValue(i, paramPValues.get(i).value());
+            }
+        }
+        else {
+            for (int i = 0; i < paramValues.size(); i++) {
+                context.setValue(i, paramValues.get(i));
+            }
+        }
     }
 
     @Override
@@ -51,9 +75,31 @@ public class PostgresExecuteStatement extends PostgresBaseCursorStatement
                                               List<ParameterNode> params, int[] paramTypes) {
         ExecuteStatementNode execute = (ExecuteStatementNode)stmt;
         this.name = execute.getName();
+        FromObjectValueSource fromObject = null;
+        if (Types3Switch.ON) {
+            paramPValues = new ArrayList<TPreptimeValue>();
+        }
+        else {
+            paramValues = new ArrayList<ValueSource>();
+            fromObject = new FromObjectValueSource();
+        }
+        for (ValueNode param : execute.getParameterList()) {
+            AkType akType = null;
+            if (param.getType() != null)
+                akType = TypesTranslation.sqlTypeToAkType(param.getType());
+            if (!(param instanceof ConstantNode)) {
+                throw new UnsupportedSQLException("EXECUTE arguments must be constants", param);
+            }
+            ConstantNode constant = (ConstantNode)param;
+            Object value = constant.getValue();
+            if (paramPValues != null)
+                paramPValues.add(PValueSources.fromObject(value, akType));
+            else
+                paramValues.add(new ValueHolder(fromObject.setExplicitly(value, akType)));
+        }
         return this;
     }
-    
+
     @Override
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
