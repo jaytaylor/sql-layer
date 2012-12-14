@@ -29,7 +29,7 @@ package com.akiban.sql.pg;
 import com.akiban.qp.operator.CursorBase;
 
 public interface PostgresCursorGenerator<T extends CursorBase> {
-    boolean canSuspend(PostgresServerSession server);
-    T openCursor(PostgresQueryContext context);
-    void closeCursor(T cursor);
+    public boolean canSuspend(PostgresServerSession server);
+    public T openCursor(PostgresQueryContext context);
+    public void closeCursor(T cursor);
 }
