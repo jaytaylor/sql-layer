@@ -84,6 +84,8 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
             this.cursor = cursor;
             return true;
         }
+        this.state = State.EXHAUSTED;
+        this.cursor = null;
         return super.finishCursor(generator, cursor, suspended);
     }
 
