@@ -32,6 +32,7 @@ import com.akiban.server.types.AkType;
 public class PostgresBoundQueryContext extends PostgresQueryContext 
 {
     private static enum State { NORMAL, UNOPENED, SUSPENDED, EXHAUSTED };
+    private boolean reportSuspended;
     private State state;
     private PostgresPreparedStatement statement;
     private boolean[] columnBinary;
@@ -40,10 +41,11 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
     
     public PostgresBoundQueryContext(PostgresServerSession server,
                                      PostgresPreparedStatement statement,
-                                     boolean canSuspend) {
+                                     boolean canSuspend, boolean reportSuspended) {
         super(server);
         this.statement = statement;
         this.state = canSuspend ? State.UNOPENED : State.NORMAL;
+        this.reportSuspended = reportSuspended;
     }
 
     public PostgresPreparedStatement getStatement() {
@@ -82,8 +84,10 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
         if (suspended && (state != State.NORMAL)) {
             this.state = State.SUSPENDED;
             this.cursor = cursor;
-            return true;
+            return reportSuspended;
         }
+        cursor = null;
+        state = State.EXHAUSTED;
         return super.finishCursor(generator, cursor, suspended);
     }
 

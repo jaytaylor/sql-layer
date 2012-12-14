@@ -734,7 +734,7 @@ public class PostgresServerConnection extends ServerSessionBase
         boolean canSuspend = ((stmt instanceof PostgresCursorGenerator) &&
                               ((PostgresCursorGenerator<?>)stmt).canSuspend(this));
         PostgresBoundQueryContext bound = 
-            new PostgresBoundQueryContext(this, pstmt, canSuspend);
+            new PostgresBoundQueryContext(this, pstmt, canSuspend, true);
         if (params != null) {
             if (valueDecoder == null)
                 valueDecoder = new ServerValueDecoder(messenger.getEncoding());
@@ -1058,7 +1058,7 @@ public class PostgresServerConnection extends ServerSessionBase
             throws IOException {
         PostgresPreparedStatement pstmt = preparedStatements.get(estmt.getName());
         PostgresBoundQueryContext context = 
-            new PostgresBoundQueryContext(this, pstmt, false);
+            new PostgresBoundQueryContext(this, pstmt, false, false);
         estmt.setParameters(context);
         sessionMonitor.startStatement(pstmt.getSQL(), System.currentTimeMillis());
         pstmt.getStatement().sendDescription(context, false);
@@ -1098,10 +1098,14 @@ public class PostgresServerConnection extends ServerSessionBase
         else {
             ppstmt = new PostgresPreparedStatement(sql, pstmt);
         }
-        boolean canSuspend = ((pstmt instanceof PostgresCursorGenerator) &&
-                              ((PostgresCursorGenerator<?>)pstmt).canSuspend(this));
-        PostgresBoundQueryContext bound = 
-            new PostgresBoundQueryContext(this, ppstmt, canSuspend);
+        if (!(pstmt instanceof PostgresCursorGenerator)) {
+            throw new UnsupportedSQLException("DECLARE can only be used with a result-generating statement", stmt);
+        }
+        if (!((PostgresCursorGenerator<?>)pstmt).canSuspend(this)) {
+            throw new UnsupportedSQLException("DECLARE can only be used within a transaction", stmt);
+        }
+        PostgresBoundQueryContext bound =
+            new PostgresBoundQueryContext(this, ppstmt, true, false);
         if (estmt != null) {
             estmt.setParameters(bound);
         }
