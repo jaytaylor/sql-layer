@@ -43,7 +43,8 @@ import java.io.IOException;
  * An SQL SELECT transformed into an operator tree
  * @see PostgresOperatorCompiler
  */
-public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
+public class PostgresOperatorStatement extends PostgresBaseOperatorStatement 
+                                       implements PostgresQueryContext.CursorLifecycle<Cursor>
 {
     private Operator resultOperator;
 
@@ -56,11 +57,11 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
     }
 
     public void init(Operator resultOperator,
-                                     RowType resultRowType,
-                                     List<String> columnNames,
-                                     List<PostgresType> columnTypes,
-                                     PostgresType[] parameterTypes,
-                                     boolean usesPValues) {
+                     RowType resultRowType,
+                     List<String> columnNames,
+                     List<PostgresType> columnTypes,
+                     PostgresType[] parameterTypes,
+                     boolean usesPValues) {
         super.init(resultRowType, columnNames, columnTypes, parameterTypes, usesPValues);
         this.resultOperator = resultOperator;
     }
@@ -81,26 +82,44 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
     }
 
     @Override
+    public Cursor openCursor(PostgresQueryContext context) {
+        Cursor cursor = API.cursor(resultOperator, context);
+        cursor.open();
+        return cursor;
+    }
+
+    public void closeCursor(Cursor cursor) {
+        if (cursor != null) {
+            cursor.destroy();
+        }
+    }
+    
+    @Override
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
+        PostgresMessenger messenger = server.getMessenger();
         int nrows = 0;
         Cursor cursor = null;
         IOException exceptionDuringExecution = null;
         boolean lockSuccess = false;
+        boolean suspended = false;
         try {
             lock(context, DXLFunction.UNSPECIFIED_DML_READ);
             lockSuccess = true;
-            cursor = API.cursor(resultOperator, context);
-            cursor.open();
+            cursor = context.startExecute(this);
             PostgresOutputter<Row> outputter = getRowOutputter(context);
             outputter.beforeData();
-            Row row;
-            while ((row = cursor.next()) != null) {
-                assert getResultRowType() == null || (row.rowType() == getResultRowType()) : row;
-                outputter.output(row, usesPValues());
-                nrows++;
-                if ((maxrows > 0) && (nrows >= maxrows))
-                    break;
+            if (cursor != null) {
+                Row row;
+                while ((row = cursor.next()) != null) {
+                    assert (getResultRowType() == null) || (row.rowType() == getResultRowType()) : row;
+                    outputter.output(row, usesPValues());
+                    nrows++;
+                    if ((maxrows > 0) && (nrows >= maxrows)) {
+                        suspended = true;
+                        break;
+                    }
+                }
             }
             outputter.afterData();
         }
@@ -110,14 +129,11 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
         finally {
             RuntimeException exceptionDuringCleanup = null;
             try {
-                if (cursor != null) {
-                    cursor.destroy();
-                }
+                suspended = context.finishExecute(this, cursor, suspended);
             }
             catch (RuntimeException e) {
                 exceptionDuringCleanup = e;
-                logger.error("Caught exception while cleaning up cursor for {0}", resultOperator.describePlan());
-                logger.error("Exception stack", e);
+                logger.error("Caught exception while cleaning up cursor for {0}", resultOperator.describePlan(), e);
             }
             finally {
                 unlock(context, DXLFunction.UNSPECIFIED_DML_READ, lockSuccess);
@@ -128,8 +144,11 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
                 throw exceptionDuringCleanup;
             }
         }
+        if (suspended) {
+            messenger.beginMessage(PostgresMessages.PORTAL_SUSPENDED_TYPE.code());
+            messenger.sendMessage();
+        }
         {
-            PostgresMessenger messenger = server.getMessenger();
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
             messenger.writeString("SELECT " + nrows);
             messenger.sendMessage();

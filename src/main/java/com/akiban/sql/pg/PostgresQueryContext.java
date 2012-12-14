@@ -28,6 +28,8 @@ package com.akiban.sql.pg;
 
 import com.akiban.sql.server.ServerQueryContext;
 
+import com.akiban.qp.operator.CursorBase;
+
 public class PostgresQueryContext extends ServerQueryContext<PostgresServerSession>
 {
     public PostgresQueryContext(PostgresServerSession server) {
@@ -35,6 +37,20 @@ public class PostgresQueryContext extends ServerQueryContext<PostgresServerSessi
     }
 
     public boolean isColumnBinary(int i) {
+        return false;
+    }
+
+    public interface CursorLifecycle<T extends CursorBase> {
+        public T openCursor(PostgresQueryContext context);
+        public void closeCursor(T cursor);
+    }
+
+    public <T extends CursorBase> T startExecute(CursorLifecycle<T> callback) {
+        return callback.openCursor(this);
+    }
+
+    public <T extends CursorBase> boolean finishExecute(CursorLifecycle<T> callback, T cursor, boolean suspended) {
+        callback.closeCursor(cursor);
         return false;
     }
 

@@ -730,7 +730,9 @@ public class PostgresServerConnection extends ServerSessionBase
         }
         logger.debug("Bind: {} {}", stmtName, portalName);
         PostgresPreparedStatement pstmt = preparedStatements.get(stmtName);
-        PostgresBoundQueryContext bound = new PostgresBoundQueryContext(this, pstmt);
+        boolean canSuspend = (transaction != null);
+        PostgresBoundQueryContext bound = 
+            new PostgresBoundQueryContext(this, pstmt, canSuspend);
         if (params != null) {
             if (valueDecoder == null)
                 valueDecoder = new ServerValueDecoder(messenger.getEncoding());
@@ -795,7 +797,7 @@ public class PostgresServerConnection extends ServerSessionBase
         sessionMonitor.startStatement(pstmt.getSQL(), startTime);
         int rowsProcessed = executeStatementWithAutoTxn(pstmt.getStatement(), context, maxrows);
         sessionMonitor.endStatement(rowsProcessed);
-        logger.debug("Execute complete");
+        logger.debug("Execute complete: {} rows", rowsProcessed);
         if (reqs.monitor().isQueryLogEnabled()) {
             reqs.monitor().logQuery(sessionMonitor);
         }

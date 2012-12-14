@@ -141,6 +141,9 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
                     }
                     rowsModified++;
                     if ((maxrows > 0) && (rowsModified >= maxrows))
+                        // Note: do not allow suspending, since the
+                        // actual modifying and not just the output
+                        // would be suspended.
                         outputResult = false;
                 }
             }

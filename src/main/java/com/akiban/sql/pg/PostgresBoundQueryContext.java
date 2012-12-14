@@ -26,18 +26,24 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.qp.operator.CursorBase;
 import com.akiban.server.types.AkType;
 
 public class PostgresBoundQueryContext extends PostgresQueryContext 
 {
+    private static enum State { NORMAL, UNOPENED, SUSPENDED, EXHAUSTED };
+    private State state;
     private PostgresPreparedStatement statement;
     private boolean[] columnBinary;
     private boolean defaultColumnBinary;
+    private CursorBase<?> cursor;
     
     public PostgresBoundQueryContext(PostgresServerSession server,
-                                     PostgresPreparedStatement statement) {
+                                     PostgresPreparedStatement statement,
+                                     boolean canSuspend) {
         super(server);
         this.statement = statement;
+        this.state = canSuspend ? State.UNOPENED : State.NORMAL;
     }
 
     public PostgresPreparedStatement getStatement() {
@@ -57,7 +63,35 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
             return defaultColumnBinary;
     }
 
+    @Override
+    public <T extends CursorBase> T startExecute(CursorLifecycle<T> callback) {
+        switch (state) {
+        case NORMAL:
+        case UNOPENED:
+        default:
+            return super.startExecute(callback);
+        case SUSPENDED:
+            return (T)cursor;
+        case EXHAUSTED:
+            return null;
+        }
+    }
+
+    @Override
+    public <T extends CursorBase> boolean finishExecute(CursorLifecycle<T> callback, T cursor, boolean suspended) {
+        if (suspended && (state != State.NORMAL)) {
+            this.cursor = cursor;
+            return true;
+        }
+        return super.finishExecute(callback, cursor, suspended);
+    }
+
     protected void close() {
+        if (cursor != null) {
+            cursor.destroy();
+            cursor = null;
+            state = State.EXHAUSTED;
+        }        
     }
 
 }
