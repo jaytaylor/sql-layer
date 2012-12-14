@@ -730,7 +730,9 @@ public class PostgresServerConnection extends ServerSessionBase
         }
         logger.debug("Bind: {} = {}", stmtName, portalName);
         PostgresPreparedStatement pstmt = preparedStatements.get(stmtName);
-        boolean canSuspend = (transaction != null);
+        PostgresStatement stmt = pstmt.getStatement();
+        boolean canSuspend = ((stmt instanceof PostgresCursorGenerator) &&
+                              ((PostgresCursorGenerator<?>)stmt).canSuspend(this));
         PostgresBoundQueryContext bound = 
             new PostgresBoundQueryContext(this, pstmt, canSuspend);
         if (params != null) {
@@ -738,8 +740,8 @@ public class PostgresServerConnection extends ServerSessionBase
                 valueDecoder = new ServerValueDecoder(messenger.getEncoding());
             PostgresType[] parameterTypes = null;
             boolean usePValues = false;
-            if (pstmt.getStatement() instanceof PostgresBaseStatement) {
-                PostgresDMLStatement dml = (PostgresDMLStatement)pstmt.getStatement();
+            if (stmt instanceof PostgresBaseStatement) {
+                PostgresDMLStatement dml = (PostgresDMLStatement)stmt;
                 parameterTypes = dml.getParameterTypes();
                 usePValues = dml.usesPValues();
             }

@@ -64,12 +64,12 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
     }
 
     @Override
-    public <T extends CursorBase> T startExecute(CursorLifecycle<T> callback) {
+    public <T extends CursorBase> T startCursor(PostgresCursorGenerator<T> generator) {
         switch (state) {
         case NORMAL:
         case UNOPENED:
         default:
-            return super.startExecute(callback);
+            return super.startCursor(generator);
         case SUSPENDED:
             return (T)cursor;
         case EXHAUSTED:
@@ -78,13 +78,13 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
     }
 
     @Override
-    public <T extends CursorBase> boolean finishExecute(CursorLifecycle<T> callback, T cursor, boolean suspended) {
+    public <T extends CursorBase> boolean finishCursor(PostgresCursorGenerator<T> generator, T cursor, boolean suspended) {
         if (suspended && (state != State.NORMAL)) {
             this.state = State.SUSPENDED;
             this.cursor = cursor;
             return true;
         }
-        return super.finishExecute(callback, cursor, suspended);
+        return super.finishCursor(generator, cursor, suspended);
     }
 
     protected void close() {

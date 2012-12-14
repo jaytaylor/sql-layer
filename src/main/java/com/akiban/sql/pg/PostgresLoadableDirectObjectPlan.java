@@ -39,7 +39,7 @@ import java.util.List;
 import java.io.IOException;
 
 public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
-                                       implements PostgresQueryContext.CursorLifecycle<DirectObjectCursor>
+                                       implements PostgresCursorGenerator<DirectObjectCursor>
 {
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: execute shared");
     private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: acquire shared lock");
@@ -93,6 +93,11 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
         // The copy cases will be handled below.
         if (outputMode == DirectObjectPlan.OutputMode.TABLE)
             super.sendDescription(context, always);
+    }
+
+    @Override
+    public boolean canSuspend(PostgresServerSession server) {
+        return true;
     }
 
     @Override
@@ -151,7 +156,7 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
             }
         }
         finally {
-            suspended = context.finishExecute(this, cursor, suspended);            
+            suspended = context.finishCursor(this, cursor, suspended);            
             ServerCallContextStack.pop(context, invocation);
         }
         if (suspended) {

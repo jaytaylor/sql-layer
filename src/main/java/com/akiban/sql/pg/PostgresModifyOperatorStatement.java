@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
  * @see PostgresOperatorCompiler
  */
 public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStatement
+                                             implements PostgresCursorGenerator<Cursor>
 {
     private String statementType;
     private Operator resultOperator;
@@ -116,6 +117,25 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
         return putInCache;
     }
 
+    @Override
+    public boolean canSuspend(PostgresServerSession server) {
+        return false;           // See below.
+    }
+
+    @Override
+    public Cursor openCursor(PostgresQueryContext context) {
+        Cursor cursor = API.cursor(resultOperator, context);
+        cursor.open();
+        return cursor;
+    }
+
+    public void closeCursor(Cursor cursor) {
+        if (cursor != null) {
+            cursor.destroy();
+        }
+    }
+    
+    @Override
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
@@ -127,8 +147,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
             try {
                 lock(context, DXLFunction.UNSPECIFIED_DML_WRITE);
                 lockSuccess = true;
-                cursor = API.cursor(resultOperator, context);
-                cursor.open();
+                cursor = openCursor(context);
                 PostgresOutputter<Row> outputter = null;
                 if (outputResult) {
                     outputter = getRowOutputter(context);
@@ -142,8 +161,8 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
                     rowsModified++;
                     if ((maxrows > 0) && (rowsModified >= maxrows))
                         // Note: do not allow suspending, since the
-                        // actual modifying and not just the output
-                        // would be suspended.
+                        // actual modifying and not just the generated
+                        // key output would be incomplete.
                         outputResult = false;
                 }
             }
@@ -153,9 +172,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
             finally {
                 RuntimeException exceptionDuringCleanup = null;
                 try {
-                    if (cursor != null) {
-                        cursor.destroy();
-                    }
+                    closeCursor(cursor);
                 }
                 catch (RuntimeException e) {
                     exceptionDuringCleanup = e;

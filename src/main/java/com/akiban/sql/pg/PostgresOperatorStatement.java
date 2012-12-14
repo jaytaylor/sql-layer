@@ -44,7 +44,7 @@ import java.io.IOException;
  * @see PostgresOperatorCompiler
  */
 public class PostgresOperatorStatement extends PostgresBaseOperatorStatement 
-                                       implements PostgresQueryContext.CursorLifecycle<Cursor>
+                                       implements PostgresCursorGenerator<Cursor>
 {
     private Operator resultOperator;
 
@@ -82,6 +82,11 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
     }
 
     @Override
+    public boolean canSuspend(PostgresServerSession server) {
+        return server.isTransactionActive();
+    }
+
+    @Override
     public Cursor openCursor(PostgresQueryContext context) {
         Cursor cursor = API.cursor(resultOperator, context);
         cursor.open();
@@ -106,7 +111,7 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
         try {
             lock(context, DXLFunction.UNSPECIFIED_DML_READ);
             lockSuccess = true;
-            cursor = context.startExecute(this);
+            cursor = context.startCursor(this);
             PostgresOutputter<Row> outputter = getRowOutputter(context);
             outputter.beforeData();
             if (cursor != null) {
@@ -129,7 +134,7 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
         finally {
             RuntimeException exceptionDuringCleanup = null;
             try {
-                suspended = context.finishExecute(this, cursor, suspended);
+                suspended = context.finishCursor(this, cursor, suspended);
             }
             catch (RuntimeException e) {
                 exceptionDuringCleanup = e;
