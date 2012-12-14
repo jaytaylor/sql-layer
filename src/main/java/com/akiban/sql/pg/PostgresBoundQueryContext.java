@@ -80,6 +80,7 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
     @Override
     public <T extends CursorBase> boolean finishExecute(CursorLifecycle<T> callback, T cursor, boolean suspended) {
         if (suspended && (state != State.NORMAL)) {
+            this.state = State.SUSPENDED;
             this.cursor = cursor;
             return true;
         }

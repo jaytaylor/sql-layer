@@ -647,7 +647,7 @@ public class PostgresServerConnection extends ServerSessionBase
         for (int i = 0; i < nparams; i++)
             paramTypes[i] = messenger.readInt();
         sessionMonitor.startStatement(sql);
-        logger.debug("Parse: {}", sql);
+        logger.debug("Parse: {} = {}", stmtName, sql);
         
         PostgresQueryContext context = new PostgresQueryContext(this);
         updateAIS(context);
@@ -728,7 +728,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 defaultResultsBinary = resultsBinary[nresults-1];
             }
         }
-        logger.debug("Bind: {} {}", stmtName, portalName);
+        logger.debug("Bind: {} = {}", stmtName, portalName);
         PostgresPreparedStatement pstmt = preparedStatements.get(stmtName);
         boolean canSuspend = (transaction != null);
         PostgresBoundQueryContext bound = 
@@ -985,10 +985,10 @@ public class PostgresServerConnection extends ServerSessionBase
     protected int executeStatementWithAutoTxn(PostgresStatement pstmt, PostgresQueryContext context, int maxrows)
             throws IOException {
         ServerTransaction localTransaction = beforeExecute(pstmt);
-        int rowsProcessed = 0;
+        int rowsProcessed;
         boolean success = false;
         try {
-            executeStatement(pstmt, context, maxrows);
+            rowsProcessed = executeStatement(pstmt, context, maxrows);
             success = true;
         }
         finally {
@@ -1000,7 +1000,7 @@ public class PostgresServerConnection extends ServerSessionBase
 
     protected int executeStatement(PostgresStatement pstmt, PostgresQueryContext context, int maxrows)
             throws IOException {
-        int rowsProcessed = 0;
+        int rowsProcessed;
         PersistitAdapter persistitAdapter = null;
         if ((transaction != null) &&
             // As opposed to WRITE_STEP_ISOLATED.

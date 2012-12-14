@@ -148,7 +148,7 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
             messenger.beginMessage(PostgresMessages.PORTAL_SUSPENDED_TYPE.code());
             messenger.sendMessage();
         }
-        {
+        else {
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
             messenger.writeString("SELECT " + nrows);
             messenger.sendMessage();

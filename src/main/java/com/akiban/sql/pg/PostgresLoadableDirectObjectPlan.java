@@ -158,7 +158,7 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
             messenger.beginMessage(PostgresMessages.PORTAL_SUSPENDED_TYPE.code());
             messenger.sendMessage();
         }
-        {        
+        else {        
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
             if (copier != null)
                 messenger.writeString("COPY"); // Make CopyManager happy.
