@@ -26,38 +26,22 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.server.types.AkType;
-
-public class PostgresBoundQueryContext extends PostgresQueryContext 
+public class PostgresPreparedStatement
 {
-    private PostgresPreparedStatement statement;
-    private boolean[] columnBinary;
-    private boolean defaultColumnBinary;
+    private String sql;
+    private PostgresStatement statement;
     
-    public PostgresBoundQueryContext(PostgresServerSession server,
-                                     PostgresPreparedStatement statement) {
-        super(server);
+    public PostgresPreparedStatement(String sql, PostgresStatement statement) {
+        this.sql = sql;
         this.statement = statement;
     }
 
-    public PostgresPreparedStatement getStatement() {
-        return statement;
+    public String getSQL() {
+        return sql;
     }
     
-    protected void setColumnBinary(boolean[] columnBinary, boolean defaultColumnBinary) {
-        this.columnBinary = columnBinary;
-        this.defaultColumnBinary = defaultColumnBinary;
-    }
-
-    @Override
-    public boolean isColumnBinary(int i) {
-        if ((columnBinary != null) && (i < columnBinary.length))
-            return columnBinary[i];
-        else
-            return defaultColumnBinary;
-    }
-
-    protected void close() {
+    public PostgresStatement getStatement() {
+        return statement;
     }
 
 }
