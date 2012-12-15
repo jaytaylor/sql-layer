@@ -52,10 +52,8 @@ public abstract class SessionMonitorBase implements SessionMonitor {
     }
 
     public void startStatement(String statement, long startTime) {
-        if (statement != null) {  // TODO: Remove when always passed by PG server.
-            statementCount++;
-            currentStatement = statement;
-        }
+        statementCount++;
+        currentStatement = statement;
         currentStatementStartTime = startTime;
         currentStatementEndTime = -1;
         rowsProcessed = -1;
