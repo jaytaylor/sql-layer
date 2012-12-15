@@ -136,7 +136,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 // Wait a bit, but don't hang up shutdown if thread is wedged.
                 thread.join(500);
                 if (thread.isAlive())
-                    logger.warn("Connection " + sessionId + " still running.");
+                    logger.warn("Connection {} still running", sessionId);
             }
             catch (InterruptedException ex) {
                 Thread.currentThread().interrupt();
@@ -643,7 +643,7 @@ public class PostgresServerConnection extends ServerSessionBase
         }
         readyForQuery();
         sessionMonitor.endStatement(rowsProcessed);
-        logger.debug("Query complete");
+        logger.debug("Query complete: {} rows", rowsProcessed);
         if (reqs.monitor().isQueryLogEnabled()) {
             reqs.monitor().logQuery(sessionMonitor);
         }
