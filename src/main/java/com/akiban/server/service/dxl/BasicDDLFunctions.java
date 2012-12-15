@@ -208,8 +208,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
 
         @Override
-        public long getQueryTimeoutSec() {
-            return delegate.getQueryTimeoutSec();
+        public long getQueryTimeoutMilli() {
+            return delegate.getQueryTimeoutMilli();
         }
     }
 
