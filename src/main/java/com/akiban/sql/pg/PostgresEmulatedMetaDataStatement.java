@@ -249,7 +249,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         case PSQL_LIST_TABLES:
             ncols = 4;
             if (LIST_TABLES_BY_GROUP)
-                names = new String[] { "Schema", "Name", "Type", "Group" };
+                names = new String[] { "Schema", "Name", "Type", "Path" };
             else
                 names = new String[] { "Schema", "Name", "Type", "Owner" };
             types = new PostgresType[] { IDENT_PG_TYPE, IDENT_PG_TYPE, LIST_TYPE_PG_TYPE, IDENT_PG_TYPE };
@@ -596,16 +596,14 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             String type = table.isView() ? "view" : "table";
             writeColumn(messenger, encoder, usePVals, 
                         type, LIST_TYPE_PG_TYPE);
-            String ownerGroupName = null;
+            String ownerOrPath = null;
             if (LIST_TABLES_BY_GROUP) {
                 if (table.isTable()) {
-                    Group group = ((UserTable)table).getGroup();
-                    if (group != null)
-                        ownerGroupName = group.getName().getTableName();
+                    ownerOrPath = tableGroupPath((UserTable)table, name.getSchemaName());
                 }
             }
             writeColumn(messenger, encoder, usePVals, 
-                        ownerGroupName, IDENT_PG_TYPE);
+                        ownerOrPath, IDENT_PG_TYPE);
             messenger.sendMessage();
             nrows++;
             if ((maxrows > 0) && (nrows >= maxrows)) {
@@ -647,6 +645,21 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 return n1.compareTo(n2);
         }
     };
+
+    private String tableGroupPath(UserTable table, String schemaName) {
+        StringBuilder str = new StringBuilder();
+        do {
+            if (str.length() > 0)
+                str.insert(0, '/');
+            str.insert(0, table.getName().getTableName());
+            if (!schemaName.equals(table.getName().getSchemaName())) {
+                str.insert(0, '.');
+                str.insert(0, table.getName().getSchemaName());
+            }
+            table = table.parentTable();
+        } while (table != null);
+        return str.toString();
+    }
 
     private int psqlDescribeTables1Query(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
