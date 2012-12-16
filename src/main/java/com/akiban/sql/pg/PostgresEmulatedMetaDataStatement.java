@@ -213,6 +213,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)512, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
     static final PostgresType VIEWDEF_PG_TYPE = 
         new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)32768, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
+    static final PostgresType PATH_PG_TYPE = 
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID, (short)1024, -1, AkType.VARCHAR, MString.VARCHAR.instance(FIELDS_NULLABLE));
 
     @Override
     public PostgresType[] getParameterTypes() {
@@ -248,11 +250,14 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             break;
         case PSQL_LIST_TABLES:
             ncols = 4;
-            if (LIST_TABLES_BY_GROUP)
+            if (LIST_TABLES_BY_GROUP) {
                 names = new String[] { "Schema", "Name", "Type", "Path" };
-            else
+                types = new PostgresType[] { IDENT_PG_TYPE, IDENT_PG_TYPE, LIST_TYPE_PG_TYPE, PATH_PG_TYPE };
+            }
+            else {
                 names = new String[] { "Schema", "Name", "Type", "Owner" };
-            types = new PostgresType[] { IDENT_PG_TYPE, IDENT_PG_TYPE, LIST_TYPE_PG_TYPE, IDENT_PG_TYPE };
+                types = new PostgresType[] { IDENT_PG_TYPE, IDENT_PG_TYPE, LIST_TYPE_PG_TYPE, IDENT_PG_TYPE };
+            }
             break;
         case PSQL_DESCRIBE_TABLES_1:
             ncols = 3;
@@ -596,14 +601,19 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             String type = table.isView() ? "view" : "table";
             writeColumn(messenger, encoder, usePVals, 
                         type, LIST_TYPE_PG_TYPE);
-            String ownerOrPath = null;
             if (LIST_TABLES_BY_GROUP) {
+                String path = null;
                 if (table.isTable()) {
-                    ownerOrPath = tableGroupPath((UserTable)table, name.getSchemaName());
+                    path = tableGroupPath((UserTable)table, name.getSchemaName());
                 }
+                writeColumn(messenger, encoder, usePVals, 
+                            path, PATH_PG_TYPE);
             }
-            writeColumn(messenger, encoder, usePVals, 
-                        ownerOrPath, IDENT_PG_TYPE);
+            else {
+                String owner = null;
+                writeColumn(messenger, encoder, usePVals, 
+                            owner, IDENT_PG_TYPE);
+            }
             messenger.sendMessage();
             nrows++;
             if ((maxrows > 0) && (nrows >= maxrows)) {
