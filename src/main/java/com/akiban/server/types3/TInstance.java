@@ -30,8 +30,12 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.util.AkibanAppender;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public final class TInstance {
 
@@ -131,6 +135,19 @@ public final class TInstance {
         }
         sb.append(')');
         return sb.toString();
+    }
+
+    public static List<? extends TInstance> createTInstances(List<? extends TPreparedExpression> pExpressions)
+    {
+        if (pExpressions == null) {
+            return null;
+        }
+        int n = pExpressions.size();
+        List<TInstance> tInstances = new ArrayList<TInstance>(n);
+        for (int i = 0; i < n; i++) {
+            tInstances.add(pExpressions.get(i).resultType());
+        }
+        return tInstances;
     }
 
     // object interface
