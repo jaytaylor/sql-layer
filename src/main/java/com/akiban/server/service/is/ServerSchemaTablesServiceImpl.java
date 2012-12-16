@@ -230,6 +230,7 @@ public class ServerSchemaTablesServiceImpl
                                               session.getStatementCount(),
                                               session.getCurrentStatement(),
                                               null, null,
+                                              session.getCurrentStatementPreparedName(),
                                               ++rowCounter);
                 ((FromObjectValueSource)row.eval(2)).setExplicitly(session.getStartTimeMillis()/1000, AkType.TIMESTAMP);
                 long queryStartTime = session.getCurrentStatementStartTimeMillis();
@@ -462,7 +463,8 @@ public class ServerSchemaTablesServiceImpl
             .colBigInt("query_count", false)
             .colString("last_query_executed", PATH_MAX, true)
             .colTimestamp("query_start_time", true)
-            .colTimestamp("query_end_time", true);
+            .colTimestamp("query_end_time", true)
+            .colString("prepared_name", IDENT_MAX, true);
         
         builder.userTable(ERROR_CODES)
             .colString("code", 5, false)
