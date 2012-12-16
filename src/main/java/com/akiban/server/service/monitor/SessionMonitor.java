@@ -26,6 +26,8 @@
 
 package com.akiban.server.service.monitor;
 
+import java.util.List;
+
 public interface SessionMonitor {
     /** The id of the session being monitored. */
     int getSessionId();
@@ -45,7 +47,7 @@ public interface SessionMonitor {
     /** The number of queries executed. */
     int getStatementCount();
 
-    /** The SQL of the current last statement. */
+    /** The SQL of the current / last statement. */
     String getCurrentStatement();    
 
     /** The time at which the current statement began executing or <code>-1</code>. */
@@ -56,6 +58,9 @@ public interface SessionMonitor {
 
     /** The time for which current statement ran. */
     long getCurrentStatementDurationMillis();
+
+    /** The prepared statement name if current statement was prepared. */
+    String getCurrentStatementPreparedName();
 
     /** The number of rows returned / affected by the last statement
      * or <code>-1</code> if unknown, not applicable or in
@@ -74,4 +79,10 @@ public interface SessionMonitor {
 
     /** Get total time in nanoseconds not spent idle. */
     long getNonIdleTimeNanos();
+
+    /** Get any open cursors. */
+    List<CursorMonitor> getCursors();
+
+    /** Get any prepared statements. */
+    List<PreparedStatementMonitor> getPreparedStatements();
 }
