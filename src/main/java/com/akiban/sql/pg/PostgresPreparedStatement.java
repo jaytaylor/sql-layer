@@ -26,20 +26,46 @@
 
 package com.akiban.sql.pg;
 
-public class PostgresPreparedStatement
+import com.akiban.server.service.monitor.PreparedStatementMonitor;
+
+public class PostgresPreparedStatement implements PreparedStatementMonitor
 {
+    private PostgresServerSession session;
+    private String name;
     private String sql;
     private PostgresStatement statement;
+    private long prepareTime;
     
-    public PostgresPreparedStatement(String sql, PostgresStatement statement) {
+    public PostgresPreparedStatement(PostgresServerSession session, String name,
+                                     String sql, PostgresStatement statement,
+                                     long prepareTime) {
+        this.session = session;
+        this.name = name;
         this.sql = sql;
         this.statement = statement;
+        this.prepareTime = prepareTime;
     }
 
+    @Override
+    public int getSessionId() {
+        return session.getSessionMonitor().getSessionId();
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+    
+    @Override
     public String getSQL() {
         return sql;
     }
     
+    @Override
+    public long getPrepareTimeMillis() {
+        return prepareTime;
+    }
+
     public PostgresStatement getStatement() {
         return statement;
     }

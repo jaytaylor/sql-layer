@@ -34,7 +34,10 @@ public interface CursorMonitor {
     String getName();    
 
     /** The SQL of the cursor's statement. */
-    String getStatement();    
+    String getSQL();    
+
+    /** The name of the corresponding prepared statement, if any. */
+    String getPreparedStatementName();    
 
     /** The time at which the cursor was opened. */
     long getCreationTimeMillis();

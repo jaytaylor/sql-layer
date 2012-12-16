@@ -28,8 +28,10 @@ package com.akiban.sql.pg;
 
 import com.akiban.qp.operator.CursorBase;
 import com.akiban.server.types.AkType;
+import com.akiban.server.service.monitor.CursorMonitor;
 
 public class PostgresBoundQueryContext extends PostgresQueryContext 
+                                       implements CursorMonitor
 {
     private static enum State { NORMAL, UNOPENED, SUSPENDED, EXHAUSTED };
     private boolean reportSuspended;
@@ -38,14 +40,19 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
     private boolean[] columnBinary;
     private boolean defaultColumnBinary;
     private CursorBase<?> cursor;
+    private String portalName;
+    private long creationTime;
     
     public PostgresBoundQueryContext(PostgresServerSession server,
                                      PostgresPreparedStatement statement,
+                                     String portalName,
                                      boolean canSuspend, boolean reportSuspended) {
         super(server);
         this.statement = statement;
+        this.portalName = portalName;
         this.state = canSuspend ? State.UNOPENED : State.NORMAL;
         this.reportSuspended = reportSuspended;
+        this.creationTime = System.currentTimeMillis();
     }
 
     public PostgresPreparedStatement getStatement() {
@@ -97,6 +104,33 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
             cursor = null;
             state = State.EXHAUSTED;
         }        
+    }
+
+    /* CursorMonitor */
+
+    @Override
+    public int getSessionId() {
+        return getServer().getSessionMonitor().getSessionId();
+    }
+
+    @Override
+    public String getName() {
+        return portalName;
+    }
+
+    @Override
+    public String getSQL() {
+        return statement.getSQL();
+    }
+
+    @Override
+    public String getPreparedStatementName() {
+        return statement.getName();
+    }
+
+    @Override
+    public long getCreationTimeMillis() {
+        return creationTime;
     }
 
 }

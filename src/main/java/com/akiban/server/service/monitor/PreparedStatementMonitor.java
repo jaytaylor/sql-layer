@@ -34,7 +34,7 @@ public interface PreparedStatementMonitor {
     String getName();    
 
     /** The SQL of the statement. */
-    String getStatement();    
+    String getSQL();    
 
     /** The time at which the statement was prepared. */
     long getPrepareTimeMillis();
