@@ -734,7 +734,7 @@ public class PostgresServerConnection extends ServerSessionBase
         boolean canSuspend = ((stmt instanceof PostgresCursorGenerator) &&
                               ((PostgresCursorGenerator<?>)stmt).canSuspend(this));
         PostgresBoundQueryContext bound = 
-            new PostgresBoundQueryContext(this, pstmt, canSuspend);
+            new PostgresBoundQueryContext(this, pstmt, canSuspend, true);
         if (params != null) {
             if (valueDecoder == null)
                 valueDecoder = new ServerValueDecoder(messenger.getEncoding());
@@ -921,7 +921,8 @@ public class PostgresServerConnection extends ServerSessionBase
             new PostgresSessionStatementGenerator(this),
             new PostgresCallStatementGenerator(this),
             new PostgresExplainStatementGenerator(this),
-            new PostgresServerStatementGenerator(this)
+            new PostgresServerStatementGenerator(this),
+            new PostgresCursorStatementGenerator(this)
         };
 
         statementCache = getStatementCache();
@@ -1034,13 +1035,101 @@ public class PostgresServerConnection extends ServerSessionBase
         readyForQuery();
     }
 
-    protected void deallocatePreparedStatement(String name) {
+    @Override
+    public void prepareStatement(String name, 
+                                 String sql, StatementNode stmt,
+                                 List<ParameterNode> params, int[] paramTypes) {
+        PostgresQueryContext context = new PostgresQueryContext(this);
+        PostgresStatement pstmt = generateStatementStub(sql, stmt, params, paramTypes);
+        ServerTransaction local = beforeExecute(pstmt);
+        boolean success = false;
+        try {
+            pstmt = finishGenerating(context, pstmt, sql, stmt, params, paramTypes);
+            success = true;
+        } 
+        finally {
+            afterExecute(pstmt, local, success);
+        }
+        preparedStatements.put(name, new PostgresPreparedStatement(sql, pstmt));
+    }
+
+    @Override
+    public int executePreparedStatement(PostgresExecuteStatement estmt, int maxrows)
+            throws IOException {
+        PostgresPreparedStatement pstmt = preparedStatements.get(estmt.getName());
+        PostgresBoundQueryContext context = 
+            new PostgresBoundQueryContext(this, pstmt, false, false);
+        estmt.setParameters(context);
+        sessionMonitor.startStatement(pstmt.getSQL(), System.currentTimeMillis());
+        pstmt.getStatement().sendDescription(context, false);
+        int nrows = executeStatementWithAutoTxn(pstmt.getStatement(), context, maxrows);
+        sessionMonitor.endStatement(nrows);
+        return nrows;
+    }
+
+    @Override
+    public void deallocatePreparedStatement(String name) {
         PostgresPreparedStatement pstmt = preparedStatements.remove(name);
     }
 
-    protected void closeBoundPortal(String name) {
+    @Override
+    public void declareStatement(String name, 
+                                 String sql, StatementNode stmt) {
+        PostgresQueryContext context = new PostgresQueryContext(this);
+        PostgresStatement pstmt = generateStatementStub(sql, stmt, null, null);
+        ServerTransaction local = beforeExecute(pstmt);
+        boolean success = false;
+        try {
+            pstmt = finishGenerating(context, pstmt, sql, stmt, null, null);
+            success = true;
+        } 
+        finally {
+            afterExecute(pstmt, local, success);
+        }
+        PostgresPreparedStatement ppstmt;
+        PostgresExecuteStatement estmt = null;
+        if (pstmt instanceof PostgresExecuteStatement) {
+            // DECLARE ... EXECUTE ... gets spliced out rather than
+            // making a second prepared statement.
+            estmt = (PostgresExecuteStatement)pstmt;
+            ppstmt = preparedStatements.get(estmt.getName());
+            pstmt = ppstmt.getStatement();
+        }
+        else {
+            ppstmt = new PostgresPreparedStatement(sql, pstmt);
+        }
+        if (!(pstmt instanceof PostgresCursorGenerator)) {
+            throw new UnsupportedSQLException("DECLARE can only be used with a result-generating statement", stmt);
+        }
+        if (!((PostgresCursorGenerator<?>)pstmt).canSuspend(this)) {
+            throw new UnsupportedSQLException("DECLARE can only be used within a transaction", stmt);
+        }
+        PostgresBoundQueryContext bound =
+            new PostgresBoundQueryContext(this, ppstmt, true, false);
+        if (estmt != null) {
+            estmt.setParameters(bound);
+        }
+        PostgresBoundQueryContext prev = boundPortals.put(name, bound);
+        if (prev != null)
+            prev.close();
+    }
+
+    @Override
+    public int fetchStatement(String name, int count) throws IOException {
+        PostgresBoundQueryContext bound = boundPortals.get(name);
+        PostgresPreparedStatement pstmt = bound.getStatement();
+        sessionMonitor.startStatement(pstmt.getSQL(), System.currentTimeMillis());
+        pstmt.getStatement().sendDescription(bound, false);
+        int nrows = executeStatementWithAutoTxn(pstmt.getStatement(), bound, count);
+        sessionMonitor.endStatement(nrows);
+        return nrows;
+    }
+
+    @Override
+    public void closeBoundPortal(String name) {
         PostgresBoundQueryContext bound = boundPortals.remove(name);
-        bound.close();
+        if (bound != null)
+            bound.close();
     }
 
     @Override
