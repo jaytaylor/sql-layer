@@ -26,21 +26,27 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.qp.operator.CursorBase;
 import com.akiban.server.types.AkType;
 
 public class PostgresBoundQueryContext extends PostgresQueryContext 
 {
-    private PostgresStatement statement;
+    private static enum State { NORMAL, UNOPENED, SUSPENDED, EXHAUSTED };
+    private State state;
+    private PostgresPreparedStatement statement;
     private boolean[] columnBinary;
     private boolean defaultColumnBinary;
+    private CursorBase<?> cursor;
     
     public PostgresBoundQueryContext(PostgresServerSession server,
-                                     PostgresStatement statement) {
+                                     PostgresPreparedStatement statement,
+                                     boolean canSuspend) {
         super(server);
         this.statement = statement;
+        this.state = canSuspend ? State.UNOPENED : State.NORMAL;
     }
 
-    public PostgresStatement getStatement() {
+    public PostgresPreparedStatement getStatement() {
         return statement;
     }
     
@@ -49,11 +55,46 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
         this.defaultColumnBinary = defaultColumnBinary;
     }
 
+    @Override
     public boolean isColumnBinary(int i) {
         if ((columnBinary != null) && (i < columnBinary.length))
             return columnBinary[i];
         else
             return defaultColumnBinary;
+    }
+
+    @Override
+    public <T extends CursorBase> T startCursor(PostgresCursorGenerator<T> generator) {
+        switch (state) {
+        case NORMAL:
+        case UNOPENED:
+        default:
+            return super.startCursor(generator);
+        case SUSPENDED:
+            return (T)cursor;
+        case EXHAUSTED:
+            return null;
+        }
+    }
+
+    @Override
+    public <T extends CursorBase> boolean finishCursor(PostgresCursorGenerator<T> generator, T cursor, boolean suspended) {
+        if (suspended && (state != State.NORMAL)) {
+            this.state = State.SUSPENDED;
+            this.cursor = cursor;
+            return true;
+        }
+        this.state = State.EXHAUSTED;
+        this.cursor = null;
+        return super.finishCursor(generator, cursor, suspended);
+    }
+
+    protected void close() {
+        if (cursor != null) {
+            cursor.destroy();
+            cursor = null;
+            state = State.EXHAUSTED;
+        }        
     }
 
 }

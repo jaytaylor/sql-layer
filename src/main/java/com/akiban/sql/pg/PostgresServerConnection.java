@@ -91,8 +91,8 @@ public class PostgresServerConnection extends ServerSessionBase
     private OutputFormat outputFormat = OutputFormat.TABLE;
     private int sessionId, secret;
     private int version;
-    private Map<String,PostgresStatement> preparedStatements =
-        new HashMap<String,PostgresStatement>();
+    private Map<String,PostgresPreparedStatement> preparedStatements =
+        new HashMap<String,PostgresPreparedStatement>();
     private Map<String,PostgresBoundQueryContext> boundPortals =
         new HashMap<String,PostgresBoundQueryContext>();
 
@@ -647,7 +647,7 @@ public class PostgresServerConnection extends ServerSessionBase
         for (int i = 0; i < nparams; i++)
             paramTypes[i] = messenger.readInt();
         sessionMonitor.startStatement(sql);
-        logger.debug("Parse: {}", sql);
+        logger.debug("Parse: {} = {}", stmtName, sql);
         
         PostgresQueryContext context = new PostgresQueryContext(this);
         updateAIS(context);
@@ -685,7 +685,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 statementCache.put(sql, pstmt);
             }
         }
-        preparedStatements.put(stmtName, pstmt);
+        preparedStatements.put(stmtName, new PostgresPreparedStatement(sql, pstmt));
         messenger.beginMessage(PostgresMessages.PARSE_COMPLETE_TYPE.code());
         messenger.sendMessage();
     }
@@ -728,15 +728,20 @@ public class PostgresServerConnection extends ServerSessionBase
                 defaultResultsBinary = resultsBinary[nresults-1];
             }
         }
-        PostgresStatement pstmt = preparedStatements.get(stmtName);
-        PostgresBoundQueryContext bound = new PostgresBoundQueryContext(this, pstmt);
+        logger.debug("Bind: {} = {}", stmtName, portalName);
+        PostgresPreparedStatement pstmt = preparedStatements.get(stmtName);
+        PostgresStatement stmt = pstmt.getStatement();
+        boolean canSuspend = ((stmt instanceof PostgresCursorGenerator) &&
+                              ((PostgresCursorGenerator<?>)stmt).canSuspend(this));
+        PostgresBoundQueryContext bound = 
+            new PostgresBoundQueryContext(this, pstmt, canSuspend);
         if (params != null) {
             if (valueDecoder == null)
                 valueDecoder = new ServerValueDecoder(messenger.getEncoding());
             PostgresType[] parameterTypes = null;
             boolean usePValues = false;
-            if (pstmt instanceof PostgresBaseStatement) {
-                PostgresDMLStatement dml = (PostgresDMLStatement)pstmt;
+            if (stmt instanceof PostgresBaseStatement) {
+                PostgresDMLStatement dml = (PostgresDMLStatement)stmt;
                 parameterTypes = dml.getParameterTypes();
                 usePValues = dml.usesPValues();
             }
@@ -754,7 +759,9 @@ public class PostgresServerConnection extends ServerSessionBase
             }
         }
         bound.setColumnBinary(resultsBinary, defaultResultsBinary);
-        boundPortals.put(portalName, bound);
+        PostgresBoundQueryContext prev = boundPortals.put(portalName, bound);
+        if (prev != null)
+            prev.close();
         messenger.beginMessage(PostgresMessages.BIND_COMPLETE_TYPE.code());
         messenger.sendMessage();
     }
@@ -766,13 +773,13 @@ public class PostgresServerConnection extends ServerSessionBase
         PostgresQueryContext context;
         switch (source) {
         case (byte)'S':
-            pstmt = preparedStatements.get(name);
+            pstmt = preparedStatements.get(name).getStatement();
             context = new PostgresQueryContext(this);
             break;
         case (byte)'P':
             {
                 PostgresBoundQueryContext bound = boundPortals.get(name);
-                pstmt = bound.getStatement();
+                pstmt = bound.getStatement().getStatement();
                 context = bound;
             }
             break;
@@ -786,14 +793,13 @@ public class PostgresServerConnection extends ServerSessionBase
         long startTime = System.currentTimeMillis();
         String portalName = messenger.readString();
         int maxrows = messenger.readInt();
+        logger.debug("Execute: {}", portalName);
         PostgresBoundQueryContext context = boundPortals.get(portalName);
-        PostgresStatement pstmt = context.getStatement();
-        logger.debug("Execute: {}", pstmt);
-        // TODO: save SQL in prepared statement and get it here.
-        sessionMonitor.startStatement(null, startTime);
-        int rowsProcessed = executeStatementWithAutoTxn(pstmt, context, maxrows);
+        PostgresPreparedStatement pstmt = context.getStatement();
+        sessionMonitor.startStatement(pstmt.getSQL(), startTime);
+        int rowsProcessed = executeStatementWithAutoTxn(pstmt.getStatement(), context, maxrows);
         sessionMonitor.endStatement(rowsProcessed);
-        logger.debug("Execute complete");
+        logger.debug("Execute complete: {} rows", rowsProcessed);
         if (reqs.monitor().isQueryLogEnabled()) {
             reqs.monitor().logQuery(sessionMonitor);
         }
@@ -806,13 +812,12 @@ public class PostgresServerConnection extends ServerSessionBase
     protected void processClose() throws IOException {
         byte source = messenger.readByte();
         String name = messenger.readString();
-        PostgresStatement pstmt;        
         switch (source) {
         case (byte)'S':
-            pstmt = preparedStatements.remove(name);
+            deallocatePreparedStatement(name);
             break;
         case (byte)'P':
-            pstmt = boundPortals.remove(name).getStatement();
+            closeBoundPortal(name);
             break;
         default:
             throw new IOException("Unknown describe source: " + (char)source);
@@ -982,10 +987,10 @@ public class PostgresServerConnection extends ServerSessionBase
     protected int executeStatementWithAutoTxn(PostgresStatement pstmt, PostgresQueryContext context, int maxrows)
             throws IOException {
         ServerTransaction localTransaction = beforeExecute(pstmt);
-        int rowsProcessed = 0;
+        int rowsProcessed;
         boolean success = false;
         try {
-            executeStatement(pstmt, context, maxrows);
+            rowsProcessed = executeStatement(pstmt, context, maxrows);
             success = true;
         }
         finally {
@@ -997,7 +1002,7 @@ public class PostgresServerConnection extends ServerSessionBase
 
     protected int executeStatement(PostgresStatement pstmt, PostgresQueryContext context, int maxrows)
             throws IOException {
-        int rowsProcessed = 0;
+        int rowsProcessed;
         PersistitAdapter persistitAdapter = null;
         if ((transaction != null) &&
             // As opposed to WRITE_STEP_ISOLATED.
@@ -1027,6 +1032,15 @@ public class PostgresServerConnection extends ServerSessionBase
         messenger.beginMessage(PostgresMessages.EMPTY_QUERY_RESPONSE_TYPE.code());
         messenger.sendMessage();
         readyForQuery();
+    }
+
+    protected void deallocatePreparedStatement(String name) {
+        PostgresPreparedStatement pstmt = preparedStatements.remove(name);
+    }
+
+    protected void closeBoundPortal(String name) {
+        PostgresBoundQueryContext bound = boundPortals.remove(name);
+        bound.close();
     }
 
     @Override
