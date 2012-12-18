@@ -125,6 +125,7 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
         ServerCallContextStack.push(context, invocation);
         boolean suspended = false;
         try {
+            cursor = context.startCursor(this);
             switch (outputMode) {
             case TABLE:
                 outputter = new PostgresDirectObjectOutputter(context, this);
