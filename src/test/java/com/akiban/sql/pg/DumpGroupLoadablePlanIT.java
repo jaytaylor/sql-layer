@@ -100,7 +100,7 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
         PersistitAdapter adapter = persistitAdapter(schema);
         QueryContext queryContext = new SimpleQueryContext(adapter) {
                 @Override
-                public String getCurrentUser() {
+                public String getCurrentSchema() {
                     return SCHEMA_NAME;
                 }
             };

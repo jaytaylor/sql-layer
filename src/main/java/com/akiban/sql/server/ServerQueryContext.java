@@ -68,12 +68,22 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
 
     @Override
     public String getCurrentUser() {
-        return server.getDefaultSchemaName();
+        return getSessionUser();
     }
 
     @Override
     public String getSessionUser() {
         return server.getProperty("user");
+    }
+
+    @Override
+    public String getCurrentSchema() {
+        return server.getDefaultSchemaName();
+    }
+
+    @Override
+    public int getSessionId() {
+        return server.getSessionMonitor().getSessionId();
     }
 
     @Override

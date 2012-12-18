@@ -136,7 +136,7 @@ public interface QueryContext
     public Date getCurrentDate();
 
     /**
-     * Get the current schema name.
+     * Get the current user name.
      */
     public String getCurrentUser();
 
@@ -149,6 +149,16 @@ public interface QueryContext
      * Get the system identity of the server process.
      */
     public String getSystemUser();
+
+    /**
+     * Get the current schema name.
+     */
+    public String getCurrentSchema();
+
+    /**
+     * Get the server session id.
+     */
+    public int getSessionId();
 
     /**
      * Get the system time at which the query started.

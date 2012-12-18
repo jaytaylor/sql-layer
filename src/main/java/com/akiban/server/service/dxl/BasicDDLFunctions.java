@@ -183,6 +183,16 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
 
         @Override
+        public String getCurrentSchema() {
+            return delegate.getCurrentSchema();
+        }
+
+        @Override
+        public int getSessionId() {
+            return delegate.getSessionId();
+        }
+
+        @Override
         public void notifyClient(NotificationLevel level, ErrorCode errorCode, String message) {
             delegate.notifyClient(level, errorCode, message);
         }
