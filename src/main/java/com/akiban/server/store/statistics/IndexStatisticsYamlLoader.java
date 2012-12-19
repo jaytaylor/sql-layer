@@ -226,7 +226,7 @@ public class IndexStatisticsYamlLoader
                                                                   Collections.singletonList(pvalue.instance()),
                                                                   tInstance,
                                                                   null, null, null, null);
-                PValue pvalue2 = new PValue(tInstance.typeClass().underlyingType());
+                PValue pvalue2 = new PValue(tInstance.typeClass());
                 tInstance.typeClass().fromObject(context, pvalue.value(), pvalue2);
                 tInstance.writeCollating(pvalue2, keyTarget);
             }

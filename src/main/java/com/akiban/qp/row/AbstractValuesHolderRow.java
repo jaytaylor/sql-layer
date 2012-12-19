@@ -30,6 +30,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
@@ -110,8 +111,7 @@ class AbstractValuesHolderRow extends AbstractRow {
             pValues = new ArrayList<PValue>(nfields);
             for (int i = 0; i < nfields; ++i) {
                 TInstance tinst = rowType.typeInstanceAt(i);
-                PUnderlying underlying = (tinst == null) ? null :
-                    tinst.typeClass().underlyingType();
+                TClass underlying = (tinst == null) ? null : tinst.typeClass();
                 pValues.add(new PValue(underlying));
             }
         }

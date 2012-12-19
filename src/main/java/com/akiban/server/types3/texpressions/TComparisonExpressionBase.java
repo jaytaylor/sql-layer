@@ -63,7 +63,7 @@ public abstract class TComparisonExpressionBase implements TPreparedExpression {
         boolean nullable;
         if (oneVal != null && twoVal != null) {
             final boolean result = doEval(leftPrep.instance(), oneVal, rightPrep.instance(), twoVal);
-            resultSource = new PValue(result);
+            resultSource = new PValue(AkBool.INSTANCE, result);
             nullable = resultSource.isNull();
         }
         else {
@@ -148,7 +148,7 @@ public abstract class TComparisonExpressionBase implements TPreparedExpression {
         @Override
         public void evaluate() {
             if (value == null)
-                value = new PValue(PUnderlying.BOOL);
+                value = new PValue(AkBool.INSTANCE);
             left.evaluate();
             PValueSource leftSource = left.resultValue();
             if (leftSource.isNull()) {

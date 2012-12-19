@@ -52,7 +52,7 @@ public final class TCastExpression implements TPreparedExpression {
             value = null;
         }
         else {
-            value = new PValue(cast.targetClass().underlyingType());
+            value = new PValue(cast.targetClass());
 
             TExecutionContext context = new TExecutionContext(
                     new SparseArray<Object>(),
@@ -139,7 +139,7 @@ public final class TCastExpression implements TPreparedExpression {
         {
             this.inputEval = inputEval;
             this.cast = cast;
-            this.value = new PValue(cast.targetClass().underlyingType());
+            this.value = new PValue(cast.targetClass());
             this.executionContext = new TExecutionContext(
                     Collections.singletonList(sourceInstance),
                     targetInstance,

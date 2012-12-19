@@ -128,7 +128,7 @@ public abstract class ServerJavaValues
             tcontext = new TExecutionContext(Collections.singletonList(sourceInstance),
                                              targetInstance,
                                              context);
-            target = new PValue(targetClass.underlyingType());
+            target = new PValue(targetClass);
         }
 
         protected boolean matches(TClass required) {

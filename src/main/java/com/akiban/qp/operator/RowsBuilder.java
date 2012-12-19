@@ -77,7 +77,7 @@ public final class RowsBuilder {
                     TExecutionContext context = new TExecutionContext(null,
                                                                       tinsts[i],
                                                                       null);
-                    PValue pvalue = new PValue(tinsts[i].typeClass().underlyingType());
+                    PValue pvalue = new PValue(tinsts[i].typeClass());
                     tinsts[i].typeClass().fromObject(context, psource, pvalue);
                     psource = pvalue;
                 }

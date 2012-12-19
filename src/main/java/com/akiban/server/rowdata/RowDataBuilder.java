@@ -32,10 +32,12 @@ import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueCacher;
@@ -322,7 +324,7 @@ public final class RowDataBuilder {
                     return;
                 }
                 if (stringCache == null)
-                    stringCache = new PValue(PUnderlying.STRING);
+                    stringCache = new PValue(MString.VARCHAR);
                 stringCache.putString(stringInput, null);
                 TExecutionContext context = new TExecutionContext(null, instance, null);
                 instance.typeClass().fromObject(context, stringCache, pValue);
@@ -332,7 +334,7 @@ public final class RowDataBuilder {
 
         @Override
         public void objectToSource(Object object, FieldDef fieldDef) {
-            PUnderlying underlying = underlying(fieldDef);
+            TClass underlying = underlying(fieldDef);
             pValue.underlying(underlying);
             stringInput = null;
             if (object == null) {
@@ -340,13 +342,13 @@ public final class RowDataBuilder {
             }
             else if (object instanceof String) {
                 // This is the common case, so let's test for it first
-                if (underlying == PUnderlying.STRING)
+                if (underlying.underlyingType() == PUnderlying.STRING)
                     pValue.putString((String)object, null);
                 else
                     stringInput = (String)object;
             }
             else {
-                switch (underlying) {
+                switch (underlying.underlyingType()) {
                 case INT_8:
                 case INT_16:
                 case UINT_16:
@@ -389,7 +391,7 @@ public final class RowDataBuilder {
 
         @Override
         public PValueSource nullSource(FieldDef fieldDef) {
-            return PValueSources.getNullSource(underlying(fieldDef));
+            return PValueSources.getNullSource(underlying(fieldDef).underlyingType());
         }
 
         @Override
@@ -397,8 +399,8 @@ public final class RowDataBuilder {
             return (stringInput == null) && source.isNull();
         }
 
-        private PUnderlying underlying(FieldDef fieldDef) {
-            return fieldDef.column().tInstance().typeClass().underlyingType();
+        private TClass underlying(FieldDef fieldDef) {
+            return fieldDef.column().tInstance().typeClass();
         }
 
         public NewValueAdapter() {

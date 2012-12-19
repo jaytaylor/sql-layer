@@ -49,7 +49,7 @@ public class PersistitKeyPValueSource implements PValueSource {
     
     public PersistitKeyPValueSource(TInstance tInstance) {
         this.tInstance = tInstance;
-        this.output = new PValue(tInstance.typeClass().underlyingType());
+        this.output = new PValue(tInstance.typeClass());
     }
     
     public void attach(Key key, IndexColumn indexColumn) {

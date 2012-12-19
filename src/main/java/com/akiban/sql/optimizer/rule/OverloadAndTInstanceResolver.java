@@ -796,7 +796,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 ErrorHandlingMode.ERROR,
                 ErrorHandlingMode.ERROR
         );
-        PValue result = new PValue(targetInstance.typeClass().underlyingType());
+        PValue result = new PValue(targetInstance.typeClass());
         try {
             cast.evaluate(context, source.value(), result);
         } catch (Exception e) {

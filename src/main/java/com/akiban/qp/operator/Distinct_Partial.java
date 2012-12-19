@@ -254,7 +254,7 @@ class Distinct_Partial extends Operator
                 currentValues = null;
                 currentPValues = new PValue[nfields];
                 for (int i = 0; i < nfields; ++i) {
-                    currentPValues[i] = new PValue(distinctType.typeInstanceAt(i).typeClass().underlyingType());
+                    currentPValues[i] = new PValue(distinctType.typeInstanceAt(i).typeClass());
                 }
             }
         }

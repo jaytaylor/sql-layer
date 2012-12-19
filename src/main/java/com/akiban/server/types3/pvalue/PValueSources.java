@@ -185,13 +185,13 @@ public final class PValueSources {
                 value = null;
             }
             else {
-                value = new PValue(tInstance.typeClass().underlyingType());
+                value = new PValue(tInstance.typeClass());
                 value.putNull();
             }
         }
         else if (object instanceof Integer) {
             tInstance = MNumeric.INT.instance(false);
-            value = new PValue((Integer)object);
+            value = new PValue(tInstance.typeClass(), (Integer) object);
         }
         else if (object instanceof Long) {
             if (akType == null) {
@@ -235,22 +235,22 @@ public final class PValueSources {
                 }
                 tInstance = tClass.instance(false);
             }
-            value = new PValue(tInstance.typeClass().underlyingType());
+            value = new PValue(tInstance.typeClass());
             pvalueFromLong((Long)object, value);
         }
         else if (object instanceof String) {
             String s = (String) object;
             tInstance = MString.VARCHAR.instance(
                     s.length(), StringFactory.DEFAULT_CHARSET.ordinal(), StringFactory.NULL_COLLATION_ID, false);
-            value = new PValue(s);
+            value = new PValue(tInstance.typeClass(), s);
         }
         else if (object instanceof Double) {
             tInstance = MApproximateNumber.DOUBLE.instance(false);
-            value = new PValue((Double)object);
+            value = new PValue(tInstance.typeClass(), (Double) object);
         }
         else if (object instanceof Float) {
             tInstance = MApproximateNumber.FLOAT.instance(false);
-            value = new PValue((Float)object);
+            value = new PValue(tInstance.typeClass(), (Float)object);
         }
         else if (object instanceof BigDecimal) {
             BigDecimal bd = (BigDecimal) object;
@@ -261,7 +261,7 @@ public final class PValueSources {
                 precision = scale;
             }
             tInstance = MNumeric.DECIMAL.instance(precision, scale, false);
-            value = new PValue(PUnderlying.BYTES);
+            value = new PValue(tInstance.typeClass());
             value.putObject(new MBigDecimalWrapper(bd));
         }
         else if (object instanceof ByteSource || object instanceof byte[]) {
@@ -277,29 +277,28 @@ public final class PValueSources {
                 bytes = Arrays.copyOfRange(srcArray, offset, end);
             }
             tInstance = MBinary.VARBINARY.instance(bytes.length, false);
-            value = new PValue(PUnderlying.BYTES);
-            value.putBytes(bytes);
+            value = new PValue(tInstance.typeClass(), bytes);
         }
         else if (object instanceof BigInteger) {
             tInstance = MNumeric.BIGINT_UNSIGNED.instance(false);
             BigInteger bi = (BigInteger) object;
-            value = new PValue(bi.longValue());
+            value = new PValue(tInstance.typeClass(), bi.longValue());
         }
         else if (object instanceof Boolean) {
             tInstance = AkBool.INSTANCE.instance(false);
-            value = new PValue((Boolean)object);
+            value = new PValue(tInstance.typeClass(), (Boolean)object);
         }
         else if (object instanceof Character) {
             tInstance = MString.VARCHAR.instance(1, false);
-            value = new PValue(object.toString());
+            value = new PValue(tInstance.typeClass(), object.toString());
         }
         else if (object instanceof Short) {
             tInstance = MNumeric.SMALLINT.instance(false);
-            value = new PValue((Short)object);
+            value = new PValue(tInstance.typeClass(), (Short)object);
         }
         else if (object instanceof Byte) {
             tInstance = MNumeric.TINYINT.instance(false);
-            value = new PValue((Byte)object);
+            value = new PValue(tInstance.typeClass(), (Byte)object);
         }
         else {
             throw new UnsupportedOperationException("can't convert " + object + " of type " + object.getClass());
@@ -520,8 +519,8 @@ public final class PValueSources {
     }
 
     public static PValueSource fromValueSource(ValueSource source, TInstance tInstance) {
-        PValue result = new PValue(tInstance == null ? null :
-                                   tInstance.typeClass().underlyingType());
+        TClass tClass = tInstance == null ? null : tInstance.typeClass();
+        PValue result = new PValue(tClass);
         plainConverter.convert(null, source, result, tInstance);
         return result;
     }
@@ -701,7 +700,7 @@ public final class PValueSources {
                     }
                     else {
                         TClass tClass = tInstance.typeClass();
-                        PValue sValue = new PValue(sval);
+                        PValue sValue = new PValue(tClass, sval);
                         TExecutionContext forErrors = new TExecutionContext(
                                 null,
                                 Collections.singletonList(tInstance),

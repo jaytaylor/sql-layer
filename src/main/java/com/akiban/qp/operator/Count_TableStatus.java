@@ -173,7 +173,7 @@ class Count_TableStatus extends Operator
                     long rowCount = adapter().rowCount(tableType);
                     close();
                     return usePValues
-                            ? new PValuesRow(resultType, new PValue(rowCount))
+                            ? new PValuesRow(resultType, new PValue(MNumeric.BIGINT, rowCount))
                             : new ValuesRow(resultType, new Object[] { rowCount });
                 }
                 else {

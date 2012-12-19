@@ -105,7 +105,7 @@ public abstract class TClassBase extends TClass
                  default:
                      throw new AssertionError(underlyingType + ": " + in);
                  }
-                 in = new PValue(asString);
+                 in = new PValue(MString.VARCHAR, asString);
              }
             parser.parse(context, in, out);
          }

@@ -366,7 +366,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     if(defaultValue == null) {
                         defaultValueSource = PValueSources.getNullSource(newInst.typeClass().underlyingType());
                     } else {
-                        defaultValueSource = new PValue(defaultValue);
+                        defaultValueSource = new PValue(newInst.typeClass(), defaultValue);
                     }
                     pProjections.add(new TPreparedLiteral(newInst, defaultValueSource));
                 } else {

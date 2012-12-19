@@ -50,6 +50,7 @@ import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -201,8 +202,8 @@ class IndexCursorSpatial_InBox extends IndexCursor
                 }
                 // lo and hi bounds
                 if (Types3Switch.ON) {
-                    PValue loPValue = new PValue(PUnderlying.INT_64);
-                    PValue hiPValue = new PValue(PUnderlying.INT_64);
+                    PValue loPValue = new PValue(MNumeric.BIGINT);
+                    PValue hiPValue = new PValue(MNumeric.BIGINT);
                     loPValue.putInt64(space.zLo(z));
                     hiPValue.putInt64(space.zHi(z));
                     zLoRow.value(latColumn, loPValue);

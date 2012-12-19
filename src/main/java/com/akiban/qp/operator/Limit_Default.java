@@ -232,7 +232,7 @@ final class Limit_Default extends Operator
                             TInstance tinst = MNumeric.INT.instance(true);
                             TExecutionContext executionContext = 
                                 new TExecutionContext(null, tinst, context);
-                            PValue pvalue = new PValue(MNumeric.INT.underlyingType());
+                            PValue pvalue = new PValue(MNumeric.INT);
                             MNumeric.INT.fromObject(executionContext, value, pvalue);
                             this.limitLeft = pvalue.getInt32();
                         }

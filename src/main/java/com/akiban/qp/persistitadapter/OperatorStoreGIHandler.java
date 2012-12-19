@@ -238,7 +238,7 @@ class OperatorStoreGIHandler {
     private final UserTable sourceTable;
     private final PersistitIndexRowBuffer indexRow;
     private final ValueHolder zSource_t2 = new ValueHolder();
-    private final PValue zSource_t3 = new PValue(PUnderlying.INT_64);
+    private final PValue zSource_t3 = new PValue(MNumeric.BIGINT);
 
     // class state
     private static volatile GIHandlerHook giHandlerHook;

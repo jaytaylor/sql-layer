@@ -31,6 +31,7 @@ import static com.akiban.sql.optimizer.rule.OldExpressionAssembler.*;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -848,22 +849,23 @@ public class OperatorAssembler extends BaseRule
                     } 
                     else if (row[i] == null) {
                         TInstance tinst = targetRowType.typeInstanceAt(i);
+                        TClass tClass = tinst.typeClass();
                         final String defaultValue = column.getDefaultValue();
                         final PValue defaultValueSource;
                         if(defaultValue == null) {
-                            defaultValueSource = new PValue(tinst.typeClass().underlyingType());
+                            defaultValueSource = new PValue(tClass);
                             defaultValueSource.putNull();
                         } else {
-                            TCast cast = tinst.typeClass().castFromVarchar();
+                            TCast cast = tClass.castFromVarchar();
                             if (cast != null) {
-                                defaultValueSource = new PValue(tinst.typeClass().underlyingType());
+                                defaultValueSource = new PValue(tClass);
                                 TInstance valInst = MString.VARCHAR.instance(defaultValue.length(), false);
                                 TExecutionContext executionContext = new TExecutionContext(
                                         Collections.singletonList(valInst),
                                         tinst, planContext.getQueryContext());
-                                cast.evaluate(executionContext, new PValue(defaultValue), defaultValueSource);
+                                cast.evaluate(executionContext, new PValue(tClass, defaultValue), defaultValueSource);
                             } else {
-                                defaultValueSource = new PValue (defaultValue);
+                                defaultValueSource = new PValue (tClass, defaultValue);
                             }
                         }
                         row[i] = new TPreparedLiteral(tinst, defaultValueSource);

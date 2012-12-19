@@ -132,7 +132,7 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
 
         protected ValueRoutineInvocation(Routine routine) {
             super(routine);
-            returnValue = new PValue(routine.getReturnValue().tInstance().typeClass().underlyingType());
+            returnValue = new PValue(routine.getReturnValue().tInstance().typeClass());
         }
 
         public PValueSource getReturnValue() {
