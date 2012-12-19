@@ -1027,7 +1027,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 if (pstmt.getAISGeneration() != ais.getGeneration())
                     throw new StaleStatementException();
             }
-            session.setTimeoutAfterSeconds(getQueryTimeoutSec());
+            session.setTimeoutAfterMillis(getQueryTimeoutMilli());
             sessionMonitor.enterStage(MonitorStage.EXECUTE);
             rowsProcessed = pstmt.execute(context, maxrows);
         }

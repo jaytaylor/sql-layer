@@ -96,8 +96,8 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
     }
 
     @Override
-    public long getQueryTimeoutSec() {
-        return server.getQueryTimeoutSec();
+    public long getQueryTimeoutMilli() {
+        return server.getQueryTimeoutMilli();
     }
 
     @Override
@@ -112,10 +112,10 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
 
     public void lock(DXLFunction operationType) {
         long timeout = 0;       // No timeout.
-        long queryTimeoutSec = getQueryTimeoutSec();
-        if (queryTimeoutSec >= 0) {
+        long queryTimeoutMilli = getQueryTimeoutMilli();
+        if (queryTimeoutMilli >= 0) {
             long runningTimeMsec = System.currentTimeMillis() - getStartTime();
-            timeout = queryTimeoutSec * 1000 - runningTimeMsec;
+            timeout = queryTimeoutMilli - runningTimeMsec;
             if (timeout <= 0) {
                 // Already past time.
                 throw new QueryTimedOutException(runningTimeMsec);

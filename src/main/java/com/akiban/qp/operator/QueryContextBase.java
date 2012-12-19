@@ -206,8 +206,8 @@ public abstract class QueryContextBase implements QueryContext
     }
 
     @Override
-    public long getQueryTimeoutSec() {
-        return getStore().getQueryTimeoutSec();
+    public long getQueryTimeoutMilli() {
+        return getStore().getQueryTimeoutMilli();
     }
 
     @Override
@@ -215,10 +215,10 @@ public abstract class QueryContextBase implements QueryContext
         if (getSession().isCurrentQueryCanceled()) {
             throw new QueryCanceledException(getSession());
         }
-        long queryTimeoutSec = getQueryTimeoutSec();
-        if (queryTimeoutSec >= 0) {
+        long queryTimeoutMilli = getQueryTimeoutMilli();
+        if (queryTimeoutMilli >= 0) {
             long runningTimeMsec = System.currentTimeMillis() - getStartTime();
-            if (runningTimeMsec > queryTimeoutSec * 1000) {
+            if (runningTimeMsec > queryTimeoutMilli) {
                 throw new QueryTimedOutException(runningTimeMsec);
             }
         }

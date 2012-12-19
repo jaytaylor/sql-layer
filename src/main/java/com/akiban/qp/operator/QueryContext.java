@@ -185,8 +185,8 @@ public interface QueryContext
      */
     public void warnClient(InvalidOperationException exception);
 
-    /** Get the query timeout in seconds or <code>-1</code> if no limit. */
-    public long getQueryTimeoutSec();
+    /** Get the query timeout in milliseconds or <code>-1</code> if no limit. */
+    public long getQueryTimeoutMilli();
 
     /** Check whether query has been cancelled or timeout has been exceeded. */
     public void checkQueryCancelation();
