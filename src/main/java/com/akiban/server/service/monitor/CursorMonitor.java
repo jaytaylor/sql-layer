@@ -24,50 +24,22 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.pg;
+package com.akiban.server.service.monitor;
 
-import com.akiban.server.service.monitor.PreparedStatementMonitor;
+public interface CursorMonitor {
+    /** The id of the session owning the cursor. */
+    int getSessionId();
 
-public class PostgresPreparedStatement implements PreparedStatementMonitor
-{
-    private PostgresServerSession session;
-    private String name;
-    private String sql;
-    private PostgresStatement statement;
-    private long prepareTime;
-    
-    public PostgresPreparedStatement(PostgresServerSession session, String name,
-                                     String sql, PostgresStatement statement,
-                                     long prepareTime) {
-        this.session = session;
-        this.name = name;
-        this.sql = sql;
-        this.statement = statement;
-        this.prepareTime = prepareTime;
-    }
+    /** The name of the cursor, if any. */
+    String getName();    
 
-    @Override
-    public int getSessionId() {
-        return session.getSessionMonitor().getSessionId();
-    }
+    /** The SQL of the cursor's statement. */
+    String getSQL();    
 
-    @Override
-    public String getName() {
-        return name;
-    }
-    
-    @Override
-    public String getSQL() {
-        return sql;
-    }
-    
-    @Override
-    public long getPrepareTimeMillis() {
-        return prepareTime;
-    }
+    /** The name of the corresponding prepared statement, if any. */
+    String getPreparedStatementName();    
 
-    public PostgresStatement getStatement() {
-        return statement;
-    }
+    /** The time at which the cursor was opened. */
+    long getCreationTimeMillis();
 
 }
