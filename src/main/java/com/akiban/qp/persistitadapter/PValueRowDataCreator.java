@@ -48,11 +48,6 @@ public final class PValueRowDataCreator implements RowDataCreator<PValueSource> 
     }
 
     @Override
-    public PValueSource createId(long id) {
-        return new PValue(id);
-    }
-
-    @Override
     public void put(PValueSource source, NewRow into, FieldDef fieldDef, int f) {
 
         // TODO efficiency warning
