@@ -28,6 +28,7 @@ package com.akiban.sql.optimizer.rule.cost;
 
 import com.akiban.server.geophile.BoxLatLon;
 import com.akiban.sql.optimizer.rule.cost.CostEstimator.IndexIntersectionCoster;
+import com.akiban.sql.optimizer.rule.cost.CostEstimator.SelectivityConditions;
 import com.akiban.sql.optimizer.rule.range.RangeSegment;
 import static com.akiban.sql.optimizer.rule.OperatorAssembler.INSERTION_SORT_MAX_LIMIT;
 import static com.akiban.sql.optimizer.rule.cost.CostEstimator.simpleRound;
@@ -91,7 +92,7 @@ public class PlanCostEstimator
     }
 
     public void select(Collection<ConditionExpression> conditions,
-                       Map<ColumnExpression,Collection<ComparisonCondition>> selectivityConditions) {
+                       SelectivityConditions selectivityConditions) {
         planEstimator = new SelectEstimator(planEstimator,
                                             conditions, selectivityConditions);
     }
@@ -330,11 +331,11 @@ public class PlanCostEstimator
 
     protected class SelectEstimator extends PlanEstimator {
         private Collection<ConditionExpression> conditions;
-        private Map<ColumnExpression,Collection<ComparisonCondition>> selectivityConditions;
+        private SelectivityConditions selectivityConditions;
 
         protected SelectEstimator(PlanEstimator input,
                                   Collection<ConditionExpression> conditions,
-                                  Map<ColumnExpression,Collection<ComparisonCondition>> selectivityConditions) {
+                                  SelectivityConditions selectivityConditions) {
             super(input);
             this.conditions = conditions;
             this.selectivityConditions = selectivityConditions;

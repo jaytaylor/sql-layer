@@ -27,6 +27,7 @@
 package com.akiban.sql.optimizer.rule.join_enum;
 
 import com.akiban.sql.optimizer.rule.EquivalenceFinder;
+import com.akiban.sql.optimizer.rule.cost.CostEstimator.SelectivityConditions;
 import com.akiban.sql.optimizer.rule.cost.PlanCostEstimator;
 import com.akiban.sql.optimizer.rule.join_enum.DPhyp.JoinOperator;
 import com.akiban.sql.optimizer.rule.range.ColumnRanges;
@@ -1163,9 +1164,8 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
 
     // Conditions that might have a recognizable selectivity.
-    protected Map<ColumnExpression,Collection<ComparisonCondition>> selectivityConditions(Collection<ConditionExpression> conditions, Collection<TableSource> requiredTables) {
-        Map<ColumnExpression,Collection<ComparisonCondition>> result = new
-            HashMap<ColumnExpression,Collection<ComparisonCondition>>();
+    protected SelectivityConditions selectivityConditions(Collection<ConditionExpression> conditions, Collection<TableSource> requiredTables) {
+        SelectivityConditions result = new SelectivityConditions();
         for (ConditionExpression condition : conditions) {
             if (condition instanceof ComparisonCondition) {
                 ComparisonCondition ccond = (ComparisonCondition)condition;
@@ -1174,12 +1174,26 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                     if ((column.getColumn() != null) &&
                         requiredTables.contains(column.getTable()) &&
                         constantOrBound(ccond.getRight())) {
-                        Collection<ComparisonCondition> entry = result.get(column);
-                        if (entry == null) {
-                            entry = new ArrayList<ComparisonCondition>();
-                            result.put(column, entry);
+                        result.addCondition(column, condition);
+                    }
+                }
+            }
+            else if (condition instanceof InListCondition) {
+                InListCondition incond = (InListCondition)condition;
+                if (incond.getOperand() instanceof ColumnExpression) {
+                    ColumnExpression column = (ColumnExpression)incond.getOperand();
+                    if ((column.getColumn() != null) &&
+                        requiredTables.contains(column.getTable())) {
+                        boolean allConstant = true;
+                        for (ExpressionNode expr : incond.getExpressions()) {
+                            if (!constantOrBound(expr)) {
+                                allConstant = false;
+                                break;
+                            }
                         }
-                        entry.add(ccond);
+                        if (allConstant) {
+                            result.addCondition(column, condition);
+                        }
                     }
                 }
             }

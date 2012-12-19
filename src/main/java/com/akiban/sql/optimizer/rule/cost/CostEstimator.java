@@ -891,17 +891,39 @@ public abstract class CostEstimator implements TableRowCounts
     }
 
     public CostEstimate costSelect(Collection<ConditionExpression> conditions,
-                                   Map<ColumnExpression,Collection<ComparisonCondition>> selectivityConditions,
+                                   SelectivityConditions selectivityConditions,
                                    long size) {
         return costSelect(conditions, conditionsSelectivity(selectivityConditions), size);
     }
 
-    public double conditionsSelectivity(Map<ColumnExpression,Collection<ComparisonCondition>> conditions) {
+    public static class SelectivityConditions {
+        private Map<ColumnExpression,Collection<ConditionExpression>> map =
+            new HashMap<ColumnExpression,Collection<ConditionExpression>>();
+        
+        public void addCondition(ColumnExpression column, ConditionExpression condition) {
+            Collection<ConditionExpression> entry = map.get(column);
+            if (entry == null) {
+                entry = new ArrayList<ConditionExpression>();
+                map.put(column, entry);
+            }
+            entry.add(condition);
+        }
+
+        public Iterable<ColumnExpression> getColumns() {
+            return map.keySet();
+        }
+
+        public Collection<ConditionExpression> getConditions(ColumnExpression column) {
+            return map.get(column);
+        }
+    }
+
+    public double conditionsSelectivity(SelectivityConditions conditions) {
         double selectivity = 1.0;
-        for (Map.Entry<ColumnExpression,Collection<ComparisonCondition>> entry : conditions.entrySet()) {
+        for (ColumnExpression entry : conditions.getColumns()) {
             Index index = null;
             IndexStatistics indexStatistics = null;
-            Column column = entry.getKey().getColumn();
+            Column column = entry.getColumn();
             // Find a TableIndex whose first column is leadingColumn
             for (TableIndex tableIndex : column.getTable().getIndexes()) {
                 if (tableIndex.getKeyColumns().get(0).getColumn() == column) {
@@ -929,30 +951,37 @@ public abstract class CostEstimator implements TableRowCounts
             if (indexStatistics == null) continue;
             ExpressionNode eq = null, ne = null, lo = null, hi = null;
             boolean loInc = false, hiInc = false;
-            for (ComparisonCondition cond : entry.getValue()) {
-                switch (cond.getOperation()) {
-                case EQ:
-                    eq = cond.getRight();
-                    break;
-                case NE:
-                    ne = cond.getRight();
-                    break;
-                case LT:
-                    hi = cond.getRight();
-                    hiInc = false;
-                    break;
-                case LE:
-                    hi = cond.getRight();
-                    hiInc = true;
-                    break;
-                case GT:
-                    lo = cond.getRight();
-                    loInc = false;
-                    break;
-                case GE:
-                    lo = cond.getRight();
-                    loInc = true;
-                    break;
+            List<ExpressionNode> in = null;
+            for (ConditionExpression cond : conditions.getConditions(entry)) {
+                if (cond instanceof ComparisonCondition) {
+                    ComparisonCondition ccond = (ComparisonCondition)cond;
+                    switch (ccond.getOperation()) {
+                    case EQ:
+                        eq = ccond.getRight();
+                        break;
+                    case NE:
+                        ne = ccond.getRight();
+                        break;
+                    case LT:
+                        hi = ccond.getRight();
+                        hiInc = false;
+                        break;
+                    case LE:
+                        hi = ccond.getRight();
+                        hiInc = true;
+                        break;
+                    case GT:
+                        lo = ccond.getRight();
+                        loInc = false;
+                        break;
+                    case GE:
+                        lo = ccond.getRight();
+                        loInc = true;
+                        break;
+                    }
+                }
+                else if (cond instanceof InListCondition) {
+                    in = ((InListCondition)cond).getExpressions();
                 }
             }
             if (eq != null)
@@ -961,6 +990,14 @@ public abstract class CostEstimator implements TableRowCounts
                 selectivity *= (1.0 - fractionEqual(column, index, indexStatistics, eq));
             else if ((lo != null) || (hi != null))
                 selectivity *= fractionBetween(column, index, indexStatistics, lo, loInc, hi, hiInc);
+            else if (in != null) {
+                double fraction = 0.0;
+                for (ExpressionNode expr : in) {
+                    fraction += fractionEqual(column, index, indexStatistics, expr);
+                }
+                if (fraction > 1.0) fraction = 1.0;
+                selectivity *= fraction;
+            }
         }
         return selectivity;
     }
