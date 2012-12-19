@@ -136,7 +136,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 // Wait a bit, but don't hang up shutdown if thread is wedged.
                 thread.join(500);
                 if (thread.isAlive())
-                    logger.warn("Connection " + sessionId + " still running.");
+                    logger.warn("Connection {} still running", sessionId);
             }
             catch (InterruptedException ex) {
                 Thread.currentThread().interrupt();
@@ -202,7 +202,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 try {
                     type = messenger.readMessage(startupComplete);
                 } catch (ConnectionTerminatedException ex) {
-                    logError(ErrorLogLevel.DEBUG, "About to terminate", ex);
+                    logger.debug("About to terminate", ex);
                     notifyClient(QueryContext.NotificationLevel.WARNING,
                                  ex.getCode(), ex.getShortMessage());
                     stop();
@@ -265,7 +265,7 @@ public class PostgresServerConnection extends ServerSessionBase
                         cancelForKillReason = null;
                         forKill = true;
                     }
-                    logError(ErrorLogLevel.INFO, "Query canceled", nex);
+                    logError(ErrorLogLevel.INFO, "Query {} canceled", nex);
                     String msg = nex.getShortMessage();
                     if (cancelByUser != null) {
                         if (!forKill) msg = "Query canceled";
@@ -275,19 +275,19 @@ public class PostgresServerConnection extends ServerSessionBase
                     sendErrorResponse(type, nex, nex.getCode(), msg);
                     if (forKill) stop();
                 } catch (ConnectionTerminatedException ex) {
-                    logError(ErrorLogLevel.DEBUG, "Query terminated self", ex);
+                    logError(ErrorLogLevel.DEBUG, "Query {} terminated self", ex);
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
                     stop();
                 } catch (InvalidOperationException ex) {
-                    logError(ErrorLogLevel.WARN, "Error in query", ex);
+                    logError(ErrorLogLevel.WARN, "Error in query {}", ex);
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
                 } catch (RollbackException ex) {
                     QueryRollbackException qe = new QueryRollbackException();
                     qe.initCause(ex);
-                    logError(ErrorLogLevel.INFO, "Query rollback", qe);
+                    logError(ErrorLogLevel.INFO, "Query {} rollback", qe);
                     sendErrorResponse(type, qe,  qe.getCode(), qe.getMessage());
                 } catch (Exception ex) {
-                    logError(ErrorLogLevel.WARN, "Unexpected error in query", ex);
+                    logError(ErrorLogLevel.WARN, "Unexpected error in query {}", ex);
                     String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
                     sendErrorResponse(type, ex, ErrorCode.UNEXPECTED_EXCEPTION, message);
                 }
@@ -313,19 +313,29 @@ public class PostgresServerConnection extends ServerSessionBase
     private enum ErrorLogLevel { WARN, INFO, DEBUG };
 
     private void logError(ErrorLogLevel level, String msg, Exception ex) {
+        String sql = null;
+        if (sessionMonitor.getCurrentStatementEndTimeMillis() < 0) {
+            // Current statement did not complete, include in error message.
+            sql = sessionMonitor.getCurrentStatement();
+            if (sql != null) {
+                sessionMonitor.endStatement(-1); // For system tables and for next time.
+            }
+        }
+        if (sql == null)
+            sql = "";
         if (reqs.config().testing()) {
             level = ErrorLogLevel.DEBUG;
         }
         switch (level) {
         case DEBUG:
-            logger.debug(msg, ex);
+            logger.debug(msg, sql, ex);
             break;
         case INFO:
-            logger.info(msg, ex);
+            logger.info(msg, sql, ex);
             break;
         case WARN:
         default:
-            logger.warn(msg, ex);
+            logger.warn(msg, sql, ex);
             break;
         }
     }
@@ -633,7 +643,7 @@ public class PostgresServerConnection extends ServerSessionBase
         }
         readyForQuery();
         sessionMonitor.endStatement(rowsProcessed);
-        logger.debug("Query complete");
+        logger.debug("Query complete: {} rows", rowsProcessed);
         if (reqs.monitor().isQueryLogEnabled()) {
             reqs.monitor().logQuery(sessionMonitor);
         }
@@ -1060,7 +1070,7 @@ public class PostgresServerConnection extends ServerSessionBase
         PostgresBoundQueryContext context = 
             new PostgresBoundQueryContext(this, pstmt, false, false);
         estmt.setParameters(context);
-        sessionMonitor.startStatement(pstmt.getSQL(), System.currentTimeMillis());
+        sessionMonitor.startStatement(pstmt.getSQL());
         pstmt.getStatement().sendDescription(context, false);
         int nrows = executeStatementWithAutoTxn(pstmt.getStatement(), context, maxrows);
         sessionMonitor.endStatement(nrows);
@@ -1118,7 +1128,7 @@ public class PostgresServerConnection extends ServerSessionBase
     public int fetchStatement(String name, int count) throws IOException {
         PostgresBoundQueryContext bound = boundPortals.get(name);
         PostgresPreparedStatement pstmt = bound.getStatement();
-        sessionMonitor.startStatement(pstmt.getSQL(), System.currentTimeMillis());
+        sessionMonitor.startStatement(pstmt.getSQL());
         pstmt.getStatement().sendDescription(bound, false);
         int nrows = executeStatementWithAutoTxn(pstmt.getStatement(), bound, count);
         sessionMonitor.endStatement(nrows);
