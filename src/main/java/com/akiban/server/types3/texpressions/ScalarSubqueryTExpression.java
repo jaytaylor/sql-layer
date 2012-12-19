@@ -37,6 +37,13 @@ import com.akiban.server.types3.pvalue.PValueTargets;
 
 public class ScalarSubqueryTExpression extends SubqueryTExpression
 {
+
+    @Override
+    public void reset()
+    {
+        // does nothing
+    }
+    
     private static final class InnerEvaluation extends SubqueryTEvaluateble
     {
         private final TPreparedExpression expression;

@@ -245,7 +245,7 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public long getQueryTimeoutSec()
+        public long getQueryTimeoutMilli()
         {
             return -1;
         }

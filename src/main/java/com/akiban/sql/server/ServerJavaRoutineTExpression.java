@@ -61,6 +61,12 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
     }
 
     @Override
+    public void reset()
+    {
+        // does thing
+    }
+     
+    @Override
     public TPreptimeValue evaluateConstant(QueryContext context) {
         List<TPreptimeValue> values = new ArrayList<TPreptimeValue>(inputs.size());
         boolean allConstant = true, anyNull = false;

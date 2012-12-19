@@ -45,7 +45,7 @@ import java.util.List;
 
 public final class TPreparedFunction implements TPreparedExpression {
 
-    private TExecutionContext context;
+    private TExecutionContext sharedTExecContext;
     
     @Override
     public TInstance resultType() {
@@ -68,6 +68,7 @@ public final class TPreparedFunction implements TPreparedExpression {
         return overload.evaluateConstant(preptimeContext, overload.filterInputs(lazyInputs));
     }
 
+    private  int c = 0;
     @Override
     public TEvaluatableExpression build() {
         List<TEvaluatableExpression> children = new ArrayList<TEvaluatableExpression>(inputs.size());
@@ -77,9 +78,9 @@ public final class TPreparedFunction implements TPreparedExpression {
                 overload,
                 resultType,
                 children,
-                context == null 
-                    ? context = preptimeContext.createExecutionContext()
-                    : context
+                sharedTExecContext == null 
+                    ? sharedTExecContext = preptimeContext.createExecutionContext()
+                    : sharedTExecContext
                 );
     }
 
@@ -123,6 +124,12 @@ public final class TPreparedFunction implements TPreparedExpression {
     private final TInstance resultType;
     private final List<? extends TPreparedExpression> inputs;
     private final TPreptimeContext preptimeContext;
+
+    @Override
+    public void reset()
+    {
+        sharedTExecContext = null;
+    }
 
     private static final class TEvaluatableFunction implements TEvaluatableExpression {
 

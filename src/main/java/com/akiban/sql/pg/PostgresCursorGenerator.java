@@ -24,20 +24,12 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.texpressions;
+package com.akiban.sql.pg;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.explain.Explainable;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.qp.operator.CursorBase;
 
-public interface TPreparedExpression extends Explainable {
-    TPreptimeValue evaluateConstant(QueryContext queryContext);
-    TInstance resultType();
-    TEvaluatableExpression build();
-    
-    /**
-     *  clean up after each <b>execution</b>
-     */
-    void reset();
+public interface PostgresCursorGenerator<T extends CursorBase> {
+    public boolean canSuspend(PostgresServerSession server);
+    public T openCursor(PostgresQueryContext context);
+    public void closeCursor(T cursor);
 }

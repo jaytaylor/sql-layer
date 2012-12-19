@@ -26,27 +26,56 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.sql.server.ServerQueryContext;
+import java.io.IOException;
 
-import com.akiban.qp.operator.CursorBase;
-
-public class PostgresQueryContext extends ServerQueryContext<PostgresServerSession>
+/**
+ * Common handling for cursor-related statements.
+ */
+public abstract class PostgresBaseCursorStatement implements PostgresStatement
 {
-    public PostgresQueryContext(PostgresServerSession server) {
-        super(server);
+    @Override
+    public TransactionMode getTransactionMode() {
+        return TransactionMode.ALLOWED;
     }
 
-    public boolean isColumnBinary(int i) {
+    @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        return TransactionAbortedMode.ALLOWED;
+    }
+
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.ALLOWED;
+    }
+
+    @Override
+    public PostgresType[] getParameterTypes() {
+        return null;
+    }
+
+    @Override
+    public void sendDescription(PostgresQueryContext context, boolean always) 
+            throws IOException {
+        if (always) {
+            PostgresServerSession server = context.getServer();
+            PostgresMessenger messenger = server.getMessenger();
+            messenger.beginMessage(PostgresMessages.NO_DATA_TYPE.code());
+            messenger.sendMessage();
+        }
+    }
+
+    @Override
+    public boolean hasAISGeneration() {
         return false;
     }
 
-    public <T extends CursorBase> T startCursor(PostgresCursorGenerator<T> generator) {
-        return generator.openCursor(this);
+    @Override
+    public void setAISGeneration(long generation) {
     }
 
-    public <T extends CursorBase> boolean finishCursor(PostgresCursorGenerator<T> generator, T cursor, boolean suspended) {
-        generator.closeCursor(cursor);
-        return false;
+    @Override
+    public long getAISGeneration() {
+        return 0;
     }
 
 }

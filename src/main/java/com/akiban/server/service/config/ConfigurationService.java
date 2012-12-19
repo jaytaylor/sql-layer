@@ -97,7 +97,7 @@ public interface ConfigurationService
      */
     Map<String,String> getProperties();
 
-    long queryTimeoutSec();
-    void queryTimeoutSec(long queryTimeoutSec);
+    long queryTimeoutMilli();
+    void queryTimeoutMilli(long queryTimeoutMilli);
     boolean testing();
 }

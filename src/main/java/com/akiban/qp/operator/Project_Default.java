@@ -210,7 +210,7 @@ class Project_Default extends Operator
     private class Execution extends OperatorExecutionBase implements Cursor
     {
         // Cursor interface
-
+        
         @Override
         public void open()
         {
@@ -266,6 +266,9 @@ class Project_Default extends Operator
                 input.destroy();
                 input = null;
             }
+            
+            for (TPreparedExpression expr : pExpressions)
+                expr.reset();
         }
 
         @Override
@@ -295,7 +298,6 @@ class Project_Default extends Operator
         }
 
         // Object state
-
         private Cursor input; // input = null indicates destroyed.
         private boolean idle = true;
     }

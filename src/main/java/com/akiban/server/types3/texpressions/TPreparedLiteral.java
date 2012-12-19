@@ -30,7 +30,6 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.explain.*;
 import com.akiban.server.explain.std.TExpressionExplainer;
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -38,6 +37,13 @@ import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.util.AkibanAppender;
 
 public final class TPreparedLiteral implements TPreparedExpression {
+    
+    @Override
+    public void reset()
+    {
+        // does thing
+    }
+    
     @Override
     public TInstance resultType() {
         return tInstance;

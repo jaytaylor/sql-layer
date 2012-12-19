@@ -26,27 +26,36 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.sql.server.ServerQueryContext;
+import com.akiban.sql.parser.NodeTypes;
+import com.akiban.sql.parser.ParameterNode;
+import com.akiban.sql.parser.StatementNode;
 
-import com.akiban.qp.operator.CursorBase;
+import java.util.List;
 
-public class PostgresQueryContext extends ServerQueryContext<PostgresServerSession>
+/** SQL statements related to manipulation of prepared statements and cursors. */
+public class PostgresCursorStatementGenerator extends PostgresBaseStatementGenerator
 {
-    public PostgresQueryContext(PostgresServerSession server) {
-        super(server);
+    public PostgresCursorStatementGenerator(PostgresServerSession server) {
     }
 
-    public boolean isColumnBinary(int i) {
-        return false;
+    @Override
+    public PostgresStatement generateStub(PostgresServerSession server,
+                                          String sql, StatementNode stmt,
+                                          List<ParameterNode> params, int[] paramTypes)  {
+        switch (stmt.getNodeType()) {
+        case NodeTypes.PREPARE_STATEMENT_NODE:
+            return new PostgresPrepareStatement();
+        case NodeTypes.DECLARE_STATEMENT_NODE:
+            return new PostgresDeclareStatement();
+        case NodeTypes.EXECUTE_STATEMENT_NODE:
+            return new PostgresExecuteStatement();
+        case NodeTypes.FETCH_STATEMENT_NODE:
+            return new PostgresFetchStatement();
+        case NodeTypes.CLOSE_STATEMENT_NODE:
+        case NodeTypes.DEALLOCATE_STATEMENT_NODE:
+            return new PostgresCloseCursorStatement();
+        default:
+            return null;
+        }
     }
-
-    public <T extends CursorBase> T startCursor(PostgresCursorGenerator<T> generator) {
-        return generator.openCursor(this);
-    }
-
-    public <T extends CursorBase> boolean finishCursor(PostgresCursorGenerator<T> generator, T cursor, boolean suspended) {
-        generator.closeCursor(cursor);
-        return false;
-    }
-
 }

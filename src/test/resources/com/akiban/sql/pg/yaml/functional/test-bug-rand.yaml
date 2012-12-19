@@ -11,4 +11,19 @@
 --- # context should not be shared amongst different columns
 - Statement: SELECT RAND(3), RAND(3), RAND(3);
 - output: [['0.731057369148862', '0.731057369148862', '0.731057369148862']]
+---
+- DropTable: t
+---
+- Statement: PREPARE stm AS SELECT RAND(3);
+---
+- Statement: EXECUTE stm;
+- output: [['0.731057369148862']]
+---
+- Statement: EXECUTE stm;
+- output: [['0.731057369148862']]
+---
+- Statement: EXECUTE stm;
+- output: [['0.731057369148862']]
+---
+- Statement: DEALLOCATE stm;
 ...

@@ -36,6 +36,12 @@ import com.akiban.server.types3.pvalue.PValueSource;
 public final class TComparisonExpression extends TComparisonExpressionBase {
 
     @Override
+    public void reset()
+    {
+        // does thing
+    }
+    
+    @Override
     protected int compare(TInstance leftInstance, PValueSource leftSource,
                           TInstance rightInstance, PValueSource rightSource)
     {

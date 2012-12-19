@@ -482,9 +482,10 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return "session_user";
         case NodeTypes.SYSTEM_USER_NODE:
             return "system_user";
+        case NodeTypes.CURRENT_SCHEMA_NODE:
+            return "current_schema";
         case NodeTypes.CURRENT_ISOLATION_NODE:
         case NodeTypes.IDENTITY_VAL_NODE:
-        case NodeTypes.CURRENT_SCHEMA_NODE:
         case NodeTypes.CURRENT_ROLE_NODE:
         default:
             return null;

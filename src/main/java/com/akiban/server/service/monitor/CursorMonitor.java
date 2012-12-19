@@ -24,20 +24,22 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.texpressions;
+package com.akiban.server.service.monitor;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.explain.Explainable;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
+public interface CursorMonitor {
+    /** The id of the session owning the cursor. */
+    int getSessionId();
 
-public interface TPreparedExpression extends Explainable {
-    TPreptimeValue evaluateConstant(QueryContext queryContext);
-    TInstance resultType();
-    TEvaluatableExpression build();
-    
-    /**
-     *  clean up after each <b>execution</b>
-     */
-    void reset();
+    /** The name of the cursor, if any. */
+    String getName();    
+
+    /** The SQL of the cursor's statement. */
+    String getSQL();    
+
+    /** The name of the corresponding prepared statement, if any. */
+    String getPreparedStatementName();    
+
+    /** The time at which the cursor was opened. */
+    long getCreationTimeMillis();
+
 }

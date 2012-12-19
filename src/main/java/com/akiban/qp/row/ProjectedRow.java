@@ -154,13 +154,19 @@ public class ProjectedRow extends AbstractRow
         this.holders = expressions == null ? null : new ValueHolder[expressions.size()];
     }
 
-    /** Make sure all the <code>ValueHolder</code>s are full. */
+    /** Make sure all the cached values are full. */
     public void freeze() {
-        if (holders == null)
-            return;
-        for (int i = 0; i < holders.length; i++) {
-            if (holders[i] == null) {
-                eval(i);
+        if (holders != null) {
+            for (int i = 0; i < holders.length; i++) {
+                if (holders[i] == null) {
+                    eval(i);
+                }
+            }
+        } else if (evaluated != null) {
+            for (int i = 0; i < evaluated.length; i++) {
+                if (!evaluated[i]) {
+                    pvalue(i);
+                }
             }
         }
     }
@@ -196,6 +202,7 @@ public class ProjectedRow extends AbstractRow
         }
         return result;
     }
+
 
     // Object state
 

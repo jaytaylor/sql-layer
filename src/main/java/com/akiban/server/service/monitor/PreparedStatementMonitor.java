@@ -24,20 +24,19 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.texpressions;
+package com.akiban.server.service.monitor;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.explain.Explainable;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
+public interface PreparedStatementMonitor {
+    /** The id of the session owning the prepared statement. */
+    int getSessionId();
 
-public interface TPreparedExpression extends Explainable {
-    TPreptimeValue evaluateConstant(QueryContext queryContext);
-    TInstance resultType();
-    TEvaluatableExpression build();
-    
-    /**
-     *  clean up after each <b>execution</b>
-     */
-    void reset();
+    /** The name of the statement, if any. */
+    String getName();    
+
+    /** The SQL of the statement. */
+    String getSQL();    
+
+    /** The time at which the statement was prepared. */
+    long getPrepareTimeMillis();
+
 }

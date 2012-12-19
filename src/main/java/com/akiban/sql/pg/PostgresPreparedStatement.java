@@ -24,20 +24,50 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.texpressions;
+package com.akiban.sql.pg;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.explain.Explainable;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.service.monitor.PreparedStatementMonitor;
 
-public interface TPreparedExpression extends Explainable {
-    TPreptimeValue evaluateConstant(QueryContext queryContext);
-    TInstance resultType();
-    TEvaluatableExpression build();
+public class PostgresPreparedStatement implements PreparedStatementMonitor
+{
+    private PostgresServerSession session;
+    private String name;
+    private String sql;
+    private PostgresStatement statement;
+    private long prepareTime;
     
-    /**
-     *  clean up after each <b>execution</b>
-     */
-    void reset();
+    public PostgresPreparedStatement(PostgresServerSession session, String name,
+                                     String sql, PostgresStatement statement,
+                                     long prepareTime) {
+        this.session = session;
+        this.name = name;
+        this.sql = sql;
+        this.statement = statement;
+        this.prepareTime = prepareTime;
+    }
+
+    @Override
+    public int getSessionId() {
+        return session.getSessionMonitor().getSessionId();
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+    
+    @Override
+    public String getSQL() {
+        return sql;
+    }
+    
+    @Override
+    public long getPrepareTimeMillis() {
+        return prepareTime;
+    }
+
+    public PostgresStatement getStatement() {
+        return statement;
+    }
+
 }

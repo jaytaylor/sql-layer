@@ -33,7 +33,7 @@ public interface ConfigurationServiceMXBean
 {
     Map<String,String> getProperties();
 
-    long getQueryTimeoutSec();
+    long getQueryTimeoutMilli();
 
-    void setQueryTimeoutSec(long timeoutSec);
+    void setQueryTimeoutMilli(long timeoutMilli);
 }

@@ -107,7 +107,7 @@ public final class SchemaTableServiceIT extends ITBase {
     
     @Test
     public void serverExamine() {
-        assertEquals ("Table count", 8, ServerSchemaTablesServiceImpl.createTablesToRegister().getUserTables().size());
+        assertEquals ("Table count", 10, ServerSchemaTablesServiceImpl.createTablesToRegister().getUserTables().size());
         assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.ERROR_CODES));
         assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_INSTANCE_SUMMARY));
         assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_SERVERS));
@@ -116,5 +116,7 @@ public final class SchemaTableServiceIT extends ITBase {
         assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_MEMORY_POOLS));
         assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_GARBAGE_COLLECTORS));
         assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_TAPS));
+        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_PREPARED_STATEMENTS));
+        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_CURSORS));
     }
 }
