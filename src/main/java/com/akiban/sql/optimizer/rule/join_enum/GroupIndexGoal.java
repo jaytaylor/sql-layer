@@ -176,6 +176,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 conditions.addAll(conditionSource);
             }
         }
+        columnsToRanges = null;
     }
 
     public void updateRequiredColumns(Collection<JoinOperator> joins,
