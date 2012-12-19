@@ -65,7 +65,11 @@ public abstract class Rand extends TScalarBase {
                 @Override
                 protected long getSeed(LazyList<? extends PValueSource> inputs)
                 {
-                    return inputs.get(0).getInt64();
+                    PValueSource input = inputs.get(0);
+                    if (input.isNull())
+                        return System.currentTimeMillis() + counter.getAndAdd(DELTA);
+                    else
+                        return inputs.get(0).getInt64();
                 }
 
                 @Override
@@ -89,6 +93,18 @@ public abstract class Rand extends TScalarBase {
         this.resultType = resultType;
     }
 
+    @Override
+    protected boolean nullContaminates(int inputIndex)
+    {
+        return false;
+    }
+    
+    @Override
+    protected boolean neverConstant()
+    {
+        return true;
+    }
+    
     @Override
     public String displayName() {
         return "RAND";
