@@ -26,7 +26,10 @@
 
 package com.akiban.server;
 
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.persistit.Persistit;
 import com.persistit.Value;
@@ -52,7 +55,7 @@ public final class PersistitValuePValueSourceTest {
 
         readyAndCheck(source, null);
 
-        readyAndCheck(source, PUnderlying.INT_64);
+        readyAndCheck(source, MNumeric.BIGINT);
         assertEquals("source value", 1234L, source.getInt64());
     }
 
@@ -84,23 +87,23 @@ public final class PersistitValuePValueSourceTest {
         });
 
         // first set
-        readyAndCheck(source, PUnderlying.STRING);
+        readyAndCheck(source, MString.VARCHAR);
         assertEquals("source value", "foo", source.getString());
 
-        readyAndCheck(source, PUnderlying.INT_64);
+        readyAndCheck(source, MNumeric.BIGINT);
         assertEquals("source value", 456L, source.getInt64());
 
-        readyAndCheck(source, PUnderlying.BYTES);
+        readyAndCheck(source, MBinary.VARBINARY);
         assertArrayEquals("source value", new byte[] {1, 2, 3}, source.getBytes());
 
         // second set
-        readyAndCheck(source, PUnderlying.STRING);
+        readyAndCheck(source, MString.VARCHAR);
         assertEquals("source value", "foo", source.getString());
 
-        readyAndCheck(source, PUnderlying.INT_64);
+        readyAndCheck(source, MNumeric.BIGINT);
         assertEquals("source value", 456L, source.getInt64());
 
-        readyAndCheck(source, PUnderlying.BYTES);
+        readyAndCheck(source, MBinary.VARBINARY);
         assertArrayEquals("source value", new byte[] {1, 2, 3}, source.getBytes());
     }
 
@@ -118,8 +121,8 @@ public final class PersistitValuePValueSourceTest {
         assertEquals("source value", BigDecimal.ONE, source.getObject());
     }
 
-    private void readyAndCheck(PersistitValuePValueSource source, PUnderlying pUnderlying) {
-        source.getReady(MNumeric.DECIMAL);
+    private void readyAndCheck(PersistitValuePValueSource source, TClass pUnderlying) {
+        source.getReady(pUnderlying);
         if (pUnderlying == null) {
             assertTrue("source should be null", source.isNull());
         }
