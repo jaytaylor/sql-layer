@@ -81,7 +81,7 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
                 constantSource = invocation.getReturnValue();
             }
             if (anyNull && !routine.isCalledOnNullInput()) {
-                constantSource = PValueSources.getNullSource(resultType().typeClass().underlyingType());
+                constantSource = PValueSources.getNullSource(resultType().typeClass());
             }
         }
         return new TPreptimeValue(resultType(), constantSource);

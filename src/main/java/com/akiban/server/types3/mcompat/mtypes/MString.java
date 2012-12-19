@@ -96,7 +96,7 @@ public class MString extends TString
         int charsetId = context.outputTInstance().attribute(StringAttribute.CHARSET);
         int collatorId = context.outputTInstance().attribute(StringAttribute.COLLATION);
 
-        switch (in.getUnderlyingType())
+        switch (in.getUnderlyingType().underlyingType())
         {
             case STRING:
                 String inStr = in.getString();

@@ -46,7 +46,7 @@ public final class PValueTargets {
         else if (!source.hasRawValue()) {
             throw new IllegalStateException("source has no value: " + source);
         }
-        switch (source.getUnderlyingType()) {
+        switch (source.getUnderlyingType().underlyingType()) {
         case BOOL:
             target.putBool(source.getBoolean());
             break;

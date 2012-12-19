@@ -28,13 +28,8 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
-
-import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
 
 public final class PValueRowDataCreator implements RowDataCreator<PValueSource> {
     @Override
@@ -63,7 +58,7 @@ public final class PValueRowDataCreator implements RowDataCreator<PValueSource> 
             putObj = source.getObject();
         }
         else {
-            switch (source.getUnderlyingType()) {
+            switch (source.getUnderlyingType().underlyingType()) {
             case BOOL:
                 putObj = source.getBoolean();
                 break;

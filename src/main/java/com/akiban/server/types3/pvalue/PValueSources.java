@@ -62,7 +62,7 @@ public final class PValueSources {
      * @return the source's value as a long
      */
     public static long getLong(PValueSource source) {
-        switch (source.getUnderlyingType()) {
+        switch (source.getUnderlyingType().underlyingType()) {
         case INT_8:
             return source.getInt8();
         case INT_16:
@@ -72,7 +72,7 @@ public final class PValueSources {
         case INT_64:
             return source.getInt64();
         default:
-            throw new UnsupportedOperationException(source.getUnderlyingType().name());
+            throw new UnsupportedOperationException(source.getUnderlyingType().toString());
         }
     }
 
@@ -308,7 +308,7 @@ public final class PValueSources {
     }
 
     public static void pvalueFromLong(long value, PValue result) {
-        PUnderlying underlying = result.getUnderlyingType();
+        PUnderlying underlying = result.getUnderlyingType().underlyingType();
         switch (underlying) {
         case INT_8:
             result.putInt8((byte)value);
@@ -339,7 +339,7 @@ public final class PValueSources {
             return valueSource.getBoolean();
         case LONG_AKTYPE:
             long v;
-            switch (valueSource.getUnderlyingType()) {
+            switch (valueSource.getUnderlyingType().underlyingType()) {
             case INT_8:
                 v = valueSource.getInt8();
                 break;
@@ -367,15 +367,15 @@ public final class PValueSources {
             }
             return v;
         case FLOAT_AKTYPE:
-            return valueSource.getUnderlyingType() == PUnderlying.STRING
+            return valueSource.getUnderlyingType().underlyingType() == PUnderlying.STRING
                     ? Float.parseFloat(valueSource.getString())
                     : valueSource.getFloat();
         case DOUBLE_AKTYPE:
-            return valueSource.getUnderlyingType() == PUnderlying.STRING
+            return valueSource.getUnderlyingType().underlyingType() == PUnderlying.STRING
                     ? Double.parseDouble(valueSource.getString())
                     : valueSource.getDouble();
         case OBJECT_AKTYPE:
-            if (valueSource.getUnderlyingType() == PUnderlying.STRING)
+            if (valueSource.getUnderlyingType().underlyingType() == PUnderlying.STRING)
                 return valueSource.getString();
             if (akType == AkType.VARBINARY)
                 return new WrappingByteSource(valueSource.getBytes());
@@ -388,7 +388,7 @@ public final class PValueSources {
     }
 
     private static Object toObject(PValueSource source) {
-        PUnderlying underlying = source.getUnderlyingType();
+        PUnderlying underlying = source.getUnderlyingType().underlyingType();
         switch (underlying) {
         case BOOL:      return source.getBoolean();
         case INT_8:     return source.getInt8();
@@ -405,8 +405,8 @@ public final class PValueSources {
     }
 
     public static boolean areEqual(PValueSource one, PValueSource two, TInstance instance) {
-        PUnderlying underlyingType = one.getUnderlyingType();
-        if (underlyingType != two.getUnderlyingType())
+        PUnderlying underlyingType = one.getUnderlyingType().underlyingType();
+        if (underlyingType != two.getUnderlyingType().underlyingType())
             return false;
         if (one.isNull())
             return two.isNull();
@@ -446,7 +446,7 @@ public final class PValueSources {
         if (source.isNull())
             return 0;
         final long hash;
-        switch (source.getUnderlyingType()) {
+        switch (source.getUnderlyingType().underlyingType()) {
         case BOOL:
             hash = source.getBoolean() ? 1 : 0;
             break;
@@ -490,33 +490,13 @@ public final class PValueSources {
         return ((int) (hash >> 32)) ^ (int) hash;
     }
 
-    public static PValueSource getNullSource(PUnderlying underlying) {
-        PValueSource source = (underlying == null) ? NULL_UNKNOWN : NULL_SOURCES[underlying.ordinal()];
-        assert source.isNull() : source;
-        return source;
-    }
-
-    private PValueSources() {}
-
-    private static final PValueSource[] NULL_SOURCES = createNullSources();
-    private static final PValueSource NULL_UNKNOWN = createNullUnknown();
-
-    private static PValueSource[] createNullSources() {
-        PUnderlying[] vals = PUnderlying.values();
-        PValueSource[] arr = new PValueSource[vals.length];
-        for (int i = 0; i < vals.length; ++i) {
-            PValue pval = new PValue(vals[i]);
-            pval.putNull();
-            arr[i] = pval;
-        }
-        return arr;
-    }
-
-    private static PValueSource createNullUnknown() {
-        PValue result = new PValue();
+    public static PValueSource getNullSource(TClass underlying) {
+        PValue result = new PValue(underlying);
         result.putNull();
         return result;
     }
+
+    private PValueSources() {}
 
     public static PValueSource fromValueSource(ValueSource source, TInstance tInstance) {
         TClass tClass = tInstance == null ? null : tInstance.typeClass();
@@ -539,7 +519,7 @@ public final class PValueSources {
             return;
         }
         
-        switch (source.getUnderlyingType()) {
+        switch (source.getUnderlyingType().underlyingType()) {
         case BOOL:
             out.append(source.getBoolean());
             break;
@@ -695,7 +675,7 @@ public final class PValueSources {
             else if (oval != UNDEF && oval.getClass() != byte[].class) {
                 if (oval instanceof String) {
                     String sval = (String) oval;
-                    if (out.getUnderlyingType() == PUnderlying.STRING) {
+                    if (out.getUnderlyingType().underlyingType() == PUnderlying.STRING) {
                         out.putString(sval, null);
                     }
                     else {
@@ -715,7 +695,7 @@ public final class PValueSources {
                 }
             }
             else {
-                switch (out.getUnderlyingType()) {
+                switch (out.getUnderlyingType().underlyingType()) {
                 case BOOL:
                     out.putBool(boolval);
                     break;

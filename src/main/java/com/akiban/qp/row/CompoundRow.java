@@ -108,8 +108,7 @@ public class CompoundRow extends AbstractRow {
     }
 
     private PValueSource nullPValue(int i) {
-        PUnderlying underlying = rowType.typeInstanceAt(i).typeClass().underlyingType();
-        return PValueSources.getNullSource(underlying);
+        return PValueSources.getNullSource(rowType.typeInstanceAt(i).typeClass());
     }
 
     // Object state

@@ -46,7 +46,7 @@ public class ScalarSubqueryTExpression extends SubqueryTExpression
                                RowType outerRowType, RowType innerRowType,
                                int bindingPosition)
         {
-            super(subquery, outerRowType, innerRowType, bindingPosition, expression.resultType().typeClass().underlyingType());
+            super(subquery, outerRowType, innerRowType, bindingPosition, expression.resultType().typeClass());
             this.expression = expression;
         }
 

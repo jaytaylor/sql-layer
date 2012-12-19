@@ -391,7 +391,7 @@ public final class RowDataBuilder {
 
         @Override
         public PValueSource nullSource(FieldDef fieldDef) {
-            return PValueSources.getNullSource(underlying(fieldDef).underlyingType());
+            return PValueSources.getNullSource(underlying(fieldDef));
         }
 
         @Override

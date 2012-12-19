@@ -947,7 +947,7 @@ public class ApiTestBase {
             return null;
         if (pvalue.hasCacheValue())
             return pvalue.getObject();
-        switch (pvalue.getUnderlyingType()) {
+        switch (pvalue.getUnderlyingType().underlyingType()) {
         case BOOL:
             return pvalue.getBoolean();
         case INT_8:
@@ -987,7 +987,7 @@ public class ApiTestBase {
                 result = null;
             }
             else {
-                switch (pvalue.getUnderlyingType()) {
+                switch (pvalue.getUnderlyingType().underlyingType()) {
                 case INT_8:
                     result = (long) pvalue.getInt8();
                     break;

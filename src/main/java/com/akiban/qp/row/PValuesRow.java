@@ -27,7 +27,7 @@
 package com.akiban.qp.row;
 
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.pvalue.PValueSource;
 
 import java.util.Arrays;
@@ -57,8 +57,8 @@ public final class PValuesRow extends AbstractRow {
                             + values.length + " values given: " + Arrays.asList(values));
         }
         for (int i = 0, max = values.length; i < max; ++i) {
-            PUnderlying requiredType = rowType.typeInstanceAt(i).typeClass().underlyingType();
-            PUnderlying actualType = values[i].getUnderlyingType();
+            TClass requiredType = rowType.typeInstanceAt(i).typeClass();
+            TClass actualType = values[i].getUnderlyingType();
             if (requiredType != actualType)
                 throw new IllegalArgumentException("value " + i + " should be " + requiredType
                         + " but was " + actualType);

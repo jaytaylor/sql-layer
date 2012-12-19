@@ -28,6 +28,7 @@ package com.akiban.server;
 
 import com.akiban.ais.model.Column;
 import com.akiban.server.collation.AkCollator;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -54,7 +55,7 @@ public class PersistitKeyPValueTarget implements PValueTarget {
     // PValueTarget interface
     
     @Override
-    public PUnderlying getUnderlyingType() {
+    public TClass getUnderlyingType() {
         throw new UnsupportedOperationException();
     }
 

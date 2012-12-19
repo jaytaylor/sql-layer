@@ -30,6 +30,7 @@ import static org.junit.Assert.*;
 
 import java.util.List;
 
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import org.junit.Test;
 
 import com.akiban.qp.loadableplan.DirectObjectCursor;
@@ -55,10 +56,10 @@ public class PersistitCLILoadablePlanIT extends ITBase {
 
         DirectObjectCursor cursor = plan.cursor(queryContext);
         if (Types3Switch.ON) {
-            queryContext.setPValue(0, new PValue("stat"));
-            queryContext.setPValue(1, new PValue("count=3"));
-            queryContext.setPValue(2, new PValue("delay=2"));
-            queryContext.setPValue(3, new PValue("-a"));
+            queryContext.setPValue(0, new PValue(MString.VARCHAR, "stat"));
+            queryContext.setPValue(1, new PValue(MString.VARCHAR, "count=3"));
+            queryContext.setPValue(2, new PValue(MString.VARCHAR, "delay=2"));
+            queryContext.setPValue(3, new PValue(MString.VARCHAR, "-a"));
         }
         else {
             queryContext.setValue(0, new FromObjectValueSource().setReflectively("stat"));

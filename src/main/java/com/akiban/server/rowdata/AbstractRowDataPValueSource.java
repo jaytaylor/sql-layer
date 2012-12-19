@@ -40,8 +40,8 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
     // ValueSource interface
 
     @Override
-    public PUnderlying getUnderlyingType() {
-        return fieldDef().column().tInstance().typeClass().underlyingType();
+    public TClass getUnderlyingType() {
+        return fieldDef().column().tInstance().typeClass();
     }
 
     @Override

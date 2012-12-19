@@ -28,11 +28,10 @@ package com.akiban.server.rowdata;
 
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.collation.AkCollator;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.util.ArgumentValidation;
-import java.math.BigInteger;
 
 public final class RowDataPValueTarget implements PValueTarget, RowDataTarget {
 
@@ -93,10 +92,9 @@ public final class RowDataPValueTarget implements PValueTarget, RowDataTarget {
     }
     
     @Override
-    public PUnderlying getUnderlyingType() {
+    public TClass getUnderlyingType() {
         // STRING should actually be interpreted as BYTES
-        PUnderlying underlying = targetInstance().typeClass().underlyingType();
-        return underlying == PUnderlying.STRING ? PUnderlying.BYTES : underlying;
+        return targetInstance().typeClass();
     }
 
     @Override
@@ -194,9 +192,4 @@ public final class RowDataPValueTarget implements PValueTarget, RowDataTarget {
     // consts
 
     private static final int INT_STORAGE_SIZE = 4;
-
-    /**
-     * We want to encode BigInteger as long, so we require it to be smaller than (2^64) + 1
-     */
-    private static final BigInteger MAX_BIGINT = BigInteger.valueOf(Long.MAX_VALUE);
 }

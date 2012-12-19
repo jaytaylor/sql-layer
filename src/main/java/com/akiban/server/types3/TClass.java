@@ -41,7 +41,6 @@ import com.google.common.primitives.Floats;
 import com.google.common.primitives.Longs;
 import com.google.common.primitives.UnsignedBytes;
 
-import java.nio.ByteBuffer;
 import java.util.regex.Pattern;
 
 public abstract class TClass {
@@ -112,7 +111,7 @@ public abstract class TClass {
         }
         PValueSources.ensureRawValue(sourceA, instanceA);
         PValueSources.ensureRawValue(sourceB, instanceB);
-        switch (sourceA.getUnderlyingType()) {
+        switch (sourceA.getUnderlyingType().underlyingType()) {
         case BOOL:
             return Booleans.compare(sourceA.getBoolean(), sourceB.getBoolean());
         case INT_8:

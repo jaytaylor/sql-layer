@@ -30,13 +30,11 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.explain.*;
 import com.akiban.server.explain.std.TExpressionExplainer;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
-
-import java.util.EnumMap;
 
 public final class TNullExpression implements TPreparedExpression {
 
@@ -57,11 +55,7 @@ public final class TNullExpression implements TPreparedExpression {
 
     @Override
     public TEvaluatableExpression build() {
-        TEvaluatableExpression result = tInstance == null
-                ? nullUnknown
-                : evaluationsByUnderlying.get(tInstance.typeClass().underlyingType());
-        assert result != null : tInstance;
-        return result;
+        return new InnerEvaluation(tInstance == null ? null : tInstance.typeClass());
     }
 
     @Override
@@ -78,17 +72,6 @@ public final class TNullExpression implements TPreparedExpression {
     }
 
     private final TInstance tInstance;
-
-    private static final EnumMap<PUnderlying,InnerEvaluation> evaluationsByUnderlying = createEvaluations();
-    private static final InnerEvaluation nullUnknown = new InnerEvaluation(null);
-
-    private static EnumMap<PUnderlying, InnerEvaluation> createEvaluations() {
-        EnumMap<PUnderlying, InnerEvaluation> result = new EnumMap<PUnderlying, InnerEvaluation>(PUnderlying.class);
-        for (PUnderlying underlying : PUnderlying.values()) {
-            result.put(underlying, new InnerEvaluation(underlying));
-        }
-        return result;
-    }
 
     private static class InnerEvaluation implements TEvaluatableExpression {
         @Override
@@ -108,7 +91,7 @@ public final class TNullExpression implements TPreparedExpression {
         public void with(QueryContext context) {
         }
 
-        private InnerEvaluation(PUnderlying underlying) {
+        private InnerEvaluation(TClass underlying) {
             this.valueSource = PValueSources.getNullSource(underlying);
         }
 

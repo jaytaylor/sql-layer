@@ -240,8 +240,8 @@ public final class PValue implements PValueSource, PValueTarget {
     // PValueSource + PValueTarget
 
     @Override
-    public PUnderlying getUnderlyingType() {
-        return underlying.underlyingType();
+    public TClass getUnderlyingType() {
+        return underlying;
     }
 
     // Object interface

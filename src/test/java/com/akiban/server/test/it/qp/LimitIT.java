@@ -33,8 +33,8 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.NegativeLimitException;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValue;
-import org.junit.Before;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.*;
@@ -118,7 +118,7 @@ public class LimitIT extends OperatorITBase
                                               0, false, 0, true);
         Cursor cursor = cursor(plan, queryContext);
         if (Types3Switch.ON)
-            queryContext.setPValue(0, new PValue(2));
+            queryContext.setPValue(0, new PValue(MNumeric.INT, 2));
         else
             queryContext.setValue(0, new FromObjectValueSource().setReflectively(2L));
         RowBase[] expected = new RowBase[]{
@@ -135,7 +135,7 @@ public class LimitIT extends OperatorITBase
                                               0, false, 0, true);
         Cursor cursor = cursor(plan, queryContext);
         if (Types3Switch.ON)
-            queryContext.setPValue(0, new PValue(-1));
+            queryContext.setPValue(0, new PValue(MNumeric.INT, -1));
         else
             queryContext.setValue(0, new FromObjectValueSource().setReflectively(-1L));
         RowBase[] expected = new RowBase[]{

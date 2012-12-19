@@ -27,6 +27,7 @@
 package com.akiban.server;
 
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.persistit.Key;
 import com.akiban.server.collation.AkCollator;
@@ -69,8 +70,8 @@ public class PersistitKeyPValueSource implements PValueSource {
     }
 
     @Override
-    public PUnderlying getUnderlyingType() {
-        return tInstance.typeClass().underlyingType();
+    public TClass getUnderlyingType() {
+        return tInstance.typeClass();
     }
 
     @Override
@@ -191,7 +192,7 @@ public class PersistitKeyPValueSource implements PValueSource {
             }
             else
             {
-                PUnderlying pUnderlying = getUnderlyingType();
+                PUnderlying pUnderlying = getUnderlyingType().underlyingType();
                 Class<?> expected = pUnderlyingExpectedClasses.get(pUnderlying);
                 if (key.decodeType() == expected) {
                     switch (pUnderlying) {

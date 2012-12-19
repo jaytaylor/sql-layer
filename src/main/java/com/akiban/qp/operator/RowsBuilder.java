@@ -36,10 +36,10 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -72,7 +72,7 @@ public final class RowsBuilder {
             PValueSource[] pvalues = new PValueSource[values.length];
             for (int i = 0; i < values.length; ++i) {
                 PValueSource psource = PValueSources.fromObject(values[i], null).value();
-                if (psource.getUnderlyingType() != tinsts[i].typeClass().underlyingType()) {
+                if (psource.getUnderlyingType() != tinsts[i].typeClass()) {
                     // This assumes that anything that doesn't match is a string.
                     TExecutionContext context = new TExecutionContext(null,
                                                                       tinsts[i],
@@ -117,8 +117,8 @@ public final class RowsBuilder {
         ArgumentValidation.isEQ("values.length", pvalues.length, tinsts.length);
         for (int i=0; i < pvalues.length; ++i) {
             PValueSource pvalue = pvalues[i];
-            PUnderlying valueType = pvalue.getUnderlyingType();
-            PUnderlying requiredType = tinsts[i].typeClass().underlyingType();
+            TClass valueType = pvalue.getUnderlyingType();
+            TClass requiredType = tinsts[i].typeClass();
             if (valueType != requiredType) {
                 throw new IllegalArgumentException("type at " + i + " must be " + requiredType + ", is " + valueType);
             }

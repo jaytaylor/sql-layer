@@ -25,6 +25,7 @@
  */
 package com.akiban.server;
 
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -44,15 +45,15 @@ public final class PersistitValuePValueSource implements PValueSource {
         value.setStreamMode(true);
     }
 
-    public void getReady() {
+    public void getReady(TClass expectedTClass) {
         if (persistitValue.isNull(true)) {
             cacheObject = NULL;
         }
         else {
             Class<?> valueClass = persistitValue.getType();
             PUnderlying rawUnderlying = classesToUnderlying.get(valueClass);
-            if (rawUnderlying != null) {
-                pValue.underlying(rawUnderlying);
+            if (rawUnderlying == expectedTClass.underlyingType()) {
+                pValue.underlying(expectedTClass);
                 cacheObject = null;
             }
             else
@@ -78,7 +79,7 @@ public final class PersistitValuePValueSource implements PValueSource {
     }
 
     private boolean needsDecoding(PUnderlying toUnderlying) {
-        assert toUnderlying == pValue.getUnderlyingType()
+        assert toUnderlying == pValue.getUnderlyingType().underlyingType()
                 : "expected underlying " + toUnderlying + " but was set up for " + pValue.getUnderlyingType();
         return ! pValue.hasRawValue();
     }
@@ -93,7 +94,7 @@ public final class PersistitValuePValueSource implements PValueSource {
     }
 
     @Override
-    public PUnderlying getUnderlyingType() {
+    public TClass getUnderlyingType() {
         assert hasRawValue() : "underlying type is only available when there is a raw value";
         return pValue.getUnderlyingType();
     }

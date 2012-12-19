@@ -35,7 +35,6 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -51,12 +50,12 @@ public abstract class TComparisonExpressionBase implements TPreparedExpression {
         TPreptimeValue leftPrep = left.evaluateConstant(queryContext);
         PValueSource oneVal = leftPrep.value();
         if (oneVal != null && oneVal.isNull())
-            return new TPreptimeValue(AkBool.INSTANCE.instance(true), PValueSources.getNullSource(PUnderlying.BOOL));
+            return new TPreptimeValue(AkBool.INSTANCE.instance(true), PValueSources.getNullSource(AkBool.INSTANCE));
 
         TPreptimeValue rightPrep = right.evaluateConstant(queryContext);
         PValueSource twoVal = rightPrep.value();
         if (twoVal != null && twoVal.isNull())
-            return new TPreptimeValue(AkBool.INSTANCE.instance(true), PValueSources.getNullSource(PUnderlying.BOOL));
+            return new TPreptimeValue(AkBool.INSTANCE.instance(true), PValueSources.getNullSource(AkBool.INSTANCE));
 
         // Neither side is constant null. If both sides are constant, evaluate
         PValueSource resultSource = null;

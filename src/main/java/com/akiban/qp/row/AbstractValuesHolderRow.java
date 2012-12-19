@@ -32,7 +32,6 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTargets;
@@ -148,10 +147,9 @@ class AbstractValuesHolderRow extends AbstractRow {
                 if (i >= pValues.size())
                     throw new IllegalArgumentException("too many initial values: reached limit of " + values.size());
                 PValueSource nextValue = initialPValues.next();
-                PUnderlying nextValueType = nextValue.getUnderlyingType();
+                TClass nextValueType = nextValue.getUnderlyingType();
                 TInstance expectedTInst = rowType.typeInstanceAt(i);
-                PUnderlying expectedValueType = expectedTInst == null ? null : 
-                    expectedTInst.typeClass().underlyingType();
+                TClass expectedValueType = expectedTInst == null ? null : expectedTInst.typeClass();
                 if (nextValueType != expectedValueType)
                     throw new IllegalArgumentException(
                             "value at index " + i + " expected type " + rowType.typeInstanceAt(i)

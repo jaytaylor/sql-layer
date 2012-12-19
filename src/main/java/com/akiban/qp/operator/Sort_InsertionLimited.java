@@ -26,7 +26,6 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
@@ -37,7 +36,6 @@ import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
@@ -480,7 +478,7 @@ class Sort_InsertionLimited extends Operator
         private Comparable toObject(PValueSource valueSource) {
             if (valueSource.isNull())
                 return null;
-            switch (valueSource.getUnderlyingType()) {
+            switch (valueSource.getUnderlyingType().underlyingType()) {
             case BOOL:
                 return valueSource.getBoolean();
             case INT_8:

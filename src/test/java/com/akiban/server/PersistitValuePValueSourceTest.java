@@ -26,6 +26,7 @@
 
 package com.akiban.server;
 
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.persistit.Persistit;
 import com.persistit.Value;
@@ -112,13 +113,13 @@ public final class PersistitValuePValueSourceTest {
             }
         });
 
-        source.getReady();
+        source.getReady(MNumeric.DECIMAL);
         assertEquals("source value", BigDecimal.ONE, source.getObject());
         assertEquals("source value", BigDecimal.ONE, source.getObject());
     }
 
     private void readyAndCheck(PersistitValuePValueSource source, PUnderlying pUnderlying) {
-        source.getReady();
+        source.getReady(MNumeric.DECIMAL);
         if (pUnderlying == null) {
             assertTrue("source should be null", source.isNull());
         }

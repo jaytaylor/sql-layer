@@ -363,12 +363,12 @@ public class OperatorITBase extends ITBase
                     if (value == null) {
                         pvalue.putNull();
                     } else if (value instanceof Integer) {
-                        if (pvalue.getUnderlyingType() == PUnderlying.INT_64)
+                        if (pvalue.getUnderlyingType().underlyingType() == PUnderlying.INT_64)
                             pvalue.putInt64(((Integer) value).longValue());
                         else
                             pvalue.putInt32((Integer) value);
                     } else if (value instanceof Long) {
-                        if (pvalue.getUnderlyingType() == PUnderlying.INT_32)
+                        if (pvalue.getUnderlyingType().underlyingType() == PUnderlying.INT_32)
                             pvalue.putInt32(((Long) value).intValue());
                         else
                             pvalue.putInt64((Long) value);

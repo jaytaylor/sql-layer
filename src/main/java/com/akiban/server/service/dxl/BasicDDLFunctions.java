@@ -98,7 +98,6 @@ import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.error.NoSuchSequenceException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
-import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.error.UnsupportedDropException;
@@ -121,7 +120,6 @@ import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.persistit.Exchange;
-import com.persistit.exception.PersistitException;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
@@ -364,7 +362,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     final String defaultValue = newCol.getDefaultValue();
                     final PValueSource defaultValueSource;
                     if(defaultValue == null) {
-                        defaultValueSource = PValueSources.getNullSource(newInst.typeClass().underlyingType());
+                        defaultValueSource = PValueSources.getNullSource(newInst.typeClass());
                     } else {
                         defaultValueSource = new PValue(newInst.typeClass(), defaultValue);
                     }

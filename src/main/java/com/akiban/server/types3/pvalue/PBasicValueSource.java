@@ -26,8 +26,10 @@
 
 package com.akiban.server.types3.pvalue;
 
+import com.akiban.server.types3.TClass;
+
 public interface PBasicValueSource {
-    PUnderlying getUnderlyingType();
+    TClass getUnderlyingType();
 
     boolean isNull();
 

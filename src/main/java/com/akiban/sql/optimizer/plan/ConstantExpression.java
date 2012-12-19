@@ -48,7 +48,7 @@ public class ConstantExpression extends BaseExpression
 
     public static ConstantExpression typedNull(DataTypeDescriptor sqlType, ValueNode sqlSource, TInstance tInstance) {
         ConstantExpression result = new ConstantExpression(null, sqlType, AkType.NULL, sqlSource);
-        PValueSource nullSource = PValueSources.getNullSource(tInstance.typeClass().underlyingType());
+        PValueSource nullSource = PValueSources.getNullSource(tInstance.typeClass());
         result.preptimeValue = new TPreptimeValue(tInstance, nullSource);
         return result;
     }

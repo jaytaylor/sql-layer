@@ -131,7 +131,7 @@ public abstract class TScalarBase implements TScalar {
                 if ((constSource != null) && constSource.isNull()) {
                     // Const null source on contaminating operand. Result is null.
                     return new TPreptimeValue(context.getOutputType(), 
-                                              PValueSources.getNullSource(context.getOutputType().typeClass().underlyingType()));
+                                              PValueSources.getNullSource(context.getOutputType().typeClass()));
                 }
             }
         }

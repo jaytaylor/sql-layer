@@ -963,7 +963,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             return castExpression;
         }
         if (expression instanceof NullSource) {
-            PValueSource nullSource = PValueSources.getNullSource(targetInstance.typeClass().underlyingType());
+            PValueSource nullSource = PValueSources.getNullSource(targetInstance.typeClass());
             expression.setPreptimeValue(new TPreptimeValue(targetInstance, nullSource));
             return expression;
         }

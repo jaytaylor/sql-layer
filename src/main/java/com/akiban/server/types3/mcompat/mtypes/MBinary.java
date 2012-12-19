@@ -75,7 +75,7 @@ public final class MBinary extends SimpleDtdTClass {
         }
         
         byte[] bytes;
-        PUnderlying underlying = in.getUnderlyingType();
+        PUnderlying underlying = in.getUnderlyingType().underlyingType();
         if (underlying == PUnderlying.BYTES) {
             bytes = in.getBytes();
         }
