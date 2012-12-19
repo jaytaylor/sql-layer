@@ -33,8 +33,10 @@ import com.akiban.sql.optimizer.plan.ConditionExpression;
 import com.akiban.sql.optimizer.plan.ConstantExpression;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.FunctionCondition;
+import com.akiban.sql.optimizer.plan.InListCondition;
 import com.akiban.sql.optimizer.plan.LogicalFunctionCondition;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -72,6 +74,10 @@ public final class ColumnRanges {
                     }
                 }
             }
+        }
+        else if (node instanceof InListCondition) {
+            InListCondition inListCondition = (InListCondition) node;
+            return inListToRange(inListCondition);
         }
         return null;
     }
@@ -216,6 +222,28 @@ public final class ColumnRanges {
             case NE:    return op;
             default:    throw new AssertionError(op.name());
         }
+    }
+
+    private static ColumnRanges inListToRange (InListCondition inListCondition) {
+        final ColumnExpression columnExpression;
+        if (inListCondition.getOperand() instanceof ColumnExpression) {
+            columnExpression = (ColumnExpression)inListCondition.getOperand();
+        }
+        else {
+            return null;
+        }
+        List<ExpressionNode> expressions = inListCondition.getExpressions();
+        List<RangeSegment> rangeSegments = new ArrayList<RangeSegment>(expressions.size());
+        for (ExpressionNode expr : expressions) {
+            if (expr instanceof ConstantExpression) {
+                rangeSegments.addAll(RangeSegment.fromComparison(Comparison.EQ, 
+                                                                 (ConstantExpression)expr));
+            }
+            else {
+                return null;
+            }
+        }
+        return new ColumnRanges(columnExpression, inListCondition, rangeSegments);
     }
 
     private ColumnExpression columnExpression;
