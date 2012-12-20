@@ -739,14 +739,19 @@ public class JoinAndIndexPicker extends BaseRule
                 // predicate, which can be better optimized.
                 assert (planClass.asGroupWithIn == null);
                 GroupWithInPlanClass asGroupWithIn = null;
-                if (left instanceof GroupPlanClass)
+                if (left instanceof GroupPlanClass) {
                     asGroupWithIn = new GroupWithInPlanClass((GroupPlanClass)left,
                                                              (ValuesPlanClass)right,
                                                              joins);
-                else if (left instanceof GroupWithInPlanClass)
-                    asGroupWithIn = new GroupWithInPlanClass((GroupWithInPlanClass)left,
-                                                             (ValuesPlanClass)right,
-                                                             joins);
+                }
+                else if (left instanceof JoinPlanClass) {
+                    JoinPlanClass leftJoinPlanClass = (JoinPlanClass)left;
+                    if (leftJoinPlanClass.asGroupWithIn != null) {
+                        asGroupWithIn = new GroupWithInPlanClass(leftJoinPlanClass.asGroupWithIn,
+                                                                 (ValuesPlanClass)right,
+                                                                 joins);
+                    }
+                }
                 if ((asGroupWithIn != null) &&
                     (asGroupWithIn.getExtraConditions() != null)) {
                     Plan withInPlan = asGroupWithIn.bestPlan(outsideJoins);
