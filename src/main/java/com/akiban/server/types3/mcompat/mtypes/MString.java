@@ -103,7 +103,7 @@ public class MString extends TString
         int charsetId = context.outputTInstance().attribute(StringAttribute.CHARSET);
         int collatorId = context.outputTInstance().attribute(StringAttribute.COLLATION);
 
-        switch (TInstance.pUnderlying(in.getUnderlyingType()))
+        switch (TInstance.pUnderlying(in.tInstance()))
         {
             case STRING:
                 String inStr = in.getString();
@@ -143,7 +143,7 @@ public class MString extends TString
                 }
                 break;
             default:
-                throw new IllegalArgumentException("Unexpected UnderlyingType: " + in.getUnderlyingType());
+                throw new IllegalArgumentException("Unexpected UnderlyingType: " + in.tInstance());
         }
     }
 

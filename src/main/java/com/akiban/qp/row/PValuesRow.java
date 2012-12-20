@@ -59,7 +59,7 @@ public final class PValuesRow extends AbstractRow {
         }
         for (int i = 0, max = values.length; i < max; ++i) {
             TClass requiredType = rowType.typeInstanceAt(i).typeClass();
-            TClass actualType = TInstance.tClass(values[i].getUnderlyingType());
+            TClass actualType = TInstance.tClass(values[i].tInstance());
             if (requiredType != actualType)
                 throw new IllegalArgumentException("value " + i + " should be " + requiredType
                         + " but was " + actualType);

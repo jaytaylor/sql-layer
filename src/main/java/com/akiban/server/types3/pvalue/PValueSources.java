@@ -56,11 +56,11 @@ public final class PValueSources {
     private static final Logger logger = LoggerFactory.getLogger(PValueSources.class);
 
     public static TClass tClass(PValueSource source) {
-        return TInstance.tClass(source.getUnderlyingType());
+        return TInstance.tClass(source.tInstance());
     }
 
     public static PUnderlying pUnderlying(PValueSource source) {
-        return TInstance.pUnderlying(source.getUnderlyingType());
+        return TInstance.pUnderlying(source.tInstance());
     }
 
     /**
@@ -80,7 +80,7 @@ public final class PValueSources {
         case INT_64:
             return source.getInt64();
         default:
-            throw new UnsupportedOperationException(source.getUnderlyingType().toString());
+            throw new UnsupportedOperationException(source.tInstance().toString());
         }
     }
 
@@ -371,7 +371,7 @@ public final class PValueSources {
                 v = Long.parseLong(valueSource.getString());
                 break;
             default:
-                throw new AssertionError(valueSource.getUnderlyingType());
+                throw new AssertionError(valueSource.tInstance());
             }
             return v;
         case FLOAT_AKTYPE:
@@ -413,8 +413,8 @@ public final class PValueSources {
     }
 
     public static boolean areEqual(PValueSource one, PValueSource two, TInstance instance) {
-        TInstance oneTInstance = one.getUnderlyingType();
-        TInstance twoTIntance = two.getUnderlyingType();
+        TInstance oneTInstance = one.tInstance();
+        TInstance twoTIntance = two.tInstance();
         if (oneTInstance == null || twoTIntance == null)
             return oneTInstance == null && twoTIntance == null;
         if (!oneTInstance.equalsExcludingNullable(twoTIntance))
@@ -496,7 +496,7 @@ public final class PValueSources {
             hash = collator.hashCode(stringVal);
             break;
         default:
-            throw new AssertionError(source.getUnderlyingType());
+            throw new AssertionError(source.tInstance());
         }
         return ((int) (hash >> 32)) ^ (int) hash;
     }
@@ -563,7 +563,7 @@ public final class PValueSources {
             break;
         default:
             // toStrings are non-critical, so let's not throw an error
-            logger.warn("unknown PValueSource underlying type: {} ({})", source.getUnderlyingType(), source);
+            logger.warn("unknown PValueSource underlying type: {} ({})", source.tInstance(), source);
             out.append("<?>");
             break;
         }
@@ -736,7 +736,7 @@ public final class PValueSources {
                     out.putString((String)(oval), null);
                     break;
                 default:
-                    throw new AssertionError(out.getUnderlyingType());
+                    throw new AssertionError(out.tInstance());
                 }
             }
         }

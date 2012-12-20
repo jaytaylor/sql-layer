@@ -59,7 +59,7 @@ public final class PValueRowDataCreator implements RowDataCreator<PValueSource> 
             putObj = source.getObject();
         }
         else {
-            switch (TInstance.pUnderlying(source.getUnderlyingType())) {
+            switch (TInstance.pUnderlying(source.tInstance())) {
             case BOOL:
                 putObj = source.getBoolean();
                 break;
@@ -91,7 +91,7 @@ public final class PValueRowDataCreator implements RowDataCreator<PValueSource> 
                 putObj = source.getBytes();
                 break;
             default:
-                throw new AssertionError(source.getUnderlyingType());
+                throw new AssertionError(source.tInstance());
             }
         }
         into.put(f, putObj);

@@ -36,7 +36,6 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
@@ -72,7 +71,7 @@ public final class RowsBuilder {
             PValueSource[] pvalues = new PValueSource[values.length];
             for (int i = 0; i < values.length; ++i) {
                 PValueSource psource = PValueSources.fromObject(values[i], null).value();
-                if (!psource.getUnderlyingType().equalsExcludingNullable(tinsts[i])) {
+                if (!psource.tInstance().equalsExcludingNullable(tinsts[i])) {
                     // This assumes that anything that doesn't match is a string.
                     TExecutionContext context = new TExecutionContext(null,
                                                                       tinsts[i],
@@ -117,7 +116,7 @@ public final class RowsBuilder {
         ArgumentValidation.isEQ("values.length", pvalues.length, tinsts.length);
         for (int i=0; i < pvalues.length; ++i) {
             PValueSource pvalue = pvalues[i];
-            TInstance valueType = pvalue.getUnderlyingType();
+            TInstance valueType = pvalue.tInstance();
             TInstance requiredType = tinsts[i];
             if (!valueType.equalsExcludingNullable(requiredType)) {
                 throw new IllegalArgumentException("type at " + i + " must be " + requiredType + ", is " + valueType);

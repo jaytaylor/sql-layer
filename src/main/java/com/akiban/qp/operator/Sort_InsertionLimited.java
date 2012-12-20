@@ -501,7 +501,7 @@ class Sort_InsertionLimited extends Operator
             case STRING:
                 return valueSource.getString();
             default:
-                throw new AssertionError(valueSource.getUnderlyingType());
+                throw new AssertionError(valueSource.tInstance());
             }
         }
     }

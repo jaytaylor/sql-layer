@@ -91,7 +91,7 @@ public final class RowDataPValueTarget implements PValueTarget, RowDataTarget {
     }
     
     @Override
-    public TInstance getUnderlyingType() {
+    public TInstance tInstance() {
         return targetInstance();
     }
 

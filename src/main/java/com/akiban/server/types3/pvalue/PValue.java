@@ -239,7 +239,7 @@ public final class PValue implements PValueSource, PValueTarget {
     // PValueSource + PValueTarget
 
     @Override
-    public TInstance getUnderlyingType() {
+    public TInstance tInstance() {
         return underlying;
     }
 

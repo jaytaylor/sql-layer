@@ -69,7 +69,7 @@ public class PersistitKeyPValueSource implements PValueSource {
     }
 
     @Override
-    public TInstance getUnderlyingType() {
+    public TInstance tInstance() {
         return tInstance;
     }
 
@@ -191,7 +191,7 @@ public class PersistitKeyPValueSource implements PValueSource {
             }
             else
             {
-                PUnderlying pUnderlying = TInstance.pUnderlying(getUnderlyingType());
+                PUnderlying pUnderlying = TInstance.pUnderlying(tInstance());
                 Class<?> expected = pUnderlyingExpectedClasses.get(pUnderlying);
                 if (key.decodeType() == expected) {
                     switch (pUnderlying) {

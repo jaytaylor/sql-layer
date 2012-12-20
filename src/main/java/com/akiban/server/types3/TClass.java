@@ -111,7 +111,7 @@ public abstract class TClass {
         }
         PValueSources.ensureRawValue(sourceA, instanceA);
         PValueSources.ensureRawValue(sourceB, instanceB);
-        switch (TInstance.pUnderlying(sourceA.getUnderlyingType())) {
+        switch (TInstance.pUnderlying(sourceA.tInstance())) {
         case BOOL:
             return Booleans.compare(sourceA.getBoolean(), sourceB.getBoolean());
         case INT_8:
@@ -133,7 +133,7 @@ public abstract class TClass {
         case STRING:
             return sourceA.getString().compareTo(sourceB.getString());
         default:
-            throw new AssertionError(sourceA.getUnderlyingType());
+            throw new AssertionError(sourceA.tInstance());
         }
     }
 

@@ -32,7 +32,7 @@ public final class PValueTargets {
     private PValueTargets() {}
 
     public static PUnderlying pUnderlying(PValueTarget valueTarget) {
-        return TInstance.pUnderlying(valueTarget.getUnderlyingType());
+        return TInstance.pUnderlying(valueTarget.tInstance());
     }
 
     public static void copyFrom(PValueSource source, PValueTarget target) {
@@ -52,7 +52,7 @@ public final class PValueTargets {
         else if (!source.hasRawValue()) {
             throw new IllegalStateException("source has no value: " + source);
         }
-        switch (TInstance.pUnderlying(source.getUnderlyingType())) {
+        switch (TInstance.pUnderlying(source.tInstance())) {
         case BOOL:
             target.putBool(source.getBoolean());
             break;
@@ -84,7 +84,7 @@ public final class PValueTargets {
             target.putString(source.getString(), null);
             break;
         default:
-            throw new AssertionError(source.getUnderlyingType());
+            throw new AssertionError(source.tInstance());
         }
     }
 

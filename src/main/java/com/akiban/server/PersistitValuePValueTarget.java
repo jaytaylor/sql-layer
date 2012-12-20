@@ -51,7 +51,7 @@ public final class PersistitValuePValueTarget implements PValueTarget {
     }
 
     @Override
-    public TInstance getUnderlyingType() {
+    public TInstance tInstance() {
         throw new UnsupportedOperationException();
     }
 

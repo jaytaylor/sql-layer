@@ -145,7 +145,7 @@ class AbstractValuesHolderRow extends AbstractRow {
                 if (i >= pValues.size())
                     throw new IllegalArgumentException("too many initial values: reached limit of " + values.size());
                 PValueSource nextValue = initialPValues.next();
-                TInstance nextValueType = nextValue.getUnderlyingType();
+                TInstance nextValueType = nextValue.tInstance();
                 TInstance expectedTInst = rowType.typeInstanceAt(i);
                 if (TInstance.tClass(nextValueType) != TInstance.tClass(expectedTInst))
                     throw new IllegalArgumentException(

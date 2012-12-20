@@ -30,7 +30,7 @@ import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types3.TInstance;
 
 public interface PBasicValueTarget {
-    TInstance getUnderlyingType();
+    TInstance tInstance();
 
     void putNull();
 
