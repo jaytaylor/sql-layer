@@ -110,8 +110,10 @@ import com.akiban.server.store.PersistitStore;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -364,7 +366,16 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     if(defaultValue == null) {
                         defaultValueSource = PValueSources.getNullSource(newInst.typeClass());
                     } else {
-                        defaultValueSource = new PValue(newInst.typeClass(), defaultValue);
+                        PValue defaultPValue = new PValue(newInst.typeClass());
+                        TInstance defInstance = MString.VARCHAR.instance(defaultValue.length(), defaultValue == null);
+                        TExecutionContext executionContext = new TExecutionContext(
+                                Collections.singletonList(defInstance),
+                                newInst,
+                                queryContext
+                        );
+                        PValue defaultSource = new PValue(MString.VARCHAR, defaultValue);
+                        newInst.typeClass().fromObject(executionContext, defaultSource, defaultPValue);
+                        defaultValueSource = defaultPValue;
                     }
                     pProjections.add(new TPreparedLiteral(newInst, defaultValueSource));
                 } else {
