@@ -405,9 +405,15 @@ public final class PValueSources {
     }
 
     public static boolean areEqual(PValueSource one, PValueSource two, TInstance instance) {
-        PUnderlying underlyingType = one.getUnderlyingType().underlyingType();
-        if (underlyingType != two.getUnderlyingType().underlyingType())
+        TClass oneTClass = one.getUnderlyingType();
+        TClass twoTClass = two.getUnderlyingType();
+        if (oneTClass != twoTClass)
             return false;
+        if (oneTClass == null) {
+            assert one.isNull() : one;
+            assert two.isNull() : two;
+            return true;
+        }
         if (one.isNull())
             return two.isNull();
         if (two.isNull())
@@ -416,7 +422,7 @@ public final class PValueSources {
             return one.getObject().equals(two.getObject());
         ensureRawValue(one, instance);
         ensureRawValue(two, instance);
-        switch (underlyingType) {
+        switch (oneTClass.underlyingType()) {
         case BOOL:
             return one.getBoolean() == two.getBoolean();
         case INT_8:
@@ -438,7 +444,7 @@ public final class PValueSources {
         case BYTES:
             return Arrays.equals(one.getBytes(), two.getBytes());
         default:
-            throw new AssertionError(underlyingType);
+            throw new AssertionError(String.valueOf(oneTClass));
         }
     }
 
