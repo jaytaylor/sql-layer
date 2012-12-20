@@ -886,6 +886,14 @@ public abstract class CostEstimator implements TableRowCounts
     public CostEstimate costSelect(Collection<ConditionExpression> conditions,
                                    double selectivity,
                                    long size) {
+        int nconds = 0;         // Approximate number of predicate tests.
+        for (ConditionExpression cond : conditions) {
+            if (cond instanceof InListCondition)
+                nconds += ((InListCondition)cond).getExpressions().size();
+            // TODO: Maybe various kinds of subquery predicate get high count?
+            else
+                nconds++;
+        }
         return new CostEstimate(Math.max(1, round(size * selectivity)),
                                 model.select((int)size) * conditions.size());
     }
