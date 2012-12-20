@@ -323,7 +323,7 @@ public final class RowDataBuilder {
                     return;
                 }
                 if (stringCache == null)
-                    stringCache = new PValue(MString.VARCHAR.instance(1024, true));
+                    stringCache = new PValue(MString.VARCHAR.instance(Integer.MAX_VALUE, true));
                 stringCache.putString(stringInput, null);
                 TExecutionContext context = new TExecutionContext(null, instance, null);
                 instance.typeClass().fromObject(context, stringCache, pValue);
