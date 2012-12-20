@@ -109,8 +109,6 @@ public abstract class TClass {
                 return comparableA.compareTo(sourceB.getObject());
             }
         }
-        PValueSources.ensureRawValue(sourceA, instanceA);
-        PValueSources.ensureRawValue(sourceB, instanceB);
         switch (TInstance.pUnderlying(sourceA.tInstance())) {
         case BOOL:
             return Booleans.compare(sourceA.getBoolean(), sourceB.getBoolean());

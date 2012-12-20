@@ -33,32 +33,12 @@ public final class PValue implements PValueSource, PValueTarget {
     // PValue interface
     
     public void underlying(TInstance underlying) {
-        this.underlying = underlying;
+        this.tInstance = underlying;
         this.state = State.UNSET;
     }
 
     public void unset() {
         this.state = State.UNSET;
-    }
-
-    public void ensureRaw(PValueCacher cacher, TInstance tInstance) {
-        switch (state) {
-        case UNSET:
-            throw new IllegalStateException("no value set");
-        case CACHE_ONLY:
-            Object oCacheSave = this.oCache;
-            cacher.cacheToValue(oCacheSave, tInstance, this);
-            assert state == State.VAL_ONLY;
-            this.oCache = oCacheSave;
-            state = State.VAL_AND_CACHE;
-            break;
-        case NULL:
-        case VAL_ONLY:
-        case VAL_AND_CACHE:
-            break;
-        default:
-            throw new AssertionError(state);
-        }
     }
     
     // PValueTarget interface
@@ -122,7 +102,7 @@ public final class PValue implements PValueSource, PValueTarget {
     @Override
     public void putString(String value, AkCollator collator) {
         checkUnderlying(PUnderlying.STRING);
-        setRawValues(State.VAL_ONLY, -1, null, value);
+        setRawValues(State.VAL_ONLY, -1, value, null);
     }
 
     @Override
@@ -193,32 +173,21 @@ public final class PValue implements PValueSource, PValueTarget {
     public final byte[] getBytes() {
         checkUnderlying(PUnderlying.BYTES);
         checkRawState();
-        return bVal;
+        return (byte[]) rawObject;
     }
 
     @Override
     public String getString() {
         checkUnderlying(PUnderlying.STRING);
         checkRawState();
-        return (String) oCache;
+        return (String) rawObject;
     }
 
     @Override
     public final Object getObject() {
-        switch (state) {
-        case UNSET:
-            throw new IllegalStateException("no value set");
-        case NULL:
-            return null;
-        case VAL_ONLY:
-            throw new IllegalArgumentException("no cached object set");
-            // fall through
-        case CACHE_ONLY:
-        case VAL_AND_CACHE:
-            return oCache;
-        default:
-            throw new AssertionError(state);
-        }
+        ensureCached();
+        assert state != State.UNSET : State.UNSET;
+        return oCache;
     }
 
     @Override
@@ -228,26 +197,48 @@ public final class PValue implements PValueSource, PValueTarget {
 
     @Override
     public boolean hasRawValue() {
-        return state == State.VAL_ONLY || state == State.VAL_AND_CACHE;
+        switch (state) {
+        case UNSET:
+            return false;
+        case NULL:
+        case VAL_ONLY:
+        case VAL_AND_CACHE:
+            return true;
+        case CACHE_ONLY:
+            return tInstance().typeClass().cacher() != null;
+        default:
+            throw new AssertionError(state);
+        }
     }
 
     @Override
     public boolean hasCacheValue() {
-        return state == State.CACHE_ONLY || state == State.VAL_AND_CACHE;
+        switch (state) {
+        case UNSET:
+            return false;
+        case VAL_ONLY:
+            return tInstance().typeClass().cacher() != null;
+        case NULL:
+        case CACHE_ONLY:
+        case VAL_AND_CACHE:
+            return true;
+        default:
+            throw new AssertionError(state);
+        }
     }
 
     // PValueSource + PValueTarget
 
     @Override
     public TInstance tInstance() {
-        return underlying;
+        return tInstance;
     }
 
     // Object interface
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("PValue(").append(underlying).append(" = ");
+        StringBuilder sb = new StringBuilder("PValue(").append(tInstance).append(" = ");
         switch (state) {
         case UNSET:
             sb.append("<empty>");
@@ -255,8 +246,10 @@ public final class PValue implements PValueSource, PValueTarget {
         case NULL:
             sb.append("NULL");
             break;
+        case VAL_AND_CACHE:
+            sb.append("cached <").append(oCache).append(">: ");
         case VAL_ONLY:
-            switch (TInstance.pUnderlying(underlying)) {
+            switch (TInstance.pUnderlying(tInstance)) {
             case INT_8:
             case INT_16:
             case INT_32:
@@ -274,10 +267,11 @@ public final class PValue implements PValueSource, PValueTarget {
                 sb.append(getBoolean());
                 break;
             case STRING:
-                sb.append(getString());
+                sb.append('"').append(getString()).append('"');
                 break;
             case BYTES:
                 sb.append("0x ");
+                byte[] bVal = (byte[]) rawObject;
                 for (int i = 0, max= bVal.length; i < max; ++i) {
                     byte b = bVal[i];
                     int bInt = ((int)b) & 0xFF;
@@ -289,7 +283,6 @@ public final class PValue implements PValueSource, PValueTarget {
             }
             break;
         case CACHE_ONLY:
-        case VAL_AND_CACHE:
             sb.append("(cached) ").append(oCache);
             break;
         }
@@ -303,23 +296,8 @@ public final class PValue implements PValueSource, PValueTarget {
         return iVal;
     }
 
-    private void checkRawState() {
-        switch (state) {
-        case UNSET:
-        case CACHE_ONLY:
-            throw new IllegalStateException("no raw value set: state is " + state);
-        case NULL:
-            throw new NullValueException();
-        case VAL_ONLY:
-        case VAL_AND_CACHE:
-            break;
-        default:
-            throw new AssertionError(state);
-        }
-    }
-
     private void checkUnderlying(PUnderlying expected) {
-        PUnderlying pUnderlying = TInstance.pUnderlying(underlying);
+        PUnderlying pUnderlying = TInstance.pUnderlying(tInstance);
         if (pUnderlying != expected) {
             String underlyingToString = (pUnderlying == null) ? "unspecified" : pUnderlying.name();
             throw new IllegalStateException("required underlying " + expected + " but was " + underlyingToString);
@@ -331,10 +309,10 @@ public final class PValue implements PValueSource, PValueTarget {
         setRawValues(State.VAL_ONLY, value, null, null);
     }
 
-    private void setRawValues(State state, long iVal, byte[] bVal, Object oCache) {
+    private void setRawValues(State state, long iVal, Object rawObject, Object oCache) {
         this.state = state;
         this.iVal = iVal;
-        this.bVal = bVal;
+        this.rawObject = rawObject;
         this.oCache = oCache;
     }
 
@@ -342,61 +320,98 @@ public final class PValue implements PValueSource, PValueTarget {
         this(null);
     }
 
-    public PValue(TInstance underlying) {
-        underlying(underlying);
+    public PValue(TInstance tInstance) {
+        underlying(tInstance);
     }
 
-    public PValue(TInstance underlying, byte[] val) {
-        this(underlying);
+    public PValue(TInstance tInstance, byte[] val) {
+        this(tInstance);
         putBytes(val);
     }
 
-    public PValue(TInstance underlying, long val) {
-        this(underlying);
+    public PValue(TInstance tInstance, long val) {
+        this(tInstance);
         putInt64(val);
     }
 
-    public PValue(TInstance underlying, float val)
+    public PValue(TInstance tInstance, float val)
     {
-        this(underlying);
+        this(tInstance);
         putFloat(val);
     }
 
-    public PValue(TInstance underlying, double val)
+    public PValue(TInstance tInstance, double val)
     {
-        this(underlying);
+        this(tInstance);
         putDouble(val);
     }
 
-    public PValue(TInstance underlying, int val) {
-        this(underlying);
+    public PValue(TInstance tInstance, int val) {
+        this(tInstance);
         putInt32(val);
     }
 
-    public PValue(TInstance underlying, short val) {
-        this(underlying);
+    public PValue(TInstance tInstance, short val) {
+        this(tInstance);
         putInt16(val);
     }
 
-    public PValue(TInstance underlying, byte val) {
-        this(underlying);
+    public PValue(TInstance tInstance, byte val) {
+        this(tInstance);
         putInt8(val);
     }
 
-    public PValue(TInstance underlying, String val) {
-        this(underlying);
+    public PValue(TInstance tInstance, String val) {
+        this(tInstance);
         putString(val, null);
     }
 
-    public PValue(TInstance underlying, boolean val) {
-        this(underlying);
+    public PValue(TInstance tInstance, boolean val) {
+        this(tInstance);
         putBool(val);
     }
 
-    private TInstance underlying;
+    private void checkRawState() {
+        switch (state) {
+        case UNSET:
+        case CACHE_ONLY:
+            Object oCacheSave = oCache;
+            tInstance.typeClass().cacher().cacheToValue(oCacheSave, tInstance, this);
+            assert state == State.VAL_ONLY : state;
+            oCache = oCacheSave;
+            state = State.VAL_AND_CACHE;
+            break;
+        case NULL:
+            throw new NullValueException();
+        case VAL_ONLY:
+        case VAL_AND_CACHE:
+            break;
+        default:
+            throw new AssertionError(state);
+        }
+    }
+
+    private void ensureCached() {
+        switch (state) {
+        case UNSET:
+            throw new IllegalStateException("no value set");
+        case VAL_ONLY:
+            oCache = tInstance.typeClass().cacher().valueToCache(this, tInstance);
+            state = State.VAL_AND_CACHE;
+            break;
+        case NULL:
+        case CACHE_ONLY:
+        case VAL_AND_CACHE:
+            break;
+        default:
+            throw new AssertionError(state);
+        }
+    }
+
+    private TInstance tInstance;
     private State state;
     private long iVal;
-    private byte[] bVal;
+    private Object rawObject;
     private Object oCache;
 
     private static final long BOOL_TRUE = 1L;
