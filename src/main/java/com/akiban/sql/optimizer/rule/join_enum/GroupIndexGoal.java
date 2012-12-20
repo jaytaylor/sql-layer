@@ -130,10 +130,11 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                                              Collection<JoinOperator> queryJoins,
                                              Collection<JoinOperator> joins,
                                              Collection<JoinOperator> outsideJoins,
-                                             boolean sortAllowed) {
+                                             boolean sortAllowed,
+                                             ConditionList extraConditions) {
         setBoundTables(boundTables);
         this.sortAllowed = sortAllowed;
-        setJoinConditions(queryJoins, joins);
+        setJoinConditions(queryJoins, joins, extraConditions);
         updateRequiredColumns(joins, outsideJoins);
         return conditionSources;
     }
@@ -154,7 +155,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         return false;
     }
     
-    public void setJoinConditions(Collection<JoinOperator> queryJoins, Collection<JoinOperator> joins) {
+    public void setJoinConditions(Collection<JoinOperator> queryJoins, Collection<JoinOperator> joins, ConditionList extraConditions) {
         conditionSources = new ArrayList<ConditionList>();
         if ((queryGoal.getWhereConditions() != null) && !hasOuterJoin(queryJoins)) {
             conditionSources.add(queryGoal.getWhereConditions());
@@ -163,6 +164,9 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             ConditionList joinConditions = join.getJoinConditions();
             if (joinConditions != null)
                 conditionSources.add(joinConditions);
+        }
+        if (extraConditions != null) {
+            conditionSources.add(extraConditions);
         }
         switch (conditionSources.size()) {
         case 0:

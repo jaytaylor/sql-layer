@@ -210,10 +210,10 @@ public class JoinAndIndexPicker extends BaseRule
                 GroupIndexGoal groupGoal = new GroupIndexGoal(queryGoal, tables);
                 // In this block because we were not a JoinNode, query has no joins itself
                 List<JoinOperator> queryJoins = Collections.emptyList();
-                List<ConditionList> conditionSources = groupGoal.updateContext(subqueryBoundTables, queryJoins, subqueryJoins, subqueryOutsideJoins, true);
+                List<ConditionList> conditionSources = groupGoal.updateContext(subqueryBoundTables, queryJoins, subqueryJoins, subqueryOutsideJoins, true, null);
                 BaseScan scan = groupGoal.pickBestScan();
                 CostEstimate costEstimate = scan.getCostEstimate();
-                return new GroupPlan(groupGoal, JoinableBitSet.of(0), scan, costEstimate, conditionSources, true);
+                return new GroupPlan(groupGoal, JoinableBitSet.of(0), scan, costEstimate, conditionSources, true, null);
             }
             if (joinable instanceof JoinNode) {
                 return new JoinEnumerator(this, subqueryBoundTables, subqueryJoins, subqueryOutsideJoins).run((JoinNode)joinable, queryGoal.getWhereConditions()).bestPlan(Collections.<JoinOperator>emptyList());
@@ -281,18 +281,21 @@ public class JoinAndIndexPicker extends BaseRule
         BaseScan scan;
         List<ConditionList> conditionSources;
         boolean sortAllowed;
+        ConditionList extraConditions;
 
         public GroupPlan(GroupIndexGoal groupGoal,
                          long outerTables, BaseScan scan, 
                          CostEstimate costEstimate,
                          List<ConditionList> conditionSources,
-                         boolean sortAllowed) {
+                         boolean sortAllowed,
+                         ConditionList extraConditions) {
             super(costEstimate);
             this.groupGoal = groupGoal;
             this.outerTables = outerTables;
             this.scan = scan;
             this.conditionSources = conditionSources;
             this.sortAllowed = sortAllowed;
+            this.extraConditions = extraConditions;
         }
 
         @Override
@@ -302,6 +305,13 @@ public class JoinAndIndexPicker extends BaseRule
 
         @Override
         public Joinable install(boolean copy) {
+            if (extraConditions != null) {
+                // Move to WHERE clause or join condition so that any
+                // that survive indexing are preserved.
+                assert ((conditionSources.size() > 1) &&
+                        (conditionSources.indexOf(extraConditions) > 0));
+                conditionSources.get(0).addAll(extraConditions);
+            }
             return groupGoal.install(scan, conditionSources, sortAllowed, copy);
         }
 
@@ -351,6 +361,11 @@ public class JoinAndIndexPicker extends BaseRule
             this.groupGoal = groupGoal;
         }
 
+        protected GroupPlanClass(GroupPlanClass other) {
+            super(other.enumerator, other.bitset);
+            this.groupGoal = other.groupGoal;
+        }
+
         @Override
         public Plan bestPlan(Collection<JoinOperator> outsideJoins) {
             return bestPlan(JoinableBitSet.empty(), Collections.<JoinOperator>emptyList(), outsideJoins);
@@ -361,6 +376,10 @@ public class JoinAndIndexPicker extends BaseRule
             return bestPlan(outerPlan.bitset, joins, outsideJoins);
         }
 
+        protected ConditionList getExtraConditions() {
+            return null;
+        }
+
         protected GroupPlan bestPlan(long outerTables, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
             for (GroupPlan groupPlan : bestPlans) {
                 if (groupPlan.outerTables == outerTables) {
@@ -368,10 +387,10 @@ public class JoinAndIndexPicker extends BaseRule
                 }
             }
             boolean sortAllowed = joins.isEmpty();
-            List<ConditionList> conditionSources = groupGoal.updateContext(enumerator.boundTables(outerTables), joins, joins, outsideJoins, sortAllowed);
+            List<ConditionList> conditionSources = groupGoal.updateContext(enumerator.boundTables(outerTables), joins, joins, outsideJoins, sortAllowed, getExtraConditions());
             BaseScan scan = groupGoal.pickBestScan();
             CostEstimate costEstimate = scan.getCostEstimate();
-            GroupPlan groupPlan = new GroupPlan(groupGoal, outerTables, scan, costEstimate, conditionSources, sortAllowed);
+            GroupPlan groupPlan = new GroupPlan(groupGoal, outerTables, scan, costEstimate, conditionSources, sortAllowed, getExtraConditions());
             bestPlans.add(groupPlan);
             return groupPlan;
         }
