@@ -863,7 +863,9 @@ public class OperatorAssembler extends BaseRule
                                 TExecutionContext executionContext = new TExecutionContext(
                                         Collections.singletonList(valInst),
                                         tinst, planContext.getQueryContext());
-                                cast.evaluate(executionContext, new PValue(tClass, defaultValue), defaultValueSource);
+                                cast.evaluate(executionContext,
+                                              new PValue(MString.VARCHAR, defaultValue),
+                                              defaultValueSource);
                             } else {
                                 defaultValueSource = new PValue (tClass, defaultValue);
                             }
