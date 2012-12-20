@@ -635,7 +635,7 @@ public class JoinAndIndexPicker extends BaseRule
     }
 
     static class JoinPlanClass extends PlanClass {
-        JoinPlan bestPlan;      // TODO: Later have separate sorted, etc.
+        Plan bestPlan;      // TODO: Later have separate sorted, etc.
 
         public JoinPlanClass(JoinEnumerator enumerator, long bitset) {
             super(enumerator, bitset);
@@ -646,17 +646,17 @@ public class JoinAndIndexPicker extends BaseRule
             return bestPlan;
         }
 
-        public void consider(JoinPlan joinPlan) {
+        public void consider(Plan plan) {
             if (bestPlan == null) {
-                logger.debug("Selecting {}, {}", joinPlan, joinPlan.costEstimate);
-                bestPlan = joinPlan;
+                logger.debug("Selecting {}, {}", plan, plan.costEstimate);
+                bestPlan = plan;
             }
-            else if (bestPlan.compareTo(joinPlan) > 0) {
-                logger.debug("Preferring {}, {}", joinPlan, joinPlan.costEstimate);
-                bestPlan = joinPlan;
+            else if (bestPlan.compareTo(plan) > 0) {
+                logger.debug("Preferring {}, {}", plan, plan.costEstimate);
+                bestPlan = plan;
             }
             else {
-                logger.debug("Rejecting {}, {}", joinPlan, joinPlan.costEstimate);
+                logger.debug("Rejecting {}, {}", plan, plan.costEstimate);
             }
         }
     }
