@@ -118,7 +118,7 @@ public class LimitIT extends OperatorITBase
                                               0, false, 0, true);
         Cursor cursor = cursor(plan, queryContext);
         if (Types3Switch.ON)
-            queryContext.setPValue(0, new PValue(MNumeric.INT, 2));
+            queryContext.setPValue(0, new PValue(MNumeric.INT.instance(false), 2));
         else
             queryContext.setValue(0, new FromObjectValueSource().setReflectively(2L));
         RowBase[] expected = new RowBase[]{
@@ -135,7 +135,7 @@ public class LimitIT extends OperatorITBase
                                               0, false, 0, true);
         Cursor cursor = cursor(plan, queryContext);
         if (Types3Switch.ON)
-            queryContext.setPValue(0, new PValue(MNumeric.INT, -1));
+            queryContext.setPValue(0, new PValue(MNumeric.INT.instance(false), -1));
         else
             queryContext.setValue(0, new FromObjectValueSource().setReflectively(-1L));
         RowBase[] expected = new RowBase[]{

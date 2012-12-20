@@ -160,7 +160,7 @@ public final class TPreparedFunction implements TPreparedExpression {
             this.inputs = inputs;
             this.inputValues = new PValueSource[inputs.size()];
             this.context = context;
-            resultValue = new PValue(resultType.typeClass());
+            resultValue = new PValue(resultType);
             this.evaluations = overload.filterInputs(new LazyListBase<PValueSource>() {
                 @Override
                 public PValueSource get(int i) {

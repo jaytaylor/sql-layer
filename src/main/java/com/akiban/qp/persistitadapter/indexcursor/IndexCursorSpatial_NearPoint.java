@@ -46,7 +46,6 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 
@@ -190,9 +189,9 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
         }
         // Z-value part of bounds
         if (Types3Switch.ON) {
-            PValue startPValue = new PValue(MNumeric.BIGINT);
-            PValue maxPValue = new PValue(MNumeric.BIGINT);
-            PValue minPValue = new PValue(MNumeric.BIGINT);
+            PValue startPValue = new PValue(MNumeric.BIGINT.instance(false));
+            PValue maxPValue = new PValue(MNumeric.BIGINT.instance(false));
+            PValue minPValue = new PValue(MNumeric.BIGINT.instance(false));
             startPValue.putInt64(zStart);
             maxPValue.putInt64(Long.MAX_VALUE);
             minPValue.putInt64(Long.MIN_VALUE);

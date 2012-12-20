@@ -26,8 +26,14 @@
 
 package com.akiban.server.types3.pvalue;
 
+import com.akiban.server.types3.TInstance;
+
 public final class PValueTargets {
     private PValueTargets() {}
+
+    public static PUnderlying pUnderlying(PValueTarget valueTarget) {
+        return TInstance.pUnderlying(valueTarget.getUnderlyingType());
+    }
 
     public static void copyFrom(PValueSource source, PValueTarget target) {
         if (source.isNull()) {
@@ -46,7 +52,7 @@ public final class PValueTargets {
         else if (!source.hasRawValue()) {
             throw new IllegalStateException("source has no value: " + source);
         }
-        switch (source.getUnderlyingType().underlyingType()) {
+        switch (TInstance.pUnderlying(source.getUnderlyingType())) {
         case BOOL:
             target.putBool(source.getBoolean());
             break;

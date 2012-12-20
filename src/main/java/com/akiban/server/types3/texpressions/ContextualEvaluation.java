@@ -28,7 +28,7 @@ package com.akiban.server.types3.texpressions;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
-import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -81,7 +81,7 @@ abstract class ContextualEvaluation<T> implements TEvaluatableExpression {
     
     protected abstract void evaluate(T context, PValueTarget target);
 
-    protected ContextualEvaluation(TClass underlyingType) {
+    protected ContextualEvaluation(TInstance underlyingType) {
         this.underlyingType = underlyingType;
     }
 
@@ -91,5 +91,5 @@ abstract class ContextualEvaluation<T> implements TEvaluatableExpression {
     private PValue unreadyValue;
     private PValue readyValue;
     private T context;
-    private TClass underlyingType;
+    private TInstance underlyingType;
 }

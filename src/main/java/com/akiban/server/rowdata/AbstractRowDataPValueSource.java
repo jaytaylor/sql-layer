@@ -29,9 +29,9 @@ package com.akiban.server.rowdata;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.types.*;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 
 
@@ -40,8 +40,8 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
     // ValueSource interface
 
     @Override
-    public TClass getUnderlyingType() {
-        return fieldDef().column().tInstance().typeClass();
+    public TInstance getUnderlyingType() {
+        return fieldDef().column().tInstance();
     }
 
     @Override

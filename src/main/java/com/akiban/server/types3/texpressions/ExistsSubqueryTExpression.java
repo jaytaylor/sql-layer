@@ -41,7 +41,7 @@ public class ExistsSubqueryTExpression extends SubqueryTExpression
                         RowType outerRowType, RowType innerRowType,
                         int bindingPosition)
         {
-            super(subquery, outerRowType, innerRowType, bindingPosition, AkBool.INSTANCE);
+            super(subquery, outerRowType, innerRowType, bindingPosition, AkBool.INSTANCE.instance(true));
         }
 
         @Override

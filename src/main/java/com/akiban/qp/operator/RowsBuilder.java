@@ -72,12 +72,12 @@ public final class RowsBuilder {
             PValueSource[] pvalues = new PValueSource[values.length];
             for (int i = 0; i < values.length; ++i) {
                 PValueSource psource = PValueSources.fromObject(values[i], null).value();
-                if (psource.getUnderlyingType() != tinsts[i].typeClass()) {
+                if (!psource.getUnderlyingType().equalsExcludingNullable(tinsts[i])) {
                     // This assumes that anything that doesn't match is a string.
                     TExecutionContext context = new TExecutionContext(null,
                                                                       tinsts[i],
                                                                       null);
-                    PValue pvalue = new PValue(tinsts[i].typeClass());
+                    PValue pvalue = new PValue(tinsts[i]);
                     tinsts[i].typeClass().fromObject(context, psource, pvalue);
                     psource = pvalue;
                 }
@@ -117,9 +117,9 @@ public final class RowsBuilder {
         ArgumentValidation.isEQ("values.length", pvalues.length, tinsts.length);
         for (int i=0; i < pvalues.length; ++i) {
             PValueSource pvalue = pvalues[i];
-            TClass valueType = pvalue.getUnderlyingType();
-            TClass requiredType = tinsts[i].typeClass();
-            if (valueType != requiredType) {
+            TInstance valueType = pvalue.getUnderlyingType();
+            TInstance requiredType = tinsts[i];
+            if (!valueType.equalsExcludingNullable(requiredType)) {
                 throw new IllegalArgumentException("type at " + i + " must be " + requiredType + ", is " + valueType);
             }
         }

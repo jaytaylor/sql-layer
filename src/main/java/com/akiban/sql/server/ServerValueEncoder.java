@@ -79,9 +79,9 @@ public class ServerValueEncoder
     public static final String ROUND_ZERO_DATETIME = "0001-01-01 00:00:00";
     public static final String ROUND_ZERO_DATE = "0001-01-01";
     public static final PValueSource ROUND_ZERO_DATETIME_SOURCE
-            = new PValue(MDatetimes.DATETIME, MDatetimes.parseDatetime(ROUND_ZERO_DATETIME));
+            = new PValue(MDatetimes.DATETIME.instance(false), MDatetimes.parseDatetime(ROUND_ZERO_DATETIME));
     public static final PValueSource ROUND_ZERO_DATE_SOURCE
-            = new PValue(MDatetimes.DATE, MDatetimes.parseDate(ROUND_ZERO_DATE, null));
+            = new PValue(MDatetimes.DATE.instance(false), MDatetimes.parseDate(ROUND_ZERO_DATE, null));
     
     private String encoding;
     private ZeroDateTimeBehavior zeroDateTimeBehavior;

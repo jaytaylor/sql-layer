@@ -56,10 +56,10 @@ public class PersistitCLILoadablePlanIT extends ITBase {
 
         DirectObjectCursor cursor = plan.cursor(queryContext);
         if (Types3Switch.ON) {
-            queryContext.setPValue(0, new PValue(MString.VARCHAR, "stat"));
-            queryContext.setPValue(1, new PValue(MString.VARCHAR, "count=3"));
-            queryContext.setPValue(2, new PValue(MString.VARCHAR, "delay=2"));
-            queryContext.setPValue(3, new PValue(MString.VARCHAR, "-a"));
+            queryContext.setPValue(0, new PValue(MString.varcharFor("stat"), "stat"));
+            queryContext.setPValue(1, new PValue(MString.varcharFor("count=3"), "count=3"));
+            queryContext.setPValue(2, new PValue(MString.varcharFor("delay=2"), "delay=2"));
+            queryContext.setPValue(3, new PValue(MString.varcharFor("-a"), "-a"));
         }
         else {
             queryContext.setValue(0, new FromObjectValueSource().setReflectively("stat"));

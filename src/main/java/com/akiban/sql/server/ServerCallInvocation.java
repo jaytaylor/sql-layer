@@ -228,7 +228,7 @@ public class ServerCallInvocation extends ServerRoutineInvocation
             }
             // Constants passed or parameters bound may not be of the
             // type specified in the signature.
-            PValue pvalue = new PValue(tclass);
+            PValue pvalue = new PValue(tinstance);
             TExecutionContext executionContext = 
                 new TExecutionContext(null, null, tinstance,
                                       parameters, null, null, null);

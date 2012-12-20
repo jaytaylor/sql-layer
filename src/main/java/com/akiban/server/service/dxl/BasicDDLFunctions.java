@@ -364,16 +364,16 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     final String defaultValue = newCol.getDefaultValue();
                     final PValueSource defaultValueSource;
                     if(defaultValue == null) {
-                        defaultValueSource = PValueSources.getNullSource(newInst.typeClass());
+                        defaultValueSource = PValueSources.getNullSource(newInst);
                     } else {
-                        PValue defaultPValue = new PValue(newInst.typeClass());
+                        PValue defaultPValue = new PValue(newInst);
                         TInstance defInstance = MString.VARCHAR.instance(defaultValue.length(), defaultValue == null);
                         TExecutionContext executionContext = new TExecutionContext(
                                 Collections.singletonList(defInstance),
                                 newInst,
                                 queryContext
                         );
-                        PValue defaultSource = new PValue(MString.VARCHAR, defaultValue);
+                        PValue defaultSource = new PValue(MString.varcharFor(defaultValue), defaultValue);
                         newInst.typeClass().fromObject(executionContext, defaultSource, defaultPValue);
                         defaultValueSource = defaultPValue;
                     }

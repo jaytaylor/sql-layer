@@ -83,8 +83,8 @@ public final class BooleanParserTest {
 
     @Test
     public void checkParse() {
-        PValueSource source = new PValue(MString.VARCHAR, string);
-        PValue target = new PValue(AkBool.INSTANCE);
+        PValueSource source = new PValue(MString.varcharFor(string), string);
+        PValue target = new PValue(AkBool.INSTANCE.instance(true));
         TParsers.BOOLEAN.parse(null, source, target);
         Boolean actual = target.isNull() ? null : target.getBoolean();
         assertEquals(string, Boolean.valueOf(expected), actual);

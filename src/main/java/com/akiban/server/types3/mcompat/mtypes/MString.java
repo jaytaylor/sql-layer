@@ -44,6 +44,13 @@ import java.util.Arrays;
 
 public class MString extends TString
 {
+
+    public static TInstance varcharFor(String string) {
+        return string == null
+                ? MString.VARCHAR.instance(0, true)
+                : MString.VARCHAR.instance(string.length(), false);
+    }
+
     public static final MString CHAR = new MString(TypeId.CHAR_ID, "char");
     public static final MString VARCHAR = new MString(TypeId.VARCHAR_ID, "varchar");
     public static final MString TINYTEXT = new MString(TypeId.LONGVARCHAR_ID, "tinytext", 256);
@@ -96,7 +103,7 @@ public class MString extends TString
         int charsetId = context.outputTInstance().attribute(StringAttribute.CHARSET);
         int collatorId = context.outputTInstance().attribute(StringAttribute.COLLATION);
 
-        switch (in.getUnderlyingType().underlyingType())
+        switch (TInstance.pUnderlying(in.getUnderlyingType()))
         {
             case STRING:
                 String inStr = in.getString();

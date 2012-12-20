@@ -30,7 +30,6 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.explain.*;
 import com.akiban.server.explain.std.TExpressionExplainer;
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -50,7 +49,7 @@ public final class TPreparedField implements TPreparedExpression {
 
     @Override
     public TEvaluatableExpression build() {
-        return new Evaluation(typeInstance.typeClass(), fieldIndex);
+        return new Evaluation(typeInstance, fieldIndex);
     }
 
     @Override
@@ -88,7 +87,7 @@ public final class TPreparedField implements TPreparedExpression {
             setContext(row);
         }
 
-        private Evaluation(TClass underlyingType, int fieldIndex) {
+        private Evaluation(TInstance underlyingType, int fieldIndex) {
             super(underlyingType);
             this.fieldIndex = fieldIndex;
         }

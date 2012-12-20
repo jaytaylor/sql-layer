@@ -106,10 +106,10 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
                 }
             };
         if (Types3Switch.ON) {
-            queryContext.setPValue(0, new PValue(MString.VARCHAR, SCHEMA_NAME));
-            queryContext.setPValue(1, new PValue(MString.VARCHAR, GROUP_NAME));
+            queryContext.setPValue(0, new PValue(MString.varcharFor(SCHEMA_NAME), SCHEMA_NAME));
+            queryContext.setPValue(1, new PValue(MString.varcharFor(GROUP_NAME), GROUP_NAME));
             if (multiple)
-                queryContext.setPValue(2, new PValue(MNumeric.INT, 10));
+                queryContext.setPValue(2, new PValue(MNumeric.INT.instance(false), 10));
         }
         else {
             queryContext.setValue(0, new FromObjectValueSource().setReflectively(SCHEMA_NAME));

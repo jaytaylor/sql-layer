@@ -26,7 +26,6 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.error.NegativeLimitException;
@@ -42,10 +41,8 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 
-import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -232,7 +229,7 @@ final class Limit_Default extends Operator
                             TInstance tinst = MNumeric.INT.instance(true);
                             TExecutionContext executionContext = 
                                 new TExecutionContext(null, tinst, context);
-                            PValue pvalue = new PValue(MNumeric.INT);
+                            PValue pvalue = new PValue(MNumeric.INT.instance(true));
                             MNumeric.INT.fromObject(executionContext, value, pvalue);
                             this.limitLeft = pvalue.getInt32();
                         }

@@ -28,7 +28,6 @@ package com.akiban.server.rowdata;
 
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.collation.AkCollator;
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.util.ArgumentValidation;
@@ -92,9 +91,8 @@ public final class RowDataPValueTarget implements PValueTarget, RowDataTarget {
     }
     
     @Override
-    public TClass getUnderlyingType() {
-        // STRING should actually be interpreted as BYTES
-        return targetInstance().typeClass();
+    public TInstance getUnderlyingType() {
+        return targetInstance();
     }
 
     @Override

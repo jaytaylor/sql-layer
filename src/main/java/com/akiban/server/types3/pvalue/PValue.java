@@ -27,13 +27,12 @@
 package com.akiban.server.types3.pvalue;
 
 import com.akiban.server.collation.AkCollator;
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 
 public final class PValue implements PValueSource, PValueTarget {
     // PValue interface
     
-    public void underlying(TClass underlying) {
+    public void underlying(TInstance underlying) {
         this.underlying = underlying;
         this.state = State.UNSET;
     }
@@ -240,7 +239,7 @@ public final class PValue implements PValueSource, PValueTarget {
     // PValueSource + PValueTarget
 
     @Override
-    public TClass getUnderlyingType() {
+    public TInstance getUnderlyingType() {
         return underlying;
     }
 
@@ -257,7 +256,7 @@ public final class PValue implements PValueSource, PValueTarget {
             sb.append("NULL");
             break;
         case VAL_ONLY:
-            switch (underlying.underlyingType()) {
+            switch (TInstance.pUnderlying(underlying)) {
             case INT_8:
             case INT_16:
             case INT_32:
@@ -320,7 +319,7 @@ public final class PValue implements PValueSource, PValueTarget {
     }
 
     private void checkUnderlying(PUnderlying expected) {
-        PUnderlying pUnderlying = (this.underlying == null) ? null : this.underlying.underlyingType();
+        PUnderlying pUnderlying = TInstance.pUnderlying(underlying);
         if (pUnderlying != expected) {
             String underlyingToString = (pUnderlying == null) ? "unspecified" : pUnderlying.name();
             throw new IllegalStateException("required underlying " + expected + " but was " + underlyingToString);
@@ -343,58 +342,58 @@ public final class PValue implements PValueSource, PValueTarget {
         this(null);
     }
 
-    public PValue(TClass underlying) {
+    public PValue(TInstance underlying) {
         underlying(underlying);
     }
 
-    public PValue(TClass underlying, byte[] val) {
+    public PValue(TInstance underlying, byte[] val) {
         this(underlying);
         putBytes(val);
     }
 
-    public PValue(TClass underlying, long val) {
+    public PValue(TInstance underlying, long val) {
         this(underlying);
         putInt64(val);
     }
 
-    public PValue(TClass underlying, float val)
+    public PValue(TInstance underlying, float val)
     {
         this(underlying);
         putFloat(val);
     }
 
-    public PValue(TClass underlying, double val)
+    public PValue(TInstance underlying, double val)
     {
         this(underlying);
         putDouble(val);
     }
 
-    public PValue(TClass underlying, int val) {
+    public PValue(TInstance underlying, int val) {
         this(underlying);
         putInt32(val);
     }
 
-    public PValue(TClass underlying, short val) {
+    public PValue(TInstance underlying, short val) {
         this(underlying);
         putInt16(val);
     }
 
-    public PValue(TClass underlying, byte val) {
+    public PValue(TInstance underlying, byte val) {
         this(underlying);
         putInt8(val);
     }
 
-    public PValue(TClass underlying, String val) {
+    public PValue(TInstance underlying, String val) {
         this(underlying);
         putString(val, null);
     }
 
-    public PValue(TClass underlying, boolean val) {
+    public PValue(TInstance underlying, boolean val) {
         this(underlying);
         putBool(val);
     }
 
-    private TClass underlying;
+    private TInstance underlying;
     private State state;
     private long iVal;
     private byte[] bVal;

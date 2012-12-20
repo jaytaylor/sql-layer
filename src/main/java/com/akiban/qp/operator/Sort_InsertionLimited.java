@@ -36,6 +36,7 @@ import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
@@ -478,7 +479,7 @@ class Sort_InsertionLimited extends Operator
         private Comparable toObject(PValueSource valueSource) {
             if (valueSource.isNull())
                 return null;
-            switch (valueSource.getUnderlyingType().underlyingType()) {
+            switch (PValueSources.pUnderlying(valueSource)) {
             case BOOL:
                 return valueSource.getBoolean();
             case INT_8:

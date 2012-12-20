@@ -32,7 +32,6 @@ import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
@@ -324,7 +323,7 @@ public final class RowDataBuilder {
                     return;
                 }
                 if (stringCache == null)
-                    stringCache = new PValue(MString.VARCHAR);
+                    stringCache = new PValue(MString.VARCHAR.instance(1024, true));
                 stringCache.putString(stringInput, null);
                 TExecutionContext context = new TExecutionContext(null, instance, null);
                 instance.typeClass().fromObject(context, stringCache, pValue);
@@ -334,7 +333,7 @@ public final class RowDataBuilder {
 
         @Override
         public void objectToSource(Object object, FieldDef fieldDef) {
-            TClass underlying = underlying(fieldDef);
+            TInstance underlying = underlying(fieldDef);
             pValue.underlying(underlying);
             stringInput = null;
             if (object == null) {
@@ -342,13 +341,13 @@ public final class RowDataBuilder {
             }
             else if (object instanceof String) {
                 // This is the common case, so let's test for it first
-                if (underlying.underlyingType() == PUnderlying.STRING)
+                if (TInstance.pUnderlying(underlying) == PUnderlying.STRING)
                     pValue.putString((String)object, null);
                 else
                     stringInput = (String)object;
             }
             else {
-                switch (underlying.underlyingType()) {
+                switch (TInstance.pUnderlying(underlying)) {
                 case INT_8:
                 case INT_16:
                 case UINT_16:
@@ -399,8 +398,8 @@ public final class RowDataBuilder {
             return (stringInput == null) && source.isNull();
         }
 
-        private TClass underlying(FieldDef fieldDef) {
-            return fieldDef.column().tInstance().typeClass();
+        private TInstance underlying(FieldDef fieldDef) {
+            return fieldDef.column().tInstance();
         }
 
         public NewValueAdapter() {

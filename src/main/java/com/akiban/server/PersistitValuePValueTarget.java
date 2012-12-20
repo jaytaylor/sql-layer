@@ -26,7 +26,7 @@
 package com.akiban.server;
 
 import com.akiban.server.collation.AkCollator;
-import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.persistit.Value;
 
@@ -51,7 +51,7 @@ public final class PersistitValuePValueTarget implements PValueTarget {
     }
 
     @Override
-    public TClass getUnderlyingType() {
+    public TInstance getUnderlyingType() {
         throw new UnsupportedOperationException();
     }
 

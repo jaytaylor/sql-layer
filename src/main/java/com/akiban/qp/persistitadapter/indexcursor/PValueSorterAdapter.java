@@ -110,7 +110,7 @@ final class PValueSorterAdapter extends SorterAdapter<PValueSource, TPreparedExp
 
         @Override
         public void putToHolders(ValuesHolderRow row, int i, AkType[] oFieldTypes) {
-            valueSource.getReady(row.rowType().typeInstanceAt(i).typeClass());
+            valueSource.getReady(row.rowType().typeInstanceAt(i));
             PValueTargets.copyFrom(valueSource, row.pvalueAt(i));
         }
 

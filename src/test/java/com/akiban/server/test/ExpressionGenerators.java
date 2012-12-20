@@ -306,7 +306,7 @@ public final class ExpressionGenerators {
                                 eval.with(context);
                             }
 
-                            private final PValue pValue = new PValue(MString.VARCHAR);
+                            private final PValue pValue = new PValue(MString.VARCHAR.instance(255, true));
                         };
                     }
 

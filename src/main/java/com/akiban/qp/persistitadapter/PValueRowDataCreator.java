@@ -29,6 +29,7 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.rowdata.FieldDef;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueSource;
 
 public final class PValueRowDataCreator implements RowDataCreator<PValueSource> {
@@ -58,7 +59,7 @@ public final class PValueRowDataCreator implements RowDataCreator<PValueSource> 
             putObj = source.getObject();
         }
         else {
-            switch (source.getUnderlyingType().underlyingType()) {
+            switch (TInstance.pUnderlying(source.getUnderlyingType())) {
             case BOOL:
                 putObj = source.getBoolean();
                 break;

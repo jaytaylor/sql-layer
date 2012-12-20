@@ -30,7 +30,6 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.explain.*;
 import com.akiban.server.explain.std.TExpressionExplainer;
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -55,7 +54,7 @@ public final class TNullExpression implements TPreparedExpression {
 
     @Override
     public TEvaluatableExpression build() {
-        return new InnerEvaluation(tInstance == null ? null : tInstance.typeClass());
+        return new InnerEvaluation(tInstance);
     }
 
     @Override
@@ -91,7 +90,7 @@ public final class TNullExpression implements TPreparedExpression {
         public void with(QueryContext context) {
         }
 
-        private InnerEvaluation(TClass underlying) {
+        private InnerEvaluation(TInstance underlying) {
             this.valueSource = PValueSources.getNullSource(underlying);
         }
 

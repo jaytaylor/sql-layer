@@ -33,6 +33,7 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -88,7 +89,7 @@ abstract class SubqueryTEvaluateble implements TEvaluatableExpression {
     }
 
     SubqueryTEvaluateble(Operator subquery, RowType outerRowType, RowType innerRowType, int bindingPosition,
-                         TClass underlying)
+                         TInstance underlying)
     {
         this.subquery = subquery;
         this.outerRowType = outerRowType;

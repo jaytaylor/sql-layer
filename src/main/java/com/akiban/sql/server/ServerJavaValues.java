@@ -36,6 +36,7 @@ import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.aksql.aktypes.AkResultSet;
@@ -128,7 +129,7 @@ public abstract class ServerJavaValues
             tcontext = new TExecutionContext(Collections.singletonList(sourceInstance),
                                              targetInstance,
                                              context);
-            target = new PValue(targetClass);
+            target = new PValue(targetInstance);
         }
 
         protected boolean matches(TClass required) {

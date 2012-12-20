@@ -31,7 +31,6 @@ import static com.akiban.sql.optimizer.rule.OldExpressionAssembler.*;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.t3expressions.T3RegistryService;
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -849,25 +848,24 @@ public class OperatorAssembler extends BaseRule
                     } 
                     else if (row[i] == null) {
                         TInstance tinst = targetRowType.typeInstanceAt(i);
-                        TClass tClass = tinst.typeClass();
                         final String defaultValue = column.getDefaultValue();
                         final PValue defaultValueSource;
                         if(defaultValue == null) {
-                            defaultValueSource = new PValue(tClass);
+                            defaultValueSource = new PValue(tinst);
                             defaultValueSource.putNull();
                         } else {
-                            TCast cast = tClass.castFromVarchar();
+                            TCast cast = tinst.typeClass().castFromVarchar();
                             if (cast != null) {
-                                defaultValueSource = new PValue(tClass);
+                                defaultValueSource = new PValue(tinst);
                                 TInstance valInst = MString.VARCHAR.instance(defaultValue.length(), false);
                                 TExecutionContext executionContext = new TExecutionContext(
                                         Collections.singletonList(valInst),
                                         tinst, planContext.getQueryContext());
                                 cast.evaluate(executionContext,
-                                              new PValue(MString.VARCHAR, defaultValue),
+                                              new PValue(MString.varcharFor(defaultValue), defaultValue),
                                               defaultValueSource);
                             } else {
-                                defaultValueSource = new PValue (tClass, defaultValue);
+                                defaultValueSource = new PValue (tinst, defaultValue);
                             }
                         }
                         row[i] = new TPreparedLiteral(tinst, defaultValueSource);

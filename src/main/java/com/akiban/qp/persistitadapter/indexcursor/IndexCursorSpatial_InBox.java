@@ -27,7 +27,6 @@
 package com.akiban.qp.persistitadapter.indexcursor;
 
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
@@ -35,7 +34,6 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.IndexScanRowState;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.util.MultiCursor;
 import com.akiban.server.api.dml.ColumnSelector;
@@ -53,9 +51,6 @@ import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValueTargets;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
 
 import java.math.BigDecimal;
@@ -202,8 +197,8 @@ class IndexCursorSpatial_InBox extends IndexCursor
                 }
                 // lo and hi bounds
                 if (Types3Switch.ON) {
-                    PValue loPValue = new PValue(MNumeric.BIGINT);
-                    PValue hiPValue = new PValue(MNumeric.BIGINT);
+                    PValue loPValue = new PValue(MNumeric.BIGINT.instance(false));
+                    PValue hiPValue = new PValue(MNumeric.BIGINT.instance(false));
                     loPValue.putInt64(space.zLo(z));
                     hiPValue.putInt64(space.zHi(z));
                     zLoRow.value(latColumn, loPValue);

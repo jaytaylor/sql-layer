@@ -30,7 +30,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -110,8 +109,7 @@ class AbstractValuesHolderRow extends AbstractRow {
             pValues = new ArrayList<PValue>(nfields);
             for (int i = 0; i < nfields; ++i) {
                 TInstance tinst = rowType.typeInstanceAt(i);
-                TClass underlying = (tinst == null) ? null : tinst.typeClass();
-                pValues.add(new PValue(underlying));
+                pValues.add(new PValue(tinst));
             }
         }
     }
@@ -147,10 +145,9 @@ class AbstractValuesHolderRow extends AbstractRow {
                 if (i >= pValues.size())
                     throw new IllegalArgumentException("too many initial values: reached limit of " + values.size());
                 PValueSource nextValue = initialPValues.next();
-                TClass nextValueType = nextValue.getUnderlyingType();
+                TInstance nextValueType = nextValue.getUnderlyingType();
                 TInstance expectedTInst = rowType.typeInstanceAt(i);
-                TClass expectedValueType = expectedTInst == null ? null : expectedTInst.typeClass();
-                if (nextValueType != expectedValueType)
+                if (TInstance.tClass(nextValueType) != TInstance.tClass(expectedTInst))
                     throw new IllegalArgumentException(
                             "value at index " + i + " expected type " + rowType.typeInstanceAt(i)
                                     + ", but PUnderlying was " + nextValueType + ": " + nextValue);

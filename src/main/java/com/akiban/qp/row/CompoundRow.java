@@ -29,7 +29,6 @@ import com.akiban.qp.rowtype.CompoundRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.util.ShareHolder;
@@ -108,7 +107,7 @@ public class CompoundRow extends AbstractRow {
     }
 
     private PValueSource nullPValue(int i) {
-        return PValueSources.getNullSource(rowType.typeInstanceAt(i).typeClass());
+        return PValueSources.getNullSource(rowType.typeInstanceAt(i));
     }
 
     // Object state

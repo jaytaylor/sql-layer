@@ -30,7 +30,7 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.persistit.Persistit;
 import com.persistit.Value;
 import org.junit.Test;
@@ -116,19 +116,19 @@ public final class PersistitValuePValueSourceTest {
             }
         });
 
-        source.getReady(MNumeric.DECIMAL);
+        source.getReady(MNumeric.DECIMAL.instance(false));
         assertEquals("source value", BigDecimal.ONE, source.getObject());
         assertEquals("source value", BigDecimal.ONE, source.getObject());
     }
 
     private void readyAndCheck(PersistitValuePValueSource source, TClass pUnderlying) {
-        source.getReady(pUnderlying);
+        source.getReady(pUnderlying == null ? null : pUnderlying.instance(true));
         if (pUnderlying == null) {
             assertTrue("source should be null", source.isNull());
         }
         else {
             assertFalse("source should not be null", source.isNull());
-            assertEquals("source PUnderlying", pUnderlying, source.getUnderlyingType());
+            assertEquals("source PUnderlying", pUnderlying, PValueSources.tClass(source));
         }
     }
 

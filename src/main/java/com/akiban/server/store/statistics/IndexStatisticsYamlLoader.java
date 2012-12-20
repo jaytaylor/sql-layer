@@ -31,7 +31,6 @@ import static com.akiban.server.store.statistics.IndexStatistics.*;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 
@@ -226,7 +225,7 @@ public class IndexStatisticsYamlLoader
                                                                   Collections.singletonList(pvalue.instance()),
                                                                   tInstance,
                                                                   null, null, null, null);
-                PValue pvalue2 = new PValue(tInstance.typeClass());
+                PValue pvalue2 = new PValue(tInstance);
                 tInstance.typeClass().fromObject(context, pvalue.value(), pvalue2);
                 tInstance.writeCollating(pvalue2, keyTarget);
             }
