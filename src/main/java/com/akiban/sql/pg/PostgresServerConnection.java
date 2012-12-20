@@ -762,6 +762,8 @@ public class PostgresServerConnection extends ServerSessionBase
         }
         logger.debug("Bind: {} = {}", stmtName, portalName);
         PostgresPreparedStatement pstmt = preparedStatements.get(stmtName);
+        if (pstmt == null)
+            throw new NoSuchPreparedStatementException(stmtName);
         PostgresStatement stmt = pstmt.getStatement();
         boolean canSuspend = ((stmt instanceof PostgresCursorGenerator) &&
                               ((PostgresCursorGenerator<?>)stmt).canSuspend(this));
@@ -806,11 +808,15 @@ public class PostgresServerConnection extends ServerSessionBase
         switch (source) {
         case (byte)'S':
             pstmt = preparedStatements.get(name).getStatement();
+            if (pstmt == null)
+                throw new NoSuchPreparedStatementException(name);
             context = new PostgresQueryContext(this);
             break;
         case (byte)'P':
             {
                 PostgresBoundQueryContext bound = boundPortals.get(name);
+                if (bound == null)
+                    throw new NoSuchCursorException(name);
                 pstmt = bound.getStatement().getStatement();
                 context = bound;
             }
@@ -827,6 +833,8 @@ public class PostgresServerConnection extends ServerSessionBase
         int maxrows = messenger.readInt();
         logger.debug("Execute: {}", portalName);
         PostgresBoundQueryContext context = boundPortals.get(portalName);
+        if (context == null)
+            throw new NoSuchCursorException(portalName);
         PostgresPreparedStatement pstmt = context.getStatement();
         sessionMonitor.startStatement(pstmt.getSQL(), pstmt.getName(), startTime);
         int rowsProcessed = executeStatementWithAutoTxn(pstmt.getStatement(), context, maxrows);
@@ -1093,6 +1101,8 @@ public class PostgresServerConnection extends ServerSessionBase
     public int executePreparedStatement(PostgresExecuteStatement estmt, int maxrows)
             throws IOException {
         PostgresPreparedStatement pstmt = preparedStatements.get(estmt.getName());
+        if (pstmt == null)
+            throw new NoSuchPreparedStatementException(estmt.getName());
         PostgresBoundQueryContext context = 
             new PostgresBoundQueryContext(this, pstmt, null, false, false);
         estmt.setParameters(context);
@@ -1129,6 +1139,8 @@ public class PostgresServerConnection extends ServerSessionBase
             // making a second prepared statement.
             estmt = (PostgresExecuteStatement)pstmt;
             ppstmt = preparedStatements.get(estmt.getName());
+            if (ppstmt == null)
+                throw new NoSuchPreparedStatementException(estmt.getName());
             pstmt = ppstmt.getStatement();
         }
         else {
@@ -1154,6 +1166,8 @@ public class PostgresServerConnection extends ServerSessionBase
     @Override
     public int fetchStatement(String name, int count) throws IOException {
         PostgresBoundQueryContext bound = boundPortals.get(name);
+        if (bound == null)
+            throw new NoSuchCursorException(name);
         PostgresPreparedStatement pstmt = bound.getStatement();
         sessionMonitor.startStatement(pstmt.getSQL(), pstmt.getName());
         pstmt.getStatement().sendDescription(bound, false);

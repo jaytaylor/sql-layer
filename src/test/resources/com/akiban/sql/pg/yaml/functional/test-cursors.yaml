@@ -52,4 +52,10 @@
 - Statement: COMMIT
 ---
 - Statement: DEALLOCATE p
+---
+- Statement: EXECUTE no_such_stmt
+- error: [4251D]
+---
+- Statement: FETCH no_such_curs
+- error: [4251C]
 ...

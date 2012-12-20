@@ -275,6 +275,8 @@ public enum ErrorCode {
     NO_SUCH_ROUTINE         ("42", "519", Importance.DEBUG, NoSuchRoutineException.class),
     NO_SUCH_CAST            ("42", "51A", Importance.DEBUG, NoSuchCastException.class),
     PROCEDURE_CALLED_AS_FUNCTION ("42", "51B", Importance.DEBUG, ProcedureCalledAsFunctionException.class),
+    NO_SUCH_CURSOR          ("42", "51C", Importance.DEBUG, NoSuchCursorException.class),
+    NO_SUCH_PREPARED_STATEMENT ("42", "51D", Importance.DEBUG, NoSuchPreparedStatementException.class),
 
 
     // Class 44 - with check option violation
