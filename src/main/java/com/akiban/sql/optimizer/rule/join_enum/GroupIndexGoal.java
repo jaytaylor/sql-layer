@@ -236,10 +236,10 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                             }
                         }
                     }
-                    if (column == null) return null;
                 }
             }
         }
+        if (column == null) return null;
         List<ExpressionNode> expressions = new ArrayList<ExpressionNode>(values.getExpressions().size());
         for (List<ExpressionNode> row : values.getExpressions()) {
             expressions.add(row.get(0));
