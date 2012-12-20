@@ -217,7 +217,7 @@ public final class PValue implements PValueSource, PValueTarget {
         case UNSET:
             return false;
         case VAL_ONLY:
-            return tInstance().typeClass().cacher() != null;
+            return tInstance.typeClass().cacher() != null;
         case NULL:
         case CACHE_ONLY:
         case VAL_AND_CACHE:

@@ -270,6 +270,10 @@ public abstract class TClass {
             formatter.formatAsJson(instance, source, out);
     }
 
+    public Object formatCachedForNiceRow(PValueSource source) {
+        return source.getObject();
+    }
+
     // for use by subclasses
     protected abstract TInstance doPickInstance(TInstance left, TInstance right, boolean suggestedNullability);
     protected abstract void validate(TInstance instance);

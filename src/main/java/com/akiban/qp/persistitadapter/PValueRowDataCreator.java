@@ -56,7 +56,7 @@ public final class PValueRowDataCreator implements RowDataCreator<PValueSource> 
         }
         final Object putObj;
         if (source.hasCacheValue()) {
-            putObj = source.getObject();
+            putObj = source.tInstance().typeClass().formatCachedForNiceRow(source);
         }
         else {
             switch (TInstance.pUnderlying(source.tInstance())) {

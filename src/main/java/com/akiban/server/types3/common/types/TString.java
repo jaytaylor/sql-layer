@@ -29,6 +29,7 @@ package com.akiban.server.types3.common.types;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.error.InvalidArgumentTypeException;
+import com.akiban.server.error.UnsupportedCharsetException;
 import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.types3.TBundle;
 import com.akiban.server.types3.TCast;
@@ -40,7 +41,10 @@ import com.akiban.server.types3.TInstanceAdjuster;
 import com.akiban.server.types3.TInstanceBuilder;
 import com.akiban.server.types3.TInstanceNormalizer;
 import com.akiban.server.types3.aksql.AkCategory;
+import com.akiban.server.types3.pvalue.PBasicValueSource;
+import com.akiban.server.types3.pvalue.PBasicValueTarget;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueCacher;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.sql.types.CharacterTypeAttributes;
@@ -49,11 +53,13 @@ import com.akiban.sql.types.TypeId;
 import com.akiban.util.AkibanAppender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.UnsupportedEncodingException;
 import java.util.Formatter;
 
 /**
  * Base types for VARCHAR types. Its base type is PUnderlying.STRING. Its cached object can either be a String
- * (representing a collated string with a lossy collation) or a ByteSource wrapping the string's bytes.
+ * (representing a collated string with a lossy collation) or a byte[] of the string's bytes.
  */
 public abstract class TString extends TClass
 {
@@ -138,6 +144,11 @@ public abstract class TString extends TClass
     }
 
     @Override
+    public Object formatCachedForNiceRow(PValueSource source) {
+        return StringCacher.getString((byte[])source.getObject(), source.tInstance());
+    }
+
+    @Override
     protected int doCompare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB) {
         CharacterTypeAttributes aAttrs = StringAttribute.characterTypeAttributes(instanceA);
         CharacterTypeAttributes bAttrs = StringAttribute.characterTypeAttributes(instanceB);
@@ -185,6 +196,11 @@ public abstract class TString extends TClass
 
     public AkCollator getCollator(TInstance instance) {
         return AkCollatorFactory.getAkCollator((int)instance.attribute(StringAttribute.COLLATION));
+    }
+
+    @Override
+    public PValueCacher cacher() {
+        return cacher;
     }
 
     @Override
@@ -275,6 +291,42 @@ public abstract class TString extends TClass
     private final int fixedLength;
     private final TypeId typeId;
     private static final Logger logger = LoggerFactory.getLogger(TString.class);
+
+    private static final PValueCacher cacher = new StringCacher();
+
+    private static class StringCacher implements PValueCacher {
+        @Override
+        public void cacheToValue(Object cached, TInstance tInstance, PBasicValueTarget target) {
+            String asString = getString((byte[]) cached, tInstance);
+            target.putString(asString, null);
+        }
+
+        @Override
+        public Object valueToCache(PBasicValueSource value, TInstance tInstance) {
+            String charsetName = StringAttribute.charsetName(tInstance);
+            try {
+                return value.getString().getBytes(charsetName);
+            } catch (UnsupportedEncodingException e) {
+                throw new UnsupportedCharsetException("<unknown>", "<unknown>", charsetName);
+            }
+        }
+
+        @Override
+        public Object sanitize(Object object) {
+            return String.valueOf(object);
+        }
+
+        static String getString(byte[] bytes, TInstance tInstance) {
+            String charsetName = StringAttribute.charsetName(tInstance);
+            String asString;
+            try {
+                asString = new String(bytes, charsetName);
+            } catch (UnsupportedEncodingException e) {
+                throw new UnsupportedCharsetException("<unknown>", "<unknown>", charsetName);
+            }
+            return asString;
+        }
+    }
 
     public final TInstanceNormalizer PICK_RIGHT_LENGTH = new TInstanceNormalizer() {
         @Override

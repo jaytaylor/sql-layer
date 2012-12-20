@@ -117,6 +117,11 @@ public class MBigDecimal extends TClassBase {
     }
 
     @Override
+    public Object formatCachedForNiceRow(PValueSource source) {
+        return ((BigDecimalWrapper)source.getObject()).asBigDecimal();
+    }
+
+    @Override
     protected int doCompare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB)
     {
         if (sourceA.hasRawValue() && sourceB.hasRawValue()) // both have bytearrays
