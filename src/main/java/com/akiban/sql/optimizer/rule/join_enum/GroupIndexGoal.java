@@ -49,6 +49,7 @@ import com.akiban.server.geophile.Space;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
@@ -202,6 +203,54 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 }
             }
         }        
+    }
+
+    /** Given a semi-join to a VALUES, see whether it can be turned
+     * into a predicate on some column in this group, in which case it
+     * can possibly be indexed.
+     */
+    public InListCondition semiJoinToInList(ExpressionsSource values,
+                                            Collection<JoinOperator> joins) {
+        if (values.nFields() != 1) 
+            return null;
+        ColumnExpression column = null;
+        if (joins.size() == 1) {
+            JoinOperator join = joins.iterator().next();
+            if ((join.getJoinConditions() != null) &&
+                (join.getJoinConditions().size() == 1)) {
+                ConditionExpression joinCondition = join.getJoinConditions().get(0);
+                if (joinCondition instanceof ComparisonCondition) {
+                    ComparisonCondition ccond = (ComparisonCondition)joinCondition;
+                    if ((ccond.getOperation() == Comparison.EQ) &&
+                        (ccond.getLeft() instanceof ColumnExpression) &&
+                        (ccond.getRight() instanceof ColumnExpression)) {
+                        ColumnExpression lcol = (ColumnExpression)ccond.getLeft();
+                        ColumnExpression rcol = (ColumnExpression)ccond.getRight();
+                        if ((rcol.getTable() == values) &&
+                            (rcol.getPosition() == 0)) {
+                            for (TableGroupJoinNode table : tables) {
+                                if (table.getTable() == lcol.getTable()) {
+                                    column = lcol;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (column == null) return null;
+                }
+            }
+        }
+        List<ExpressionNode> expressions = new ArrayList<ExpressionNode>(values.getExpressions().size());
+        for (List<ExpressionNode> row : values.getExpressions()) {
+            expressions.add(row.get(0));
+        }
+        InListCondition cond = new InListCondition(column, expressions,
+                                                   new DataTypeDescriptor(TypeId.BOOLEAN_ID, true),
+                                                   null);
+        if (Types3Switch.ON) {
+            cond.setPreptimeValue(new TPreptimeValue(AkBool.INSTANCE.instance(true)));
+        }
+        return cond;
     }
 
     /** Populate given index usage according to goal.

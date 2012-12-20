@@ -109,10 +109,7 @@ public class JoinAndIndexPicker extends BaseRule
             Limit limit = null;
             input = input.getOutput();
             if (input instanceof Select) {
-                ConditionList conds = ((Select)input).getConditions();
-                if (!conds.isEmpty()) {
-                    whereConditions = conds;
-                }
+                whereConditions = ((Select)input).getConditions();
             }
             input = input.getOutput();
             if (input instanceof Sort) {
@@ -396,6 +393,38 @@ public class JoinAndIndexPicker extends BaseRule
         }
     }
 
+    static class GroupWithInPlanClass extends GroupPlanClass {
+        ConditionList inConditions;
+
+        public GroupWithInPlanClass(GroupPlanClass left,
+                                    ValuesPlanClass right,
+                                    Collection<JoinOperator> joins) {
+            super(left);
+            InListCondition incond = left.groupGoal.semiJoinToInList(right.plan.values, joins);
+            if (incond != null) {
+                inConditions = new ConditionList(1);
+                inConditions.add(incond);
+            }
+        }
+
+        public GroupWithInPlanClass(GroupWithInPlanClass left,
+                                    ValuesPlanClass right,
+                                    Collection<JoinOperator> joins) {
+            super(left);
+            InListCondition incond = left.groupGoal.semiJoinToInList(right.plan.values, joins);
+            if (incond != null) {
+                inConditions = new ConditionList(left.inConditions);
+                inConditions.add(incond);
+            }
+        }
+
+        @Override
+        protected ConditionList getExtraConditions() {
+            return inConditions;
+        }
+
+    }
+
     static class SubqueryPlan extends Plan {
         SubquerySource subquery;
         Picker picker;
@@ -636,6 +665,7 @@ public class JoinAndIndexPicker extends BaseRule
 
     static class JoinPlanClass extends PlanClass {
         Plan bestPlan;      // TODO: Later have separate sorted, etc.
+        GroupWithInPlanClass asGroupWithIn; // If semi-joined to one or more VALUES.
 
         public JoinPlanClass(JoinEnumerator enumerator, long bitset) {
             super(enumerator, bitset);
@@ -704,6 +734,29 @@ public class JoinAndIndexPicker extends BaseRule
             JoinPlanClass planClass = (JoinPlanClass)existing;
             if (planClass == null)
                 planClass = new JoinPlanClass(this, bitset);
+            if ((joinType.isSemi() && (right instanceof ValuesPlanClass))) {
+                // Semi-join a VALUES on the inside by turning it into
+                // predicate, which can be better optimized.
+                assert (planClass.asGroupWithIn == null);
+                GroupWithInPlanClass asGroupWithIn = null;
+                if (left instanceof GroupPlanClass)
+                    asGroupWithIn = new GroupWithInPlanClass((GroupPlanClass)left,
+                                                             (ValuesPlanClass)right,
+                                                             joins);
+                else if (left instanceof GroupWithInPlanClass)
+                    asGroupWithIn = new GroupWithInPlanClass((GroupWithInPlanClass)left,
+                                                             (ValuesPlanClass)right,
+                                                             joins);
+                if ((asGroupWithIn != null) &&
+                    (asGroupWithIn.getExtraConditions() != null)) {
+                    Plan withInPlan = asGroupWithIn.bestPlan(outsideJoins);
+                    if (withInPlan != null) {
+                        planClass.asGroupWithIn = asGroupWithIn;
+                        planClass.consider(withInPlan);
+                    }
+                    return planClass;
+                }
+            }
             joins = new ArrayList<JoinOperator>(joins);
             Collection<JoinOperator> condJoins = joins; // Joins with conditions for indexing.
             if (subqueryJoins != null) {
