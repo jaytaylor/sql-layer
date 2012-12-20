@@ -81,7 +81,7 @@ public class ServerValueEncoder
     public static final PValueSource ROUND_ZERO_DATETIME_SOURCE
             = new PValue(MDatetimes.DATETIME, MDatetimes.parseDatetime(ROUND_ZERO_DATETIME));
     public static final PValueSource ROUND_ZERO_DATE_SOURCE
-            = new PValue(MDatetimes.DATETIME, MDatetimes.parseDate(ROUND_ZERO_DATE, null));
+            = new PValue(MDatetimes.DATE, MDatetimes.parseDate(ROUND_ZERO_DATE, null));
     
     private String encoding;
     private ZeroDateTimeBehavior zeroDateTimeBehavior;
