@@ -136,7 +136,7 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
         final long location = getRawOffsetAndWidth();
         return location == 0
                 ? null
-                : AkServerUtil.bytesForMySQLString(bytes(), (int) location, (int) (location >>> 32), fieldDef());
+                : AkServerUtil.byteSourceForMySQLString(bytes(), (int) location, (int) (location >>> 32), fieldDef());
     }
 
 

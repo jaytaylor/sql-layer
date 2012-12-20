@@ -414,10 +414,10 @@ public final class PValueSources {
 
     public static boolean areEqual(PValueSource one, PValueSource two, TInstance instance) {
         TInstance oneTInstance = one.tInstance();
-        TInstance twoTIntance = two.tInstance();
-        if (oneTInstance == null || twoTIntance == null)
-            return oneTInstance == null && twoTIntance == null;
-        if (!oneTInstance.equalsExcludingNullable(twoTIntance))
+        TInstance twoTInstance = two.tInstance();
+        if (oneTInstance == null || twoTInstance == null)
+            return oneTInstance == null && twoTInstance == null;
+        if (!oneTInstance.equalsExcludingNullable(twoTInstance))
             return false;
         if (one.isNull())
             return two.isNull();

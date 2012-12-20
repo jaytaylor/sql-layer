@@ -51,6 +51,8 @@ import com.akiban.sql.types.CharacterTypeAttributes;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 import com.akiban.util.AkibanAppender;
+import com.akiban.util.ByteSource;
+import com.akiban.util.WrappingByteSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,7 +61,7 @@ import java.util.Formatter;
 
 /**
  * Base types for VARCHAR types. Its base type is PUnderlying.STRING. Its cached object can either be a String
- * (representing a collated string with a lossy collation) or a byte[] of the string's bytes.
+ * (representing a collated string with a lossy collation) or a ByteSource of the string's bytes.
  */
 public abstract class TString extends TClass
 {
@@ -145,7 +147,7 @@ public abstract class TString extends TClass
 
     @Override
     public Object formatCachedForNiceRow(PValueSource source) {
-        return StringCacher.getString((byte[])source.getObject(), source.tInstance());
+        return StringCacher.getString((ByteSource)source.getObject(), source.tInstance());
     }
 
     @Override
@@ -297,7 +299,7 @@ public abstract class TString extends TClass
     private static class StringCacher implements PValueCacher {
         @Override
         public void cacheToValue(Object cached, TInstance tInstance, PBasicValueTarget target) {
-            String asString = getString((byte[]) cached, tInstance);
+            String asString = getString((ByteSource) cached, tInstance);
             target.putString(asString, null);
         }
 
@@ -305,7 +307,7 @@ public abstract class TString extends TClass
         public Object valueToCache(PBasicValueSource value, TInstance tInstance) {
             String charsetName = StringAttribute.charsetName(tInstance);
             try {
-                return value.getString().getBytes(charsetName);
+                return new WrappingByteSource(value.getString().getBytes(charsetName));
             } catch (UnsupportedEncodingException e) {
                 throw new UnsupportedCharsetException("<unknown>", "<unknown>", charsetName);
             }
@@ -316,11 +318,11 @@ public abstract class TString extends TClass
             return String.valueOf(object);
         }
 
-        static String getString(byte[] bytes, TInstance tInstance) {
+        static String getString(ByteSource bs, TInstance tInstance) {
             String charsetName = StringAttribute.charsetName(tInstance);
             String asString;
             try {
-                asString = new String(bytes, charsetName);
+                asString = new String(bs.byteArray(), bs.byteArrayOffset(), bs.byteArrayLength(), charsetName);
             } catch (UnsupportedEncodingException e) {
                 throw new UnsupportedCharsetException("<unknown>", "<unknown>", charsetName);
             }
