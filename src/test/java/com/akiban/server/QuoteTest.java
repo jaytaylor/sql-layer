@@ -157,7 +157,7 @@ public class QuoteTest {
         catch (UnsupportedEncodingException ex) {
           throw new RuntimeException(ex);
         }
-        AkibanAppender appender = AkibanAppender.of(os, pr, null);
+        AkibanAppender appender = AkibanAppender.of(os, pr, "UTF-8");
         Quote.writeBytes(appender, testBytes, preBytes, testBytes.length - preBytes - postBytes, charset, quote);
         pr.flush();
 
