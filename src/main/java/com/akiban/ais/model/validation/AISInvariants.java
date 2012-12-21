@@ -39,9 +39,6 @@ import com.akiban.server.error.DuplicateSQLJJarNameException;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.NameIsNullException;
 
-import java.util.HashSet;
-import java.util.Set;
-
 public class AISInvariants {
 
     public static void checkNullField (Object field, String owner, String fieldName, String reference) {
