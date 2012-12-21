@@ -38,7 +38,7 @@ import java.util.Random;
 public abstract class Rand extends TScalarBase {
 
     private static final int RAND_INDEX = 0; // the cached Random Object's index
-    
+
     public static TScalar[] create(TClass inputType, TClass resultType)
     {
         return new TScalar[]
@@ -46,9 +46,9 @@ public abstract class Rand extends TScalarBase {
             new Rand(inputType, resultType)
             {
                 @Override
-                protected long getSeed(LazyList<? extends PValueSource> inputs)
+                protected Random getRandom(LazyList<? extends PValueSource> inputs)
                 {
-                    return System.currentTimeMillis();
+                    return new Random();
                 }
 
                 @Override
@@ -60,12 +60,13 @@ public abstract class Rand extends TScalarBase {
             new Rand(inputType, resultType)
             {
                 @Override
-                protected long getSeed(LazyList<? extends PValueSource> inputs)
+                protected Random getRandom(LazyList<? extends PValueSource> inputs)
                 {
                     PValueSource input = inputs.get(0);
                     if (input.isNull())
-                        return System.currentTimeMillis();
-                    else return input.getInt64();
+                        return new Random();
+                    else
+                        return new Random(inputs.get(0).getInt64());
                 }
 
                 @Override
@@ -77,7 +78,7 @@ public abstract class Rand extends TScalarBase {
         };
     }
     
-    protected abstract  long getSeed (LazyList<? extends PValueSource> inputs);
+    protected abstract  Random getRandom (LazyList<? extends PValueSource> inputs);
     protected final TClass inputType;
     protected final TClass resultType;
 
@@ -123,8 +124,8 @@ public abstract class Rand extends TScalarBase {
         if (context.hasExectimeObject(RAND_INDEX))
             rand = (Random) context.exectimeObjectAt(RAND_INDEX);
         else
-            context.putExectimeObject(RAND_INDEX,
-                                      rand = new Random(getSeed(inputs)));
+            context.putExectimeObject(RAND_INDEX, rand = getRandom(inputs));
+
         out.putDouble(rand.nextDouble());
     }
 }
