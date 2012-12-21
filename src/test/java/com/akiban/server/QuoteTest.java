@@ -92,7 +92,7 @@ public class QuoteTest {
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         PrintWriter pr = new PrintWriter(os);
-        AkibanAppender appender = AkibanAppender.of(os, pr, null);
+        AkibanAppender appender = AkibanAppender.of(os, pr, "UTF-16");
         byte[] bytes = "some string".getBytes("UTF-16");
         Quote.writeBytes(appender, bytes, 0, bytes.length, Charset.forName("UTF-16"), Quote.NONE);
     }
