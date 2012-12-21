@@ -34,6 +34,5 @@ import com.akiban.server.types.AkType;
 interface RowDataCreator<S> {
     S eval(RowBase row, int f);
     boolean isNull(S source);
-    S createId(long id);
     void put(S source, NewRow into, FieldDef fieldDef, int f);
 }

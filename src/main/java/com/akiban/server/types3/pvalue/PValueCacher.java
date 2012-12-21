@@ -32,4 +32,5 @@ public interface PValueCacher {
     void cacheToValue(Object cached, TInstance tInstance, PBasicValueTarget target);
     Object valueToCache(PBasicValueSource value, TInstance tInstance);
     Object sanitize(Object object);
+    boolean canConvertToValue(Object cached);
 }
