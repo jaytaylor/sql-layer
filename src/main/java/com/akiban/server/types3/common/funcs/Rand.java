@@ -34,13 +34,10 @@ import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TScalarBase;
 
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class Rand extends TScalarBase {
 
     private static final int RAND_INDEX = 0; // the cached Random Object's index
-    private static final int DELTA = 100;
-    private static final AtomicLong counter = new AtomicLong(DELTA);
 
     public static TScalar[] create(TClass inputType, TClass resultType)
     {
@@ -51,7 +48,7 @@ public abstract class Rand extends TScalarBase {
                 @Override
                 protected Random getRandom(LazyList<? extends PValueSource> inputs)
                 {
-                    return new Random(System.currentTimeMillis() + counter.getAndAdd(DELTA));
+                    return new Random();
                 }
 
                 @Override
@@ -67,7 +64,7 @@ public abstract class Rand extends TScalarBase {
                 {
                     PValueSource input = inputs.get(0);
                     if (input.isNull())
-                        return new Random(System.currentTimeMillis() + counter.getAndAdd(DELTA));
+                        return new Random();
                     else
                         return new Random(inputs.get(0).getInt64());
                 }
