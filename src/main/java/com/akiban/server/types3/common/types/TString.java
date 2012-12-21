@@ -52,11 +52,13 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
+import com.akiban.util.Strings;
 import com.akiban.util.WrappingByteSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.Formatter;
 
 /**
@@ -89,6 +91,20 @@ public abstract class TString extends TClass
         STRING {
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+                if (source.hasCacheValue() && out.canAppendBytes()) {
+                    Object cached = source.getObject();
+                    if (cached instanceof ByteSource) {
+                        String tInstanceCharset = StringAttribute.charsetName(instance);
+                        Charset appenderCharset = out.appendBytesAs();
+                        if (Strings.equalCharsets(appenderCharset, tInstanceCharset)) {
+                            out.appendBytes((ByteSource) cached);
+                            return;
+                        }
+                    }
+                    else {
+                        logger.warn("couldn't append TString directly; bad cached object. {}", source);
+                    }
+                }
                 out.append(source.getString());
             }
 

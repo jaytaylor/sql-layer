@@ -92,7 +92,7 @@ public class QuoteTest {
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         PrintWriter pr = new PrintWriter(os);
-        AkibanAppender appender = AkibanAppender.of(os, pr);
+        AkibanAppender appender = AkibanAppender.of(os, pr, null);
         byte[] bytes = "some string".getBytes("UTF-16");
         Quote.writeBytes(appender, bytes, 0, bytes.length, Charset.forName("UTF-16"), Quote.NONE);
     }
@@ -157,7 +157,7 @@ public class QuoteTest {
         catch (UnsupportedEncodingException ex) {
           throw new RuntimeException(ex);
         }
-        AkibanAppender appender = AkibanAppender.of(os, pr);
+        AkibanAppender appender = AkibanAppender.of(os, pr, null);
         Quote.writeBytes(appender, testBytes, preBytes, testBytes.length - preBytes - postBytes, charset, quote);
         pr.flush();
 

@@ -105,7 +105,7 @@ public class ServerValueEncoder
         // If the target encoding is UTF-8, we can support
         // canAppendBytes() for properly encoded source strings.
         if ("UTF-8".equals(encoding))
-            appender = AkibanAppender.of(byteStream, printWriter);
+            appender = AkibanAppender.of(byteStream, printWriter, "UTF-8");
         else
             appender = AkibanAppender.of(printWriter);
     }
