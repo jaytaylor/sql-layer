@@ -267,12 +267,6 @@ public final class ExpressionGenerators {
             public TPreparedExpression getTPreparedExpression() {
                 final TPreparedExpression expr = input.getTPreparedExpression();
                 return new TPreparedExpression() {
-     
-                    @Override
-                    public void reset()
-                    {
-                        // does thing
-                    }
                     
                     @Override
                     public TPreptimeValue evaluateConstant(QueryContext queryContext) {

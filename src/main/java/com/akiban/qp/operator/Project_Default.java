@@ -34,6 +34,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.*;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
@@ -219,6 +220,11 @@ class Project_Default extends Operator
                 CursorLifecycle.checkIdle(this);
                 input.open();
                 idle = false;
+                
+                // one list of evaluatables per execution
+                if (pExpressions != null)
+                    pEvalExpr = ProjectedRow.createTEvaluatableExpressions(pExpressions, context);
+
             } finally {
                 TAP_OPEN.out();
             }
@@ -236,7 +242,7 @@ class Project_Default extends Operator
                 if ((inputRow = input.next()) != null) {
                     projectedRow =
                         inputRow.rowType() == rowType
-                        ? new ProjectedRow(projectType, inputRow, context, projections, pExpressions, tInstances)
+                        ? new ProjectedRow(projectType, inputRow, context, projections, pEvalExpr, tInstances)
                         : inputRow;
                 }
                 if (projectedRow == null) {
@@ -255,6 +261,7 @@ class Project_Default extends Operator
             if (!idle) {
                 input.close();
                 idle = true;
+                pEvalExpr = null;
             }
         }
 
@@ -265,10 +272,8 @@ class Project_Default extends Operator
                 close();
                 input.destroy();
                 input = null;
+                pEvalExpr = null;
             }
-            
-            for (TPreparedExpression expr : pExpressions)
-                expr.reset();
         }
 
         @Override
@@ -300,5 +305,6 @@ class Project_Default extends Operator
         // Object state
         private Cursor input; // input = null indicates destroyed.
         private boolean idle = true;
+        private List<TEvaluatableExpression> pEvalExpr = null;
     }
 }

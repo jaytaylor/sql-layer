@@ -65,12 +65,6 @@ public final class AnySubqueryTExpression extends SubqueryTExpression {
 
     private final TPreparedExpression expression;
 
-    @Override
-    public void reset()
-    {
-        // does nothing
-    }
-
     private static class InnerEvaluatable extends SubqueryTEvaluateble {
 
         @Override

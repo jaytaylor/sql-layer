@@ -136,20 +136,18 @@ public class ProjectedRow extends AbstractRow
                         Row row,
                         QueryContext context,
                         List<? extends Expression> expressions,
-                        List<? extends TPreparedExpression> pExpressions,
+                        List<TEvaluatableExpression> pEvaluatableExprs,
                         List<? extends TInstance> tInstances)
     {
         this.context = context;
         this.rowType = rowType;
         this.row = row;
         this.evaluations = createEvaluations(expressions, row, context);
-        if (pExpressions != null) {
-            this.pEvaluatableExpressions = createTEvaluatableExpressions(pExpressions, row, context);
-            this.evaluated = new boolean[pExpressions.size()];
-        } else {
-            this.pEvaluatableExpressions = null;
-            this.evaluated = null;
-        }
+        this.pEvaluatableExpressions = pEvaluatableExprs;
+        if (pEvaluatableExpressions == null)
+            evaluated = null;
+        else
+            evaluated = new boolean[pEvaluatableExpressions.size()];
         this.tInstances = tInstances;
         this.holders = expressions == null ? null : new ValueHolder[expressions.size()];
     }
@@ -189,8 +187,8 @@ public class ProjectedRow extends AbstractRow
         return result;
     }
 
-    private List<TEvaluatableExpression> createTEvaluatableExpressions
-        (List<? extends TPreparedExpression> pExpressions, Row row, QueryContext context)
+    public static List<TEvaluatableExpression> createTEvaluatableExpressions
+        (List<? extends TPreparedExpression> pExpressions, QueryContext context)
     {
         if (pExpressions == null)
             return null;

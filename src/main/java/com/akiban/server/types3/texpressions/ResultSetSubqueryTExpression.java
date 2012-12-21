@@ -39,13 +39,6 @@ import com.akiban.server.types3.pvalue.PValueSource;
 
 public class ResultSetSubqueryTExpression extends SubqueryTExpression
 {
-
-    @Override
-    public void reset()
-    {
-        // does nothing
-    }
-    
     private static final class InnerEvaluation implements TEvaluatableExpression
     {
         @Override

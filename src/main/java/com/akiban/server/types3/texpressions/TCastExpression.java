@@ -110,12 +110,6 @@ public final class TCastExpression implements TPreparedExpression {
     private final TCast cast;
     private final QueryContext preptimeContext;
 
-    @Override
-    public void reset()
-    {
-        // does thing
-    }
-
     private static class CastEvaluation implements TEvaluatableExpression {
         @Override
         public PValueSource resultValue() {

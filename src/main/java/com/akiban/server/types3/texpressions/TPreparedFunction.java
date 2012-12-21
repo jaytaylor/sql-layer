@@ -68,7 +68,6 @@ public final class TPreparedFunction implements TPreparedExpression {
         return overload.evaluateConstant(preptimeContext, overload.filterInputs(lazyInputs));
     }
 
-    private  int c = 0;
     @Override
     public TEvaluatableExpression build() {
         List<TEvaluatableExpression> children = new ArrayList<TEvaluatableExpression>(inputs.size());
@@ -78,9 +77,7 @@ public final class TPreparedFunction implements TPreparedExpression {
                 overload,
                 resultType,
                 children,
-                sharedTExecContext == null 
-                    ? sharedTExecContext = preptimeContext.createExecutionContext()
-                    : sharedTExecContext
+                preptimeContext.createExecutionContext()
                 );
     }
 
@@ -124,12 +121,6 @@ public final class TPreparedFunction implements TPreparedExpression {
     private final TInstance resultType;
     private final List<? extends TPreparedExpression> inputs;
     private final TPreptimeContext preptimeContext;
-
-    @Override
-    public void reset()
-    {
-        sharedTExecContext = null;
-    }
 
     private static final class TEvaluatableFunction implements TEvaluatableExpression {
 

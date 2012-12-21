@@ -457,7 +457,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                                                   oldRow,
                                                   queryContext,
                                                   projections,
-                                                  pProjections,
+                                                  ProjectedRow.createTEvaluatableExpressions(pProjections, context),
                                                   TInstance.createTInstances(pProjections));
                     queryContext.checkConstraints(newRow, usePValues);
                     adapter.alterRow(oldRow, newRow, oldTypeIndexes, groupChange, usePValues);

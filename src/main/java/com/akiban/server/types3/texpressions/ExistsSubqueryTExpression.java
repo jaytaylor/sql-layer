@@ -36,12 +36,6 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 
 public class ExistsSubqueryTExpression extends SubqueryTExpression
 {
-    @Override
-    public void reset()
-    {
-        // does nothing
-    }
-    
     private static final class InnerEvaluation extends SubqueryTEvaluateble
     {
         InnerEvaluation(Operator subquery,

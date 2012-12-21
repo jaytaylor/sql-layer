@@ -39,12 +39,6 @@ import com.akiban.util.AkibanAppender;
 public final class TPreparedLiteral implements TPreparedExpression {
     
     @Override
-    public void reset()
-    {
-        // does thing
-    }
-    
-    @Override
     public TInstance resultType() {
         return tInstance;
     }

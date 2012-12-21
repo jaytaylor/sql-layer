@@ -40,13 +40,6 @@ import java.util.EnumMap;
 
 public final class TNullExpression implements TPreparedExpression {
 
-    
-    @Override
-    public void reset()
-    {
-        // does thing
-    }
-    
     public TNullExpression (TInstance tInstance) {
         this.tInstance = tInstance.withNullable(true);
     }

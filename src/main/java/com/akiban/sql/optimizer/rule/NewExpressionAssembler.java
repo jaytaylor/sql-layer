@@ -298,12 +298,6 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
 
     private class TKeyComparisonPreparation extends TComparisonExpressionBase {
 
-        @Override
-        public void reset()
-        {
-            // does thing
-        }
-
         private TKeyComparisonPreparation(TPreparedExpression left, Comparison op, TPreparedExpression right,
                                           TKeyComparable comparable)
         {

@@ -35,9 +35,4 @@ public interface TPreparedExpression extends Explainable {
     TPreptimeValue evaluateConstant(QueryContext queryContext);
     TInstance resultType();
     TEvaluatableExpression build();
-    
-    /**
-     *  clean up after each <b>execution</b>
-     */
-    void reset();
 }
