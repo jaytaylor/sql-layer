@@ -80,7 +80,7 @@ public final class PersistitValuePValueSource implements PValueSource {
 
     @Override
     public boolean canGetRawValue() {
-        return false;
+        return hasRawValue();
     }
 
     private boolean needsDecoding(PUnderlying toUnderlying) {
