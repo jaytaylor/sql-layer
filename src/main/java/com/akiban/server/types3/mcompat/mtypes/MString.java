@@ -161,7 +161,7 @@ public class MString extends TString
 
         @Override
         public void readCollating(PValueSource in, TInstance typeInstance, PValueTarget out) {
-            if (in.hasRawValue())
+            if (in.canGetRawValue())
                 out.putString(in.getString(), null);
             else if (in.hasCacheValue())
                 out.putObject(in.getObject());

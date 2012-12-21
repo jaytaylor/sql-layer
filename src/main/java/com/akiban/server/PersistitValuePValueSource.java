@@ -78,6 +78,11 @@ public final class PersistitValuePValueSource implements PValueSource {
         return (cacheObject != null) && (cacheObject != NULL);
     }
 
+    @Override
+    public boolean canGetRawValue() {
+        return false;
+    }
+
     private boolean needsDecoding(PUnderlying toUnderlying) {
         assert toUnderlying == TInstance.pUnderlying(pValue.tInstance())
                 : "expected underlying " + toUnderlying + " but was set up for " + pValue.tInstance();

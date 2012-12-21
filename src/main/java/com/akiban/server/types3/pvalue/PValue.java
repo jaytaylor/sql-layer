@@ -199,13 +199,12 @@ public final class PValue implements PValueSource, PValueTarget {
     public boolean hasRawValue() {
         switch (state) {
         case UNSET:
+        case CACHE_ONLY:
             return false;
         case NULL:
         case VAL_ONLY:
         case VAL_AND_CACHE:
             return true;
-        case CACHE_ONLY:
-            return tInstance().typeClass().cacher() != null;
         default:
             throw new AssertionError(state);
         }
@@ -215,9 +214,8 @@ public final class PValue implements PValueSource, PValueTarget {
     public boolean hasCacheValue() {
         switch (state) {
         case UNSET:
-            return false;
         case VAL_ONLY:
-            return tInstance.typeClass().cacher() != null;
+            return false;
         case NULL:
         case CACHE_ONLY:
         case VAL_AND_CACHE:
@@ -225,6 +223,14 @@ public final class PValue implements PValueSource, PValueTarget {
         default:
             throw new AssertionError(state);
         }
+    }
+
+    @Override
+    public boolean canGetRawValue() {
+        if (hasRawValue())
+            return true;
+        PValueCacher cacher = tInstance.typeClass().cacher();
+        return cacher != null && cacher.canConvertToValue(oCache);
     }
 
     // PValueSource + PValueTarget

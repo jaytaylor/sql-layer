@@ -29,6 +29,7 @@ import com.akiban.server.PersistitKeyPValueSource;
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.util.WrappingByteSource;
 import com.persistit.Key;
 
 public abstract class AkCollator {
@@ -36,10 +37,11 @@ public abstract class AkCollator {
     public static String getString(PValueSource valueSource) {
         if (valueSource.isNull())
             return null;
-        else if (valueSource.hasRawValue())
+        else if (valueSource.canGetRawValue())
             return valueSource.getString();
-        else if (valueSource.hasCacheValue())
+        else if (valueSource.hasCacheValue()) {
             return (String) valueSource.getObject();
+        }
         throw new AssertionError("no value");
     }
 

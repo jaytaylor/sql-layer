@@ -328,6 +328,11 @@ public abstract class TString extends TClass
             }
             return asString;
         }
+
+        @Override
+        public boolean canConvertToValue(Object cached) {
+            return cached instanceof ByteSource;
+        }
     }
 
     public final TInstanceNormalizer PICK_RIGHT_LENGTH = new TInstanceNormalizer() {

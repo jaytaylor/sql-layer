@@ -45,11 +45,11 @@ public final class PValueTargets {
                 target.putObject(source.getObject());
                 return;
             }
-            else if (!source.hasRawValue()) {
+            else if (!source.canGetRawValue()) {
                 throw new IllegalStateException("source has only cached object, but no cacher provided: " + source);
             }
         }
-        else if (!source.hasRawValue()) {
+        else if (!source.canGetRawValue()) {
             throw new IllegalStateException("source has no value: " + source);
         }
         switch (TInstance.pUnderlying(source.tInstance())) {

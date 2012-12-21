@@ -89,6 +89,11 @@ public class PersistitKeyPValueSource implements PValueSource {
     }
 
     @Override
+    public boolean canGetRawValue() {
+        return decode().canGetRawValue();
+    }
+
+    @Override
     public boolean isNull() {
         /*
          * No need to decode the value to detect null

@@ -52,12 +52,17 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
 
     @Override
     public boolean hasRawValue() {
-        return true;
+        return ! hasCacheValue();
     }
 
     @Override
     public boolean hasCacheValue() {
         return fieldDef().column().tInstance().typeClass() instanceof TString;
+    }
+
+    @Override
+    public boolean canGetRawValue() {
+        return true;
     }
 
     @Override

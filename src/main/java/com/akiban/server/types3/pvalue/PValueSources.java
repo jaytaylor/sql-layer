@@ -485,7 +485,7 @@ public final class PValueSources {
             break;
         case STRING:
             String stringVal;
-            if (source.hasRawValue())
+            if (source.canGetRawValue())
                 stringVal = source.getString();
             else if (source.hasCacheValue())
                 stringVal = (String) source.getObject();
