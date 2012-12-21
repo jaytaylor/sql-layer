@@ -26,4 +26,16 @@
 - output: [['0.731057369148862']]
 ---
 - Statement: DEALLOCATE stm;
+--- # the context should not be re-init'd when the cursor reopens (in nested loop)
+- CreateTable: t (a int, b int);
+---
+- Statement: INSERT INTO t VALUES (1, 1), (2, 2)
+---
+- Statement: SELECT rand(3) from t a, t b;
+- output: [['0.731057369148862'],
+           ['0.07099203475193139'],
+           ['0.06712000939049956'],
+           ['0.768156984078079']]
+---
+- DropTable: t;
 ...
