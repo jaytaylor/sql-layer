@@ -223,7 +223,7 @@ class Project_Default extends Operator
                 
                 // one list of evaluatables per execution
                 if (pExpressions != null)
-                    pEvalExpr = ProjectedRow.createTEvaluatableExpressions(pExpressions, context);
+                    pEvalExpr = ProjectedRow.createTEvaluatableExpressions(pExpressions);
 
             } finally {
                 TAP_OPEN.out();

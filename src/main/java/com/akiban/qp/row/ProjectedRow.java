@@ -188,7 +188,7 @@ public class ProjectedRow extends AbstractRow
     }
 
     public static List<TEvaluatableExpression> createTEvaluatableExpressions
-        (List<? extends TPreparedExpression> pExpressions, QueryContext context)
+        (List<? extends TPreparedExpression> pExpressions)
     {
         if (pExpressions == null)
             return null;
