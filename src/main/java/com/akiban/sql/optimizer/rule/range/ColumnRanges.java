@@ -224,7 +224,7 @@ public final class ColumnRanges {
         }
     }
 
-    private static ColumnRanges inListToRange (InListCondition inListCondition) {
+    private static ColumnRanges inListToRange(InListCondition inListCondition) {
         final ColumnExpression columnExpression;
         if (inListCondition.getOperand() instanceof ColumnExpression) {
             columnExpression = (ColumnExpression)inListCondition.getOperand();
