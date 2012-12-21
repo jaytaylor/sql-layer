@@ -63,7 +63,7 @@ import java.util.Formatter;
 
 /**
  * Base types for VARCHAR types. Its base type is PUnderlying.STRING. Its cached object can either be a String
- * (representing a collated string with a lossy collation) or a ByteSource of the string's bytes.
+ * (representing a collated string with a lossy collation) or a ByteSource wrapping the string's bytes.
  */
 public abstract class TString extends TClass
 {

@@ -39,9 +39,8 @@ public abstract class AkCollator {
             return null;
         else if (valueSource.canGetRawValue())
             return valueSource.getString();
-        else if (valueSource.hasCacheValue()) {
+        else if (valueSource.hasCacheValue())
             return (String) valueSource.getObject();
-        }
         throw new AssertionError("no value");
     }
 
