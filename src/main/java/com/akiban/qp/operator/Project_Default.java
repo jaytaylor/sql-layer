@@ -220,10 +220,6 @@ class Project_Default extends Operator
                 CursorLifecycle.checkIdle(this);
                 input.open();
                 idle = false;
-                
-                // one list of evaluatables per execution
-                if (pExpressions != null)
-                    pEvalExpr = ProjectedRow.createTEvaluatableExpressions(pExpressions);
 
             } finally {
                 TAP_OPEN.out();
@@ -261,7 +257,6 @@ class Project_Default extends Operator
             if (!idle) {
                 input.close();
                 idle = true;
-                pEvalExpr = null;
             }
         }
 
@@ -300,6 +295,11 @@ class Project_Default extends Operator
         {
             super(context);
             this.input = input;
+            // one list of evaluatables per execution    
+            if (pExpressions != null)
+                    pEvalExpr = ProjectedRow.createTEvaluatableExpressions(pExpressions);
+            else
+                pEvalExpr = null;
         }
 
         // Object state
