@@ -359,7 +359,7 @@ public final class TCastsRegistry {
             PValueSource firstValue = source.value();
             TInstance result;
             if (firstValue != null) {
-                PValue intermediateValue = new PValue(first.targetClass().underlyingType());
+                PValue intermediateValue = new PValue(first.targetClass().instance(true));
                 TExecutionContext context = new TExecutionContext(
                         Collections.singletonList(source.instance()),
                         intermediateTInstance,
@@ -387,7 +387,7 @@ public final class TCastsRegistry {
             }
             PValue tmp = (PValue) context.exectimeObjectAt(TMP_PVALUE);
             if (tmp == null) {
-                tmp = new PValue(first.targetClass().underlyingType());
+                tmp = new PValue(first.targetClass().instance(true));
                 context.putExectimeObject(TMP_PVALUE, tmp);
             }
             // TODO cache

@@ -94,7 +94,7 @@ public final class AnySubqueryTExpression extends SubqueryTExpression {
         private InnerEvaluatable(Operator subquery, TEvaluatableExpression evaluation, RowType outerRowType,
                                        RowType innerRowType, int bindingPosition)
         {
-            super(subquery, outerRowType, innerRowType, bindingPosition, PUnderlying.BOOL);
+            super(subquery, outerRowType, innerRowType, bindingPosition, AkBool.INSTANCE.instance(true));
             this.evaluation = evaluation;
         }
 

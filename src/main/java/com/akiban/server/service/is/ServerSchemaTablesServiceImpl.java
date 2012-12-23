@@ -45,13 +45,17 @@ import com.akiban.server.AkServerInterface;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.monitor.CursorMonitor;
 import com.akiban.server.service.monitor.MonitorService;
 import com.akiban.server.service.monitor.MonitorStage;
+import com.akiban.server.service.monitor.PreparedStatementMonitor;
 import com.akiban.server.service.monitor.ServerMonitor;
 import com.akiban.server.service.monitor.SessionMonitor;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
+import com.akiban.util.tap.Tap;
+import com.akiban.util.tap.TapReport;
 import com.google.inject.Inject;
 
 public class ServerSchemaTablesServiceImpl
@@ -65,6 +69,9 @@ public class ServerSchemaTablesServiceImpl
     static final TableName SERVER_PARAMETERS = new TableName (SCHEMA_NAME, "server_parameters");
     static final TableName SERVER_MEMORY_POOLS = new TableName (SCHEMA_NAME, "server_memory_pools");
     static final TableName SERVER_GARBAGE_COLLECTORS = new TableName (SCHEMA_NAME, "server_garbage_collectors");
+    static final TableName SERVER_TAPS = new TableName (SCHEMA_NAME, "server_taps");
+    static final TableName SERVER_PREPARED_STATEMENTS = new TableName (SCHEMA_NAME, "server_prepared_statements");
+    static final TableName SERVER_CURSORS = new TableName (SCHEMA_NAME, "server_cursors");
     
     private final MonitorService monitor;
     private final ConfigurationService configService;
@@ -98,6 +105,12 @@ public class ServerSchemaTablesServiceImpl
         attach (ais, true, SERVER_MEMORY_POOLS, ServerMemoryPools.class);
         //SERVER_GARBAGE_COLLECTIONS
         attach (ais, true, SERVER_GARBAGE_COLLECTORS, ServerGarbageCollectors.class);
+        //SERVER_TAPS
+        attach (ais, true, SERVER_TAPS, ServerTaps.class);
+        //SERVER_PREPARED_STATEMENTS
+        attach (ais, true, SERVER_PREPARED_STATEMENTS, PreparedStatements.class);
+        //SERVER_CURSORS
+        attach (ais, true, SERVER_CURSORS, Cursors.class);
     }
 
     @Override
@@ -225,6 +238,7 @@ public class ServerSchemaTablesServiceImpl
                                               session.getStatementCount(),
                                               session.getCurrentStatement(),
                                               null, null,
+                                              session.getCurrentStatementPreparedName(),
                                               ++rowCounter);
                 ((FromObjectValueSource)row.eval(2)).setExplicitly(session.getStartTimeMillis()/1000, AkType.TIMESTAMP);
                 long queryStartTime = session.getCurrentStatementStartTimeMillis();
@@ -389,6 +403,149 @@ public class ServerSchemaTablesServiceImpl
         }
     }
 
+    private class ServerTaps extends BasicFactoryBase {
+        private TapReport[] getAllReports() {
+            return Tap.getReport(".*");
+        }
+
+        public ServerTaps(TableName sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan (getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            return getAllReports().length;
+        }
+
+        private class Scan extends BaseScan {
+            private final TapReport[] reports;
+            private int it = 0;
+
+            public Scan(RowType rowType) {
+                super(rowType);
+                reports = getAllReports();
+            }
+
+            @Override
+            public Row next() {
+                if(it >= reports.length) {
+                    return null;
+                }
+                TapReport report = reports[it++];
+                return new ValuesRow (rowType,
+                                      report.getName(),
+                                      report.getInCount(),
+                                      report.getOutCount(),
+                                      report.getCumulativeTime(),
+                                      ++rowCounter);
+            }
+        }
+    }
+
+    private class PreparedStatements extends BasicFactoryBase {
+
+        public PreparedStatements(TableName sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan (getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            long total = 0;
+            for (SessionMonitor session : monitor.getSessionMonitors())
+                total += session.getPreparedStatements().size();
+            return total;
+        }
+        
+        private class Scan extends BaseScan {
+            final Iterator<SessionMonitor> sessions = monitor.getSessionMonitors().iterator(); 
+            Iterator<PreparedStatementMonitor> statements = null;
+
+            public Scan(RowType rowType) {
+                super(rowType);
+            }
+
+            @Override
+            public Row next() {
+                while ((statements == null) ||
+                       !statements.hasNext()) {
+                    if (!sessions.hasNext()) {
+                        return null;
+                    }
+                    statements = sessions.next().getPreparedStatements().iterator();
+                }
+                PreparedStatementMonitor preparedStatement = statements.next();
+                ValuesRow row = new ValuesRow(rowType,
+                                              preparedStatement.getSessionId(),
+                                              preparedStatement.getName(),
+                                              preparedStatement.getSQL(),
+                                              null, // see below
+                                              ++rowCounter);
+                ((FromObjectValueSource)row.eval(3)).setExplicitly(preparedStatement.getPrepareTimeMillis()/1000, AkType.TIMESTAMP);
+                return row;
+            }
+        }
+    }
+
+    private class Cursors extends BasicFactoryBase {
+
+        public Cursors(TableName sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan (getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            long total = 0;
+            for (SessionMonitor session : monitor.getSessionMonitors())
+                total += session.getCursors().size();
+            return total;
+        }
+        
+        private class Scan extends BaseScan {
+            final Iterator<SessionMonitor> sessions = monitor.getSessionMonitors().iterator(); 
+            Iterator<CursorMonitor> statements = null;
+
+            public Scan(RowType rowType) {
+                super(rowType);
+            }
+
+            @Override
+            public Row next() {
+                while ((statements == null) ||
+                       !statements.hasNext()) {
+                    if (!sessions.hasNext()) {
+                        return null;
+                    }
+                    statements = sessions.next().getCursors().iterator();
+                }
+                CursorMonitor cursor = statements.next();
+                ValuesRow row = new ValuesRow(rowType,
+                                              cursor.getSessionId(),
+                                              cursor.getName(),
+                                              cursor.getSQL(),
+                                              cursor.getPreparedStatementName(),
+                                              null, // see below
+                                              ++rowCounter);
+                ((FromObjectValueSource)row.eval(4)).setExplicitly(cursor.getCreationTimeMillis()/1000, AkType.TIMESTAMP);
+                return row;
+            }
+        }
+    }
+
     static AkibanInformationSchema createTablesToRegister() {
         NewAISBuilder builder = AISBBasedBuilder.create();
         
@@ -412,7 +569,8 @@ public class ServerSchemaTablesServiceImpl
             .colBigInt("query_count", false)
             .colString("last_query_executed", PATH_MAX, true)
             .colTimestamp("query_start_time", true)
-            .colTimestamp("query_end_time", true);
+            .colTimestamp("query_end_time", true)
+            .colString("prepared_name", IDENT_MAX, true);
         
         builder.userTable(ERROR_CODES)
             .colString("code", 5, false)
@@ -435,6 +593,25 @@ public class ServerSchemaTablesServiceImpl
             .colString("name", IDENT_MAX, false)
             .colBigInt("total_count", false)
             .colBigInt("total_milliseconds", false);
+
+        builder.userTable(SERVER_TAPS)
+            .colString("tap_name", IDENT_MAX, false)
+            .colBigInt("in_count", false)
+            .colBigInt("out_count", false)
+            .colBigInt("total_nanoseconds", false);
+
+        builder.userTable(SERVER_PREPARED_STATEMENTS)
+            .colBigInt("session_id", false)
+            .colString("prepared_name", IDENT_MAX, true)
+            .colString("statement", PATH_MAX, true)
+            .colTimestamp("prepare_time", true);
+
+        builder.userTable(SERVER_CURSORS)
+            .colBigInt("session_id", false)
+            .colString("cursor_name", IDENT_MAX, true)
+            .colString("statement", PATH_MAX, true)
+            .colString("prepared_name", IDENT_MAX, true)
+            .colTimestamp("creation_time", true);
 
         return builder.ais(false);
     }

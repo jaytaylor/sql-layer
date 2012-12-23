@@ -81,7 +81,7 @@ public final class OverlayingRow extends AbstractRow {
         }
         else {
             if (pOverlays[index] == null)
-                pOverlays[index] = new PValue(underlying.rowType().typeInstanceAt(index).typeClass().underlyingType());
+                pOverlays[index] = new PValue(underlying.rowType().typeInstanceAt(index));
             PValueTargets.copyFrom(object,  pOverlays[index]);
         }
         return this;

@@ -126,10 +126,10 @@
 - output: [[!dc dc]]
 ---
 - JMX: com.akiban:type=Configuration
-- set: QueryTimeoutSec
-- params: ['2']
+- set: QueryTimeoutMilli
+- params: ['2000']
 ---
 - JMX: com.akiban:type=Configuration
-- get: QueryTimeoutSec
-- output: [['2']]
+- get: QueryTimeoutMilli
+- output: [['2000']]
 ...

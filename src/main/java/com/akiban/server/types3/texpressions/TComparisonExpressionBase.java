@@ -35,7 +35,6 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -50,20 +49,24 @@ public abstract class TComparisonExpressionBase implements TPreparedExpression {
         // First check both sides. If either is a constant null, the result is null
         TPreptimeValue leftPrep = left.evaluateConstant(queryContext);
         PValueSource oneVal = leftPrep.value();
-        if (oneVal != null && oneVal.isNull())
-            return new TPreptimeValue(AkBool.INSTANCE.instance(true), PValueSources.getNullSource(PUnderlying.BOOL));
+        if (oneVal != null && oneVal.isNull()) {
+            TInstance instance = AkBool.INSTANCE.instance(true);
+            return new TPreptimeValue(instance, PValueSources.getNullSource(instance));
+        }
 
         TPreptimeValue rightPrep = right.evaluateConstant(queryContext);
         PValueSource twoVal = rightPrep.value();
-        if (twoVal != null && twoVal.isNull())
-            return new TPreptimeValue(AkBool.INSTANCE.instance(true), PValueSources.getNullSource(PUnderlying.BOOL));
+        if (twoVal != null && twoVal.isNull()) {
+            TInstance instance = AkBool.INSTANCE.instance(true);
+            return new TPreptimeValue(instance, PValueSources.getNullSource(instance));
+        }
 
         // Neither side is constant null. If both sides are constant, evaluate
         PValueSource resultSource = null;
         boolean nullable;
         if (oneVal != null && twoVal != null) {
             final boolean result = doEval(leftPrep.instance(), oneVal, rightPrep.instance(), twoVal);
-            resultSource = new PValue(result);
+            resultSource = new PValue(AkBool.INSTANCE.instance(false), result);
             nullable = resultSource.isNull();
         }
         else {
@@ -148,7 +151,7 @@ public abstract class TComparisonExpressionBase implements TPreparedExpression {
         @Override
         public void evaluate() {
             if (value == null)
-                value = new PValue(PUnderlying.BOOL);
+                value = new PValue(AkBool.INSTANCE.instance(true));
             left.evaluate();
             PValueSource leftSource = left.resultValue();
             if (leftSource.isNull()) {

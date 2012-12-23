@@ -70,7 +70,7 @@ public abstract class TClassBase extends TClass
              out.putNull();
          }
          else {
-             PUnderlying underlyingType = in.getUnderlyingType();
+             PUnderlying underlyingType = TInstance.pUnderlying(in.tInstance());
              if (underlyingType != PUnderlying.STRING && underlyingType != PUnderlying.BYTES) {
                  // This isn't efficient, but it normalizes conversions of different inputs conveniently.
                  // This method isn't used in any tight loops, so some inefficiency is okay.
@@ -105,7 +105,7 @@ public abstract class TClassBase extends TClass
                  default:
                      throw new AssertionError(underlyingType + ": " + in);
                  }
-                 in = new PValue(asString);
+                 in = new PValue(MString.varcharFor(asString), asString);
              }
             parser.parse(context, in, out);
          }

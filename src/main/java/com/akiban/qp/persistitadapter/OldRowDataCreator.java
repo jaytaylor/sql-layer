@@ -47,13 +47,6 @@ final class OldRowDataCreator implements RowDataCreator<ValueSource> {
     }
 
     @Override
-    public ValueSource createId(long id) {
-        FromObjectValueSource objectSource = new FromObjectValueSource();
-        objectSource.setExplicitly(id, AkType.LONG);
-        return objectSource;
-    }
-
-    @Override
     public void put(ValueSource source, NewRow into, FieldDef fieldDef, int f) {
         into.put(f, target.convertFromSource(source));
     }

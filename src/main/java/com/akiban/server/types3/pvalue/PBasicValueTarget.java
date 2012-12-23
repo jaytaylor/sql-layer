@@ -27,9 +27,10 @@
 package com.akiban.server.types3.pvalue;
 
 import com.akiban.server.collation.AkCollator;
+import com.akiban.server.types3.TInstance;
 
 public interface PBasicValueTarget {
-    PUnderlying getUnderlyingType();
+    TInstance tInstance();
 
     void putNull();
 

@@ -39,7 +39,6 @@ import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -72,12 +71,12 @@ public final class RowsBuilder {
             PValueSource[] pvalues = new PValueSource[values.length];
             for (int i = 0; i < values.length; ++i) {
                 PValueSource psource = PValueSources.fromObject(values[i], null).value();
-                if (psource.getUnderlyingType() != tinsts[i].typeClass().underlyingType()) {
+                if (!psource.tInstance().equalsExcludingNullable(tinsts[i])) {
                     // This assumes that anything that doesn't match is a string.
                     TExecutionContext context = new TExecutionContext(null,
                                                                       tinsts[i],
                                                                       null);
-                    PValue pvalue = new PValue(tinsts[i].typeClass().underlyingType());
+                    PValue pvalue = new PValue(tinsts[i]);
                     tinsts[i].typeClass().fromObject(context, psource, pvalue);
                     psource = pvalue;
                 }
@@ -117,9 +116,9 @@ public final class RowsBuilder {
         ArgumentValidation.isEQ("values.length", pvalues.length, tinsts.length);
         for (int i=0; i < pvalues.length; ++i) {
             PValueSource pvalue = pvalues[i];
-            PUnderlying valueType = pvalue.getUnderlyingType();
-            PUnderlying requiredType = tinsts[i].typeClass().underlyingType();
-            if (valueType != requiredType) {
+            TInstance valueType = pvalue.tInstance();
+            TInstance requiredType = tinsts[i];
+            if (!valueType.equalsExcludingNullable(requiredType)) {
                 throw new IllegalArgumentException("type at " + i + " must be " + requiredType + ", is " + valueType);
             }
         }

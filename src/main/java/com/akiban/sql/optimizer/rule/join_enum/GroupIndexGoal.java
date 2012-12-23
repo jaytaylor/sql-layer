@@ -176,6 +176,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 conditions.addAll(conditionSource);
             }
         }
+        columnsToRanges = null;
     }
 
     public void updateRequiredColumns(Collection<JoinOperator> joins,
@@ -1278,6 +1279,10 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         }
     }
 
+    // Too-many-way UNION can consume too many resources (and overflow
+    // the stack explaining).
+    protected static int COLUMN_RANGE_MAX_SEGMENTS_DEFAULT = 16;
+
     // Get Range-expressible conditions for given column.
     protected ColumnRanges rangeForIndex(ExpressionNode expressionNode) {
         if (expressionNode instanceof ColumnExpression) {
@@ -1291,6 +1296,20 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                         if (oldRange != null)
                             range = ColumnRanges.andRanges(range, oldRange);
                         columnsToRanges.put(rangeColumn, range);
+                    }
+                }
+                if (!columnsToRanges.isEmpty()) {
+                    int maxSegments;
+                    String prop = queryGoal.getRulesContext().getProperty("columnRangeMaxSegments");
+                    if (prop != null)
+                        maxSegments = Integer.parseInt(prop);
+                    else
+                        maxSegments = COLUMN_RANGE_MAX_SEGMENTS_DEFAULT;
+                    Iterator<ColumnRanges> iter = columnsToRanges.values().iterator();
+                    while (iter.hasNext()) {
+                        if (iter.next().getSegments().size() > maxSegments) {
+                            iter.remove();
+                        }
                     }
                 }
             }
