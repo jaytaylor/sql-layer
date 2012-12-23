@@ -69,7 +69,7 @@ public abstract class SchemaRulesContext extends RulesContext
         super.initDone();
         assert (schema != null) : "initSchema() not called";
         assert (functionsRegistry != null) : "initFunctionsRegistry() not called";
-      //assert (costEstimator != null) : "initCostEstimator() not called";
+        assert (costEstimator != null) : "initCostEstimator() not called";
     }
 
     public Schema getSchema() {

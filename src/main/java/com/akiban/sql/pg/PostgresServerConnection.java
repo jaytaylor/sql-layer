@@ -973,7 +973,6 @@ public class PostgresServerConnection extends ServerSessionBase
         return server.getStatementCache(Arrays.asList(parser.getFeatures(),
                                                       defaultSchemaName,
                                                       getProperty("OutputFormat", "table"),
-                                                      getBooleanProperty("cbo", true),
                                                       getBooleanProperty("newtypes", false)),
                                         ais.getGeneration());
     }
@@ -1261,7 +1260,6 @@ public class PostgresServerConnection extends ServerSessionBase
             "parserInfixLogical".equals(key) ||
             "parserDoubleQuoted".equals(key) ||
             "columnAsFunc".equals(key) ||
-            "cbo".equals(key) ||
             "newtypes".equals(key)) {
             if (parsedGenerators != null)
                 rebuildCompiler();
