@@ -98,7 +98,6 @@ import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.error.NoSuchSequenceException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
-import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.error.UnsupportedDropException;
@@ -111,8 +110,10 @@ import com.akiban.server.store.PersistitStore;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -121,7 +122,6 @@ import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.persistit.Exchange;
-import com.persistit.exception.PersistitException;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
@@ -183,6 +183,16 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
 
         @Override
+        public String getCurrentSchema() {
+            return delegate.getCurrentSchema();
+        }
+
+        @Override
+        public int getSessionId() {
+            return delegate.getSessionId();
+        }
+
+        @Override
         public void notifyClient(NotificationLevel level, ErrorCode errorCode, String message) {
             delegate.notifyClient(level, errorCode, message);
         }
@@ -198,8 +208,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
 
         @Override
-        public long getQueryTimeoutSec() {
-            return delegate.getQueryTimeoutSec();
+        public long getQueryTimeoutMilli() {
+            return delegate.getQueryTimeoutMilli();
         }
     }
 
@@ -364,9 +374,18 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     final String defaultValue = newCol.getDefaultValue();
                     final PValueSource defaultValueSource;
                     if(defaultValue == null) {
-                        defaultValueSource = PValueSources.getNullSource(newInst.typeClass().underlyingType());
+                        defaultValueSource = PValueSources.getNullSource(newInst);
                     } else {
-                        defaultValueSource = new PValue(defaultValue);
+                        PValue defaultPValue = new PValue(newInst);
+                        TInstance defInstance = MString.VARCHAR.instance(defaultValue.length(), defaultValue == null);
+                        TExecutionContext executionContext = new TExecutionContext(
+                                Collections.singletonList(defInstance),
+                                newInst,
+                                queryContext
+                        );
+                        PValue defaultSource = new PValue(MString.varcharFor(defaultValue), defaultValue);
+                        newInst.typeClass().fromObject(executionContext, defaultSource, defaultPValue);
+                        defaultValueSource = defaultPValue;
                     }
                     pProjections.add(new TPreparedLiteral(newInst, defaultValueSource));
                 } else {
@@ -443,7 +462,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             while((oldRow = cursor.next()) != null) {
                 RowType oldType = oldRow.rowType();
                 if(oldType == origTableType) {
-                    Row newRow = new ProjectedRow(newTableType, oldRow, queryContext, projections, pProjections);
+                    Row newRow = new ProjectedRow(newTableType,
+                                                  oldRow,
+                                                  queryContext,
+                                                  projections,
+                                                  pProjections,
+                                                  TInstance.createTInstances(pProjections));
                     queryContext.checkConstraints(newRow, usePValues);
                     adapter.alterRow(oldRow, newRow, oldTypeIndexes, groupChange, usePValues);
                 } else {

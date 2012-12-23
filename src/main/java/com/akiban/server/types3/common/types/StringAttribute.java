@@ -52,8 +52,7 @@ public enum StringAttribute implements Attribute
             return (CharacterTypeAttributes) cacheRaw;
         }
         CharacterTypeAttributes result;
-        int charsetId = tInstance.attribute(CHARSET);
-        String charsetName = StringFactory.Charset.values()[charsetId].name();
+        String charsetName = charsetName(tInstance);
         int collationId = tInstance.attribute(COLLATION);
         if (collationId == StringFactory.NULL_COLLATION_ID) {
             result = new CharacterTypeAttributes(charsetName, null, null);
@@ -66,6 +65,11 @@ public enum StringAttribute implements Attribute
         }
         tInstance.setMetaData(result);
         return result;
+    }
+
+    public static String charsetName(TInstance tInstance) {
+        int charsetId = tInstance.attribute(CHARSET);
+        return StringFactory.Charset.values()[charsetId].name();
     }
 
     public static TInstance copyWithCollation(TInstance tInstance, CharacterTypeAttributes cattrs) {

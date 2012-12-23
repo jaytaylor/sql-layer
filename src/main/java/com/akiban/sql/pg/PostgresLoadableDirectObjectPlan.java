@@ -39,6 +39,7 @@ import java.util.List;
 import java.io.IOException;
 
 public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
+                                       implements PostgresCursorGenerator<DirectObjectCursor>
 {
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: execute shared");
     private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: acquire shared lock");
@@ -95,6 +96,24 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
     }
 
     @Override
+    public boolean canSuspend(PostgresServerSession server) {
+        return true;
+    }
+
+    @Override
+    public DirectObjectCursor openCursor(PostgresQueryContext context) {
+        DirectObjectCursor cursor = plan.cursor(context);
+        cursor.open();
+        return cursor;
+    }
+
+    public void closeCursor(DirectObjectCursor cursor) {
+        if (cursor != null) {
+            cursor.close();
+        }
+    }
+    
+    @Override
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
@@ -104,10 +123,9 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
         PostgresDirectObjectCopier copier = null;
         context = PostgresLoadablePlan.setParameters(context, invocation, usesPValues());
         ServerCallContextStack.push(context, invocation);
+        boolean suspended = false;
         try {
-            cursor = plan.cursor(context);
-            cursor.open();
-            List<?> row;
+            cursor = context.startCursor(this);
             switch (outputMode) {
             case TABLE:
                 outputter = new PostgresDirectObjectOutputter(context, this);
@@ -118,28 +136,35 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
                 copier.respond();
                 break;
             }
-            while ((row = cursor.next()) != null) {
-                if (row.isEmpty()) {
-                    messenger.flush();
+            if (cursor != null) {
+                List<?> row;
+                while ((row = cursor.next()) != null) {
+                    if (row.isEmpty()) {
+                        messenger.flush();
+                    }
+                    else {
+                        outputter.output(row, usesPValues());
+                        nrows++;
+                    }
+                    if ((maxrows > 0) && (nrows >= maxrows)) {
+                        suspended = true;
+                        break;
+                    }
                 }
-                else {
-                    outputter.output(row, usesPValues());
-                    nrows++;
-                }
-                if ((maxrows > 0) && (nrows >= maxrows))
-                    break;
             }
             if (copier != null) {
                 copier.done();
             }
         }
         finally {
-            if (cursor != null) {
-                cursor.close();
-            }
+            suspended = context.finishCursor(this, cursor, suspended);            
             ServerCallContextStack.pop(context, invocation);
         }
-        {        
+        if (suspended) {
+            messenger.beginMessage(PostgresMessages.PORTAL_SUSPENDED_TYPE.code());
+            messenger.sendMessage();
+        }
+        else {        
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
             if (copier != null)
                 messenger.writeString("COPY"); // Make CopyManager happy.

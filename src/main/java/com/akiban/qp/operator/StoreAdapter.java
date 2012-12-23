@@ -77,8 +77,8 @@ public abstract class StoreAdapter
                                 InOutTap loadTap,
                                 boolean usePValues);
 
-    public long getQueryTimeoutSec() {
-        return config.queryTimeoutSec();
+    public long getQueryTimeoutMilli() {
+        return config.queryTimeoutMilli();
     }
 
     public abstract long rowCount(RowType tableType);

@@ -67,7 +67,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     protected boolean transactionDefaultReadOnly = false;
     protected ServerSessionMonitor sessionMonitor;
 
-    protected Long queryTimeoutSec = null;
+    protected Long queryTimeoutMilli = null;
     protected ServerValueEncoder.ZeroDateTimeBehavior zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.NONE;
     protected QueryContext.NotificationLevel maxNotificationLevel = QueryContext.NotificationLevel.INFO;
 
@@ -123,7 +123,10 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             return true;
         }
         if ("queryTimeoutSec".equals(key)) {
-            queryTimeoutSec = (value == null) ? null : Long.valueOf(value);
+            if (value == null)
+                queryTimeoutMilli = null;
+            else
+                queryTimeoutMilli = (long)(Double.parseDouble(value) * 1000);
             return true;
         }
         return false;
@@ -277,11 +280,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     @Override
-    public long getQueryTimeoutSec() {
-        if (queryTimeoutSec != null)
-            return queryTimeoutSec;
+    public long getQueryTimeoutMilli() {
+        if (queryTimeoutMilli != null)
+            return queryTimeoutMilli;
         else
-            return reqs.config().queryTimeoutSec();
+            return reqs.config().queryTimeoutMilli();
     }
 
     @Override

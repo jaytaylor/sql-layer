@@ -28,13 +28,9 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueSource;
-
-import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
 
 public final class PValueRowDataCreator implements RowDataCreator<PValueSource> {
     @Override
@@ -45,11 +41,6 @@ public final class PValueRowDataCreator implements RowDataCreator<PValueSource> 
     @Override
     public boolean isNull(PValueSource source) {
         return source.isNull();
-    }
-
-    @Override
-    public PValueSource createId(long id) {
-        return new PValue(id);
     }
 
     @Override
@@ -65,10 +56,10 @@ public final class PValueRowDataCreator implements RowDataCreator<PValueSource> 
         }
         final Object putObj;
         if (source.hasCacheValue()) {
-            putObj = source.getObject();
+            putObj = source.tInstance().typeClass().formatCachedForNiceRow(source);
         }
         else {
-            switch (source.getUnderlyingType()) {
+            switch (TInstance.pUnderlying(source.tInstance())) {
             case BOOL:
                 putObj = source.getBoolean();
                 break;
@@ -100,7 +91,7 @@ public final class PValueRowDataCreator implements RowDataCreator<PValueSource> 
                 putObj = source.getBytes();
                 break;
             default:
-                throw new AssertionError(source.getUnderlyingType());
+                throw new AssertionError(source.tInstance());
             }
         }
         into.put(f, putObj);

@@ -162,12 +162,12 @@ public final class Session
         return timeoutAfterNanos - System.nanoTime();
     }
 
-    public void setTimeoutAfterSeconds(long seconds) {
-        if(seconds < 0) {
+    public void setTimeoutAfterMillis(long millis) {
+        if(millis < 0) {
             this.startMarkerNanos = this.timeoutAfterNanos = UNSET_NANOS;
         } else {
             this.startMarkerNanos = System.nanoTime();
-            this.timeoutAfterNanos = startMarkerNanos + TimeUnit.SECONDS.toNanos(seconds);
+            this.timeoutAfterNanos = startMarkerNanos + TimeUnit.MILLISECONDS.toNanos(millis);
         }
     }
 

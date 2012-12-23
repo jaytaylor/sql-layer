@@ -87,19 +87,19 @@ public class AISBuilder {
     public void sequence (String schemaName, String sequenceName,
             long start, long increment,
             long minValue, long maxValue, boolean cycle) {
-        LOG.info("sequence: {}.{} ", schemaName,sequenceName);
+        LOG.trace("sequence: {}.{} ", schemaName,sequenceName);
         Sequence identityGenerator = Sequence.create(ais, schemaName, sequenceName, start, increment, minValue, maxValue, cycle);
         identityGenerator.setTreeName(nameGenerator.generateSequenceTreeName(identityGenerator));
     }
     
     public void userTable(String schemaName, String tableName) {
-        LOG.info("userTable: " + schemaName + "." + tableName);
+        LOG.trace("userTable: " + schemaName + "." + tableName);
         UserTable.create(ais, schemaName, tableName, nameGenerator.generateTableID(new TableName(schemaName, tableName)));
     }
 
     public void userTableInitialAutoIncrement(String schemaName,
             String tableName, Long initialAutoIncrementValue) {
-        LOG.info("userTableInitialAutoIncrement: " + schemaName + "."
+        LOG.trace("userTableInitialAutoIncrement: " + schemaName + "."
                 + tableName + " = " + initialAutoIncrementValue);
         UserTable table = ais.getUserTable(schemaName, tableName);
         checkFound(table, "setting initial autoincrement value", "user table",
@@ -110,7 +110,7 @@ public class AISBuilder {
     public void view(String schemaName, String tableName,
                      String definition, Properties definitionProperties,
                      Map<TableName,Collection<String>> tableColumnReferences) {
-        LOG.info("view: " + schemaName + "." + tableName);
+        LOG.trace("view: " + schemaName + "." + tableName);
         View.create(ais, schemaName, tableName, 
                     definition, definitionProperties, tableColumnReferences);
     }
@@ -127,7 +127,7 @@ public class AISBuilder {
                 Integer position, String typeName, Long typeParameter1,
                 Long typeParameter2, Boolean nullable, Boolean autoIncrement,
                 String charset, String collation, String defaultValue) {
-        LOG.info("column: " + schemaName + "." + tableName + "." + columnName);
+        LOG.trace("column: " + schemaName + "." + tableName + "." + columnName);
         Columnar table = ais.getColumnar(schemaName, tableName);
         checkFound(table, "creating column", "user table",
                 concat(schemaName, tableName));
@@ -146,7 +146,7 @@ public class AISBuilder {
 
     public void columnAsIdentity (String schemaName, String tableName, String columnName,
             String sequenceName, Boolean defaultIdentity) {
-        LOG.info("column as identity: " + schemaName + "." + tableName + "." + columnName + ": " + sequenceName);
+        LOG.trace("column as identity: " + schemaName + "." + tableName + "." + columnName + ": " + sequenceName);
         Column column = ais.getTable(schemaName, tableName).getColumn(columnName);
         column.setDefaultIdentity(defaultIdentity);
         Sequence identityGenerator = ais.getSequence(new TableName (schemaName, sequenceName));
@@ -160,7 +160,7 @@ public class AISBuilder {
     }
 
     public void index(String schemaName, String tableName, String indexName, Boolean unique, String constraint, int indexID) {
-        LOG.info("index: " + schemaName + "." + tableName + "." + indexName);
+        LOG.trace("index: " + schemaName + "." + tableName + "." + indexName);
         Table table = ais.getTable(schemaName, tableName);
         checkFound(table, "creating index", "table", concat(schemaName, tableName));
         Index index = TableIndex.create(ais, table, indexName, indexID, unique, constraint);
@@ -175,7 +175,7 @@ public class AISBuilder {
 
     public void groupIndex(TableName groupName, String indexName, Boolean unique, Index.JoinType joinType)
     {
-        LOG.info("groupIndex: " + groupName + "." + indexName);
+        LOG.trace("groupIndex: " + groupName + "." + indexName);
         Group group = ais.getGroup(groupName);
         checkFound(group, "creating group index", "group", groupName);
         setRootIfNeeded(group);
@@ -188,7 +188,7 @@ public class AISBuilder {
     public void indexColumn(String schemaName, String tableName,
             String indexName, String columnName, Integer position,
             Boolean ascending, Integer indexedLength) {
-        LOG.info("indexColumn: " + schemaName + "." + tableName + "."
+        LOG.trace("indexColumn: " + schemaName + "." + tableName + "."
                 + indexName + ":" + columnName);
         Table table = ais.getTable(schemaName, tableName);
         checkFound(table, "creating index column", "table",
@@ -211,7 +211,7 @@ public class AISBuilder {
     public void groupIndexColumn(TableName groupName, String indexName, String schemaName, String tableName,
                                  String columnName, Integer position)
     {
-        LOG.info("groupIndexColumn: " + groupName + "." + indexName + ":" + columnName);
+        LOG.trace("groupIndexColumn: " + groupName + "." + indexName + ":" + columnName);
         Group group = ais.getGroup(groupName);
         checkFound(group, "creating group index column", "group", groupName);
         Index index = group.getIndex(indexName);
@@ -229,7 +229,7 @@ public class AISBuilder {
     public void joinTables(String joinName, String parentSchemaName,
             String parentTableName, String childSchemaName,
             String childTableName) {
-        LOG.info("joinTables: " + joinName + ": " + childSchemaName + "."
+        LOG.trace("joinTables: " + joinName + ": " + childSchemaName + "."
                 + childTableName + " -> " + parentSchemaName + "."
                 + parentTableName);
         UserTable child = ais.getUserTable(childSchemaName, childTableName);
@@ -253,7 +253,7 @@ public class AISBuilder {
             String childColumnName)
 
     {
-        LOG.info("joinColumns: " + joinName + ": " + childSchemaName + "."
+        LOG.trace("joinColumns: " + joinName + ": " + childSchemaName + "."
                 + childTableName + "." + childColumnName + " -> "
                 + parentSchemaName + "." + parentTableName + "."
                 + parentColumnName);
@@ -294,7 +294,7 @@ public class AISBuilder {
 
     public void routine(String schemaName, String routineName,
                         String language, Routine.CallingConvention callingConvention) {
-        LOG.info("routine: {}.{} ", schemaName, routineName);
+        LOG.trace("routine: {}.{} ", schemaName, routineName);
         Routine routine = Routine.create(ais, schemaName, routineName,
                                                language, callingConvention);
     }
@@ -302,7 +302,7 @@ public class AISBuilder {
     public void parameter(String schemaName, String routineName, 
                           String parameterName, Parameter.Direction direction, 
                           String typeName, Long typeParameter1, Long typeParameter2) {
-        LOG.info("parameter: {} {}", concat(schemaName, routineName), parameterName);
+        LOG.trace("parameter: {} {}", concat(schemaName, routineName), parameterName);
         Routine routine = ais.getRoutine(schemaName, routineName);
         checkFound(routine, "creating parameter", "routine", 
                    concat(schemaName, routineName));
@@ -315,7 +315,7 @@ public class AISBuilder {
     public void routineExternalName(String schemaName, String routineName,
                                     String jarSchema, String jarName, 
                                     String className, String methodName) {
-        LOG.info("external name: {} {}", concat(schemaName, routineName), concat(jarName, className, methodName));
+        LOG.trace("external name: {} {}", concat(schemaName, routineName), concat(jarName, className, methodName));
         Routine routine = ais.getRoutine(schemaName, routineName);
         checkFound(routine, "external name", "routine", 
                    concat(schemaName, routineName));
@@ -330,7 +330,7 @@ public class AISBuilder {
 
     public void routineDefinition(String schemaName, String routineName,
                                   String definition) {
-        LOG.info("external name: {} {}", concat(schemaName, routineName), definition);
+        LOG.trace("external name: {} {}", concat(schemaName, routineName), definition);
         Routine routine = ais.getRoutine(schemaName, routineName);
         checkFound(routine, "external name", "routine", 
                    concat(schemaName, routineName));
@@ -339,7 +339,7 @@ public class AISBuilder {
 
     public void routineSQLAllowed(String schemaName, String routineName,
                                   Routine.SQLAllowed sqlAllowed) {
-        LOG.info("SQL allowed: {} {}", concat(schemaName, routineName), sqlAllowed);
+        LOG.trace("SQL allowed: {} {}", concat(schemaName, routineName), sqlAllowed);
         Routine routine = ais.getRoutine(schemaName, routineName);
         checkFound(routine, "SQL allowed", "routine", 
                    concat(schemaName, routineName));
@@ -348,7 +348,7 @@ public class AISBuilder {
 
     public void routineDynamicResultSets(String schemaName, String routineName,
                                          int dynamicResultSets) {
-        LOG.info("dynamic result sets: {} {}", concat(schemaName, routineName), dynamicResultSets);
+        LOG.trace("dynamic result sets: {} {}", concat(schemaName, routineName), dynamicResultSets);
         Routine routine = ais.getRoutine(schemaName, routineName);
         checkFound(routine, "dynamic result sets", "routine", 
                    concat(schemaName, routineName));
@@ -357,7 +357,7 @@ public class AISBuilder {
 
     public void routineDeterministic(String schemaName, String routineName,
                                      boolean deterministic) {
-        LOG.info("deterministic: {} {}", concat(schemaName, routineName), deterministic);
+        LOG.trace("deterministic: {} {}", concat(schemaName, routineName), deterministic);
         Routine routine = ais.getRoutine(schemaName, routineName);
         checkFound(routine, "deterministic", "routine", 
                    concat(schemaName, routineName));
@@ -366,7 +366,7 @@ public class AISBuilder {
 
     public void routineCalledOnNullInput(String schemaName, String routineName,
                                          boolean calledOnNullInput) {
-        LOG.info("called on NULL input: {} {}", concat(schemaName, routineName), calledOnNullInput);
+        LOG.trace("called on NULL input: {} {}", concat(schemaName, routineName), calledOnNullInput);
         Routine routine = ais.getRoutine(schemaName, routineName);
         checkFound(routine, "calledOnNullInput", "routine", 
                    concat(schemaName, routineName));
@@ -374,12 +374,12 @@ public class AISBuilder {
     }
 
     public void sqljJar(String schemaName, String jarName, URL url) {
-        LOG.info("SQL/J jar: {}.{} ", schemaName, jarName);
+        LOG.trace("SQL/J jar: {}.{} ", schemaName, jarName);
         SQLJJar sqljJar = SQLJJar.create(ais, schemaName, jarName, url);
     }
 
     public void basicSchemaIsComplete() {
-        LOG.info("basicSchemaIsComplete");
+        LOG.trace("basicSchemaIsComplete");
         for (ForwardTableReference forwardTableReference : forwardReferences.values()) {
             UserTable childTable = forwardTableReference.childTable();
             UserTable parentTable = ais.getUserTable(forwardTableReference
@@ -407,7 +407,7 @@ public class AISBuilder {
     // API for describing groups
 
     public void createGroup(String groupName, String groupSchemaName) {
-        LOG.info("createGroup: {} in {}", groupName, groupSchemaName);
+        LOG.trace("createGroup: {} in {}", groupName, groupSchemaName);
         Group group = Group.create(ais, groupSchemaName, groupName);
         group.setTreeName(nameGenerator.generateGroupTreeName(groupSchemaName, groupName));
     }
@@ -418,7 +418,7 @@ public class AISBuilder {
     }
 
     public void deleteGroup(TableName groupName) {
-        LOG.info("deleteGroup: " + groupName);
+        LOG.trace("deleteGroup: " + groupName);
         Group group = ais.getGroup(groupName);
         checkFound(group, "deleting group", "group", groupName);
         boolean groupEmpty = true;
@@ -441,7 +441,7 @@ public class AISBuilder {
     }
 
     public void addTableToGroup(TableName groupName, String schemaName, String tableName) {
-        LOG.info("addTableToGroup: " + groupName + ": " + schemaName + "."
+        LOG.trace("addTableToGroup: " + groupName + ": " + schemaName + "."
                 + tableName);
         // group
         Group group = ais.getGroup(groupName);
@@ -467,7 +467,7 @@ public class AISBuilder {
     }
 
     public void addJoinToGroup(TableName groupName, String joinName, Integer weight) {
-        LOG.info("addJoinToGroup: " + groupName + ": " + joinName);
+        LOG.trace("addJoinToGroup: " + groupName + ": " + joinName);
         // join
         Join join = ais.getJoin(joinName);
         checkFound(join, "adding join to group", "join", joinName);
@@ -505,7 +505,7 @@ public class AISBuilder {
     }
 
     public void removeTableFromGroup(TableName groupName, String schemaName, String tableName) {
-        LOG.info("removeTableFromGroup: " + groupName + ": " + schemaName + "."
+        LOG.trace("removeTableFromGroup: " + groupName + ": " + schemaName + "."
                 + tableName);
         // This is only valid for a single-table group.
         // group
@@ -531,7 +531,7 @@ public class AISBuilder {
     }
 
     public void removeJoinFromGroup(TableName groupName, String joinName) {
-        LOG.info("removeJoinFromGroup: " + groupName + ": " + joinName);
+        LOG.trace("removeJoinFromGroup: " + groupName + ": " + joinName);
         // join
         Join join = ais.getJoin(joinName);
         checkFound(join, "removing join from group", "join", joinName);
@@ -575,7 +575,7 @@ public class AISBuilder {
     }
 
     public void moveTreeToGroup(String schemaName, String tableName, TableName groupName, String joinName) {
-        LOG.info("moveTree: " + schemaName + "." + tableName + " -> "
+        LOG.trace("moveTree: " + schemaName + "." + tableName + " -> "
                 + groupName + " via join " + joinName);
         // table
         UserTable table = ais.getUserTable(schemaName, tableName);
@@ -621,7 +621,7 @@ public class AISBuilder {
     }
 
     public void moveTreeToEmptyGroup(String schemaName, String tableName, TableName groupName) {
-        LOG.info("moveTree: " + schemaName + "." + tableName
+        LOG.trace("moveTree: " + schemaName + "." + tableName
                 + " -> empty group " + groupName);
         // table
         UserTable table = ais.getUserTable(schemaName, tableName);
@@ -652,7 +652,7 @@ public class AISBuilder {
     }
 
     public void groupingIsComplete() {
-        LOG.info("groupingIsComplete");
+        LOG.trace("groupingIsComplete");
         // Hook up root tables
         for(Group group : ais.getGroups().values()) {
             setRootIfNeeded(group);
@@ -669,7 +669,7 @@ public class AISBuilder {
     }
 
     public void clearGroupings() {
-        LOG.info("clear groupings");
+        LOG.trace("clear groupings");
         ais.getGroups().clear();
         for (UserTable table : ais.getUserTables().values()) {
             setTablesGroup(table, null);
@@ -682,7 +682,7 @@ public class AISBuilder {
     // API for getting the created AIS
 
     public AkibanInformationSchema akibanInformationSchema() {
-        LOG.info("getting AIS");
+        LOG.trace("getting AIS");
         return ais;
     }
 

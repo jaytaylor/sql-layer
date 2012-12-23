@@ -81,7 +81,7 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
                 constantSource = invocation.getReturnValue();
             }
             if (anyNull && !routine.isCalledOnNullInput()) {
-                constantSource = PValueSources.getNullSource(resultType().typeClass().underlyingType());
+                constantSource = PValueSources.getNullSource(resultType());
             }
         }
         return new TPreptimeValue(resultType(), constantSource);
@@ -132,7 +132,7 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
 
         protected ValueRoutineInvocation(Routine routine) {
             super(routine);
-            returnValue = new PValue(routine.getReturnValue().tInstance().typeClass().underlyingType());
+            returnValue = new PValue(routine.getReturnValue().tInstance());
         }
 
         public PValueSource getReturnValue() {

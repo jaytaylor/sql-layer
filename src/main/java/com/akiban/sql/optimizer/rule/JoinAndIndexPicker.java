@@ -69,7 +69,6 @@ public class JoinAndIndexPicker extends BaseRule
     static class Picker {
         Map<SubquerySource,Picker> subpickers;
         SchemaRulesContext rulesContext;
-        CostEstimator costEstimator;
         Joinable joinable;
         BaseQuery query;
         QueryIndexGoal queryGoal;
@@ -80,9 +79,12 @@ public class JoinAndIndexPicker extends BaseRule
                       Map<SubquerySource,Picker> subpickers) {
             this.subpickers = subpickers;
             this.rulesContext = rulesContext;
-            this.costEstimator = rulesContext.getCostEstimator();
             this.joinable = joinable;
             this.query = query;
+        }
+
+        public CostEstimator getCostEstimator() {
+            return rulesContext.getCostEstimator();
         }
 
         public void apply() {
@@ -166,7 +168,7 @@ public class JoinAndIndexPicker extends BaseRule
             }
             if (input instanceof Limit)
                 limit = (Limit)input;
-            return new QueryIndexGoal(query, costEstimator, whereConditions, 
+            return new QueryIndexGoal(query, rulesContext, whereConditions, 
                                       grouping, ordering, projectDistinct, limit);
         }
 
@@ -497,7 +499,7 @@ public class JoinAndIndexPicker extends BaseRule
         public ValuesPlanClass(JoinEnumerator enumerator, long bitset, 
                                ExpressionsSource values, Picker picker) {
             super(enumerator, bitset);
-            CostEstimator costEstimator = picker.costEstimator;
+            CostEstimator costEstimator = picker.getCostEstimator();
             this.plan = new ValuesPlan(values, costEstimator.costValues(values, false));
             // Nested also needs to check the join condition with Select.
             this.nestedPlan = new ValuesPlan(values, costEstimator.costValues(values, true));
@@ -817,7 +819,7 @@ public class JoinAndIndexPicker extends BaseRule
                 joinPlan.redoCostWithLimit(limit);
             }
             BloomFilter bloomFilter = new BloomFilter(loaderPlan.costEstimate.getRowCount(), 1);
-            CostEstimate costEstimate = picker.costEstimator
+            CostEstimate costEstimate = picker.getCostEstimator()
                 .costBloomFilter(loaderPlan.costEstimate, inputPlan.costEstimate, checkPlan.costEstimate, selectivity);
             return new HashJoinPlan(loaderPlan, inputPlan, checkPlan,
                                     JoinType.SEMI, JoinNode.Implementation.BLOOM_FILTER,
