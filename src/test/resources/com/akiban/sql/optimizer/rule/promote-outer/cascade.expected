@@ -3,7 +3,7 @@ SelectQuery@22c977fc
     Project@76147414[customers.name, orders.order_date]
       Select@38d1099c[addresses.state == MA]
         JoinNode@76cf0d8(INNER[addresses.cid == orders.cid])
-          JoinNode@137f8b7(INNER[customers.cid == orders.cid])
+          JoinNode@137f8b7(INNER[orders.cid == customers.cid])
             TableSource@1a9b701(customers)
             TableSource@2d2da381(orders)
           TableSource@79a9fe27(addresses)
