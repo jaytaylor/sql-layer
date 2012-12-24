@@ -3,8 +3,8 @@
 - Properties: sys-mysql
 - suppressed: true
 ---
-# Set the CBO to the setting this test requires. 
-- Statement: SET cbo TO 'false'
+# A setting that affects cache selection.
+- Statement: SET newtypes TO 'false'
 ---
 - JMX: com.akiban:type=PostgresServer
 - set: StatementCacheCapacity
@@ -81,7 +81,7 @@
 - output: [['2']]
 ---
 # Different compiler mode
-- Statement: SET cbo TO 'true'
+- Statement: SET newtypes TO 'true'
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
 - output: [['Project_Default(t.id)'],
@@ -110,7 +110,7 @@
            ['    Select_HKeyOrdered(t.s == $1)'],
            ['      GroupScan_Default(t)']]
 ---
-- Statement: SET cbo TO 'false'
+- Statement: SET newtypes TO 'false'
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
 - output: [['Project_Default(t.id)'],
@@ -141,6 +141,6 @@
 - set: StatementCacheCapacity
 - params: ['0']
 ---
-# Return the CBO setting to the server standard
-- Statement: SET cbo TO DEFAULT
+# Return the setting to the server standard
+- Statement: SET newtypes TO DEFAULT
 ...

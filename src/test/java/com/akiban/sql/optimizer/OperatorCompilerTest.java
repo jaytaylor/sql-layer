@@ -130,10 +130,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
                 t3Registry.start();
                 compiler.initT3Registry(t3Registry);
             }
-            if (Boolean.parseBoolean(properties.getProperty("cbo", "true")))
-                compiler.initCostEstimator(new TestCostEstimator(ais, compiler.getSchema(), statsFile, false, properties), usePValues);
-            else
-                compiler.initCostEstimator(null, false);
+            compiler.initCostEstimator(new TestCostEstimator(ais, compiler.getSchema(), statsFile, false, properties), usePValues);
             compiler.initDone();
             return compiler;
         }
