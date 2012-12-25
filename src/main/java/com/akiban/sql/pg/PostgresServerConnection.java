@@ -962,7 +962,8 @@ public class PostgresServerConnection extends ServerSessionBase
             new PostgresCallStatementGenerator(this),
             new PostgresExplainStatementGenerator(this),
             new PostgresServerStatementGenerator(this),
-            new PostgresCursorStatementGenerator(this)
+            new PostgresCursorStatementGenerator(this),
+            new PostgresCopyStatementGenerator(this)
         };
 
         statementCache = getStatementCache();
