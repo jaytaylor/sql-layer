@@ -116,6 +116,7 @@ public class DXLTransactionHook implements DXLFunctionsHook {
             case GET_TABLE_STATISTICS:
             case SCAN_SOME:
             case WRITE_ROW:
+            case WRITE_ROWS:
             case DELETE_ROW:
             case UPDATE_ROW:
             case TRUNCATE_TABLE:
