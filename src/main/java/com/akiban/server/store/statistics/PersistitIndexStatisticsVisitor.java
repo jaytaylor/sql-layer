@@ -27,8 +27,10 @@
 package com.akiban.server.store.statistics;
 
 import com.akiban.ais.model.Index;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.store.IndexVisitor;
+import com.akiban.server.store.PersistitStore;
 import com.persistit.Key;
 import com.persistit.Value;
 
@@ -37,14 +39,22 @@ import java.util.List;
 
 public class PersistitIndexStatisticsVisitor extends IndexVisitor
 {
-    public PersistitIndexStatisticsVisitor(Index index, long indexRowCount, KeyCreator keyCreator)
+    public PersistitIndexStatisticsVisitor(PersistitStore store,
+                                           Session session,
+                                           Index index,
+                                           long indexRowCount,
+                                           KeyCreator keyCreator)
     {
         this.multiColumnVisitor = new MultiColumnIndexStatisticsVisitor(index, indexRowCount, keyCreator);
         this.singleColumnVisitors = new ArrayList<SingleColumnIndexStatisticsVisitor>();
         this.nIndexColumns = index.getKeyColumns().size();
         for (int f = 0; f < nIndexColumns; f++) {
             SingleColumnIndexStatisticsVisitor singleColumnVisitor =
-                new SingleColumnIndexStatisticsVisitor(index, indexRowCount, keyCreator);
+                new SingleColumnIndexStatisticsVisitor(store,
+                                                       session,
+                                                       index.getKeyColumns().get(f),
+                                                       indexRowCount,
+                                                       keyCreator);
             singleColumnVisitors.add(singleColumnVisitor);
         }
     }

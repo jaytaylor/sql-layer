@@ -62,7 +62,7 @@ public class Sorter
         this.rowType = rowType;
         this.ordering = ordering.copy();
         String sortTreeName = SORT_TREE_NAME_PREFIX + SORTER_ID_GENERATOR.getAndIncrement();
-        this.exchange = TempVolume.takeExchange(adapter, sortTreeName);
+        this.exchange = TempVolume.takeExchange(adapter.persistit(), adapter.getSession(), sortTreeName);
         this.key = exchange.getKey();
         this.value = exchange.getValue();
         this.rowFields = rowType.nFields();
@@ -85,7 +85,7 @@ public class Sorter
     {
         if (exchange != null) {
             try {
-                TempVolume.returnExchange(adapter, exchange);
+                TempVolume.returnExchange(adapter.getSession(), exchange);
             } finally {
                 // Don't return the exchange. TreeServiceImpl caches it for the tree, and we're done with the tree.
                 // THIS CAUSES A LEAK OF EXCHANGES: adapter.returnExchange(exchange);

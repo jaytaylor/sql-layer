@@ -63,7 +63,8 @@ public class PersistitStoreIndexStatistics
     private final IndexStatisticsService indexStatsService;
 
     /** Initialize index statistics manager for the given store. */
-    public PersistitStoreIndexStatistics(PersistitStore store, TreeService treeService,
+    public PersistitStoreIndexStatistics(PersistitStore store,
+                                         TreeService treeService,
                                          IndexStatisticsService indexStatsService)
     {
         this.store = store;
@@ -297,7 +298,7 @@ public class PersistitStoreIndexStatistics
             throws PersistitException {
         long indexRowCount = indexStatsService.countEntries(session, index);
         PersistitIndexStatisticsVisitor visitor = 
-            new PersistitIndexStatisticsVisitor(index, indexRowCount, treeService);
+            new PersistitIndexStatisticsVisitor(store, session, index, indexRowCount, treeService);
         visitor.init();
         store.traverse(session, index, visitor);
         visitor.finish();
