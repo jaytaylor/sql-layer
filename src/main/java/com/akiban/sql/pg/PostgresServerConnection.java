@@ -562,7 +562,7 @@ public class PostgresServerConnection extends ServerSessionBase
                                          GSSCredential.ACCEPT_ONLY);
             GSSContext serverContext = manager.createContext(serverCreds);
             do {
-                switch (messenger.readMessage(true)) {
+                switch (messenger.readMessage()) {
                 case PASSWORD_MESSAGE_TYPE:
                     break;
                 default:

@@ -52,12 +52,32 @@ public class PostgresCopyInStatement implements PostgresStatement
                                               String sql, StatementNode stmt,
                                               List<ParameterNode> params, int[] paramTypes) {
         CopyStatementNode copyStmt = (CopyStatementNode)stmt;
+        if (copyStmt.getFilename() != null)
+            fromFile = new File(copyStmt.getFilename());
         return this;
     }
 
     @Override
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
+        InputStream istr;
+        if (fromFile != null)
+            istr = new FileInputStream(fromFile);
+        else
+            // Always use a stream: we align records and messages, but
+            // this is not a requirement on the client.
+            istr = new PostgresCopyInputStream(server.getMessenger(), 1); // TODO:
+        BufferedReader bstr = new BufferedReader(new InputStreamReader(istr, "UTF-8"));
+        try {
+            while (true) {
+                String line = bstr.readLine();
+                if (line == null) break;
+                System.out.println(line);
+            }
+        }
+        finally {
+            bstr.close();
+        }
         int nrows = 0;
         {        
             PostgresMessenger messenger = server.getMessenger();
