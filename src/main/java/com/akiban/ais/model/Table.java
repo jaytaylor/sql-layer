@@ -45,9 +45,7 @@ public abstract class Table extends Columnar implements Traversable, HasGroup
         this.tableId = tableId;
 
         this.groupIndexes = new HashSet<GroupIndex>();
-        this.groupIndexesIncludingImplicit = new HashSet<GroupIndex>();
         this.unmodifiableGroupIndexes = Collections.unmodifiableCollection(groupIndexes);
-        this.unmodifiableGroupIndexesIncludingImplicit = Collections.unmodifiableCollection(groupIndexesIncludingImplicit);
         this.indexMap = new TreeMap<String, TableIndex>();
         this.unmodifiableIndexMap = Collections.unmodifiableMap(indexMap);
     }
@@ -94,14 +92,12 @@ public abstract class Table extends Columnar implements Traversable, HasGroup
         return unmodifiableIndexMap.get(indexName.toLowerCase());
     }
 
-    /** Get all GroupIndexes this table explicitly participates in (i.e. as a declared column). **/
+    /**
+     * Get all GroupIndexes this table participates in, both explicit and implicit (i.e. as a declared column or
+     * as an ancestor of a declared column
+     */
     public final Collection<GroupIndex> getGroupIndexes() {
         return unmodifiableGroupIndexes;
-    }
-
-    /** Get all GroupIndexes this table participates in (i.e. as a declared column or as an ancestor of a declared column) **/
-    public final Collection<GroupIndex> getGroupIndexesIncludingImplicit() {
-        return unmodifiableGroupIndexesIncludingImplicit;
     }
 
     public MigrationUsage getMigrationUsage() {
@@ -127,14 +123,6 @@ public abstract class Table extends Columnar implements Traversable, HasGroup
 
     final void removeGroupIndex(GroupIndex groupIndex) {
         groupIndexes.remove(groupIndex);
-    }
-
-    final void addImplicitGroupIndex(GroupIndex groupIndex) {
-        groupIndexesIncludingImplicit.add(groupIndex);
-    }
-
-    final void removeImplicitGroupIndex(GroupIndex groupIndex) {
-        groupIndexesIncludingImplicit.remove(groupIndex);
     }
 
     public void removeIndexes(Collection<TableIndex> indexesToDrop) {
@@ -267,9 +255,7 @@ public abstract class Table extends Columnar implements Traversable, HasGroup
     private final Map<String, TableIndex> indexMap;
     private final Map<String, TableIndex> unmodifiableIndexMap;
     private final Collection<GroupIndex> groupIndexes;
-    private final Collection<GroupIndex> groupIndexesIncludingImplicit;
     private final Collection<GroupIndex> unmodifiableGroupIndexes;
-    private final Collection<GroupIndex> unmodifiableGroupIndexesIncludingImplicit;
 
     protected Group group;
     private Integer tableId;

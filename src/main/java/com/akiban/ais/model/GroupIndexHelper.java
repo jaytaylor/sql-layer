@@ -55,10 +55,9 @@ final class GroupIndexHelper {
     final static IndexAction REMOVE = new IndexAction() {
         @Override
         public void act(GroupIndex groupIndex, UserTable onTable) {
-            onTable.removeGroupIndex(groupIndex);
             UserTable ancestor = onTable;
             while(ancestor != null) {
-                ancestor.removeImplicitGroupIndex(groupIndex);
+                ancestor.removeGroupIndex(groupIndex);
                 ancestor = ancestor.parentTable();
             }
         }
@@ -72,10 +71,9 @@ final class GroupIndexHelper {
     final static IndexAction ADD = new IndexAction() {
         @Override
         public void act(GroupIndex groupIndex, UserTable onTable) {
-            onTable.addGroupIndex(groupIndex);
             UserTable ancestor = onTable;
             while(ancestor != null) {
-                ancestor.addImplicitGroupIndex(groupIndex);
+                ancestor.addGroupIndex(groupIndex);
                 ancestor = ancestor.parentTable();
             }
         }

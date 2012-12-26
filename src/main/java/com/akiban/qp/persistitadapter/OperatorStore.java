@@ -294,7 +294,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             PersistitHKey persistitHKey = new PersistitHKey(adapter, userTable.hKey());
             persistitHKey.copyFrom(hEx.getKey());
 
-            Collection<GroupIndex> branchIndexes = userTable.getGroupIndexesIncludingImplicit();
+            Collection<GroupIndex> branchIndexes = userTable.getGroupIndexes();
             for (GroupIndex groupIndex : optionallyOrderGroupIndexes(branchIndexes)) {
                 assert !groupIndex.isUnique() : "unique GI: " + groupIndex;
                 if (columnDifferences == null || groupIndex.columnsOverlap(userTable, columnDifferences)) {
@@ -384,7 +384,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
 
     private static boolean canSkipMaintenance(UserTable userTable) {
-       return userTable.getGroupIndexesIncludingImplicit().isEmpty();
+       return userTable.getGroupIndexes().isEmpty();
     }
 
     // object state
