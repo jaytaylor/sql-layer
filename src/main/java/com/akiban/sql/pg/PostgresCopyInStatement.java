@@ -26,24 +26,25 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.CopyStatementNode;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.StatementNode;
 
-import com.akiban.qp.row.Row;
-import com.akiban.server.error.SQLParserInternalException;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.UserTable;
 
 import java.io.*;
 import java.util.*;
 
-/** COPY ... TO */
-public class PostgresCopyOutStatement extends PostgresOperatorStatement
+/** COPY ... FROM */
+public class PostgresCopyInStatement implements PostgresStatement
 {
-    private File toFile;
+    private UserTable toTable;
+    private List<Column> toColumns;
+    private File fromFile;
+    private long aisGeneration;
 
-    public PostgresCopyOutStatement(PostgresOperatorCompiler compiler) {
-        super(compiler);
+    protected PostgresCopyInStatement() {
     }
 
     @Override
@@ -51,22 +52,11 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
                                               String sql, StatementNode stmt,
                                               List<ParameterNode> params, int[] paramTypes) {
         CopyStatementNode copyStmt = (CopyStatementNode)stmt;
-        if (copyStmt.getFilename() != null)
-            toFile = new File(copyStmt.getFilename());
-        try {
-            stmt = copyStmt.asQuery();
-        }
-        catch (StandardException ex) {
-            throw new SQLParserInternalException(ex);
-        }        
-        return super.finishGenerating(server, sql, stmt, params, paramTypes);
+        return this;
     }
 
     @Override
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
-        if (toFile == null)
-            return super.execute(context, maxrows);
-
         PostgresServerSession server = context.getServer();
         int nrows = 0;
         {        
@@ -79,13 +69,43 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
     }
 
     @Override
-    protected PostgresOutputter<Row> getRowOutputter(PostgresQueryContext context) {
-        return new PostgresCopyCsvOutputter(context, this);
+    public PostgresType[] getParameterTypes() {
+        return null;
     }
-    
+
     @Override
     public void sendDescription(PostgresQueryContext context, boolean always) 
             throws IOException {
+    }
+
+    @Override
+    public TransactionMode getTransactionMode() {
+        return TransactionMode.NONE;
+    }
+
+    @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        return TransactionAbortedMode.NOT_ALLOWED;
+    }
+
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.NOT_ALLOWED;
+    }
+
+    @Override
+    public boolean hasAISGeneration() {
+        return aisGeneration != 0;
+    }
+
+    @Override
+    public void setAISGeneration(long aisGeneration) {
+        this.aisGeneration = aisGeneration;
+    }
+
+    @Override
+    public long getAISGeneration() {
+        return aisGeneration;
     }
 
     @Override
