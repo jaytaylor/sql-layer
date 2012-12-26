@@ -73,6 +73,7 @@ public abstract class PTBase extends ApiTestBase {
         Tap.setEnabled(".*", true);
         Tap.reset(".*");
         Tap.defaultToOn(true);
+        testStartMS = System.currentTimeMillis();
     }
 
     @BeforeClass
@@ -82,6 +83,8 @@ public abstract class PTBase extends ApiTestBase {
 
     @After
     public void reportProfiling() throws Exception {
+        testEndMS = System.currentTimeMillis();
+        System.out.println("Total elapsed: " + (testEndMS - testStartMS) + "ms");
         // have to filter specifically, otherwise we'd have multiple TapReport[]s that we'd need to merge
         TapReport[] reportsArray = Tap.getReport(".*");
         List<TapReport> reports = new ArrayList<TapReport>(reportsArray.length);
@@ -115,6 +118,8 @@ public abstract class PTBase extends ApiTestBase {
     }
 
     protected final List<String> tapsRegexes;
+    protected long testStartMS;
+    protected long testEndMS;
 
     private static final Comparator<TapReport> REPORTS_BY_NAME = new Comparator<TapReport>() {
         @Override
