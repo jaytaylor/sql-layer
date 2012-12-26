@@ -84,7 +84,7 @@ public abstract class PTBase extends ApiTestBase {
     @After
     public void reportProfiling() throws Exception {
         testEndMS = System.currentTimeMillis();
-        System.out.println("Total elapsed: " + (testEndMS - testStartMS) + "ms");
+        log("Total elapsed: %dms", testEndMS - testStartMS);
         // have to filter specifically, otherwise we'd have multiple TapReport[]s that we'd need to merge
         TapReport[] reportsArray = Tap.getReport(".*");
         List<TapReport> reports = new ArrayList<TapReport>(reportsArray.length);
