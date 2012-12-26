@@ -32,8 +32,6 @@ import com.akiban.qp.persistitadapter.TempVolume;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.store.PersistitStore;
-import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Value;
@@ -41,16 +39,27 @@ import com.persistit.exception.PersistitException;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class SingleColumnIndexStatisticsVisitor
+public class SingleColumnIndexStatisticsVisitor extends IndexStatisticsGenerator
 {
     public void init()
     {
+        super.init();
         exchange = TempVolume.takeExchange(store, session, treeName);
     }
 
     public void finish()
     {
-        TempVolume.returnExchange(session, exchange);
+        exchange.clear();
+        try {
+            while (exchange.next()) {
+                loadKey(exchange.getKey());
+            }
+        } catch (PersistitException e) {
+            PersistitAdapter.handlePersistitException(session, e);
+        } finally {
+            TempVolume.returnExchange(session, exchange);
+        }
+        super.finish();
     }
 
     public void visit(Key key, Value value)
@@ -58,15 +67,10 @@ public class SingleColumnIndexStatisticsVisitor
         key.indexTo(field);
         exchange.clear().getKey().appendKeySegment(key);
         try {
-            if (exchange.traverse(Key.Direction.EQ, false)) {
-                exchange.fetch();
-                value = exchange.getValue();
-                value.put(value.getInt() + 1);
-            } else {
-                // First occurrence of key
-                exchange.clear().getKey().appendKeySegment(key);
-                exchange.getValue().put(1);
-            }
+            exchange.fetch();
+            value = exchange.getValue();
+            int count = value.isDefined() ? value.getInt() : 0;
+            value.put(count + 1);
             exchange.store();
         } catch (PersistitException e) {
             PersistitAdapter.handlePersistitException(session, e);
@@ -79,24 +83,18 @@ public class SingleColumnIndexStatisticsVisitor
                                               long indexRowCount,
                                               KeyCreator keyCreator)
     {
+        super(indexColumn.getIndex(), indexRowCount, keyCreator);
         this.store = store;
         this.session = session;
-        this.indexColumn = indexColumn;
         this.field = indexColumn.getPosition();
-        this.timestamp = System.currentTimeMillis();
         this.treeName = String.format("tempHistogram_%s_%s", counter.getAndIncrement(), timestamp);
-        this.rowCount = 0;
     }
 
-    private static InOutTap SINGLE_COLUMN_HISTOGRAM_LOAD_TAP = Tap.createTimer("singleColumnHistogram: load");
     private static final AtomicInteger counter = new AtomicInteger(0);
 
     private final PersistitStore store;
     private final Session session;
-    private final IndexColumn indexColumn;
     private final int field;
-    private final long timestamp;
     private final String treeName;
-    private int rowCount;
     private Exchange exchange;
 }
