@@ -26,37 +26,45 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.CopyStatementNode;
-import com.akiban.sql.parser.NodeTypes;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.StatementNode;
 
+import com.akiban.qp.row.Row;
+import com.akiban.server.error.SQLParserInternalException;
+
+import java.io.IOException;
 import java.util.List;
 
-/** COPY statement. */
-public class PostgresCopyStatementGenerator extends PostgresBaseStatementGenerator
+public class PostgresCopyOutStatement extends PostgresOperatorStatement
 {
-    private PostgresOperatorCompiler compiler;
-
-    public PostgresCopyStatementGenerator(PostgresServerSession server) {
-        compiler = (PostgresOperatorCompiler)server.getAttribute("compiler");
+    public PostgresCopyOutStatement(PostgresOperatorCompiler compiler) {
+        super(compiler);
     }
 
     @Override
-    public PostgresStatement generateStub(PostgresServerSession server,
-                                          String sql, StatementNode stmt,
-                                          List<ParameterNode> params, int[] paramTypes)  {
-        if (stmt.getNodeType() == NodeTypes.COPY_STATEMENT_NODE) {
-            switch (((CopyStatementNode)stmt).getMode()) {
-            case FROM_TABLE:
-            case FROM_SUBQUERY:
-                return new PostgresCopyOutStatement(compiler);
-                /*
-            case TO_TABLE:
-                return new PostgresCopyInStatement(compiler);
-                */
-            }
+    public PostgresStatement finishGenerating(PostgresServerSession server,
+                                              String sql, StatementNode stmt,
+                                              List<ParameterNode> params, int[] paramTypes) {
+        CopyStatementNode copyStmt = (CopyStatementNode)stmt;
+        try {
+            stmt = copyStmt.asQuery();
         }
-        return null;
+        catch (StandardException ex) {
+            throw new SQLParserInternalException(ex);
+        }        
+        return super.finishGenerating(server, sql, stmt, params, paramTypes);
     }
+
+    @Override
+    protected PostgresOutputter<Row> getRowOutputter(PostgresQueryContext context) {
+        return new PostgresCopyCsvOutputter(context, this);
+    }
+    
+    @Override
+    public void sendDescription(PostgresQueryContext context, boolean always) 
+            throws IOException {
+    }
+
 }
