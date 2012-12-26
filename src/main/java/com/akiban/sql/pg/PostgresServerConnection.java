@@ -120,7 +120,9 @@ public class PostgresServerConnection extends ServerSessionBase
                 public List<PreparedStatementMonitor> getPreparedStatements() {
                     List<PreparedStatementMonitor> result = 
                         new ArrayList<PreparedStatementMonitor>(preparedStatements.size());
-                    result.addAll(preparedStatements.values());
+                    synchronized (preparedStatements) {
+                        result.addAll(preparedStatements.values());
+                    }
                     return result;
                 }
 
@@ -128,7 +130,9 @@ public class PostgresServerConnection extends ServerSessionBase
                 public List<CursorMonitor> getCursors() {
                     List<CursorMonitor> result = 
                         new ArrayList<CursorMonitor>(boundPortals.size());
-                    result.addAll(boundPortals.values());
+                    synchronized (boundPortals) {
+                        result.addAll(boundPortals.values());
+                    }
                     return result;
                 }
             };
@@ -717,7 +721,9 @@ public class PostgresServerConnection extends ServerSessionBase
         PostgresPreparedStatement ppstmt = 
             new PostgresPreparedStatement(this, stmtName, sql, pstmt,
                                           sessionMonitor.getCurrentStatementStartTimeMillis());
-        preparedStatements.put(stmtName, ppstmt);
+        synchronized (preparedStatements) {
+            preparedStatements.put(stmtName, ppstmt);
+        }
         messenger.beginMessage(PostgresMessages.PARSE_COMPLETE_TYPE.code());
         messenger.sendMessage();
     }
@@ -793,7 +799,10 @@ public class PostgresServerConnection extends ServerSessionBase
             }
         }
         bound.setColumnBinary(resultsBinary, defaultResultsBinary);
-        PostgresBoundQueryContext prev = boundPortals.put(portalName, bound);
+        PostgresBoundQueryContext prev;
+        synchronized (boundPortals) {
+            prev = boundPortals.put(portalName, bound);
+        }
         if (prev != null)
             prev.close();
         messenger.beginMessage(PostgresMessages.BIND_COMPLETE_TYPE.code());
@@ -1093,7 +1102,9 @@ public class PostgresServerConnection extends ServerSessionBase
         PostgresPreparedStatement ppstmt = new PostgresPreparedStatement(this, name, 
                                                                          sql, pstmt,
                                                                          prepareTime);
-        preparedStatements.put(name, ppstmt);
+        synchronized (preparedStatements) {
+            preparedStatements.put(name, ppstmt);
+        }
     }
 
     @Override
@@ -1114,7 +1125,10 @@ public class PostgresServerConnection extends ServerSessionBase
 
     @Override
     public void deallocatePreparedStatement(String name) {
-        PostgresPreparedStatement pstmt = preparedStatements.remove(name);
+        PostgresPreparedStatement pstmt;
+        synchronized (preparedStatements) {
+            pstmt = preparedStatements.remove(name);
+        }
     }
 
     @Override
@@ -1157,7 +1171,10 @@ public class PostgresServerConnection extends ServerSessionBase
         if (estmt != null) {
             estmt.setParameters(bound);
         }
-        PostgresBoundQueryContext prev = boundPortals.put(name, bound);
+        PostgresBoundQueryContext prev;
+        synchronized (boundPortals) {
+            prev = boundPortals.put(name, bound);
+        }
         if (prev != null)
             prev.close();
     }
@@ -1177,7 +1194,10 @@ public class PostgresServerConnection extends ServerSessionBase
 
     @Override
     public void closeBoundPortal(String name) {
-        PostgresBoundQueryContext bound = boundPortals.remove(name);
+        PostgresBoundQueryContext bound;
+        synchronized (boundPortals) {
+            bound = boundPortals.remove(name);
+        }
         if (bound != null)
             bound.close();
     }
