@@ -143,7 +143,7 @@ class Map_NestedLoops extends Operator
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Map_NestedLoops next");
     private static final Logger LOG = LoggerFactory.getLogger(Map_NestedLoops.class);
 
-    // Object state
+    //   Object state
 
     private final Operator outerInputOperator;
     private final Operator innerInputOperator;
