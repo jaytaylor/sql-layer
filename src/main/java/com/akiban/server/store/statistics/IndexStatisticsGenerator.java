@@ -38,13 +38,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.akiban.server.store.statistics.IndexStatistics.Histogram;
-import static com.akiban.server.store.statistics.IndexStatistics.HistogramEntry;
-
 abstract class IndexStatisticsGenerator
 {
     protected final Index index;
     private final int columnCount;
+    private final int singleColumnPosition; // -1 for multi-column
     protected final long timestamp;
     private int rowCount;
     private final KeyCreator keyCreator;
@@ -56,14 +54,20 @@ abstract class IndexStatisticsGenerator
         }
     };
 
-    protected IndexStatisticsGenerator(Index index, long indexRowCount, KeyCreator keyCreator) {
+    protected IndexStatisticsGenerator(Index index,
+                                       long indexRowCount,
+                                       int columnCount,
+                                       int singleColumnPosition,
+                                       KeyCreator keyCreator) {
         this.index = index;
         this.keyCreator = keyCreator;
-        columnCount = index.getKeyColumns().size();
-        timestamp = System.currentTimeMillis();
-        rowCount = 0;
+        this.columnCount = columnCount;
+        this.singleColumnPosition = singleColumnPosition;
+        this.timestamp = System.currentTimeMillis();
+        this.rowCount = 0;
         KeySplitter splitter = new KeySplitter(columnCount, keysFlywheel);
-        keySampler = new Sampler<Key>(splitter, PersistitIndexStatisticsVisitor.BUCKETS_COUNT, indexRowCount, keysFlywheel);
+        this.keySampler =
+            new Sampler<Key>(splitter, PersistitIndexStatisticsVisitor.BUCKETS_COUNT, indexRowCount, keysFlywheel);
     }
     
     private static class KeySplitter implements Splitter<Key> {
@@ -117,27 +121,29 @@ abstract class IndexStatisticsGenerator
         result.setSampledCount(rowCount);
         List<List<Bucket<Key>>> segmentBuckets = keySampler.toBuckets();
         assert segmentBuckets.size() == columnCount
-                : "expected " + columnCount + " seguments, saw " + segmentBuckets.size() + ": " + segmentBuckets;
+            : String.format("expected %s segments, saw %s: %s", columnCount, segmentBuckets.size(), segmentBuckets);
         for (int colCountSegment = 0; colCountSegment < columnCount; colCountSegment++) {
             List<Bucket<Key>> segmentSamples = segmentBuckets.get(colCountSegment);
             int samplesCount = segmentSamples.size();
             List<HistogramEntry> entries = new ArrayList<HistogramEntry>(samplesCount);
-            for (int s = 0; s < samplesCount; ++s) {
-                Bucket<Key> sample = segmentSamples.get(s);
+            for (Bucket<Key> sample : segmentSamples) {
                 Key key = sample.value();
                 byte[] keyBytes = new byte[key.getEncodedSize()];
                 System.arraycopy(key.getEncodedBytes(), 0, keyBytes, 0, keyBytes.length);
                 HistogramEntry entry = new HistogramEntry(
-                        key.toString(),
-                        keyBytes,
-                        sample.getEqualsCount(),
-                        sample.getLessThanCount(),
-                        sample.getLessThanDistinctsCount()
+                    key.toString(),
+                    keyBytes,
+                    sample.getEqualsCount(),
+                    sample.getLessThanCount(),
+                    sample.getLessThanDistinctsCount()
                 );
                 entries.add(entry);
             }
-            Histogram histogram = new Histogram(colCountSegment+1, entries);
-            result.addHistogram(histogram);
+            if (singleColumnPosition < 0) {
+                result.addHistogram(new Histogram(0, colCountSegment + 1, entries));
+            } else {
+                result.addHistogram(new Histogram(singleColumnPosition, 1, entries));
+            }
         }
         return result;
     }

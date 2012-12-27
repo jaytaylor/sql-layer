@@ -83,7 +83,7 @@ public class SingleColumnIndexStatisticsVisitor extends IndexStatisticsGenerator
                                               long indexRowCount,
                                               KeyCreator keyCreator)
     {
-        super(indexColumn.getIndex(), indexRowCount, keyCreator);
+        super(indexColumn.getIndex(), indexRowCount, 1, indexColumn.getPosition(), keyCreator);
         this.store = store;
         this.session = session;
         this.field = indexColumn.getPosition();

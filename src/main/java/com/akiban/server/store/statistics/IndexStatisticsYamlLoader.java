@@ -26,8 +26,6 @@
 
 package com.akiban.server.store.statistics;
 
-import static com.akiban.server.store.statistics.IndexStatistics.*;
-
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
@@ -177,7 +175,7 @@ public class IndexStatisticsYamlLoader
             entries.add(new HistogramEntry(keyString, keyBytes,
                                            eqCount, ltCount, distinctCount));
         }
-        return new Histogram(columnCount, entries);
+        return new Histogram(0, columnCount, entries);
     }
 
     protected Key encodeKey(Index index, int columnCount, List<?> values) {
@@ -300,7 +298,7 @@ public class IndexStatisticsYamlLoader
         int nkeys = index.getKeyColumns().size();
         if (index.isSpatial()) nkeys -= index.dimensions() - 1;
         for (int i = 0; i < nkeys; i++) {
-            Histogram histogram = indexStatistics.getHistogram(i + 1);
+            Histogram histogram = indexStatistics.getHistogram(0, i + 1);
             if (histogram == null) continue;
             stats.add(buildHistogram(index, histogram));
         }

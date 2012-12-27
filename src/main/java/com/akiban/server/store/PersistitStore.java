@@ -50,6 +50,8 @@ import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.statistics.Histogram;
+import com.akiban.server.store.statistics.HistogramEntry;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.util.tap.InOutTap;
@@ -59,7 +61,6 @@ import com.persistit.*;
 import com.persistit.Management.DisplayFilter;
 import com.persistit.encoding.CoderManager;
 import com.persistit.exception.PersistitException;
-import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -935,7 +936,7 @@ public class PersistitStore implements Store, Service {
         if (stats == null) {
             return null;
         }
-        IndexStatistics.Histogram fromHistogram = stats.getHistogram(index.getKeyColumns().size());
+        Histogram fromHistogram = stats.getHistogram(0, index.getKeyColumns().size());
         if (fromHistogram == null) {
             return null;
         }
@@ -946,7 +947,7 @@ public class PersistitStore implements Store, Service {
         RowData indexRowData = new RowData(new byte[4096]);
         Object[] indexValues = new Object[indexRowDef.getFieldCount()];
         long count = 0;
-        for (IndexStatistics.HistogramEntry entry : fromHistogram.getEntries()) {
+        for (HistogramEntry entry : fromHistogram.getEntries()) {
             // Decode the key.
             int keylen = entry.getKeyBytes().length;
             System.arraycopy(entry.getKeyBytes(), 0, key.getEncodedBytes(), 0, keylen);

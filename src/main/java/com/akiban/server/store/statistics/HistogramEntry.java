@@ -26,18 +26,16 @@
 
 package com.akiban.server.store.statistics;
 
-import com.akiban.ais.model.Index;
-import com.akiban.server.service.tree.KeyCreator;
-import com.persistit.Key;
-import com.persistit.Value;
+public class HistogramEntry extends HistogramEntryDescription {
+    private byte[] keyBytes;
 
-class MultiColumnIndexStatisticsVisitor extends IndexStatisticsGenerator
-{
-    public void visit(Key key, Value value) {
-        loadKey(key);
+    HistogramEntry(String keyString, byte[] keyBytes,
+                   long equalCount, long lessCount, long distinctCount) {
+        super(keyString, equalCount, lessCount, distinctCount);
+        this.keyBytes = keyBytes;
     }
 
-    public MultiColumnIndexStatisticsVisitor(Index index, long indexRowCount, KeyCreator keyCreator) {
-        super(index, indexRowCount, index.getKeyColumns().size(), -1, keyCreator);
+    public byte[] getKeyBytes() {
+        return keyBytes;
     }
 }
