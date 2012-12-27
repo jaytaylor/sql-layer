@@ -37,10 +37,11 @@ public class CsvFormat
     private List<String> headings = null;
     
     private int delimiterByte, quoteByte, escapeByte;
-    private byte[] nullBytes;
+    private byte[] nullBytes, recordEndBytes;
 
     public CsvFormat(String encoding) {
         this.encoding = encoding;
+        this.recordEndBytes = getBytes("\n");
         setDelimiter(",");
         setNullString("");
         setQuote("\"");
@@ -71,7 +72,7 @@ public class CsvFormat
     public int getEscapeByte() {
         return escapeByte;
     }
-    public byte[] getNullByte() {
+    public byte[] getNullBytes() {
         return nullBytes;
     }
 
@@ -114,6 +115,10 @@ public class CsvFormat
 
     public byte[] getHeadingBytes(int i) {
         return getBytes(headings.get(i));
+    }
+
+    public byte[] getRecordEndBytes() {
+        return recordEndBytes;
     }
 
     private byte[] getBytes(String str) {

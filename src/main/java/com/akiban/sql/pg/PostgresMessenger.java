@@ -238,6 +238,11 @@ public class PostgresMessenger implements DataInput, DataOutput
         return rawMessageInput;
     }
 
+    /** Get the raw stream for current message. */
+    public OutputStream getRawOutput() {
+        return messageOutput;
+    }
+
     /** Write null-terminated string. */
     public void writeString(String s) throws IOException {
         byte[] ba = s.getBytes(encoding);

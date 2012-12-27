@@ -30,9 +30,12 @@ import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.CopyStatementNode;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.StatementNode;
+import com.akiban.sql.server.ServerValueEncoder;
 
 import com.akiban.qp.row.Row;
+import com.akiban.qp.operator.Cursor;
 import com.akiban.server.error.SQLParserInternalException;
+import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 import java.io.*;
 import java.util.*;
@@ -63,7 +66,7 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
         assert (pstmt == this);
         if (copyStmt.getFilename() != null)
             toFile = new File(copyStmt.getFilename());
-        format = getCsvFormat(server, copyStmt);
+        format = CsvHelper.getCsvFormat(server, copyStmt);
         if (copyStmt.isHeader()) {
             format.setHeadings(getColumnNames());
         }
@@ -77,6 +80,36 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
 
         PostgresServerSession server = context.getServer();
         int nrows = 0;
+        Cursor cursor = null;
+        OutputStream outputStream = null;
+        boolean lockSuccess = false;
+        try {
+            lock(context, DXLFunction.UNSPECIFIED_DML_READ);
+            lockSuccess = true;
+            cursor = context.startCursor(this);
+            outputStream = new FileOutputStream(toFile);
+            int ncols = getColumnTypes().size();
+            ServerValueEncoder encoder = server.getValueEncoder();
+            if (!encoder.getEncoding().equals(format.getEncoding()))
+                encoder = new ServerValueEncoder(format.getEncoding());
+            PostgresCopyCsvOutputter outputter = 
+                new PostgresCopyCsvOutputter(context, this, format);
+            if (format.getHeadings() != null) {
+                outputter.outputHeadings(outputStream);
+                nrows++;
+            }
+            Row row;
+            while ((row = cursor.next()) != null) {
+                outputter.output(row, outputStream, usesPValues());
+                nrows++;
+            }
+        }
+        finally {
+            if (outputStream != null)
+                outputStream.close();
+            context.finishCursor(this, cursor, false);
+            unlock(context, DXLFunction.UNSPECIFIED_DML_READ, lockSuccess);
+        }
         {        
             PostgresMessenger messenger = server.getMessenger();
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
@@ -99,23 +132,6 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
     @Override
     public boolean putInCache() {
         return false;
-    }
-
-    public static CsvFormat getCsvFormat(PostgresServerSession server,
-                                         CopyStatementNode copyStmt) {
-        String encoding = copyStmt.getEncoding();
-        if (encoding == null)
-            encoding = server.getMessenger().getEncoding();
-        CsvFormat format = new CsvFormat(encoding);
-        if (copyStmt.getDelimiter() != null)
-            format.setDelimiter(copyStmt.getDelimiter());
-        if (copyStmt.getQuote() != null)
-            format.setQuote(copyStmt.getQuote());
-        if (copyStmt.getEscape() != null)
-            format.setEscape(copyStmt.getEscape());
-        if (copyStmt.getNullString() != null)
-            format.setNullString(copyStmt.getNullString());
-        return format;
     }
 
 }

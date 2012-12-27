@@ -26,8 +26,6 @@
 
 package com.akiban.sql.pg;
 
-import static com.akiban.sql.pg.PostgresCopyOutStatement.getCsvFormat;
-
 import com.akiban.sql.parser.ColumnReference;
 import com.akiban.sql.parser.CopyStatementNode;
 import com.akiban.sql.parser.ParameterNode;
@@ -82,7 +80,7 @@ public class PostgresCopyInStatement implements PostgresStatement
         }
         if (copyStmt.getFilename() != null)
             fromFile = new File(copyStmt.getFilename());
-        format = getCsvFormat(server, copyStmt);
+        format = CsvHelper.getCsvFormat(server, copyStmt);
         if (copyStmt.isHeader()) {
             skipRows = 1;
         }

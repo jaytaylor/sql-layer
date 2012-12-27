@@ -30,6 +30,7 @@ import com.akiban.sql.server.ServerValueEncoder;
 import com.akiban.qp.row.Row;
 
 import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.io.IOException;
 
 public class PostgresCopyCsvOutputter extends PostgresOutputter<Row>
@@ -48,18 +49,7 @@ public class PostgresCopyCsvOutputter extends PostgresOutputter<Row>
     @Override
     public void output(Row row, boolean usePVals) throws IOException {
         messenger.beginMessage(PostgresMessages.COPY_DATA_TYPE.code());
-        for (int i = 0; i < ncols; i++) {
-            if (i > 0) messenger.write(format.getDelimiterByte());
-            PostgresType type = columnTypes.get(i);
-            boolean binary = context.isColumnBinary(i);
-            ByteArrayOutputStream bytes;
-            if (usePVals) bytes = encoder.encodePValue(row.pvalue(i), type, binary);
-            else bytes = encoder.encodeValue(row.eval(i), type, binary);
-            if (bytes != null) {
-                messenger.writeByteStream(bytes);
-            }
-        }
-        messenger.writeBytes("\n");
+        output(row, messenger.getRawOutput(), usePVals);
         messenger.sendMessage();
     }
 
@@ -75,11 +65,7 @@ public class PostgresCopyCsvOutputter extends PostgresOutputter<Row>
         messenger.sendMessage();
         if (format.getHeadings() != null) {
             messenger.beginMessage(PostgresMessages.COPY_DATA_TYPE.code());
-            for (int i = 0; i < ncols; i++) {
-                if (i > 0) messenger.write(format.getDelimiterByte());
-                messenger.write(format.getHeadingBytes(i));
-            }
-            messenger.writeBytes("\n");
+            outputHeadings(messenger.getRawOutput());
             messenger.sendMessage();
         }
     }
@@ -88,6 +74,33 @@ public class PostgresCopyCsvOutputter extends PostgresOutputter<Row>
     public void afterData() throws IOException {
         messenger.beginMessage(PostgresMessages.COPY_DONE_TYPE.code());
         messenger.sendMessage();
+    }
+
+    public void output(Row row, OutputStream outputStream, boolean usePVals) 
+            throws IOException {
+        for (int i = 0; i < ncols; i++) {
+            if (i > 0) outputStream.write(format.getDelimiterByte());
+            PostgresType type = columnTypes.get(i);
+            boolean binary = context.isColumnBinary(i);
+            ByteArrayOutputStream bytes;
+            if (usePVals) bytes = encoder.encodePValue(row.pvalue(i), type, binary);
+            else bytes = encoder.encodeValue(row.eval(i), type, binary);
+            if (bytes != null) {
+                bytes.writeTo(outputStream);
+            }
+            else {
+                outputStream.write(format.getNullBytes());
+            }
+        }
+        outputStream.write(format.getRecordEndBytes());
+    }
+
+    public void outputHeadings(OutputStream outputStream) throws IOException {
+        for (int i = 0; i < ncols; i++) {
+            if (i > 0) outputStream.write(format.getDelimiterByte());
+            outputStream.write(format.getHeadingBytes(i));
+        }
+        outputStream.write(format.getRecordEndBytes());
     }
 
 }
