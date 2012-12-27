@@ -42,8 +42,8 @@ public class PostgresCopyCsvOutputter extends PostgresOutputter<Row>
                                     CsvFormat format) {
         super(context, statement);
         this.format = format;
-        if (!encoder.getEncoding().equals(format.getEncoding()))
-            encoder = new ServerValueEncoder(format.getEncoding());
+        encoder = new ServerValueEncoder(format.getEncoding(),
+                                         new QuotingByteArrayOutputStream());
     }
 
     @Override
@@ -82,10 +82,11 @@ public class PostgresCopyCsvOutputter extends PostgresOutputter<Row>
             if (i > 0) outputStream.write(format.getDelimiterByte());
             PostgresType type = columnTypes.get(i);
             boolean binary = context.isColumnBinary(i);
-            ByteArrayOutputStream bytes;
-            if (usePVals) bytes = encoder.encodePValue(row.pvalue(i), type, binary);
-            else bytes = encoder.encodeValue(row.eval(i), type, binary);
+            QuotingByteArrayOutputStream bytes;
+            if (usePVals) bytes = (QuotingByteArrayOutputStream)encoder.encodePValue(row.pvalue(i), type, binary);
+            else bytes = (QuotingByteArrayOutputStream)encoder.encodeValue(row.eval(i), type, binary);
             if (bytes != null) {
+                bytes.quote(format);
                 bytes.writeTo(outputStream);
             }
             else {
@@ -103,4 +104,39 @@ public class PostgresCopyCsvOutputter extends PostgresOutputter<Row>
         outputStream.write(format.getRecordEndBytes());
     }
 
+    static class QuotingByteArrayOutputStream extends ByteArrayOutputStream {
+        public void quote(CsvFormat format) {
+            if (needsQuoting(format.getRequiresQuoting())) {
+                for (int i = 0; i < count; i++) {
+                    int b = buf[i] & 0xFF;
+                    if ((b == format.getQuoteByte()) ||
+                        (b == format.getEscapeByte())) {
+                        insert(i, format.getEscapeByte());
+                        i++;
+                    }
+                }
+                insert(0, format.getQuoteByte());
+                insert(count, format.getQuoteByte());
+            }
+        }
+
+        private boolean needsQuoting(byte[] quotable) {
+            for (int i = 0; i < count; i++) {
+                byte b = buf[i];
+                for (int j = 0; j < quotable.length; j++) {
+                    if (b == quotable[j]) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private void insert(int pos, int b) {
+            write(b);           // for private ensureCapacity.
+            System.arraycopy(buf, pos, buf, pos+1, count-pos-1);
+            buf[pos] = (byte)b;
+        }
+    }
+ 
 }

@@ -30,7 +30,6 @@ import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.CopyStatementNode;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.server.ServerValueEncoder;
 
 import com.akiban.qp.row.Row;
 import com.akiban.qp.operator.Cursor;
@@ -89,9 +88,6 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
             cursor = context.startCursor(this);
             outputStream = new FileOutputStream(toFile);
             int ncols = getColumnTypes().size();
-            ServerValueEncoder encoder = server.getValueEncoder();
-            if (!encoder.getEncoding().equals(format.getEncoding()))
-                encoder = new ServerValueEncoder(format.getEncoding());
             PostgresCopyCsvOutputter outputter = 
                 new PostgresCopyCsvOutputter(context, this, format);
             if (format.getHeadings() != null) {

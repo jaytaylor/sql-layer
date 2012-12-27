@@ -39,7 +39,7 @@ public class CsvFormat
     private List<String> headings = null;
     
     private int delimiterByte, quoteByte, escapeByte;
-    private byte[] nullBytes, recordEndBytes;
+    private byte[] nullBytes, recordEndBytes, requiresQuoting;
 
     public CsvFormat(String encoding) {
         this.encoding = encoding;
@@ -103,7 +103,7 @@ public class CsvFormat
         if (bytes.length != 1)
             throw new IllegalArgumentException("Must encode as a single byte.");
         this.delimiter = delimiter;
-        this.delimiterByte = bytes[0];
+        this.delimiterByte = bytes[0] & 0xFF;
     }
 
     public void setQuote(String quote) {
@@ -111,7 +111,7 @@ public class CsvFormat
         if (bytes.length != 1)
             throw new IllegalArgumentException("Must encode as a single byte.");
         this.escape = this.quote = quote;
-        this.escapeByte = this.quoteByte = bytes[0];
+        this.escapeByte = this.quoteByte = bytes[0] & 0xFF;;
     }
 
     public void setEscape(String escape) {
@@ -119,7 +119,7 @@ public class CsvFormat
         if (bytes.length != 1)
             throw new IllegalArgumentException("Must encode as a single byte.");
         this.escape = escape;
-        this.escapeByte = bytes[0];
+        this.escapeByte = bytes[0] & 0xFF;;
     }
 
     public void setNullString(String nullString) {
@@ -142,14 +142,27 @@ public class CsvFormat
     public int getNewline() {
         if (recordEndBytes.length != 1)
             throw new IllegalArgumentException("Must encode as a single byte.");
-        return recordEndBytes[0];
+        return recordEndBytes[0] & 0xFF;
     }
 
     public int getReturn() {
         byte[] bytes = getBytes("\r");
         if (bytes.length != 1)
             throw new IllegalArgumentException("Must encode as a single byte.");
-        return bytes[0];
+        return bytes[0] & 0xFF;
+    }
+
+    public byte[] getRequiresQuoting() {
+        if (requiresQuoting == null) {
+            requiresQuoting = new byte[(quoteByte == escapeByte) ? 4 : 5];
+            requiresQuoting[0] = (byte)delimiterByte;
+            requiresQuoting[1] = (byte)quoteByte;
+            requiresQuoting[2] = (byte)getNewline();
+            requiresQuoting[3] = (byte)getReturn();
+            if (quoteByte != escapeByte)
+                requiresQuoting[4] = (byte)escapeByte;
+        }
+        return requiresQuoting;
     }
 
     private byte[] getBytes(String str) {

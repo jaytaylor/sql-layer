@@ -93,9 +93,17 @@ public class ServerValueEncoder
     private DataOutputStream dataStream;
 
     public ServerValueEncoder(String encoding) {
-        this.encoding = encoding;
+        this(encoding, new ByteArrayOutputStream());
+    }
 
-        byteStream = new ByteArrayOutputStream();
+    public ServerValueEncoder(String encoding, ZeroDateTimeBehavior zeroDateTimeBehavior) {
+        this(encoding);
+        this.zeroDateTimeBehavior = zeroDateTimeBehavior;
+    }
+
+    public ServerValueEncoder(String encoding, ByteArrayOutputStream byteStream) {
+        this.encoding = encoding;
+        this.byteStream = byteStream;
         try {
             printWriter = new PrintWriter(new OutputStreamWriter(byteStream, encoding));
         }
@@ -108,11 +116,6 @@ public class ServerValueEncoder
             appender = AkibanAppender.of(byteStream, printWriter, "UTF-8");
         else
             appender = AkibanAppender.of(printWriter);
-    }
-
-    public ServerValueEncoder(String encoding, ZeroDateTimeBehavior zeroDateTimeBehavior) {
-        this(encoding);
-        this.zeroDateTimeBehavior = zeroDateTimeBehavior;
     }
 
     public String getEncoding() {
