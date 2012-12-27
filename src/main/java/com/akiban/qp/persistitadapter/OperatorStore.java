@@ -281,6 +281,9 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     throws PersistitException
     {
         UserTable userTable = ais.getUserTable(rowData.getRowDefId());
+        if(canSkipMaintenance(userTable)) {
+            return;
+        }
 
         Exchange hEx = adapter.takeExchange(userTable.getGroup());
         try {
@@ -291,13 +294,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             PersistitHKey persistitHKey = new PersistitHKey(adapter, userTable.hKey());
             persistitHKey.copyFrom(hEx.getKey());
 
-            Collection<GroupIndex> branchIndexes = new ArrayList<GroupIndex>();
-            for (GroupIndex groupIndex : userTable.getGroup().getIndexes()) {
-                if (groupIndex.leafMostTable().isDescendantOf(userTable)) {
-                    branchIndexes.add(groupIndex);
-                }
-            }
-
+            Collection<GroupIndex> branchIndexes = userTable.getGroupIndexes();
             for (GroupIndex groupIndex : optionallyOrderGroupIndexes(branchIndexes)) {
                 assert !groupIndex.isUnique() : "unique GI: " + groupIndex;
                 if (columnDifferences == null || groupIndex.columnsOverlap(userTable, columnDifferences)) {
@@ -384,6 +381,10 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             }
         }
         return true;
+    }
+
+    private static boolean canSkipMaintenance(UserTable userTable) {
+       return userTable.getGroupIndexes().isEmpty();
     }
 
     // object state

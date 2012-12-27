@@ -586,7 +586,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public Long writeRow(Session session, NewRow row)
+    public void writeRow(Session session, NewRow row)
     {
         logger.trace("writing a row");
         final RowData rowData = niceRowToRowData(row);
@@ -595,7 +595,18 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         } catch (PersistitException ex) {
             throw new PersistitAdapterException(ex);
         }
-        return null;
+    }
+
+    @Override
+    public void writeRows(Session session, List<RowData> rows) {
+        logger.trace("writing {} rows", rows.size());
+        try {
+            for(RowData rowData : rows) {
+                store().writeRow(session, rowData);
+            }
+        } catch (PersistitException ex) {
+            throw new PersistitAdapterException(ex);
+        }
     }
 
     @Override

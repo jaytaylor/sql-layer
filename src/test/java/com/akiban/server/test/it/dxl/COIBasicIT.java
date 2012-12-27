@@ -159,6 +159,24 @@ public final class COIBasicIT extends ITBase {
         assertEquals("iRows", Arrays.asList(iRow), convertRowDatas(iRows));
     }
 
+    @Test
+    public void insertToUTablesBulkAndScanToLegacy() throws InvalidOperationException {
+        final TableIds tids = createTables();
+
+        final NewRow cRow = NewRowBuilder.forTable(tids.c, getRowDef(tids.c)).put(1L).put("Robert").check(session(), dml()).row();
+        final NewRow oRow = NewRowBuilder.forTable(tids.o, getRowDef(tids.o)).put(10L).put(1L).check(session(), dml()).row();
+        final NewRow iRow = NewRowBuilder.forTable(tids.i, getRowDef(tids.i)).put(100L).put(10L).put("Desc 1").check(session(), dml()).row();
+
+        dml().writeRows(session(), Arrays.asList(cRow.toRowData(), oRow.toRowData(), iRow.toRowData()));
+        List<RowData> cRows = scanFull(scanAllRequest(tids.c));
+        List<RowData> oRows = scanFull(scanAllRequest(tids.o));
+        List<RowData> iRows = scanFull(scanAllRequest(tids.i));
+
+        assertEquals("cRows", Arrays.asList(cRow), convertRowDatas(cRows));
+        assertEquals("oRows", Arrays.asList(oRow), convertRowDatas(oRows));
+        assertEquals("iRows", Arrays.asList(iRow), convertRowDatas(iRows));
+    }
+
     @Test(expected=UnsupportedDropException.class)
     public void dropTableRoot() throws InvalidOperationException {
         final TableIds tids = createTables();
