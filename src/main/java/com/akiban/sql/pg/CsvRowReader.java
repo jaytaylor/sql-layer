@@ -33,7 +33,10 @@ import com.akiban.qp.persistitadapter.PValueRowDataCreator;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ToObjectValueTarget;
+import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.ErrorHandlingMode;
 import com.akiban.server.types3.TExecutionContext;
@@ -64,8 +67,10 @@ public class CsvRowReader
     private final PValue[] pvalues;
     private final PValueRowDataCreator pvalueCreator;
     private final TExecutionContext[] executionContexts;
+    private final FromObjectValueSource fromObject;
     private final ValueHolder holder;
     private final ToObjectValueTarget toObject;
+    private AkType[] aktypes;
     private NewRow row;
     private enum State { ROW_START, FIELD_START, IN_FIELD, IN_QUOTE, AFTER_QUOTE };
     private State state;
@@ -109,12 +114,19 @@ public class CsvRowReader
                                                              ErrorHandlingMode.WARN);
             }
             pvalueCreator = new PValueRowDataCreator();
+            fromObject = null;
             holder = null;
             toObject = null;
+            aktypes = null;
         }
         else {
+            fromObject = new FromObjectValueSource();
             holder = new ValueHolder();
             toObject = new ToObjectValueTarget();
+            aktypes = new AkType[columns.size()];
+            for (int i = 0; i < aktypes.length; i++) {
+                aktypes[i] = columns.get(i).getType().akType();
+            }
             pstring = null;
             pvalues = null;
             pvalueCreator = null;
@@ -273,7 +285,9 @@ public class CsvRowReader
             pvalueCreator.put(pvalue, row, rowDef.getFieldDef(columnIndex), columnIndex);
         }
         else {
-            holder.putString(string);
+            fromObject.setExplicitly(string, AkType.VARCHAR);
+            holder.expectType(aktypes[fieldIndex]);
+            Converters.convert(fromObject, holder);
             row.put(columnIndex, toObject.convertFromSource(holder));
         }
         fieldIndex++;
