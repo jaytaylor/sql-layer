@@ -70,7 +70,7 @@ call mvn -Dmaven.test.skip=true assembly:single
 IF ERRORLEVEL 1 GOTO EOF
 CD ..\..
 
-IF NOT DEFINED REST_BRANCH SET REST_BRANCH=https://github.com/akiban/akiban-rest/archive/plugin.zip
+IF NOT DEFINED REST_BRANCH SET REST_BRANCH=https://github.com/akiban/akiban-rest/archive/akiban-rest-0.2.2.zip
 curl -kLo rest.zip %REST_BRANCH%
 IF ERRORLEVEL 1 GOTO EOF
 call 7z x rest.zip
