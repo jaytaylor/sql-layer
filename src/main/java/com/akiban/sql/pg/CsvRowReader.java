@@ -267,7 +267,7 @@ public class CsvRowReader
             }
         }
         int columnIndex = fieldMap[fieldIndex];
-        // Normal case is: bytes -> string -> parsed typed value -> Java object.
+        // bytes -> string -> parsed typed value -> Java object.
         String string;
         try {
             string = new String(buffer, 0, fieldLength, format.getEncoding());
