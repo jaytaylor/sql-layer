@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.pg;
+package com.akiban.server.csv;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
@@ -53,6 +53,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+/** Read from a flat file into <code>NewRow</code> rows suitable for inserting. */
 public class CsvRowReader
 {
     private final RowDef rowDef;

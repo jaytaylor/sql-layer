@@ -31,9 +31,12 @@ import com.akiban.sql.parser.CopyStatementNode;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.StatementNode;
 
-import com.akiban.qp.row.Row;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.row.Row;
+import com.akiban.server.csv.CsvFormat;
 import com.akiban.server.error.SQLParserInternalException;
+
+import static com.akiban.sql.pg.PostgresCopyInStatement.csvFormat;
 import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 import java.io.*;
@@ -65,7 +68,7 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
         assert (pstmt == this);
         if (copyStmt.getFilename() != null)
             toFile = new File(copyStmt.getFilename());
-        format = CsvFormat.create(copyStmt, server.getMessenger().getEncoding());
+        format = csvFormat(copyStmt, server);
         if (copyStmt.isHeader()) {
             format.setHeadings(getColumnNames());
         }

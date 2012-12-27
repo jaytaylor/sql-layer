@@ -37,6 +37,8 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.csv.CsvFormat;
+import com.akiban.server.csv.CsvRowReader;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.session.Session;
@@ -66,6 +68,23 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
     protected PostgresCopyInStatement() {
     }
 
+    public static CsvFormat csvFormat(CopyStatementNode copyStmt, 
+                                      PostgresServerSession server) {
+        String encoding = copyStmt.getEncoding();
+        if (encoding == null)
+            encoding = server.getMessenger().getEncoding();
+        CsvFormat format = new CsvFormat(encoding);
+        if (copyStmt.getDelimiter() != null)
+            format.setDelimiter(copyStmt.getDelimiter());
+        if (copyStmt.getQuote() != null)
+            format.setQuote(copyStmt.getQuote());
+        if (copyStmt.getEscape() != null)
+            format.setEscape(copyStmt.getEscape());
+        if (copyStmt.getNullString() != null)
+            format.setNullString(copyStmt.getNullString());
+        return format;
+    }
+
     @Override
     public PostgresStatement finishGenerating(PostgresServerSession server,
                                               String sql, StatementNode stmt,
@@ -93,7 +112,7 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
         }
         if (copyStmt.getFilename() != null)
             fromFile = new File(copyStmt.getFilename());
-        format = CsvFormat.create(copyStmt, server.getMessenger().getEncoding());
+        format = csvFormat(copyStmt, server);
         if (copyStmt.isHeader()) {
             skipRows = 1;
         }

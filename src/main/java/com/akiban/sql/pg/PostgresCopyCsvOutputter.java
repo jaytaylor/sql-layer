@@ -27,7 +27,9 @@
 package com.akiban.sql.pg;
 
 import com.akiban.sql.server.ServerValueEncoder;
+
 import com.akiban.qp.row.Row;
+import com.akiban.server.csv.CsvFormat;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
