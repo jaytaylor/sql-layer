@@ -92,13 +92,13 @@ cp $(find . -name 'server-plugins-http-conductor*with-dependencies.jar') ../../p
 popd && popd
 
 # Add akiban-rest
-[ ! -z "$REST_BRANCH" ] || REST_BRANCH="https://github.com/akiban/akiban-rest/archive/akiban-rest-0.2.2.zip"
+[ ! -z "$REST_BRANCH" ] || REST_BRANCH="https://github.com/akiban/akiban-rest/archive/master.zip"
 echo "Using akiban-rest git branch: ${REST_BRANCH}"
 pushd target && rm -rf akiban-rest-plugin ; \
     rm rest.zip ; \
     curl -kL -o rest.zip ${REST_BRANCH} && \
     unzip rest.zip && \
-    pushd akiban-rest-plugin
+    pushd akiban-rest-*
 mvn -Dmaven.test.skip=true clean package
 cp $(find . -name '*with-dependencies.jar') ../../packages-common/plugins
 
