@@ -31,24 +31,37 @@ import com.akiban.sql.parser.CopyStatementNode;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.ResultColumn;
 import com.akiban.sql.parser.StatementNode;
+import com.akiban.sql.server.ServerTransaction;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.api.DMLFunctions;
+import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.service.session.Session;
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.Tap;
+import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
 
 /** COPY ... FROM */
-public class PostgresCopyInStatement implements PostgresStatement
+public class PostgresCopyInStatement extends PostgresBaseStatement
 {
     private UserTable toTable;
     private List<Column> toColumns;
     private File fromFile;
     private CsvFormat format;
     private int skipRows;
-    private long aisGeneration;
+
+    private static final Logger logger = LoggerFactory.getLogger(PostgresCopyInStatement.class);
+    private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresCopyInStatement: execute shared");
+    private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresCopyInStatement: acquire shared lock");
 
     protected PostgresCopyInStatement() {
     }
@@ -90,6 +103,9 @@ public class PostgresCopyInStatement implements PostgresStatement
     @Override
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
+        DMLFunctions dml = server.getDXL().dmlFunctions();
+        Session session = server.getSession();
+        CsvRowReader reader = new CsvRowReader(toTable, toColumns, format, context);
         InputStream istr;
         if (fromFile != null)
             istr = new FileInputStream(fromFile);
@@ -98,18 +114,34 @@ public class PostgresCopyInStatement implements PostgresStatement
             // this is not a requirement on the client.
             istr = new PostgresCopyInputStream(server.getMessenger(), 
                                                toColumns.size());
-        BufferedReader bstr = new BufferedReader(new InputStreamReader(istr, "UTF-8"));
+        // This + TransactionMode.NONE to allow committing periodically in the middle.
+        ServerTransaction localTransaction = null;
+        boolean success = false, lockSuccess = false;
+        int nrows = 0;
         try {
+            lock(context, DXLFunction.UNSPECIFIED_DML_WRITE);
+            lockSuccess = true;
+            localTransaction = new ServerTransaction(server, false);
+            localTransaction.beforeUpdate(true);
             while (true) {
-                String line = bstr.readLine();
-                if (line == null) break;
-                System.out.println(line);
+                NewRow row = reader.nextRow(istr);
+                if (row == null) break;
+                logger.trace("Read row: " + row);
+                dml.writeRow(session, row);
+                nrows++;
             }
         }
         finally {
-            bstr.close();
+            if (localTransaction != null) {
+                if (success)
+                    localTransaction.commit();
+                else
+                    localTransaction.abort();
+            }
+            unlock(context, DXLFunction.UNSPECIFIED_DML_WRITE, lockSuccess);
+            if (istr != null)
+                istr.close();
         }
-        int nrows = 0;
         {        
             PostgresMessenger messenger = server.getMessenger();
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
@@ -140,28 +172,25 @@ public class PostgresCopyInStatement implements PostgresStatement
     }
 
     @Override
-    public AISGenerationMode getAISGenerationMode() {
-        return AISGenerationMode.NOT_ALLOWED;
-    }
-
-    @Override
-    public boolean hasAISGeneration() {
-        return aisGeneration != 0;
-    }
-
-    @Override
-    public void setAISGeneration(long aisGeneration) {
-        this.aisGeneration = aisGeneration;
-    }
-
-    @Override
-    public long getAISGeneration() {
-        return aisGeneration;
-    }
-
-    @Override
     public boolean putInCache() {
         return false;
+    }
+
+    @Override
+    protected InOutTap executeTap()
+    {
+        return EXECUTE_TAP;
+    }
+
+    @Override
+    protected InOutTap acquireLockTap()
+    {
+        return ACQUIRE_LOCK_TAP;
+    }
+
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.NOT_ALLOWED;
     }
 
 }
