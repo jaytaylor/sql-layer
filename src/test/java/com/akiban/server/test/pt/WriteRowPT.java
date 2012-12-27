@@ -31,20 +31,48 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class WriteRowPT extends PTBase {
     private static final int MILLION = 1000000;
+    private static final int BULK_CALLS = 35;
+    private static final int ROWS_PER_BULK = MILLION / BULK_CALLS;
+
     private static final String SCHEMA = "test";
     private static final String TABLE = "t";
 
+    private RowDef createTable() {
+        int tid = createTable(SCHEMA, TABLE, "id INT NOT NULL PRIMARY KEY");
+        return getRowDef(tid);
+    }
+
     @Test
     public void writeMillionSingleRows() {
-        int tid = createTable(SCHEMA, TABLE, "id INT NOT NULL PRIMARY KEY");
-        RowDef rowDef = getRowDef(tid);
-        RowData rowData = new RowData(new byte[1024]);
+        RowDef rowDef = createTable();
+        RowData rowData = new RowData(new byte[100]);
         LegacyRowWrapper wrapper = new LegacyRowWrapper(null, rowData);
         for(int i = 0; i < MILLION; ++i) {
             rowData.createRow(rowDef, new Object[] { i });
             dml().writeRow(session(), wrapper);
+        }
+    }
+
+    // Simulate a WriteRowRequest from the adapter that had the write cache enabled
+    @Test
+    public void writeMillionBulkRows() {
+        RowDef rowDef = createTable();
+        List<RowData> rows = new ArrayList<RowData>(ROWS_PER_BULK);
+        for(int i = 0; i < ROWS_PER_BULK; ++i) {
+            rows.add(new RowData(new byte[100]));
+        }
+
+        int rowID = 0;
+        for(int bulkCall = 0; bulkCall < BULK_CALLS; ++bulkCall) {
+            for(int listIndex = 0; listIndex < ROWS_PER_BULK; ++listIndex) {
+                rows.get(listIndex).createRow(rowDef, new Object[] { rowID++ });
+            }
+            dml().writeRows(session(), rows);
         }
     }
 }
