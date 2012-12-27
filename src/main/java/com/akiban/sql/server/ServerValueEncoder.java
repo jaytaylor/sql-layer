@@ -115,6 +115,10 @@ public class ServerValueEncoder
         this.zeroDateTimeBehavior = zeroDateTimeBehavior;
     }
 
+    public String getEncoding() {
+        return encoding;
+    }
+
     public ByteArrayOutputStream getByteStream() {
         printWriter.flush();
         return byteStream;

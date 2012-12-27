@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.server.ServerValueEncoder;
 import com.akiban.qp.row.Row;
 
 import java.io.ByteArrayOutputStream;
@@ -33,17 +34,22 @@ import java.io.IOException;
 
 public class PostgresCopyCsvOutputter extends PostgresOutputter<Row>
 {
+    private CsvFormat format;
+
     public PostgresCopyCsvOutputter(PostgresQueryContext context,
-                                    PostgresDMLStatement statement) {
+                                    PostgresDMLStatement statement,
+                                    CsvFormat format) {
         super(context, statement);
-        // TODO: encoder = new ServerValueEncoder(format.getEncoding());
+        this.format = format;
+        if (!encoder.getEncoding().equals(format.getEncoding()))
+            encoder = new ServerValueEncoder(format.getEncoding());
     }
 
     @Override
     public void output(Row row, boolean usePVals) throws IOException {
         messenger.beginMessage(PostgresMessages.COPY_DATA_TYPE.code());
         for (int i = 0; i < ncols; i++) {
-            if (i > 0) messenger.writeBytes(",");
+            if (i > 0) messenger.write(format.getDelimiterByte());
             PostgresType type = columnTypes.get(i);
             boolean binary = context.isColumnBinary(i);
             ByteArrayOutputStream bytes;
@@ -67,6 +73,15 @@ public class PostgresCopyCsvOutputter extends PostgresOutputter<Row>
             messenger.writeShort(0);
         }
         messenger.sendMessage();
+        if (format.getHeadings() != null) {
+            messenger.beginMessage(PostgresMessages.COPY_DATA_TYPE.code());
+            for (int i = 0; i < ncols; i++) {
+                if (i > 0) messenger.write(format.getDelimiterByte());
+                messenger.write(format.getHeadingBytes(i));
+            }
+            messenger.writeBytes("\n");
+            messenger.sendMessage();
+        }
     }
 
     @Override

@@ -41,6 +41,7 @@ import java.util.*;
 public class PostgresCopyOutStatement extends PostgresOperatorStatement
 {
     private File toFile;
+    private CsvFormat format;
 
     public PostgresCopyOutStatement(PostgresOperatorCompiler compiler) {
         super(compiler);
@@ -51,15 +52,22 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
                                               String sql, StatementNode stmt,
                                               List<ParameterNode> params, int[] paramTypes) {
         CopyStatementNode copyStmt = (CopyStatementNode)stmt;
-        if (copyStmt.getFilename() != null)
-            toFile = new File(copyStmt.getFilename());
         try {
             stmt = copyStmt.asQuery();
         }
         catch (StandardException ex) {
             throw new SQLParserInternalException(ex);
         }        
-        return super.finishGenerating(server, sql, stmt, params, paramTypes);
+        PostgresStatement pstmt = super.finishGenerating(server, sql, stmt,
+                                                         params, paramTypes);
+        assert (pstmt == this);
+        if (copyStmt.getFilename() != null)
+            toFile = new File(copyStmt.getFilename());
+        format = getCsvFormat(server, copyStmt);
+        if (copyStmt.isHeader()) {
+            format.setHeadings(getColumnNames());
+        }
+        return this;
     }
 
     @Override
@@ -80,7 +88,7 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
 
     @Override
     protected PostgresOutputter<Row> getRowOutputter(PostgresQueryContext context) {
-        return new PostgresCopyCsvOutputter(context, this);
+        return new PostgresCopyCsvOutputter(context, this, format);
     }
     
     @Override
@@ -91,6 +99,23 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
     @Override
     public boolean putInCache() {
         return false;
+    }
+
+    public static CsvFormat getCsvFormat(PostgresServerSession server,
+                                         CopyStatementNode copyStmt) {
+        String encoding = copyStmt.getEncoding();
+        if (encoding == null)
+            encoding = server.getMessenger().getEncoding();
+        CsvFormat format = new CsvFormat(encoding);
+        if (copyStmt.getDelimiter() != null)
+            format.setDelimiter(copyStmt.getDelimiter());
+        if (copyStmt.getQuote() != null)
+            format.setQuote(copyStmt.getQuote());
+        if (copyStmt.getEscape() != null)
+            format.setEscape(copyStmt.getEscape());
+        if (copyStmt.getNullString() != null)
+            format.setNullString(copyStmt.getNullString());
+        return format;
     }
 
 }
