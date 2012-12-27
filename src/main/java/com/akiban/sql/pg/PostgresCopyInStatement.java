@@ -80,7 +80,7 @@ public class PostgresCopyInStatement implements PostgresStatement
         }
         if (copyStmt.getFilename() != null)
             fromFile = new File(copyStmt.getFilename());
-        format = CsvHelper.getCsvFormat(server, copyStmt);
+        format = CsvFormat.create(copyStmt, server.getMessenger().getEncoding());
         if (copyStmt.isHeader()) {
             skipRows = 1;
         }

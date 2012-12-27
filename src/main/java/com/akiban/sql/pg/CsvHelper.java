@@ -32,21 +32,5 @@ public class CsvHelper
 {
     private CsvHelper() {}
 
-    public static CsvFormat getCsvFormat(PostgresServerSession server,
-                                         CopyStatementNode copyStmt) {
-        String encoding = copyStmt.getEncoding();
-        if (encoding == null)
-            encoding = server.getMessenger().getEncoding();
-        CsvFormat format = new CsvFormat(encoding);
-        if (copyStmt.getDelimiter() != null)
-            format.setDelimiter(copyStmt.getDelimiter());
-        if (copyStmt.getQuote() != null)
-            format.setQuote(copyStmt.getQuote());
-        if (copyStmt.getEscape() != null)
-            format.setEscape(copyStmt.getEscape());
-        if (copyStmt.getNullString() != null)
-            format.setNullString(copyStmt.getNullString());
-        return format;
-    }
     
 }

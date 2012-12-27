@@ -26,6 +26,8 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.parser.CopyStatementNode;
+
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.List;
@@ -45,6 +47,22 @@ public class CsvFormat
         setDelimiter(",");
         setNullString("");
         setQuote("\"");
+    }
+
+    public static CsvFormat create(CopyStatementNode copyStmt, String defaultEncoding) {
+        String encoding = copyStmt.getEncoding();
+        if (encoding == null)
+            encoding = defaultEncoding;
+        CsvFormat format = new CsvFormat(encoding);
+        if (copyStmt.getDelimiter() != null)
+            format.setDelimiter(copyStmt.getDelimiter());
+        if (copyStmt.getQuote() != null)
+            format.setQuote(copyStmt.getQuote());
+        if (copyStmt.getEscape() != null)
+            format.setEscape(copyStmt.getEscape());
+        if (copyStmt.getNullString() != null)
+            format.setNullString(copyStmt.getNullString());
+        return format;
     }
 
     public String getEncoding() {

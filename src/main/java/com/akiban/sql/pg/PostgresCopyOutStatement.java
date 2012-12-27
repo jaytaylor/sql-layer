@@ -66,7 +66,7 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
         assert (pstmt == this);
         if (copyStmt.getFilename() != null)
             toFile = new File(copyStmt.getFilename());
-        format = CsvHelper.getCsvFormat(server, copyStmt);
+        format = CsvFormat.create(copyStmt, server.getMessenger().getEncoding());
         if (copyStmt.isHeader()) {
             format.setHeadings(getColumnNames());
         }
