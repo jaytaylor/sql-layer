@@ -139,6 +139,19 @@ public class CsvFormat
         return recordEndBytes;
     }
 
+    public int getNewline() {
+        if (recordEndBytes.length != 1)
+            throw new IllegalArgumentException("Must encode as a single byte.");
+        return recordEndBytes[0];
+    }
+
+    public int getReturn() {
+        byte[] bytes = getBytes("\r");
+        if (bytes.length != 1)
+            throw new IllegalArgumentException("Must encode as a single byte.");
+        return bytes[0];
+    }
+
     private byte[] getBytes(String str) {
         try {
             return str.getBytes(encoding);
