@@ -26,12 +26,16 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.parser.ColumnReference;
 import com.akiban.sql.parser.CopyStatementNode;
 import com.akiban.sql.parser.ParameterNode;
+import com.akiban.sql.parser.ResultColumn;
 import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.error.NoSuchColumnException;
+import com.akiban.server.error.NoSuchTableException;
 
 import java.io.*;
 import java.util.*;
@@ -52,6 +56,26 @@ public class PostgresCopyInStatement implements PostgresStatement
                                               String sql, StatementNode stmt,
                                               List<ParameterNode> params, int[] paramTypes) {
         CopyStatementNode copyStmt = (CopyStatementNode)stmt;
+        String schemaName = copyStmt.getTableName().getSchemaName();
+        String tableName = copyStmt.getTableName().getTableName();
+        if (schemaName == null)
+            schemaName = server.getDefaultSchemaName();
+        toTable = server.getAIS().getUserTable(schemaName, tableName);
+        if (toTable == null)
+            throw new NoSuchTableException(schemaName, tableName, 
+                                           copyStmt.getTableName());
+        if (copyStmt.getColumnList() == null)
+            toColumns = toTable.getColumns();
+        else {
+            toColumns = new ArrayList<Column>(copyStmt.getColumnList().size());
+            for (ResultColumn rc : copyStmt.getColumnList()) {
+                ColumnReference cref = rc.getReference();
+                Column column = toTable.getColumn(cref.getColumnName());
+                if (column == null)
+                    throw new NoSuchColumnException(cref.getColumnName(), cref);
+                toColumns.add(column);
+            }
+        }
         if (copyStmt.getFilename() != null)
             fromFile = new File(copyStmt.getFilename());
         return this;
@@ -66,7 +90,8 @@ public class PostgresCopyInStatement implements PostgresStatement
         else
             // Always use a stream: we align records and messages, but
             // this is not a requirement on the client.
-            istr = new PostgresCopyInputStream(server.getMessenger(), 1); // TODO:
+            istr = new PostgresCopyInputStream(server.getMessenger(), 
+                                               toColumns.size());
         BufferedReader bstr = new BufferedReader(new InputStreamReader(istr, "UTF-8"));
         try {
             while (true) {
