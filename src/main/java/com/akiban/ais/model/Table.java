@@ -92,6 +92,10 @@ public abstract class Table extends Columnar implements Traversable, HasGroup
         return unmodifiableIndexMap.get(indexName.toLowerCase());
     }
 
+    /**
+     * Get all GroupIndexes this table participates in, both explicit and implicit (i.e. as a declared column or
+     * as an ancestor of a declared column
+     */
     public final Collection<GroupIndex> getGroupIndexes() {
         return unmodifiableGroupIndexes;
     }
