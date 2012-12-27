@@ -37,6 +37,7 @@ import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.ErrorHandlingMode;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
@@ -46,6 +47,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class CsvRowReader
@@ -61,7 +63,7 @@ public class CsvRowReader
     private final PValue pstring;
     private final PValue[] pvalues;
     private final PValueRowDataCreator pvalueCreator;
-    private final TExecutionContext executionContext;
+    private final TExecutionContext[] executionContexts;
     private final ValueHolder holder;
     private final ToObjectValueTarget toObject;
     private NewRow row;
@@ -92,15 +94,21 @@ public class CsvRowReader
         if (usePValues) {
             pstring = new PValue(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
             pvalues = new PValue[columns.size()];
+            executionContexts = new TExecutionContext[pvalues.length];
+            List<TInstance> inputs = Collections.singletonList(pstring.tInstance());
             for (int i = 0; i < pvalues.length; i++) {
-                pvalues[i] = new PValue(columns.get(i).tInstance());
+                TInstance output = columns.get(i).tInstance();
+                pvalues[i] = new PValue(output);
+                // TODO: Only needed until every place gets type from
+                // PValueTarget, when there can just be one
+                // TExecutionContext wrapping the QueryContext.
+                executionContexts[i] = new TExecutionContext(null, 
+                                                             inputs, output, queryContext,
+                                                             ErrorHandlingMode.WARN,
+                                                             ErrorHandlingMode.WARN,
+                                                             ErrorHandlingMode.WARN);
             }
             pvalueCreator = new PValueRowDataCreator();
-            executionContext = new TExecutionContext(null, null, null, 
-                                                     queryContext,
-                                                     ErrorHandlingMode.WARN,
-                                                     ErrorHandlingMode.WARN,
-                                                     ErrorHandlingMode.WARN);
             holder = null;
             toObject = null;
         }
@@ -110,23 +118,33 @@ public class CsvRowReader
             pstring = null;
             pvalues = null;
             pvalueCreator = null;
-            executionContext = null;
+            executionContexts = null;
         }
     }
 
     public NewRow nextRow(InputStream inputStream) throws IOException {
+        int lb = inputStream.read();
+        if (lb < 0) return null;
         row = new NiceRow(tableId, rowDef);
         state = State.ROW_START;
         fieldIndex = fieldLength = 0;
         while (true) {
-            int b = inputStream.read();
+            int b = lb;
+            if (b < 0) 
+                b = inputStream.read();
+            else
+                lb = -1;
             switch (state) {
             case ROW_START:
-                if ((b == cr) || (b == nl)) {
+                if (b < 0) {
+                    return null;
+                }
+                else if ((b == cr) || (b == nl)) {
                     continue;
                 }
                 else if (b == delim) {
                     addField(false);
+                    state = State.FIELD_START;
                 }
                 else if (b == quote) {
                     state = State.IN_QUOTE;
@@ -137,7 +155,7 @@ public class CsvRowReader
                 }
                 break;
             case FIELD_START:
-                if ((b == cr) || (b == nl)) {
+                if ((b < 0) || (b == cr) || (b == nl)) {
                     addField(false);
                     return row;
                 }
@@ -153,12 +171,13 @@ public class CsvRowReader
                 }
                 break;
             case IN_FIELD:
-                if ((b == cr) || (b == nl)) {
+                if ((b < 0) || (b == cr) || (b == nl)) {
                     addField(false);
                     return row;
                 }
                 else if (b == delim) {
                     addField(false);
+                    state = State.FIELD_START;
                 }
                 else if (b == quote) {
                     throw new IOException("QUOTE in the middle of a field");
@@ -170,25 +189,36 @@ public class CsvRowReader
             case IN_QUOTE:
                 if (b < 0)
                     throw new IOException("EOF inside QUOTE");
-                if (b == escape) {
+                else if (b == quote) {
+                    if (escape == quote) {
+                        // Must be doubled; peek next character.
+                        lb = inputStream.read();
+                        if (lb == quote) {
+                            addToField(b);
+                            lb = -1;
+                            continue;
+                        }
+                    }
+                    state = State.AFTER_QUOTE;
+                }
+                else if (b == escape) {
+                    // Non-doubling escape.
                     b = inputStream.read();
                     if (b < 0) throw new IOException("EOF after ESCAPE");
                     addToField(b);
-                }
-                else if (b == quote) {
-                    state = State.AFTER_QUOTE;
                 }
                 else {
                     addToField(b);
                 }
                 break;
             case AFTER_QUOTE:
-                if (b == delim) {
-                    addField(true);
-                }
-                else if ((b == cr) || (b == nl)) {
+                if ((b < 0) || (b == cr) || (b == nl)) {
                     addField(true);
                     return row;
+                }
+                else if (b == delim) {
+                    addField(true);
+                    state = State.FIELD_START;
                 }
                 else {
                     throw new IOException("junk after quoted field");
@@ -219,6 +249,7 @@ public class CsvRowReader
                 }
                 if (match) {
                     row.put(fieldMap[fieldIndex++], null);
+                    fieldLength = 0;
                     return;
                 }
             }
@@ -237,7 +268,8 @@ public class CsvRowReader
         if (usePValues) {
             pstring.putString(string, null);
             PValue pvalue = pvalues[fieldIndex];
-            pvalue.tInstance().typeClass().fromObject(executionContext, pstring, pvalue);
+            pvalue.tInstance().typeClass()
+                .fromObject(executionContexts[fieldIndex], pstring, pvalue);
             pvalueCreator.put(pvalue, row, rowDef.getFieldDef(columnIndex), columnIndex);
         }
         else {
@@ -245,6 +277,7 @@ public class CsvRowReader
             row.put(columnIndex, toObject.convertFromSource(holder));
         }
         fieldIndex++;
+        fieldLength = 0;
     }
 
 }

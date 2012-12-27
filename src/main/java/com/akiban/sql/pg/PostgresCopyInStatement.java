@@ -114,9 +114,10 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
             // this is not a requirement on the client.
             istr = new PostgresCopyInputStream(server.getMessenger(), 
                                                toColumns.size());
-        // This + TransactionMode.NONE to allow committing periodically in the middle.
+        // This + TransactionMode.NONE to allow committing
+        // periodically in the middle, at least as an option.
         ServerTransaction localTransaction = null;
-        boolean success = false, lockSuccess = false;
+        boolean lockSuccess = false, success = false;
         int nrows = 0;
         try {
             lock(context, DXLFunction.UNSPECIFIED_DML_WRITE);
@@ -126,10 +127,11 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
             while (true) {
                 NewRow row = reader.nextRow(istr);
                 if (row == null) break;
-                logger.trace("Read row: " + row);
+                logger.trace("Read row: {}", row);
                 dml.writeRow(session, row);
                 nrows++;
             }
+            success = true;
         }
         finally {
             if (localTransaction != null) {
