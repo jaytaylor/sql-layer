@@ -143,6 +143,8 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
             lockSuccess = true;
             localTransaction = new ServerTransaction(server, false);
             localTransaction.beforeUpdate(true);
+            if (skipRows > 0)
+                reader.skipRows(istr, skipRows);
             while (true) {
                 NewRow row = reader.nextRow(istr);
                 if (row == null) break;
