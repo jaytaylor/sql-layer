@@ -347,13 +347,8 @@ public class PersistitStore implements Store, Service {
                           BitSet tablesRequiringHKeyMaintenance,
                           boolean propagateHKeyChanges) throws PersistitException
     {
-        final int rowDefId = rowData.getRowDefId();
-
         if (rowData.getRowSize() > MAX_ROW_SIZE) {
-            if (LOG.isWarnEnabled()) {
-                LOG.warn("RowData size " + rowData.getRowSize() + " is larger than current limit of " + MAX_ROW_SIZE
-                                 + " bytes");
-            }
+            LOG.warn("RowData size {} is larger than current limit of {} bytes" + rowData.getRowSize(), MAX_ROW_SIZE);
         }
 
         final RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
@@ -393,7 +388,7 @@ public class PersistitStore implements Store, Service {
                 insertIntoIndex(session, index, rowData, hEx.getKey(), indexRow, deferIndexes);
             }
 
-            if (propagateHKeyChanges) {
+            if (propagateHKeyChanges && hasChildren(rowDef.userTable())) {
                 // The row being inserted might be the parent of orphan rows
                 // already present. The hkeys of these
                 // orphan rows need to be maintained. The hkeys of interest
@@ -458,7 +453,6 @@ public class PersistitStore implements Store, Service {
                            BitSet tablesRequiringHKeyMaintenance, boolean propagateHKeyChanges)
         throws PersistitException
     {
-        int rowDefId = rowData.getRowDefId();
         RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
         checkNoGroupIndexes(rowDef.table());
         lockAndCheckVersion(session, rowDef);
@@ -492,7 +486,7 @@ public class PersistitStore implements Store, Service {
             // The row being deleted might be the parent of rows that
             // now become orphans. The hkeys
             // of these rows need to be maintained.
-            if(propagateHKeyChanges) {
+            if(propagateHKeyChanges && hasChildren(rowDef.userTable())) {
                 propagateDownGroup(session, hEx, tablesRequiringHKeyMaintenance, indexRow, deleteIndexes);
             }
         } finally {
@@ -1474,5 +1468,10 @@ public class PersistitStore implements Store, Service {
     private static PersistitAdapter adapter(Session session)
     {
         return (PersistitAdapter) session.get(StoreAdapter.STORE_ADAPTER_KEY);
+    }
+
+    private static boolean hasChildren(UserTable table) {
+        // At runtime, getCandidateChildJoins() = getChildJoins() and doesn't involve building a temp list
+        return !table.getCandidateChildJoins().isEmpty();
     }
 }
