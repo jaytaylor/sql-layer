@@ -27,6 +27,7 @@
 package com.akiban.server.types3.pvalue;
 
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.common.BigDecimalWrapper;
 
 public final class PValueTargets {
     private PValueTargets() {}
@@ -42,7 +43,13 @@ public final class PValueTargets {
         }
         else if (source.hasCacheValue()) {
             if (target.supportsCachedObjects()) {
-                target.putObject(source.getObject());
+                // The BigDecimalWrapper is mutable
+                // a shalloow copy won't work.
+                Object obj = source.getObject();
+                if (obj instanceof BigDecimalWrapper)
+                    target.putObject(((BigDecimalWrapper)obj).deepCopy());
+                else
+                    target.putObject(source.getObject());
                 return;
             }
             else if (!source.canGetRawValue()) {

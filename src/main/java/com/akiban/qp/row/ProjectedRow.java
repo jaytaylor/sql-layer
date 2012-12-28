@@ -160,16 +160,13 @@ public class ProjectedRow extends AbstractRow
         if (evaluations == null)
             return null;
         else
-            return Iterators.<ExpressionEvaluation, ValueSource>transform(evaluations.iterator(),
-                                                                          new Function<ExpressionEvaluation, ValueSource>()
-                                                                          {
-                                                                              int i = 0;
-                                                                              @Override
-                                                                              public ValueSource apply(ExpressionEvaluation f)
-                                                                              {
-                                                                                  return eval(i++);
-                                                                              }
-                                                                          });
+        {
+            int size = evaluations.size();
+            List<ValueSource> ret = new ArrayList<ValueSource>(size);
+            for (int i = 0; i < size; ++i)
+                ret.add(eval(i));
+            return ret.iterator();
+        }
     }
     
     public Iterator<PValueSource> getPValueSources()
@@ -177,16 +174,13 @@ public class ProjectedRow extends AbstractRow
         if (pEvaluatableExpressions == null)
             return null;
         else
-            return Iterators.<TEvaluatableExpression, PValueSource>transform(pEvaluatableExpressions.iterator(),
-                                                                             new Function<TEvaluatableExpression, PValueSource>()
-                                                                             {
-                                                                                int i = 0;
-                                                                                @Override
-                                                                                public PValueSource apply(TEvaluatableExpression f)
-                                                                                {
-                                                                                    return pvalue(i);
-                                                                                }
-                                                                             });
+        {
+            int size = pEvaluatableExpressions.size();
+            List<PValueSource> ret = new ArrayList<PValueSource>(size);
+            for (int i = 0; i < size; ++i)
+                ret.add(pvalue(i));
+            return ret.iterator();
+        }
     }
     // For use by this class
 
