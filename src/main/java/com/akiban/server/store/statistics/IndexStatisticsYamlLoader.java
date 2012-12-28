@@ -78,6 +78,7 @@ public class IndexStatisticsYamlLoader
     public static final String SAMPLED_COUNT_KEY = "SampledCount";
     public static final String STATISTICS_COLLECTION_KEY = "Statistics";
     public static final String STATISTICS_COLUMN_COUNT_KEY = "Columns";
+    public static final String STATISTICS_COLUMN_FIRST_COLUMN_KEY = "FirstColumn";
     public static final String STATISTICS_HISTOGRAM_COLLECTION_KEY = "Histogram";
     public static final String HISTOGRAM_KEY_ARRAY_KEY = "key";
     public static final String HISTOGRAM_EQUAL_COUNT_KEY = "eq";
@@ -149,14 +150,15 @@ public class IndexStatisticsYamlLoader
         for (Object e : (Iterable)map.get(STATISTICS_COLLECTION_KEY)) {
             Map<?,?> em = (Map<?,?>)e;
             int columnCount = (Integer)em.get(STATISTICS_COLUMN_COUNT_KEY);
-            Histogram h = parseHistogram(em.get(STATISTICS_HISTOGRAM_COLLECTION_KEY), 
-                                         index, columnCount);
+            Integer firstColumn = (Integer)em.get(STATISTICS_COLUMN_FIRST_COLUMN_KEY);
+            Histogram h = parseHistogram(em.get(STATISTICS_HISTOGRAM_COLLECTION_KEY),
+                                         index, firstColumn == null ? 0 : firstColumn, columnCount);
             stats.addHistogram(h);
         }
         result.put(index, stats);
     }
 
-    protected Histogram parseHistogram(Object obj, Index index, int columnCount) {
+    protected Histogram parseHistogram(Object obj, Index index, int firstColumn, int columnCount) {
         if (!(obj instanceof Iterable))
             throw new AkibanInternalException("Histogram not in expected format");
         List<HistogramEntry> entries = new ArrayList<HistogramEntry>();
@@ -175,7 +177,7 @@ public class IndexStatisticsYamlLoader
             entries.add(new HistogramEntry(keyString, keyBytes,
                                            eqCount, ltCount, distinctCount));
         }
-        return new Histogram(0, columnCount, entries);
+        return new Histogram(firstColumn, columnCount, entries);
     }
 
     protected Key encodeKey(Index index, int columnCount, List<?> values) {
@@ -288,7 +290,7 @@ public class IndexStatisticsYamlLoader
     }
 
     protected Object buildStatistics(Index index, IndexStatistics indexStatistics) {
-        Map map = new TreeMap();
+        Map<String, Object> map = new TreeMap<String, Object>();
         map.put(INDEX_NAME_KEY, index.getIndexName().getName());
         map.put(TABLE_NAME_KEY, index.getIndexName().getTableName());
         map.put(TIMESTAMP_KEY, new Date(indexStatistics.getAnalysisTimestamp()));
@@ -297,8 +299,15 @@ public class IndexStatisticsYamlLoader
         List<Object> stats = new ArrayList<Object>();
         int nkeys = index.getKeyColumns().size();
         if (index.isSpatial()) nkeys -= index.dimensions() - 1;
+        // Multi-column histograms
         for (int i = 0; i < nkeys; i++) {
             Histogram histogram = indexStatistics.getHistogram(0, i + 1);
+            if (histogram == null) continue;
+            stats.add(buildHistogram(index, histogram));
+        }
+        // Single-column histograms
+        for (int i = 1; i < nkeys; i++) {
+            Histogram histogram = indexStatistics.getHistogram(i, 1);
             if (histogram == null) continue;
             stats.add(buildHistogram(index, histogram));
         }
@@ -307,17 +316,18 @@ public class IndexStatisticsYamlLoader
     }
 
     protected Object buildHistogram(Index index, Histogram histogram) {
-        Map map = new TreeMap();
+        Map<String, Object> map = new TreeMap<String, Object>();
         int columnCount = histogram.getColumnCount();
+        int firstColumn = histogram.getFirstColumn();
         map.put(STATISTICS_COLUMN_COUNT_KEY, columnCount);
+        map.put(STATISTICS_COLUMN_FIRST_COLUMN_KEY, firstColumn);
         List<Object> entries = new ArrayList<Object>();
         for (HistogramEntry entry : histogram.getEntries()) {
-            Map emap = new TreeMap();
+            Map<String, Object> emap = new TreeMap<String, Object>();
             emap.put(HISTOGRAM_EQUAL_COUNT_KEY, entry.getEqualCount());
             emap.put(HISTOGRAM_LESS_COUNT_KEY, entry.getLessCount());
             emap.put(HISTOGRAM_DISTINCT_COUNT_KEY, entry.getDistinctCount());
-            emap.put(HISTOGRAM_KEY_ARRAY_KEY, decodeKey(index, columnCount, 
-                                                        entry.getKeyBytes()));
+            emap.put(HISTOGRAM_KEY_ARRAY_KEY, decodeKey(index, columnCount, entry.getKeyBytes()));
             entries.add(emap);
         }
         map.put(STATISTICS_HISTOGRAM_COLLECTION_KEY, entries);

@@ -45,7 +45,9 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
                                            long indexRowCount,
                                            KeyCreator keyCreator)
     {
-        this.multiColumnVisitor = new MultiColumnIndexStatisticsVisitor(index, indexRowCount, keyCreator);
+        this.index = index;
+        this.indexRowCount = indexRowCount;
+        this.multiColumnVisitor = new MultiColumnIndexStatisticsVisitor(index, keyCreator);
         this.singleColumnVisitors = new ArrayList<SingleColumnIndexStatisticsVisitor>();
         this.nIndexColumns = index.getKeyColumns().size();
         for (int f = 0; f < nIndexColumns; f++) {
@@ -53,7 +55,6 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
                 new SingleColumnIndexStatisticsVisitor(store,
                                                        session,
                                                        index.getKeyColumns().get(f),
-                                                       indexRowCount,
                                                        keyCreator);
             singleColumnVisitors.add(singleColumnVisitor);
         }
@@ -61,9 +62,9 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
 
     public void init()
     {
-        multiColumnVisitor.init();
+        multiColumnVisitor.init(indexRowCount);
         for (int c = 0; c < nIndexColumns; c++) {
-            singleColumnVisitors.get(c).init();
+            singleColumnVisitors.get(c).init(-1L); // Value computed by the single-column visitor
         }
     }
 
@@ -85,11 +86,23 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
 
     public IndexStatistics getIndexStatistics()
     {
-        return multiColumnVisitor.getIndexStatistics();
+        IndexStatistics indexStatistics = new IndexStatistics(index);
+        // The multi-column visitor has the row count. The single-column visitors have the count of distinct
+        // keys for that column.
+        int rowCount = multiColumnVisitor.rowCount();
+        indexStatistics.setRowCount(rowCount);
+        indexStatistics.setSampledCount(rowCount);
+        multiColumnVisitor.getIndexStatistics(indexStatistics);
+        for (SingleColumnIndexStatisticsVisitor singleColumnVisitor : singleColumnVisitors) {
+            singleColumnVisitor.getIndexStatistics(indexStatistics);
+        }
+        return indexStatistics;
     }
 
     public static final int BUCKETS_COUNT = 32;
 
+    private final Index index;
+    private final long indexRowCount;
     private final MultiColumnIndexStatisticsVisitor multiColumnVisitor;
     private final List<SingleColumnIndexStatisticsVisitor> singleColumnVisitors;
     private final int nIndexColumns;

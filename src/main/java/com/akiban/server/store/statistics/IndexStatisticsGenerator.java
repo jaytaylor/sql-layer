@@ -46,7 +46,7 @@ abstract class IndexStatisticsGenerator
     protected final long timestamp;
     private int rowCount;
     private final KeyCreator keyCreator;
-    private final Sampler<Key> keySampler;
+    private Sampler<Key> keySampler;
     private final Flywheel<Key> keysFlywheel = new Flywheel<Key>() {
         @Override
         protected Key createNew() {
@@ -54,8 +54,12 @@ abstract class IndexStatisticsGenerator
         }
     };
 
+    public int rowCount()
+    {
+        return rowCount;
+    }
+
     protected IndexStatisticsGenerator(Index index,
-                                       long indexRowCount,
                                        int columnCount,
                                        int singleColumnPosition,
                                        KeyCreator keyCreator) {
@@ -65,9 +69,6 @@ abstract class IndexStatisticsGenerator
         this.singleColumnPosition = singleColumnPosition;
         this.timestamp = System.currentTimeMillis();
         this.rowCount = 0;
-        KeySplitter splitter = new KeySplitter(columnCount, keysFlywheel);
-        this.keySampler =
-            new Sampler<Key>(splitter, PersistitIndexStatisticsVisitor.BUCKETS_COUNT, indexRowCount, keysFlywheel);
     }
     
     private static class KeySplitter implements Splitter<Key> {
@@ -98,7 +99,12 @@ abstract class IndexStatisticsGenerator
         private Flywheel<Key> keysFlywheel;
     }
     
-    public void init() {
+    public void init(long distinctCount) {
+        this.keySampler =
+            new Sampler<Key>(new KeySplitter(columnCount, keysFlywheel),
+                             PersistitIndexStatisticsVisitor.BUCKETS_COUNT,
+                             distinctCount,
+                             keysFlywheel);
         keySampler.init();
     }
 
@@ -114,11 +120,8 @@ abstract class IndexStatisticsGenerator
         }
     }
 
-    public final IndexStatistics getIndexStatistics() {
-        IndexStatistics result = new IndexStatistics(index);
-        result.setAnalysisTimestamp(timestamp);
-        result.setRowCount(rowCount);
-        result.setSampledCount(rowCount);
+    public final void getIndexStatistics(IndexStatistics indexStatistics) {
+        indexStatistics.setAnalysisTimestamp(timestamp);
         List<List<Bucket<Key>>> segmentBuckets = keySampler.toBuckets();
         assert segmentBuckets.size() == columnCount
             : String.format("expected %s segments, saw %s: %s", columnCount, segmentBuckets.size(), segmentBuckets);
@@ -140,11 +143,11 @@ abstract class IndexStatisticsGenerator
                 entries.add(entry);
             }
             if (singleColumnPosition < 0) {
-                result.addHistogram(new Histogram(0, colCountSegment + 1, entries));
-            } else {
-                result.addHistogram(new Histogram(singleColumnPosition, 1, entries));
-            }
+                indexStatistics.addHistogram(new Histogram(0, colCountSegment + 1, entries));
+            } else if (singleColumnPosition > 0) {
+                indexStatistics.addHistogram(new Histogram(singleColumnPosition, 1, entries));
+            } // else: Single-column histogram for leading column is handled as a multi-column histogram with
+              // column count = 1.
         }
-        return result;
     }
 }

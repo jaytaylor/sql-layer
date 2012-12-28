@@ -26,12 +26,7 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.*;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.server.store.statistics.IndexStatisticsYamlTest;
 
@@ -134,7 +129,7 @@ public class IndexStatisticsLifecycleIT extends PostgresServerFilesITBase
         GroupIndex bothValue = ais.getGroup("parent").getIndex("value");
         Integer bothValueCount = entries.get(bothValue);
         assertNotNull("group index was analyzed", bothValueCount);
-        assertEquals("group index two entries", 4, bothValueCount.intValue());
+        assertEquals("group index two entries", 6, bothValueCount.intValue());
 
         executeStatement.executeUpdate("DROP INDEX parent.name");
         entries = check();
@@ -144,7 +139,7 @@ public class IndexStatisticsLifecycleIT extends PostgresServerFilesITBase
         parentPKCount = entries.get(parentPK);
         bothValueCount = entries.get(bothValue);
         assertEquals("parent PK intact after name drop", 2, parentPKCount.intValue());
-        assertEquals("group index intact after name drop", 4, bothValueCount.intValue());
+        assertEquals("group index intact after name drop", 6, bothValueCount.intValue());
 
         executeStatement.executeUpdate("DROP INDEX value");
         entries = check();

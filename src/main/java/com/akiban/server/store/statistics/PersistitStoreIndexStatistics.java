@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import static com.akiban.server.store.statistics.IndexStatisticsService.INDEX_STATISTICS_ENTRY_TABLE_NAME;
 import static com.akiban.server.store.statistics.IndexStatisticsService.INDEX_STATISTICS_TABLE_NAME;
@@ -226,21 +227,25 @@ public class PersistitStoreIndexStatistics
             store.writeRow(session, rowData);
             // Multi-column
             for (int prefixColumns = 1; prefixColumns <= index.getKeyColumns().size(); prefixColumns++) {
+                Histogram histogram = indexStatistics.getHistogram(0, prefixColumns);
                 storeIndexStatisticsEntry(session,
                                           index,
                                           tableId,
+                                          histogram.getColumnCount(),
                                           indexStatisticsEntryRowDef,
                                           rowData,
-                                          indexStatistics.getHistogram(0, prefixColumns));
+                                          histogram);
             }
             // Single-column
             for (int columnPosition = 1; columnPosition < index.getKeyColumns().size(); columnPosition++) {
+                Histogram histogram = indexStatistics.getHistogram(columnPosition, 1);
                 storeIndexStatisticsEntry(session,
                                           index,
                                           tableId,
+                                          -histogram.getFirstColumn() - 1,
                                           indexStatisticsEntryRowDef,
                                           rowData,
-                                          indexStatistics.getHistogram(columnPosition, 1));
+                                          histogram);
             }
             transaction.commit();
         }
@@ -249,32 +254,31 @@ public class PersistitStoreIndexStatistics
         }
     }
 
-    private boolean storeIndexStatisticsEntry(Session session,
-                                              Index index,
-                                              int tableId,
-                                              RowDef indexStatisticsEntryRowDef,
-                                              RowData rowData,
-                                              Histogram histogram) throws PersistitException
+    private void storeIndexStatisticsEntry(Session session,
+                                           Index index,
+                                           int tableId,
+                                           int columnCount,
+                                           RowDef indexStatisticsEntryRowDef,
+                                           RowData rowData,
+                                           Histogram histogram) throws PersistitException
     {
-        if (histogram == null) {
-            return true;
+        if (histogram != null) {
+            int itemNumber = 0;
+            for (HistogramEntry entry : histogram.getEntries()) {
+                rowData.createRow(indexStatisticsEntryRowDef, new Object[] {
+                    tableId,
+                    index.getIndexId(),
+                    columnCount,
+                    ++itemNumber,
+                    entry.getKeyString(),
+                    entry.getKeyBytes(),
+                    entry.getEqualCount(),
+                    entry.getLessCount(),
+                    entry.getDistinctCount()
+                });
+                store.writeRow(session, rowData);
+            }
         }
-        int itemNumber = 0;
-        for (HistogramEntry entry : histogram.getEntries()) {
-            rowData.createRow(indexStatisticsEntryRowDef, new Object[] {
-                tableId,
-                index.getIndexId(),
-                histogram.getColumnCount(),
-                ++itemNumber,
-                entry.getKeyString(),
-                entry.getKeyBytes(),
-                entry.getEqualCount(),
-                entry.getLessCount(),
-                entry.getDistinctCount()
-            });
-            store.writeRow(session, rowData);
-        }
-        return false;
     }
 
     private void removeStatistics(Session session, Index index, Exchange exchange)
@@ -339,11 +343,11 @@ public class PersistitStoreIndexStatistics
         visitor.init();
         store.traverse(session, index, visitor);
         visitor.finish();
-        IndexStatistics result = visitor.getIndexStatistics();
+        IndexStatistics indexStatistics = visitor.getIndexStatistics();
         if (logger.isDebugEnabled()) {
-            logger.debug("Analyzed: " + result.toString(index));
+            logger.debug("Analyzed: " + indexStatistics.toString(index));
         }
-        return result;
+        return indexStatistics;
     }
     
     // TODO: Is this the right API?

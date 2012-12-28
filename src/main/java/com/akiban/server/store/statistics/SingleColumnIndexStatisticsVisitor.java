@@ -41,14 +41,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class SingleColumnIndexStatisticsVisitor extends IndexStatisticsGenerator
 {
-    public void init()
+    public void init(long distinctCount)
     {
-        super.init();
         exchange = TempVolume.takeExchange(store, session, treeName);
     }
 
     public void finish()
     {
+
+        super.init(distinctCount);
         exchange.clear();
         try {
             while (exchange.next()) {
@@ -57,9 +58,9 @@ public class SingleColumnIndexStatisticsVisitor extends IndexStatisticsGenerator
         } catch (PersistitException e) {
             PersistitAdapter.handlePersistitException(session, e);
         } finally {
+            super.finish();
             TempVolume.returnExchange(session, exchange);
         }
-        super.finish();
     }
 
     public void visit(Key key, Value value)
@@ -69,7 +70,13 @@ public class SingleColumnIndexStatisticsVisitor extends IndexStatisticsGenerator
         try {
             exchange.fetch();
             value = exchange.getValue();
-            int count = value.isDefined() ? value.getInt() : 0;
+            int count;
+            if (value.isDefined()) {
+                count = value.getInt();
+            } else {
+                count = 0;
+                distinctCount++;
+            }
             value.put(count + 1);
             exchange.store();
         } catch (PersistitException e) {
@@ -80,10 +87,9 @@ public class SingleColumnIndexStatisticsVisitor extends IndexStatisticsGenerator
     public SingleColumnIndexStatisticsVisitor(PersistitStore store,
                                               Session session,
                                               IndexColumn indexColumn,
-                                              long indexRowCount,
                                               KeyCreator keyCreator)
     {
-        super(indexColumn.getIndex(), indexRowCount, 1, indexColumn.getPosition(), keyCreator);
+        super(indexColumn.getIndex(), 1, indexColumn.getPosition(), keyCreator);
         this.store = store;
         this.session = session;
         this.field = indexColumn.getPosition();
@@ -97,4 +103,5 @@ public class SingleColumnIndexStatisticsVisitor extends IndexStatisticsGenerator
     private final int field;
     private final String treeName;
     private Exchange exchange;
+    private int distinctCount = 0;
 }

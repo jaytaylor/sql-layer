@@ -70,7 +70,6 @@ public class MultipleAndSingleColumnHistogramsIT extends ITBase
         IndexStatistics stats = statsService.getIndexStatistics(session(), index);
         for (int prefixColumns = 1; prefixColumns <= INDEX_COLUMNS; prefixColumns++) {
             Histogram histogram = stats.getHistogram(0, prefixColumns);
-            System.out.println(histogram);
 
         }
     }

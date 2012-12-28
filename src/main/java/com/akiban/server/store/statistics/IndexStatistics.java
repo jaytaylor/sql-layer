@@ -32,7 +32,8 @@ import com.akiban.ais.model.Index;
  */
 public class IndexStatistics
 {
-    // NOTE: There is no backpointer to the Index in this class because of 
+    private final String indexName;
+    // NOTE: There is no backpointer to the Index in this class because of
     // IndexStatisticsServiceImpl.cache, a WeakHashMap<Index,IndexStatistics>.
     private long analysisTimestamp, rowCount, sampledCount;
     // Single-column histograms are indexed by column position, starting at 1.
@@ -50,6 +51,7 @@ public class IndexStatistics
     private Histogram[] singleColumnHistograms;
 
     protected IndexStatistics(Index index) {
+        this.indexName = index.getIndexName().getName();
         this.multiColumnHistograms = new Histogram[index.getKeyColumns().size()];
         this.singleColumnHistograms = new Histogram[index.getKeyColumns().size()];
     }

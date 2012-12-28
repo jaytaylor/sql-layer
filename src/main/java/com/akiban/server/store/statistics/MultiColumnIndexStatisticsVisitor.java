@@ -33,11 +33,13 @@ import com.persistit.Value;
 
 class MultiColumnIndexStatisticsVisitor extends IndexStatisticsGenerator
 {
-    public void visit(Key key, Value value) {
+    public void visit(Key key, Value value)
+    {
         loadKey(key);
     }
 
-    public MultiColumnIndexStatisticsVisitor(Index index, long indexRowCount, KeyCreator keyCreator) {
-        super(index, indexRowCount, index.getKeyColumns().size(), -1, keyCreator);
+    public MultiColumnIndexStatisticsVisitor(Index index, KeyCreator keyCreator)
+    {
+        super(index, index.getKeyColumns().size(), -1, keyCreator);
     }
 }
