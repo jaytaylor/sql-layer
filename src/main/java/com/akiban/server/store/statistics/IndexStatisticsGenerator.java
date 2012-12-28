@@ -44,7 +44,7 @@ abstract class IndexStatisticsGenerator
     private final int columnCount;
     private final int singleColumnPosition; // -1 for multi-column
     protected final long timestamp;
-    private int rowCount;
+    protected int rowCount;
     private final KeyCreator keyCreator;
     private Sampler<Key> keySampler;
     private final Flywheel<Key> keysFlywheel = new Flywheel<Key>() {
@@ -112,10 +112,11 @@ abstract class IndexStatisticsGenerator
         keySampler.finish();
     }
 
-    protected final void loadKey(Key key) {
+    protected final void loadKey(Key key)
+    {
         List<? extends Key> recycles = keySampler.visit(key);
         rowCount++;
-        for (int i=0, len=recycles.size(); i < len; ++i) {
+        for (int i = 0, len = recycles.size(); i < len; ++i) {
             keysFlywheel.recycle(recycles.get(i));
         }
     }

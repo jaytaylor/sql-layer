@@ -48,12 +48,14 @@ public class SingleColumnIndexStatisticsVisitor extends IndexStatisticsGenerator
 
     public void finish()
     {
-
-        super.init(distinctCount);
+        super.init(rowCount);
         exchange.clear();
         try {
             while (exchange.next()) {
-                loadKey(exchange.getKey());
+                int keyCount = exchange.getValue().getInt();
+                for (int i = 0; i < keyCount; i++) {
+                    loadKey(exchange.getKey());
+                }
             }
         } catch (PersistitException e) {
             PersistitAdapter.handlePersistitException(session, e);
@@ -70,15 +72,10 @@ public class SingleColumnIndexStatisticsVisitor extends IndexStatisticsGenerator
         try {
             exchange.fetch();
             value = exchange.getValue();
-            int count;
-            if (value.isDefined()) {
-                count = value.getInt();
-            } else {
-                count = 0;
-                distinctCount++;
-            }
+            int count = value.isDefined() ? value.getInt() : 0;
             value.put(count + 1);
             exchange.store();
+            rowCount++;
         } catch (PersistitException e) {
             PersistitAdapter.handlePersistitException(session, e);
         }
@@ -103,5 +100,4 @@ public class SingleColumnIndexStatisticsVisitor extends IndexStatisticsGenerator
     private final int field;
     private final String treeName;
     private Exchange exchange;
-    private int distinctCount = 0;
 }
