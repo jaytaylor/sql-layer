@@ -28,6 +28,8 @@ package com.akiban.server;
 
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.util.AkibanAppender;
+import com.akiban.util.ByteSource;
+import com.akiban.util.WrappingByteSource;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -335,6 +337,24 @@ public class AkServerUtil {
         } catch(UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static ByteSource byteSourceForMySQLString(byte[] bytes, final int offset,
+                                                      final int width, final FieldDef fieldDef) {
+        if (width == 0) {
+            return null;
+        }
+
+        final int prefixSize = fieldDef.getPrefixSize();
+        int length = (int) getUnsignedIntegerByWidth(bytes, offset, prefixSize);
+
+        if (length > width) {
+            throw new IllegalArgumentException(String.format(
+                    "String is wider than available bytes: %d > %d", length, width));
+        }
+        byte[] result = new byte[length];
+        System.arraycopy(bytes, offset+prefixSize, result, 0, length);
+        return new WrappingByteSource(result);
     }
 
     public static ByteBuffer byteBufferForMySQLString(byte[] bytes, final int offset,

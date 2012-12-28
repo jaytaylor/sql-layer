@@ -34,5 +34,7 @@ public interface PValueSource extends PBasicValueSource {
     
     boolean hasCacheValue();
 
+    boolean canGetRawValue();
+
     Object getObject();
 }

@@ -68,11 +68,11 @@ public abstract class QueryContextBase implements QueryContext
         PValue holder = null;
         if (bindings.isDefined(index)) {
             holder = (PValue)bindings.get(index);
-            if (holder.getUnderlyingType() != value.getUnderlyingType())
+            if (holder.tInstance() != value.tInstance())
                 holder = null;
         }
         if (holder == null) {
-            holder = new PValue(value.getUnderlyingType());
+            holder = new PValue(value.tInstance());
             bindings.set(index, holder);
         }
         PValueTargets.copyFrom(value, holder);

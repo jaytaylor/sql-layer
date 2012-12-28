@@ -29,9 +29,10 @@ package com.akiban.server.rowdata;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.types.*;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.common.types.TString;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 
 
@@ -40,8 +41,8 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
     // ValueSource interface
 
     @Override
-    public PUnderlying getUnderlyingType() {
-        return fieldDef().column().tInstance().typeClass().underlyingType();
+    public TInstance tInstance() {
+        return fieldDef().column().tInstance();
     }
 
     @Override
@@ -51,12 +52,17 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
 
     @Override
     public boolean hasRawValue() {
-        return true;
+        return ! hasCacheValue();
     }
 
     @Override
     public boolean hasCacheValue() {
-        return false;
+        return fieldDef().column().tInstance().typeClass() instanceof TString;
+    }
+
+    @Override
+    public boolean canGetRawValue() {
+        return true;
     }
 
     @Override
@@ -131,7 +137,11 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
 
     @Override
     public Object getObject() {
-        throw new UnsupportedOperationException();
+        assert hasCacheValue() : "can't get cached object for " + fieldDef();
+        final long location = getRawOffsetAndWidth();
+        return location == 0
+                ? null
+                : AkServerUtil.byteSourceForMySQLString(bytes(), (int) location, (int) (location >>> 32), fieldDef());
     }
 
 
@@ -150,13 +160,6 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
         long asLong = extractLong(Signage.SIGNED);
         int asInt = (int) asLong;
         return Float.intBitsToFloat(asInt);
-    }
-
-    private String doGetString() {
-        final long location = getRawOffsetAndWidth();
-        return location == 0
-                ? null
-                : AkServerUtil.decodeMySQLString(bytes(), (int) location, (int) (location >>> 32), fieldDef());
     }
 
     private long extractLong(Signage signage) {

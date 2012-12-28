@@ -851,19 +851,21 @@ public class OperatorAssembler extends BaseRule
                         final String defaultValue = column.getDefaultValue();
                         final PValue defaultValueSource;
                         if(defaultValue == null) {
-                            defaultValueSource = new PValue(tinst.typeClass().underlyingType());
+                            defaultValueSource = new PValue(tinst);
                             defaultValueSource.putNull();
                         } else {
                             TCast cast = tinst.typeClass().castFromVarchar();
                             if (cast != null) {
-                                defaultValueSource = new PValue(tinst.typeClass().underlyingType());
+                                defaultValueSource = new PValue(tinst);
                                 TInstance valInst = MString.VARCHAR.instance(defaultValue.length(), false);
                                 TExecutionContext executionContext = new TExecutionContext(
                                         Collections.singletonList(valInst),
                                         tinst, planContext.getQueryContext());
-                                cast.evaluate(executionContext, new PValue(defaultValue), defaultValueSource);
+                                cast.evaluate(executionContext,
+                                              new PValue(MString.varcharFor(defaultValue), defaultValue),
+                                              defaultValueSource);
                             } else {
-                                defaultValueSource = new PValue (defaultValue);
+                                defaultValueSource = new PValue (tinst, defaultValue);
                             }
                         }
                         row[i] = new TPreparedLiteral(tinst, defaultValueSource);

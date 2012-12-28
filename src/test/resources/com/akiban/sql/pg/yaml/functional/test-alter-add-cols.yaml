@@ -1,0 +1,21 @@
+# test adding multiple columns in ALTER TABLE ...
+---
+- Statement: CREATE TABLE t (a integer)
+--- # incorrect number of columns
+- Statement: ISNERT INTO t values (1, 2, 3);
+- error: [42000]
+---
+- Statement: ALTER TABLE t add b integer, c integer;
+--- # after the ALTER statement, the table now has 3 colummns
+- Statement: INSERT INTO t values (1, 2, 3);
+---
+- Statement: SELECT * from t;
+- output: [[1, 2, 3]]
+---
+- Statement: ALTER TABLE t add  d int;
+---
+- Statement: DROP TABLE t;
+--- # table not found
+- Statement: ALTER TABLE foo ADD COLUMN bar INT
+- error: [42501]
+...

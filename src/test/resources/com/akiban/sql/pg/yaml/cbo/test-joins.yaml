@@ -1,8 +1,6 @@
 ---
 - Properties: sys-mysql
 - suppressed: true
----
-- Statement: SET cbo TO 'true'
 ---  # based on files in server /src/test/resources/com/akiban/sql/pg/select
 - Include: all-schema.yaml
 ---
@@ -82,6 +80,4 @@
 ---
 - Statement: SELECT id_unsigned, u_value FROM t_signed JOIN t_unsigned ON id_signed = id_unsigned WHERE u_value < 100
 - output: [[0, 0], [1, 0], [2, 0]]
----
-- Statement: SET cbo TO DEFAULT
 ...

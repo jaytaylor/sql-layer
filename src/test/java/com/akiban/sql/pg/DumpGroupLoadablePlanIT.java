@@ -33,8 +33,9 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.sql.TestBase;
-import com.akiban.sql.pg.PostgresServerFilesITBase;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValue;
@@ -105,10 +106,10 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
                 }
             };
         if (Types3Switch.ON) {
-            queryContext.setPValue(0, new PValue(SCHEMA_NAME));
-            queryContext.setPValue(1, new PValue(GROUP_NAME));
+            queryContext.setPValue(0, new PValue(MString.varcharFor(SCHEMA_NAME), SCHEMA_NAME));
+            queryContext.setPValue(1, new PValue(MString.varcharFor(GROUP_NAME), GROUP_NAME));
             if (multiple)
-                queryContext.setPValue(2, new PValue(10));
+                queryContext.setPValue(2, new PValue(MNumeric.INT.instance(false), 10));
         }
         else {
             queryContext.setValue(0, new FromObjectValueSource().setReflectively(SCHEMA_NAME));
@@ -123,7 +124,7 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
 
         cursor.open();
         while(true) {
-            List<? extends Object> columns = cursor.next();
+            List<?> columns = cursor.next();
             if (columns == null) {
                 break;
             }

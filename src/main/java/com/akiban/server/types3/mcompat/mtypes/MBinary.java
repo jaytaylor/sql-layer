@@ -40,6 +40,7 @@ import com.akiban.server.types3.common.types.StringFactory;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.TypeId;
 
@@ -75,7 +76,7 @@ public final class MBinary extends SimpleDtdTClass {
         }
         
         byte[] bytes;
-        PUnderlying underlying = in.getUnderlyingType();
+        PUnderlying underlying = PValueSources.pUnderlying(in);
         if (underlying == PUnderlying.BYTES) {
             bytes = in.getBytes();
         }

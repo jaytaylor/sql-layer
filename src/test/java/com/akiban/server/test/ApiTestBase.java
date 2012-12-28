@@ -79,6 +79,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.ConverterTestUtils;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.util.GroupIndexCreator;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.aisddl.AlterTableDDL;
@@ -112,7 +113,6 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.session.Session;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.MethodRule;
 import org.junit.rules.TestName;
@@ -947,7 +947,7 @@ public class ApiTestBase {
             return null;
         if (pvalue.hasCacheValue())
             return pvalue.getObject();
-        switch (pvalue.getUnderlyingType()) {
+        switch (PValueSources.pUnderlying(pvalue)) {
         case BOOL:
             return pvalue.getBoolean();
         case INT_8:
@@ -987,7 +987,7 @@ public class ApiTestBase {
                 result = null;
             }
             else {
-                switch (pvalue.getUnderlyingType()) {
+                switch (PValueSources.pUnderlying(pvalue)) {
                 case INT_8:
                     result = (long) pvalue.getInt8();
                     break;

@@ -53,7 +53,7 @@ enum RoundingOverloadSignature {
             return ZERO;
         }
 
-        private final PValueSource ZERO = new PValue(0);
+        private final PValueSource ZERO = new PValue(MNumeric.INT.instance(false), 0);
     },
     TWO_ARGS {
         @Override

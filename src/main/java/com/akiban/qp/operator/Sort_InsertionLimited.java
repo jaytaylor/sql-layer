@@ -484,7 +484,7 @@ class Sort_InsertionLimited extends Operator
         private Comparable toObject(PValueSource valueSource) {
             if (valueSource.isNull())
                 return null;
-            switch (valueSource.getUnderlyingType()) {
+            switch (PValueSources.pUnderlying(valueSource)) {
             case BOOL:
                 return valueSource.getBoolean();
             case INT_8:
@@ -506,7 +506,7 @@ class Sort_InsertionLimited extends Operator
             case STRING:
                 return valueSource.getString();
             default:
-                throw new AssertionError(valueSource.getUnderlyingType());
+                throw new AssertionError(valueSource.tInstance());
             }
         }
     }
