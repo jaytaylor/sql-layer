@@ -40,7 +40,10 @@ import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.util.AkibanAppender;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Iterators;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class ProjectedRow extends AbstractRow
@@ -152,23 +155,40 @@ public class ProjectedRow extends AbstractRow
         this.holders = expressions == null ? null : new ValueHolder[expressions.size()];
     }
 
-    /** Make sure all the cached values are full. */
-    public void freeze() {
-        if (holders != null) {
-            for (int i = 0; i < holders.length; i++) {
-                if (holders[i] == null) {
-                    eval(i);
-                }
-            }
-        } else if (evaluated != null) {
-            for (int i = 0; i < evaluated.length; i++) {
-                if (!evaluated[i]) {
-                    pvalue(i);
-                }
-            }
-        }
+    public Iterator<ValueSource> getValueSources()
+    {
+        if (evaluations == null)
+            return null;
+        else
+            return Iterators.<ExpressionEvaluation, ValueSource>transform(evaluations,
+                                                                          new Function<ExpressionEvaluation, ValueSource>()
+                                                                          {
+                                                                              int i = 0;
+                                                                              @Override
+                                                                              public ValueSource apply(ExpressionEvaluation f)
+                                                                              {
+                                                                                  return eval(i++);
+                                                                              }
+                                                                          });
     }
-
+    
+    public Iterator<PValueSource> getPValueSources()
+    {
+        if (pEvaluatableExpressions == null)
+            return null;
+        else
+            return Iterators.<TEvaluatableExpression, PValueSource>transform(pEvaluatableExpressions,
+                                                                             new Function<ExpressionEvaluation, PValueSource>()
+                                                                             {
+                                                                                 int i = 0;
+                                                                                 
+                                                                                @Override
+                                                                                 public PValueSource apply(ExpressionEvaluation f)
+                                                                                 {
+                                                                                     return pvalue(i++);
+                                                                                 }
+                                                                             });
+    }
     // For use by this class
 
     private List<ExpressionEvaluation> createEvaluations(List<? extends Expression> expressions,
