@@ -135,6 +135,17 @@ public class CsvRowReader
         }
     }
 
+    public void skipRows(InputStream inputStream, int nrows) throws IOException {
+        while (true) {
+            int b = inputStream.read();
+            if (b < 0) break;
+            if (b == nl) {
+                nrows--;
+                if (nrows <= 0) break;
+            }
+        }        
+    }
+
     public NewRow nextRow(InputStream inputStream) throws IOException {
         int lb = inputStream.read();
         if (lb < 0) return null;
