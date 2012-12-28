@@ -160,7 +160,7 @@ public class ProjectedRow extends AbstractRow
         if (evaluations == null)
             return null;
         else
-            return Iterators.<ExpressionEvaluation, ValueSource>transform(evaluations,
+            return Iterators.<ExpressionEvaluation, ValueSource>transform(evaluations.iterator(),
                                                                           new Function<ExpressionEvaluation, ValueSource>()
                                                                           {
                                                                               int i = 0;
@@ -177,16 +177,15 @@ public class ProjectedRow extends AbstractRow
         if (pEvaluatableExpressions == null)
             return null;
         else
-            return Iterators.<TEvaluatableExpression, PValueSource>transform(pEvaluatableExpressions,
-                                                                             new Function<ExpressionEvaluation, PValueSource>()
+            return Iterators.<TEvaluatableExpression, PValueSource>transform(pEvaluatableExpressions.iterator(),
+                                                                             new Function<TEvaluatableExpression, PValueSource>()
                                                                              {
-                                                                                 int i = 0;
-                                                                                 
+                                                                                int i = 0;
                                                                                 @Override
-                                                                                 public PValueSource apply(ExpressionEvaluation f)
-                                                                                 {
-                                                                                     return pvalue(i++);
-                                                                                 }
+                                                                                public PValueSource apply(TEvaluatableExpression f)
+                                                                                {
+                                                                                    return pvalue(i);
+                                                                                }
                                                                              });
     }
     // For use by this class
