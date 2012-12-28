@@ -30,6 +30,7 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.persistitadapter.TempVolume;
 import com.akiban.qp.persistitadapter.indexcursor.Sorter;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
@@ -450,8 +451,8 @@ public class Sort_TreeIT extends OperatorITBase
             row(itemRowType, 111L, 11L),
         };
         for (int i = 0; i < 10; i++) {
-            Session.Key<Sorter.TempVolumeState> tempVolumeStateKey = Session.Key.named("TEMP_VOLUME_STATE");
-            Sorter.TempVolumeState tempVolumeState = session().get(tempVolumeStateKey);
+            Session.Key<TempVolume.TempVolumeState> tempVolumeStateKey = Session.Key.named("TEMP_VOLUME_STATE");
+            TempVolume.TempVolumeState tempVolumeState = session().get(tempVolumeStateKey);
             assertTrue(tempVolumeState == null);
             compareRows(expected, cursor(plan, queryContext));
             tempVolumeState = session().get(tempVolumeStateKey);

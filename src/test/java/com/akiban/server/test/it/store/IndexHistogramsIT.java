@@ -29,10 +29,7 @@ package com.akiban.server.test.it.store;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
-import com.akiban.server.store.statistics.IndexStatistics;
-import com.akiban.server.store.statistics.IndexStatisticsService;
-import com.akiban.server.store.statistics.IndexStatistics.HistogramEntryDescription;
-import com.akiban.server.store.statistics.PersistitIndexStatisticsVisitor;
+import com.akiban.server.store.statistics.*;
 import com.akiban.server.store.statistics.histograms.Sampler;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.util.AssertUtils;
@@ -46,7 +43,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public final class IndexHistogramsIT extends ITBase {
     
@@ -464,10 +461,10 @@ public final class IndexHistogramsIT extends ITBase {
 
         if (entries != null) {
             IndexStatistics stats = statsService.getIndexStatistics(session(), index);
-            IndexStatistics.Histogram histogram = stats.getHistogram(expectedColumns);
+            Histogram histogram = stats.getHistogram(0, expectedColumns);
 
             assertEquals("histogram column count", expectedColumns, histogram.getColumnCount());
-            List<IndexStatistics.HistogramEntry> actualEntries = histogram.getEntries();
+            List<HistogramEntry> actualEntries = histogram.getEntries();
             List<HistogramEntryDescription> expectedList = Arrays.asList(entries);
             AssertUtils.assertCollectionEquals("entries", expectedList, actualEntries);
         }

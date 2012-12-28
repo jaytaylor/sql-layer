@@ -11,7 +11,9 @@ CREATE TABLE child
 (
   id INT NOT NULL, PRIMARY KEY(id), 
   pid INT, GROUPING FOREIGN KEY (pid) REFERENCES parent(id), 
-  value DECIMAL(4,2)
+  value DECIMAL(4,2),
+  when DATE
 );
 
 CREATE INDEX value ON parent(parent.name, child.value) USING LEFT JOIN;
+CREATE INDEX when_name ON parent(child.when, parent.name) USING LEFT JOIN;
