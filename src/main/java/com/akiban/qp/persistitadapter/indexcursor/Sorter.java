@@ -87,8 +87,6 @@ public class Sorter
             try {
                 TempVolume.returnExchange(adapter.getSession(), exchange);
             } finally {
-                // Don't return the exchange. TreeServiceImpl caches it for the tree, and we're done with the tree.
-                // THIS CAUSES A LEAK OF EXCHANGES: adapter.returnExchange(exchange);
                 exchange = null;
             }
         }

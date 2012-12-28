@@ -166,7 +166,7 @@ public class IndexStatisticsYamlLoader
             if (!(eobj instanceof Map))
                 throw new AkibanInternalException("Entry not in expected format");
             Map<?,?> emap = (Map<?,?>)eobj;
-            Key key = encodeKey(index, columnCount,
+            Key key = encodeKey(index, firstColumn, columnCount,
                                 (List<?>)emap.get(HISTOGRAM_KEY_ARRAY_KEY));
             String keyString = key.toString();
             byte[] keyBytes = new byte[key.getEncodedSize()];
@@ -180,7 +180,7 @@ public class IndexStatisticsYamlLoader
         return new Histogram(firstColumn, columnCount, entries);
     }
 
-    protected Key encodeKey(Index index, int columnCount, List<?> values) {
+    protected Key encodeKey(Index index, int firstColumn, int columnCount, List<?> values) {
         if (values.size() != columnCount)
             throw new AkibanInternalException("Key values do not match column count");
         int firstSpatialColumn = Integer.MAX_VALUE;
@@ -210,7 +210,7 @@ public class IndexStatisticsYamlLoader
                     if (i > firstSpatialColumn) {
                         offset += index.dimensions() - 1;
                     }
-                    Column column = index.getKeyColumns().get(offset).getColumn();
+                    Column column = index.getKeyColumns().get(firstColumn + offset).getColumn();
                     tInstance = column.tInstance();
                     akType = column.getType().akType();
                     collator = column.getCollator();
@@ -251,7 +251,7 @@ public class IndexStatisticsYamlLoader
                     if (i > firstSpatialColumn) {
                         offset += index.dimensions() - 1;
                     }
-                    Column column = index.getKeyColumns().get(offset).getColumn();
+                    Column column = index.getKeyColumns().get(firstColumn + offset).getColumn();
                     akType = column.getType().akType();
                     collator = column.getCollator();
                 }
@@ -327,14 +327,14 @@ public class IndexStatisticsYamlLoader
             emap.put(HISTOGRAM_EQUAL_COUNT_KEY, entry.getEqualCount());
             emap.put(HISTOGRAM_LESS_COUNT_KEY, entry.getLessCount());
             emap.put(HISTOGRAM_DISTINCT_COUNT_KEY, entry.getDistinctCount());
-            emap.put(HISTOGRAM_KEY_ARRAY_KEY, decodeKey(index, columnCount, entry.getKeyBytes()));
+            emap.put(HISTOGRAM_KEY_ARRAY_KEY, decodeKey(index, firstColumn, columnCount, entry.getKeyBytes()));
             entries.add(emap);
         }
         map.put(STATISTICS_HISTOGRAM_COLLECTION_KEY, entries);
         return map;
     }
 
-    protected List<Object> decodeKey(Index index, int columnCount, byte[] bytes) {
+    protected List<Object> decodeKey(Index index, int firstColumn, int columnCount, byte[] bytes) {
         key.setEncodedSize(bytes.length);
         System.arraycopy(bytes, 0, key.getEncodedBytes(), 0, bytes.length);
         int firstSpatialColumn = Integer.MAX_VALUE;
@@ -357,7 +357,7 @@ public class IndexStatisticsYamlLoader
                     if (i > firstSpatialColumn) {
                         offset += index.dimensions() - 1;
                     }
-                    Column column = index.getKeyColumns().get(offset).getColumn();
+                    Column column = index.getKeyColumns().get(firstColumn + offset).getColumn();
                     tInstance = column.tInstance();
                     akType = column.getType().akType();
                     AkCollator collator = column.getCollator();
@@ -406,7 +406,7 @@ public class IndexStatisticsYamlLoader
                     if (i > firstSpatialColumn) {
                         offset += index.dimensions() - 1;
                     }
-                    Column column = index.getKeyColumns().get(offset).getColumn();
+                    Column column = index.getKeyColumns().get(firstColumn + offset).getColumn();
                     akType = column.getType().akType();
                     collator = column.getCollator();
                     useRawSegment = ((collator != null) && !collator.isRecoverable());

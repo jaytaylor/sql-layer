@@ -77,6 +77,8 @@ public class TempVolume
             } catch (PersistitException e) {
                 PersistitAdapter.handlePersistitException(session, e);
             }
+            // Don't return the exchange to the adapter. TreeServiceImpl caches it for the tree, and we're done
+            // with the tree. Calling adapter.returnExchange would cause a leak of exchanges.
         }
     }
 

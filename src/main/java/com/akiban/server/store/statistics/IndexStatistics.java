@@ -83,6 +83,7 @@ public class IndexStatistics
     }
 
     public Histogram getHistogram(int firstColumn, int columnCount) {
+        assert firstColumn == 0 || columnCount == 1;
         return
             firstColumn == 0
             ? multiColumnHistograms[columnCount - 1]
