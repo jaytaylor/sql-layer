@@ -59,6 +59,10 @@ public class GroupPlanGenerator
         this.schema = new Schema(ais);
     }
 
+    public Schema getSchema() {
+        return schema;
+    }
+
     // TODO: Can narrow synchronization to plans and schema.
     public synchronized Operator generate(UserTable table) {
         Operator plan = plans.get(table);
@@ -98,6 +102,12 @@ public class GroupPlanGenerator
                                         tableType, 
                                         API.InputPreservationOption.DISCARD_INPUT);
                                         
+        if (false) {
+            for (String exp : new com.akiban.server.explain.format.DefaultFormatter("foo", true).format(plan.getExplainer(new com.akiban.server.explain.ExplainContext()))) {
+                System.out.println("XXX " + exp);
+            }
+        }
+
         plans.put(table, plan);
         return plan;
     }

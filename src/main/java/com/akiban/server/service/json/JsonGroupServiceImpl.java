@@ -29,13 +29,24 @@ package com.akiban.server.service.json;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CacheValueGenerator;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.SimpleQueryContext;
+import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.row.Row;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.Service;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
+import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.Store;
+import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.server.types3.pvalue.PValue;
 
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -46,16 +57,24 @@ import java.io.OutputStream;
 import java.util.List;
 
 public class JsonGroupServiceImpl implements JsonGroupService, Service {
-    private DXLService dxlService;
-    private TransactionService transactionService;
+    private final ConfigurationService configService;
+    private final DXLService dxlService;
+    private final Store store;
+    private final TransactionService transactionService;
+    private final TreeService treeService;
     
     private static final Logger logger = LoggerFactory.getLogger(JsonGroupServiceImpl.class);
 
     @Inject
-    public JsonGroupServiceImpl(DXLService dxlService,
-                                TransactionService transactionService) {
+    public JsonGroupServiceImpl(ConfigurationService configService,
+                                DXLService dxlService, Store store,
+                                TransactionService transactionService,
+                                TreeService treeService) {
+        this.configService = configService;
         this.dxlService = dxlService;
+        this.store = store;
         this.transactionService = transactionService;
+        this.treeService = treeService;
     }
 
     /* JsonGroupService */
@@ -79,7 +98,25 @@ public class JsonGroupServiceImpl implements JsonGroupService, Service {
                                    }
                                });
         Operator plan = generator.generate(table);
-        outputStream.write(table.getName().toString().getBytes(encoding));
+        // TODO: Cache in Session.
+        StoreAdapter adapter = new PersistitAdapter(generator.getSchema(),
+                                                    store, treeService, 
+                                                    session, configService);
+        QueryContext queryContext = new SimpleQueryContext(adapter);
+        PValue pvalue = new PValue(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
+        for (int i = 0; i < keys.size(); i++) {
+            pvalue.putString(keys.get(i), null);
+            queryContext.setPValue(i, pvalue);
+        }
+        transactionService.beginTransaction(session);
+        Cursor cursor = API.cursor(plan, queryContext);
+        cursor.open();
+        Row row;
+        while ((row = cursor.next()) != null) {
+            outputStream.write((row.toString() + "\n").getBytes(encoding));
+        }
+        cursor.destroy();
+        transactionService.commitTransaction(session);
     }
 
     /* Service */
