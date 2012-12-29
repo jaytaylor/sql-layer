@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service.json;
+package com.akiban.server.service.externaldata;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CacheValueGenerator;
@@ -53,23 +53,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.List;
 
-public class JsonGroupServiceImpl implements JsonGroupService, Service {
+public class ExternalDataServiceImpl implements ExternalDataService, Service {
     private final ConfigurationService configService;
     private final DXLService dxlService;
     private final Store store;
     private final TransactionService transactionService;
     private final TreeService treeService;
     
-    private static final Logger logger = LoggerFactory.getLogger(JsonGroupServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(ExternalDataServiceImpl.class);
 
     @Inject
-    public JsonGroupServiceImpl(ConfigurationService configService,
-                                DXLService dxlService, Store store,
-                                TransactionService transactionService,
-                                TreeService treeService) {
+    public ExternalDataServiceImpl(ConfigurationService configService,
+                                   DXLService dxlService, Store store,
+                                   TransactionService transactionService,
+                                   TreeService treeService) {
         this.configService = configService;
         this.dxlService = dxlService;
         this.store = store;
@@ -77,24 +77,23 @@ public class JsonGroupServiceImpl implements JsonGroupService, Service {
         this.treeService = treeService;
     }
 
-    /* JsonGroupService */
+    /* ExternalDataService */
 
     @Override
-    public void writeGroup(Session session,
-                           String schemaName, String tableName, List<String> keys,
-                           OutputStream outputStream, String encoding) 
-            throws IOException {
+    public void writeBranchAsJSON(Session session,
+                                  String schemaName, String tableName, List<String> keys,
+                                  PrintWriter writer) throws IOException {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
         UserTable table = ais.getUserTable(schemaName, tableName);
         if (table == null)
             // TODO: Consider sending in-band as JSON.
             throw new NoSuchTableException(schemaName, tableName);
-        GroupPlanGenerator generator = 
+        BranchPlanGenerator generator = 
             ais.getCachedValue(this,
-                               new CacheValueGenerator<GroupPlanGenerator>() {
+                               new CacheValueGenerator<BranchPlanGenerator>() {
                                    @Override
-                                   public GroupPlanGenerator valueFor(AkibanInformationSchema ais) {
-                                       return new GroupPlanGenerator(ais);
+                                   public BranchPlanGenerator valueFor(AkibanInformationSchema ais) {
+                                       return new BranchPlanGenerator(ais);
                                    }
                                });
         Operator plan = generator.generate(table);
@@ -113,7 +112,7 @@ public class JsonGroupServiceImpl implements JsonGroupService, Service {
         cursor.open();
         Row row;
         while ((row = cursor.next()) != null) {
-            outputStream.write((row.toString() + "\n").getBytes(encoding));
+            writer.println(row);
         }
         cursor.destroy();
         transactionService.commitTransaction(session);

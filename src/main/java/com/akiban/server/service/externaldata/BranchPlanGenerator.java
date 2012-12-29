@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service.json;
+package com.akiban.server.service.externaldata;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.PrimaryKey;
@@ -43,18 +43,23 @@ import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
 import com.akiban.server.types3.texpressions.TPreparedParameter;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class GroupPlanGenerator
+public class BranchPlanGenerator
 {
     private AkibanInformationSchema ais;
     private Schema schema;
     private Map<UserTable,Operator> plans = new HashMap<UserTable,Operator>();
 
-    public GroupPlanGenerator(AkibanInformationSchema ais) {
+    private static final Logger logger = LoggerFactory.getLogger(BranchPlanGenerator.class);
+
+    public BranchPlanGenerator(AkibanInformationSchema ais) {
         this.ais = ais;
         this.schema = new Schema(ais);
     }
@@ -102,10 +107,9 @@ public class GroupPlanGenerator
                                         tableType, 
                                         API.InputPreservationOption.DISCARD_INPUT);
                                         
-        if (false) {
-            for (String exp : new com.akiban.server.explain.format.DefaultFormatter("foo", true).format(plan.getExplainer(new com.akiban.server.explain.ExplainContext()))) {
-                System.out.println("XXX " + exp);
-            }
+        if (logger.isDebugEnabled()) {
+            logger.debug("Plan for {}:\n{}", table, 
+                         com.akiban.util.Strings.join(new com.akiban.server.explain.format.DefaultFormatter(table.getName().getSchemaName(), true).format(plan.getExplainer(new com.akiban.server.explain.ExplainContext()))));
         }
 
         plans.put(table, plan);

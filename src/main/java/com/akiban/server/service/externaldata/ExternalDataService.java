@@ -24,16 +24,16 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service.json;
+package com.akiban.server.service.externaldata;
 
 import com.akiban.server.service.session.Session;
 
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.List;
 
-public interface JsonGroupService {
-    void writeGroup(Session session,
-                    String schemaName, String tableName, List<String> keys,
-                    OutputStream outputStream, String encoding) throws IOException;
+public interface ExternalDataService {
+    void writeBranchAsJSON(Session session,
+                           String schemaName, String tableName, List<String> keys,
+                           PrintWriter writer) throws IOException;
 }
