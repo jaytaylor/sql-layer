@@ -33,7 +33,7 @@ import java.io.PrintWriter;
 import java.util.List;
 
 public interface ExternalDataService {
-    void writeBranchAsJSON(Session session,
-                           String schemaName, String tableName, List<String> keys,
-                           PrintWriter writer) throws IOException;
+    void writeBranchAsJson(Session session, PrintWriter writer,
+                           String schemaName, String tableName, 
+                           List<List<String>> keys, int depth) throws IOException;
 }

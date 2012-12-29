@@ -47,6 +47,7 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.util.AkibanAppender;
 
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -80,9 +81,11 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     /* ExternalDataService */
 
     @Override
-    public void writeBranchAsJSON(Session session,
-                                  String schemaName, String tableName, List<String> keys,
-                                  PrintWriter writer) throws IOException {
+    public void writeBranchAsJson(Session session, PrintWriter writer,
+                                  String schemaName, String tableName, 
+                                  List<List<String>> keys, int depth) 
+            throws IOException {
+        logger.debug("For {}: {}", tableName, keys);
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
         UserTable table = ais.getUserTable(schemaName, tableName);
         if (table == null)
@@ -104,17 +107,27 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                                            session, configService);
         QueryContext queryContext = new SimpleQueryContext(adapter);
         PValue pvalue = new PValue(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
-        for (int i = 0; i < keys.size(); i++) {
-            pvalue.putString(keys.get(i), null);
-            queryContext.setPValue(i, pvalue);
-        }
+        JsonRowWriter json = new JsonRowWriter(table, depth);
+        AkibanAppender appender = AkibanAppender.of(writer);
         boolean transaction = false;
         Cursor cursor = null;
         try {
             transactionService.beginTransaction(session);
             transaction = true;
             cursor = API.cursor(plan, queryContext);
-            new JsonRowWriter().writeRows(cursor, writer);
+            appender.append("[");
+            boolean begun = false;
+            for (List<String> key : keys) {
+                for (int i = 0; i < key.size(); i++) {
+                    String akey = key.get(i);
+                    // TODO: Check for col=val syntax or have another API?
+                    pvalue.putString(akey, null);
+                    queryContext.setPValue(i, pvalue);
+                }
+                if (json.writeRows(cursor, appender, begun ? ",\n" : "\n"))
+                    begun = true;
+            }
+            appender.append(begun ? "\n]" : "]");
             transactionService.commitTransaction(session);
             transaction = false;
         }
