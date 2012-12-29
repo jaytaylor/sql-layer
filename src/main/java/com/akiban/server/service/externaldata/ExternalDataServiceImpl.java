@@ -97,25 +97,33 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                                    }
                                });
         Operator plan = generator.generate(table);
-        // TODO: Cache in Session.
-        StoreAdapter adapter = new PersistitAdapter(generator.getSchema(),
-                                                    store, treeService, 
-                                                    session, configService);
+        StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
+        if (adapter == null)
+            adapter = new PersistitAdapter(generator.getSchema(),
+                                           store, treeService, 
+                                           session, configService);
         QueryContext queryContext = new SimpleQueryContext(adapter);
         PValue pvalue = new PValue(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
         for (int i = 0; i < keys.size(); i++) {
             pvalue.putString(keys.get(i), null);
             queryContext.setPValue(i, pvalue);
         }
-        transactionService.beginTransaction(session);
-        Cursor cursor = API.cursor(plan, queryContext);
-        cursor.open();
-        Row row;
-        while ((row = cursor.next()) != null) {
-            writer.println(row);
+        boolean transaction = false;
+        Cursor cursor = null;
+        try {
+            transactionService.beginTransaction(session);
+            transaction = true;
+            cursor = API.cursor(plan, queryContext);
+            new JsonRowWriter().writeRows(cursor, writer);
+            transactionService.commitTransaction(session);
+            transaction = false;
         }
-        cursor.destroy();
-        transactionService.commitTransaction(session);
+        finally {
+            if (cursor != null)
+                cursor.destroy();
+            if (transaction)
+                transactionService.rollbackTransaction(session);
+        }
     }
 
     /* Service */
