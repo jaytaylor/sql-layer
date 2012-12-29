@@ -27,7 +27,10 @@
 package com.akiban.server.service.json;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.CacheValueGenerator;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.dxl.DXLService;
@@ -65,7 +68,17 @@ public class JsonGroupServiceImpl implements JsonGroupService, Service {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
         UserTable table = ais.getUserTable(schemaName, tableName);
         if (table == null)
+            // TODO: Consider sending in-band as JSON.
             throw new NoSuchTableException(schemaName, tableName);
+        GroupPlanGenerator generator = 
+            ais.getCachedValue(this,
+                               new CacheValueGenerator<GroupPlanGenerator>() {
+                                   @Override
+                                   public GroupPlanGenerator valueFor(AkibanInformationSchema ais) {
+                                       return new GroupPlanGenerator(ais);
+                                   }
+                               });
+        Operator plan = generator.generate(table);
         outputStream.write(table.getName().toString().getBytes(encoding));
     }
 
