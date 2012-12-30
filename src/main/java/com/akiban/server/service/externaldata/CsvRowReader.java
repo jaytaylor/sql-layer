@@ -30,6 +30,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.error.ExternalRowReaderException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -123,7 +124,7 @@ public class CsvRowReader extends RowReader
                     state = State.FIELD_START;
                 }
                 else if (b == quote) {
-                    throw new IOException("QUOTE in the middle of a field");
+                    throw new ExternalRowReaderException("QUOTE in the middle of a field");
                 }
                 else {
                     addToField(b);
@@ -131,7 +132,7 @@ public class CsvRowReader extends RowReader
                 break;
             case IN_QUOTE:
                 if (b < 0)
-                    throw new IOException("EOF inside QUOTE");
+                    throw new ExternalRowReaderException("EOF inside QUOTE");
                 else if (b == quote) {
                     if (escape == quote) {
                         // Must be doubled; peek next character.
@@ -147,7 +148,7 @@ public class CsvRowReader extends RowReader
                 else if (b == escape) {
                     // Non-doubling escape.
                     b = inputStream.read();
-                    if (b < 0) throw new IOException("EOF after ESCAPE");
+                    if (b < 0) throw new ExternalRowReaderException("EOF after ESCAPE");
                     addToField(b);
                 }
                 else {
@@ -164,7 +165,7 @@ public class CsvRowReader extends RowReader
                     state = State.FIELD_START;
                 }
                 else {
-                    throw new IOException("junk after quoted field");
+                    throw new ExternalRowReaderException("junk after quoted field");
                 }
                 break;
             }
