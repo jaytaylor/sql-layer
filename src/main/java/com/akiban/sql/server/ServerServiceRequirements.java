@@ -27,6 +27,7 @@
 package com.akiban.sql.server;
 
 import com.akiban.server.AkServerInterface;
+import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
@@ -52,7 +53,8 @@ public final class ServerServiceRequirements {
                                      IndexStatisticsService indexStatistics,
                                      T3RegistryService t3RegistryService,
                                      RoutineLoader routineLoader,
-                                     TransactionService txnService) {
+                                     TransactionService txnService,
+                                     ServiceManager serviceManager) {
         this.akServer = akServer;
         this.dxlService = dxlService;
         this.monitor = monitor;
@@ -65,6 +67,7 @@ public final class ServerServiceRequirements {
         this.t3RegistryService = t3RegistryService;
         this.routineLoader = routineLoader;
         this.txnService = txnService;
+        this.serviceManager = serviceManager;
     }
 
     public AkServerInterface akServer() {
@@ -115,6 +118,10 @@ public final class ServerServiceRequirements {
         return txnService;
     }
 
+    public ServiceManager serviceManager() {
+        return serviceManager;
+    }
+
     private final AkServerInterface akServer;
     private final DXLService dxlService;
     private final MonitorService monitor;
@@ -127,4 +134,5 @@ public final class ServerServiceRequirements {
     private final T3RegistryService t3RegistryService;
     private final RoutineLoader routineLoader;
     private final TransactionService txnService;
+    private final ServiceManager serviceManager;
 }

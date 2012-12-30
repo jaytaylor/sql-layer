@@ -60,6 +60,7 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
     private File fromFile;
     private CsvFormat format;
     private int skipRows;
+    private long commitFrequency;
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresCopyInStatement.class);
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresCopyInStatement: execute shared");
@@ -116,6 +117,9 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
         if (copyStmt.isHeader()) {
             skipRows = 1;
         }
+        commitFrequency = copyStmt.getCommitFrequency();
+        if (commitFrequency == 0)
+            commitFrequency = Long.MAX_VALUE; // Or let it choose?
         return this;
     }
 
