@@ -32,6 +32,9 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.ExternalRowReaderException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -54,6 +57,8 @@ public class MysqlDumpRowReader extends RowReader
     private State state;
     private byte[] tableName = null; // According to the file.
     
+    private static final Logger logger = LoggerFactory.getLogger(MysqlDumpRowReader.class);
+
     public MysqlDumpRowReader(UserTable table, List<Column> columns, String encoding,
                               QueryContext queryContext) {
         super(table, columns, encoding, getBytes("NULL", encoding), queryContext);
@@ -234,6 +239,9 @@ public class MysqlDumpRowReader extends RowReader
                     if (b != ' ') lb = b;
                     if (tableName == null) {
                         tableName = copyField();
+                        if (logger.isTraceEnabled()) {
+                            logger.trace("Original target table: {}", decodeField());
+                        }
                     }
                     else if (!fieldMatches(tableName)) {
                         throw new ExternalRowReaderException("INSERT INTO changed from " + 
@@ -258,6 +266,9 @@ public class MysqlDumpRowReader extends RowReader
                     b = inputStream.read();
                     if (b >= 0)
                         addToField(b);
+                }
+                else {
+                    addToField(b);
                 }
                 break;
             case NEXT_ROW_CTOR:
