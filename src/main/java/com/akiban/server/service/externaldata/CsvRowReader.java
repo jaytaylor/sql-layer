@@ -54,85 +54,22 @@ import java.util.Collections;
 import java.util.List;
 
 /** Read from a flat file into <code>NewRow</code> rows suitable for inserting. */
-public class CsvRowReader
+public class CsvRowReader extends RowReader
 {
-    private final RowDef rowDef;
-    private final int[] fieldMap;
-    private final boolean[] nullable;
     private final CsvFormat format;
     private final int delim, quote, escape, nl, cr;
-    private final byte[] nullBytes;
-    private final int tableId;
-    private final boolean usePValues;
-    private final PValue pstring;
-    private final PValue[] pvalues;
-    private final PValueRowDataCreator pvalueCreator;
-    private final TExecutionContext[] executionContexts;
-    private final FromObjectValueSource fromObject;
-    private final ValueHolder holder;
-    private final ToObjectValueTarget toObject;
-    private AkType[] aktypes;
-    private NewRow row;
     private enum State { ROW_START, FIELD_START, IN_FIELD, IN_QUOTE, AFTER_QUOTE };
     private State state;
-    private byte[] buffer = new byte[128];
-    private int fieldIndex, fieldLength;
 
     public CsvRowReader(UserTable table, List<Column> columns, CsvFormat format,
                         QueryContext queryContext) {
-        this.tableId = table.getTableId();
-        this.rowDef = table.rowDef();
-        this.fieldMap = new int[columns.size()];
-        this.nullable = new boolean[fieldMap.length];
-        for (int i = 0; i < fieldMap.length; i++) {
-            Column column = columns.get(i);
-            fieldMap[i] = column.getPosition();
-            nullable[i] = column.getNullable();
-        }
+        super(table, columns, format.getEncoding(), format.getNullBytes(), queryContext);
         this.format = format;
         this.delim = format.getDelimiterByte();
         this.quote = format.getQuoteByte();
         this.escape = format.getEscapeByte();
         this.nl = format.getNewline();
         this.cr = format.getReturn();
-        this.nullBytes = format.getNullBytes();
-        this.usePValues = Types3Switch.ON;
-        if (usePValues) {
-            pstring = new PValue(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
-            pvalues = new PValue[columns.size()];
-            executionContexts = new TExecutionContext[pvalues.length];
-            List<TInstance> inputs = Collections.singletonList(pstring.tInstance());
-            for (int i = 0; i < pvalues.length; i++) {
-                TInstance output = columns.get(i).tInstance();
-                pvalues[i] = new PValue(output);
-                // TODO: Only needed until every place gets type from
-                // PValueTarget, when there can just be one
-                // TExecutionContext wrapping the QueryContext.
-                executionContexts[i] = new TExecutionContext(null, 
-                                                             inputs, output, queryContext,
-                                                             ErrorHandlingMode.WARN,
-                                                             ErrorHandlingMode.WARN,
-                                                             ErrorHandlingMode.WARN);
-            }
-            pvalueCreator = new PValueRowDataCreator();
-            fromObject = null;
-            holder = null;
-            toObject = null;
-            aktypes = null;
-        }
-        else {
-            fromObject = new FromObjectValueSource();
-            holder = new ValueHolder();
-            toObject = new ToObjectValueTarget();
-            aktypes = new AkType[columns.size()];
-            for (int i = 0; i < aktypes.length; i++) {
-                aktypes[i] = columns.get(i).getType().akType();
-            }
-            pstring = null;
-            pvalues = null;
-            pvalueCreator = null;
-            executionContexts = null;
-        }
     }
 
     public void skipRows(InputStream inputStream, long nrows) throws IOException {
@@ -149,9 +86,8 @@ public class CsvRowReader
     public NewRow nextRow(InputStream inputStream) throws IOException {
         int lb = inputStream.read();
         if (lb < 0) return null;
-        row = new NiceRow(tableId, rowDef);
+        newRow();
         state = State.ROW_START;
-        fieldIndex = fieldLength = 0;
         while (true) {
             int b = lb;
             if (b < 0) 
@@ -250,60 +186,6 @@ public class CsvRowReader
                 break;
             }
         }
-    }
-
-    private void addToField(int b) {
-        if (fieldLength + 1 > buffer.length) {
-            buffer = Arrays.copyOf(buffer, (buffer.length * 3) / 2);
-        }
-        buffer[fieldLength++] = (byte)b;
-    }
-
-    private void addField(boolean quoted) {
-        if (!quoted && nullable[fieldIndex]) {
-            // Check whether unquoted value matches the representation
-            // of null, normally the empty string.
-            if (fieldLength == nullBytes.length) {
-                boolean match = true;
-                for (int i = 0; i < fieldLength; i++) {
-                    if (buffer[i] != nullBytes[i]) {
-                        match = false;
-                        break;
-                    }
-                }
-                if (match) {
-                    row.put(fieldMap[fieldIndex++], null);
-                    fieldLength = 0;
-                    return;
-                }
-            }
-        }
-        int columnIndex = fieldMap[fieldIndex];
-        // bytes -> string -> parsed typed value -> Java object.
-        String string;
-        try {
-            string = new String(buffer, 0, fieldLength, format.getEncoding());
-        }
-        catch (UnsupportedEncodingException ex) {
-            UnsupportedCharsetException nex = new UnsupportedCharsetException(format.getEncoding());
-            nex.initCause(ex);
-            throw nex;
-        }
-        if (usePValues) {
-            pstring.putString(string, null);
-            PValue pvalue = pvalues[fieldIndex];
-            pvalue.tInstance().typeClass()
-                .fromObject(executionContexts[fieldIndex], pstring, pvalue);
-            pvalueCreator.put(pvalue, row, rowDef.getFieldDef(columnIndex), columnIndex);
-        }
-        else {
-            fromObject.setExplicitly(string, AkType.VARCHAR);
-            holder.expectType(aktypes[fieldIndex]);
-            Converters.convert(fromObject, holder);
-            row.put(columnIndex, toObject.convertFromSource(holder));
-        }
-        fieldIndex++;
-        fieldLength = 0;
     }
 
 }
