@@ -53,7 +53,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-
 /** Read rows from an external source. */
 public abstract class RowReader
 {
@@ -74,7 +73,7 @@ public abstract class RowReader
     protected NewRow row;
     protected byte[] buffer = new byte[128];
     protected int fieldIndex, fieldLength;
-    protected String encoding;
+    protected final String encoding;
 
     protected RowReader(UserTable table, List<Column> columns, 
                         String encoding, byte[] nullBytes,
@@ -152,15 +151,7 @@ public abstract class RowReader
         }
         int columnIndex = fieldMap[fieldIndex];
         // bytes -> string -> parsed typed value -> Java object.
-        String string;
-        try {
-            string = new String(buffer, 0, fieldLength, encoding);
-        }
-        catch (UnsupportedEncodingException ex) {
-            UnsupportedCharsetException nex = new UnsupportedCharsetException(encoding);
-            nex.initCause(ex);
-            throw nex;
-        }
+        String string = decodeField();
         if (usePValues) {
             pstring.putString(string, null);
             PValue pvalue = pvalues[fieldIndex];
@@ -189,6 +180,21 @@ public abstract class RowReader
             }
         }
         return true;
+    }
+
+    public byte[] copyField() {
+        return Arrays.copyOf(buffer, fieldLength);
+    }
+
+    public String decodeField() {
+        try {
+            return new String(buffer, 0, fieldLength, encoding);
+        }
+        catch (UnsupportedEncodingException ex) {
+            UnsupportedCharsetException nex = new UnsupportedCharsetException(encoding);
+            nex.initCause(ex);
+            throw nex;
+        }
     }
 
 }
