@@ -85,12 +85,12 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                                   String schemaName, String tableName, 
                                   List<List<String>> keys, int depth) 
             throws IOException {
-        logger.debug("For {}: {}", tableName, keys);
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
         UserTable table = ais.getUserTable(schemaName, tableName);
         if (table == null)
             // TODO: Consider sending in-band as JSON.
             throw new NoSuchTableException(schemaName, tableName);
+        logger.debug("Writing from {}: {}", table, keys);
         BranchPlanGenerator generator = 
             ais.getCachedValue(this,
                                new CacheValueGenerator<BranchPlanGenerator>() {
