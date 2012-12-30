@@ -37,7 +37,6 @@ import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.dxl.DXLTransactionHook;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
@@ -252,12 +251,9 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics>(indexes.size());
         for (Index index : indexes) {
             try {
-                IndexStatistics indexStatistics = 
-                    storeStats.computeIndexStatistics(session, index);
-                if (indexStatistics != null) {
-                    storeStats.storeIndexStatistics(session, index, indexStatistics);
-                    updates.put(index, indexStatistics);
-                }
+                IndexStatistics indexStatistics = storeStats.computeIndexStatistics(session, index);
+                storeStats.storeIndexStatistics(session, index, indexStatistics);
+                updates.put(index, indexStatistics);
             }
             catch (PersistitInterruptedException ex) {
                 log.debug("interrupt while analyzing " + index, ex);

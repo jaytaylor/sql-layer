@@ -30,13 +30,15 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.persistitadapter.TempVolume;
 import com.akiban.qp.persistitadapter.indexcursor.SorterAdapter.PersistitValueSourceAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.service.session.Session;
 import com.akiban.util.tap.InOutTap;
-import com.persistit.*;
+import com.persistit.Exchange;
+import com.persistit.Key;
+import com.persistit.Value;
 import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +62,7 @@ public class Sorter
         this.rowType = rowType;
         this.ordering = ordering.copy();
         String sortTreeName = SORT_TREE_NAME_PREFIX + SORTER_ID_GENERATOR.getAndIncrement();
-        this.exchange = exchange(adapter, sortTreeName);
+        this.exchange = TempVolume.takeExchange(adapter.persistit(), adapter.getSession(), sortTreeName);
         this.key = exchange.getKey();
         this.value = exchange.getValue();
         this.rowFields = rowType.nFields();
@@ -83,18 +85,8 @@ public class Sorter
     {
         if (exchange != null) {
             try {
-                TempVolumeState tempVolumeState = adapter.getSession().get(TEMP_VOLUME_STATE);
-                int sortsInProgress = tempVolumeState.endSort();
-                if (sortsInProgress == 0) {
-                    // Returns disk space used by the volume
-                    tempVolumeState.volume().close();
-                    adapter.getSession().remove(TEMP_VOLUME_STATE);
-                }
-            } catch (PersistitException e) {
-                adapter.handlePersistitException(e);
+                TempVolume.returnExchange(adapter.getSession(), exchange);
             } finally {
-                // Don't return the exchange. TreeServiceImpl caches it for the tree, and we're done with the tree.
-                // THIS CAUSES A LEAK OF EXCHANGES: adapter.returnExchange(exchange);
                 exchange = null;
             }
         }
@@ -119,7 +111,7 @@ public class Sorter
                 loadTap.out();
             }
         } catch (PersistitException e) {
-            if (!adapter.isFromInterruption(e))
+            if (!PersistitAdapter.isFromInterruption(e))
                 LOG.error("Caught exception while loading tree for sort", e);
             exchange.removeAll();
             adapter.handlePersistitException(e);
@@ -154,39 +146,11 @@ public class Sorter
         }
     }
 
-    private static Exchange exchange(PersistitAdapter adapter, String treeName)
-    {
-        try {
-            Session session = adapter.getSession();
-            Persistit persistit = adapter.persistit().getDb();
-            TempVolumeState tempVolumeState = session.get(TEMP_VOLUME_STATE);
-            if (tempVolumeState == null) {
-                // Persistit creates a temp volume per "Persistit session", and these are currently one-to-one with threads.
-                // Conveniently, server sessions and threads are also one-to-one. If either of these relationships ever
-                // change, then the use of session resources and temp volumes will need to be revisited. But for now,
-                // persistit.createTemporaryVolume creates a temp volume that is private to the persistit session and
-                // therefore to the server session.
-                Volume volume = persistit.createTemporaryVolume();
-                tempVolumeState = new TempVolumeState(volume);
-                session.put(TEMP_VOLUME_STATE, tempVolumeState);
-            }
-            tempVolumeState.startSort();
-            return new Exchange(persistit, tempVolumeState.volume(), treeName, true);
-        } catch (PersistitException e) {
-            if (!adapter.isFromInterruption(e))
-                LOG.error("Caught exception while getting exchange for sort", e);
-            adapter.handlePersistitException(e);
-            assert false; // handlePersistitException should throw something
-            return null;
-        }
-    }
-
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(Sorter.class);
     private static final String SORT_TREE_NAME_PREFIX = "sort.";
     private static final AtomicLong SORTER_ID_GENERATOR = new AtomicLong(0);
-    private static final Session.Key<TempVolumeState> TEMP_VOLUME_STATE = Session.Key.named("TEMP_VOLUME_STATE");
 
     // Object state
 
@@ -244,35 +208,5 @@ public class Sorter
         }
 
         private final PersistitValueSourceAdapter valueAdapter;
-    }
-
-    // public so that tests can see it
-    public static class TempVolumeState
-    {
-        public TempVolumeState(Volume volume)
-        {
-            this.volume = volume;
-            sortsInProgress = 0;
-        }
-
-        public Volume volume()
-        {
-            return volume;
-        }
-
-        public void startSort()
-        {
-            sortsInProgress++;
-        }
-
-        public int endSort()
-        {
-            sortsInProgress--;
-            assert sortsInProgress >= 0;
-            return sortsInProgress;
-        }
-
-        private final Volume volume;
-        private int sortsInProgress;
     }
 }
