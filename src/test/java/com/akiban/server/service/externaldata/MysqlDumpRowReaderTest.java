@@ -47,7 +47,7 @@ public final class MysqlDumpRowReaderTest {
     public static final Object[][] ROWS = {
         { 2, null },
         { 3, "a 'xyz' b" },
-        { 5, "abc" },
+        { 5, "abc\nxyz" },
         { 1, "foo" },
         { 6, "\u2603" }
     };
