@@ -169,6 +169,10 @@ public abstract class RowReader
         fieldLength = 0;
     }
 
+    protected void clearField() {
+        fieldLength = 0;
+    }
+
     protected boolean fieldMatches(byte[] key) {
         // Check whether unquoted value matches the representation
         // of null, normally the empty string.

@@ -163,6 +163,7 @@ public class MysqlDumpRowReader extends RowReader
                     if (b != ' ') lb = b;
                     if (state == State.INSERT) {
                         if (fieldMatches(into)) {
+                            clearField();
                             state = State.INSERT_TABLE;
                         }
                         else {
@@ -171,6 +172,7 @@ public class MysqlDumpRowReader extends RowReader
                     }
                     else if (state == State.INSERT_VALUES) {
                         if (fieldMatches(values)) {
+                            clearField();
                             state = State.NEXT_ROW_CTOR;
                         }
                         else {
@@ -178,7 +180,12 @@ public class MysqlDumpRowReader extends RowReader
                         }
                     }
                     else if (fieldMatches(lock) || fieldMatches(unlock)) {
+                        clearField();
                         state = State.IGNORED_STATEMENT;
+                    }
+                    else if (fieldMatches(insert)) {
+                        clearField();
+                        state = State.INSERT;
                     }
                     else {
                         throw new ExternalRowReaderException("Unrecognized statement " + decodeField());
@@ -234,6 +241,8 @@ public class MysqlDumpRowReader extends RowReader
                                                              " to " + decodeField() +
                                                              ". Does file contain multiple tables?");
                     }
+                    clearField();
+                    state = State.INSERT_VALUES;
                 }
                 break;
             case TABLE_BACKQUOTE:
