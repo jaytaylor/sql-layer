@@ -56,7 +56,7 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
     private UserTable toTable;
     private List<Column> toColumns;
     private File fromFile;
-    private CsvFormat format;
+    private CsvFormat csvFormat;
     private long skipRows;
     private long commitFrequency;
 
@@ -111,7 +111,7 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
         }
         if (copyStmt.getFilename() != null)
             fromFile = new File(copyStmt.getFilename());
-        format = csvFormat(copyStmt, server);
+        csvFormat = csvFormat(copyStmt, server);
         if (copyStmt.isHeader()) {
             skipRows = 1;
         }
@@ -139,7 +139,7 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
         try {
             lock(context, DXLFunction.UNSPECIFIED_DML_WRITE);
             lockSuccess = true;
-            nrows = externalData.loadTableFromCsv(session, istr, format, skipRows,
+            nrows = externalData.loadTableFromCsv(session, istr, csvFormat, skipRows,
                                                   toTable, toColumns,
                                                   commitFrequency, context);
         }

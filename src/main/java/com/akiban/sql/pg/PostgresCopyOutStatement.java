@@ -46,7 +46,7 @@ import java.util.*;
 public class PostgresCopyOutStatement extends PostgresOperatorStatement
 {
     private File toFile;
-    private CsvFormat format;
+    private CsvFormat csvFormat;
 
     public PostgresCopyOutStatement(PostgresOperatorCompiler compiler) {
         super(compiler);
@@ -68,9 +68,9 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
         assert (pstmt == this);
         if (copyStmt.getFilename() != null)
             toFile = new File(copyStmt.getFilename());
-        format = csvFormat(copyStmt, server);
+        csvFormat = csvFormat(copyStmt, server);
         if (copyStmt.isHeader()) {
-            format.setHeadings(getColumnNames());
+            csvFormat.setHeadings(getColumnNames());
         }
         return this;
     }
@@ -92,8 +92,8 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
             outputStream = new FileOutputStream(toFile);
             int ncols = getColumnTypes().size();
             PostgresCopyCsvOutputter outputter = 
-                new PostgresCopyCsvOutputter(context, this, format);
-            if (format.getHeadings() != null) {
+                new PostgresCopyCsvOutputter(context, this, csvFormat);
+            if (csvFormat.getHeadings() != null) {
                 outputter.outputHeadings(outputStream);
                 nrows++;
             }
@@ -120,7 +120,7 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
 
     @Override
     protected PostgresOutputter<Row> getRowOutputter(PostgresQueryContext context) {
-        return new PostgresCopyCsvOutputter(context, this, format);
+        return new PostgresCopyCsvOutputter(context, this, csvFormat);
     }
     
     @Override
