@@ -37,6 +37,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.externaldata.CsvFormat;
 import com.akiban.server.service.externaldata.ExternalDataService;
 import com.akiban.server.service.session.Session;
@@ -56,7 +57,8 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
     private UserTable toTable;
     private List<Column> toColumns;
     private File fromFile;
-    private CsvFormat format;
+    private CopyStatementNode.Format format;
+    private CsvFormat csvFormat;
     private long skipRows;
     private long commitFrequency;
 
@@ -111,9 +113,18 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
         }
         if (copyStmt.getFilename() != null)
             fromFile = new File(copyStmt.getFilename());
-        format = csvFormat(copyStmt, server);
-        if (copyStmt.isHeader()) {
-            skipRows = 1;
+        format = copyStmt.getFormat();
+        if (format == null)
+            format = CopyStatementNode.Format.CSV;
+        switch (format) {
+        case CSV:
+            csvFormat = csvFormat(copyStmt, server);
+            if (copyStmt.isHeader()) {
+                skipRows = 1;
+            }
+            break;
+        default:
+            throw new UnsupportedSQLException("COPY FORMAT " + format);
         }
         commitFrequency = copyStmt.getCommitFrequency();
         if (commitFrequency == 0)
@@ -127,7 +138,7 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
         Session session = server.getSession();
         ExternalDataService externalData = server.getExternalDataService();
         InputStream istr;
-        long nrows;
+        long nrows = 0;
         boolean lockSuccess = false;
         if (fromFile != null)
             istr = new FileInputStream(fromFile);
@@ -139,9 +150,13 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
         try {
             lock(context, DXLFunction.UNSPECIFIED_DML_WRITE);
             lockSuccess = true;
-            nrows = externalData.loadTableFromCsv(session, istr, format, skipRows,
-                                                  toTable, toColumns,
-                                                  commitFrequency, context);
+            switch (format) {
+            case CSV:
+                nrows = externalData.loadTableFromCsv(session, istr, csvFormat, skipRows,
+                                                      toTable, toColumns,
+                                                      commitFrequency, context);
+                break;
+            }
         }
         finally {
             unlock(context, DXLFunction.UNSPECIFIED_DML_WRITE, lockSuccess);

@@ -34,6 +34,7 @@ import com.akiban.sql.parser.StatementNode;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
 import com.akiban.server.error.SQLParserInternalException;
+import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.externaldata.CsvFormat;
 
 import static com.akiban.sql.pg.PostgresCopyInStatement.csvFormat;
@@ -46,7 +47,7 @@ import java.util.*;
 public class PostgresCopyOutStatement extends PostgresOperatorStatement
 {
     private File toFile;
-    private CsvFormat format;
+    private CsvFormat csvFormat;
 
     public PostgresCopyOutStatement(PostgresOperatorCompiler compiler) {
         super(compiler);
@@ -68,9 +69,18 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
         assert (pstmt == this);
         if (copyStmt.getFilename() != null)
             toFile = new File(copyStmt.getFilename());
-        format = csvFormat(copyStmt, server);
-        if (copyStmt.isHeader()) {
-            format.setHeadings(getColumnNames());
+        CopyStatementNode.Format format = copyStmt.getFormat();
+        if (format == null)
+            format = CopyStatementNode.Format.CSV;
+        switch (format) {
+        case CSV:
+            csvFormat = csvFormat(copyStmt, server);
+            if (copyStmt.isHeader()) {
+                csvFormat.setHeadings(getColumnNames());
+            }
+            break;
+        default:
+            throw new UnsupportedSQLException("COPY FORMAT " + format);
         }
         return this;
     }
@@ -92,8 +102,8 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
             outputStream = new FileOutputStream(toFile);
             int ncols = getColumnTypes().size();
             PostgresCopyCsvOutputter outputter = 
-                new PostgresCopyCsvOutputter(context, this, format);
-            if (format.getHeadings() != null) {
+                new PostgresCopyCsvOutputter(context, this, csvFormat);
+            if (csvFormat.getHeadings() != null) {
                 outputter.outputHeadings(outputStream);
                 nrows++;
             }
@@ -120,7 +130,7 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
 
     @Override
     protected PostgresOutputter<Row> getRowOutputter(PostgresQueryContext context) {
-        return new PostgresCopyCsvOutputter(context, this, format);
+        return new PostgresCopyCsvOutputter(context, this, csvFormat);
     }
     
     @Override
