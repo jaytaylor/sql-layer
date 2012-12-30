@@ -58,6 +58,7 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
     private List<Column> toColumns;
     private File fromFile;
     private CopyStatementNode.Format format;
+    private String encoding;
     private CsvFormat csvFormat;
     private long skipRows;
     private long commitFrequency;
@@ -123,6 +124,11 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
                 skipRows = 1;
             }
             break;
+        case MYSQL_DUMP:
+            encoding = copyStmt.getEncoding();
+            if (encoding == null)
+                encoding = server.getMessenger().getEncoding();
+            break;
         default:
             throw new UnsupportedSQLException("COPY FORMAT " + format);
         }
@@ -155,6 +161,11 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
                 nrows = externalData.loadTableFromCsv(session, istr, csvFormat, skipRows,
                                                       toTable, toColumns,
                                                       commitFrequency, context);
+                break;
+            case MYSQL_DUMP:
+                nrows = externalData.loadTableFromMysqlDump(session, istr, encoding,
+                                                            toTable, toColumns,
+                                                            commitFrequency, context);
                 break;
             }
         }
