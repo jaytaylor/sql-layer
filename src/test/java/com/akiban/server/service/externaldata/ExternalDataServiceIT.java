@@ -88,6 +88,8 @@ public class ExternalDataServiceIT extends ITBase
     }
 
     static final String C13 = "[\n" +
+        "{\"cid\":1,\"name\":\"Smith\",\"test.o\":[{\"oid\":101,\"cid\":1,\"order_date\":\"2012-12-12\",\"test.i\":[{\"iid\":10101,\"oid\":101,\"sku\":\"ABCD\"},{\"iid\":10102,\"oid\":101,\"sku\":\"1234\"}]},{\"oid\":102,\"cid\":1,\"order_date\":\"2013-01-01\"}],\"test.a\":[{\"aid\":101,\"cid\":1,\"state\":\"MA\"}]},\n" +
+        "{\"cid\":3,\"name\":\"Adams\",\"test.o\":[{\"oid\":301,\"cid\":3,\"order_date\":\"2010-04-01\"}]}\n" +
         "]";
 
     @Test
@@ -102,4 +104,49 @@ public class ExternalDataServiceIT extends ITBase
                                    -1);
         assertEquals(C13, str.toString());
     }
+
+    static final String O101 = "[\n" +
+        "{\"oid\":101,\"cid\":1,\"order_date\":\"2012-12-12\",\"test.i\":[{\"iid\":10101,\"oid\":101,\"sku\":\"ABCD\"},{\"iid\":10102,\"oid\":101,\"sku\":\"1234\"}]}\n" +
+        "]";
+
+    @Test
+    public void writeJsonO101() throws IOException {
+        ExternalDataService external = 
+            serviceManager().getServiceByClass(ExternalDataService.class);
+        StringWriter str = new StringWriter();
+        PrintWriter pw = new PrintWriter(str);
+        external.writeBranchAsJson(session(), pw, SCHEMA, "o", 
+                                   Collections.singletonList(Collections.singletonList("101")),
+                                   -1);
+        assertEquals(O101, str.toString());
+    }
+
+    static final String C1d1 = "[\n" +
+        "{\"cid\":1,\"name\":\"Smith\",\"test.o\":[{\"oid\":101,\"cid\":1,\"order_date\":\"2012-12-12\"},{\"oid\":102,\"cid\":1,\"order_date\":\"2013-01-01\"}],\"test.a\":[{\"aid\":101,\"cid\":1,\"state\":\"MA\"}]}\n" +
+        "]";
+
+    @Test
+    public void writeJsonDepth() throws IOException {
+        ExternalDataService external = 
+            serviceManager().getServiceByClass(ExternalDataService.class);
+        StringWriter str = new StringWriter();
+        PrintWriter pw = new PrintWriter(str);
+        external.writeBranchAsJson(session(), pw, SCHEMA, "c", 
+                                   Collections.singletonList(Collections.singletonList("1")),
+                                   1);
+        assertEquals(C1d1, str.toString());
+    }
+
+    @Test
+    public void writeJsonEmpty() throws IOException {
+        ExternalDataService external = 
+            serviceManager().getServiceByClass(ExternalDataService.class);
+        StringWriter str = new StringWriter();
+        PrintWriter pw = new PrintWriter(str);
+        external.writeBranchAsJson(session(), pw, SCHEMA, "c", 
+                                   Collections.singletonList(Collections.singletonList("666")),
+                                   -1);
+        assertEquals("[]", str.toString());
+    }
+
 }

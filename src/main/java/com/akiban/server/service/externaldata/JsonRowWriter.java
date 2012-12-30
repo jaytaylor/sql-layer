@@ -44,7 +44,7 @@ import java.util.List;
 
 public class JsonRowWriter
 {
-    private int maxDepth;
+    private int minDepth, maxDepth;
     // This is not sufficient if orphans are possible (when
     // ancestor keys are repeated in descendants). In that case, we
     // have to save rows and check that they are ancestors of new
@@ -52,7 +52,7 @@ public class JsonRowWriter
     private RowType[] openTypes;
 
     public JsonRowWriter(UserTable table, int addlDepth) {
-        maxDepth = table.getDepth();
+        minDepth = maxDepth = table.getDepth();
         if (addlDepth < 0) {
             table.traverseTableAndDescendants(new NopVisitor() {
                     @Override
@@ -72,7 +72,7 @@ public class JsonRowWriter
     public boolean writeRows(Cursor cursor, AkibanAppender appender, String prefix)
             throws IOException {
         cursor.open();
-        int depth = -1;
+        int depth = minDepth-1;
         Row row;
         while ((row = cursor.next()) != null) {
             logger.trace("Row {}", row);
@@ -96,7 +96,7 @@ public class JsonRowWriter
             if (begun) {
                 appender.append(',');
             }
-            else if (depth > 0) {
+            else if (depth > minDepth) {
                 appender.append(",\"");
                 appender.append(table.getName().toString());
                 appender.append("\":[");
@@ -116,12 +116,12 @@ public class JsonRowWriter
             }
         }
         cursor.close();
-        if (depth < 0)
+        if (depth < minDepth)
             return false;       // Cursor was empty = not found.
         do {
-            appender.append((depth > 0) ? "}]" : "}");
+            appender.append((depth > minDepth) ? "}]" : "}");
             depth--;
-        } while (depth >= 0);
+        } while (depth >= minDepth);
         return true;
     }
 }

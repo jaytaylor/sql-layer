@@ -38,6 +38,7 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
@@ -61,7 +62,7 @@ public class BranchPlanGenerator
 
     public BranchPlanGenerator(AkibanInformationSchema ais) {
         this.ais = ais;
-        this.schema = new Schema(ais);
+        this.schema = SchemaCache.globalSchema(ais);
     }
 
     public Schema getSchema() {
@@ -74,9 +75,9 @@ public class BranchPlanGenerator
         if (plan != null) return plan;
 
         PrimaryKey pkey = table.getPrimaryKey();
+        final int nkeys = pkey.getColumns().size();
         UserTableRowType tableType = schema.userTableRowType(table);
         IndexRowType indexType = schema.indexRowType(pkey.getIndex());
-        final int nkeys = indexType.nFields();
 
         List<TPreparedExpression> pexprs = new ArrayList<TPreparedExpression>(nkeys);
         for (int i = 0; i < nkeys; i++) {
