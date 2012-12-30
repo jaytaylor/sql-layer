@@ -145,23 +145,10 @@ public abstract class RowReader
     }
 
     protected void addField(boolean quoted) {
-        if (!quoted && nullable[fieldIndex]) {
-            // Check whether unquoted value matches the representation
-            // of null, normally the empty string.
-            if (fieldLength == nullBytes.length) {
-                boolean match = true;
-                for (int i = 0; i < fieldLength; i++) {
-                    if (buffer[i] != nullBytes[i]) {
-                        match = false;
-                        break;
-                    }
-                }
-                if (match) {
-                    row.put(fieldMap[fieldIndex++], null);
-                    fieldLength = 0;
-                    return;
-                }
-            }
+        if (!quoted && nullable[fieldIndex] && fieldMatches(nullBytes)) {
+            row.put(fieldMap[fieldIndex++], null);
+            fieldLength = 0;
+            return;
         }
         int columnIndex = fieldMap[fieldIndex];
         // bytes -> string -> parsed typed value -> Java object.
@@ -189,6 +176,19 @@ public abstract class RowReader
         }
         fieldIndex++;
         fieldLength = 0;
+    }
+
+    protected boolean fieldMatches(byte[] key) {
+        // Check whether unquoted value matches the representation
+        // of null, normally the empty string.
+        if (fieldLength != key.length)
+            return false;
+        for (int i = 0; i < fieldLength; i++) {
+            if (buffer[i] != key[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
 }

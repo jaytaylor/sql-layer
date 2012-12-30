@@ -65,6 +65,7 @@ public class CsvRowReader extends RowReader
         }        
     }
 
+    @Override
     public NewRow nextRow(InputStream inputStream) throws IOException {
         int lb = inputStream.read();
         if (lb < 0) return null;
