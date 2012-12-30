@@ -156,24 +156,27 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
         long pending = 0, total = 0;
         boolean transaction = false;
         try {
-            transactionService.beginTransaction(session);
-            transaction = true;
-            while (true) {
-                NewRow row = reader.nextRow(inputStream);
-                if (row == null) break;
-                logger.trace("Read row: {}", row);
-                dml.writeRow(session, row);
-                total++;
-                pending++; 
-                if (pending >= commitFrequency) {
-                    transactionService.commitTransaction(session);
-                    pending = 0;
-                    transactionService.beginTransaction(session);
+            NewRow row;
+            do {
+                row = reader.nextRow(inputStream);
+                if (row != null) {
+                    logger.trace("Read row: {}", row);
+                    if (!transaction) {
+                        transactionService.beginTransaction(session);
+                        transaction = true;
+                    }
+                    dml.writeRow(session, row);
+                    total++;
+                    pending++;
                 }
-            }
-            transactionService.commitTransaction(session);
-            transaction = false;
-        }        
+                if ((row == null) ? transaction : (pending >= commitFrequency)) {
+                    logger.debug("Committing {} rows", pending);
+                    transactionService.commitTransaction(session);
+                    transaction = false;
+                    pending = 0;
+                }
+            } while (row != null);
+        }
         finally {
             if (transaction)
                 transactionService.rollbackTransaction(session);
