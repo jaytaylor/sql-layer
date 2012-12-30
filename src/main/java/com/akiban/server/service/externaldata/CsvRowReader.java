@@ -29,28 +29,10 @@ package com.akiban.server.service.externaldata;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.PValueRowDataCreator;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types.ToObjectValueTarget;
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types.util.ValueHolder;
-import com.akiban.server.types3.ErrorHandlingMode;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.Types3Switch;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValue;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.UnsupportedCharsetException;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /** Read from a flat file into <code>NewRow</code> rows suitable for inserting. */
