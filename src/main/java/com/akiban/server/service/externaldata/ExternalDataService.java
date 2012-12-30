@@ -26,9 +26,13 @@
 
 package com.akiban.server.service.externaldata;
 
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.service.session.Session;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.List;
 
@@ -36,4 +40,9 @@ public interface ExternalDataService {
     void writeBranchAsJson(Session session, PrintWriter writer,
                            String schemaName, String tableName, 
                            List<List<String>> keys, int depth) throws IOException;
+
+    long loadTableFromCsv(Session session, InputStream inputStream, 
+                          CsvFormat format, long skipRows,
+                          UserTable toTable, List<Column> toColumns,
+                          long commitFrequency, QueryContext context) throws IOException;
 }

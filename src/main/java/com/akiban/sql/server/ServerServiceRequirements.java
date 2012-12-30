@@ -30,6 +30,7 @@ import com.akiban.server.AkServerInterface;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.externaldata.ExternalDataService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.monitor.MonitorService;
 import com.akiban.server.service.routines.RoutineLoader;
@@ -120,6 +121,12 @@ public final class ServerServiceRequirements {
 
     public ServiceManager serviceManager() {
         return serviceManager;
+    }
+
+    /* Less commonly used, started on demand */
+
+    public ExternalDataService externalData() {
+        return serviceManager.getServiceByClass(ExternalDataService.class);
     }
 
     private final AkServerInterface akServer;
