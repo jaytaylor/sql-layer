@@ -29,7 +29,7 @@ package com.akiban.sql.pg;
 import com.akiban.sql.server.ServerValueEncoder;
 
 import com.akiban.qp.row.Row;
-import com.akiban.server.csv.CsvFormat;
+import com.akiban.server.service.externaldata.CsvFormat;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;

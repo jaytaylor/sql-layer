@@ -33,8 +33,8 @@ import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
-import com.akiban.server.csv.CsvFormat;
 import com.akiban.server.error.SQLParserInternalException;
+import com.akiban.server.service.externaldata.CsvFormat;
 
 import static com.akiban.sql.pg.PostgresCopyInStatement.csvFormat;
 import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
