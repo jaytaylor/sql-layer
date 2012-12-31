@@ -42,12 +42,12 @@ public final class BucketSamplerTest {
     public void medianPointAtEnd() {
         check(
                 4,
-                "a b c   d e f   g h i   j k l",
+                "a   b c d   e f g h   i j k l",
                 bucketsList(
-                        bucket("c", 1, 2, 2),
-                        bucket("f", 1, 2, 2),
-                        bucket("i", 1, 2, 2),
-                        bucket("l", 1, 2, 2)
+                        bucket("a", 1, 0, 0),
+                        bucket("d", 1, 2, 2),
+                        bucket("h", 1, 3, 3),
+                        bucket("l", 1, 3, 3)
                 )
         );
     }
@@ -55,10 +55,11 @@ public final class BucketSamplerTest {
     @Test
     public void medianPointNotEvenlyDistributed() {
         check(
-                4,
-                "a b c d   e f g   h i j k   l m n",
+                5,
+                "a   b c d   e f g   h i j k   l m n",
                 bucketsList(
-                        bucket("d", 1, 3, 3),
+                        bucket("a", 1, 0, 0),
+                        bucket("d", 1, 2, 2),
                         bucket("g", 1, 2, 2),
                         bucket("k", 1, 3, 3),
                         bucket("n", 1, 2, 2)
@@ -69,10 +70,11 @@ public final class BucketSamplerTest {
     @Test
     public void spanStartsAfterMedianPointEndsOn() {
         check(
-                4,
-                "a b c   d d d   e f g   h i j",
+                5,
+                "a   b c   d d d   e f g   h i j",
                 bucketsList(
-                        bucket("c", 1, 2, 2),
+                        bucket("a", 1, 0, 0),
+                        bucket("c", 1, 1, 1),
                         bucket("d", 3, 0, 0),
                         bucket("g", 1, 2, 2),
                         bucket("j", 1, 2, 2)
@@ -83,10 +85,11 @@ public final class BucketSamplerTest {
     @Test
     public void spanStartsOffMedianPointEndsOn() {
         check(
-                4,
-                "a b c   d e e   e e e   f g h",
+                5,
+                "a   b c   d e e   e e e   f g h",
                 bucketsList(
-                        bucket("c", 1, 2, 2),
+                        bucket("a", 1, 0, 0),
+                        bucket("c", 1, 1, 1),
                         bucket("e", 5, 1, 1),
                         bucket("h", 1, 2, 2)
                 )
@@ -96,10 +99,11 @@ public final class BucketSamplerTest {
     @Test
     public void spanStartsOnMedianPointEndsOff() {
         check(
-                4,
-                "a b c   d d d   d e f   g h i",
+                5,
+                "a   b c   d d d   d e f   g h i",
                 bucketsList(
-                        bucket("c", 1, 2, 2),
+                        bucket("a", 1, 0, 0),
+                        bucket("c", 1, 1, 1),
                         bucket("d", 4, 0, 0),
                         bucket("f", 1, 1, 1),
                         bucket("i", 1, 2, 2)
@@ -110,10 +114,11 @@ public final class BucketSamplerTest {
     @Test
     public void spanStartsOfMedianPointEndsOff() {
         check(
-                4,
-                "a b c   d e e   e e f   g h i",
+                5,
+                "a   b c   d e e   e e f   g h i",
                 bucketsList(
-                        bucket("c", 1, 2, 2),
+                        bucket("a", 1, 0, 0),
+                        bucket("c", 1, 1, 1),
                         bucket("e", 4, 1, 1),
                         bucket("f", 1, 0, 0),
                         bucket("i", 1, 2, 2)
@@ -170,12 +175,14 @@ public final class BucketSamplerTest {
     }
 
     @Test
-    public void maxIsOne() {
+    public void maxIsTwo() {
+        // The practical minimum number of buckets is 2, one for the min value, one for everything else.
         check(
-                1,
+                2,
                 "a a b b c d d e f f",
                 bucketsList(
-                        bucket("f", 2, 8, 5)
+                        bucket("a", 2, 0, 0),
+                        bucket("f", 2, 6, 4)
                 )
         );
     }
@@ -231,13 +238,13 @@ public final class BucketSamplerTest {
 
     @Test
     public void testEqualityMean() {
-        BucketSampler<String> sampler = runSampler(1, "a a a    b b   c c c c   d d d   e  f f f f f");
+        BucketSampler<String> sampler = runSampler(2, "a a a    b b   c c c c   d d d   e  f f f f f");
         assertEquals("mean equality", 3.0d, sampler.getEqualsMean(), 0.0);
     }
 
     @Test
     public void testEqualityStdDev() {
-        BucketSampler<String> sampler = runSampler(1, "a a a    b b   c c c c   d d d   e  f f f f f ");
+        BucketSampler<String> sampler = runSampler(2, "a a a    b b   c c c c   d d d   e  f f f f f ");
         assertEquals("equality std dev", 1.41421d, sampler.getEqualsStdDev(), 0.00001d);
     }
 
@@ -272,7 +279,7 @@ public final class BucketSamplerTest {
     
     @Test(expected = IllegalStateException.class)
     public void stdDevRequestedButNotCalculated() {
-        BucketSampler<String> sampler = runSampler(1, "a b c", false);
+        BucketSampler<String> sampler = runSampler(2, "a b c", false);
         sampler.getEqualsStdDev();
     }
 

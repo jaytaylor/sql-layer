@@ -135,7 +135,7 @@ public abstract class KeyUpdateBase extends ITBase {
                 // Records
                 RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
                 RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
-                testStore.traverse(session(), groupRD, testVisitor, realVisitor);
+                testStore.traverse(session(), group, testVisitor, realVisitor);
                 assertEquals(testVisitor.records(), realVisitor.records());
                 assertEquals("records count", countAllRows(), testVisitor.records().size());
                 // Check indexes
@@ -196,7 +196,7 @@ public abstract class KeyUpdateBase extends ITBase {
             public Void call() throws Exception {
                 RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
                 RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
-                testStore.traverse(session(), groupRD, testVisitor, realVisitor);
+                testStore.traverse(session(), group, testVisitor, realVisitor);
                 Iterator<TreeRecord> expectedIterator = testVisitor.records().iterator();
                 Iterator<TreeRecord> actualIterator = realVisitor.records().iterator();
                 Map<Integer, Integer> expectedCounts = new HashMap<Integer, Integer>();
@@ -271,6 +271,9 @@ public abstract class KeyUpdateBase extends ITBase {
                     else if (column instanceof HKeyElement) {
                         indexEntryElement = record.hKey().objectArray()[ ((HKeyElement) column).getIndex() ];
                     }
+                    else if (column instanceof NullSeparatorColumn) {
+                        indexEntryElement = 0L;
+                    }
                     else {
                         String msg = String.format(
                                 "column must be an Integer or HKeyElement: %s in %s:",
@@ -298,9 +301,17 @@ public abstract class KeyUpdateBase extends ITBase {
         return indexEntries;
     }
 
+    protected TestRow createTestRow(int tableId) {
+        return new TestRow(tableId, getRowDef(tableId), store());
+    }
+
+    protected TestRow createTestRow(RowDef rowDef) {
+        return new TestRow(rowDef.getRowDefId(), rowDef, store());
+    }
+
     protected TestRow copyRow(TestRow row)
     {
-        TestRow copy = new TestRow(row.getTableId(), store());
+        TestRow copy = createTestRow(row.getTableId());
         for (Map.Entry<Integer, Object> entry : row.getFields().entrySet()) {
             copy.put(entry.getKey(), entry.getValue());
         }
@@ -325,7 +336,7 @@ public abstract class KeyUpdateBase extends ITBase {
 
     protected final TestRow row(RowDef table, Object... values)
     {
-        TestRow row = new TestRow(table.getRowDefId(), store());
+        TestRow row = createTestRow(table);
         int column = 0;
         for (Object value : values) {
             if (value instanceof Integer) {
@@ -339,7 +350,7 @@ public abstract class KeyUpdateBase extends ITBase {
 
     protected TestRow row(TestRow parent, RowDef table, Object... values)
     {
-        TestRow row = new TestRow(table.getRowDefId(), store());
+        TestRow row = createTestRow(table);
         int column = 0;
         for (Object value : values) {
             if (value instanceof Integer) {
@@ -353,7 +364,7 @@ public abstract class KeyUpdateBase extends ITBase {
 
     protected TestRow row(TestRow parent, TestRow grandparent, RowDef table, Object... values)
     {
-        TestRow row = new TestRow(table.getRowDefId(), store());
+        TestRow row = createTestRow(table);
         int column = 0;
         for (Object value : values) {
             if (value instanceof Integer) {
@@ -406,6 +417,7 @@ public abstract class KeyUpdateBase extends ITBase {
     }
 
     private static final String HKEY_PROPAGATION_TAP_PATTERN = ".*propagate_hkey_change.*";
+    protected static final NullSeparatorColumn NULL_SEPARATOR_COLUMN = new NullSeparatorColumn();
 
     abstract protected void createSchema() throws Exception;
     abstract protected void populateTables() throws Exception;
@@ -421,5 +433,6 @@ public abstract class KeyUpdateBase extends ITBase {
 
     protected TestStore testStore;
     protected Map<Integer,Integer> rowDefsToCounts;
-    
+
+    protected static class NullSeparatorColumn {}
 }

@@ -57,10 +57,83 @@ public class Schema {
         userTables.remove(tableName);
     }
 
+    public Map<String, Sequence> getSequences() {
+        return sequences;
+    }
+    
+    public Sequence getSequence (String sequenceName) {
+        return sequences.get(sequenceName);
+    }
+    
+    void addSequence (Sequence sequence) {
+        sequences.put(sequence.getSequenceName().getTableName(), sequence);
+    }
+    
+    void removeSequence (String sequenceName) {
+        sequences.remove(sequenceName);
+    }
+    
+    public Map<String, View> getViews() {
+        return views;
+    }
+
+    public View getView(String viewName) {
+        return views.get(viewName);
+    }
+
+    void addView(View view) {
+        views.put(view.getName().getTableName(), view);
+    }
+
+    void removeView(String viewName) {
+        views.remove(viewName);
+    }
+
+    public Map<String, Routine> getRoutines() {
+        return routines;
+    }
+    
+    public Routine getRoutine(String routineName) {
+        return routines.get(routineName);
+    }
+    
+    void addRoutine(Routine routine) {
+        routines.put(routine.getName().getTableName(), routine);
+    }
+    
+    void removeRoutine(String routineName) {
+        routines.remove(routineName);
+    }
+    
+    public Map<String, SQLJJar> getSQLJJars() {
+        return sqljJars;
+    }
+    
+    public SQLJJar getSQLJJar(String sqljJarName) {
+        return sqljJars.get(sqljJarName);
+    }
+    
+    void addSQLJJar(SQLJJar sqljJar) {
+        sqljJars.put(sqljJar.getName().getTableName(), sqljJar);
+    }
+    
+    void removeSQLJJar(String sqljJarName) {
+        sqljJars.remove(sqljJarName);
+    }
+    
+    @Override
+    public String toString() {
+        return name;
+    }
+
     Schema(String name) {
         this.name = name;
     }
 
     private final String name;
     private final Map<String, UserTable> userTables = new TreeMap<String, UserTable>();
+    private final Map<String, Sequence> sequences = new TreeMap<String, Sequence>();
+    private final Map<String, View> views = new TreeMap<String, View>();
+    private final Map<String, Routine> routines = new TreeMap<String, Routine>();
+    private final Map<String, SQLJJar> sqljJars = new TreeMap<String, SQLJJar>();
 }

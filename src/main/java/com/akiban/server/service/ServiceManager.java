@@ -26,22 +26,28 @@
 
 package com.akiban.server.service;
 
-import com.akiban.server.AkServer;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.instrumentation.InstrumentationService;
+import com.akiban.server.service.monitor.MonitorService;
 import com.akiban.server.service.jmx.JmxRegistryService;
-import com.akiban.server.service.memcache.MemcacheService;
+import com.akiban.server.service.servicemanager.ServiceManagerBase;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.stats.StatisticsService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
-import com.akiban.sql.pg.PostgresService;
 
-public interface ServiceManager {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public interface ServiceManager extends ServiceManagerBase {
+    static final Logger logger = LoggerFactory.getLogger(ServiceManager.class);
+
+    enum State { IDLE, STARTING, ACTIVE, STOPPING, ERROR_STARTING };
+
+    State getState();
 
     void startServices() throws ServiceStartupException;
 
@@ -54,12 +60,8 @@ public interface ServiceManager {
     AkServerInterface getAkSserver();
 
     Store getStore();
-    
+
     TreeService getTreeService();
-
-    MemcacheService getMemcacheService();
-
-    PostgresService getPostgresService();
 
     SchemaManager getSchemaManager();
 
@@ -75,5 +77,5 @@ public interface ServiceManager {
 
     boolean serviceIsStarted(Class<?> serviceClass);
     
-    InstrumentationService getInstrumentationService();
+    MonitorService getMonitorService();
 }

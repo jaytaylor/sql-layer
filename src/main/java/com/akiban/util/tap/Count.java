@@ -71,9 +71,9 @@ class Count extends Tap
         justEnabled = true;
     }
 
-    public void appendReport(StringBuilder buffer)
+    public void appendReport(String label, StringBuilder buffer)
     {
-        buffer.append(String.format("%20s inCount=%,10d outCount=%,10d", name, inCount, outCount));
+        buffer.append(String.format("%s %20s inCount=%,10d outCount=%,10d", label, name, inCount, outCount));
     }
 
     public TapReport[] getReports()

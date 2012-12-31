@@ -29,8 +29,8 @@ package com.akiban.server.test.it.qp;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.*;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -38,18 +38,16 @@ import com.akiban.server.expression.Expression;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Collections;
-
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.server.expression.std.Expressions.field;
+import static com.akiban.server.test.ExpressionGenerators.field;
 import static junit.framework.Assert.fail;
 
 // Single-branch testing. See MultiIndexCrossBranchIT for cross-branch testing.
 
 public class HKeyUnion_OrderedIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         parent = createTable(
             "schema", "parent",
@@ -65,14 +63,19 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
             "z int",
             "grouping foreign key (pid) references parent(pid)");
         createIndex("schema", "child", "z", "z");
-        schema = new Schema(rowDefCache().ais());
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
+        schema = new Schema(ais());
         parentRowType = schema.userTableRowType(userTable(parent));
         childRowType = schema.userTableRowType(userTable(child));
         parentPidIndexRowType = indexType(parent, "pid");
         parentXIndexRowType = indexType(parent, "x");
         parentYIndexRowType = indexType(parent, "y");
         childZIndexRowType = indexType(child, "z");
-        coi = groupTable(parent);
+        coi = group(parent);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[]{
@@ -505,7 +508,7 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
         Ordering ordering = API.ordering();
         int i = 0;
         while (i < objects.length) {
-            Expression expression = (Expression) objects[i++];
+            ExpressionGenerator expression = (ExpressionGenerator) objects[i++];
             Boolean ascending = (Boolean) objects[i++];
             ordering.append(expression, ascending);
         }
@@ -514,7 +517,7 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
 
     private String pKey(Long pid)
     {
-        return String.format("{%d,%s}", parent, hKeyValue(pid));
+        return String.format("{%d,%s}", parentRowType.userTable().rowDef().getOrdinal(), hKeyValue(pid));
     }
 
     private int parent;

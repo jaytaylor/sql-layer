@@ -42,14 +42,11 @@ public class TreeServiceImplTest {
 
     private final static int MEGA = 1024 * 1024;
 
-    private static class MyConfigService extends TestConfigService {
-    }
-
-    private Service<ConfigurationService> configService;
+    private TestConfigService configService;
 
     @Before
     public void startConfiguration() throws Exception {
-        configService = new MyConfigService();
+        configService = new TestConfigService();
         configService.start();
     }
 
@@ -60,7 +57,7 @@ public class TreeServiceImplTest {
 
     @Test
     public void startupPropertiesTest() throws Exception {
-        final Properties properties = TreeServiceImpl.setupPersistitProperties(configService.cast());
+        final Properties properties = TreeServiceImpl.setupPersistitProperties(configService);
         assertNotNull(properties.getProperty("datapath"));
         assertNotNull(properties.getProperty("buffer.memory.16384"));
     }

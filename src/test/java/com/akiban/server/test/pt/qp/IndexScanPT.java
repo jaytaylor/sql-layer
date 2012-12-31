@@ -26,7 +26,6 @@
 
 package com.akiban.server.test.pt.qp;
 
-import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
@@ -45,6 +44,7 @@ import org.junit.Test;
 import java.util.Random;
 
 import static com.akiban.qp.operator.API.*;
+import static com.akiban.server.test.ExpressionGenerators.field;
 
 public class IndexScanPT extends QPProfilePTBase
 {
@@ -53,24 +53,25 @@ public class IndexScanPT extends QPProfilePTBase
     {
         t = createTable(
             "schema", "t",
-            "id int not null key",
+            "id int not null",
             "x int",
-            "index(x)");
-        schema = new Schema(rowDefCache().ais());
+            "primary key(id)");
+        createIndex("schema", "t", "idx_x", "x");
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "x");
-        group = groupTable(t);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
     }
 
     @Test
-    public void profileGroupScan()
+    public void profileIndexScan()
     {
         Tap.setEnabled(".*", false);
         populateDB(ROWS);
         run(null, WARMUP_RUNS, 1);
         run("0", MEASURED_RUNS, 1);
+/*
         run("1", MEASURED_RUNS, 2);
         run("2", MEASURED_RUNS, 3);
         run("3", MEASURED_RUNS, 4);
@@ -87,6 +88,7 @@ public class IndexScanPT extends QPProfilePTBase
         run("250", MEASURED_RUNS, 251);
         run("500", MEASURED_RUNS, 501);
         run("1000", MEASURED_RUNS, 1001);
+*/
     }
 
     private void run(String label, int runs, int sequentialAccessesPerRandom)
@@ -94,7 +96,7 @@ public class IndexScanPT extends QPProfilePTBase
         IndexBound lo = new IndexBound(row(idxRowType, Integer.MAX_VALUE / 2), new SetColumnSelector(0));
         IndexBound hi = new IndexBound(row(idxRowType, Integer.MAX_VALUE), new SetColumnSelector(0));
         Ordering ordering = new Ordering();
-        ordering.append(new FieldExpression(idxRowType, 0), true);
+        ordering.append(field(idxRowType, 0), true);
         IndexKeyRange keyRange = IndexKeyRange.bounded(idxRowType, lo, true, hi, true);
         Operator plan = indexScan_Default(idxRowType, keyRange, ordering);
         long start = System.nanoTime();
@@ -106,6 +108,7 @@ public class IndexScanPT extends QPProfilePTBase
                 assert row != null;
             }
             cursor.close();
+            cursor.destroy();
         }
         long end = System.nanoTime();
         if (label != null) {
@@ -124,11 +127,10 @@ public class IndexScanPT extends QPProfilePTBase
 
     private static final int ROWS = 50000;
     private static final int WARMUP_RUNS = 20000;
-    private static final int MEASURED_RUNS = 10000;
+    private static final int MEASURED_RUNS = 1000000000;
 
     private final Random random = new Random();
     private int t;
     private RowType tRowType;
     private IndexRowType idxRowType;
-    private GroupTable group;
 }

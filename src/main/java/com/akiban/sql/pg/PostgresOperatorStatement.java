@@ -26,14 +26,15 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.server.service.session.Session;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
+import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 import java.util.*;
 import java.io.IOException;
@@ -42,22 +43,27 @@ import java.io.IOException;
  * An SQL SELECT transformed into an operator tree
  * @see PostgresOperatorCompiler
  */
-public class PostgresOperatorStatement extends PostgresBaseStatement
+public class PostgresOperatorStatement extends PostgresBaseOperatorStatement 
+                                       implements PostgresCursorGenerator<Cursor>
 {
     private Operator resultOperator;
-    private RowType resultRowType;
 
+    private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorStatement.class);
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresOperatorStatement: execute shared");
     private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresOperatorStatement: acquire shared lock");
 
-    public PostgresOperatorStatement(Operator resultOperator,
-                                     RowType resultRowType,
-                                     List<String> columnNames,
-                                     List<PostgresType> columnTypes,
-                                     PostgresType[] parameterTypes) {
-        super(columnNames, columnTypes, parameterTypes);
+    public PostgresOperatorStatement(PostgresOperatorCompiler compiler) {
+        super(compiler);
+    }
+
+    public void init(Operator resultOperator,
+                     RowType resultRowType,
+                     List<String> columnNames,
+                     List<PostgresType> columnTypes,
+                     PostgresType[] parameterTypes,
+                     boolean usesPValues) {
+        super.init(resultRowType, columnNames, columnTypes, parameterTypes, usesPValues);
         this.resultOperator = resultOperator;
-        this.resultRowType = resultRowType;
     }
     
     @Override
@@ -66,42 +72,93 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     }
 
     @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        return TransactionAbortedMode.NOT_ALLOWED;
+    }
+
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.NOT_ALLOWED;
+    }
+
+    @Override
+    public boolean canSuspend(PostgresServerSession server) {
+        return server.isTransactionActive();
+    }
+
+    @Override
+    public Cursor openCursor(PostgresQueryContext context) {
+        Cursor cursor = API.cursor(resultOperator, context);
+        cursor.open();
+        return cursor;
+    }
+
+    public void closeCursor(Cursor cursor) {
+        if (cursor != null) {
+            cursor.destroy();
+        }
+    }
+    
+    @Override
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
-        Session session = server.getSession();
+        PostgresMessenger messenger = server.getMessenger();
         int nrows = 0;
         Cursor cursor = null;
+        IOException exceptionDuringExecution = null;
+        boolean lockSuccess = false;
+        boolean suspended = false;
         try {
-            lock(session, UNSPECIFIED_DML_READ);
-            cursor = API.cursor(resultOperator, context);
-            cursor.open();
+            lock(context, DXLFunction.UNSPECIFIED_DML_READ);
+            lockSuccess = true;
+            cursor = context.startCursor(this);
             PostgresOutputter<Row> outputter = getRowOutputter(context);
-            Row row;
-            while ((row = cursor.next()) != null) {
-                assert resultRowType == null || (row.rowType() == resultRowType) : row;
-                outputter.output(row);
-                nrows++;
-                if ((maxrows > 0) && (nrows >= maxrows))
-                    break;
+            outputter.beforeData();
+            if (cursor != null) {
+                Row row;
+                while ((row = cursor.next()) != null) {
+                    assert (getResultRowType() == null) || (row.rowType() == getResultRowType()) : row;
+                    outputter.output(row, usesPValues());
+                    nrows++;
+                    if ((maxrows > 0) && (nrows >= maxrows)) {
+                        suspended = true;
+                        break;
+                    }
+                }
             }
+            outputter.afterData();
+        }
+        catch (IOException e) {
+            exceptionDuringExecution = e;
         }
         finally {
-            if (cursor != null) {
-                cursor.destroy();
+            RuntimeException exceptionDuringCleanup = null;
+            try {
+                suspended = context.finishCursor(this, cursor, suspended);
             }
-            unlock(session, UNSPECIFIED_DML_READ);
+            catch (RuntimeException e) {
+                exceptionDuringCleanup = e;
+                logger.error("Caught exception while cleaning up cursor for {0}", resultOperator.describePlan(), e);
+            }
+            finally {
+                unlock(context, DXLFunction.UNSPECIFIED_DML_READ, lockSuccess);
+            }
+            if (exceptionDuringExecution != null) {
+                throw exceptionDuringExecution;
+            } else if (exceptionDuringCleanup != null) {
+                throw exceptionDuringCleanup;
+            }
         }
-        {        
-            PostgresMessenger messenger = server.getMessenger();
+        if (suspended) {
+            messenger.beginMessage(PostgresMessages.PORTAL_SUSPENDED_TYPE.code());
+            messenger.sendMessage();
+        }
+        else {
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
             messenger.writeString("SELECT " + nrows);
             messenger.sendMessage();
         }
         return nrows;
-    }
-
-    protected PostgresOutputter<Row> getRowOutputter(PostgresQueryContext context) {
-        return new PostgresRowOutputter(context, this);
     }
 
     @Override

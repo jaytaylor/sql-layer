@@ -26,12 +26,14 @@
 
 package com.akiban.server.util;
 
+import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.NameIsNullException;
 import com.akiban.server.error.NoSuchColumnException;
@@ -64,7 +66,7 @@ public class GroupIndexCreator {
      * @return GroupIndex representation of the requested
      * @throws GroupIndexCreatorException For any error
      */
-    public static GroupIndex createIndex(AkibanInformationSchema ais, String groupName, String indexName,
+    public static GroupIndex createIndex(AkibanInformationSchema ais, TableName groupName, String indexName,
                                          String tableColumnList, Index.JoinType joinType) {
         return createIndex(ais, groupName, indexName, false, tableColumnList, joinType);
     }
@@ -80,8 +82,11 @@ public class GroupIndexCreator {
      * @return GroupIndex representation of the requested
      * @throws GroupIndexCreatorException For any error
      */
-    private static GroupIndex createIndex(AkibanInformationSchema ais, String groupName, String indexName,
+    private static GroupIndex createIndex(AkibanInformationSchema ais, TableName groupName, String indexName,
                                          boolean unique, String tableColumnList, Index.JoinType joinType) {
+        if(ais.isFrozen()) {
+            ais = AISCloner.clone(ais);
+        }
         final Group group = ais.getGroup(groupName);
         if(group == null) {
             throw new NoSuchGroupException (groupName);
@@ -94,22 +99,32 @@ public class GroupIndexCreator {
 
         int pos = 0;
         final GroupIndex tmpIndex = new GroupIndex(group, indexName, 0, unique, Index.KEY_CONSTRAINT, joinType);
-        for(String tableCol : tableColPairs) {
-            int period = tableCol.indexOf('.');
-            if(period == -1) {
-                throw new WrongNameFormatException (tableCol);
+        boolean complete = false;
+        try {
+            for(String tableCol : tableColPairs) {
+                int period = tableCol.indexOf('.');
+                if(period == -1) {
+                    throw new WrongNameFormatException (tableCol);
+                }
+                final String tableName = tableCol.substring(0, period).trim();
+                final String columnName = tableCol.substring(period+1).trim();
+                final UserTable table = findTableInGroup(ais, group, tableName);
+                if(table == null) {
+                    throw new NoSuchTableException ("", tableName);
+                }
+                final Column column = table.getColumn(columnName);
+                if(column == null) {
+                    throw new NoSuchColumnException (columnName);
+                }
+                IndexColumn.create(tmpIndex, column, pos++, true, null);
             }
-            final String tableName = tableCol.substring(0, period).trim();
-            final String columnName = tableCol.substring(period+1).trim();
-            final UserTable table = findTableInGroup(ais, group, tableName);
-            if(table == null) {
-                throw new NoSuchTableException ("", tableName);
-            }
-            final Column column = table.getColumn(columnName);
-            if(column == null) {
-                throw new NoSuchColumnException (columnName);
-            }
-            tmpIndex.addColumn(new IndexColumn(tmpIndex, column, pos++, true, null));
+            complete = true;
+        }
+        finally {
+            // Some ITs create broken indexes directly rather than on a copy of the AIS.
+            // Do enough cleanup to keep tables from pointing to half-done index.
+            if (!complete)
+                tmpIndex.disassociate();
         }
 
         return tmpIndex;

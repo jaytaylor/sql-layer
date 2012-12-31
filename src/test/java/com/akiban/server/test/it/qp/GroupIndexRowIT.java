@@ -26,8 +26,8 @@
 
 package com.akiban.server.test.it.qp;
 
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.qp.expression.IndexKeyRange;
@@ -51,8 +51,8 @@ import static org.junit.Assert.assertEquals;
 
 public class GroupIndexRowIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         user = createTable(
             "schema", "usr",
@@ -71,12 +71,17 @@ public class GroupIndexRowIT extends OperatorITBase
             "primary key(entUserGroupID)",
             "grouping foreign key (uid) references member_info(profileID)");
         createGroupIndex("usr", "gi", "entitlement_user_group.uid,member_info.lastLogin", Index.JoinType.LEFT);
-        schema = new com.akiban.qp.rowtype.Schema(rowDefCache().ais());
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
+        schema = new com.akiban.qp.rowtype.Schema(ais());
         userRowType = schema.userTableRowType(userTable(user));
         memberInfoRowType = schema.userTableRowType(userTable(memberInfo));
         entitlementUserGroupRowType = schema.userTableRowType(userTable(entitlementUserGroup));
         groupIndexRowType = groupIndexType(Index.JoinType.LEFT, "entitlement_user_group.uid", "member_info.lastLogin");
-        group = groupTable(user);
+        group = group(user);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[] {
@@ -128,5 +133,5 @@ public class GroupIndexRowIT extends OperatorITBase
     private UserTableRowType memberInfoRowType;
     private UserTableRowType entitlementUserGroupRowType;
     private IndexRowType groupIndexRowType;
-    private GroupTable group;
+    private Group group;
 }

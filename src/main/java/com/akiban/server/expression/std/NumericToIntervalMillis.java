@@ -86,9 +86,9 @@ class NumericToIntervalMillis extends AbstractUnaryExpression
     }
 
     @Override
-    protected String name()
+    public String name()
     {
-        return "NUM_TO_INTERVAL";
+        return valueType().name() + " TO " + target;
     }
 
     @Override

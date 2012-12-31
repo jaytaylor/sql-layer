@@ -26,10 +26,14 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.error.InvalidParameterValueException;
+
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
+import java.net.*;
 import java.io.*;
+import java.nio.charset.Charset;
 
 /**
  * Basic implementation of Postgres wire protocol for SQL integration.
@@ -55,19 +59,27 @@ public class PostgresMessenger implements DataInput, DataOutput
     private final static InOutTap recvTap = Tap.createTimer("sql: msg: recv");
     private final static InOutTap xmitTap = Tap.createTimer("sql: msg: xmit");
 
-    private InputStream inputStream;
-    private OutputStream outputStream;
-    private DataInputStream dataInput;
+    private static final int IDLE_INTERVAL = 100;
+
+    private final Socket socket;
+    private final InputStream inputStream;
+    private final OutputStream outputStream;
+    private final DataInputStream dataInput;
+    private byte[] rawMessageInput;
     private DataInputStream messageInput;
     private ByteArrayOutputStream byteOutput;
     private DataOutputStream messageOutput;
     private String encoding = "UTF-8";
-    private boolean cancel = false;
 
-    public PostgresMessenger(InputStream inputStream, OutputStream outputStream) {
-        this.inputStream = inputStream;
-        this.outputStream = outputStream;
-        this.dataInput = new DataInputStream(inputStream);
+    public PostgresMessenger(Socket socket) throws SocketException, IOException {
+        this.socket = socket;
+        // We flush() when we mean it. 
+        // So, turn off kernel delay, but wrap a buffer so every
+        // message isn't its own packet.
+        socket.setTcpNoDelay(true);
+        inputStream = socket.getInputStream();
+        dataInput = new DataInputStream(inputStream);
+        outputStream = new BufferedOutputStream(socket.getOutputStream());
     }
 
     InputStream getInputStream() {
@@ -83,17 +95,19 @@ public class PostgresMessenger implements DataInput, DataOutput
         return encoding;
     }
     public void setEncoding(String encoding) {
-        this.encoding = encoding;
-    }
-
-    /** Has a cancel been sent? */
-    public synchronized boolean isCancel() {
-        return cancel;
-    }
-    /** Mark as cancelled. Cleared at the start of results. 
-     * Usually set from a thread running a request just for that purpose. */
-    public synchronized void setCancel(boolean cancel) {
-        this.cancel = cancel;
+        String newEncoding = encoding;
+        if ((newEncoding == null) || newEncoding.equals("UNICODE"))
+            newEncoding = "UTF-8";
+        else if (newEncoding.startsWith("WIN") && newEncoding.matches("WIN\\d+"))
+            newEncoding = "Cp" + newEncoding.substring(3);
+        try {
+            Charset.forName(newEncoding);
+        }
+        catch (IllegalArgumentException ex) {
+            throw new InvalidParameterValueException("unknown client_encoding '" + 
+                                                     encoding + "'");
+        }
+        this.encoding = newEncoding;
     }
 
     /** Read the next message from the stream, without any type opcode. */
@@ -106,15 +120,24 @@ public class PostgresMessenger implements DataInput, DataOutput
         int code = -1;
         if (hasType) {
             try {
-                waitTap.in();
-                code = dataInput.read();
-                if (!PostgresMessages.readTypeCorrect(code)) {
-                    throw new IOException ("Bad protocol read message: " + (char)code);
+                beforeIdle();
+                while (true) {
+                    try {
+                        code = dataInput.read();
+                    }
+                    catch (SocketTimeoutException ex) {
+                        idle();
+                        continue;
+                    }
+                    if (!PostgresMessages.readTypeCorrect(code)) {
+                        throw new IOException ("Bad protocol read message: " + (char)code);
+                    }
+                    type = PostgresMessages.messageType(code);
+                    break;
                 }
-                type = PostgresMessages.messageType(code);
             }
             finally {
-                waitTap.out();
+                afterIdle();
             }
         }
         else {
@@ -131,9 +154,9 @@ public class PostgresMessenger implements DataInput, DataOutput
                 throw new IOException(String.format("Implausible message length (%d) received.", len));
             len -= 4;
             try {
-                byte[] msg = new byte[len];
-                dataInput.readFully(msg, 0, len);
-                messageInput = new DataInputStream(new ByteArrayInputStream(msg));
+                rawMessageInput = new byte[len];
+                dataInput.readFully(rawMessageInput, 0, len);
+                messageInput = new DataInputStream(new ByteArrayInputStream(rawMessageInput));
             } catch (OutOfMemoryError ex) {
                 throw new IOException (String.format("Unable to allocate read buffer of length (%d)", len));
             }
@@ -208,6 +231,11 @@ public class PostgresMessenger implements DataInput, DataOutput
             bs.write(b);
         }
         return bs.toString(encoding);
+    }
+
+    /** Return entire message body. */
+    public byte[] getRawMessage() {
+        return rawMessageInput;
     }
 
     /** Write null-terminated string. */
@@ -312,6 +340,22 @@ public class PostgresMessenger implements DataInput, DataOutput
     }
     public void writeUTF(String s) throws IOException {
         messageOutput.writeUTF(s);
+    }
+
+    public void beforeIdle() throws IOException {
+        waitTap.in();
+        socket.setSoTimeout(IDLE_INTERVAL);
+    }
+
+    public void afterIdle() throws IOException {
+        socket.setSoTimeout(0);
+        waitTap.out();
+    }
+
+    /** Called every <code>IDLE_INTERVAL</code> ms. while waiting for a message.
+     * Overridden to allow insertion of asynch notifications.
+     */
+    public void idle() {
     }
 
 }

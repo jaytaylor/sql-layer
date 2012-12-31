@@ -26,15 +26,21 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import java.util.Collections;
 import java.util.List;
 
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
+import com.akiban.server.explain.Attributes;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.std.DUIOperatorExplainer;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
+import java.util.Map;
 
 /**
 
@@ -89,44 +95,39 @@ import com.akiban.util.tap.Tap;
 
  */
 
-class Delete_Default extends OperatorExecutionBase implements UpdatePlannable {
+class Delete_Default implements UpdatePlannable {
 
     // constructor
 
-    public Delete_Default(Operator inputOperator) {
+    public Delete_Default(Operator inputOperator, boolean usePValues) {
         this.inputOperator = inputOperator;
+        this.usePValues = usePValues;
     }
 
     // Object interface
 
     @Override
     public String toString() {
-        return String.format("%s(%s)", getClass().getSimpleName(), inputOperator);
+        return String.format("%s(%s)", getName(), inputOperator);
+    }
+    
+    @Override
+    public String getName() {
+        return getClass().getSimpleName();
+    }
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        Attributes atts = new Attributes();
+        if (context.hasExtraInfo(this))
+            atts.putAll(context.getExtraInfo(this).get());
+        return new DUIOperatorExplainer(getName(), atts, inputOperator, context);
     }
 
     @Override
     public UpdateResult run(QueryContext context) {
-        context(context);
-        int seen = 0, modified = 0;
-        Cursor inputCursor = null;
-        DELETE_TAP.in();
-        try {
-            inputCursor = inputOperator.cursor(context);
-            inputCursor.open();
-            Row oldRow;
-            while ((oldRow = inputCursor.next()) != null) {
-                checkQueryCancelation();
-                ++seen;
-                adapter().deleteRow(oldRow);
-                ++modified;
-            }
-        } finally {
-            if (inputCursor != null) {
-                inputCursor.close();
-            }
-            DELETE_TAP.out();
-        }
-        return new StandardUpdateResult(seen, modified);
+        return new Execution(context, inputOperator.cursor(context)).run();
     }
 
     @Override
@@ -144,6 +145,42 @@ class Delete_Default extends OperatorExecutionBase implements UpdatePlannable {
         return Collections.singletonList(inputOperator);
     }
 
+    private final boolean usePValues;
     private final Operator inputOperator;
     private static final InOutTap DELETE_TAP = Tap.createTimer("operator: Delete_Default");
+
+    // Inner classes
+
+    private class Execution extends ExecutionBase
+    {
+        public UpdateResult run()
+        {
+            int seen = 0, modified = 0;
+            DELETE_TAP.in();
+            try {
+                input.open();
+                Row oldRow;
+                while ((oldRow = input.next()) != null) {
+                    checkQueryCancelation();
+                    ++seen;
+                    adapter().deleteRow(oldRow, usePValues);
+                    ++modified;
+                }
+            } finally {
+                if (input != null) {
+                    input.close();
+                }
+                DELETE_TAP.out();
+            }
+            return new StandardUpdateResult(seen, modified);
+        }
+
+        protected Execution(QueryContext queryContext, Cursor input)
+        {
+            super(queryContext);
+            this.input = input;
+        }
+
+        private final Cursor input;
+    }
 }

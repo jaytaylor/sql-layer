@@ -1,0 +1,4 @@
+PhysicalUpdate
+  Project_Default(items.iid)
+    Delete_Returning(FROM items)
+      ValuesScan_Default()

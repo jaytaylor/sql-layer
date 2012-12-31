@@ -27,6 +27,7 @@
 package com.akiban.server.service.dxl;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
 
 import java.util.List;
 
@@ -38,13 +39,13 @@ public interface DXLMXBean {
 
     void setUsingSchema(String schema);
 
-    void createGroupIndex(String groupName, String indexName, String tableColumnList, Index.JoinType joinType);
+    void createGroupIndex(String schemaName, String groupName, String indexName, String tableColumnList, Index.JoinType joinType);
 
     void dropTable(String tableName) ;
 
-    void dropGroupIndex(String groupName, String indexName) ;
+    void dropGroupIndex(String schemaName, String groupName, String indexName) ;
 
-    void dropGroup(String groupName) ;
+    void dropGroup(String schemaName, String groupName) ;
     
     void dropGroupBySchema(String schemaName) ;
 
@@ -56,7 +57,7 @@ public interface DXLMXBean {
 
     List<String> getGroupIndexDDLs();
 
-    String getGroupNameFromTableName(String schema, String table);
+    TableName getGroupNameFromTableName(String schema, String table);
 
     String printAIS();
 

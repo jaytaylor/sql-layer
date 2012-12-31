@@ -32,7 +32,6 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionType;
-import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.types.AkType;
 import com.akiban.sql.StandardException;
 import com.akiban.server.expression.TypesList;
@@ -130,11 +129,6 @@ public final class FunctionsRegistryImplTest {
 
     public static final ExpressionComposer GOOD_EXPRESSION_COMPOSER = new ExpressionComposer() {
         @Override
-        public Expression compose(List<? extends Expression> arguments) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             throw new UnsupportedOperationException();
@@ -173,8 +167,18 @@ public final class FunctionsRegistryImplTest {
             throw new UnsupportedOperationException();
         }
         @Override
+        public String getName () {
+            return "TEST";
+        }
+        @Override
         public AkType outputType() {
             return AkType.NULL;
+        }
+
+        @Override
+        public Aggregator get(Object obj)
+        {
+            return get();
         }
     };
 

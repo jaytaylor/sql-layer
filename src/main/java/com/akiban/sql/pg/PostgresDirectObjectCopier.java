@@ -26,8 +26,6 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.qp.row.Row;
-
 import java.util.List;
 import java.io.IOException;
 
@@ -37,13 +35,17 @@ import java.io.IOException;
  */
 public class PostgresDirectObjectCopier extends PostgresOutputter<List<?>>
 {
+    private boolean withNewline;
+
     public PostgresDirectObjectCopier(PostgresQueryContext context,
-                                      PostgresBaseStatement statement) {
+                                      PostgresDMLStatement statement,
+                                      boolean withNewline) {
         super(context, statement);
+        this.withNewline = withNewline;
     }
 
     @Override
-    public void output(List<?> row) throws IOException {
+    public void output(List<?> row, boolean usePVals) throws IOException {
         messenger.beginMessage(PostgresMessages.COPY_DATA_TYPE.code());
         encoder.reset();
         for (int i = 0; i < ncols; i++) {
@@ -53,7 +55,8 @@ public class PostgresDirectObjectCopier extends PostgresOutputter<List<?>>
             if (field != null)
                 encoder.appendObject(field, type, false);
         }
-        encoder.appendString("\n");
+        if (withNewline)
+            encoder.appendString("\n");
         messenger.writeByteStream(encoder.getByteStream());
         messenger.sendMessage();
     }

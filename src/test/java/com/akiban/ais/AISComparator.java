@@ -30,6 +30,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 
 import java.util.Collection;
@@ -60,7 +61,7 @@ public class AISComparator {
     }
 
     private static class GroupMaps {
-        public final Collection<String> names = new TreeSet<String>();
+        public final Collection<TableName> names = new TreeSet<TableName>();
         public final Collection<String> indexes = new TreeSet<String>();
 
         public GroupMaps(Collection<Group> groups, boolean withIDs) {

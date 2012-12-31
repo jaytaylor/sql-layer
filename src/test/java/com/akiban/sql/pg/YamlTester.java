@@ -69,6 +69,7 @@ import java.util.Map.Entry;
 import java.util.Stack;
 import java.util.regex.Pattern;
 
+import com.akiban.server.types3.Types3Switch;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -205,6 +206,8 @@ class YamlTester {
     private static final String ALL_ENGINE = "all";
     /** Matches the IT engine. */
     private static final String IT_ENGINE = "it";
+    /** Matches the newtypes "engine." */
+    private static final String NEWTYPES_ENGINE = "newtypes";
 
     /** Compare toString values of arguments, ignoring case. */
     private static final Comparator<? super Object> COMPARE_IGNORE_CASE =
@@ -241,10 +244,12 @@ class YamlTester {
 
     /** Test the input specified in the constructor. */
     void test() {
+	executeSql("SET newtypes TO DEFAULT");
 	test(in);
     }
 
     private void test(Reader in) {
+    List<Object> sequence = null;
 	try {
 	    Yaml yaml = new Yaml(new RegisterTags());
 	    Iterator<Object> documents = yaml.loadAll(in).iterator();
@@ -252,7 +257,7 @@ class YamlTester {
 		++commandNumber;
 		commandName = null;
 		Object document = documents.next();
-		List<Object> sequence = nonEmptySequence(document,
+		sequence = nonEmptySequence(document,
 			"command document");
 		Entry<Object, Object> firstEntry = firstEntry(sequence.get(0),
 			"first element of the document");
@@ -265,7 +270,7 @@ class YamlTester {
 		} else if ("CreateTable".equals(commandName)) {
 		    createTableCommand(value, sequence);
 		} else if ("DropTable".equals(commandName)) {
-		    dropTableCommand(value);
+		    dropTableCommand(value, sequence);
 		} else if ("Statement".equals(commandName)) {
 		    statementCommand(value, sequence);
 		} else if ("Message".equals(commandName)) {
@@ -274,11 +279,13 @@ class YamlTester {
                     bulkloadCommand(value, sequence); 
                 } else if ("JMX".equals(commandName)) {
                     jmxCommand(value, sequence);
+        } else if ("Newtypes".equals(commandName)) {
+            newtypesCommand(value);
 		} else {
 		    fail("Unknown command: " + commandName);
 		}
 		if (suppressed) {
-		    System.err.println(context() + "Test suppressed: exiting");
+		    System.err.println(context(null) + "Test suppressed: exiting");
 		    break;
 		}
 	    }
@@ -289,13 +296,28 @@ class YamlTester {
 	    throw e;
 	} catch (Throwable e) {
 	    /* Add context */
-	    throw new ContextAssertionError(e.toString(), e);
+	    throw new ContextAssertionError(String.valueOf(sequence), e.toString(), e);
 	}
+    }
+
+    private void executeSql(String sql) {
+        try {
+            Statement statement = connection.createStatement();
+            try {
+                statement.execute(sql);
+            }
+            finally {
+                statement.close();
+            }
+        }
+        catch (SQLException e) {
+            throw new ContextAssertionError(sql, e.toString(), e);
+        }
     }
 
     private void bulkloadCommand(Object value, List<Object> sequence) {
         // ignore this command.  Not meant for ITs, only system testing
-        throw new ContextAssertionError("Bulk Load command is not supported in ITs");
+        throw new ContextAssertionError(null, "Bulk Load command is not supported in ITs");
     }
 
     private void includeCommand(Object value, List<Object> sequence) {
@@ -306,6 +328,7 @@ class YamlTester {
 	File include = new File(includeValue);
 	if (sequence.size() > 1) {
 	    throw new ContextAssertionError(
+            includeValue,
 		    "The Include command does not support attributes"
 			    + "\nFound: " + sequence.get(1));
 	}
@@ -323,7 +346,7 @@ class YamlTester {
 	try {
 	    in = new InputStreamReader(new FileInputStream(include), "UTF-8");
 	} catch (IOException e) {
-	    throw new ContextAssertionError("Problem accessing include file "
+	    throw new ContextAssertionError(includeValue, "Problem accessing include file "
 		    + include + ": " + e, e);
 	}
 	int originalCommandNumber = commandNumber;
@@ -347,6 +370,21 @@ class YamlTester {
     private void messageCommand(Object value) {
         String message = string(value, "Message");
         System.err.println("FTS Message: " + message);
+    }
+
+    private void newtypesCommand(Object value) throws SQLException {
+        Boolean boolVal = (Boolean) value;
+        String newtypesValue;
+        if (boolVal == null)
+            newtypesValue = "DEFAULT";
+        else if (boolVal)
+            newtypesValue = "'true'";
+        else
+            newtypesValue = "'false'";
+        String command = "SET newtypes = " + newtypesValue;
+        Map<?,?> commandMap = Collections.singletonMap("Statement", command);
+        List<Object> sequence = Collections.<Object>singletonList(commandMap);
+        statementCommand(command, sequence);
     }
 
     private void propertiesCommand(Object value, List<Object> sequence) {
@@ -405,6 +443,7 @@ class YamlTester {
 	    }
 	    if (!errorSpecified) {
 		throw new ContextAssertionError(
+            statement,
 			"Unexpected statement execution failure: "
 				+ sqlException, sqlException);
 	    }
@@ -459,8 +498,12 @@ class YamlTester {
 	new CreateTableCommand(value, sequence).execute();
     }
 
-    private class CreateTableCommand extends AbstractStatementCommand {
-	CreateTableCommand(Object value, List<Object> sequence) {
+    private class CreateTableCommand extends AbstractStatementCommand 
+    {
+        private Object warningsCount;
+        private List<Warning> warnings;
+        
+        CreateTableCommand(Object value, List<Object> sequence) {
 	    super("CREATE TABLE " + string(value, "CreateTable argument"));
 	    for (int i = 1; i < sequence.size(); i++) {
 		Entry<Object, Object> map = onlyEntry(sequence.get(i),
@@ -468,12 +511,21 @@ class YamlTester {
 		String attribute = string(map.getKey(),
 			"CreateTable attribute name");
 		Object attributeValue = map.getValue();
-		if ("error".equals(attribute)) {
+		if ("error".equals(attribute))
 		    parseError(attributeValue);
-		} else {
+                else if ("warnings_count".equals(attribute)) 
+                    warningsCount = parseWarningsCount(attributeValue, warningsCount);
+                else if ("warnings".equals(attribute)) 
+                    warnings = parseWarnings(attributeValue, warnings);
+                else 
 		    fail("The '" + attribute + "' attribute name was not"
 			    + " recognized");
-		}
+
+                if (warnings != null && warningsCount != null 
+                                     && !expected(warningsCount, warnings.size()))
+                    fail("Warnings count " + warningsCount
+                         + " does not match " + warnings.size()
+                         + ", which is the number of warnings");
 	    }
 	}
 
@@ -487,6 +539,7 @@ class YamlTester {
 		if (DEBUG) {
 		    System.err.println("Statement executed successfully");
 		}
+                
 	    } catch (SQLException e) {
 		if (DEBUG) {
 		    System.err.println("Generated error code: "
@@ -495,20 +548,47 @@ class YamlTester {
 		checkFailure(e);
 		return;
 	    }
-	    assertFalse("Statement execution succeeded, but was expected"
-		    + " to generate an error", errorSpecified);
+            checkSuccess(stmt, errorSpecified, warnings, warningsCount);
 	}
     }
 
     
-    private void dropTableCommand(Object value) throws SQLException {
-        new DropTableCommand(value).execute();
+    private void dropTableCommand(Object value, List<Object> sequence) throws SQLException {
+        new DropTableCommand(value, sequence).execute();
     }
     
 
-    private class DropTableCommand extends AbstractStatementCommand {
-	DropTableCommand(Object value) {
+    private class DropTableCommand extends AbstractStatementCommand
+    {
+                
+        private Object warningsCount;
+        private List<Warning> warnings;
+	
+        DropTableCommand(Object value, List<Object> sequence)
+        {
 	    super("DROP TABLE " + string(value, "DropTable argument"));
+            for (int i = 1; i < sequence.size(); i++) {
+		Entry<Object, Object> map = onlyEntry(sequence.get(i),
+			"DropTable attribute");
+		String attribute = string(map.getKey(),
+			"CreateTable attribute name");
+		Object attributeValue = map.getValue();
+		if ("error".equals(attribute))
+		    parseError(attributeValue);
+                else if ("warnings_count".equals(attribute)) 
+                    warningsCount = parseWarningsCount(attributeValue, warningsCount);
+                else if ("warnings".equals(attribute)) 
+                    warnings = parseWarnings(attributeValue, warnings);
+                else 
+		    fail("The '" + attribute + "' attribute name was not"
+			    + " recognized");
+
+                if (warnings != null && warningsCount != null 
+                                     && !expected(warningsCount, warnings.size()))
+                    fail("Warnings count " + warningsCount
+                         + " does not match " + warnings.size()
+                         + ", which is the number of warnings");
+	    }
 	}
 
 	void execute() throws SQLException {
@@ -521,6 +601,7 @@ class YamlTester {
 		if (DEBUG) {
 		    System.err.println("Statement executed successfully");
 		}
+                
 	    } catch (SQLException e) {
 		if (DEBUG) {
 		    System.err.println("Generated error code: "
@@ -529,16 +610,14 @@ class YamlTester {
 		checkFailure(e);
 		return;
 	    }
-	    assertFalse("Statement execution succeeded, but was expected"
-		    + " to generate an error", errorSpecified);
+            checkSuccess(stmt, errorSpecified, warnings, warningsCount);
 	}
     }
 
     private void statementCommand(Object value, List<Object> sequence)
 	    throws SQLException {
-	if (value != null) {
-	    new StatementCommand(value, sequence).execute();
-	}
+        assertNotNull("Statement value cannot be null (e.g. null, empty, no matching select-engine)", value);
+        new StatementCommand(string(value, "Statement value"), sequence).execute();
     }
 
     private class StatementCommand extends AbstractStatementCommand {
@@ -563,13 +642,8 @@ class YamlTester {
 	 */
 	private int outputRow = 0;
 
-	StatementCommand(Object value, List<Object> sequence) {
-	    super(string(value, "Statement value"));
-	    if (statement.regionMatches(true, 0, "CREATE TABLE", 0, 12)) {
-		throw new ContextAssertionError(
-			"The Statement command should not be used for CREATE"
-				+ " TABLE statements");
-	    }
+	StatementCommand(String value, List<Object> sequence) {
+	    super(value);
 	    for (int i = 1; i < sequence.size(); i++) {
 		Entry<Object, Object> map = onlyEntry(sequence.get(i),
 			"Statement attribute");
@@ -595,9 +669,9 @@ class YamlTester {
 		} else if ("explain".equals(attribute)) {
 		    parseExplain(attributeValue);
                 } else if ("warnings_count".equals(attribute)) {
-                    parseWarningsCount(attributeValue);
+                   warningsCount = parseWarningsCount(attributeValue, warningsCount);
                 } else if ("warnings".equals(attribute)) {
-                    parseWarnings(attributeValue);
+                    warnings = parseWarnings(attributeValue, warnings);
 		} else {
 		    fail("The '" + attribute + "' attribute name was not"
 			    + " recognized");
@@ -719,41 +793,6 @@ class YamlTester {
 		    explain);
 	    explain = scalar(value, "explain value");
 	}
-
-        /** Parse a warnings_count attribute with the specified value. */
-        void parseWarningsCount(Object value) {
-            if (value == null) {
-                return;
-            }
-            assertNull(
-                "The warnings_count attribute must not appear more than once",
-                warningsCount);
-            warningsCount = scalar(value, "warningsCount");
-        }
-
-        /** Parse a warnings attribute with the specified value. */
-        void parseWarnings(Object value) {
-            if (value == null) {
-                return;
-            }
-            assertNull("The warnings attribute must not appear more than once",
-                       warnings);
-            List<Object> list = nonEmptySequence(value, "warnings");
-            warnings = new ArrayList<Warning>();
-            for (int i = 0; i < list.size(); i++) {
-                List<Object> element = nonEmptyScalarSequence(
-                    list.get(i), "warnings element " + i);
-                assertFalse("Warnings element " + i + " is empty",
-                            element.isEmpty());
-                assertFalse(
-                    "Warnings element " + i + " has more than two elements",
-                    element.size() > 2);
-                warnings.add(
-                    new Warning(
-                        element.get(0),
-                        element.size() > 1 ? element.get(1) : null));
-            }
-        }
 
 	void execute() throws SQLException {
 	    if (explain != null) {
@@ -915,11 +954,11 @@ class YamlTester {
 		got++;
 	    }
 	    if (got > expected) {
-		throw new ContextAssertionError("Too many output rows:"
+		throw new ContextAssertionError(statement, "Too many output rows:"
 			+ "\nExpected: " + expected + "\n     got: " + got);
 	    } else if (!more && (params == null || paramsRow == params.size())
 		    && (got < expected)) {
-		throw new ContextAssertionError("Too few output rows:"
+		throw new ContextAssertionError(statement, "Too few output rows:"
 			+ "\nExpected: " + expected + "\n     got: " + got);
 	    }
 	}
@@ -983,6 +1022,7 @@ class YamlTester {
                         break;
                     } else if (!rowsEqual(row, resultsRow)) {
                         throw new ContextAssertionError(
+                            statement,
                             "Unexpected output in row " + (outputRow + 1) + ":"
                             + "\nExpected: " + arrayString(row)
                             + "\n     got: "
@@ -1053,7 +1093,95 @@ class YamlTester {
 	    }
 	}
     }
+    
+    //----------- static helpers -----------------
 
+    static Object stripWARN (Object msg)
+    {
+        
+        if (msg instanceof String)
+        {
+            String st = (String)msg;
+            if (st.startsWith("WARN:  "))
+                return st.substring(7);
+        }
+        return msg;
+    }
+
+    static void checkSuccess(Statement stmt, boolean errorSpecified, List<Warning> warnings, Object warningsCount) throws SQLException
+    {
+        assertFalse("Statement execution succeeded, but was expected"
+                    + " to generate an error", errorSpecified);
+
+        List<Warning> reportedWarnings = new ArrayList<Warning>();
+        collectWarnings(stmt.getWarnings(), reportedWarnings);
+        checkWarnings(reportedWarnings, warnings, warningsCount);
+    }
+
+    static Object parseWarningsCount(Object value, Object warningsCount)
+    {
+        if (value == null)
+            return null;
+        assertNull("The warnings_count attribute must not appear more than once",
+                   warningsCount);
+        return warningsCount = scalar(value, "warningsCount");
+    }
+
+    static List<Warning>  parseWarnings(Object value, List<Warning> warnings)
+    {
+        if (value == null)
+            return null;
+        assertNull("The warnings attribute must not appear more than once",
+                   warnings);
+
+        List<Object> list = nonEmptySequence(value, "warnings");
+        warnings = new ArrayList<Warning>();
+        for (int i = 0; i < list.size(); i++)
+        {
+            List<Object> element = nonEmptyScalarSequence(
+                    list.get(i), "warnings element " + i);
+            assertFalse("Warnings element " + i + " is empty",
+                        element.isEmpty());
+            assertFalse("Warnings element " + i + " has more than two elements",
+                        element.size() > 2);
+            warnings.add(new Warning(
+                    element.get(0),
+                    element.size() > 1 ? stripWARN(element.get(1)) : null));
+        }
+        return warnings;
+    }
+
+    private static void collectWarnings(SQLWarning warning, List<Warning> messages)
+    {
+        while (warning != null)
+        {
+            messages.add(new Warning(warning.getSQLState(), warning.getMessage()));
+            warning = warning.getNextWarning();
+        }
+    }
+
+    private static void checkWarnings(List<Warning> reportedWarnings, List<Warning> warnings, Object warningsCount)
+    {
+        if (DEBUG && !reportedWarnings.isEmpty())
+            System.err.println("Statement warnings: " + reportedWarnings);
+
+        if (warningsCount != null)
+            checkExpected("warnings count", warningsCount, reportedWarnings.size());
+        if (warnings == null)
+            return;
+        if (reportedWarnings.isEmpty())
+        {
+            if (!warnings.isEmpty())
+                fail("No warnings were reported, but expected warnings: " + warnings);
+        }
+        else
+        {
+            if (warnings.isEmpty())
+                fail("Warnings were reported but none were expected: " + warnings);
+            checkExpectedList("Warnings", warnings, reportedWarnings);
+        }
+    }
+    
     static void checkExpectedList(String description, List<?> expected,
                                   List<?> actual)
     {
@@ -1093,8 +1221,9 @@ class YamlTester {
         } else if (expected == null) {
             return actual == null;
         } else {
-            String expectedString = objectToString(expected).trim();
-            String actualString = objectToString(actual).trim();
+            String expectedString = objectToString(expected);
+            String actualString = objectToString(actual);
+     
             return expectedString.equals(actualString);
         }
     }
@@ -1407,7 +1536,11 @@ class YamlTester {
 				+ "\nGot: " + constructObject(keyNode));
 		    }
 		    String key = ((ScalarNode) keyNode).getValue();
-		    if (IT_ENGINE.equals(key)
+		    if (NEWTYPES_ENGINE.equals(key) && Types3Switch.ON) {
+		        matchingKey = key;
+		        result = constructObject(tuple.getValueNode());
+		    }
+		    else if (IT_ENGINE.equals(key)
 			    || (matchingKey == null && ALL_ENGINE.equals(key))) {
 			matchingKey = key;
 			result = constructObject(tuple.getValueNode());
@@ -1524,18 +1657,18 @@ class YamlTester {
 
     /** An assertion error that includes context information. */
     private class ContextAssertionError extends AssertionError {
-	ContextAssertionError(String message) {
-	    super(context() + message);
+	ContextAssertionError(String failedStatement, String message) {
+	    super(context(failedStatement) + message);
 	}
 
-	ContextAssertionError(String message, Throwable cause) {
-	    super(context() + message);
+	ContextAssertionError(String failedStatement, String message, Throwable cause) {
+	    super(context(failedStatement) + message);
 	    initCause(cause);
 	}
     }
 
-    private String context() {
-	StringBuffer context = new StringBuffer();
+    private String context(String failedStatement) {
+	StringBuilder context = new StringBuilder();
 	if (filename != null) {
 	    context.append(filename);
 	}
@@ -1553,7 +1686,10 @@ class YamlTester {
 	    }
 	    context.append("Command ").append(commandNumber);
 	    if (commandName != null) {
-		context.append(" (").append(commandName).append(')');
+		context.append(" (").append(commandName);
+        if (failedStatement != null)
+            context.append(": <").append(failedStatement).append('>');
+        context.append(')');
 	    }
 	}
 	if (context.length() != 0) {

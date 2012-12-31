@@ -1,7 +1,10 @@
 # Test statement cache
 ---
-# Set the CBO to the setting this test requires. 
-- Statement: SET cbo TO 'false'
+- Properties: sys-mysql
+- suppressed: true
+---
+# A setting that affects cache selection.
+- Statement: SET newtypes TO 'false'
 ---
 - JMX: com.akiban:type=PostgresServer
 - set: StatementCacheCapacity
@@ -27,80 +30,117 @@
 - Statement: INSERT INTO t VALUES(1, 'fred'), (2, 'barney')
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
-- output: [['project([Field(0)])'],
-           ['  Filter_Default([test.t])'],
-           ['    Select_HKeyOrdered(test.t, Field(1) == Variable(pos=0))'],
-           ['      GroupScan_Default(full scan on _akiban_t)']]
+- output: [['Project_Default(t.id)'],
+           ['  Filter_Default(t)'],
+           ['    Select_HKeyOrdered(t.s == $1)'],
+           ['      GroupScan_Default(t)']]
 ---
-- Statement: EXPLAIN SELECT id FROM t WHERE s = ?
+- Statement: SELECT id FROM t WHERE s = 1
 ---
-- Statement: EXPLAIN SELECT id FROM t WHERE s = ?
+- Statement: SELECT id FROM t WHERE s = 1
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheMisses
-# INSERT, EXPLAIN
-- output: [['2']]
+# INSERT, EXPLAIN, SELECT
+- output: [['3']]
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheHits
-# EXPLAIN x 2
+# SELECT
+- output: [['1']]
+---
+- Statement: INSERT INTO t VALUES(1, CURRENT_DATE)
+---
+- Statement: INSERT INTO t VALUES(1, CURRENT_DATE)
+---
+- JMX: com.akiban:type=PostgresServer
+- get: StatementCacheMisses
+# INSERT
+- output: [['4']]
+---
+- JMX: com.akiban:type=PostgresServer
+- get: StatementCacheHits
+# INSERT
 - output: [['2']]
 ---
 # AIS change
 - Statement: CREATE INDEX t_s ON t(s)
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
-- output: [['project([Field(0)])'],
-           ['  AncestorLookup_Default(Index(test.t.t_s[IndexColumn(s)]) -> [test.t])'],
-           ['    IndexScan_Default(Index(test.t.t_s[IndexColumn(s)]) (>=UnboundExpressions[Variable(pos=0)],<=UnboundExpressions[Variable(pos=0)]))']]
+- output: [['Project_Default(t.id)'],
+           ['  AncestorLookup_Default(Index(t.t_s) -> t)'],
+           ['    IndexScan_Default(Index(t.t_s), s = $1)']]
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheMisses
 # CREATE, EXPLAIN
-- output: [['4']]
----
-- JMX: com.akiban:type=PostgresServer
-- get: StatementCacheHits
-- output: [['2']]
----
-# Different compiler mode
-- Statement: SET cbo TO 'true'
----
-- Statement: EXPLAIN SELECT id FROM t WHERE s = ?
-- output: [['project([Field(0)])'],
-           ['  AncestorLookup_Default(Index(test.t.t_s[IndexColumn(s)]) -> [test.t])'],
-           ['    IndexScan_Default(Index(test.t.t_s[IndexColumn(s)]) (>=UnboundExpressions[Variable(pos=0)],<=UnboundExpressions[Variable(pos=0)]))']]
----
-- JMX: com.akiban:type=PostgresServer
-- get: StatementCacheMisses
-# SET, EXPLAIN
 - output: [['6']]
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheHits
 - output: [['2']]
 ---
+# Different compiler mode
+- Statement: SET newtypes TO 'true'
+---
+- Statement: EXPLAIN SELECT id FROM t WHERE s = ?
+- output: [['Project_Default(t.id)'],
+           ['  AncestorLookup_Default(Index(t.t_s) -> t)'],
+           ['    IndexScan_Default(Index(t.t_s), s = $1)']]
+---
+- Statement: SELECT id FROM t WHERE s = 1
+---
+- Statement: SELECT id FROM t WHERE s = 1
+---
+- JMX: com.akiban:type=PostgresServer
+- get: StatementCacheMisses
+# SET, EXPLAIN, SELECT
+- output: [['9']]
+---
+- JMX: com.akiban:type=PostgresServer
+- get: StatementCacheHits
+# SELECT
+- output: [['3']]
+---
 - Statement: DROP INDEX t_s
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
-- output: [['project([Field(0)])'],
-           ['  Filter_Default([test.t])'],
-           ['    Select_HKeyOrdered(test.t, Field(1) == Variable(pos=0))'],
-           ['      GroupScan_Default(full scan on _akiban_t)']]
+- output: [['Project_Default(t.id)'],
+           ['  Filter_Default(t)'],
+           ['    Select_HKeyOrdered(t.s == $1)'],
+           ['      GroupScan_Default(t)']]
 ---
-- Statement: SET cbo TO 'false'
+- Statement: SET newtypes TO 'false'
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
-- output: [['project([Field(0)])'],
-           ['  Filter_Default([test.t])'],
-           ['    Select_HKeyOrdered(test.t, Field(1) == Variable(pos=0))'],
-           ['      GroupScan_Default(full scan on _akiban_t)']]
+- output: [['Project_Default(t.id)'],
+           ['  Filter_Default(t)'],
+           ['    Select_HKeyOrdered(t.s == $1)'],
+           ['      GroupScan_Default(t)']]
+---
+- CreateTable: test1.t (n INT)
+---
+- Statement: INSERT INTO test1.t VALUES(1)
+---
+- CreateTable: test2.t (n INT)
+---
+- Statement: INSERT INTO test2.t VALUES(0)
+---
+- Statement: SET SCHEMA test1
+---
+- Statement: SELECT * FROM t
+- output: [[1]]
+---
+- Statement: SET SCHEMA test2
+---
+- Statement: SELECT * FROM t
+- output: [[0]]
 ---
 # Turn it back off
 - JMX: com.akiban:type=PostgresServer
 - set: StatementCacheCapacity
 - params: ['0']
 ---
-# Return the CBO setting to the server standard
-- Statement: SET cbo TO DEFAULT
+# Return the setting to the server standard
+- Statement: SET newtypes TO DEFAULT
 ...

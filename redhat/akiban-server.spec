@@ -5,7 +5,7 @@
 %define relname %{name}-%{version}-%{release}
 
 Name:           akiban-server
-Version:        1.2.2
+Version:        1.4.5
 Release:        REVISION%{?dist}
 Epoch:		EPOCH
 Summary:        Akiban Server is the main server for the Akiban Orthogonal Architecture.
@@ -40,22 +40,35 @@ mvn -B -Dmaven.test.skip.exec -DBZR_REVISION=%{release} clean install
 %install
 rm -rf ${RPM_BUILD_ROOT}
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{username}/
-mkdir -p ${RPM_BUILD_ROOT}/usr/share/%{username}
+mkdir -p ${RPM_BUILD_ROOT}/usr/share/%{username}/server
+mkdir -p ${RPM_BUILD_ROOT}/usr/share/%{username}/client
 mkdir -p ${RPM_BUILD_ROOT}/etc/%{username}/config
 mkdir -p ${RPM_BUILD_ROOT}/etc/rc.d/init.d/
 mkdir -p ${RPM_BUILD_ROOT}/etc/security/limits.d/
 mkdir -p ${RPM_BUILD_ROOT}/etc/default/
 mkdir -p ${RPM_BUILD_ROOT}/usr/sbin
 mkdir -p ${RPM_BUILD_ROOT}/usr/bin
+mkdir -p ${RPM_BUILD_ROOT}/usr/share/%{username}/plugins
+
 cp -p redhat/log4j.properties ${RPM_BUILD_ROOT}/etc/%{username}/config
 cp -p redhat/server.properties ${RPM_BUILD_ROOT}/etc/%{username}/config
 cp -p redhat/services-config.yaml ${RPM_BUILD_ROOT}/etc/%{username}/config
 cp -p redhat/jvm.options ${RPM_BUILD_ROOT}/etc/%{username}/config
 cp -p redhat/akiban-server ${RPM_BUILD_ROOT}/etc/rc.d/init.d/
-cp -p target/akiban-server-1.2.2-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
-ln -s /usr/share/%{username}/akiban-server-1.2.2-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-server.jar
+cp -p redhat/LICENSE.txt ${RPM_BUILD_ROOT}/usr/share/%{username}
+cp -p redhat/*.tag ${RPM_BUILD_ROOT}/usr/share/%{username}
+
+cp -p target/akiban-server-1.4.5-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
+ln -s /usr/share/%{username}/akiban-server-1.4.5-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-server.jar
+cp -p target/dependency/* ${RPM_BUILD_ROOT}/usr/share/%{username}/server
+cp -p redhat/akiban-client-tools-1.3.4-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
+ln -s /usr/share/%{username}/akiban-client-tools-1.3.4-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-client-tools.jar
+cp -p redhat/client/* ${RPM_BUILD_ROOT}/usr/share/%{username}/client
+cp -p redhat/plugins/* ${RPM_BUILD_ROOT}/usr/share/%{username}/plugins
+
+mv redhat/akdump ${RPM_BUILD_ROOT}/usr/bin
 mv bin/akserver ${RPM_BUILD_ROOT}/usr/sbin
-mv bin/akloader ${RPM_BUILD_ROOT}/usr/bin
+
 mkdir -p ${RPM_BUILD_ROOT}/var/lib/%{username}
 mkdir -p ${RPM_BUILD_ROOT}/var/lib/%{username}
 mkdir -p ${RPM_BUILD_ROOT}/var/lib/%{username}
@@ -80,7 +93,7 @@ fi
 %files
 %defattr(-,root,root,0755)
 %attr(755,root,root) %{_sbindir}/akserver
-%attr(755,root,root) %{_bindir}/akloader
+%attr(755,root,root) %{_bindir}/akdump
 %attr(755,root,root) /etc/rc.d/init.d/akiban-server
 %attr(755,%{username},%{username}) /usr/share/%{username}*
 %attr(755,%{username},%{username}) %config(noreplace) /%{_sysconfdir}/%{username}

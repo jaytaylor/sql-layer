@@ -1,0 +1,6 @@
+PhysicalUpdate
+  Project_Default(items.oid, items.iid, items.quan - 2)
+    Update_Returning(items SET quan = items.quan + 2)
+      Filter_Default(items)
+        BranchLookup_Default(Index(orders.order_date) -> orders)
+          IndexScan_Default(Index(orders.order_date), order_date > DATE '2011-04-01')

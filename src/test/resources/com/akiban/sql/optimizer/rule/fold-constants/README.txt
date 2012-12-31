@@ -1,3 +1,5 @@
+and-tree: Multiple ANDs flattened into Select.
+
 case-1: CASE condition already worked out.
 
 case-2: CASE only partially worked out.
@@ -42,6 +44,14 @@ in-non-top-level: IN list inside complex condition.
 in-nulls: IN list with nulls.
 
 in-singleton: IN list with single value after folding.
+
+in-singleton-row: IN list with single row value.
+
+in-constant: IN with some constants
+
+in-constant-row: IN row value with some constants
+
+in-constant-equals: IN with some constants that are equal
 
 is-conditions: IS TRUE / FALSE / NULL.
 

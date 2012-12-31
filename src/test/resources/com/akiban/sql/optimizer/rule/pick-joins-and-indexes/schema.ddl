@@ -53,6 +53,13 @@ CREATE TABLE books
 );
 CREATE INDEX copyright ON books(copyright,author,name);
 
+CREATE TABLE categories
+(
+   cat int NOT NULL,
+   sku varchar(32) NOT NULL
+);
+CREATE UNIQUE INDEX cat_sku ON categories(cat,sku);
+
 CREATE INDEX cname_and_sku ON customers(customers.name, items.sku) USING LEFT JOIN;
 CREATE INDEX sku_and_date ON customers(items.sku, orders.order_date) USING LEFT JOIN;
 CREATE INDEX state_and_name ON customers(addresses.state, customers.name) USING RIGHT JOIN;

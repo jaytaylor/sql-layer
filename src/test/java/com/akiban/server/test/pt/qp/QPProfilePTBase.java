@@ -38,6 +38,7 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.rowdata.RowDef;
@@ -54,15 +55,14 @@ import static org.junit.Assert.assertTrue;
 
 public class QPProfilePTBase extends PTBase
 {
-    protected GroupTable groupTable(int userTableId)
+    protected Group group(int userTableId)
     {
-        RowDef userTableRowDef = rowDefCache().rowDef(userTableId);
-        return userTableRowDef.table().getGroup().getGroupTable();
+        return getRowDef(userTableId).table().getGroup();
     }
 
     protected UserTable userTable(int userTableId)
     {
-        RowDef userTableRowDef = rowDefCache().rowDef(userTableId);
+        RowDef userTableRowDef = getRowDef(userTableId);
         return userTableRowDef.userTable();
     }
 
@@ -107,7 +107,7 @@ public class QPProfilePTBase extends PTBase
 
     protected RowBase row(int tableId, Object... values /* alternating field position and value */)
     {
-        NiceRow niceRow = new NiceRow(tableId, store());
+        NewRow niceRow = createNewRow(tableId);
         int i = 0;
         while (i < values.length) {
             int position = (Integer) values[i++];

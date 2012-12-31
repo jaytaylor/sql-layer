@@ -26,11 +26,16 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.rowtype.*;
+import com.akiban.server.explain.*;
+import com.akiban.server.explain.std.LookUpOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -40,12 +45,13 @@ import org.slf4j.LoggerFactory;
 import java.util.Set;
 
 import static java.lang.Math.min;
+import java.util.Map;
 
 /**
 
  <h1>Overview</h1>
 
- Given an index row or group row, BranchLookup_Default locates a
+ Given an index row or group row, BranchLookup_Nested locates a
  related branch, i.e., a related row and all of its descendents.
  Branches are located 
  using the hkey in a row of the current query's QueryContext.
@@ -139,7 +145,7 @@ public class BranchLookup_Nested extends Operator
     {
         return String.format("%s(%s %s -> %s)",
                              getClass().getSimpleName(),
-                             groupTable.getName().getTableName(),
+                             group.getRoot().getName(),
                              inputRowType,
                              outputRowType);
     }
@@ -165,14 +171,14 @@ public class BranchLookup_Nested extends Operator
 
     // BranchLookup_Default interface
 
-    public BranchLookup_Nested(GroupTable groupTable,
+    public BranchLookup_Nested(Group group,
                                RowType inputRowType,
                                UserTableRowType ancestorRowType,
                                UserTableRowType outputRowType,
                                API.InputPreservationOption flag,
                                int inputBindingPosition)
     {
-        ArgumentValidation.notNull("groupTable", groupTable);
+        ArgumentValidation.notNull("group", group);
         ArgumentValidation.notNull("inputRowType", inputRowType);
         ArgumentValidation.notNull("outputRowType", outputRowType);
         ArgumentValidation.notNull("flag", flag);
@@ -195,7 +201,7 @@ public class BranchLookup_Nested extends Operator
                                   inputTable.getGroup(),
                                   "outputTable.getGroup()",
                                   outputTable.getGroup());
-        this.groupTable = groupTable;
+        this.group = group;
         this.inputRowType = inputRowType;
         this.outputRowType = outputRowType;
         this.keepInput = flag == API.InputPreservationOption.KEEP_INPUT;
@@ -265,7 +271,7 @@ public class BranchLookup_Nested extends Operator
 
     // Object state
 
-    private final GroupTable groupTable;
+    private final Group group;
     private final RowType inputRowType;
     private final UserTableRowType outputRowType;
     private final boolean keepInput;
@@ -274,6 +280,18 @@ public class BranchLookup_Nested extends Operator
     private final int inputBindingPosition;
     private final UserTable commonAncestor;
     private final int branchRootOrdinal;
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        Attributes atts = new Attributes();
+        atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
+        atts.put(Label.OUTPUT_TYPE, outputRowType.getExplainer(context));
+        UserTableRowType ancestorRowType = outputRowType.schema().userTableRowType(commonAncestor);
+        if ((ancestorRowType != inputRowType) && (ancestorRowType != outputRowType))
+            atts.put(Label.ANCESTOR_TYPE, ancestorRowType.getExplainer(context));
+        return new LookUpOperatorExplainer(getName(), atts, inputRowType, false, null, context);
+    }
 
     // Inner classes
 
@@ -372,7 +390,7 @@ public class BranchLookup_Nested extends Operator
         Execution(QueryContext context)
         {
             super(context);
-            this.cursor = adapter().newGroupCursor(groupTable);
+            this.cursor = adapter().newGroupCursor(group);
             this.hKey = adapter().newHKey(outputRowType.hKey());
         }
 

@@ -10,4 +10,4 @@ SelectQuery@1eb0c6
               Select@7523cde5[orders.order_date > Cast(2011-01-01 AS DATE NOT NULL)]
                 BranchLookup@1a2b178(customers -> customers)
                   SingleIndexScan@60313e1e(Index(test.customers.name[IndexColumn(name)]), NONE, =parent.name, rows = 9, cost = 607.094)
-                  TableSource@73d55dd(orders - TableGroupJoin@40e554e8(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+                  TableSource@73d55dd(orders - TableGroupJoin@40e554e8(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

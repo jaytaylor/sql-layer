@@ -27,6 +27,7 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -35,17 +36,17 @@ import com.akiban.server.expression.std.Comparison;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.akiban.server.expression.std.Expressions.compare;
-import static com.akiban.server.expression.std.Expressions.field;
-import static com.akiban.server.expression.std.Expressions.literal;
+import static com.akiban.server.test.ExpressionGenerators.compare;
+import static com.akiban.server.test.ExpressionGenerators.field;
+import static com.akiban.server.test.ExpressionGenerators.literal;
 import static com.akiban.qp.operator.API.*;
 
 public class SelectIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupPostCreateSchema()
     {
-        super.before();
+        super.setupPostCreateSchema();
         NewRow[] dbWithOrphans = new NewRow[]{
             createNewRow(customer, 1L, "northbridge"),
             createNewRow(customer, 2L, "foundation"),
@@ -87,7 +88,7 @@ public class SelectIT extends OperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testNullPredicate()
     {
-        select_HKeyOrdered(groupScan_Default(coi), customerRowType, null);
+        select_HKeyOrdered(groupScan_Default(coi), customerRowType, (Expression)null);
     }
 
     // Runtime tests
@@ -205,18 +206,18 @@ public class SelectIT extends OperatorITBase
 
     // For use by this class
 
-    private Expression customerNameEQ(String name)
+    private ExpressionGenerator customerNameEQ(String name)
     {
-        return compare(field(customerRowType, 1), Comparison.EQ, literal(name));
+        return compare(field(customerRowType, 1), Comparison.EQ, literal(name), castResolver());
     }
 
-    private Expression orderSalesmanEQ(String name)
+    private ExpressionGenerator orderSalesmanEQ(String name)
     {
-        return compare(field(orderRowType, 2), Comparison.EQ, literal(name));
+        return compare(field(orderRowType, 2), Comparison.EQ, literal(name), castResolver());
     }
 
-    private Expression itemOidEQ(long oid)
+    private ExpressionGenerator itemOidEQ(long oid)
     {
-        return compare(field(itemRowType, 1), Comparison.EQ, literal(oid));
+        return compare(field(itemRowType, 1), Comparison.EQ, literal(oid), castResolver());
     }
 }

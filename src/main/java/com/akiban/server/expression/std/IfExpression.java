@@ -43,16 +43,15 @@ import java.util.List;
 
 public class IfExpression extends AbstractCompositeExpression
 {
+    @Override
+    protected void describe(StringBuilder sb)
+    {
+        sb.append("IF()");
+    }
 
     @Scalar("if")
     public static final ExpressionComposer COMPOSER = new ExpressionComposer()
     {
-        @Override
-        public Expression compose(List<? extends Expression> arguments)
-        {
-            return new IfExpression(arguments);
-        }
-
         @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
@@ -77,7 +76,7 @@ public class IfExpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported in IF yet.");
+            return new IfExpression(arguments);
         }
 
         @Override
@@ -95,6 +94,12 @@ public class IfExpression extends AbstractCompositeExpression
         else
             return CoalesceExpression.getTopType(Arrays.asList(children.get(1).valueType(),
                                                                children.get(2).valueType()));
+    }
+
+    @Override
+    public String name()
+    {
+        return "IF";
     }
 
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
@@ -120,12 +125,6 @@ public class IfExpression extends AbstractCompositeExpression
     public boolean nullIsContaminating()
     {
         return false;
-    }
-
-    @Override
-    protected void describe(StringBuilder sb)
-    {
-        sb.append("IF()");
     }
 
     @Override

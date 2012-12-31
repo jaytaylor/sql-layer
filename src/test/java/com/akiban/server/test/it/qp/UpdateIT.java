@@ -28,6 +28,8 @@ package com.akiban.server.test.it.qp;
 
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
@@ -43,9 +45,12 @@ import static com.akiban.qp.operator.API.*;
 import com.persistit.Transaction;
 
 import org.junit.Test;
+
+import static com.akiban.qp.operator.API.indexScan_Default;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 public class UpdateIT extends OperatorITBase
 {
@@ -55,16 +60,28 @@ public class UpdateIT extends OperatorITBase
 
         UpdateFunction updateFunction = new UpdateFunction() {
             @Override
+            public boolean usePValues() {
+                return usingPValues();
+            }
+
+            @Override
             public boolean rowIsSelected(Row row) {
                 return row.rowType().equals(customerRowType);
             }
 
             @Override
             public Row evaluate(Row original, QueryContext context) {
-                ToObjectValueTarget target = new ToObjectValueTarget();
-                target.expectType(AkType.VARCHAR);
-                Object obj = Converters.convert(original.eval(1), target).lastConvertedValue();
-                String name = (String) obj; // TODO eventually use Expression for this
+                String name;
+                if (usePValues()) {
+                    name = original.pvalue(1).getString();
+                }
+                else {
+                    ToObjectValueTarget target = new ToObjectValueTarget();
+                    target.expectType(AkType.VARCHAR);
+                    Object obj = Converters.convert(original.eval(1), target).lastConvertedValue();
+                    name = (String) obj;
+                }
+                // TODO eventually use Expression for this
                 name = name.toUpperCase();
                 name = name + name;
                 return new OverlayingRow(original).overlay(1, name);
@@ -111,13 +128,24 @@ public class UpdateIT extends OperatorITBase
         
         UpdateFunction updateFunction = new UpdateFunction() {
                 @Override
+                public boolean usePValues() {
+                    return usingPValues();
+                }
+
+                @Override
                 public boolean rowIsSelected(Row row) {
                     return row.rowType().equals(itemRowType);
                 }
 
                 @Override
-                public Row evaluate(Row original, QueryContext context) {
-                    long id = original.eval(0).getInt();
+                public Row evaluate(Row original, QueryContext context) { 
+                    long id;
+                    if (usePValues()) {
+                        id = original.pvalue(0).getInt64();
+                    }
+                    else {
+                        id = getLong(original, 0);
+                    }
                     // Make smaller to avoid Halloween (see next test).
                     return new OverlayingRow(original).overlay(0, id - 100);
                 }
@@ -160,13 +188,24 @@ public class UpdateIT extends OperatorITBase
         
         UpdateFunction updateFunction = new UpdateFunction() {
                 @Override
+                public boolean usePValues() {
+                    return usingPValues();
+                }
+
+                @Override
                 public boolean rowIsSelected(Row row) {
                     return row.rowType().equals(itemRowType);
                 }
 
                 @Override
                 public Row evaluate(Row original, QueryContext context) {
-                    long id = original.eval(0).getInt();
+                    long id;
+                    if (usePValues()) {
+                        id = original.pvalue(0).getInt64();
+                    }
+                    else {
+                        id = getLong(original, 0);
+                    }
                     return new OverlayingRow(original).overlay(0, 1000 + id);
                 }
             };
@@ -192,4 +231,91 @@ public class UpdateIT extends OperatorITBase
         compareRows(expected, executable);
     }
 
+
+    @Test
+    public void updateCustomer() {
+        use(db);
+        doUpdate();
+        compareRows(
+                array(TestRow.class,
+                      row(customerRowType, 1L, "xyz"),
+                      row(customerRowType, 2L, "zzz")
+                      ),
+                cursor(
+                        filter_Default(
+                                groupScan_Default(coi),
+                                Collections.singleton(customerRowType)),
+                        queryContext
+                )
+        );
+    }
+
+    @Test
+    public void updateCustomerCheckNameIndex() {
+        use(db);
+        doUpdate();
+        compareRows(
+                array(RowBase.class,
+                      row(customerNameIndexRowType, "xyz", 1L),
+                      row(customerNameIndexRowType, "zzz", 2L)
+                      ),
+                cursor(
+                        indexScan_Default(
+                                customerNameIndexRowType,
+                                IndexKeyRange.unbounded(customerNameIndexRowType),
+                                new API.Ordering()),
+                        queryContext
+                ));
+    }
+
+    @Test
+    public void updateCustomerCheckNameItemOidGroupIndex() {
+        use(db);
+        doUpdate();
+        compareRows(
+                array(RowBase.class,
+                      row(customerNameItemOidIndexRowType, "xyz", 11L, 1L, 11L, 111L),
+                      row(customerNameItemOidIndexRowType, "xyz", 11L, 1L, 11L, 112L),
+                      row(customerNameItemOidIndexRowType, "xyz", 12L, 1L, 12L, 121L),
+                      row(customerNameItemOidIndexRowType, "xyz", 12L, 1L, 12L, 122L),
+                      row(customerNameItemOidIndexRowType, "zzz", 21L, 2L, 21L, 211L),
+                      row(customerNameItemOidIndexRowType, "zzz", 21L, 2L, 21L, 212L),
+                      row(customerNameItemOidIndexRowType, "zzz", 22L, 2L, 22L, 221L),
+                      row(customerNameItemOidIndexRowType, "zzz", 22L, 2L, 22L, 222L)
+                ),
+                cursor(
+                        indexScan_Default(
+                                customerNameItemOidIndexRowType,
+                                IndexKeyRange.unbounded(customerNameItemOidIndexRowType),
+                                new API.Ordering(),
+                                customerRowType),
+                        queryContext
+                ));
+    }
+
+    private void doUpdate() {
+        Row[] rows = {
+                row(customerRowType, new Object[]{2, "abc"}, new AkType[]{AkType.INT, AkType.VARCHAR})
+        };
+        UpdateFunction updateFunction = new UpdateFunction() {
+            @Override
+            public boolean usePValues() {
+                return usingPValues();
+            }
+
+            @Override
+            public Row evaluate(Row original, QueryContext context) {
+                return row(customerRowType, 2L, "zzz");
+            }
+
+            @Override
+            public boolean rowIsSelected(Row row) {
+                return true;
+            }
+        };
+        UpdatePlannable insertPlan = update_Default(rowsToValueScan(rows), updateFunction);
+        UpdateResult result = insertPlan.run(queryContext);
+        assertEquals("rows touched", rows.length, result.rowsTouched());
+        assertEquals("rows modified", rows.length, result.rowsModified());
+    }
 }

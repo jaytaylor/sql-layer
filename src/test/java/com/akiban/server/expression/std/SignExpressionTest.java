@@ -29,7 +29,6 @@ package com.akiban.server.expression.std;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import java.math.BigDecimal;
 import java.math.BigInteger;

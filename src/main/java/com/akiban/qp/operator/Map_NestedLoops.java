@@ -26,19 +26,21 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.explain.*;
+import com.akiban.server.explain.std.NestedLoopsExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -146,6 +148,16 @@ class Map_NestedLoops extends Operator
     private final Operator outerInputOperator;
     private final Operator innerInputOperator;
     private final int inputBindingPosition;
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        CompoundExplainer ex = new NestedLoopsExplainer(getName(), innerInputOperator, outerInputOperator, null, null, context);
+        ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
+        if (context.hasExtraInfo(this))
+            ex.get().putAll(context.getExtraInfo(this).get());
+        return ex;
+    }
 
     // Inner classes
 

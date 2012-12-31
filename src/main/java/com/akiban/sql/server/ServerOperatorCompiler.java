@@ -26,55 +26,30 @@
 
 package com.akiban.sql.server;
 
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.optimizer.OperatorCompiler;
-import com.akiban.sql.optimizer.rule.BaseRule;
-import com.akiban.sql.parser.DMLStatementNode;
-
-import com.akiban.server.service.EventTypes;
-import com.akiban.server.service.instrumentation.SessionTracer;
 
 public abstract class ServerOperatorCompiler extends OperatorCompiler
 {
-    protected SessionTracer tracer;
-
     protected ServerOperatorCompiler() {
     }
 
     protected void initServer(ServerSession server) {
+        boolean usePValues = server.getBooleanProperty("newtypes", Types3Switch.DEFAULT);
+        // the following is racy, but everything about the Types3Switch is
+        if (usePValues != Types3Switch.ON)
+            Types3Switch.ON = usePValues;
         initProperties(server.getCompilerProperties());
         initAIS(server.getAIS(), server.getDefaultSchemaName());
         initParser(server.getParser());
         initFunctionsRegistry(server.functionsRegistry());
-        if (Boolean.parseBoolean(server.getProperty("cbo", "true")))
-            initCostEstimator(server.costEstimator(this));
-        else
-            initCostEstimator(null);
+        initCostEstimator(server.costEstimator(this, server.getTreeService()), usePValues);
+        if (usePValues)
+            initT3Registry(server.t3RegistryService());
         
-        server.setAttribute("aisBinder", binder);
+        server.getBinderContext().setBinderAndTypeComputer(binder, typeComputer);
+
         server.setAttribute("compiler", this);
-
-        tracer = server.getSessionTracer();
-    }
-
-    @Override
-    protected DMLStatementNode bindAndTransform(DMLStatementNode stmt)  {
-        try {
-            tracer.beginEvent(EventTypes.BIND_AND_GROUP); // TODO: rename.
-            return super.bindAndTransform(stmt);
-        } 
-        finally {
-            tracer.endEvent();
-        }
-    }
-
-    @Override
-    public void beginRule(BaseRule rule) {
-        tracer.beginEvent(rule.getTraceName());
-    }
-
-    @Override
-    public void endRule(BaseRule rule) {
-        tracer.endEvent();
     }
 
 }

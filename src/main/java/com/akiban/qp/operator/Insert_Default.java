@@ -26,18 +26,23 @@
 
 package com.akiban.qp.operator;
 
-import java.util.Collections;
-import java.util.List;
-
-import com.akiban.util.tap.InOutTap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
+import com.akiban.server.explain.*;
+import com.akiban.server.explain.std.DUIOperatorExplainer;
 import com.akiban.util.Strings;
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
 
@@ -84,39 +89,16 @@ import com.akiban.util.tap.Tap;
 
  */
 
-class Insert_Default extends OperatorExecutionBase implements UpdatePlannable {
+class Insert_Default implements UpdatePlannable {
 
-    public Insert_Default(Operator inputOperator) {
+    public Insert_Default(Operator inputOperator, boolean usePValues) {
         this.inputOperator = inputOperator;
+        this.usePValues = usePValues;
     }
 
     @Override
     public UpdateResult run(QueryContext context) {
-        context(context);
-        int seen = 0, modified = 0;
-        Cursor inputCursor = null;
-        INSERT_TAP.in();
-        try {
-            inputCursor = inputOperator.cursor(context);
-            inputCursor.open();
-            Row row;
-            while ((row = inputCursor.next()) != null) {
-                checkQueryCancelation();
-                ++seen;
-                adapter().writeRow(row);
-                ++modified;
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Insert: row {}", row);
-                }
-
-            }
-        } finally {
-            if (inputCursor != null) {
-                inputCursor.close();
-            }
-            INSERT_TAP.out();
-        }
-        return new StandardUpdateResult(seen, modified);
+        return new Execution(context, inputOperator.cursor(context)).run();
     }
 
     @Override
@@ -135,12 +117,66 @@ class Insert_Default extends OperatorExecutionBase implements UpdatePlannable {
     }
 
     @Override
+    public String getName() {
+        return getClass().getSimpleName();
+    }
+
+    @Override
     public String toString() {
-        return String.format("%s(%s)", getClass().getSimpleName(), inputOperator);
+        return String.format("%s(%s)", getName(), inputOperator);
     }
 
     private final Operator inputOperator;
+    private final boolean usePValues;
     private static final InOutTap INSERT_TAP = Tap.createTimer("operator: Insert_Default");
     private static final Logger LOG = LoggerFactory.getLogger(Insert_Default.class);
 
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        Attributes atts = new Attributes();
+        if (context.hasExtraInfo(this))
+            atts.putAll(context.getExtraInfo(this).get()); 
+        return new DUIOperatorExplainer(getName(), atts, inputOperator, context);
+    }
+
+    // Inner classes
+
+    private class Execution extends ExecutionBase
+    {
+        public UpdateResult run()
+        {
+            int seen = 0, modified = 0;
+            INSERT_TAP.in();
+            try {
+                input.open();
+                Row row;
+                while ((row = input.next()) != null) {
+                    // LOG.warn("About to insert {}: {}", row.rowType().userTable(), row);
+                    checkQueryCancelation();
+                    ++seen;
+                    context.checkConstraints(row, usePValues);
+                    adapter().writeRow(row, usePValues);
+                    ++modified;
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Insert: row {}", row);
+                    }
+                }
+            } finally {
+                if (input != null) {
+                    input.close();
+                }
+                INSERT_TAP.out();
+            }
+            return new StandardUpdateResult(seen, modified);
+        }
+
+        protected Execution(QueryContext queryContext, Cursor input)
+        {
+            super(queryContext);
+            this.input = input;
+        }
+
+        private final Cursor input;
+    }
 }

@@ -29,16 +29,12 @@ package com.akiban.qp.loadableplan;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
-import com.akiban.sql.pg.PostgresType;
-import com.akiban.sql.types.DataTypeDescriptor;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public abstract class LoadablePlan<T>
 {
-    public abstract String name();
-
     public abstract T plan();
 
     public abstract int[] jdbcTypes();
@@ -53,22 +49,12 @@ public abstract class LoadablePlan<T>
         return columnNames;
     }
 
-    public final List<PostgresType> columnTypes()
-    {
-        List<PostgresType> columnTypes = new ArrayList<PostgresType>();
-        for (int jdbcType : jdbcTypes()) {
-            DataTypeDescriptor d = DataTypeDescriptor.getBuiltInDataTypeDescriptor(jdbcType);
-            columnTypes.add(PostgresType.fromDerby(d));
-        }
-        return columnTypes;
-    }
-
     public final void ais(AkibanInformationSchema ais)
     {
         this.ais = ais;
     }
 
-    protected AkibanInformationSchema ais()
+    public final AkibanInformationSchema ais()
     {
         return ais;
     }

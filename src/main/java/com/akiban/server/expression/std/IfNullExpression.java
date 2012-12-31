@@ -48,15 +48,9 @@ public class IfNullExpression extends CoalesceExpression
         }
 
         @Override
-        public Expression compose(List<? extends Expression> arguments)
-        {
-            return new IfNullExpression(arguments);
-        }
-
-        @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported in IFNULL yet.");
+            return new IfNullExpression(arguments);
         }
 
         @Override
@@ -66,7 +60,7 @@ public class IfNullExpression extends CoalesceExpression
         }
     };
     
-    protected IfNullExpression (List< ? extends Expression> children)
+    public IfNullExpression (List< ? extends Expression> children)
     {
         super(checkArgs(children));
     }
@@ -75,11 +69,5 @@ public class IfNullExpression extends CoalesceExpression
     {
         if (children.size() != 2) throw new WrongExpressionArityException(2, children.size());
         else return children;
-    }
-
-    @Override
-    protected void describe(StringBuilder sb)
-    {
-        sb.append("IF_NULL");
     }
 }

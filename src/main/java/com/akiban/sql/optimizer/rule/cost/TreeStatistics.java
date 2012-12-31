@@ -64,7 +64,7 @@ public abstract class TreeStatistics
                 fieldWidth = 8;
                 break;
             case DECIMAL:
-                fieldWidth = column.getMaxStorageSize().intValue();
+                fieldWidth = (int)column.getAverageStorageSize();
                 break;
             case DOUBLE:
                 fieldWidth = 8;
@@ -79,7 +79,7 @@ public abstract class TreeStatistics
                 fieldWidth = 8;
                 break;
             case VARCHAR:
-                fieldWidth = (int) (column.getMaxStorageSize() * PLAUSIBLE_AVERAGE_VAR_USAGE);
+                fieldWidth = (int) (column.getAverageStorageSize() * PLAUSIBLE_AVERAGE_VAR_USAGE);
                 break;
             case TEXT:
                 fieldWidth = PLAUSIBLE_AVERAGE_BLOB_SIZE;
@@ -91,7 +91,7 @@ public abstract class TreeStatistics
                 fieldWidth = 8;
                 break;
             case U_BIGINT:
-                fieldWidth = column.getMaxStorageSize().intValue();
+                fieldWidth = (int)column.getAverageStorageSize();
                 break;
             case U_DOUBLE:
                 fieldWidth = 8;
@@ -103,7 +103,7 @@ public abstract class TreeStatistics
                 fieldWidth = 8;
                 break;
             case VARBINARY:
-                fieldWidth = (int) (column.getMaxStorageSize() * PLAUSIBLE_AVERAGE_VAR_USAGE);
+                fieldWidth = (int) (column.getAverageStorageSize() * PLAUSIBLE_AVERAGE_VAR_USAGE);
                 break;
             case YEAR:
                 fieldWidth = 8;

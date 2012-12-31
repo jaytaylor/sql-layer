@@ -28,17 +28,14 @@ package com.akiban.qp.operator;
 
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
-import com.akiban.server.error.InconvertibleTypesException;
-import com.akiban.server.error.InvalidCharToNumException;
-import com.akiban.server.error.InvalidDateFormatException;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.QueryCanceledException;
-import com.akiban.server.error.QueryTimedOutException;
+import com.akiban.server.error.*;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.util.BloomFilter;
 import com.akiban.util.SparseArray;
 
@@ -58,6 +55,28 @@ public abstract class QueryContextBase implements QueryContext
     }
 
     /* QueryContext interface */
+
+    @Override
+    public PValueSource getPValue(int index) {
+        if (!bindings.isDefined(index))
+            throw new BindingNotSetException(index);
+        return (PValueSource)bindings.get(index);
+    }
+
+    @Override
+    public void setPValue(int index, PValueSource value) {
+        PValue holder = null;
+        if (bindings.isDefined(index)) {
+            holder = (PValue)bindings.get(index);
+            if (holder.tInstance() != value.tInstance())
+                holder = null;
+        }
+        if (holder == null) {
+            holder = new PValue(value.tInstance());
+            bindings.set(index, holder);
+        }
+        PValueTargets.copyFrom(value, holder);
+    }
 
     @Override
     public ValueSource getValue(int index) {
@@ -123,22 +142,6 @@ public abstract class QueryContextBase implements QueryContext
     }
 
     @Override
-    public void setValue(int index, Object value)
-    {
-        FromObjectValueSource source = new FromObjectValueSource();
-        source.setReflectively(value);
-        setValue(index, source);
-    }
-
-    @Override
-    public void setValue(int index, Object value, AkType type)
-    {
-        FromObjectValueSource source = new FromObjectValueSource();
-        source.setReflectively(value);
-        setValue(index, source, type);
-    }
-
-    @Override
     public Row getRow(int index) {
         if (!bindings.isDefined(index))
             throw new BindingNotSetException(index);
@@ -178,6 +181,11 @@ public abstract class QueryContextBase implements QueryContext
     }
 
     @Override
+    public void clear() {
+        bindings.clear();
+    }
+
+    @Override
     public Date getCurrentDate() {
         return new Date();
     }
@@ -198,8 +206,8 @@ public abstract class QueryContextBase implements QueryContext
     }
 
     @Override
-    public long getQueryTimeoutSec() {
-        return getStore().getQueryTimeoutSec();
+    public long getQueryTimeoutMilli() {
+        return getStore().getQueryTimeoutMilli();
     }
 
     @Override
@@ -207,13 +215,17 @@ public abstract class QueryContextBase implements QueryContext
         if (getSession().isCurrentQueryCanceled()) {
             throw new QueryCanceledException(getSession());
         }
-        long queryTimeoutSec = getQueryTimeoutSec();
-        if (queryTimeoutSec >= 0) {
+        long queryTimeoutMilli = getQueryTimeoutMilli();
+        if (queryTimeoutMilli >= 0) {
             long runningTimeMsec = System.currentTimeMillis() - getStartTime();
-            if (runningTimeMsec > queryTimeoutSec * 1000) {
+            if (runningTimeMsec > queryTimeoutMilli) {
                 throw new QueryTimedOutException(runningTimeMsec);
             }
         }
     }
 
+    @Override
+    public void checkConstraints(Row row, boolean usePValues) throws InvalidOperationException {
+        row.rowType().constraintChecker().checkConstraints(row, usePValues);
+    }
 }

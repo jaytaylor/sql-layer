@@ -31,6 +31,7 @@ import com.akiban.qp.rowtype.HKeyRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.util.HKeyCache;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.pvalue.PValueSource;
 
 public class HKeyRow extends AbstractRow
 {
@@ -54,6 +55,11 @@ public class HKeyRow extends AbstractRow
     public ValueSource eval(int i)
     {
         return hKey.eval(i);
+    }
+
+    @Override
+    public PValueSource pvalue(int i) {
+        return hKey.pEval(i);
     }
 
     @Override

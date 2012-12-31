@@ -28,7 +28,6 @@ package com.akiban.server.types.util;
 
 import com.akiban.qp.operator.Cursor;
 import com.akiban.server.Quote;
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
@@ -50,7 +49,7 @@ import java.util.Set;
 import com.akiban.util.WrappingByteSource;
 import org.joda.time.DateTime;
 
-public final class ValueHolder implements ValueSource, ValueTarget {
+public final class ValueHolder extends ValueSource implements ValueTarget {
 
     // ValueHolder interface
 
@@ -199,7 +198,13 @@ public final class ValueHolder implements ValueSource, ValueTarget {
         ToObjectValueTarget target = new ToObjectValueTarget();
         target.expectType(AkType.VARCHAR);
         String string = (String) Converters.convert(this, target).lastConvertedValue();
-        appender.append(string);
+        if (quote == Quote.NONE)
+            appender.append(string);
+        else {
+            quote.quote(appender, type);
+            quote.append(appender, string);
+            quote.quote(appender, type);
+        }
     }
 
     @Override

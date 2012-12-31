@@ -4,7 +4,7 @@ SelectQuery@51970991
       Select@17c1e333[EXISTS(Subquery@3a2b3574)]
         TableGroupJoinTree@6ac27081(TableGroup@3685be9(customers), customers INNER orders)
           TableSource@490241ae(customers - TableGroup@3685be9(customers))
-            TableSource@33262bf4(orders - TableGroupJoin@386a1fbe(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+            TableSource@33262bf4(orders - TableGroupJoin@386a1fbe(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
 
 Subquery@3a2b3574
   Select@3f4a0fe1[items.oid == orders.oid, items.sku == 1234]

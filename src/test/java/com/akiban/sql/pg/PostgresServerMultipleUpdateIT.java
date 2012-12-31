@@ -32,6 +32,7 @@ import com.akiban.sql.TestBase;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.NamedParameterizedRunner.TestParameters;
 import com.akiban.junit.Parameterization;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -55,6 +56,12 @@ public class PostgresServerMultipleUpdateIT extends PostgresServerFilesITBase
         loadDatabase(RESOURCE_DIR);
     }
 
+    @After
+    public void dontLeaveConnection() throws Exception {
+        // Tests change read only state. Easiest not to reuse.
+        forgetConnection();
+    }
+
     @TestParameters
     public static Collection<Parameterization> queries() throws Exception {
         return NamedParamsTestBase.namedCases(TestBase.sqlAndExpected(RESOURCE_DIR));
@@ -72,7 +79,7 @@ public class PostgresServerMultipleUpdateIT extends PostgresServerFilesITBase
 
     @Override
     public String generateResult() throws Exception {
-        Statement stmt = connection.createStatement();
+        Statement stmt = getConnection().createStatement();
         for (String sqls : sql.split("\\;\\s*")) {
             stmt.execute(sqls);
         }

@@ -30,27 +30,26 @@ import com.akiban.ais.model.*;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Comparison;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
 
-import static com.akiban.server.expression.std.Expressions.*;
+import static com.akiban.server.test.ExpressionGenerators.*;
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.qp.operator.API.JoinType.*;
-import static org.junit.Assert.assertEquals;
 
 public class OperatorIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupPostCreateSchema()
     {
-        super.before();
+        super.setupPostCreateSchema();
         use(db);
     }
 
@@ -81,7 +80,7 @@ public class OperatorIT extends OperatorITBase
     public void testSelect()
     {
         Operator groupScan = groupScan_Default(coi);
-        Expression cidEq2 = compare(field(customerRowType, 0), Comparison.EQ, literal(2L));
+        ExpressionGenerator cidEq2 = compare(field(customerRowType, 0), Comparison.EQ, literal(2L), castResolver());
         Operator select = select_HKeyOrdered(groupScan, customerRowType, cidEq2);
         RowBase[] expected = new RowBase[]{row(customerRowType, 2L, "abc"),
                                            row(orderRowType, 21L, 2L, "tom"),

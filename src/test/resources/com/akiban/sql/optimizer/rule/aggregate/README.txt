@@ -22,6 +22,8 @@ order-by-1: ORDER BY compatible with grouping
 
 order-by-2: ORDER BY accumulated result
 
+order-by-alias: Using aggregate alias in ORDER BY
+
 sum-all: aggregate without GROUP BY
 
 update: UPDATE to aggregate subexpression

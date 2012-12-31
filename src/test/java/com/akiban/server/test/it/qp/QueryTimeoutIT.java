@@ -26,26 +26,30 @@
 
 package com.akiban.server.test.it.qp;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.row.Row;
 import com.akiban.server.AkServer;
 import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.error.QueryTimedOutException;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.akiban.qp.operator.API.cursor;
+import java.util.Map;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class QueryTimeoutIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupPostCreateSchema()
     {
-        super.before();
+        super.setupPostCreateSchema();
         session().cancelCurrentQuery(false);
     }
 
@@ -80,8 +84,8 @@ public class QueryTimeoutIT extends OperatorITBase
     @Test
     public void exitWithTimeout() throws InterruptedException
     {
-        int timeoutSec = 3;
-        configService().queryTimeoutSec(timeoutSec);
+        int timeoutMilli = 3000;
+        configService().queryTimeoutMilli(timeoutMilli);
         final Operator plan = new DoNothingForever();
         final Cursor cursor = cursor(plan, queryContext);
         final AtomicBoolean exited = new AtomicBoolean(false);
@@ -105,17 +109,17 @@ public class QueryTimeoutIT extends OperatorITBase
         queryThread.join();
         long stop = System.currentTimeMillis();
         assertTrue(exited.get());
-        long elapsedSec = (stop - start) / 1000;
-        assertTrue(closeEnough(timeoutSec, elapsedSec));
+        long elapsedMilli = (stop - start);
+        assertTrue("Time: " + timeoutMilli + " Not equal to " + elapsedMilli, closeEnough(timeoutMilli, elapsedMilli));
     }
 
     @Test
     public void shortenedTimeout() throws InterruptedException
     {
-        int INITIAL_TIMEOUT_SEC = 10000;
-        int MODIFIED_TIMEOUT_SEC = 5;
+        int INITIAL_TIMEOUT_MILLI = 10000000;
+        int MODIFIED_TIMEOUT_MILLI = 5000;
         AkServer akServer = (AkServer) akServer();
-        configService().queryTimeoutSec(INITIAL_TIMEOUT_SEC);
+        configService().queryTimeoutMilli(INITIAL_TIMEOUT_MILLI);
         final Operator plan = new DoNothingForever();
         final Cursor cursor = cursor(plan, queryContext);
         final AtomicBoolean exited = new AtomicBoolean(false);
@@ -138,21 +142,21 @@ public class QueryTimeoutIT extends OperatorITBase
         queryThread.start();
         // Shorten timeout
         Thread.sleep(1000); // 1 sec
-        configService().queryTimeoutSec(MODIFIED_TIMEOUT_SEC);
+        configService().queryTimeoutMilli(MODIFIED_TIMEOUT_MILLI);
         queryThread.join();
         long stop = System.currentTimeMillis();
         assertTrue(exited.get());
-        long elapsedSec = (stop - start) / 1000;
-        assertTrue(closeEnough(MODIFIED_TIMEOUT_SEC, elapsedSec));
+        long elapsedMilli = (stop - start);
+        assertTrue(closeEnough(MODIFIED_TIMEOUT_MILLI, elapsedMilli));
     }
 
     @Test
     public void removedTimeout() throws InterruptedException
     {
-        int INITIAL_TIMEOUT_SEC = 5;
-        int MODIFIED_TIMEOUT_SEC = -1; // No timeout
+        int INITIAL_TIMEOUT_MILLI = 5000;
+        int MODIFIED_TIMEOUT_MILLI = -1; // No timeout
         AkServer akServer = (AkServer) akServer();
-        configService().queryTimeoutSec(INITIAL_TIMEOUT_SEC);
+        configService().queryTimeoutMilli(INITIAL_TIMEOUT_MILLI);
         final Operator plan = new DoNothingForever();
         final Cursor cursor = cursor(plan, queryContext);
         final AtomicBoolean exited = new AtomicBoolean(false);
@@ -175,24 +179,24 @@ public class QueryTimeoutIT extends OperatorITBase
         queryThread.start();
         // Remove timeout
         Thread.sleep(1000); // 1 sec
-        configService().queryTimeoutSec(MODIFIED_TIMEOUT_SEC);
-        Thread.sleep(INITIAL_TIMEOUT_SEC * 1000);
+        configService().queryTimeoutMilli(MODIFIED_TIMEOUT_MILLI);
+        Thread.sleep(INITIAL_TIMEOUT_MILLI);
         session().cancelCurrentQuery(true);
         queryThread.join();
         long stop = System.currentTimeMillis();
         assertTrue(exited.get());
-        long elapsedSec = (stop - start) / 1000;
-        long expectedSec = INITIAL_TIMEOUT_SEC + 1;
-        assertTrue(closeEnough(expectedSec, elapsedSec));
+        long elapsedMilli = (stop - start);
+        long expectedMilli = INITIAL_TIMEOUT_MILLI + 1000;
+        assertTrue(closeEnough(expectedMilli, elapsedMilli));
     }
 
-    private boolean closeEnough(long expectedSec, long actualSec)
+    private boolean closeEnough(long expectedMilli, long actualMilli)
     {
         // A lower fudge factor is needed because the timeout starts from the time the QueryContext is created,
         // which is in the @Before method, slightly before the test's timer starts.
         return
-            actualSec <= expectedSec * (1 + UPPER_FUDGE_FACTOR) &&
-            actualSec >= expectedSec * (1 - LOWER_FUDGE_FACTOR);
+            actualMilli <= expectedMilli * (1 + UPPER_FUDGE_FACTOR) &&
+            actualMilli >= expectedMilli * (1 - LOWER_FUDGE_FACTOR);
     }
     
     private static final double UPPER_FUDGE_FACTOR = 1.0; // 100%
@@ -206,6 +210,12 @@ public class QueryTimeoutIT extends OperatorITBase
         protected Cursor cursor(QueryContext context)
         {
             return new Execution(context);
+        }
+
+        @Override
+        public CompoundExplainer getExplainer(ExplainContext context)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         private class Execution extends OperatorExecutionBase implements Cursor

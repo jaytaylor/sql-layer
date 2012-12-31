@@ -26,19 +26,16 @@
 
 package com.akiban.sql.optimizer.rule.join_enum;
 
-import com.akiban.sql.optimizer.rule.cost.CostEstimator;
-
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.IndexScan.OrderEffectiveness;
-import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
-
-import java.util.*;
+import com.akiban.sql.optimizer.rule.SchemaRulesContext;
+import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 
 /** The overall goal of a query: WHERE conditions, ORDER BY, etc. */
 public class QueryIndexGoal
 {
     private BaseQuery query;
-    private CostEstimator costEstimator;
+    private SchemaRulesContext rulesContext;
     private ConditionList whereConditions;
 
     // If both grouping and ordering are present, they must be
@@ -58,30 +55,37 @@ public class QueryIndexGoal
     private TableNode updateTarget;
 
     public QueryIndexGoal(BaseQuery query,
-                          CostEstimator costEstimator,
+                          SchemaRulesContext rulesContext,
                           ConditionList whereConditions,
                           AggregateSource grouping,
                           Sort ordering,
                           Project projectDistinct,
                           Limit limit) {
         this.query = query;
-        this.costEstimator = costEstimator;
+        this.rulesContext = rulesContext;
         this.whereConditions = whereConditions;
         this.grouping = grouping;
         this.ordering = ordering;
         this.projectDistinct = projectDistinct;
         this.limit = limit;
 
-        if ((query instanceof UpdateStatement) ||
-            (query instanceof DeleteStatement))
-          updateTarget = ((BaseUpdateStatement)query).getTargetTable();
+        if (query instanceof DMLStatement) {
+            DMLStatement stmt = (DMLStatement)query;
+            if (stmt.getType() == BaseUpdateStatement.StatementType.DELETE ||
+                    stmt.getType() == BaseUpdateStatement.StatementType.UPDATE) {
+                updateTarget = stmt.getTargetTable();
+            }
+        }
     }
 
     public BaseQuery getQuery() {
         return query;
     }
+    public SchemaRulesContext getRulesContext() {
+        return rulesContext;
+    }
     public CostEstimator getCostEstimator() {
-        return costEstimator;
+        return rulesContext.getCostEstimator();
     }
     public ConditionList getWhereConditions() {
         return whereConditions;

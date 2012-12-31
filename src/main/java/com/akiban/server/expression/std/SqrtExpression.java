@@ -43,7 +43,7 @@ public class SqrtExpression extends AbstractUnaryExpression {
     {
 
         @Override
-        protected Expression compose(Expression argument)
+        protected Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType)
         {
             return new SqrtExpression(argument);
         }
@@ -89,7 +89,7 @@ public class SqrtExpression extends AbstractUnaryExpression {
     }
     
     @Override
-    protected String name()
+    public String name()
     {
         return "sqrt";
     }

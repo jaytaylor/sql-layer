@@ -26,8 +26,10 @@
 
 package com.akiban.server.error;
 
+import com.akiban.ais.model.TableName;
+
 public class DuplicateGroupNameException extends InvalidOperationException {
-    public DuplicateGroupNameException (String groupName) {
-        super(ErrorCode.DUPLICATE_GROUP, groupName);
+    public DuplicateGroupNameException(TableName groupName) {
+        super(ErrorCode.DUPLICATE_GROUP, groupName.getSchemaName(), groupName.getTableName());
     }
 }

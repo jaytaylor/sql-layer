@@ -4,4 +4,4 @@ SelectQuery@6990ff81
       Select@3c8e7bd5[isNull(items.sku)]
         TableGroupJoinTree@2e63fc02(TableGroup@2635ff19(customers), orders LEFT items ON items.quan > 0 - SingleIndexScan@22fed5e8(Index(test.orders.order_date[IndexColumn(order_date)]), SORTED/reverse, rows = 20000, cost = 1.71100e+06))
           TableSource@5b4d82db(orders - TableGroup@2635ff19(customers))
-            TableSource@3dca26b1(items - TableGroupJoin@88d844b(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+            TableSource@3dca26b1(items - TableGroupJoin@88d844b(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

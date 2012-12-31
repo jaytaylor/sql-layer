@@ -28,6 +28,7 @@ package com.akiban.server.test.it.qp;
 
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.RowBase;
@@ -43,15 +44,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static com.akiban.server.expression.std.Expressions.*;
+import static com.akiban.server.test.ExpressionGenerators.*;
 import static com.akiban.qp.operator.API.*;
 
 public class Sort_InsertionLimitedIT extends OperatorITBase
 {
-    @Before
-    public void before()
-    {
-        super.before();
+    @Override
+    protected void setupPostCreateSchema() {
+        super.setupPostCreateSchema();
         NewRow[] dbRows = new NewRow[]{
             createNewRow(customer, 1L, "northbridge"),
             createNewRow(customer, 2L, "foundation"),
@@ -173,9 +173,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
@@ -209,9 +209,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
@@ -245,9 +245,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
@@ -281,9 +281,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
@@ -317,9 +317,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
@@ -353,9 +353,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
@@ -389,9 +389,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
@@ -425,9 +425,9 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_InsertionLimited(
                 filter_Default(
@@ -539,7 +539,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
     {
         RowType innerValuesRowType = schema.newValuesType(AkType.NULL);
         List<BindableRow> innerValuesRows = new ArrayList<BindableRow>();
-        innerValuesRows.add(BindableRow.of(innerValuesRowType, Collections.singletonList(literal(null))));
+        innerValuesRows.add(BindableRow.of(innerValuesRowType, Collections.singletonList(literal(null)), null));
         Operator project = project_Default(valuesScan_Default(innerValuesRows, innerValuesRowType),
                                            innerValuesRowType,
                                            Arrays.asList(boundField(customerRowType, 0, 1)));
@@ -597,7 +597,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
         Ordering ordering = API.ordering();
         int i = 0;
         while (i < objects.length) {
-            Expression expression = (Expression) objects[i++];
+            ExpressionGenerator expression = (ExpressionGenerator) objects[i++];
             Boolean ascending = (Boolean) objects[i++];
             ordering.append(expression, ascending);
         }

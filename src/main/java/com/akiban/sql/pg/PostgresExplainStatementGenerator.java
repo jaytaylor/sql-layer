@@ -26,10 +26,12 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.server.error.UnableToExplainException;
 import com.akiban.server.error.UnsupportedExplainException;
 import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.plan.BasePlannable;
+import com.akiban.sql.optimizer.rule.ExplainPlanContext;
 
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.ExplainStatementNode;
@@ -37,7 +39,10 @@ import com.akiban.sql.parser.NodeTypes;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.ParameterNode;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /** SQL statement to explain another one. */
 public class PostgresExplainStatementGenerator extends PostgresBaseStatementGenerator
@@ -49,10 +54,9 @@ public class PostgresExplainStatementGenerator extends PostgresBaseStatementGene
     }
 
     @Override
-    public PostgresStatement generate(PostgresServerSession server,
-                                      StatementNode stmt, 
-                                      List<ParameterNode> params,
-                                      int[] paramTypes)  {
+    public PostgresStatement generateStub(PostgresServerSession server,
+                                          String sql, StatementNode stmt,
+                                          List<ParameterNode> params, int[] paramTypes)  {
         if (stmt.getNodeType() != NodeTypes.EXPLAIN_STATEMENT_NODE)
             return null;
         StatementNode innerStmt = ((ExplainStatementNode)stmt).getStatement();
@@ -60,8 +64,6 @@ public class PostgresExplainStatementGenerator extends PostgresBaseStatementGene
             throw new UnsupportedExplainException();
         if (!(innerStmt instanceof DMLStatementNode))
             throw new UnableToExplainException ();
-        BasePlannable result = compiler.compile((DMLStatementNode)innerStmt, params);
-        return new PostgresExplainStatement(result.explainPlan());
+        return new PostgresExplainStatement(compiler);
     }
-
 }

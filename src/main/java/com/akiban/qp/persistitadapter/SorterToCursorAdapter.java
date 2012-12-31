@@ -30,9 +30,10 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.sort.Sorter;
+import com.akiban.qp.persistitadapter.indexcursor.Sorter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.util.tap.InOutTap;
 import com.persistit.exception.PersistitException;
 
@@ -47,7 +48,7 @@ class SorterToCursorAdapter implements Cursor
     {
         CursorLifecycle.checkIdle(this);
         try {
-            sorter = new Sorter(context, input, rowType, ordering, sortOption, loadTap);
+            sorter = new Sorter(context, input, rowType, ordering, sortOption, loadTap, usePValues);
             cursor = sorter.sort();
             cursor.open();
         } catch (PersistitException e) {
@@ -60,6 +61,12 @@ class SorterToCursorAdapter implements Cursor
     {
         CursorLifecycle.checkIdleOrActive(this);
         return cursor == null ? null : cursor.next();
+    }
+
+    @Override
+    public void jump(Row row, ColumnSelector columnSelector)
+    {
+        throw new UnsupportedOperationException(getClass().getName());
     }
 
     @Override
@@ -111,7 +118,8 @@ class SorterToCursorAdapter implements Cursor
                                  RowType rowType,
                                  API.Ordering ordering,
                                  API.SortOption sortOption,
-                                 InOutTap loadTap)
+                                 InOutTap loadTap,
+                                 boolean usePValues)
     {
         this.adapter = adapter;
         this.context = context;
@@ -120,6 +128,7 @@ class SorterToCursorAdapter implements Cursor
         this.ordering = ordering;
         this.sortOption = sortOption;
         this.loadTap = loadTap;
+        this.usePValues = usePValues;
     }
 
     private final PersistitAdapter adapter;
@@ -129,6 +138,7 @@ class SorterToCursorAdapter implements Cursor
     private final API.Ordering ordering;
     private final API.SortOption sortOption;
     private final InOutTap loadTap;
+    private final boolean usePValues;
     private Sorter sorter;
     private Cursor cursor;
     private boolean destroyed = false;

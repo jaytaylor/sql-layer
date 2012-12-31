@@ -36,7 +36,10 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.UnsupportedDropException;
 import com.akiban.server.service.tree.TreeLink;
+import com.akiban.server.store.PersistitStoreSchemaManager;
+import com.akiban.server.store.SchemaManager;
 import com.akiban.server.test.it.ITBase;
+import com.persistit.exception.PersistitException;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -54,8 +57,8 @@ public final class DropTreesIT extends ITBase {
 
     private TreeLink treeLink(Object o) {
         if(o == null) throw new IllegalArgumentException("TreeLink holder is null");
-        if(o instanceof Table) return (TreeLink) ((Table)o).rowDef();
-        if(o instanceof Index) return (TreeLink) ((Index)o).indexDef();
+        if(o instanceof Table) return ((Table)o).getGroup();
+        if(o instanceof Index) return ((Index)o).indexDef();
         throw new IllegalArgumentException("Unknown TreeLink holder: " + o);
     }
 
@@ -65,8 +68,21 @@ public final class DropTreesIT extends ITBase {
     }
 
     private void expectNoTree(Object hasTreeLink) throws Exception {
+        cleanupTrees();
         TreeLink link = treeLink(hasTreeLink);
         assertFalse("tree should not exist: " + link.getTreeName(), treeExists(link));
+    }
+
+    void cleanupTrees() {
+        SchemaManager schemaManager = serviceManager().getSchemaManager();
+        if(schemaManager instanceof PersistitStoreSchemaManager) {
+            PersistitStoreSchemaManager pssm = (PersistitStoreSchemaManager)schemaManager;
+            try {
+                pssm.cleanupDelayedTrees(session());
+            } catch(PersistitException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private static Index createSimpleIndex(Table curTable, String columnName) {
@@ -77,7 +93,7 @@ public final class DropTreesIT extends ITBase {
         Column newColumn = Column.create(newTable,  curColumn.getName(), curColumn.getPosition(), curColumn.getType());
         newColumn.setTypeParameter1(curColumn.getTypeParameter1());
         newColumn.setTypeParameter2(curColumn.getTypeParameter2());
-        newIndex.addColumn(new IndexColumn(newIndex, newColumn, 0, true, null));
+        IndexColumn.create(newIndex, newColumn, 0, true, null);
         return newIndex;
     }
 

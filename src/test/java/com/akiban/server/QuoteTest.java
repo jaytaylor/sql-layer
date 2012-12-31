@@ -92,19 +92,19 @@ public class QuoteTest {
 
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         PrintWriter pr = new PrintWriter(os);
-        AkibanAppender appender = AkibanAppender.of(os, pr);
+        AkibanAppender appender = AkibanAppender.of(os, pr, "UTF-16");
         byte[] bytes = "some string".getBytes("UTF-16");
         Quote.writeBytes(appender, bytes, 0, bytes.length, Charset.forName("UTF-16"), Quote.NONE);
     }
 
     @Test
     public void writeBytesWithSnowman_JSON() {
-        doWriteBytesTest("very wintery ☃ string", "UTF-8", "very wintery ☃ string", Quote.JSON_QUOTE);
+        doWriteBytesTest("very wintery ☃ string", "UTF-8", "very wintery \\u2603 string", Quote.JSON_QUOTE);
     }
 
     @Test
     public void writeBytesJSONControlChars() {
-        doWriteBytesTest("very newline \n string", "UTF-8", "very newline \\u000a string", Quote.JSON_QUOTE);
+        doWriteBytesTest("very newline \n string", "UTF-8", "very newline \\n string", Quote.JSON_QUOTE);
     }
 
     @Test
@@ -157,7 +157,7 @@ public class QuoteTest {
         catch (UnsupportedEncodingException ex) {
           throw new RuntimeException(ex);
         }
-        AkibanAppender appender = AkibanAppender.of(os, pr);
+        AkibanAppender appender = AkibanAppender.of(os, pr, "UTF-8");
         Quote.writeBytes(appender, testBytes, preBytes, testBytes.length - preBytes - postBytes, charset, quote);
         pr.flush();
 

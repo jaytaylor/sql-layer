@@ -26,35 +26,37 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.ais.model.*;
+import com.akiban.qp.operator.*;
 import com.akiban.qp.row.FlattenedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDataPValueSource;
 import com.akiban.server.rowdata.RowDataValueSource;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
+import com.persistit.exception.PersistitException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
 
 final class OperatorStoreMaintenance {
 
-    public void run(OperatorStoreGIHandler.Action action, PersistitHKey hKey, RowData forRow, StoreAdapter adapter, OperatorStoreGIHandler handler) {
+    public void run(OperatorStoreGIHandler.Action action,
+                    PersistitHKey hKey,
+                    RowData forRow,
+                    StoreAdapter adapter,
+                    OperatorStoreGIHandler handler)
+        throws PersistitException
+    {
         if (storePlan.noMaintenanceRequired())
             return;
         Cursor cursor = null;
@@ -65,17 +67,22 @@ final class OperatorStoreMaintenance {
             if (planOperator == null)
                 return;
             QueryContext context = new SimpleQueryContext(adapter);
-            List<Column> lookupCols = rowType.userTable().getPrimaryKey().getColumns();
+            List<Column> lookupCols = rowType.userTable().getPrimaryKeyIncludingInternal().getColumns();
 
             context.setHKey(OperatorStoreMaintenance.HKEY_BINDING_POSITION, hKey);
 
             // Copy the values into the array bindings
             RowDataValueSource source = new RowDataValueSource();
+            RowDataPValueSource pSource = new RowDataPValueSource();
             for (int i=0; i < lookupCols.size(); ++i) {
                 int bindingsIndex = i+1;
                 Column col = lookupCols.get(i);
-                source.bind((FieldDef)col.getFieldDef(), forRow);
-                context.setValue(bindingsIndex, source);
+                pSource.bind(col.getFieldDef(), forRow);
+                source.bind(col.getFieldDef(), forRow);
+                
+                // New types
+                if (Types3Switch.ON) context.setPValue(bindingsIndex, pSource);
+                else context.setValue(bindingsIndex, source);
             }
             cursor = API.cursor(planOperator, context);
             RUN_TAP.in();
@@ -167,7 +174,9 @@ final class OperatorStoreMaintenance {
         }
     }
 
-    private void doAction(OperatorStoreGIHandler.Action action, OperatorStoreGIHandler handler, Row row) {
+    private void doAction(OperatorStoreGIHandler.Action action, OperatorStoreGIHandler handler, Row row)
+        throws PersistitException
+    {
         InOutTap actionTap = actionTap(action);
         actionTap.in();
         try {
@@ -234,19 +243,19 @@ final class OperatorStoreMaintenance {
         if (parentUserTable == null) {
             return null;
         }
-        final GroupTable groupTable = groupIndex.getGroup().getGroupTable();
+        final Group group = groupIndex.getGroup();
         final UserTableRowType parentRowType = branchTables.parentRowType(rowType);
         assert parentRowType != null;
 
         Operator plan = API.groupScan_Default(
-                groupIndex.getGroup().getGroupTable(),
+                groupIndex.getGroup(),
                 HKEY_BINDING_POSITION,
                 false,
                 rowType.userTable(),
                 branchTables.fromRoot().get(0).userTable()
         );
-        plan = API.ancestorLookup_Default(plan, groupTable, rowType, Collections.singleton(parentRowType), API.InputPreservationOption.DISCARD_INPUT);
-        plan = API.branchLookup_Default(plan, groupTable, parentRowType, rowType, API.InputPreservationOption.DISCARD_INPUT);
+        plan = API.ancestorLookup_Default(plan, group, rowType, Collections.singleton(parentRowType), API.InputPreservationOption.DISCARD_INPUT);
+        plan = API.branchLookup_Default(plan, group, parentRowType, rowType, API.InputPreservationOption.DISCARD_INPUT);
         plan = API.filter_Default(plan, Collections.singleton(rowType));
         return plan;
     }
@@ -277,7 +286,7 @@ final class OperatorStoreMaintenance {
         PlanCreationStruct result = new PlanCreationStruct(rowType, groupIndex);
 
         Operator plan = API.groupScan_Default(
-                groupIndex.getGroup().getGroupTable(),
+                groupIndex.getGroup(),
                 HKEY_BINDING_POSITION,
                 false,
                 rowType.userTable(),
@@ -292,7 +301,7 @@ final class OperatorStoreMaintenance {
             UserTableRowType child = branchTables.childOf(rowType);
             plan = API.branchLookup_Default(
                     plan,
-                    groupIndex.getGroup().getGroupTable(),
+                    groupIndex.getGroup(),
                     rowType,
                     child,
                     API.InputPreservationOption.KEEP_INPUT
@@ -301,7 +310,7 @@ final class OperatorStoreMaintenance {
         if (!branchTables.fromRoot().get(0).equals(rowType)) {
             plan = API.ancestorLookup_Default(
                     plan,
-                    groupIndex.getGroup().getGroupTable(),
+                    groupIndex.getGroup(),
                     rowType,
                     ancestors(rowType, branchTables.fromRoot()),
                     API.InputPreservationOption.KEEP_INPUT

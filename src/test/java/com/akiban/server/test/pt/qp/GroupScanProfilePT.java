@@ -26,10 +26,9 @@
 
 package com.akiban.server.test.pt.qp;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -69,7 +68,7 @@ public class GroupScanProfilePT extends QPProfilePTBase
             "address varchar(100)",
             "constraint __akiban_ac foreign key __akiban_ac(cid) references customer(cid)",
             "index(address)");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         customerRowType = schema.userTableRowType(userTable(customer));
         orderRowType = schema.userTableRowType(userTable(order));
         itemRowType = schema.userTableRowType(userTable(item));
@@ -80,7 +79,7 @@ public class GroupScanProfilePT extends QPProfilePTBase
         itemIidIndexRowType = indexType(item, "iid");
         customerCidIndexRowType = indexType(customer, "cid");
         addressAddressIndexRowType = indexType(address, "address");
-        coi = groupTable(customer);
+        coi = group(customer);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
     }
@@ -141,5 +140,5 @@ public class GroupScanProfilePT extends QPProfilePTBase
     protected IndexRowType itemOidIndexRowType;
     protected IndexRowType itemIidIndexRowType;
     protected IndexRowType addressAddressIndexRowType;
-    protected GroupTable   coi;
+    protected Group coi;
 }

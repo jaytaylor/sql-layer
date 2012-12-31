@@ -1,5 +1,5 @@
 PhysicalUpdate
-  Delete_Default(Filter_Default([test.items]))
-    Filter_Default([test.items])
-      Select_HKeyOrdered(test.items, Field(3) == Literal(0))
-        GroupScan_Default(full scan on _akiban_customers)
+  Delete_Returning(FROM items)
+    Filter_Default(items)
+      Select_HKeyOrdered(items.quan == 0)
+        GroupScan_Default(customers)

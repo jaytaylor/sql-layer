@@ -26,6 +26,8 @@
 
 package com.akiban.ais.model.staticgrouping;
 
+import com.akiban.ais.model.TableName;
+
 /**
  * Defines a group.
  *
@@ -34,9 +36,9 @@ package com.akiban.ais.model.staticgrouping;
  */
 public final class Group
 {
-    private final String groupName;
+    private final TableName groupName;
 
-    public Group(String groupName)
+    public Group(TableName groupName)
     {
         if (groupName == null) {
             throw new IllegalArgumentException("group name can't be null");
@@ -44,12 +46,12 @@ public final class Group
         this.groupName = groupName;
     }
 
-    public String getGroupName()
+    public TableName getGroupName()
     {
         return groupName;
     }
 
-    Group copyButRename(String newName) {
+    Group copyButRename(TableName newName) {
         return new Group(newName);
     }
 

@@ -1,0 +1,1 @@
+com.akiban.server.error.InsertWrongCountException: INSERT_WRONG_COUNT: Number of target columns (3) is not the same as number of expressions (4)

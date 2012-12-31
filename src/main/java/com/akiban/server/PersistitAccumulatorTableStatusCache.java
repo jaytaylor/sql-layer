@@ -26,6 +26,7 @@
 
 package com.akiban.server;
 
+import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowDef;
@@ -38,7 +39,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
-    private Map<Integer, InternalTableStatus> tableStatusMap = new HashMap<Integer, InternalTableStatus>();
+    private Map<Integer, MemoryStatus> memoryStatuses = new HashMap<Integer, MemoryStatus>();
     private TreeService treeService;
 
     public PersistitAccumulatorTableStatusCache(TreeService treeService) {
@@ -46,92 +47,41 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     }
 
     @Override
-    public synchronized void rowDeleted(int tableID) {
-        getInternalTableStatus(tableID).rowDeleted();
+    public synchronized TableStatus createTableStatus(int tableID) {
+        return new AccumulatorStatus(tableID);
     }
 
     @Override
-    public synchronized void rowWritten(int tableID) {
-        getInternalTableStatus(tableID).rowWritten();
-    }
-
-    @Override
-    public synchronized void truncate(int tableID) throws PersistitInterruptedException {
-        getInternalTableStatus(tableID).truncate();
-    }
-
-    @Override
-    public synchronized void drop(int tableID) throws PersistitInterruptedException {
-        InternalTableStatus ts = tableStatusMap.remove(tableID);
-        if(ts != null) {
-            if(ts.autoIncrement != null) {
-                ts.setAutoIncrement(0, true);
-            }
-            if(ts.rowCount != null) {
-                ts.internalSetRowCount(0);
-            }
-            if(ts.ordinal != null) {
-                ts.setOrdinal(0);
-            }
-            ts.setRowDef(null, null);
-        }
-    }
-
-    @Override
-    public synchronized void setAutoIncrement(int tableID, long value) throws PersistitInterruptedException {
-        getInternalTableStatus(tableID).setAutoIncrement(value, false);
-    }
-
-    @Override
-    public synchronized void setOrdinal(int tableID, int value) throws PersistitInterruptedException {
-        getInternalTableStatus(tableID).setOrdinal(value);
-    }
-
-    @Override
-    public synchronized void setRowDef(int tableID, RowDef rowDef) {
-        InternalTableStatus ts = tableStatusMap.get(tableID);
+    public TableStatus getOrCreateMemoryTableStatus(int tableID, MemoryTableFactory factory) {
+        MemoryStatus ts = memoryStatuses.get(tableID);
         if(ts == null) {
-            throw new IllegalArgumentException("Unknown table ID " + tableID + " for RowDef " + rowDef);
+            if(factory == null) {
+                throw new IllegalArgumentException("Null factory");
+            }
+            ts = new MemoryStatus(tableID, factory);
+            memoryStatuses.put(tableID, ts);
         }
-        Tree tree = getTreeForRowDef(rowDef);
-        ts.setRowDef(rowDef, tree);
-    }
-
-    @Override
-    public synchronized long createNewUniqueID(int tableID) throws PersistitInterruptedException {
-        return getInternalTableStatus(tableID).createNewUniqueID();
-    }
-
-    @Override
-    public synchronized TableStatus getTableStatus(int tableID) {
-        return getInternalTableStatus(tableID);
-    }
-
-    @Override
-    public synchronized void loadAllInVolume(String volumeName) throws Exception {
-        // Nothing to do
+        return ts;
     }
 
     @Override
     public synchronized void detachAIS() {
-        for(InternalTableStatus ts : tableStatusMap.values()) {
-            ts.setRowDef(null, null);
+        for(MemoryStatus ts : memoryStatuses.values()) {
+            ts.setRowDef(null);
         }
     }
     
     //
     // Internal
     //
-    
-    private synchronized InternalTableStatus getInternalTableStatus(int tableID) {
-        InternalTableStatus ts = tableStatusMap.get(tableID);
-        if(ts == null) {
-            ts = new InternalTableStatus();
-            tableStatusMap.put(tableID, ts);
+
+    private static void checkExpectedRowDefID(int expected, RowDef rowDef) {
+        if((rowDef != null) && (expected != rowDef.getRowDefId())) {
+            throw new IllegalArgumentException("RowDef ID " + rowDef.getRowDefId() +
+                                               " does not match expected ID " + expected);
         }
-        return ts;
     }
-    
+
     private Tree getTreeForRowDef(RowDef rowDef) {
         IndexDef indexDef = rowDef.getPKIndex().indexDef();
         assert indexDef != null : rowDef;
@@ -144,12 +94,16 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
     }
 
-    private class InternalTableStatus implements TableStatus {
-        private volatile RowDef rowDef;
+    private class AccumulatorStatus implements TableStatus {
+        private final int expectedID;
         private volatile AccumulatorAdapter ordinal;
         private volatile AccumulatorAdapter rowCount;
         private volatile AccumulatorAdapter uniqueID;
         private volatile AccumulatorAdapter autoIncrement;
+
+        public AccumulatorStatus(int expectedID) {
+            this.expectedID = expectedID;
+        }
 
         @Override
         public long getAutoIncrement() throws PersistitInterruptedException {
@@ -187,48 +141,141 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public RowDef getRowDef() {
-            return rowDef;
+        public int getTableID() {
+            return expectedID;
         }
 
-        void rowDeleted() {
+        @Override
+        public void rowDeleted() {
             rowCount.updateAndGet(-1);
         }
 
-        void rowWritten() {
+        @Override
+        public void rowWritten() {
             rowCount.updateAndGet(1);
         }
 
-        void internalSetRowCount(long rowCountValue) throws PersistitInterruptedException {
-            rowCount.set(rowCountValue);
+        public void setOrdinal(int ordinal) throws PersistitInterruptedException {
+            this.ordinal.set(ordinal);
         }
 
-        void setAutoIncrement(long autoIncrementValue, boolean evenIfLess) throws PersistitInterruptedException {
-            autoIncrement.set(autoIncrementValue, evenIfLess);
-        }
-
-        void setOrdinal(int ordinalValue) throws PersistitInterruptedException {
-            ordinal.set(ordinalValue);
-        }
-
-        synchronized void setRowDef(RowDef rowDef, Tree tree) {
-            this.rowDef = rowDef;
-            if(rowDef == null && tree == null) {
-                return;
-            }
-            ordinal = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ORDINAL, treeService, tree);
-            rowCount = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, tree);
-            uniqueID = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, treeService, tree);
-            autoIncrement = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.AUTO_INC, treeService, tree);
-        }
-        
-        long createNewUniqueID() throws PersistitInterruptedException {
+        @Override
+        public long createNewUniqueID() throws PersistitInterruptedException {
             return uniqueID.updateAndGet(1);
         }
 
-        void truncate() throws PersistitInterruptedException {
+        @Override
+        public void truncate() throws PersistitInterruptedException {
             internalSetRowCount(0);
-            setAutoIncrement(0, true);
+            internalSetAutoIncrement(0, true);
+        }
+
+        @Override
+        public void setAutoIncrement(long value) throws PersistitInterruptedException {
+            internalSetAutoIncrement(value, false);
+        }
+
+        @Override
+        public void setRowDef(RowDef rowDef) {
+            if(rowDef == null) {
+                ordinal = rowCount = uniqueID = autoIncrement = null;
+            } else {
+                checkExpectedRowDefID(expectedID, rowDef);
+                Tree tree = getTreeForRowDef(rowDef);
+                ordinal = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ORDINAL, treeService, tree);
+                rowCount = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, tree);
+                uniqueID = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, treeService, tree);
+                autoIncrement = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.AUTO_INC, treeService, tree);
+            }
+        }
+
+        private void internalSetRowCount(long rowCountValue) throws PersistitInterruptedException {
+            rowCount.set(rowCountValue);
+        }
+
+        private void internalSetAutoIncrement(long autoIncrementValue, boolean evenIfLess) throws PersistitInterruptedException {
+            autoIncrement.set(autoIncrementValue, evenIfLess);
+        }
+    }
+
+    private class MemoryStatus implements TableStatus {
+        private final int expectedID;
+        private final MemoryTableFactory factory;
+        private volatile int ordinal;
+
+        private MemoryStatus(int expectedID, MemoryTableFactory factory) {
+            this.expectedID = expectedID;
+            this.factory = factory;
+        }
+
+        @Override
+        public long getAutoIncrement() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getOrdinal() {
+            return ordinal;
+        }
+
+        @Override
+        public long getRowCount() {
+            return factory.rowCount();
+        }
+
+        @Override
+        public long getApproximateRowCount() {
+            return factory.rowCount();
+        }
+
+        @Override
+        public long getUniqueID() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getTableID() {
+            return expectedID;
+        }
+
+        @Override
+        public void setRowCount(long rowCount) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void rowDeleted() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void rowWritten() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void truncate() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setAutoIncrement(long value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public long createNewUniqueID() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setOrdinal(int ordinal) {
+            this.ordinal = ordinal;
+        }
+
+        @Override
+        public void setRowDef(RowDef rowDef) {
+            checkExpectedRowDefID(expectedID, rowDef);
         }
     }
 }

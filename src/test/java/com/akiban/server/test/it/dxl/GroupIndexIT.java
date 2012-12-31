@@ -29,6 +29,7 @@ package com.akiban.server.test.it.dxl;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableName;
 import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.store.IndexKeyVisitor;
@@ -55,7 +56,7 @@ public class GroupIndexIT extends ITBase {
     private int aId;
     private int oId;
     private int iId;
-    private String groupName;
+    private TableName groupName;
 
     @Before
     public void createTables() {
@@ -70,7 +71,7 @@ public class GroupIndexIT extends ITBase {
     public void removeTables() {
         ddl().dropGroup(session(), groupName);
         cId = aId = oId = iId = -1;
-        groupName = "";
+        groupName = null;
     }
 
     @Test
@@ -86,7 +87,6 @@ public class GroupIndexIT extends ITBase {
 
         checkGroupIndexes(getUserTable("test", "c"), index);
         checkGroupIndexes(getUserTable("test", "o"), index);
-        checkGroupIndexes(group.getGroupTable(), index);
         // and just to double check...
         assertEquals("c group", group, getUserTable("test", "c").getGroup());
         assertEquals("o group", group, getUserTable("test", "o").getGroup());
@@ -102,7 +102,6 @@ public class GroupIndexIT extends ITBase {
 
         checkGroupIndexes(getUserTable("test", "c"));
         checkGroupIndexes(getUserTable("test", "o"));
-        checkGroupIndexes(getUserTable("test", "o").getGroup().getGroupTable());
         // and just to double check...
         assertEquals("c group vs o group", getUserTable("test", "o").getGroup(), getUserTable("test", "c").getGroup());
     }
@@ -115,7 +114,6 @@ public class GroupIndexIT extends ITBase {
         assertNull("name_date_sku does not exist", ddl().getAIS(session()).getGroup(groupName).getIndex("name_date_sku"));
         checkGroupIndexes(getUserTable("test", "c"));
         checkGroupIndexes(getUserTable("test", "o"));
-        checkGroupIndexes(getUserTable("test", "c").getGroup().getGroupTable());
     }
 
     @Test
@@ -199,12 +197,12 @@ public class GroupIndexIT extends ITBase {
     @Test
     public void createACWithExistingData() throws Exception {
         writeRows(createNewRow(cId, 1, "bob"),
-                    createNewRow(aId, 3, 1, 123),
+                    createNewRow(aId, 3, 1, "123"),
                   createNewRow(cId, 2, "jill"),
-                    createNewRow(aId, 1, 2, 875),
+                    createNewRow(aId, 1, 2, "875"),
                   createNewRow(cId, 3, "foo"),
                   createNewRow(cId, 4, "bar"),
-                    createNewRow(aId, 2, 4, 23));
+                    createNewRow(aId, 2, 4, "23"));
 
         GroupIndex aAddr_cID = createGroupIndex(groupName, "aAddr_cID", "a.addr, c.id");
         expectIndexContents(aAddr_cID,
@@ -237,6 +235,12 @@ public class GroupIndexIT extends ITBase {
         final int[] curKey = {0};
         final String indexName = groupIndex.getIndexName().getName();
         persistitStore().traverse(session(), groupIndex, new IndexKeyVisitor() {
+            @Override
+            public boolean groupIndex()
+            {
+                return true;
+            }
+
             @Override
             protected void visit(List<?> actual) {
                 if(!keyIt.hasNext()) {

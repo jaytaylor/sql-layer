@@ -36,9 +36,9 @@ import com.akiban.sql.optimizer.plan.AST;
 import com.akiban.sql.optimizer.plan.ColumnExpression;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.ExpressionVisitor;
-import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.PlanNode;
 import com.akiban.sql.optimizer.plan.PlanVisitor;
+import com.akiban.sql.optimizer.rule.PlanContext;
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.util.AssertUtils;
@@ -130,8 +130,8 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
     public void loadDDL() throws Exception {
         AkibanInformationSchema ais = loadSchema(schemaFile);
         int columnEquivalenceRuleIndex = -1;
-        for (int i = 0, max = DefaultRules.DEFAULT_RULES_CBO.size(); i < max; i++) {
-            BaseRule rule = DefaultRules.DEFAULT_RULES_CBO.get(i);
+        for (int i = 0, max = DefaultRules.DEFAULT_RULES_NEWTYPES.size(); i < max; i++) {
+            BaseRule rule = DefaultRules.DEFAULT_RULES_NEWTYPES.get(i);
             if (rule instanceof ColumnEquivalenceFinder) {
                 columnEquivalenceRuleIndex = i;
                 break;
@@ -139,7 +139,7 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
         }
         if (columnEquivalenceRuleIndex < 0)
             throw new RuntimeException(ColumnEquivalenceFinder.class.getSimpleName() + " not found");
-        List<BaseRule> rulesSublist = DefaultRules.DEFAULT_RULES_CBO.subList(0, columnEquivalenceRuleIndex + 1);
+        List<BaseRule> rulesSublist = DefaultRules.DEFAULT_RULES_NEWTYPES.subList(0, columnEquivalenceRuleIndex + 1);
         rules = RulesTestContext.create(ais, null, false, rulesSublist, new Properties());
     }
 

@@ -177,19 +177,19 @@ public class TrigExpressionTest extends ComposedExpressionTestBase
         Expression arg1 = new LiteralExpression(AkType.DOUBLE, 1.0);
         Expression arg2 = new LiteralExpression(AkType.DOUBLE, 1.0);
         
-        Expression atan = TrigExpression.ATAN_COMPOSER.compose(Arrays.asList(arg1, arg2));
+        Expression atan = compose(TrigExpression.ATAN_COMPOSER, Arrays.asList(arg1, arg2));
         double rst = atan.evaluation().eval().getDouble();
         assertEquals(Math.atan2(1,1), rst, 0.0001);
         
-        atan = TrigExpression.ATAN_COMPOSER.compose(Arrays.asList(arg1));
+        atan = compose(TrigExpression.ATAN_COMPOSER, Arrays.asList(arg1));
         rst = atan.evaluation().eval().getDouble();
         assertEquals(Math.atan2(1,1), rst, 0.0001);
         
-        atan = TrigExpression.ATAN2_COMPOSER.compose(Arrays.asList(arg1));
+        atan = compose(TrigExpression.ATAN2_COMPOSER, Arrays.asList(arg1));
         rst = atan.evaluation().eval().getDouble();
         assertEquals(Math.atan2(1,1), rst, 0.0001);
         
-        atan = TrigExpression.ATAN2_COMPOSER.compose(Arrays.asList(arg1, arg2));
+        atan = compose(TrigExpression.ATAN2_COMPOSER, Arrays.asList(arg1, arg2));
         rst = atan.evaluation().eval().getDouble();
         assertEquals(Math.atan2(1,1), rst, 0.0001);        
     }

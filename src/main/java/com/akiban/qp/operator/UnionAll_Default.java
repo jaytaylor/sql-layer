@@ -27,22 +27,27 @@
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.expression.BoundExpressions;
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.explain.*;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.InOutTap;
 
+import com.google.common.base.Objects;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  <h1>Overview</h1>
@@ -108,12 +113,12 @@ final class UnionAll_Default extends Operator {
         return new Execution(context);
     }
 
-    UnionAll_Default(Operator input1, RowType input1Type, Operator input2, RowType input2Type) {
+    UnionAll_Default(Operator input1, RowType input1Type, Operator input2, RowType input2Type, boolean usePValues) {
         ArgumentValidation.notNull("first input", input1);
         ArgumentValidation.notNull("first input type", input1Type);
         ArgumentValidation.notNull("second input", input2);
         ArgumentValidation.notNull("second input type", input2Type);
-        this.outputRowType = rowType(input1Type, input2Type);
+        this.outputRowType = rowType(input1Type, input2Type, usePValues);
         this.inputs = Arrays.asList(input1, input2);
         this.inputTypes = Arrays.asList(input1Type, input2Type);
         ArgumentValidation.isEQ("inputs.size", inputs.size(), "inputTypes.size", inputTypes.size());
@@ -121,11 +126,32 @@ final class UnionAll_Default extends Operator {
 
     // for use in this package (in ctor and unit tests)
 
-    static RowType rowType(RowType rowType1, RowType rowType2) {
+    static RowType rowType(RowType rowType1, RowType rowType2, boolean usePValues) {
         if (rowType1 == rowType2)
             return rowType1;
         if (rowType1.nFields() != rowType2.nFields())
             throw notSameShape(rowType1, rowType2);
+        return usePValues ? rowTypeNew(rowType1, rowType2) : rowTypeOld(rowType1, rowType2);
+    }
+
+    private static RowType rowTypeNew(RowType rowType1, RowType rowType2) {
+        TInstance[] types = new TInstance[rowType1.nFields()];
+        for(int i=0; i<types.length; ++i) {
+            TInstance tInst1 = rowType1.typeInstanceAt(i);
+            TInstance tInst2 = rowType2.typeInstanceAt(i);
+            if (Objects.equal(tInst1, tInst2))
+                types[i] = tInst1;
+            else if (tInst1 == null)
+                types[i] = tInst2;
+            else if (tInst2 == null)
+                types[i] = tInst1;
+            else
+                throw notSameShape(rowType1, rowType2);
+        }
+        return rowType1.schema().newValuesType(types);
+    }
+
+    private static RowType rowTypeOld(RowType rowType1, RowType rowType2) {
         AkType[] types = new AkType[rowType1.nFields()];
         for(int i=0; i<types.length; ++i) {
             AkType akType1 = rowType1.typeAt(i);
@@ -168,8 +194,25 @@ final class UnionAll_Default extends Operator {
     private final List<? extends RowType> inputTypes;
     private final RowType outputRowType;
 
-    private class Execution extends OperatorExecutionBase implements Cursor {
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        Attributes att = new Attributes();
+        
+        att.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
+        att.put(Label.UNION_OPTION, PrimitiveExplainer.getInstance("ALL"));
+        
+        for (Operator op : inputs)
+            att.put(Label.INPUT_OPERATOR, op.getExplainer(context));
+        for (RowType type : inputTypes)
+            att.put(Label.INPUT_TYPE, type.getExplainer(context));
+       
+        att.put(Label.OUTPUT_TYPE, outputRowType.getExplainer(context));
+        
+        return new CompoundExplainer(Type.UNION, att);
+    }
 
+    private class Execution extends OperatorExecutionBase implements Cursor {
 
         @Override
         public void open() {
@@ -286,7 +329,9 @@ final class UnionAll_Default extends Operator {
             if (!inputRow.rowType().equals(currentInputRowType)) {
                 throw new WrongRowTypeException(inputRow, currentInputRowType);
             }
-            assert inputRow.rowType().equals(currentInputRowType) : inputRow.rowType() + " != " + currentInputRowType;
+            if (currentInputRowType == outputRowType) {
+                return inputRow;
+            }
             MasqueradingRow row;
             if (rowHolder.isEmpty() || rowHolder.isShared()) {
                 row = new MasqueradingRow(outputRowType, inputRow);
@@ -327,7 +372,7 @@ final class UnionAll_Default extends Operator {
     private static class MasqueradingRow implements Row {
 
         @Override
-        public int compareTo(BoundExpressions row, int leftStartIndex, int rightStartIndex, int fieldCount)
+        public int compareTo(RowBase row, int leftStartIndex, int rightStartIndex, int fieldCount)
         {
             return delegate.compareTo(row, leftStartIndex, rightStartIndex, fieldCount);
         }
@@ -366,6 +411,11 @@ final class UnionAll_Default extends Operator {
         @Override
         public ValueSource eval(int index) {
             return delegate.eval(index);
+        }
+
+        @Override
+        public PValueSource pvalue(int index) {
+            return delegate.pvalue(index);
         }
 
         /**

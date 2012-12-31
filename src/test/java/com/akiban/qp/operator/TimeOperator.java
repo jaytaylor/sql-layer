@@ -26,11 +26,15 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class TimeOperator extends Operator
@@ -87,6 +91,11 @@ public class TimeOperator extends Operator
 
     private final Operator inputOperator;
     private long elapsedNsec = 0;
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
     // Inner classes
 

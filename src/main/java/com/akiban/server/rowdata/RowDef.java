@@ -29,15 +29,10 @@ package com.akiban.server.rowdata;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.ais.model.*;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.TableStatus;
-import com.akiban.server.TableStatusCache;
-import com.akiban.server.service.tree.TreeCache;
-import com.akiban.server.service.tree.TreeLink;
-import com.persistit.exception.PersistitInterruptedException;
 
 /**
  * Contain the relevant schema information for one version of a table
@@ -45,11 +40,9 @@ import com.persistit.exception.PersistitInterruptedException;
  * AIS, interpret it, and provide information on how to encode and decode fields
  * from a RowData structure.
  * 
- * 
  * @author peter
- * 
  */
-public class RowDef implements TreeLink {
+public class RowDef {
 
     private final Table table;
 
@@ -74,18 +67,6 @@ public class RowDef implements TreeLink {
      * Field index of the auto-increment column; -1 if none.
      */
     private int autoIncrementField;
-
-    /**
-     * RowDefs of constituent user tables. Populated only if this is the RowDef
-     * for a group table. Null if this is the RowDef for a user table.
-     */
-    private RowDef[] userTableRowDefs;
-
-    /**
-     * For a user table, the column position of the first column of the user
-     * table relative to the group table.
-     */
-    private int columnOffset;
 
     /**
      * For a user table, the number of Persistit Key segments uses to encode the
@@ -115,8 +96,6 @@ public class RowDef implements TreeLink {
      * method to assist in looking up a field's offset and length.
      */
     private final byte[][] varLenFieldMap;
-
-    private AtomicReference<TreeCache> treeCache = new AtomicReference<TreeCache>();
 
     public RowDef(Table table, final TableStatus tableStatus) {
         this.table = table;
@@ -166,11 +145,6 @@ public class RowDef implements TreeLink {
         return (UserTable) table;
     }
 
-    public GroupTable groupTable() {
-        assert table instanceof GroupTable : this;
-        return (GroupTable) table;
-    }
-
     /**
      * Display the fieldCoordinates array
      */
@@ -207,22 +181,11 @@ public class RowDef implements TreeLink {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(String.format("RowDef #%d %s (%s.%s)",
+        StringBuilder sb = new StringBuilder(String.format("RowDef #%d %s (%s)",
                                                            table.getTableId(),
                                                            table.getName(),
-                                                           getTreeName(), getPkTreeName()));
-        if (userTableRowDefs != null) {
-            for (int i = 0; i < userTableRowDefs.length; i++) {
-                sb.append(i == 0 ? "{" : ",");
-                sb.append(userTableRowDefs[i].getRowDefId());
-                sb.append("->");
-                sb.append(userTableRowDefs[i].getColumnOffset());
-                sb.append(":" + userTableRowDefs[i].getFieldCount());
-            }
-            sb.append("}");
-        }
-        sb.append("groupColumnOffset, fieldcount " + getColumnOffset() + ", "
-                + getFieldCount());
+                                                           getPkTreeName()));
+        sb.append("fieldCount ").append(getFieldCount()).append(' ');
 
         for (int i = 0; i < fieldDefs.length; i++) {
             sb.append(i == 0 ? "[" : ",");
@@ -415,11 +378,6 @@ public class RowDef implements TreeLink {
         return fieldDefs;
     }
 
-    public int getGroupRowDefId() {
-        return table instanceof GroupTable ? table.getTableId() : table
-                .getGroup().getGroupTable().getTableId();
-    }
-
     public Index[] getIndexes() {
         return indexes;
     }
@@ -456,6 +414,12 @@ public class RowDef implements TreeLink {
         return parentJoin == null ? 0 : parentJoin.getParent().getTableId();
     }
 
+    public RowDef getParentRowDef() {
+        UserTable userTable = (UserTable) table;
+        Join parentJoin = userTable.getParentJoin();
+        return (parentJoin == null) ? null : parentJoin.getParent().rowDef();
+    }
+
     public String getPkTreeName() {
         final Index pkIndex = getPKIndex();
         return pkIndex != null ? pkIndex.indexDef().getTreeName() : null;
@@ -473,16 +437,8 @@ public class RowDef implements TreeLink {
         return table.getName().getTableName();
     }
 
-    public String getTreeName() {
-        return table.getTreeName();
-    }
-
     public String getSchemaName() {
         return table.getName().getSchemaName();
-    }
-
-    public boolean isGroupTable() {
-        return userTableRowDefs != null;
     }
 
     public int getOrdinal() {
@@ -494,7 +450,7 @@ public class RowDef implements TreeLink {
     }
 
     public boolean isUserTable() {
-        return !isGroupTable();
+        return table.isUserTable();
     }
 
     public void setIndexes(TableIndex[] indexes) {
@@ -521,29 +477,13 @@ public class RowDef implements TreeLink {
         return hkeyDepth;
     }
 
-    public int getColumnOffset() {
-        assert !isGroupTable() || columnOffset == 0;
-        return columnOffset;
-    }
-
-    public void setColumnOffset(final int columnOffset) {
-        this.columnOffset = columnOffset;
-    }
-
     public TableIndex getPKIndex() {
-        if (!isGroupTable() && indexes != null && indexes.length > 0) {
+        assert isUserTable() : this;
+        if (indexes != null && indexes.length > 0) {
             return indexes[0];
         } else {
             return null;
         }
-    }
-
-    public RowDef[] getUserTableRowDefs() {
-        return userTableRowDefs;
-    }
-
-    public void setUserTableRowDefs(final RowDef[] userTableRowDefs) {
-        this.userTableRowDefs = userTableRowDefs;
     }
 
     public boolean isAutoIncrement() {
@@ -553,7 +493,7 @@ public class RowDef implements TreeLink {
     /**
      * Compute lookup tables used to in the {@link #fieldLocation(RowData, int)}
      * method. This method is invoked once when a RowDef is first constructed.
-     * 
+     *
      * @param fieldDefs
      */
     void preComputeFieldCoordinates(final FieldDef[] fieldDefs) {
@@ -625,7 +565,6 @@ public class RowDef implements TreeLink {
         final RowDef def = (RowDef) o;
         return this == def || def.getRowDefId() == def.getRowDefId()
                 && AkServerUtil.equals(table.getName(), def.table.getName())
-                && AkServerUtil.equals(getTreeName(), def.getTreeName())
                 && Arrays.deepEquals(fieldDefs, def.fieldDefs)
                 && Arrays.deepEquals(indexes, def.indexes)
                 && getOrdinal() == def.getOrdinal()
@@ -636,17 +575,11 @@ public class RowDef implements TreeLink {
     @Override
     public int hashCode() {
         return getRowDefId() ^ table.getName().hashCode()
-                ^ AkServerUtil.hashCode(getTreeName()) ^ Arrays.hashCode(fieldDefs)
+                ^ Arrays.hashCode(fieldDefs)
                 ^ Arrays.hashCode(parentJoinFields);
     }
 
-    @Override
-    public void setTreeCache(TreeCache cache) {
-        treeCache.set(cache);
-    }
-
-    @Override
-    public TreeCache getTreeCache() {
-        return treeCache.get();
+    public Group getGroup() {
+        return table.getGroup();
     }
 }

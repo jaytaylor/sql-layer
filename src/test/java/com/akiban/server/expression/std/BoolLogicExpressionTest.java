@@ -31,12 +31,14 @@ import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.extract.Extractors;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -98,7 +100,7 @@ public final class BoolLogicExpressionTest {
 
     @Test
     public void test() {
-        Expression test = composer.compose(Arrays.asList(lhs, rhs));
+        Expression test = composer.compose(Arrays.asList(lhs, rhs), Collections.nCopies(3, ExpressionTypes.BOOL));
         Boolean actual = Extractors.getBooleanExtractor().getBoolean(test.evaluation().eval(), null);
         assertEquals(expected, actual);
     }

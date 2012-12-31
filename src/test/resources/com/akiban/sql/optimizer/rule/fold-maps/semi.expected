@@ -6,8 +6,11 @@ SelectQuery@7bd349e2
 
 Subquery@61b59919
   MapJoin@1bb0889a()
-    Select@76898587[items.oid == orders.oid]
-      SingleIndexScan@9eb67cb(Index(test.items.sku[IndexColumn(sku)]), covering/NONE, =1234, rows = 97, cost = 238.521)
+    Flatten@555d7e03(items)
+      Select@5084ebe8[items.sku == 1234]
+        BranchLookup@469bf5a4(orders -> items)
+          GroupLoopScan@291c0633(orders - items, rows = 1, cost = 40.4420)
+          TableSource@3e74f380(items - TableGroup@6edb135a(customers))
     Select@14db38a4[]
       Flatten@21453d72(child)
         Select@2136bdda[child.name != Astro]

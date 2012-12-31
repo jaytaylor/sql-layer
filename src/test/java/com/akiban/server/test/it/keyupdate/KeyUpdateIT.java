@@ -51,12 +51,12 @@ public class KeyUpdateIT extends KeyUpdateBase
         updateRow(updatedItem, i_oid, 0L, null);
         startMonitoringHKeyPropagation();
         dbUpdate(originalItem, updatedItem);
-        checkHKeyPropagation(2, 0);
+        checkHKeyPropagation(0, 0);
         checkDB();
         // Revert change
         startMonitoringHKeyPropagation();
         dbUpdate(updatedItem, originalItem);
-        checkHKeyPropagation(2, 0);
+        checkHKeyPropagation(0, 0);
         checkDB();
         checkInitialState();
     }
@@ -72,12 +72,12 @@ public class KeyUpdateIT extends KeyUpdateBase
         updateRow(updatedItem, i_iid, 0L, order);
         startMonitoringHKeyPropagation();
         dbUpdate(originalItem, updatedItem);
-        checkHKeyPropagation(2, 0);
+        checkHKeyPropagation(0, 0);
         checkDB();
         // Revert change
         startMonitoringHKeyPropagation();
         dbUpdate(updatedItem, originalItem);
-        checkHKeyPropagation(2, 0);
+        checkHKeyPropagation(0, 0);
         checkDB();
         checkInitialState();
     }
@@ -342,12 +342,12 @@ public class KeyUpdateIT extends KeyUpdateBase
         TestRow itemRow = testStore.find(new HKey(vendorRD, 2L, customerRD, 22L, orderRD, 222L, itemRD, 2222L));
         startMonitoringHKeyPropagation();
         dbDelete(itemRow);
-        checkHKeyPropagation(1, 0);
+        checkHKeyPropagation(0, 0);
         checkDB();
         // Revert change
         startMonitoringHKeyPropagation();
         dbInsert(itemRow);
-        checkHKeyPropagation(1, 0);
+        checkHKeyPropagation(0, 0);
         checkDB();
         checkInitialState();
     }
@@ -490,12 +490,11 @@ public class KeyUpdateIT extends KeyUpdateBase
         i_oid = 1;
         i_ix = 2;
         // group
-        vendorRD = rowDefCache().getRowDef(vendorId);
-        customerRD = rowDefCache().getRowDef(customerId);
-        orderRD = rowDefCache().getRowDef(orderId);
-        itemRD = rowDefCache().getRowDef(itemId);
-        int groupRowDefId = customerRD.getGroupRowDefId();
-        groupRD = store().getRowDefCache().getRowDef(groupRowDefId);
+        vendorRD = getRowDef(vendorId);
+        customerRD = getRowDef(customerId);
+        orderRD = getRowDef(orderId);
+        itemRD = getRowDef(itemId);
+        group = customerRD.getGroup();
     }
 
     @Override
@@ -531,7 +530,7 @@ public class KeyUpdateIT extends KeyUpdateBase
     @Override
     protected List<List<Object>> orderWhenIndex(List<TreeRecord> records)
     {
-        return indexFromRecords(records, orderRD, o_when, HKeyElement.from(1), o_cid, o_oid);
+        return indexFromRecords(records, orderRD, o_when, NULL_SEPARATOR_COLUMN, HKeyElement.from(1), o_cid, o_oid);
     }
 
     @Override

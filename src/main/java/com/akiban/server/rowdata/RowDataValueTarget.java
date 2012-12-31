@@ -37,19 +37,24 @@ import com.akiban.util.ByteSource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public final class RowDataValueTarget implements ValueTarget {
+public final class RowDataValueTarget implements ValueTarget, RowDataTarget {
 
+    @Override
     public void bind(FieldDef fieldDef, byte[] backingBytes, int offset) {
         if(fieldDef.getType().akType() == AkType.INTERVAL_MILLIS || fieldDef.getType().akType() == AkType.INTERVAL_MONTH)
             throw new UnsupportedOperationException();
         clear();
         ArgumentValidation.notNull("fieldDef", fieldDef);
-        ArgumentValidation.withinArray("backing bytes", backingBytes, "offset", offset);
+        if (offset < 0)
+            throw new IllegalArgumentException("offset may not be zero");
+        if (offset >= backingBytes.length)
+            throw new ArrayIndexOutOfBoundsException(offset);
         this.fieldDef = fieldDef;
         this.bytes = backingBytes;
         this.offset = offset;
     }
 
+    @Override
     public int lastEncodedLength() {
         if (lastEncodedLength < 0) {
             throw new IllegalStateException("no last recorded length available");

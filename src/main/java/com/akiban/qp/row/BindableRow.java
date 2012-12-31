@@ -27,10 +27,18 @@
 package com.akiban.qp.row;
 
 import com.akiban.qp.expression.ExpressionRow;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.explain.*;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.util.SqlLiteralValueFormatter;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.util.AkibanAppender;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.Collection;
@@ -41,27 +49,64 @@ public abstract class BindableRow {
 
     // BindableRow class interface
 
-    public static BindableRow of(RowType rowType, List<? extends Expression> expressions) {
-        ArgumentValidation.isEQ("rowType fields", rowType.nFields(), "expressions.size", expressions.size());
-        for (Expression expression : expressions) {
-            if (!expression.isConstant())
-                return new BindingExpressions(rowType, expressions);
+    public static BindableRow of(RowType rowType, List<? extends ExpressionGenerator> expressions, QueryContext queryContext) {
+        return of(rowType, API.generateOld(expressions), API.generateNew(expressions), queryContext);
+    }
+
+    public static BindableRow of(RowType rowType, List<? extends Expression> expressions,
+                                 List<? extends TPreparedExpression> pExpressions,
+                                 QueryContext queryContext) {
+        Iterator<? extends ValueSource> oldVals;
+        Iterator<? extends PValueSource> newVals;
+        if (pExpressions != null) {
+            assert expressions == null : "can't have both style of expressions";
+            ArgumentValidation.isEQ("rowType fields", rowType.nFields(), "expressions.size", pExpressions.size());
+            for (TPreparedExpression expression : pExpressions) {
+                TPreptimeValue tpv = expression.evaluateConstant(queryContext);
+                if (tpv == null || tpv.value() == null)
+                    return new BindingExpressions(rowType, null, pExpressions);
+            }
+            newVals = new PExpressionEvaluator(pExpressions, queryContext);
+            oldVals = null;
         }
-        // all expressions are const; put them into a ImmutableRow
-        ImmutableRow holderRow = new ImmutableRow(rowType, new ExpressionEvaluator(expressions));
+        else if (expressions != null) {
+            ArgumentValidation.isEQ("rowType fields", rowType.nFields(), "expressions.size", expressions.size());
+            for (Expression expression : expressions) {
+                if (!expression.isConstant())
+                    return new BindingExpressions(rowType, expressions, null);
+            }
+            // all expressions are const; put them into a ImmutableRow
+            newVals = null;
+            oldVals =  new ExpressionEvaluator(expressions);
+        }
+        else {
+            throw new AssertionError("both expression types can't be null");
+        }
+        ImmutableRow holderRow = new ImmutableRow(rowType, oldVals, newVals);
         return new Delegating(holderRow);
     }
 
-    public static BindableRow of(Row row) {
-        return new Delegating(strictCopy(row));
+    public static BindableRow of(Row row, boolean usePValues) {
+        return new Delegating(strictCopy(row, usePValues));
     }
 
     // BindableRow instance interface
 
     public abstract Row bind(QueryContext context);
+    public abstract CompoundExplainer getExplainer(ExplainContext context);
 
-    private static Row strictCopy(Row input) {
-        return new ImmutableRow(input.rowType(), new RowCopier(input));
+    private static ImmutableRow strictCopy(Row input, boolean usePValues) {
+        RowCopier oldCopier;
+        RowPCopier newCopier;
+        if (usePValues) {
+            newCopier = new RowPCopier(input);
+            oldCopier = null;
+        }
+        else {
+            newCopier = null;
+            oldCopier = new RowCopier(input);
+        }
+        return new ImmutableRow(input.rowType(), oldCopier, newCopier);
     }
 
     // nested classes
@@ -69,15 +114,37 @@ public abstract class BindableRow {
     private static class BindingExpressions extends BindableRow {
         @Override
         public Row bind(QueryContext context) {
-            return new ExpressionRow(rowType, context, expressions);
+            return new ExpressionRow(rowType, context, expressions, pExprs);
         }
 
-        private BindingExpressions(RowType rowType, List<? extends Expression> expressions) {
+        @Override
+        public CompoundExplainer getExplainer(ExplainContext context) {
+            Attributes atts = new Attributes();
+            if (expressions != null) {
+                for (Expression expression : expressions) {
+                    atts.put(Label.EXPRESSIONS, expression.getExplainer(context));
+                }
+            }
+            else {
+                for (TPreparedExpression pexpr : pExprs) {
+                    atts.put(Label.EXPRESSIONS, pexpr.getExplainer(context));
+                }
+            }
+            return new CompoundExplainer(Type.ROW, atts);
+        }
+
+        private BindingExpressions(RowType rowType, List<? extends Expression> expressions,
+                                   List<? extends TPreparedExpression> pExprs)
+        {
             this.rowType = rowType;
             this.expressions = expressions;
-            for (Expression expression : expressions) {
-                if (expression.needsRow()) {
-                    throw new IllegalArgumentException("expression " + expression + " needs a row");
+            this.pExprs = pExprs;
+            if (expressions != null) {
+                // TODO do we need an equivalent for pexprs?
+                for (Expression expression : expressions) {
+                    if (expression.needsRow()) {
+                        throw new IllegalArgumentException("expression " + expression + " needs a row");
+                    }
                 }
             }
         }
@@ -87,10 +154,11 @@ public abstract class BindableRow {
 
         @Override
         public String toString() {
-            return "Bindable" + expressions;
+            return "Bindable" + (expressions == null ? pExprs : expressions);
         }
 
         private final List<? extends Expression> expressions;
+        private final List<? extends TPreparedExpression> pExprs;
         private final RowType rowType;
     }
 
@@ -119,6 +187,31 @@ public abstract class BindableRow {
         private int i = 0;
     }
 
+    private static class RowPCopier implements Iterator<PValueSource>  {
+
+        @Override
+        public boolean hasNext() {
+            return i < sourceRow.rowType().nFields();
+        }
+
+        @Override
+        public PValueSource next() {
+            return sourceRow.pvalue(i++);
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+
+        private RowPCopier(Row sourceRow) {
+            this.sourceRow = sourceRow;
+        }
+
+        private final Row sourceRow;
+        private int i = 0;
+    }
+
     private static class ExpressionEvaluator implements Iterator<ValueSource> {
 
         @Override
@@ -138,11 +231,43 @@ public abstract class BindableRow {
             throw new UnsupportedOperationException();
         }
 
-        private ExpressionEvaluator(Collection<? extends Expression> expressions) {
+        private ExpressionEvaluator(Collection<? extends Expression> expressions)
+        {
             this.expressions = expressions.iterator();
         }
 
         private final Iterator<? extends Expression> expressions;
+    }
+
+    private static class PExpressionEvaluator implements Iterator<PValueSource> {
+
+        @Override
+        public boolean hasNext() {
+            return expressions.hasNext();
+        }
+
+        @Override
+        public PValueSource next() {
+            TPreparedExpression expression = expressions.next();
+            TPreptimeValue ptv = expression.evaluateConstant(context);
+            assert ptv != null && ptv.value() != null
+                    : "not constant: " + expression + " with prepare-time value of " + ptv;
+            return ptv.value();
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+
+        private PExpressionEvaluator(Collection<? extends TPreparedExpression> expressions, QueryContext context)
+        {
+            this.expressions = expressions.iterator();
+            this.context = context;
+        }
+
+        private final Iterator<? extends TPreparedExpression> expressions;
+        private final QueryContext context;
     }
 
     private static class Delegating extends BindableRow {
@@ -152,14 +277,34 @@ public abstract class BindableRow {
         }
 
         @Override
+        public CompoundExplainer getExplainer(ExplainContext context) {
+            Attributes atts = new Attributes();
+            for (int i = 0; i < row.rowType().nFields(); i++) {
+                atts.put(Label.EXPRESSIONS, PrimitiveExplainer.getInstance(formatAsLiteral(i)));
+            }
+            return new CompoundExplainer(Type.ROW, atts);
+        }
+
+        private String formatAsLiteral(int i) {
+            if (row.usingPValues()) {
+                StringBuilder str = new StringBuilder();
+                row.rowType().typeInstanceAt(i).formatAsLiteral(row.pvalue(i), AkibanAppender.of(str));
+                return str.toString();
+            }
+            else {
+                return SqlLiteralValueFormatter.format(row.eval(i));
+            }
+        }
+
+        @Override
         public String toString() {
             return String.valueOf(row);
         }
 
-        private Delegating(Row row) {
+        private Delegating(ImmutableRow row) {
             this.row = row;
         }
 
-        private final Row row;
+        private final ImmutableRow row;
     }
 }

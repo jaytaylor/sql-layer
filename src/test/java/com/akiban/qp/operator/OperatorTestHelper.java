@@ -26,16 +26,22 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.store.Store;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.InOutTap;
 import org.junit.Assert;
@@ -46,6 +52,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public final class OperatorTestHelper {
 
@@ -65,18 +72,13 @@ public final class OperatorTestHelper {
                 int actualWidth = actual.rowType().nFields();
                 assertEquals("row width", expected.rowType().nFields(), actualWidth);
                 for (int i = 0; i < actualWidth; ++i) {
-                    ValueHolder actualHolder = new ValueHolder(actual.eval(i));
-                    ValueHolder expectedHolder = new ValueHolder(expected.eval(i));
-
-                    if (!expectedHolder.equals(actualHolder)) {
-                        Assert.assertEquals(
-                                String.format("row[%d] field[%d]", rowCount, i),
-                                str(expecteds),
-                                str(actuals)
-                        );
-                        assertEquals(String.format("row[%d] field[%d]", rowCount, i), expectedHolder, actualHolder);
-                        throw new AssertionError("should have failed by now!");
+                    if (Types3Switch.ON) {
+                        checkRowInstance(expected, actual, i, rowCount, actuals, expecteds);
+                    } 
+                    else {
+                        checkRowType(expected, actual, i, rowCount, actuals, expecteds);
                     }
+                    
                 }
                 if (additionalCheck != null)
                     additionalCheck.check(actual);
@@ -87,6 +89,43 @@ public final class OperatorTestHelper {
             for (Row actual : actuals) {
                 actual.release();
             }
+        }
+    }
+    
+    private static void checkRowType(Row expected, Row actual, int i, int rowCount, List<Row> actuals, Collection<? extends Row> expecteds) {
+        ValueHolder actualHolder = new ValueHolder(actual.eval(i));
+        ValueHolder expectedHolder = new ValueHolder(expected.eval(i));
+
+        if (!expectedHolder.equals(actualHolder)) {
+            Assert.assertEquals(
+                    String.format("row[%d] field[%d]", rowCount, i),
+                    str(expecteds),
+                    str(actuals));
+            assertEquals(String.format("row[%d] field[%d]", rowCount, i), expectedHolder, actualHolder);
+            throw new AssertionError("should have failed by now!");
+        }
+    }
+    
+    private static void checkRowInstance(Row expected, Row actual, int i, int rowCount, List<Row> actuals, Collection<? extends Row> expecteds) {   
+        PValueSource actualSource = actual.pvalue(i);
+        PValueSource expectedSource = expected.pvalue(i);
+        TInstance actualType = actual.rowType().typeInstanceAt(i);
+        TInstance expectedType = expected.rowType().typeInstanceAt(i);
+        if (actualType == null || expectedType == null) {
+            assert actualSource.isNull() && expectedSource.isNull();
+            return;
+        }
+        assertTrue(expectedType + " != " + actualType, expectedType.equalsExcludingNullable(actualType));
+
+        
+        if(!PValueSources.areEqual(actualSource, expectedSource, expectedType) &&
+           !(actualSource.isNull() && expectedSource.isNull())) {
+            Assert.assertEquals(
+                    String.format("row[%d] field[%d]", rowCount, i),
+                    str(expecteds),
+                    str(actuals));
+            assertEquals(String.format("row[%d] field[%d]", rowCount, i), expectedSource, actualSource);
+            throw new AssertionError("should have failed by now!");
         }
     }
 
@@ -143,7 +182,7 @@ public final class OperatorTestHelper {
     private static class TestAdapter extends StoreAdapter
     {
         @Override
-        public GroupCursor newGroupCursor(GroupTable groupTable)
+        public GroupCursor newGroupCursor(Group group)
         {
             throw new UnsupportedOperationException();
         }
@@ -153,7 +192,8 @@ public final class OperatorTestHelper {
                                      Index index,
                                      IndexKeyRange keyRange,
                                      API.Ordering ordering,
-                                     IndexScanSelector selector)
+                                     IndexScanSelector selector,
+                                     boolean usePValues)
         {
             throw new UnsupportedOperationException();
         }
@@ -165,20 +205,30 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public void updateRow(Row oldRow, Row newRow)
+        public Store getUnderlyingStore() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void updateRow(Row oldRow, Row newRow, boolean usePValues)
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void writeRow(Row newRow)
+        public void writeRow(Row newRow, boolean usePValues)
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void deleteRow(Row oldRow)
+        public void deleteRow(Row oldRow, boolean usePValues)
         {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void alterRow(Row oldRow, Row newRow, Index[] indexesToMaintain, boolean hKeyChanged, boolean usePValues) {
             throw new UnsupportedOperationException();
         }
 
@@ -188,13 +238,14 @@ public final class OperatorTestHelper {
                            RowType rowType,
                            API.Ordering ordering,
                            API.SortOption sortOption,
-                           InOutTap loadTap)
+                           InOutTap loadTap,
+                           boolean usePValues)
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public long getQueryTimeoutSec()
+        public long getQueryTimeoutMilli()
         {
             return -1;
         }
@@ -205,9 +256,25 @@ public final class OperatorTestHelper {
             throw new UnsupportedOperationException();
         }
 
+        @Override
+        public long hash(ValueSource valueSource, AkCollator collator)
+        {
+            throw new UnsupportedOperationException();
+        }
+
         public TestAdapter()
         {
             super(null, null, null);
+        }
+
+        @Override
+        public long sequenceNextValue(TableName sequenceName) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public long sequenceCurrentValue(TableName sequenceName) {
+            throw new UnsupportedOperationException();
         }
     }
 }

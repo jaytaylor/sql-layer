@@ -31,13 +31,37 @@ import java.util.List;
 
 public class DefaultRules
 {
-    /** These are the rules that get run for CBO compilation. */
-    public static final List<BaseRule> DEFAULT_RULES_CBO = Arrays.asList(
+    /** These are the rules that get run for the new types compilation. */
+    public static final List<BaseRule> DEFAULT_RULES_NEWTYPES = Arrays.asList(
+            // These aren't singletons because someday they will have options.
+            new ASTStatementLoader(),
+            new AggregateMapper(),
+            new AggregateToDistinctMapper(),
+            new OverloadAndTInstanceResolver(),
+            new ConstantFolder(true),
+            new OuterJoinPromoter(),
+            new ColumnEquivalenceFinder(),
+            new GroupJoinFinder(),
+            new InConditionReverser(),
+            new JoinAndIndexPicker(),
+            new NestedLoopMapper(),
+            new BranchJoiner(),
+            new SelectPreponer(),
+            new AggregateSplitter(),
+            new SortSplitter(),
+            new MapFolder(),
+            new ExpressionCompactor(),
+            new HalloweenRecognizer(),
+            new OperatorAssembler(true)
+    );
+
+    /** These are the rules that get run old types compilation. */
+    public static final List<BaseRule> DEFAULT_RULES_OLDTYPES = Arrays.asList(
         // These aren't singletons because someday they will have options.
         new ASTStatementLoader(),
         new AggregateMapper(),
         new AggregateToDistinctMapper(),
-        new ConstantFolder(),
+        new ConstantFolder(false),
         new OuterJoinPromoter(),
         new ColumnEquivalenceFinder(),
         new GroupJoinFinder(),
@@ -50,29 +74,8 @@ public class DefaultRules
         new SortSplitter(),
         new MapFolder(),
         new ExpressionCompactor(),
-        new OperatorAssembler()
-     );
-
-    /** These are the rules that get run for non-CBO compilation. */
-    public static final List<BaseRule> DEFAULT_RULES_OLD = Arrays.asList(
-        // These aren't singletons because someday they will have options.
-        new ASTStatementLoader(),
-        new AggregateMapper(),
-        new AggregateToDistinctMapper(),
-        new ConstantFolder(),
-        new OuterJoinPromoter(),
-        new ColumnEquivalenceFinder(),
-        new GroupJoinFinder_Old(),
-        new InConditionReverser(),
-        new IndexPicker_Old(),
-        new NestedLoopMapper(),
-        new BranchJoiner_Old(),
-        new SelectPreponer(),
-        new AggregateSplitter(),
-        new SortSplitter(),
-        new MapFolder(),
-        new ExpressionCompactor(),
-        new OperatorAssembler()
+        new HalloweenRecognizer(),
+        new OperatorAssembler(false)
      );
 
     private DefaultRules() {

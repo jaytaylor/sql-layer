@@ -29,6 +29,7 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.server.explain.ExplainContext;
 
 import java.util.List;
 import java.util.Arrays;
@@ -54,28 +55,16 @@ public class PhysicalSelect extends BasePlannable
         }
     }
 
-    private List<PhysicalResultColumn> resultColumns;
-    private RowType rowType;
-    
     public PhysicalSelect(Operator resultOperator, RowType rowType,
                           List<PhysicalResultColumn> resultColumns,
                           DataTypeDescriptor[] parameterTypes) {
-        super(resultOperator, parameterTypes);
-        this.rowType = rowType;
-        this.resultColumns = resultColumns;
+        super(resultOperator, parameterTypes, rowType, resultColumns);
     }
 
     public Operator getResultOperator() {
         return (Operator)getPlannable();
     }
 
-    public RowType getResultRowType() {
-        return rowType;
-    }
-
-    public List<PhysicalResultColumn> getResultColumns() {
-        return resultColumns;
-    }
 
     @Override
     public boolean isUpdate() {
@@ -83,11 +72,11 @@ public class PhysicalSelect extends BasePlannable
     }
     
     @Override
-    protected String withIndentedExplain(StringBuilder str) {
+    protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName) {
         if (getParameterTypes() != null)
             str.append(Arrays.toString(getParameterTypes()));
-        str.append(resultColumns);
-        return super.withIndentedExplain(str);
+        str.append(getResultColumns());
+        return super.withIndentedExplain(str, context, defaultSchemaName);
     }
 
 }

@@ -42,6 +42,12 @@ public class BindingNodeFactory extends NodeFactory
     private Map<QueryTreeNode,QueryTreeNode> nodeMap;
     private Collection<QueryTreeNode> bindingsToCopy;
 
+    public static void wrap(SQLParser parser) {
+        NodeFactory nodeFactory = parser.getNodeFactory();
+        if (!(nodeFactory instanceof BindingNodeFactory))
+            parser.setNodeFactory(new BindingNodeFactory(nodeFactory));
+    }
+
     /** Construct BindingNodeFactory encapsulating original. */
     public BindingNodeFactory(NodeFactory inner) {
         this.inner = inner;

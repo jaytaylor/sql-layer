@@ -31,6 +31,7 @@ import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.optimizer.OptimizerTestBase;
 import com.akiban.sql.optimizer.rule.ASTStatementLoader;
 import com.akiban.sql.optimizer.rule.BaseRule;
+import com.akiban.sql.optimizer.rule.PlanContext;
 import com.akiban.sql.optimizer.rule.RulesTestContext;
 
 import com.akiban.sql.parser.DMLStatementNode;

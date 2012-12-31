@@ -150,15 +150,21 @@ public class GroupJoinFinder extends BaseRule
     // the top-level join.
     protected void moveInnerJoinConditions(Joinable joinable,
                                            ConditionList whereConditions) {
-        if (joinable.isInnerJoin()) {
+        if (joinable.isJoin()) {
             JoinNode join = (JoinNode)joinable;
-            ConditionList joinConditions = join.getJoinConditions();
-            if (joinConditions != null) {
-                whereConditions.addAll(joinConditions);
-                joinConditions.clear();
+            if (joinable.isInnerJoin()) {
+                ConditionList joinConditions = join.getJoinConditions();
+                if (joinConditions != null) {
+                    whereConditions.addAll(joinConditions);
+                    joinConditions.clear();
+                }
             }
-            moveInnerJoinConditions(join.getLeft(), whereConditions);
-            moveInnerJoinConditions(join.getRight(), whereConditions);
+            if (join.getJoinType() != JoinType.RIGHT) {
+                moveInnerJoinConditions(join.getLeft(), whereConditions);
+            }
+            if (join.getJoinType() != JoinType.LEFT) {
+                moveInnerJoinConditions(join.getRight(), whereConditions);
+            }
         }
     }
 
@@ -254,7 +260,7 @@ public class GroupJoinFinder extends BaseRule
         }
         joinables.clear();
         // Make order of groups predictable.
-        List<TableGroup> keys = new ArrayList(groups.keySet());
+        List<TableGroup> keys = new ArrayList<TableGroup>(groups.keySet());
         Collections.sort(keys, tableGroupComparator);
         for (TableGroup gkey : keys) {
             List<TableSource> group = groups.get(gkey);
@@ -649,6 +655,9 @@ public class GroupJoinFinder extends BaseRule
         Set<TableSource> required = new HashSet<TableSource>();
         getRequiredTables(joins, required);
         tree.setRequired(required);
+        for (TableGroupJoinNode node : root) {
+            node.getTable().setOutput(tree); // Instead of join that is going away.
+        }
         return tree;
     }
 

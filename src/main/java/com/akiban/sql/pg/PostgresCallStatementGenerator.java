@@ -26,9 +26,14 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.server.error.StalePlanException;
-import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.sql.parser.*;
+import com.akiban.sql.server.ServerCallInvocation;
+
+import com.akiban.sql.parser.CallStatementNode;
+import com.akiban.sql.parser.ParameterNode;
+import com.akiban.sql.parser.StatementNode;
+import com.akiban.sql.parser.StaticMethodCallNode;
+
+import com.akiban.server.explain.Explainable;
 
 import java.util.List;
 
@@ -42,37 +47,43 @@ public class PostgresCallStatementGenerator extends PostgresBaseStatementGenerat
     }
 
     @Override
-    public PostgresStatement generate(PostgresServerSession server,
-                                      StatementNode stmt,
-                                      List<ParameterNode> params, int[] paramTypes)
+    public PostgresStatement generateStub(PostgresServerSession server,
+                                          String sql, StatementNode stmt,
+                                          List<ParameterNode> params, int[] paramTypes)
     {
-        PostgresStatement statement = null;
-        if (stmt instanceof CallStatementNode) {
-            CallStatementNode call = (CallStatementNode)stmt;
-            StaticMethodCallNode methodCall = (StaticMethodCallNode)call.methodCall().getJavaValueNode();
-            String planName = methodCall.getMethodName();
-            Object[] args = null;
-            JavaValueNode[] margs = methodCall.getMethodParameters();
-            if (margs != null) {
-                args = new Object[margs.length];
-                for (int i = 0; i < margs.length; i++) {
-                    JavaValueNode marg = margs[i];
-                    if (marg instanceof SQLToJavaValueNode) {
-                        ValueNode sqlArg = ((SQLToJavaValueNode)marg).getSQLValueNode();
-                        if (sqlArg instanceof ConstantNode) {
-                            args[i] = ((ConstantNode)sqlArg).getValue();
-                            continue;
-                        }
-                    }
-                    throw new UnsupportedSQLException("CALL parameter must be constant",
-                                                      marg);
-                }
-            }
-            statement = PostgresLoadablePlan.statement(server, planName, args);
-            if (statement == null) {
-                throw new StalePlanException(planName);
-            }
+        if (!(stmt instanceof CallStatementNode))
+            return null;
+        CallStatementNode call = (CallStatementNode)stmt;
+        StaticMethodCallNode methodCall = (StaticMethodCallNode)call.methodCall().getJavaValueNode();
+        // This will signal error if undefined, so any special handling of
+        // non-AIS CALL statements needs to be tested by an earlier generator.
+        ServerCallInvocation invocation = ServerCallInvocation.of(server, methodCall);
+        final PostgresStatement pstmt;
+        switch (invocation.getCallingConvention()) {
+        case LOADABLE_PLAN:
+            pstmt = PostgresLoadablePlan.statement(server, invocation);
+            break;
+        default:
+            pstmt = PostgresJavaRoutine.statement(server, invocation,
+                                                  params, paramTypes);
         }
-        return statement;
+        // The above makes extensive use of the AIS. This doesn't fit well into the
+        // create and then init, so just mark with AIS now.
+        pstmt.setAISGeneration(server.getAIS().getGeneration());
+        return pstmt;
+    }
+
+    public static Explainable explainable(PostgresServerSession server,
+                                          CallStatementNode call, 
+                                          List<ParameterNode> params, int[] paramTypes) {
+        StaticMethodCallNode methodCall = (StaticMethodCallNode)call.methodCall().getJavaValueNode();
+        ServerCallInvocation invocation = ServerCallInvocation.of(server, methodCall);
+        switch (invocation.getCallingConvention()) {
+        case LOADABLE_PLAN:
+            return PostgresLoadablePlan.explainable(server, invocation);
+        default:
+            return PostgresJavaRoutine.explainable(server, invocation,
+                                                   params, paramTypes);
+        }
     }
 }

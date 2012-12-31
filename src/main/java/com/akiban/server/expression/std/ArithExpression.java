@@ -28,6 +28,12 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.error.InvalidParameterValueException;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Label;
+import com.akiban.server.explain.PrimitiveExplainer;
+import com.akiban.server.explain.Type;
+import com.akiban.server.explain.std.ExpressionExplainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
@@ -42,6 +48,8 @@ import com.akiban.util.ArgumentValidation;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Map;
+import org.joda.time.DateTimeZone;
 
 public class ArithExpression extends AbstractBinaryExpression
 {
@@ -85,13 +93,18 @@ public class ArithExpression extends AbstractBinaryExpression
         SUPPORTED_TYPES.put(AkType.INT, 11);
     }
     
-    public ArithExpression (Expression lhs, ArithOp op, Expression rhs, ExpressionType topT)
+    public ArithExpression (Expression lhs, ArithOp op, Expression rhs, ExpressionType leftType, ExpressionType rightType, ExpressionType resultT)
     {
         super(getTopType(lhs.valueType(), rhs.valueType(), op), lhs, rhs);
         this.op = op;
         this.topT = super.valueType();
-        assert this.topT == topT.getType() : "mismatched top type";
-        top = topT;
+        if ((resultT != null) && (resultT.getType() == topT))
+            top = resultT;
+        else
+            // Cases that don't match: 
+            // * operation on INTs is INT, vs. LONG.
+            // * tests don't supply expression types.
+            top = ExpressionTypes.newType(topT, DEFAULT_PRECISION, DEFAULT_SCALE);
     }
 
     public ArithExpression (Expression lhs, ArithOp op, Expression rhs)
@@ -123,7 +136,7 @@ public class ArithExpression extends AbstractBinaryExpression
     }
     
     @Override
-    protected void describe(StringBuilder sb)
+    public void describe(StringBuilder sb)
     {
         sb.append(op);
     }
@@ -256,7 +269,31 @@ public class ArithExpression extends AbstractBinaryExpression
     {
         return true;
     }
-
+    
+    @Override
+    public String name()
+    {
+        return op.toString();
+    }
+    
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        ExpressionExplainer explainer = new ExpressionExplainer(Type.BINARY_OPERATOR, name(), context, children());
+        if (op.isInfix())
+            if (name().equals("d"))
+            {
+                explainer.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance("/"));
+            }
+            else
+            {
+                explainer.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance(name()));
+            }
+        if (op.isAssociative())
+            explainer.addAttribute(Label.ASSOCIATIVE, PrimitiveExplainer.getInstance(true));
+        return explainer;
+    }
+    
     /**
      * this is to be overridden by sub-classes to return a more appropriate ValueSource
      * @param op
@@ -388,10 +425,10 @@ public class ArithExpression extends AbstractBinaryExpression
         {
             LongExtractor lEx = Extractors.getLongExtractor(left.getConversionType());
             LongExtractor rEx = Extractors.getLongExtractor(right.getConversionType());
-            long leftUnix = lEx.stdLongToUnix(lEx.getLong(left));
-            long rightUnix = rEx.stdLongToUnix(rEx.getLong(right));               
+            long leftUnix = lEx.stdLongToUnix(lEx.getLong(left), DateTimeZone.UTC);
+            long rightUnix = rEx.stdLongToUnix(rEx.getLong(right), DateTimeZone.UTC);               
             return Extractors.getLongExtractor(SUPPORTED_TYPES.get(pos)). 
-                    unixToStdLong(op.evaluate(leftUnix, rightUnix, top));
+                    unixToStdLong(op.evaluate(leftUnix, rightUnix, top), DateTimeZone.UTC);
         }
         
      
@@ -465,7 +502,7 @@ public class ArithExpression extends AbstractBinaryExpression
             return extract.getEncoded(ymd_hms);
         }
 
-        private static boolean vallidDayMonth (long y, long m, long d)
+        protected static boolean vallidDayMonth (long y, long m, long d)
         {
             switch ((int)m)
             {

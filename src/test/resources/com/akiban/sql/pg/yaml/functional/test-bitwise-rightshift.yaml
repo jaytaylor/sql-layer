@@ -1,5 +1,8 @@
 # Test the shiftright or >> function
 ---
+- Properties: sys-mysql
+- suppressed: true
+---
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
@@ -37,8 +40,8 @@
 #- output: [[4611686018427387903]]
 ---
 - Statement: SELECT RIGHTSHIFT(4,-2) from all_types;
-- output: [[16]]
+- output: [[0]]
 ---
 - Statement: SELECT RIGHTSHIFT(4,-3) from all_types;
-- output: [[32]]
+- output: [[0]]
 ... 

@@ -26,7 +26,7 @@
 
 package com.akiban.server.test.pt.qp;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
@@ -35,8 +35,6 @@ import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.store.PersistitStore;
 import com.akiban.util.tap.Tap;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,36 +53,36 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
         // Changes to parent.gid propagate to children hkeys.
         grandparent = createTable(
             "schema", "grandparent",
-            "gid int not null key",
-            "gid_copy int," +
-            "index(gid_copy)");
+            "gid int not null primary key",
+            "gid_copy int");
+        createIndex("schema", "grandparent", "idx_gid_copy", "gid_copy");
         parent = createTable(
             "schema", "parent",
-            "pid int not null key",
+            "pid int not null primary key",
             "gid int",
             "pid_copy int," +
-            "index(pid_copy)",
-            "constraint __akiban_pg foreign key __akiban_pg(gid) references grandparent(gid)");
+            "grouping foreign key(gid) references grandparent(gid)");
+        createIndex("schema", "parent", "idx_pid_copy", "pid_copy");
         child1 = createTable(
             "schema", "child1",
-            "cid1 int not null key",
+            "cid1 int not null primary key",
             "pid int",
             "cid1_copy int," +
-            "index(cid1_copy)",
-            "constraint __akiban_c1p foreign key __akiban_c1p(pid) references parent(pid)");
+            "grouping foreign key(pid) references parent(pid)");
+        createIndex("schema", "child1", "idx_cid1_copy", "cid1_copy");
         child2 = createTable(
             "schema", "child2",
-            "cid2 int not null key",
+            "cid2 int not null primary key",
             "pid int",
             "cid2_copy int," +
-            "index(cid2_copy)",
-            "constraint __akiban_c2p foreign key __akiban_c2p(pid) references parent(pid)");
-        schema = new Schema(rowDefCache().ais());
+            "grouping foreign key(pid) references parent(pid)");
+        createIndex("schema", "child2", "idx_cid2_copy", "cid2_copy");
+        schema = new Schema(ais());
         grandparentRowType = schema.userTableRowType(userTable(grandparent));
         parentRowType = schema.userTableRowType(userTable(parent));
         child1RowType = schema.userTableRowType(userTable(child1));
         child2RowType = schema.userTableRowType(userTable(child2));
-        group = groupTable(grandparent);
+        group = group(grandparent);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
         // The following is adapter from super.setUpProfiling. Leave taps disabled, they'll be enabled after loading
@@ -102,7 +100,7 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
     private RowType    parentRowType;
     private RowType    child1RowType;
     private RowType    child2RowType;
-    private GroupTable group;
+    private Group      group;
 
     protected void populateDB(final int grandparents, 
                               final int parentsPerGrandparent, 
@@ -159,10 +157,22 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                            new UpdateFunction()
                            {
                                @Override
+                               public boolean usePValues() {
+                                   return usingPValues();
+                               }
+
+                               @Override
                                public Row evaluate(Row original, QueryContext context)
                                {
                                    OverlayingRow updatedRow = new OverlayingRow(original);
-                                   updatedRow.overlay(1, original.eval(1).getInt() - 1000000);
+                                   long i;
+                                   if (usePValues()) {
+                                       i = original.pvalue(1).getInt64();
+                                   }
+                                   else {
+                                       i = getLong(original, 1);
+                                   }
+                                   updatedRow.overlay(1, i - 1000000);
                                    return updatedRow;
                                }
 
@@ -221,10 +231,22 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                            new UpdateFunction()
                            {
                                @Override
+                               public boolean usePValues() {
+                                   return usingPValues();
+                               }
+
+                               @Override
                                public Row evaluate(Row original, QueryContext context)
                                {
                                    OverlayingRow updatedRow = new OverlayingRow(original);
-                                   updatedRow.overlay(0, original.eval(0).getInt() - 1000000);
+                                   long i;
+                                   if (usePValues()) {
+                                       i = original.pvalue(0).getInt64();
+                                   }
+                                   else {
+                                       i = getLong(original, 0);
+                                   }
+                                   updatedRow.overlay(0, i - 1000000);
                                    return updatedRow;
                                }
 
@@ -239,10 +261,22 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                            new UpdateFunction()
                            {
                                @Override
+                               public boolean usePValues() {
+                                   return usingPValues();
+                               }
+
+                               @Override
                                public Row evaluate(Row original, QueryContext context)
                                {
                                    OverlayingRow updatedRow = new OverlayingRow(original);
-                                   updatedRow.overlay(0, original.eval(0).getInt() + 1000000);
+                                   long i;
+                                   if (usePValues()) {
+                                       i = original.pvalue(0).getInt64();
+                                   }
+                                   else {
+                                       i = getLong(original, 0);
+                                   }
+                                   updatedRow.overlay(0, i + 1000000);
                                    return updatedRow;
                                }
 

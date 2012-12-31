@@ -10,9 +10,9 @@
 ---
 - Statement: INSERT INTO t VALUES ('a1', 1, 1.0), ('a2', 2, 2.0)
 
----
-- Statement: SELECT CONCAT() FROM t
-- output: [[''], [''], [''], [''], ['']]
+#--- not a valid test. Types2 happens to allow this, but types3 doeesn't
+#- Statement: SELECT CONCAT() FROM t
+#- output: [[''], [''], [''], [''], ['']]
 
 ---
 - Statement: SELECT CONCAT(x, y), CONCAT(x, '-foo'), CONCAT(3, z) FROM t

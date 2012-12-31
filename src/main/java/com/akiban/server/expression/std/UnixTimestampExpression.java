@@ -29,7 +29,6 @@ package com.akiban.server.expression.std;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.expression.ExpressionComposer.NullTreating;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.TypesList;
@@ -60,12 +59,6 @@ public class UnixTimestampExpression extends AbstractCompositeExpression
         }
 
         @Override
-        public Expression compose(List<? extends Expression> arguments)
-        {
-            return new UnixTimestampExpression(arguments);
-        }
-
-        @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
             return new UnixTimestampExpression(arguments);
@@ -77,6 +70,11 @@ public class UnixTimestampExpression extends AbstractCompositeExpression
             return NullTreating.RETURN_NULL;
         }
     };
+
+    @Override
+    public String name() {
+        return "TIMESTAMP";
+    }
             
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
@@ -95,8 +93,8 @@ public class UnixTimestampExpression extends AbstractCompositeExpression
                     if (ts.isNull())
                         return NullValueSource.only();
                     
-                    long millis = ts.getTimestamp();
-                    valueHolder().putLong(millis <= 0L ? 0L : millis);
+                    long secs = ts.getTimestamp();
+                    valueHolder().putLong(secs <= 0L ? 0L : secs);
                     break;
                 case 0: // if called w/o argument, returns the current timestamp (similar to current_timestamp
                     valueHolder().putLong(new DateTime(queryContext().getCurrentDate()).getMillis() / 1000L);
@@ -116,7 +114,7 @@ public class UnixTimestampExpression extends AbstractCompositeExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("TIMESTAMP");
+        sb.append(name());
     }
 
     @Override

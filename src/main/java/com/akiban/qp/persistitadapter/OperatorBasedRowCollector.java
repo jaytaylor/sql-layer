@@ -33,29 +33,31 @@ import com.akiban.qp.operator.Limit;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.AisRowType;
-import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.*;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
+import com.akiban.server.api.FixedCountLimit;
+import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.api.dml.scan.PredicateLimit;
+import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.server.api.FixedCountLimit;
 import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.memcache.hprocessor.PredicateLimit;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.RowCollector;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.GrowableByteBuffer;
 import com.akiban.util.ShareHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.BufferOverflowException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.akiban.qp.operator.API.*;
@@ -220,10 +222,11 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             throw new IllegalArgumentException(String.format("start row def id: %s, end row def id: %s",
                                                              start.getRowDefId(), end.getRowDefId()));
         }
+        if(!rowDef.isUserTable()) {
+            throw new IllegalArgumentException("Must scan a UserTable: " + rowDef);
+        }
         OperatorBasedRowCollector rowCollector =
-            rowDef.isUserTable()
-            // HAPI query root table = predicate table
-            ? new OneTableRowCollector(config,
+              new OneTableRowCollector(config,
                                        session,
                                        store,
                                        rowDef,
@@ -232,19 +235,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                                        start,
                                        startColumns,
                                        end,
-                                       endColumns)
-            // HAPI query root table != predicate table
-            : new TwoTableRowCollector(config,
-                                       session,
-                                       store,
-                                       rowDef,
-                                       indexId,
-                                       scanFlags,
-                                       start,
-                                       startColumns,
-                                       end,
-                                       endColumns,
-                                       columnBitMap);
+                                       endColumns);
         boolean singleRow = (scanFlags & SCAN_FLAGS_SINGLE_ROW) != 0;
         boolean descending = (scanFlags & SCAN_FLAGS_DESCENDING) != 0;
         boolean deep = (scanFlags & SCAN_FLAGS_DEEP) != 0;
@@ -254,7 +245,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     
     protected OperatorBasedRowCollector(PersistitStore store, Session session, ConfigurationService config)
     {
-        this.schema = SchemaCache.globalSchema(store.getRowDefCache().ais());
+        this.schema = SchemaCache.globalSchema(store.getAIS(session));
         // Passing null to PersistitAdapter's TreeService argument. TreeService is only needed for sorting,
         // which OBRC doesn't use.
         this.adapter = new PersistitAdapter(schema, store, null, session, config);
@@ -282,26 +273,27 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         // Plan and query
         Limit limit = new PersistitRowLimit(scanLimit(scanLimit, singleRow));
         boolean useIndex = predicateIndex != null;
-        GroupTable groupTable = queryRootTable.getGroup().getGroupTable();
+        Group group = queryRootTable.getGroup();
         Operator plan;
         if (useIndex) {
-            Operator indexScan = indexScan_Default(predicateType.indexRowType(predicateIndex),
+            IndexRowType indexRowType = predicateType.indexRowType(predicateIndex).physicalRowType();
+            Operator indexScan = indexScan_Default(indexRowType,
                                                    descending,
                                                    indexKeyRange);
             plan = branchLookup_Default(indexScan,
-                    groupTable,
-                    predicateType.indexRowType(predicateIndex),
+                    group,
+                    indexRowType,
                     predicateType,
                     InputPreservationOption.DISCARD_INPUT,
                     limit);
         } else {
             assert !descending;
-            plan = groupScan_Default(groupTable);
+            plan = groupScan_Default(group);
             if (scanLimit != ScanLimit.NONE) {
                 if (scanLimit instanceof FixedCountLimit) {
-                    plan = limit_Default(plan, ((FixedCountLimit) scanLimit).getLimit());
+                    plan = limit_Default(plan, ((FixedCountLimit) scanLimit).getLimit(), usePVals);
                 } else if (scanLimit instanceof PredicateLimit) {
-                    plan = limit_Default(plan, ((PredicateLimit) scanLimit).getLimit());
+                    plan = limit_Default(plan, ((PredicateLimit) scanLimit).getLimit(), usePVals);
                 }
             }
         }
@@ -309,7 +301,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (queryRootType != predicateType) {
             List<UserTableRowType> ancestorTypes = ancestorTypes();
             if (!ancestorTypes.isEmpty()) {
-                plan = ancestorLookup_Default(plan, groupTable, predicateType, ancestorTypes, InputPreservationOption.KEEP_INPUT);
+                plan = ancestorLookup_Default(plan, group, predicateType, ancestorTypes, InputPreservationOption.KEEP_INPUT);
             }
         }
         // Get rid of everything above query root table.
@@ -324,7 +316,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             plan = filter_Default(plan, removeDescendentTypes(cutType, plan));
         }
         if (LOG.isInfoEnabled()) {
-            LOG.info("Execution plan:\n{}", plan.describePlan());
+            LOG.debug("Execution plan:\n{}", plan.describePlan());
         }
         this.operator = plan;
     }
@@ -430,6 +422,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     private int rowCount = 0;
     private ShareHolder<Row> currentRow = new ShareHolder<Row>();
     private boolean closed = true; // Not false, so that initial call to hasMore, prior to open, will proceed to call open.
+    private boolean usePVals = Types3Switch.ON;
 
 //    // inner class
 //    static class OpenInfoStruct {

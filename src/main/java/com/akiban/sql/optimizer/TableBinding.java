@@ -26,7 +26,7 @@
 
 package com.akiban.sql.optimizer;
 
-import com.akiban.ais.model.Table;
+import com.akiban.ais.model.Columnar;
 
 /**
  * A table binding: stored in the UserData of a FromBaseTable and
@@ -34,10 +34,10 @@ import com.akiban.ais.model.Table;
  */
 public class TableBinding 
 {
-    private Table table;
+    private Columnar table;
     private boolean nullable;
         
-    public TableBinding(Table table, boolean nullable) {
+    public TableBinding(Columnar table, boolean nullable) {
         this.table = table;
         this.nullable = nullable;
     }
@@ -46,7 +46,7 @@ public class TableBinding
         this.table = other.table;
     }
 
-    public Table getTable() {
+    public Columnar getTable() {
         return table;
     }
 

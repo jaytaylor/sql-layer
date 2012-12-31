@@ -31,13 +31,11 @@ import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.util.HKeyCache;
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.rowdata.RowDataValueSource;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.encoding.EncodingException;
+import com.akiban.server.rowdata.*;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.SparseArray;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
@@ -69,6 +67,15 @@ public class PersistitGroupRow extends AbstractRow
         FieldDef fieldDef = rowDef().getFieldDef(i);
         RowData rowData = rowData();
         RowDataValueSource valueSource = valueSource(i);
+        valueSource.bind(fieldDef, rowData);
+        return valueSource;
+    }
+
+    @Override
+    public PValueSource pvalue(int i) {
+        FieldDef fieldDef = rowDef().getFieldDef(i);
+        RowData rowData = rowData();
+        RowDataPValueSource valueSource = pValueSource(i);
         valueSource.bind(fieldDef, rowData);
         return valueSource;
     }
@@ -128,7 +135,8 @@ public class PersistitGroupRow extends AbstractRow
             try {
                 exception = null;
                 adapter.persistit().expandRowData(exchange, rowData);
-                row.setRowDef(rowData.getRowDefId(), adapter.persistit());
+                RowDef rowDef = adapter.schema().ais().getUserTable(rowData.getRowDefId()).rowDef();
+                row.setRowDef(rowDef);
                 row.setRowData(rowData);
                 PersistitHKey persistitHKey = persistitHKey();
                 persistitHKey.copyFrom(exchange.getKey());
@@ -181,7 +189,30 @@ public class PersistitGroupRow extends AbstractRow
 
     private RowDataValueSource valueSource(int i)
     {
+        if (valueSources == null) {
+            valueSources = new SparseArray<RowDataValueSource>()
+            {
+                @Override
+                protected RowDataValueSource initialValue()
+                {
+                    return new RowDataValueSource();
+                }
+            };
+        }
         return valueSources.get(i);
+    }
+
+    private RowDataPValueSource pValueSource(int i) {
+        if (pvalueSources == null) {
+            pvalueSources = new SparseArray<RowDataPValueSource>()
+            {
+                @Override
+                protected RowDataPValueSource initialValue() {
+                    return new RowDataPValueSource();
+                }
+            };
+        }
+        return pvalueSources.get(i);
     }
 
     // Class state
@@ -192,14 +223,8 @@ public class PersistitGroupRow extends AbstractRow
 
     // Object state
 
-    private final SparseArray<RowDataValueSource> valueSources = new SparseArray<RowDataValueSource>()
-    {
-        @Override
-        protected RowDataValueSource initialValue()
-        {
-            return new RowDataValueSource();
-        }
-    };
+    private SparseArray<RowDataValueSource> valueSources;
+    private SparseArray<RowDataPValueSource> pvalueSources;
     private final PersistitAdapter adapter;
     private RowData rowData;
     private LegacyRowWrapper row;

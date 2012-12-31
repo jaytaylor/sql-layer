@@ -27,15 +27,13 @@
 package com.akiban.ais.model.validation;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.TableNotInGroupException;
+
 /**
  * Validates that all tables belong to a group, 
  * All user tables should be in a group.
- * All group tables should belong to a group. 
  * @author tjoneslo
- *
  */
 class TablesInAGroup implements AISValidation {
 
@@ -45,12 +43,6 @@ class TablesInAGroup implements AISValidation {
             if (table.getGroup() == null) {
                 output.reportFailure(new AISValidationFailure (
                         new TableNotInGroupException (table.getName())));
-            }
-        }
-        for (GroupTable table : ais.getGroupTables().values()) {
-            if (table.getGroup() == null) {
-                output.reportFailure(new AISValidationFailure (
-                        new TableNotInGroupException(table.getName())));
             }
         }
     }

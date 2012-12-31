@@ -27,6 +27,7 @@
 package com.akiban.server.test.it.keyupdate;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.DuplicateKeyException;
 import com.akiban.server.store.statistics.IndexStatisticsService;
@@ -192,7 +193,7 @@ public final class IndexEntryCountIT extends ITBase {
         return possible.get(0);
     }
 
-    private String groupName() {
+    private TableName groupName() {
         return getUserTable(cId).getGroup().getName();
     }
 

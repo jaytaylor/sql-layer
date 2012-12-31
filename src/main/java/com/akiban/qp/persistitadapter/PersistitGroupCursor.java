@@ -26,11 +26,12 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.util.ShareHolder;
@@ -70,7 +71,7 @@ class PersistitGroupCursor implements GroupCursor
     {
         try {
             CursorLifecycle.checkIdle(this);
-            this.exchange = adapter.takeExchange(groupTable);
+            this.exchange = adapter.takeExchange(group);
             exchange.clear();
             groupScan =
                 hKey == null ? new FullScan() :
@@ -105,6 +106,12 @@ class PersistitGroupCursor implements GroupCursor
         } catch (InvalidOperationException e) {
             throw new PersistitAdapterException(e);
         }
+    }
+
+    @Override
+    public void jump(Row row, ColumnSelector columnSelector)
+    {
+        throw new UnsupportedOperationException(getClass().getName());
     }
 
     @Override
@@ -145,11 +152,11 @@ class PersistitGroupCursor implements GroupCursor
 
     // For use by this package
 
-    PersistitGroupCursor(PersistitAdapter adapter, GroupTable groupTable)
+    PersistitGroupCursor(PersistitAdapter adapter, Group group)
         throws PersistitException
     {
         this.adapter = adapter;
-        this.groupTable = groupTable;
+        this.group = group;
         this.row = new ShareHolder<PersistitGroupRow>(adapter.newGroupRow());
         this.controllingHKey = adapter.newKey();
         this.idle = true;
@@ -185,7 +192,7 @@ class PersistitGroupCursor implements GroupCursor
      */
 
     private final PersistitAdapter adapter;
-    private final GroupTable groupTable;
+    private final Group group;
     private final ShareHolder<PersistitGroupRow> row;
     private Exchange exchange;
     private Key controllingHKey;

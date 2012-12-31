@@ -51,6 +51,7 @@ import java.util.Formatter;
  */
 public class IntervalMatrixCreator {
 
+    // these time strings are picked in such a way that they couldn't possibly be a valid date string
     private static final String[] times = {
         "00:00:00",
         "00:00:01",
@@ -63,7 +64,7 @@ public class IntervalMatrixCreator {
         "01:00:00",
         "23:00:00",
         "23:59:59",
-        "17:07:23"
+        "17:27:23"
     };
 
     private static final String[] timeIntervals = {
@@ -197,10 +198,10 @@ public class IntervalMatrixCreator {
                     insertTimeInterval(out, period, negate);
                     out.append(" FROM times WHERE ind = ").append(index);
                     out.append("\n");
-                    out.append("- output: [['");
+                    out.append("- output: !select-engine { sys-mysql: [[null]], newtypes: [[null]], all: [['");
                     timeFormatter.printTo(
                         out, negate ? time.minus(period) : time.plus(period));
-                    out.append("']]\n");
+                    out.append("']] }\n");
                 }
                 index++;
             }

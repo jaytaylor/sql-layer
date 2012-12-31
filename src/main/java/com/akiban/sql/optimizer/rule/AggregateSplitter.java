@@ -30,12 +30,10 @@ import com.akiban.sql.optimizer.rule.AggregateMapper.AggregateSourceFinder;
 
 import com.akiban.server.error.UnsupportedSQLException;
 
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
-
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.AggregateSource.Implementation;
 
+import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,16 +82,32 @@ public class AggregateSplitter extends BaseRule
                 }
             }
         }
-        boolean distinct = checkDistinctDistincts(source);
-        // Another way to do this would be to have a different class
-        // for AggregateSource in the split-off state. Doing that
-        // would require replacing expression references to the old
-        // one as a ColumnSource.
+        
+        Object[] distinctOrderby = checkDistinctDistinctsAndOrderby(source);
         List<ExpressionNode> fields = source.splitOffProject();
         PlanNode input = source.getInput();
-        PlanNode ninput = new Project(input, fields);
-        if (distinct)
+        
+        // order-by and distinct cannot exist together for now
+        // so it's safe to do this:
+        //
+        // order by
+        List<OrderByExpression> orderBy = (List<OrderByExpression>)distinctOrderby[1];
+        PlanNode ninput;
+        
+        if (orderBy != null)
+        {
+            ninput = new Sort(input, orderBy);
+            ninput = new Project(ninput, fields);
+        }
+        // distinct
+        else if ((Boolean)distinctOrderby[0])
+        {
+            ninput = new Project(input, fields);
             ninput = new Distinct(ninput);
+        }
+        else
+            ninput = new Project(input, fields);
+        
         source.replaceInput(input, ninput);
     }
 
@@ -102,34 +116,64 @@ public class AggregateSplitter extends BaseRule
      * non-<code>DISTINCT</code> unless they are for the same
      * expression and unaffected by it.
      */
-    protected boolean checkDistinctDistincts(AggregateSource source) {
+    protected Object[] checkDistinctDistinctsAndOrderby(AggregateSource source) {
+      //  boolean orderBy = false;
+        boolean distinct = true;
+        
+        List<OrderByExpression> ret = null;
+        
         ExpressionNode operand = null;
         for (AggregateFunctionExpression aggregate : source.getAggregates()) {
             if (aggregate.isDistinct()) {
                 ExpressionNode other = aggregate.getOperand();
                 if (operand == null)
                     operand = other;
-                else if (!operand.equals(other))
+                else if (!matchExpressionNode(operand, other))
                     throw new UnsupportedSQLException("More than one DISTINCT",
                                                       other.getSQLsource());
             }
+            List<OrderByExpression> cur = aggregate.getOrderBy();
+            if (ret == null)
+                ret = cur;
+            else if (cur != null && !cur.equals(ret))
+                 throw new UnsupportedSQLException("Mix of ORDERY-BY ",
+                                                   aggregate.getSQLsource());
         }
         if (operand == null)
-            return false;
-        for (AggregateFunctionExpression aggregate : source.getAggregates()) {
-            if (!aggregate.isDistinct()) {
-                ExpressionNode other = aggregate.getOperand();
-                if (!operand.equals(other))
-                    throw new UnsupportedSQLException("Mix of DISTINCT and non-DISTINCT",
-                                                      operand.getSQLsource());
-                else if (!distinctDoesNotMatter(aggregate.getFunction()))
-                    throw new UnsupportedSQLException("Mix of DISTINCT and non-DISTINCT",
-                                                      other.getSQLsource());
+            distinct = false;
+        else
+            for (AggregateFunctionExpression aggregate : source.getAggregates()) {
+                if (!aggregate.isDistinct()) {
+                    ExpressionNode other = aggregate.getOperand();
+                    if (!matchExpressionNode(operand,other))
+                        throw new UnsupportedSQLException("Mix of DISTINCT and non-DISTINCT",
+                                                          operand.getSQLsource());
+                    else if (!distinctDoesNotMatter(aggregate.getFunction()))
+                        throw new UnsupportedSQLException("Mix of DISTINCT and non-DISTINCT",
+                                                          other.getSQLsource());
+                }
             }
-        }
-        return true;
+       
+        // both distinct and order-by are used, throw an error for now
+        if (ret != null && distinct)
+            throw new UnsupportedSQLException("Use of BOTH DISTINCT and ORDER-BY is not supported yet in" + source.getName());
+        return new Object[]{distinct, ret};
     }
 
+    protected boolean matchExpressionNode (ExpressionNode operand, ExpressionNode other) {
+        if (operand instanceof CastExpression) {
+            if (other instanceof CastExpression) {
+                return ((CastExpression)operand).getOperand().equals(((CastExpression)operand).getOperand());
+            }
+            return ((CastExpression)operand).getOperand().equals(other);
+        }
+        else if (other instanceof CastExpression) {
+            return ((CastExpression)other).getOperand().equals(operand);
+        }
+        else
+            return operand.equals(other);
+    }
+    
     protected boolean distinctDoesNotMatter(String aggregateFunction) {
         return ("MAX".equals(aggregateFunction) ||
                 "MIN".equals(aggregateFunction));
@@ -173,9 +217,7 @@ public class AggregateSplitter extends BaseRule
         if (!(input instanceof IndexScan))
             return false;
         IndexScan index = (IndexScan)input;
-        int nequals = 0;
-        if (index.getEqualityComparands() != null)
-            nequals = index.getEqualityComparands().size();
+        int nequals = index.getNEquality();
         List<Sort.OrderByExpression> ordering = index.getOrdering();
         // Get number of leading columns available for ordering. This
         // includes those tested for equality, which only have that
@@ -184,15 +226,24 @@ public class AggregateSplitter extends BaseRule
         AggregateFunctionExpression aggr1 = source.getAggregates().get(0);
         for (int i = 0; i < ncols; i++) {
             Sort.OrderByExpression orderBy = ordering.get(i);
+            if (orderBy.getExpression() == null) continue;
             if (orderBy.getExpression().equals(aggr1.getOperand())) {
                 if ((i == nequals) &&
                     (orderBy.isAscending() != aggr1.getFunction().equals("MIN"))) {
                     // Fetching the MAX of an ascending index (or MIN
-                    // or descending): reverse the scan to get it
+                    // of descending): reverse the scan to get it
                     // first.  (Order doesn't matter on the
                     // equalities, MIN and MAX are the same.)
                     for (Sort.OrderByExpression otherOtherBy : ordering) {
                         otherOtherBy.setAscending(!otherOtherBy.isAscending());
+                    }
+                }
+                if ((index instanceof SingleIndexScan) &&
+                    (index.getOrderEffectiveness() == IndexScan.OrderEffectiveness.NONE)) {
+                    SingleIndexScan sindex = (SingleIndexScan)index;
+                    if (sindex.getConditionRange() != null) {
+                        // Need to make sure index gets the right kind of merge.
+                        sindex.setOrderEffectiveness(IndexScan.OrderEffectiveness.FOR_MIN_MAX);
                     }
                 }
                 return true;

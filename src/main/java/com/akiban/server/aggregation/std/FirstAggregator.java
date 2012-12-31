@@ -83,9 +83,21 @@ public final class FirstAggregator implements Aggregator {
     // nested class
 
     private static final class InnerFactory implements AggregatorFactory {
+        
+        @Override
+        public Aggregator get(Object obj)
+        {
+            return get();
+        }
+
         @Override
         public Aggregator get() {
             return new FirstAggregator(type);
+        }
+
+        @Override
+        public String getName() {
+            return name;
         }
 
         @Override

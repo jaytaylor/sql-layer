@@ -26,11 +26,13 @@
 
 package com.akiban.ais.model;
 
+import com.akiban.ais.model.validation.AISInvariants;
+
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import com.akiban.ais.model.validation.AISInvariants;
 
 public class TableIndex extends Index
 {
@@ -47,6 +49,23 @@ public class TableIndex extends Index
         TableIndex index = new TableIndex(table, indexName, indexId, isUnique, constraint);
         table.addIndex(index);
         return index;
+    }
+
+    /**
+     * Create an independent copy of an existing TableIndex.
+     * @param table Destination Table.
+     * @param index TableIndex to to copy.
+     * @return The new copy of the TableIndex.
+     */
+    public static TableIndex create(Table table, TableIndex index)
+    {
+        TableIndex copy = create(table.getAIS(), table, index.getIndexName().getName(), index.getIndexId(),
+                                  index.isUnique(),
+                                  index.getConstraint());
+        if (index.getIndexMethod() == IndexMethod.Z_ORDER_LAT_LON) {
+            copy.markSpatial(index.firstSpatialArgument(), index.dimensions());
+        }
+        return copy;
     }
 
     public TableIndex(Table table, String indexName, Integer indexId, Boolean isUnique, String constraint)
@@ -77,10 +96,19 @@ public class TableIndex extends Index
         }
         // Add leafward-biased hkey fields not already included
         int indexColumnPosition = indexColumns.size();
-        hKeyColumns = new ArrayList<IndexColumn>();
+        List<IndexColumn> hKeyColumns = new ArrayList<IndexColumn>();
         HKey hKey = hKey();
         for (HKeySegment hKeySegment : hKey.segments()) {
-            Integer ordinal = ordinalMap.get(hKeySegment.table());
+            // TODO: ordinalMap is null if this function is called while marking an index as spatial.
+            // TODO: This is temporary, working on spatial indexes before DDL support. Once the parser
+            // TODO: supports spatial indexes, they'll be born as spatial, and we won't have to recompute
+            // TODO: field associations after the fact.
+            // By the way, it might actually safe to remove the reliance on ordinalMap and always get
+            // the ordinal from the rowdef.
+            Integer ordinal =
+                ordinalMap == null
+                ? hKeySegment.table().rowDef().getOrdinal()
+                : ordinalMap.get(hKeySegment.table());
             assert ordinal != null : hKeySegment.table();
             toHKeyBuilder.toHKeyEntry(ordinal, -1);
             for (HKeyColumn hKeyColumn : hKeySegment.columns()) {
@@ -104,6 +132,14 @@ public class TableIndex extends Index
         allColumns.addAll(hKeyColumns);
         indexRowComposition = toIndexRowBuilder.createIndexRowComposition();
         indexToHKey = toHKeyBuilder.createIndexToHKey();
+        uniqueAndMayContainNulls = false;
+        if (!isPrimaryKey() && isUnique()) {
+            for (IndexColumn indexColumn : getKeyColumns()) {
+                if (indexColumn.getColumn().getNullable()) {
+                    uniqueAndMayContainNulls = true;
+                }
+            }
+        }
     }
 
     @Override
@@ -121,6 +157,11 @@ public class TableIndex extends Index
         table.checkMutability();
     }
 
+    @Override
+    public Collection<Integer> getAllTableIDs() {
+        return Collections.singleton(table.getTableId());
+    }
+
     public Table getTable()
     {
         return table;
@@ -131,6 +172,12 @@ public class TableIndex extends Index
         return indexToHKey;
     }
 
+    @Override
+    public boolean isUniqueAndMayContainNulls()
+    {
+        return uniqueAndMayContainNulls;
+    }
+
     // For a user table index: the user table hkey
     // For a group table index: the hkey of the leafmost user table, but with user table columns replaced by
     // group table columns.
@@ -138,30 +185,13 @@ public class TableIndex extends Index
     public HKey hKey()
     {
         if (hKey == null) {
-            if (table.isUserTable()) {
-                hKey = ((UserTable) table).hKey();
-            } else {
-                // Find the user table corresponding to this index. Currently, the columns of a group table index all
-                // correspond to the same user table.
-                UserTable userTable = null;
-                for (IndexColumn indexColumn : getKeyColumns()) {
-                    Column userColumn = indexColumn.getColumn().getUserColumn();
-                    if (userTable == null) {
-                        userTable = (UserTable) userColumn.getTable();
-                    } else {
-                        assert userTable == userColumn.getTable();
-                    }
-                }
-                // Construct an hkey like userTable.hKey(), but with group columns replacing user columns.
-                assert userTable != null : this;
-                hKey = userTable.branchHKey();
-            }
+            hKey = ((UserTable) table).hKey();
         }
         return hKey;
     }
 
     private final Table table;
     private HKey hKey;
-    private List<IndexColumn> hKeyColumns;
     private IndexToHKey indexToHKey;
+    private boolean uniqueAndMayContainNulls;
 }

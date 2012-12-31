@@ -4,7 +4,7 @@ duplicate-parent: join between two parent-child joins
 
 in: IN condition
 
-inner-beneath-left: INNER join with conditions held away from WHERE
+inner-beneath-left: INNER group join beneath LEFT join still gets recognized
 
 join-across-subquery: group join in subquery expression
 

@@ -220,12 +220,11 @@ public final class HookableDMLFunctions implements DMLFunctions {
     }
 
     @Override
-    public NewRow convertRowData(RowData rowData) {
-        Session session = sessionService.createSession();
+    public NewRow wrapRowData(Session session, RowData rowData) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.CONVERT_ROW_DATA);
-            return delegate.convertRowData(rowData);
+            return delegate.wrapRowData(session, rowData);
         } catch (RuntimeException t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CONVERT_ROW_DATA, t);
@@ -235,21 +234,35 @@ public final class HookableDMLFunctions implements DMLFunctions {
             hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CONVERT_ROW_DATA, t);
             throw throwAlways(t);
         } finally {
-            try {
-                hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.CONVERT_ROW_DATA, thrown);
-            } finally {
-                session.close();
-            }
+            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.CONVERT_ROW_DATA, thrown);
         }
     }
 
     @Override
-    public List<NewRow> convertRowDatas(List<RowData> rowDatas) {
-        Session session = sessionService.createSession();
+    public NewRow convertRowData(Session session, RowData rowData) {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.CONVERT_ROW_DATA);
+            return delegate.convertRowData(session, rowData);
+        } catch (RuntimeException t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CONVERT_ROW_DATA, t);
+            throw t;
+        } catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CONVERT_ROW_DATA, t);
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.CONVERT_ROW_DATA, thrown);
+        }
+    }
+
+    @Override
+    public List<NewRow> convertRowDatas(Session session, List<RowData> rowDatas) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.CONVERT_ROW_DATAS);
-            return delegate.convertRowDatas(rowDatas);
+            return delegate.convertRowDatas(session, rowDatas);
         } catch (RuntimeException t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CONVERT_ROW_DATAS, t);
@@ -259,20 +272,16 @@ public final class HookableDMLFunctions implements DMLFunctions {
             hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.CONVERT_ROW_DATAS, t);
             throw throwAlways(t);
         } finally {
-            try {
-                hook.hookFunctionFinally(session, DXLFunction.CONVERT_ROW_DATAS, thrown);
-            } finally {
-                session.close();
-            }
+            hook.hookFunctionFinally(session, DXLFunction.CONVERT_ROW_DATAS, thrown);
         }
     }
 
     @Override
-    public Long writeRow(Session session, NewRow row) {
+    public void writeRow(Session session, NewRow row) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.WRITE_ROW);
-            return delegate.writeRow(session, row);
+            delegate.writeRow(session, row);
         } catch (RuntimeException t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.WRITE_ROW, t);
@@ -283,6 +292,25 @@ public final class HookableDMLFunctions implements DMLFunctions {
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.WRITE_ROW, thrown);
+        }
+    }
+
+    @Override
+    public void writeRows(Session session, List<RowData> rows) {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.WRITE_ROWS);
+            delegate.writeRows(session, rows);
+        } catch (RuntimeException t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.WRITE_ROWS, t);
+            throw t;
+        } catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.WRITE_ROWS, t);
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.WRITE_ROWS, thrown);
         }
     }
 

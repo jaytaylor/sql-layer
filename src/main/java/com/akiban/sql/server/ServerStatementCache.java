@@ -34,8 +34,8 @@ import java.util.Map;
  */
 public class ServerStatementCache<T extends ServerStatement>
 {
-    private Cache<T> cache;
-    private int hits, misses;
+    private final CacheCounters counters;
+    private final Cache<T> cache;
 
     static class Cache<T> extends LinkedHashMap<String,T> {
         private int capacity;
@@ -59,8 +59,9 @@ public class ServerStatementCache<T extends ServerStatement>
         }  
     }
 
-    public ServerStatementCache(int size) {
-        cache = new Cache<T>(size);
+    public ServerStatementCache(CacheCounters counters, int size) {
+        this.counters = counters;
+        this.cache = new Cache<T>(size);
     }
 
     public int getCapacity() {
@@ -75,9 +76,9 @@ public class ServerStatementCache<T extends ServerStatement>
     public synchronized T get(String sql) {
         T entry = cache.get(sql);
         if (entry != null)
-            hits++;
+            counters.incrementHits();
         else
-            misses++;
+            counters.incrementMisses();
         return entry;
     }
 
@@ -87,20 +88,11 @@ public class ServerStatementCache<T extends ServerStatement>
         cache.put(sql, stmt);
     }
 
-    public synchronized int getHits() {
-        return hits;
-    }
-    public synchronized int getMisses() {
-        return misses;
-    }
-
     public synchronized void invalidate() {
         cache.clear();
     }
 
     public synchronized void reset() {
         cache.clear();
-        hits = 0;
-        misses = 0;
     }
 }

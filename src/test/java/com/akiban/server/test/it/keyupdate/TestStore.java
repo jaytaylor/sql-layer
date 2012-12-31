@@ -26,6 +26,7 @@
 
 package com.akiban.server.test.it.keyupdate;
 
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
@@ -65,16 +66,17 @@ public class TestStore
         mainDelegate.updateRow(session,
                            oldRow.toRowData(),
                            newRow.toRowData(), // Not mergedRow. Rely on delegate to merge existing and new.
-                           columnSelector);
+                           columnSelector,
+                           null);
         TestRow currentRow = map.remove(oldRow.hKey());
         TestRow mergedRow = mergeRows(currentRow, newRow, columnSelector);
         map.put(mergedRow.hKey(), mergedRow);
     }
 
-    public void traverse(Session session, RowDef rowDef, TreeRecordVisitor testVisitor, TreeRecordVisitor realVisitor)
+    public void traverse(Session session, Group group, TreeRecordVisitor testVisitor, TreeRecordVisitor realVisitor)
         throws Exception
     {
-        persistitStore.traverse(session, rowDef, realVisitor);
+        persistitStore.traverse(session, group, realVisitor);
         for (Map.Entry<HKey, TestRow> entry : map.entrySet()) {
             testVisitor.visit(entry.getKey().objectArray(), entry.getValue());
         }
@@ -120,7 +122,7 @@ public class TestStore
             if (currentRow.getRowDef() != newRow.getRowDef()) {
                 throw new RuntimeException();
             }
-            mergedRow = new TestRow(newRow.getRowDef().getRowDefId(), currentRow.getStore());
+            mergedRow = new TestRow(newRow.getRowDef().getRowDefId(), newRow.getRowDef(), currentRow.getStore());
             int n = newRow.getRowDef().getFieldCount();
             for (int i = 0; i < n; i++) {
                 mergedRow.put(i, columnSelector.includesColumn(i) ? newRow.get(i) : currentRow.get(i));

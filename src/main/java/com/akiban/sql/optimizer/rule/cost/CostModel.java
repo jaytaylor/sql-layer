@@ -28,7 +28,6 @@ package com.akiban.sql.optimizer.rule.cost;
 
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.API;
 import com.akiban.qp.rowtype.*;
 
 import java.util.ArrayList;
@@ -37,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.akiban.sql.optimizer.rule.cost.CostModelMeasurements.*;
-import static java.lang.Math.round;
 
 public class CostModel
 {
@@ -107,9 +105,9 @@ public class CostModel
         return nRows * (SELECT_PER_ROW + EXPRESSION_PER_FIELD);
     }
 
-    public double project(RowType rowType, int nRows)
+    public double project(int nFields, int nRows)
     {
-        return nRows * (PROJECT_PER_ROW + rowType.nFields() * EXPRESSION_PER_FIELD);
+        return nRows * (PROJECT_PER_ROW + nFields * EXPRESSION_PER_FIELD);
     }
 
     public double distinct(int nRows)
@@ -135,6 +133,11 @@ public class CostModel
     public double intersect(int nLeftRows, int nRightRows)
     {
         return (nLeftRows + nRightRows) * INTERSECT_PER_ROW;
+    }
+
+    public double union(int nLeftRows, int nRightRows)
+    {
+        return (nLeftRows + nRightRows) * UNION_PER_ROW;
     }
 
     public double hKeyUnion(int nLeftRows, int nRightRows)

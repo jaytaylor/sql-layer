@@ -34,15 +34,12 @@ import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index.JoinType;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
 
-import com.akiban.util.Strings;
 import org.junit.Before;
 import org.junit.Ignore;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -93,6 +90,8 @@ public class OptimizerTestBase extends ASTTransformTestBase
     protected AkibanInformationSchema loadSchema(List<File> ddl) throws Exception {
         AkibanInformationSchema ais = parseSchema(ddl);
         binder = new AISBinder(ais, DEFAULT_SCHEMA);
+        if (!ais.getViews().isEmpty())
+            new TestBinderContext(parser, binder, typeComputer);
         return ais;
     }
 
@@ -100,9 +99,12 @@ public class OptimizerTestBase extends ASTTransformTestBase
         return loadSchema(Collections.singletonList(ddl));
     }
 
-    protected void loadView(File view) throws Exception {
-        String sql = fileContents(view);
-        binder.addView(new ViewDefinition(sql, parser));
+    protected static class TestBinderContext extends AISBinderContext {
+        public TestBinderContext(SQLParser parser, AISBinder binder, TypeComputer typeComputer) {
+            this.parser = parser;
+            this.defaultSchemaName = DEFAULT_SCHEMA;
+            setBinderAndTypeComputer(binder, typeComputer);
+        }
     }
 
 }

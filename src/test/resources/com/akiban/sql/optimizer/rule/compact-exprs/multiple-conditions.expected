@@ -6,5 +6,5 @@ SelectQuery@7297e3a5
           AncestorLookup@a7981d5(items -> [customers, orders, items])
             SingleIndexScan@2f3acc52(Index(test.items.sku[IndexColumn(sku)]), NONE, UNIONs of [NULL < % < 1234, 1234 < % ], rows = 19993, cost = 4.03440e+06)
             TableSource@3d2a416a(customers - TableGroup@12183272(customers))
-            TableSource@212cb585(orders - TableGroupJoin@3d3c33b7(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
-            TableSource@7e413fc6(items - TableGroupJoin@3b6752c9(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+            TableSource@212cb585(orders - TableGroupJoin@3d3c33b7(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+            TableSource@7e413fc6(items - TableGroupJoin@3b6752c9(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

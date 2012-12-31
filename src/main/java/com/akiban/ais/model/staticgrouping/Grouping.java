@@ -176,9 +176,9 @@ public final class Grouping
         // This is inefficient, but easy for now!
         // Eventually, we probably want to keep a map of tableName -> GroupTreeNode, so that we can get the node
         // in constant time and then just backtrack up to the parent.
-        String groupName = traverse(new GroupingVisitorStub<String>(){
-            private String found = null;
-            private String currentGroup;
+        TableName groupName = traverse(new GroupingVisitorStub<TableName>(){
+            private TableName found = null;
+            private TableName currentGroup;
 
             @Override
             public void visitGroup(Group group, TableName rootTable) {
@@ -201,7 +201,7 @@ public final class Grouping
             }
 
             @Override
-            public String end() {
+            public TableName end() {
                 return found;
             }
         });
@@ -226,7 +226,7 @@ public final class Grouping
         groups.put(group, GroupTreeNode.forRoot(tableName));
     }
 
-    void dropGroup(String groupName) {
+    void dropGroup(TableName groupName) {
         for (Map.Entry<Group,GroupTreeNode> entry : groups.entrySet()) {
             Group group = entry.getKey();
             GroupTreeNode node = entry.getValue();
@@ -240,7 +240,7 @@ public final class Grouping
         throw new IllegalArgumentException("group name not known taken: " + groupName);
     }
 
-    void checkGroupAvailability(String groupName) {
+    void checkGroupAvailability(TableName groupName) {
         for (Group group : groups.keySet()) {
             if (group.getGroupName().equals(groupName)) {
                 throw new IllegalStateException("group name already taken: " + group);
@@ -323,7 +323,7 @@ public final class Grouping
     }
 
     public Group newGroupFromChild(String newRootSchema, String newRootTable, String groupName) {
-        return newGroupFromChild(new TableName(newRootSchema, newRootTable), groupName);
+        return newGroupFromChild(new TableName(newRootSchema, newRootTable), new TableName(newRootSchema, groupName));
     }
 
     /**
@@ -333,7 +333,7 @@ public final class Grouping
      * @param groupName the new group's name
      * @return the new Group
      */
-    public Group newGroupFromChild(TableName newRoot, String groupName) {
+    public Group newGroupFromChild(TableName newRoot, TableName groupName) {
         GroupTreeNode childNode = findNode(newRoot);
         if (childNode == null) {
             throw new IllegalArgumentException("can't move promote " + newRoot + " to new group " + groupName
@@ -637,7 +637,7 @@ public final class Grouping
                 errors.add("null group name");
                 foundProblem = true;
             }
-            else if (group.getGroupName().trim().length() == 0) {
+            else if (group.getGroupName().getTableName().trim().length() == 0) {
                 errors.add("empty group name");
                 foundProblem = true;
             }

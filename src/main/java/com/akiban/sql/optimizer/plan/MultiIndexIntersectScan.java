@@ -31,8 +31,6 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.util.Strings;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public final class MultiIndexIntersectScan extends IndexScan {
@@ -153,8 +151,8 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
-    public int getPeggedCount() {
-        return outputScan.getPeggedCount();
+    public int getNEquality() {
+        return outputScan.getNEquality();
     }
 
     @Override
@@ -171,6 +169,21 @@ public final class MultiIndexIntersectScan extends IndexScan {
     @Override
     public List<IndexColumn> getIndexColumns() {
         return outputScan.getIndexColumns();
+    }
+
+    @Override
+    public int getNKeyColumns() {
+        return outputScan.getNKeyColumns();
+    }
+
+    @Override
+    public boolean usesAllColumns() {
+        return outputScan.usesAllColumns();
+    }
+
+    @Override
+    public void setUsesAllColumns(boolean usesAllColumns) {
+        outputScan.setUsesAllColumns(usesAllColumns);
     }
 
     @Override
@@ -207,8 +220,13 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
-    protected boolean isAscendingAt(int i) {
+    public boolean isAscendingAt(int i) {
         return outputScan.isAscendingAt(i);
+    }
+
+    @Override
+    public boolean isRecoverableAt(int i) {
+        return outputScan.isRecoverableAt(i);
     }
 
     @Override

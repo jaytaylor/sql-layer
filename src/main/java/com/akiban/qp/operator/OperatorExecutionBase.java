@@ -26,76 +26,59 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.Row;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.error.QueryCanceledException;
 
-public abstract class OperatorExecutionBase /* TODO: Temporary */ implements CursorBase<Row>
+public abstract class OperatorExecutionBase extends ExecutionBase implements RowOrientedCursorBase<Row>
 {
-    // TODO: Implementation of new cursor methods is temporary, so that I don't have to add them to
-    // TODO: all Cursor implementations before testing any of them.
-
-
     @Override
     public void destroy()
     {
-        assert false : this;
+        throw new UnsupportedOperationException(getClass().getName());
     }
 
     @Override
     public boolean isIdle()
     {
-        assert false : this;
-        return false;
+        throw new UnsupportedOperationException(getClass().getName());
     }
 
     @Override
     public boolean isActive()
     {
-        assert false : this;
-        return false;
+        throw new UnsupportedOperationException(getClass().getName());
     }
 
     @Override
     public boolean isDestroyed()
     {
-        assert false : this;
-        return false;
+        throw new UnsupportedOperationException(getClass().getName());
     }
 
     @Override
     public void open()
     {
-        assert false : this;
+        throw new UnsupportedOperationException(getClass().getName());
     }
 
     @Override
     public Row next()
     {
-        assert false : this;
-        return null;
+        throw new UnsupportedOperationException(getClass().getName());
+    }
+
+    @Override
+    public void jump(Row row, ColumnSelector columnSelector)
+    {
+        throw new UnsupportedOperationException(getClass().getName());
     }
 
     @Override
     public void close()
     {
-        assert false : this;
-    }
-
-    // Operators that implement cursors have a context at construction time
-    protected OperatorExecutionBase(QueryContext context)
-    {
-        this.context = context;
-    }
-
-    // Update operators don't get the context until later
-    protected OperatorExecutionBase()
-    {
-    }
-
-    protected void context(QueryContext context)
-    {
-        this.context = context;
+        throw new UnsupportedOperationException(getClass().getName());
     }
 
     protected void checkQueryCancelation()
@@ -108,13 +91,8 @@ public abstract class OperatorExecutionBase /* TODO: Temporary */ implements Cur
         }
     }
 
-    protected StoreAdapter adapter() {
-        return context.getStore();
+    protected OperatorExecutionBase(QueryContext context)
+    {
+        super(context);
     }
-    
-    protected StoreAdapter adapter (TableName name) {
-        return context.getStore(name);
-    }
-
-    protected QueryContext context;
 }

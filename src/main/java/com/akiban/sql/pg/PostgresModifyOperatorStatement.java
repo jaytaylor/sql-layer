@@ -26,66 +26,176 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.qp.exec.UpdatePlannable;
-import com.akiban.qp.exec.UpdateResult;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.Operator;
+import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
-import java.util.List;
 import java.io.IOException;
+import java.util.List;
 
-import com.akiban.server.service.session.Session;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
-
 /**
  * An SQL modifying DML statement transformed into an operator tree
  * @see PostgresOperatorCompiler
  */
-public class PostgresModifyOperatorStatement extends PostgresBaseStatement
+public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStatement
+                                             implements PostgresCursorGenerator<Cursor>
 {
     private String statementType;
-    private UpdatePlannable resultOperator;
+    private Operator resultOperator;
+    // Until fully initialized, play it safe by claiming to need isolation
+    private boolean requireStepIsolation = true;
+    private boolean outputResult;
+    private boolean putInCache = true;
 
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresBaseStatement: execute exclusive");
     private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresBaseStatement: acquire exclusive lock");
     private static final Logger LOG = LoggerFactory.getLogger(PostgresModifyOperatorStatement.class);
-        
-    public PostgresModifyOperatorStatement(String statementType,
-                                           UpdatePlannable resultOperator,
-                                           PostgresType[] parameterTypes) {
-        super(parameterTypes);
+
+    public PostgresModifyOperatorStatement(PostgresOperatorCompiler compiler) {
+        super(compiler);
+    }
+
+    public void init(String statementType,
+                     Operator resultsOperator,
+                     PostgresType[] parameterTypes,
+                     boolean usesPValues,
+                     boolean requireStepIsolation,
+                     boolean putInCache) {
+        super.init(parameterTypes, usesPValues);
+        this.statementType = statementType;
+        this.resultOperator = resultsOperator;
+        this.requireStepIsolation = requireStepIsolation;
+        outputResult = false;
+        this.putInCache = putInCache;
+    }
+    
+    public void init(String statementType,
+                     Operator resultOperator,
+                     RowType resultRowType,
+                     List<String> columnNames,
+                     List<PostgresType> columnTypes,
+                     PostgresType[] parameterTypes,
+                     boolean usesPValues,
+                     boolean requireStepIsolation,
+                     boolean putInCache) {
+        super.init(resultRowType, columnNames, columnTypes, parameterTypes, usesPValues);
         this.statementType = statementType;
         this.resultOperator = resultOperator;
+        this.requireStepIsolation = requireStepIsolation;
+        outputResult = true;
+        this.putInCache = putInCache;
+    }
+
+    @Override
+    public TransactionMode getTransactionMode() {
+        if (requireStepIsolation)
+            return TransactionMode.WRITE_STEP_ISOLATED;
+        else
+            return TransactionMode.WRITE;
+    }
+
+    @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        return TransactionAbortedMode.NOT_ALLOWED;
+    }
+
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.NOT_ALLOWED;
+    }
+
+    @Override
+    public boolean putInCache() {
+        return putInCache;
+    }
+
+    @Override
+    public boolean canSuspend(PostgresServerSession server) {
+        return false;           // See below.
+    }
+
+    @Override
+    public Cursor openCursor(PostgresQueryContext context) {
+        Cursor cursor = API.cursor(resultOperator, context);
+        cursor.open();
+        return cursor;
+    }
+
+    public void closeCursor(Cursor cursor) {
+        if (cursor != null) {
+            cursor.destroy();
+        }
     }
     
     @Override
-    public TransactionMode getTransactionMode() {
-        return TransactionMode.WRITE;
-    }
-
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
-        Session session = server.getSession();
-        final UpdateResult updateResult;
-        try {
-            lock(session, UNSPECIFIED_DML_WRITE);
-            updateResult = resultOperator.run(context);
-        } finally {
-            unlock(session, UNSPECIFIED_DML_WRITE);
+        boolean lockSuccess = false;
+        int rowsModified = 0;
+        if (resultOperator != null) {
+            Cursor cursor = null;
+            IOException exceptionDuringExecution = null;
+            try {
+                lock(context, DXLFunction.UNSPECIFIED_DML_WRITE);
+                lockSuccess = true;
+                cursor = openCursor(context);
+                PostgresOutputter<Row> outputter = null;
+                if (outputResult) {
+                    outputter = getRowOutputter(context);
+                }
+                Row row;
+                while ((row = cursor.next()) != null) {
+                    assert getResultRowType() == null || (row.rowType() == getResultRowType()) : row;
+                    if (outputResult) { 
+                        outputter.output(row, usesPValues());
+                    }
+                    rowsModified++;
+                    if ((maxrows > 0) && (rowsModified >= maxrows))
+                        // Note: do not allow suspending, since the
+                        // actual modifying and not just the generated
+                        // key output would be incomplete.
+                        outputResult = false;
+                }
+            }
+            catch (IOException e) {
+                exceptionDuringExecution = e;
+            }
+            finally {
+                RuntimeException exceptionDuringCleanup = null;
+                try {
+                    closeCursor(cursor);
+                }
+                catch (RuntimeException e) {
+                    exceptionDuringCleanup = e;
+                    LOG.error("Caught exception while cleaning up cursor for {0}", resultOperator.describePlan());
+                    LOG.error("Exception stack", e);
+                }
+                finally {
+                    unlock(context, DXLFunction.UNSPECIFIED_DML_WRITE, lockSuccess);
+                }
+                if (exceptionDuringExecution != null) {
+                    throw exceptionDuringExecution;
+                } else if (exceptionDuringCleanup != null) {
+                    throw exceptionDuringCleanup;
+                }
+            }
         }
-
-        LOG.debug("Statement: {}, result: {}", statementType, updateResult);
         
         messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
         //TODO: Find a way to extract InsertNode#statementToString() or equivalent
         if (statementType.equals("INSERT")) {
-            messenger.writeString(statementType + " 0 " + updateResult.rowsModified());
+            messenger.writeString(statementType + " 0 " + rowsModified);
         } else {
-            messenger.writeString(statementType + " " + updateResult.rowsModified());
+            messenger.writeString(statementType + " " + rowsModified);
         }
         messenger.sendMessage();
         return 0;

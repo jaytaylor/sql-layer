@@ -29,7 +29,6 @@ package com.akiban.qp.operator;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.rowdata.RowDef;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
@@ -44,10 +43,16 @@ public abstract class Operator implements Plannable
     @Override
     public String toString()
     {
-        return getClass().getSimpleName();
+        return getName();
     }
 
     // Operator interface
+
+    @Override
+    public String getName()
+    {
+        return getClass().getSimpleName();
+    }
 
     // I'm not sure I like having this as part of the interface. On one hand, operators like Flatten create new
     // RowTypes and it's handy to get access to those new RowTypes. On the other hand, not all operators do this,

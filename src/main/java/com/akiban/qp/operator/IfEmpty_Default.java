@@ -26,11 +26,22 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.types3.pvalue.PValueTargets;
+import com.akiban.server.types3.texpressions.TEvaluatableExpression;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.explain.Attributes;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Label;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.PrimitiveExplainer;
+import com.akiban.server.explain.Type;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -39,6 +50,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -98,7 +110,8 @@ class IfEmpty_Default extends Operator
         buffer.append(getClass().getSimpleName());
         buffer.append('(');
         boolean first = true;
-        for (Expression expression : expressions) {
+        List<?> toStringExpressions = (pExpressions != null) ? pExpressions : oExpressions;
+        for (Object expression : toStringExpressions) {
             if (first) {
                 first = false;
             } else {
@@ -145,16 +158,30 @@ class IfEmpty_Default extends Operator
     public IfEmpty_Default(Operator inputOperator,
                            RowType rowType,
                            List<? extends Expression> expressions,
+                           List<? extends TPreparedExpression> pExpressions,
                            API.InputPreservationOption inputPreservation)
     {
         ArgumentValidation.notNull("inputOperator", inputOperator);
         ArgumentValidation.notNull("rowType", rowType);
-        ArgumentValidation.notNull("expressions", expressions);
         ArgumentValidation.notNull("inputPreservation", inputPreservation);
-        ArgumentValidation.isEQ("rowType.nFields()", rowType.nFields(), "expressions.size()", expressions.size());
         this.inputOperator = inputOperator;
         this.rowType = rowType;
-        this.expressions = new ArrayList<Expression>(expressions);
+        List<?> validateExprs;
+        if (pExpressions != null) {
+            assert expressions == null : " expressions and pexpressions can't both be non-null";
+            this.pExpressions = new ArrayList<TPreparedExpression>(pExpressions);
+            this.oExpressions = null;
+            validateExprs = pExpressions;
+        }
+        else if (expressions != null) {
+            this.pExpressions = null;
+            this.oExpressions = new ArrayList<Expression>(expressions);
+            validateExprs = expressions;
+        }
+        else {
+            throw new IllegalArgumentException("both expressions lists are null");
+        }
+        ArgumentValidation.isEQ("rowType.nFields()", rowType.nFields(), "expressions.size()", validateExprs.size());
         this.inputPreservation = inputPreservation;
     }
 
@@ -168,8 +195,28 @@ class IfEmpty_Default extends Operator
 
     private final Operator inputOperator;
     private final RowType rowType;
-    private final List<Expression> expressions;
+    private final List<Expression> oExpressions;
+    private final List<TPreparedExpression> pExpressions;
     private final API.InputPreservationOption inputPreservation;
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        Attributes atts = new Attributes();
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
+        atts.put(Label.INPUT_TYPE, rowType.getExplainer(context));
+        if (pExpressions != null) {
+            for (TPreparedExpression ex : pExpressions)
+                atts.put(Label.OPERAND, ex.getExplainer(context));
+        }
+        else {
+            for (Expression ex : oExpressions)
+                atts.put(Label.OPERAND, ex.getExplainer(context));
+        }
+        atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(context));
+        atts.put(Label.INPUT_PRESERVATION, PrimitiveExplainer.getInstance(inputPreservation.toString()));
+        return new CompoundExplainer(Type.IF_EMPTY, atts);
+    }
 
     // Inner classes
 
@@ -250,8 +297,10 @@ class IfEmpty_Default extends Operator
         public void destroy()
         {
             input.destroy();
-            for (ExpressionEvaluation evaluation : evaluations) {
-                evaluation.destroy();
+            if (oEvaluations != null) {
+                for (ExpressionEvaluation evaluation : oEvaluations) {
+                    evaluation.destroy();
+                }
             }
         }
 
@@ -279,14 +328,20 @@ class IfEmpty_Default extends Operator
         {
             super(context);
             this.input = inputOperator.cursor(context);
-            if (expressions == null) {
-                this.evaluations = null;
-            } else {
-                this.evaluations = new ArrayList<ExpressionEvaluation>();
-                for (Expression outerJoinRowExpression : expressions) {
-                    ExpressionEvaluation eval = outerJoinRowExpression.evaluation();
-                    evaluations.add(eval);
+            if (pExpressions != null) {
+                this.oEvaluations = null;
+                this.pEvaluations = new ArrayList<TEvaluatableExpression>(pExpressions.size());
+                for (TPreparedExpression outerJoinRowExpressions : pExpressions) {
+                    TEvaluatableExpression eval = outerJoinRowExpressions.build();
+                    pEvaluations.add(eval);
                 }
+            } else {
+                this.oEvaluations = new ArrayList<ExpressionEvaluation>();
+                for (Expression outerJoinRowExpression : oExpressions) {
+                    ExpressionEvaluation eval = outerJoinRowExpression.evaluation();
+                    oEvaluations.add(eval);
+                }
+                this.pEvaluations = null;
             }
         }
 
@@ -296,10 +351,22 @@ class IfEmpty_Default extends Operator
         {
             ValuesHolderRow valuesHolderRow = unsharedEmptySubstitute().get();
             int nFields = rowType.nFields();
-            for (int i = 0; i < nFields; i++) {
-                ExpressionEvaluation outerJoinRowColumnEvaluation = evaluations.get(i);
-                outerJoinRowColumnEvaluation.of(context);
-                valuesHolderRow.holderAt(i).copyFrom(outerJoinRowColumnEvaluation.eval());
+            if (pEvaluations != null) {
+                for (int i = 0; i < nFields; i++) {
+                    TEvaluatableExpression outerJoinRowColumnEvaluation = pEvaluations.get(i);
+                    outerJoinRowColumnEvaluation.with(context);
+                    outerJoinRowColumnEvaluation.evaluate();
+                    PValueTargets.copyFrom(
+                            outerJoinRowColumnEvaluation.resultValue(),
+                            valuesHolderRow.pvalueAt(i));
+                }
+            }
+            else {
+                for (int i = 0; i < nFields; i++) {
+                    ExpressionEvaluation outerJoinRowColumnEvaluation = oEvaluations.get(i);
+                    outerJoinRowColumnEvaluation.of(context);
+                    valuesHolderRow.holderAt(i).copyFrom(outerJoinRowColumnEvaluation.eval());
+                }
             }
             return valuesHolderRow;
         }
@@ -307,7 +374,7 @@ class IfEmpty_Default extends Operator
         private ShareHolder<ValuesHolderRow> unsharedEmptySubstitute()
         {
             if (emptySubstitute.isEmpty() || emptySubstitute.isShared()) {
-                ValuesHolderRow valuesHolderRow = new ValuesHolderRow(rowType);
+                ValuesHolderRow valuesHolderRow = new ValuesHolderRow(rowType, pEvaluations != null);
                 emptySubstitute.hold(valuesHolderRow);
             }
             return emptySubstitute;
@@ -316,7 +383,8 @@ class IfEmpty_Default extends Operator
         // Object state
 
         private final Cursor input;
-        private final List<ExpressionEvaluation> evaluations;
+        private final List<ExpressionEvaluation> oEvaluations;
+        private final List<TEvaluatableExpression> pEvaluations;
         private final ShareHolder<ValuesHolderRow> emptySubstitute = new ShareHolder<ValuesHolderRow>();
         private boolean closed = true;
         private InputState inputState;

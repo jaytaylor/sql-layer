@@ -4,7 +4,7 @@
     <groupId>com.akiban</groupId>
     <artifactId>akiban-server</artifactId>
     <packaging>jar</packaging>
-    <version>1.2.2-SNAPSHOT</version>
+    <version>1.4.5-SNAPSHOT</version>
     <name>akiban-server</name>
     <properties>
         <!-- this is the default version number, hudson job sets this to the official number -->
@@ -35,7 +35,7 @@
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>1.8</version>
+            <version>1.11</version>
         </dependency>
         <dependency>
             <groupId>com.google.inject</groupId>
@@ -45,12 +45,17 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>11.0.1</version>
+            <version>13.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.google.inject.extensions</groupId>
             <artifactId>guice-grapher</artifactId>
             <version>3.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jgrapht</groupId>
+            <artifactId>jgrapht-jdk1.5</artifactId>
+            <version>0.7.3</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -59,87 +64,31 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.json</groupId>
-            <artifactId>json</artifactId>
-            <version>20090211</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.netty</groupId>
-            <artifactId>netty</artifactId>
-            <version>3.2.0.ALPHA4</version>
-        </dependency>
-        <dependency>
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr</artifactId>
-            <version>3.1.3</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
             <groupId>commons-cli</groupId>
             <artifactId>commons-cli</artifactId>
             <version>1.2</version>
         </dependency>
         <dependency>
-            <groupId>velocity</groupId>
-            <artifactId>velocity-dep</artifactId>
-            <version>1.4</version>
-        </dependency>
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>5.1.10</version>
-        </dependency>
-        <dependency>
             <groupId>com.akiban</groupId>
-            <artifactId>akiban-persistit-core</artifactId>
-            <version>3.1.0</version>
+            <artifactId>akiban-persistit</artifactId>
+            <version>3.2.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-sql-parser</artifactId>
-            <version>1.0.3-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>zookeeper</artifactId>
-            <version>3.3.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>javax.jms</groupId>
-                    <artifactId>jms</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.sun.jmx</groupId>
-                    <artifactId>jmxri</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.sun.jdmk</groupId>
-                    <artifactId>jmxtools</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.mortbay.jetty</groupId>
-            <artifactId>jetty-embedded</artifactId>
-            <version>6.1.14</version>
+            <version>1.0.13-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.6.1</version>
+            <version>1.6.6</version>
         </dependency>
         <dependency>
             <!-- TODO remove this once we get packaging under control, so that we can dynamically set the logger -->
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
-            <version>1.6.1</version>
+            <version>1.6.6</version>
             <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.thimbleware.jmemcached</groupId>
-            <artifactId>jmemcached-core</artifactId>
-            <version>0.9.1</version>
         </dependency>
         <dependency>
             <groupId>com.google.protobuf</groupId>
@@ -149,7 +98,7 @@
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-sql-parser</artifactId>
-            <version>1.0.3-SNAPSHOT</version>
+            <version>1.0.13-SNAPSHOT</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -162,7 +111,22 @@
         <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
-            <version>2.0</version>
+            <version>2.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ibm.icu</groupId>
+            <artifactId>icu4j</artifactId>
+            <version>49.1</version>
+        </dependency>
+        <dependency>
+             <groupId>com.google.code.gson</groupId>
+             <artifactId>gson</artifactId>
+             <version>2.2.2</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.7</version>
         </dependency>
     </dependencies>
     <build>
@@ -186,12 +150,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>2.4.3</version>
+                <version>2.6</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>2.2</version>
+                <version>2.4</version>
                 <executions>
                     <execution>
                         <goals>
@@ -203,7 +167,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>1.5</version>
+                <version>1.7</version>
                 <executions>
                     <execution>
                         <id>reserve-network-port</id>
@@ -224,7 +188,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.2</version>
+                <version>2.5.1</version>
                 <configuration>
                     <source>1.6</source>
                     <target>1.6</target>
@@ -233,7 +197,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>2.1.2</version>
+                <version>2.2.1</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -245,199 +209,180 @@
                 </executions>
             </plugin>
             <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.5.1</version>
                 <configuration>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                    <archive>
-                    <manifest>
-                        <mainClass>com.akiban.server.AkServer</mainClass>
-                    </manifest>
-                </archive>
-            </configuration>
-            <executions>
-                <execution>
-                    <id>make-assembly</id> <!-- This is used for inheritance merges ?? -->
-                    <phase>install</phase> <!-- Append to the install phase -->
-                    <goals>
-                        <goal>single</goal>
-                    </goals>
-                </execution>
-            </executions>
-        </plugin>
-        <plugin>
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr3-maven-plugin</artifactId>
-            <version>3.1.3-1</version>
-            <executions>
-                <execution>
-                    <goals>
-                        <goal>antlr</goal>
-                    </goals>
-                </execution>
-            </executions>
-        </plugin>
-        <plugin>
-            <groupId>com.atlassian.maven.plugins</groupId>
-            <artifactId>maven-clover2-plugin</artifactId>
-            <version>3.0.1</version>
-            <configuration>
-                <generateHistorical>true</generateHistorical>
-                <historyDir>/clover/history</historyDir>
-                <license>${clover.license}</license>
-                <generateXml>true</generateXml>
-            </configuration>
-        </plugin>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <version>2.11</version>
-            <configuration>
-                <systemPropertyVariables>
-                    <akserver.port>${akserver.port}</akserver.port>
-                    <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
-                </systemPropertyVariables>
-                <argLine>-Xmx512m -Xms128m ${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
-                <includes>
-                    <include>**/*Test.java</include>
-                    <include>**/*Test?.java</include>
-                </includes>
-                <excludes>
-                    <!-- None -->
-                </excludes>
-            </configuration>
-        </plugin>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-failsafe-plugin</artifactId>
-            <version>2.11</version>
-            <configuration>
-                <systemPropertyVariables>
-                    <akserver.port>${akserver.port}</akserver.port>
-                    <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
-                </systemPropertyVariables>
-                <argLine>${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
-            </configuration>
-            <executions>
-                <execution>
-                    <id>integration-test</id>
-                    <goals>
-                        <goal>integration-test</goal>
-                    </goals>
-                </execution>
-                <execution>
-                    <id>verify</id>
-                    <goals>
-                        <goal>verify</goal>
-                    </goals>
-                </execution>
-            </executions>
-        </plugin>
-        <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>findbugs-maven-plugin</artifactId>
-            <version>1.2</version>
-            <configuration>
-                <findbugsXmlOutput>true</findbugsXmlOutput>
-                <findbugsXmlWithMessages>true</findbugsXmlWithMessages>
-                <xmlOutput>true</xmlOutput>
-            </configuration>
-        </plugin>
-        <plugin>
-            <groupId>com.mycila.maven-license-plugin</groupId>
-            <artifactId>maven-license-plugin</artifactId>
-            <version>1.10.b1</version>
-            <configuration>
-                <header>src/etc/header.txt</header>
-                <strictCheck>true</strictCheck>
-                <failIfMissing>true</failIfMissing>
-                <excludes>
-                    <!-- General files that can't have or don't need header -->
-                    <exclude>**/*.ddl</exclude>
-                    <exclude>**/*.json</exclude>
-                    <exclude>**/*.sql</exclude>
-                    <exclude>**/*.expected</exclude>
-                    <exclude>**/*.error</exclude>
-                    <exclude>**/*.dat</exclude>
-                    <exclude>**/*.fail</exclude>
-                    <exclude>**/*.params</exclude>
-                    <exclude>**/*.test</exclude>
-                    <exclude>**/*.yaml</exclude>
-                    <exclude>**/*.yml</exclude>
-                    <exclude>**/group.idx</exclude>
-                    <exclude>src/test/bin/*.sh</exclude>
-                    <exclude>src/test/bin/*.cmd</exclude>
-                    <exclude>.idea/**</exclude>
-                    <exclude>**/*.proto</exclude>
-                    <exclude>.bzrignore</exclude>
-                    <exclude>velocity.log</exclude>
-                    <!-- No extension. Manually add header and ignore -->
-                    <exclude>bin/akserver</exclude>
-                    <exclude>bin/akloader</exclude>
-                    <exclude>conf/config/jvm.options</exclude>
-                    <exclude>packages-common/jvm.options</exclude>
-                    <exclude>doc/release_notes.txt</exclude>
-                    <exclude>src/main/antlr3/com/akiban/server/service/memcache/hapi.g</exclude>
-                    <!-- Files requiring a specific format (packaging control, test output, etc) -->
-                    <exclude>debian/*</exclude>
-                    <exclude>redhat/*</exclude>
-                    <exclude>windows/**</exclude>
-                    <exclude>LICENSE.txt</exclude>
-                    <exclude>src/main/resources/version/akserver_version</exclude> 
-                    <exclude>src/test/resources/com/akiban/**/README*</exclude> 
-                    <exclude>src/test/resources/com/akiban/**/*.properties</exclude>
-                    <exclude>src/test/resources/com/akiban/ais/model/staticgrouping/*</exclude>
-                    <exclude>src/main/resources/com/akiban/server/service/functions/functionpath.txt</exclude>
-                    <exclude>src/test/resources/com/akiban/server/service/functions/testfunctionpath.txt</exclude>
-                    <exclude>src/test/resources/com/akiban/server/service/servicemanager/configuration/yaml/test-composite.yaml.1</exclude>
-                </excludes>
-                <mapping>
-                    <g>JAVADOC_STYLE</g>
-                    <yml>SCRIPT_STYLE</yml>
-                </mapping>
-            </configuration>
-            <executions>
-                <execution>
-                    <goals>
-                        <goal>check</goal>
-                    </goals>
-                </execution>
-            </executions>
-        </plugin>
-        <!-- Earlier version of eclipse plugin to avoid resource filtering bug. 
+                    <excludeArtifactIds>junit,postgresql</excludeArtifactIds>
+                    <excludeTypes>test-jar</excludeTypes>
+                </configuration>
+                <executions>
+                    <execution>
+                      <id>copy-dependencies</id>
+                      <phase>package</phase>
+                      <goals>
+                          <goal>copy-dependencies</goal>
+                      </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.atlassian.maven.plugins</groupId>
+                <artifactId>maven-clover2-plugin</artifactId>
+                <version>3.0.1</version>
+                <configuration>
+                    <generateHistorical>true</generateHistorical>
+                    <historyDir>/clover/history</historyDir>
+                    <license>${clover.license}</license>
+                    <generateXml>true</generateXml>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.12.4</version>
+                <configuration>
+                    <systemPropertyVariables>
+                        <akserver.port>${akserver.port}</akserver.port>
+                        <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
+                    </systemPropertyVariables>
+                    <argLine>-Xmx512m ${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
+                    <includes>
+                        <include>**/*Test.java</include>
+                        <include>**/*Test?.java</include>
+                    </includes>
+                    <excludes>
+                        <!-- None -->
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>2.12.4</version>
+                <configuration>
+                    <systemPropertyVariables>
+                        <akserver.port>${akserver.port}</akserver.port>
+                        <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
+                    </systemPropertyVariables>
+                    <argLine>-Xmx512m ${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>integration-test</id>
+                        <goals>
+                            <goal>integration-test</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>verify</id>
+                        <goals>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>findbugs-maven-plugin</artifactId>
+                <version>2.5.2</version>
+                <configuration>
+                    <findbugsXmlOutput>true</findbugsXmlOutput>
+                    <findbugsXmlWithMessages>true</findbugsXmlWithMessages>
+                    <xmlOutput>true</xmlOutput>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.mycila.maven-license-plugin</groupId>
+                <artifactId>maven-license-plugin</artifactId>
+                <version>1.10.b1</version>
+                <configuration>
+                    <header>src/etc/header.txt</header>
+                    <strictCheck>true</strictCheck>
+                    <failIfMissing>true</failIfMissing>
+                    <excludes>
+                        <!-- General files that can't have or don't need header -->
+                        <exclude>**/*.ddl</exclude>
+                        <exclude>**/*.sql</exclude>
+                        <exclude>**/*.tag</exclude>
+                        <exclude>**/*.expected</exclude>
+                        <exclude>**/*.t3expected</exclude>
+                        <exclude>**/*.error</exclude>
+                        <exclude>**/*.dat</exclude>
+                        <exclude>**/*.fail</exclude>
+                        <exclude>**/*.params</exclude>
+                        <exclude>**/*.test</exclude>
+                        <exclude>**/*.yaml</exclude>
+                        <exclude>**/*.yml</exclude>
+                        <exclude>src/test/bin/*.sh</exclude>
+                        <exclude>src/test/bin/*.cmd</exclude>
+                        <exclude>.idea/**</exclude>
+                        <exclude>**/*.proto</exclude>
+                        <exclude>.bzrignore</exclude>
+                        <!-- No extension. Manually add header and ignore -->
+                        <exclude>bin/*</exclude>
+                        <exclude>conf/config/jvm.options</exclude>
+                        <exclude>**/jvm.options</exclude>
+                        <exclude>conf/config/jvm-options.cmd</exclude>
+                        <!-- Files requiring a specific format (packaging control, test output, etc) -->
+                        <exclude>debian/*</exclude>
+                        <exclude>redhat/*</exclude>
+                        <exclude>macosx/**</exclude>
+                        <exclude>windows/**</exclude>
+                        <exclude>build_installer.cmd</exclude>
+                        <exclude>**/LICENSE*.txt</exclude>
+                        <exclude>src/main/resources/version/akserver_version</exclude>
+                        <exclude>src/test/resources/com/akiban/**/README*</exclude>
+                        <exclude>src/test/resources/com/akiban/**/*.properties</exclude>
+                        <exclude>src/test/resources/com/akiban/ais/model/staticgrouping/*</exclude>
+                        <exclude>src/main/resources/com/akiban/server/service/functions/functionpath.txt</exclude>
+                        <exclude>src/test/resources/com/akiban/server/service/functions/testfunctionpath.txt</exclude>
+                        <exclude>src/test/resources/com/akiban/server/service/servicemanager/configuration/yaml/test-composite.yaml.1</exclude>
+                        <exclude>src/main/resources/com/akiban/server/types3/service/t3s.txt</exclude>
+                    </excludes>
+                    <mapping>
+                        <g>JAVADOC_STYLE</g>
+                        <yml>SCRIPT_STYLE</yml>
+                    </mapping>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Earlier version of eclipse plugin to avoid resource filtering bug. 
          (See http://stackoverflow.com/questions/1397903/setting-project-for-eclipse-using-maven)-->
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-eclipse-plugin</artifactId>
-            <version>2.6</version>
-        </plugin>
-
-        <plugin>
-            <artifactId>maven-antrun-plugin</artifactId>
-            <executions>
-                <execution>
-                    <id>protobuf-compile</id>
-                    <phase>generate-sources</phase>
-                    <configuration>
-                        <tasks>
-                            <mkdir dir="target/generated-sources/protobuf"/>
-                            <exec executable="protoc" failonerror="true">
-                                <arg value="--java_out=target/generated-sources/protobuf"/>
-                                <arg value="src/main/protobuf/akiban_information_schema.proto"/>
-                            </exec>
-                        </tasks>
-                        <sourceRoot>target/generated-sources</sourceRoot>
-                    </configuration>
-                    <goals>
-                        <goal>run</goal>
-                    </goals>
-                </execution>
-            </executions>
-        </plugin>
-
-
-    </plugins>
-</build>
-
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-eclipse-plugin</artifactId>
+                <version>2.6</version>
+            </plugin>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.7</version>
+                <executions>
+                    <execution>
+                        <id>protobuf-compile</id>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <target>
+                                <mkdir dir="target/generated-sources/protobuf"/>
+                                <exec executable="protoc" failonerror="true">
+                                    <arg value="--java_out=target/generated-sources/protobuf"/>
+                                    <arg value="src/main/protobuf/akiban_information_schema.proto"/>
+                                </exec>
+                            </target>
+                            <sourceRoot>target/generated-sources</sourceRoot>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

@@ -31,8 +31,9 @@ import com.akiban.server.types.ValueSourceException;
 import com.akiban.util.AkibanAppender;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
-final class ConversionHelperBigDecimal {
+public final class ConversionHelperBigDecimal {
 
     // "public" methods (though still only available within-package)
 
@@ -68,7 +69,25 @@ final class ConversionHelperBigDecimal {
 
 
     public static int fromObject(FieldDef fieldDef, BigDecimal value, byte[] dest, int offset) {
-        final String from = value.toPlainString();
+        final int declPrec = fieldDef.getTypeParameter1().intValue();
+        final int declScale = fieldDef.getTypeParameter2().intValue();
+
+        return fromObject(value, dest, offset, declPrec, declScale);
+    }
+
+    public static byte[] bytesFromObject(BigDecimal value, int declPrec, int declScale) {
+        final int declIntSize = calcBinSize(declPrec - declScale);
+        final int declFracSize = calcBinSize(declScale);
+
+        int size = declIntSize + declFracSize;
+        byte[] results = new byte[size];
+        fromObject(value, results, 0, declPrec, declScale);
+        return results;
+    }
+
+    private static int fromObject(BigDecimal value, byte[] dest, int offset, int declPrec, int declScale) {
+        final String from = normalizeToString(value, declPrec, declScale);
+
         final int mask = (from.charAt(0) == '-') ? -1 : 0;
         int fromOff = 0;
 
@@ -95,8 +114,6 @@ final class ConversionHelperBigDecimal {
         final int fracPart = fracCnt % DECIMAL_DIGIT_PER;
         final int intSize = calcBinSize(intCnt);
 
-        final int declPrec = fieldDef.getTypeParameter1().intValue();
-        final int declScale = fieldDef.getTypeParameter2().intValue();
         final int declIntSize = calcBinSize(declPrec - declScale);
         final int declFracSize = calcBinSize(declScale);
 
@@ -180,6 +197,41 @@ final class ConversionHelperBigDecimal {
         return declIntSize + declFracSize;
     }
 
+    static String normalizeToString(BigDecimal value, int declPrec, int declScale) {
+        // First, we have to turn the value into one that fits teh FieldDef's constraints.
+        final String from;
+        int valuePrec = value.precision();
+        int valueScale = value.scale();
+        assert valueScale >= 0 : value;
+        // MySQL sees "0.0123" as DECIMAL(4, 4). Java sees it as DECIMAL(3, 4). So, just do a simple conversion.
+        if (valuePrec < valueScale) {
+            valuePrec = valueScale;
+        }
+        int valueIntDigits = valuePrec - valueScale;
+        int declIntDigits = declPrec - declScale;
+        if (valueIntDigits > declIntDigits) {
+            // truncate to something like "99.999"
+            StringBuilder sb = new StringBuilder(declPrec+2); // one for minus sign, one for period
+            if (value.signum() < 0)
+                sb.append('-');
+            for (int i = declPrec; i > 0; --i) {
+                if (i == declScale)
+                    sb.append('.');
+                sb.append('9');
+            }
+            from = sb.toString();
+        }
+        else if (valueScale != declScale) {
+            // just truncate
+            BigDecimal rounded = value.setScale(declScale, RoundingMode.HALF_UP);
+            from = rounded.toPlainString();
+        }
+        else {
+            from = value.toPlainString();
+        }
+        return from;
+    }
+
     // for use within this package (for testing)
 
     /**
@@ -193,7 +245,7 @@ final class ConversionHelperBigDecimal {
      * @throws NumberFormatException if the parse failed; the exception's message will be the String that we
      * tried to parse
      */
-    static void decodeToString(byte[] from, int location, int precision, int scale, AkibanAppender appender) {
+    public static void decodeToString(byte[] from, int location, int precision, int scale, AkibanAppender appender) {
         final int intCount = precision - scale;
         final int intFull = intCount / DECIMAL_DIGIT_PER;
         final int intPartial = intCount % DECIMAL_DIGIT_PER;

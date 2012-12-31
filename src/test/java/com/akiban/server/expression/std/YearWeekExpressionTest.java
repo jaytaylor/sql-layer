@@ -28,7 +28,6 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.types.ValueSourceIsNullException;
 import java.util.EnumMap;
-import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -41,7 +40,7 @@ import static org.junit.Assert.*;
 
 public class YearWeekExpressionTest extends ComposedExpressionTestBase
 {
-    private static final EnumMap<AkType, String> TESTCASE_1 = new EnumMap(AkType.class);
+    private static final EnumMap<AkType, String> TESTCASE_1 = new EnumMap<AkType, String>(AkType.class);
     private static final int RESULT1[] = {200852, 200901, 200852, 200901, 200853, 200852, 200853, 200852};
     static
     {
@@ -50,7 +49,7 @@ public class YearWeekExpressionTest extends ComposedExpressionTestBase
         TESTCASE_1.put(AkType.TIMESTAMP, "2009-01-01 12:30: 45");
     }
     
-    private static final EnumMap<AkType, String> TESTCASE_2 = new EnumMap(AkType.class);
+    private static final EnumMap<AkType, String> TESTCASE_2 = new EnumMap<AkType, String>(AkType.class);
     private static final int RESULT2 = 201253;
     static
     {
@@ -59,7 +58,7 @@ public class YearWeekExpressionTest extends ComposedExpressionTestBase
         TESTCASE_2.put(AkType.TIMESTAMP, "2012-12-31 12:30: 45");
     }
     
-    private static final EnumMap<AkType, String> TESTCASE_3 = new EnumMap(AkType.class);
+    private static final EnumMap<AkType, String> TESTCASE_3 = new EnumMap<AkType, String>(AkType.class);
     private static final int RESULT3[] = {201119, 201118, 201119, 201118, 201119, 201118, 201119, 201118};
     static
     {

@@ -34,7 +34,7 @@ import com.akiban.util.ByteSource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public final class NullValueSource implements ValueSource {
+public final class NullValueSource extends ValueSource {
 
     public static ValueSource only() {
         return INSTANCE;

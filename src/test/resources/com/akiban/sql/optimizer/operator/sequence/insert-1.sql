@@ -1,0 +1,2 @@
+INSERT INTO customers (customer_id, customer_name, customer_title, primary_payment_code, payment_status, comment) 
+VALUES  (1, 'YLKDZIWHQHCHLMUZEVIWGCKBQKRUFBITCI', 'QUPGQ', 'CHRG', 'C', 'Lorem ipsum dolor')

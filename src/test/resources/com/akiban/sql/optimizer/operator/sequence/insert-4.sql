@@ -1,0 +1,1 @@
+insert into orders (customer_id) values (4), (6), (21)

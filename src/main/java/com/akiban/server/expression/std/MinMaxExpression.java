@@ -45,6 +45,11 @@ import java.util.List;
 /** Note: This isn't the <code>MAX</code> aggregate function, but its scalar cousin. */
 public class MinMaxExpression extends AbstractBinaryExpression
 {
+
+    @Override
+    public String name() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
     public static enum Operation { MIN, MAX }
     
     private final Operation operation;
@@ -102,7 +107,7 @@ public class MinMaxExpression extends AbstractBinaryExpression
         }
 
         @Override
-        protected Expression compose(Expression first, Expression second)
+        protected Expression compose(Expression first, Expression second, ExpressionType firstType, ExpressionType secondType, ExpressionType resultType)
         {
             return new MinMaxExpression(first, second, operation);
         }

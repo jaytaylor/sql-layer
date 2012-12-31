@@ -99,7 +99,7 @@ public class WeekDayNameExpressionTest extends ComposedExpressionTestBase
     @Test
     public void test ()
     {
-        Expression top = composer.compose(Arrays.asList(getExp(inputType, date)));
+        Expression top = compose(composer, Arrays.asList(getExp(inputType, date)));
         ValueSource source = top.evaluation().eval();
         
         assertEquals(outputType, top.valueType());

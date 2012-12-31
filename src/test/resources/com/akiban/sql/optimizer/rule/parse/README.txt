@@ -54,11 +54,25 @@ in-l1: IN with one literal
 
 in-l2: IN with two literals
 
+in-l2n: NOT IN
+
 in-l3: IN with three literals
+
+in-l101n: NOT IN with 101 literals
+
+in-lr: IN with row literals
+
+in-lrn: NOT IN
+
+in-lrr: IN with nested row literals
 
 in-2: IN with subquery
 
+in-2l: IN with subquery with LIMIT
+
 in-3: IN with aggregate subquery
+
+in-4: IN with row value subquery
 
 insert-1: from VALUES
 
@@ -68,7 +82,9 @@ insert-3l: too few columns
 
 insert-3g: too many columns
 
-insert-4: too few columns
+insert-4l: too few columns (allowed)
+
+insert-4g: too many columns
 
 joins-1: complex join tree
 

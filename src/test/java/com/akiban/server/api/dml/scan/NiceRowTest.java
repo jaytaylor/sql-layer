@@ -36,7 +36,6 @@ import java.util.TreeMap;
 
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.rowdata.SchemaFactory;
 import org.junit.Test;
 
@@ -145,6 +144,55 @@ public final class NiceRowTest {
         assertEquals("maps", mapOne, mapTwo);
     }
 
+    @Test
+    public void toRowDataOneByteUTF8() throws Exception {
+        final int BYTE_COUNT = 0x7F;
+        byte[] bytes = new byte[BYTE_COUNT];
+        for(int i = 0; i < BYTE_COUNT; ++i) {
+            bytes[i] = (byte)i;
+        }
+        String str = new String(bytes, "utf8");
+
+        String ddl = "create table test.t(id int not null primary key, v varchar(255) character set utf8)";
+        RowDef rowDef = SCHEMA_FACTORY.aisWithRowDefs(ddl).getTable("test", "t").rowDef();
+
+        Object[] objects = { 1L, str };
+        RowData rowData = create(rowDef, objects);
+        NewRow newRow = NiceRow.fromRowData(rowData, rowDef);
+
+        assertEquals("fields count", 2, newRow.getFields().size());
+        assertEquals("field[0]", 1L, newRow.get(0));
+        assertEquals("field[1]", str, newRow.get(1));
+        assertEquals("filed[1] charset", "utf8", rowDef.getFieldDef(1).column().getCharsetAndCollation().charset());
+
+        compareRowDatas(rowData, newRow.toRowData());
+    }
+
+    // bug1057016
+    @Test
+    public void toRowDataStringWithSurrogatePairs() throws Exception {
+        final String TEST_STR = "abc \ud83d\ude0d def";
+
+        assertEquals("string length", 10, TEST_STR.length());
+        assertEquals("char 4 high surrogate", true, Character.isHighSurrogate(TEST_STR.charAt(4)));
+        assertEquals("char 5 low surrogate", true, Character.isLowSurrogate(TEST_STR.charAt(5)));
+        assertEquals("utf8 byte length", 12, TEST_STR.getBytes("UTF-8").length);
+
+        String ddl = "create table test.t(id int not null primary key, v varchar(32) character set utf8)";
+        RowDef rowDef = SCHEMA_FACTORY.aisWithRowDefs(ddl).getTable("test", "t").rowDef();
+
+        Object[] objects = { 1L, TEST_STR };
+        RowData rowData = create(rowDef, objects);
+        NewRow newRow = NiceRow.fromRowData(rowData, rowDef);
+
+        assertEquals("fields count", 2, newRow.getFields().size());
+        assertEquals("field[0]", 1L, newRow.get(0));
+        assertEquals("field[1]", TEST_STR, newRow.get(1));
+        assertEquals("filed[1] charset", "utf8", rowDef.getFieldDef(1).column().getCharsetAndCollation().charset());
+
+        compareRowDatas(rowData, newRow.toRowData());
+    }
+
     private static byte[] bytes() {
         return new byte[1024];
     }
@@ -160,8 +208,7 @@ public final class NiceRowTest {
             ddl[i++] = String.format(", field_%s int", c);
         }
         ddl[i] = ");";
-        RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
-        return rowDefCache.getRowDef("test_schema", "test_table");
+        return SCHEMA_FACTORY.aisWithRowDefs(ddl).getTable("test_schema", "test_table").rowDef();
     }
 
     private RowData create(RowDef rowDef, Object[] objects) {

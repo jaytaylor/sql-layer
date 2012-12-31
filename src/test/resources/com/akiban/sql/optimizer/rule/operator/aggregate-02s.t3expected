@@ -1,0 +1,8 @@
+PhysicalSelect@bf4c346[name, _SQL_COL_1]
+  Project_Default(Field(0), Field(1))
+    Aggregate_Partial(GROUP BY 1 field: COUNT)
+      Project_Default(Field(1), 1)
+        Filter_Default(test.customers - test.orders)
+          Flatten_HKeyOrdered(test.customers INNER test.orders)
+            BranchLookup_Default(Index(test.customers.name) -> test.customers)
+              IndexScan_Default(Index(test.customers.name), name ASC, cid)

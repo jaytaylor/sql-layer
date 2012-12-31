@@ -206,12 +206,20 @@ public interface DMLFunctions {
     RowData convertNewRow(NewRow row);
 
     /**
+     * Wraps a RowData in a NewRow. This conversion requires a RowDef, which the caller may not have, but which
+     * implementers of this interface should.
+     * @param rowData the row to wrap
+     * @return a NewRow representation of the RowData
+     */
+    NewRow wrapRowData(Session session, RowData rowData);
+
+    /**
      * Converts a RowData to a NewRow. This conversion requires a RowDef, which the caller may not have, but which
      * implementers of this interface should.
      * @param rowData the row to convert
      * @return a NewRow representation of the RowData
      */
-    NewRow convertRowData(RowData rowData);
+    NewRow convertRowData(Session session, RowData rowData);
 
     /**
      * Converts several RowData objects at once. This is not just a convenience; it lets implementations of this
@@ -219,21 +227,19 @@ public interface DMLFunctions {
      * @param rowDatas the rows to convert
      * @return a List of NewRows, each of which is a converted RowData
      */
-    List<NewRow> convertRowDatas(List<RowData> rowDatas);
+    List<NewRow> convertRowDatas(Session session, List<RowData> rowDatas);
 
     /**
-     * Writes a row to the specified table. If the table contains an autoincrement column, and a value for that
-     * column is not specified, the generated value will be returned.
-     *
-     * <p><strong>Note:</strong> The chunkserver doesn't yet support autoincrement, so for now, this method
-     * will always return <tt>null</tt>. This is expected to change in the nearish future.</p>
+     * Writes a row to the specified table.
      * @param row the row to write
-     * @return the generated autoincrement value, or <tt>null</tt> if none was generated
-     * @throws PersistitException 
-     * @throws Exception 
-     * @throws NullPointerException if the given tableId or row are null
      */
-    Long writeRow(Session session, NewRow row);
+    void writeRow(Session session, NewRow row);
+
+    /**
+     * Write multiple rows to their associated tables.
+     * @param rows the rows to write
+     */
+    void writeRows(Session session, List<RowData> rows);
 
     /**
      * <p>Deletes a row, possibly cascading the deletion to its children rows.</p>

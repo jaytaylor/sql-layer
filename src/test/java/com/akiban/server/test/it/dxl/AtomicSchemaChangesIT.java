@@ -26,21 +26,18 @@
 
 package com.akiban.server.test.it.dxl;
 
-import com.akiban.ais.metamodel.io.MessageTarget;
-import com.akiban.ais.metamodel.io.Writer;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.server.error.UnsupportedIndexSizeException;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;
 import com.akiban.server.test.it.ITBase;
-import com.akiban.sql.parser.SQLParserException;
 import com.akiban.util.GrowableByteBuffer;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
-import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 import static junit.framework.Assert.*;
 
@@ -64,7 +61,6 @@ public class AtomicSchemaChangesIT extends ITBase
         checkInitialSchema();
     }
 
-    @Ignore("bug941657 - Invalid grouping foreign keys not handled")
     @Test
     public void tryFailValidation() throws Exception
     {
@@ -207,29 +203,29 @@ public class AtomicSchemaChangesIT extends ITBase
         }
     }
 
-    private AkibanInformationSchema ais()
-    {
-        return ddl().getAIS(session());
-    }
-
     private GrowableByteBuffer serialize(AkibanInformationSchema ais) throws Exception
     {
         GrowableByteBuffer buffer = new GrowableByteBuffer(BUFFER_SIZE);
-        new Writer(new MessageTarget(buffer)).save(ais);
+        new ProtobufWriter(buffer).save(ais);
         buffer.flip();
         return buffer;
     }
 
-    private Map<String, TableDefinition> createTableStatements(String schema) throws Exception
+    private Map<String, TableDefinition> createTableStatements(final String schema) throws Exception
     {
-        return serviceManager().getServiceByClass(SchemaManager.class).getTableDefinitions(session(), schema);
+        return transactionallyUnchecked(new Callable<Map<String, TableDefinition>>() {
+            @Override
+            public Map<String, TableDefinition> call() throws Exception {
+                return serviceManager().getServiceByClass(SchemaManager.class).getTableDefinitions(session(), schema);
+            }
+        });
     }
 
     private static final int BUFFER_SIZE = 100000; // 100K
     private static final String PARENT_DDL =
-        "create table `s`.`parent`(`pid` int NOT NULL, `filler` int, PRIMARY KEY(`pid`)) engine=akibandb";
+        "create table `s`.`parent`(`pid` int NOT NULL, `filler` int NULL, PRIMARY KEY(`pid`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
     private static final String CHILD_DDL =
-        "create table `s`.`child`(`cid` int NOT NULL, `pid` int, PRIMARY KEY(`cid`), "+
-            "CONSTRAINT `__akiban_cp` FOREIGN KEY `__akiban_cp`(`pid`) REFERENCES `parent`(`pid`)) engine=akibandb";
+        "create table `s`.`child`(`cid` int NOT NULL, `pid` int NULL, PRIMARY KEY(`cid`), "+
+            "CONSTRAINT `__akiban_cp` FOREIGN KEY `__akiban_cp`(`pid`) REFERENCES `parent`(`pid`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
     private GrowableByteBuffer expectedAIS;
 }

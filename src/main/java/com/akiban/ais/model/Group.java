@@ -31,23 +31,28 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.ais.model.validation.AISInvariants;
+import com.akiban.server.service.tree.TreeCache;
+import com.akiban.server.service.tree.TreeLink;
 
-public class Group implements Traversable
+public class Group implements Traversable, TreeLink
 {
-    public static Group create(AkibanInformationSchema ais, String groupName)
+    public static Group create(AkibanInformationSchema ais, String schemaName, String rootTableName)
     {
         ais.checkMutability();
+        AISInvariants.checkNullName(schemaName, "Group", "schemaName");
+        AISInvariants.checkNullName(rootTableName, "Group", "rootTableName");
+        TableName groupName = new TableName(schemaName, rootTableName);
         AISInvariants.checkDuplicateGroups(ais, groupName);
         Group group = new Group(groupName);
         ais.addGroup(group);
         return group;
     }
 
-    public Group(final String name)
+    private Group(TableName name)
     {
-        AISInvariants.checkNullName(name, "Group", "group name");
         this.name = name;
         this.indexMap = new HashMap<String, GroupIndex>();
     }
@@ -55,27 +60,27 @@ public class Group implements Traversable
     @Override
     public String toString()
     {
-        return "Group(" + name + " -> " + groupTable.getName() + ")";
+        return "Group(" + name + ")";
     }
 
-    public String getName()
+    public TableName getName()
     {
         return name;
     }
 
     public String getDescription()
     {
-        return name;
+        return name.toString();
     }
 
-    public GroupTable getGroupTable()
+    public void setRootTable(UserTable rootTable)
     {
-        return groupTable;
+        this.rootTable = rootTable;
     }
 
-    public void setGroupTable(GroupTable groupTable)
+    public UserTable getRoot()
     {
-        this.groupTable = groupTable;
+        return rootTable;
     }
 
     public Collection<GroupIndex> getIndexes()
@@ -123,7 +128,6 @@ public class Group implements Traversable
     public void addIndex(GroupIndex index)
     {
         indexMap.put(index.getIndexName().getName().toLowerCase(), index);
-        groupTable.addGroupIndex(index);
         GroupIndexHelper.actOnGroupIndexTables(index, GroupIndexHelper.ADD);
     }
 
@@ -131,7 +135,6 @@ public class Group implements Traversable
     {
         indexMap.values().removeAll(indexesToDrop);
         for (GroupIndex groupIndex : indexesToDrop) {
-            groupTable.removeGroupIndex(groupIndex);
             GroupIndexHelper.actOnGroupIndexTables(groupIndex, GroupIndexHelper.REMOVE);
         }
     }
@@ -152,13 +155,41 @@ public class Group implements Traversable
         }
     }
 
+    public void setTreeName(String treeName) {
+        this.treeName = treeName;
+    }
+
     private Map<String, GroupIndex> internalGetIndexMap() {
         return indexMap;
     }
 
+    // TreeLink
+
+    @Override
+    public String getSchemaName() {
+        return (rootTable != null) ? rootTable.getName().getSchemaName() : null;
+    }
+
+    @Override
+    public String getTreeName() {
+        return treeName;
+    }
+
+    @Override
+    public void setTreeCache(TreeCache cache) {
+        treeCache.set(cache);
+    }
+
+    @Override
+    public TreeCache getTreeCache() {
+        return treeCache.get();
+    }
+
     // State
 
-    private final String name;
-    private GroupTable groupTable;
+    private final TableName name;
     private final Map<String, GroupIndex> indexMap;
+    private final AtomicReference<TreeCache> treeCache = new AtomicReference<TreeCache>();
+    private String treeName;
+    private UserTable rootTable;
 }

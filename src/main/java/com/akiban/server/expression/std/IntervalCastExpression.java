@@ -26,21 +26,28 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.server.error.InvalidCharToNumException;
-import com.akiban.server.error.InvalidArgumentTypeException;
-import com.akiban.server.types.conversion.Converters;
+import com.akiban.qp.exec.Plannable;
 import com.akiban.server.error.InconvertibleTypesException;
-import com.akiban.server.types.extract.Extractors;
-import java.util.HashMap;
-import com.akiban.sql.types.TypeId;
+import com.akiban.server.error.InvalidArgumentTypeException;
+import com.akiban.server.error.InvalidCharToNumException;
 import com.akiban.server.error.InvalidIntervalFormatException;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Label;
+import com.akiban.server.explain.PrimitiveExplainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.NullValueSource;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types.extract.Extractors;
+import com.akiban.sql.types.TypeId;
 
 import static com.akiban.server.types.AkType.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class IntervalCastExpression extends AbstractUnaryExpression
 {
@@ -68,7 +75,7 @@ public class IntervalCastExpression extends AbstractUnaryExpression
         final AkType type;
     }
     
-    private static final HashMap<TypeId,EndPoint> ID_MAP = new HashMap();
+    private static final HashMap<TypeId,EndPoint> ID_MAP = new HashMap<TypeId,EndPoint>();
     static
     {
         ID_MAP.put(TypeId.INTERVAL_YEAR_ID, EndPoint.YEAR);
@@ -237,9 +244,17 @@ public class IntervalCastExpression extends AbstractUnaryExpression
             return ep;
     }
     @Override
-    protected String name() 
+    public String name() 
     {
         return "CAST_INTERVAL_" + endPoint;
+    }
+    
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        CompoundExplainer ex = super.getExplainer(context);
+        ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(endPoint.type.name()));
+        return ex;
     }
 
     @Override

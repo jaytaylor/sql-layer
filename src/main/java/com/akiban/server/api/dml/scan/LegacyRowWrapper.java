@@ -31,6 +31,7 @@ import com.akiban.server.rowdata.RowDataExtractor;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.DMLError;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.store.Store;
 
 import java.util.Map;
@@ -46,18 +47,17 @@ public final class LegacyRowWrapper extends NewRow
     // For when a LegacyRowWrapper is being reused, e.g. WriteRowRequest.
     public LegacyRowWrapper()
     {
-        this((RowDef) null);
+        this(null, null);
     }
 
     public LegacyRowWrapper(RowDef rowDef)
     {
-        super(rowDef);
-        setRowData(null);
+        this(rowDef, null);
     }
 
-    public LegacyRowWrapper(RowData rowData, Store store)
+    public LegacyRowWrapper(RowDef rowDef, RowData rowData)
     {
-        this(rowDef(rowData.getRowDefId(), store));
+        super(rowDef);
         setRowData(rowData);
     }
 
@@ -186,9 +186,9 @@ public final class LegacyRowWrapper extends NewRow
     }
 
     // Allows a LegacyRowWrapper to be used for a RowData acting as a container of rows of any type.
-    public void setRowDef(int rowDefId, Store store)
+    public void setRowDef(RowDef rowDef)
     {
-        rowDef = NewRow.rowDef(rowDefId, store);
+        this.rowDef = rowDef;
         niceRow = null;
     }
 

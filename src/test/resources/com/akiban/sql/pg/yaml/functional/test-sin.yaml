@@ -5,7 +5,7 @@
 # No args
 ---
 - Statement: SELECT SIN() FROM all_types
-- error: [4250C]
+- error: !select-engine { all: [4250C], sys-mysql: [1582] }
 
 # Null and standard numeric values
 ---
@@ -41,7 +41,8 @@
 ---
 - Statement: SELECT SIN(double_field), SIN(float_field), SIN(real_field)
     FROM all_types
-- output: [[NaN, NaN, NaN], [NaN, NaN, NaN], [NaN, NaN, NaN]]
+- output: !select-engine { all: [[NaN, NaN, NaN], [NaN, NaN, NaN], [NaN, NaN, NaN]],
+                           newtypes: [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]] }
 
 # Literal arg
 ---
@@ -57,5 +58,14 @@
 - Statement: SELECT SIN(?) FROM all_types
 - params: [[0.0], [1.0]]
 - output: [[0.0], [0.8414709848078965]]
+
+# varchar, bug893181
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (varchar_field) VALUES ('abc')
+---
+- Statement: SELECT SIN(varchar_field) FROM all_types
+- output: [[0.0]]
 
 ...

@@ -26,7 +26,7 @@
 
 package com.akiban.server.test.costmodel;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.StoreAdapter;
@@ -34,7 +34,7 @@ import com.akiban.qp.operator.TimeOperator;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.test.ExpressionGenerators;
 import org.junit.Test;
 
 import java.util.Random;
@@ -81,8 +81,8 @@ public class SortWithLimitCT extends CostModelBase
             "d int",
             "e int",
             "primary key(id)");
-        group = groupTable(t);
-        schema = new Schema(rowDefCache().ais());
+        group = group(t);
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         adapter = persistitAdapter(schema);
         queryContext = queryContext((PersistitAdapter) adapter);
@@ -110,7 +110,7 @@ public class SortWithLimitCT extends CostModelBase
         TimeOperator timeSetup = new TimeOperator(setup);
         Ordering ordering = ordering();
         for (int f = 0; f < sortFields; f++) {
-            ordering.append(Expressions.field(tRowType, f), true);
+            ordering.append(ExpressionGenerators.field(tRowType, f), true);
         }
         Operator sort = sort_InsertionLimited(timeSetup, tRowType, ordering, SortOption.PRESERVE_DUPLICATES, rows);
         long start = System.nanoTime();
@@ -136,7 +136,7 @@ public class SortWithLimitCT extends CostModelBase
 
     private final Random random = new Random();
     private int t;
-    private GroupTable group;
+    private Group group;
     private Schema schema;
     private RowType tRowType;
     private StoreAdapter adapter;

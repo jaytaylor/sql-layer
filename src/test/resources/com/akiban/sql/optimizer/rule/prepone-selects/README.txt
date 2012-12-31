@@ -17,10 +17,14 @@ cross-group: Push through cross-group join.
 
 in: Push through semi-join.
 
-multiple-table: Right after Flatten.
+multiple-table: Immediately after Flatten.
 
 multiple-table-2: Product conditions do not move currently because branch not accessible.
 
 multiple-table-3: Just indexes.
 
 multiple-table-in: Can be before the semi-join.
+
+collating-index: An index with with a non-recoverable key.
+
+outer-join: Only required tables of outer join Flatten.

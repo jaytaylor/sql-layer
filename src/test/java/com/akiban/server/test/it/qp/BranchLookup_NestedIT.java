@@ -26,7 +26,7 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
@@ -46,10 +46,9 @@ import static com.akiban.qp.operator.API.*;
 
 public class BranchLookup_NestedIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
-        // Don't call super.before(). This is a different schema from most operator ITs.
         r = createTable(
             "schema", "r",
             "rid int not null primary key",
@@ -76,7 +75,12 @@ public class BranchLookup_NestedIT extends OperatorITBase
             "cvalue varchar(20)",
             "grouping foreign key(rid) references r(rid)");
         createIndex("schema", "c", "cvalue", "cvalue");
-        schema = new Schema(rowDefCache().ais());
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
+        schema = new Schema(ais());
         rRowType = schema.userTableRowType(userTable(r));
         aRowType = schema.userTableRowType(userTable(a));
         bRowType = schema.userTableRowType(userTable(b));
@@ -85,7 +89,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
         aValueIndexRowType = indexType(a, "avalue");
         bValueIndexRowType = indexType(b, "bvalue");
         cValueIndexRowType = indexType(c, "cvalue");
-        rabc = groupTable(r);
+        rabc = group(r);
         db = new NewRow[]{createNewRow(r, 1L, "r1"),
                           createNewRow(r, 2L, "r2"),
                           createNewRow(a, 13L, 1L, "a13"),
@@ -424,5 +428,5 @@ public class BranchLookup_NestedIT extends OperatorITBase
     protected IndexRowType aValueIndexRowType;
     protected IndexRowType bValueIndexRowType;
     protected IndexRowType cValueIndexRowType;
-    protected GroupTable rabc;
+    protected Group rabc;
 }

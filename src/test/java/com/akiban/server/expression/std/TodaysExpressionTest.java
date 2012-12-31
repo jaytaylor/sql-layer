@@ -49,7 +49,7 @@ public class TodaysExpressionTest extends ComposedExpressionTestBase
     
     private void doTest (String date, Long expected)
     {
-        Expression top = ToDaysExpression.COMPOSER.compose(Arrays.asList( date == null
+        Expression top = compose(ToDaysExpression.COMPOSER, Arrays.asList( date == null
                 ? LiteralExpression.forNull()
                 : new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong(date))));
         

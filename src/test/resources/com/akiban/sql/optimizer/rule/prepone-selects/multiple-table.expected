@@ -7,4 +7,4 @@ SelectQuery@7862af46
             BranchLookup@371daf60(customers -> customers)
               SingleIndexScan@159576c3(Index(test.customers.PRIMARY[IndexColumn(cid)]), SORTED, rows = 100, cost = 28727.1)
               TableSource@745a936b(customers - TableGroup@45135cd9(customers))
-              TableSource@6684917a(addresses - TableGroupJoin@7a34cdfc(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(customers))))
+              TableSource@6684917a(addresses - TableGroupJoin@7a34cdfc(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))

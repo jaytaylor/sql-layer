@@ -66,7 +66,7 @@ public class IndexSizeTest {
     public void indexSizeTooLarge() {
         builder.index("test", "t1", "i1", true, Index.UNIQUE_KEY_CONSTRAINT);
         builder.indexColumn("test", "t1", "i1", "c2", 0, true, null);
-        builder.createGroup("t1", "test", "t1$t1");
+        builder.createGroup("t1", "test");
         builder.addTableToGroup("t1", "test", "t1");
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
@@ -82,7 +82,7 @@ public class IndexSizeTest {
     public void indexPrefixRejected() {
         builder.index("test", "t1", "i1", true, Index.UNIQUE_KEY_CONSTRAINT);
         builder.indexColumn("test", "t1", "i1", "c2", 0, true, 1024);
-        builder.createGroup("t1", "test", "t1$t1");
+        builder.createGroup("t1", "test");
         builder.addTableToGroup("t1", "test", "t1");
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
@@ -94,7 +94,7 @@ public class IndexSizeTest {
     
     @Test
     public void groupIndexTooLarge() {
-        builder.createGroup("t1", "test", "t1$t1");
+        builder.createGroup("t1", "test");
         builder.addTableToGroup("t1", "test", "t1");
         builder.groupIndex("t1", "i1", false, null);
         builder.groupIndexColumn("t1", "i1", "test", "t1", "c2", 0);
@@ -114,7 +114,7 @@ public class IndexSizeTest {
         builder.column("test", "t2", "c2", 1, "varchar", 2000L, 0L, false, false, null, null);
         builder.index("test", "t2", "PRIMARY", true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("test", "t2", "PRIMARY", "c2", 0, true, null);
-        builder.createGroup("t2", "test", "t2$t2");
+        builder.createGroup("t2", "test");
         builder.addTableToGroup("t2", "test", "t2");
 
         builder.basicSchemaIsComplete();
@@ -134,7 +134,7 @@ public class IndexSizeTest {
         builder.joinTables("t2/t1", "test", "t2", "test", "t1");
         builder.joinColumns("t2/t1", "test", "t2", "c2", "test", "t1", "c2");
         builder.basicSchemaIsComplete();
-        builder.createGroup("t3", "test", "t3");
+        builder.createGroup("t3", "test");
         builder.addJoinToGroup("t3", "t2/t1", 0);
         builder.groupingIsComplete();
         Collection<AISValidationFailure> failures = builder.akibanInformationSchema().validate(validations).failures();

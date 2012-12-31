@@ -26,14 +26,13 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
@@ -48,10 +47,8 @@ import static com.akiban.qp.operator.API.*;
 
 public class AncestorLookup_NestedIT extends OperatorITBase
 {
-    @Before
-    public void before()
-    {
-        // Don't call super.before(). This is a different schema from most operator ITs.
+    @Override
+    protected void setupCreateSchema() {
         r = createTable(
             "schema", "r",
             "rid int not null primary key",
@@ -78,7 +75,11 @@ public class AncestorLookup_NestedIT extends OperatorITBase
             "cvalue varchar(20)",
             "grouping foreign key (rid) references r(rid)");
         createIndex("schema", "c", "cvalue", "cvalue");
-        schema = new Schema(rowDefCache().ais());
+    }
+
+    @Override
+    protected void setupPostCreateSchema() {
+        schema = new Schema(ais());
         rRowType = schema.userTableRowType(userTable(r));
         aRowType = schema.userTableRowType(userTable(a));
         bRowType = schema.userTableRowType(userTable(b));
@@ -87,7 +88,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
         bValueIndexRowType = indexType(b, "bvalue");
         cValueIndexRowType = indexType(c, "cvalue");
         rValueIndexRowType = indexType(r, "rvalue");
-        rabc = groupTable(r);
+        rabc = group(r);
         db = new NewRow[]{createNewRow(r, 1L, "r1"),
                           createNewRow(r, 2L, "r2"),
                           createNewRow(a, 13L, 1L, "a13"),
@@ -354,5 +355,5 @@ public class AncestorLookup_NestedIT extends OperatorITBase
     protected IndexRowType bValueIndexRowType;
     protected IndexRowType cValueIndexRowType;
     protected IndexRowType rValueIndexRowType;
-    protected GroupTable rabc;
+    protected Group rabc;
 }

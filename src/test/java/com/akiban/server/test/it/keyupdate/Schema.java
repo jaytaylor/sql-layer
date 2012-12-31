@@ -26,6 +26,7 @@
 
 package com.akiban.server.test.it.keyupdate;
 
+import com.akiban.ais.model.Group;
 import com.akiban.server.rowdata.RowDef;
 
 public class Schema
@@ -39,7 +40,7 @@ public class Schema
     static RowDef orderRD;
     static Integer itemId;
     static RowDef itemRD;
-    static RowDef groupRD;
+    static Group group;
     // For KeyUpdateIT and KeyUpdateCascadingKeysIT
     static Integer v_vid;
     static Integer v_vx;

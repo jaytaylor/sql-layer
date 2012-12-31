@@ -28,15 +28,16 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.types.ValueSource;
+import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.types.FromObjectValueSource;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 
 public class NewRowBackedIndexRow implements RowBase
 {
@@ -60,14 +61,6 @@ public class NewRowBackedIndexRow implements RowBase
         }
     }
 
-    // BoundExpressions interface
-
-    @Override
-    public int compareTo(BoundExpressions row, int leftStartIndex, int rightStartIndex, int fieldCount)
-    {
-        throw new UnsupportedOperationException();
-    }
-
     // RowBase interface
 
     @Override
@@ -77,7 +70,7 @@ public class NewRowBackedIndexRow implements RowBase
 
     @Override
     public ValueSource eval(int i) {
-        FieldDef fieldDef = (FieldDef) index.getAllColumns().get(i).getColumn().getFieldDef();
+        FieldDef fieldDef = index.getAllColumns().get(i).getColumn().getFieldDef();
         int fieldPos = fieldDef.getFieldIndex();
         FromObjectValueSource source = sources[fieldPos];
         if (row.isColumnNull(fieldPos)) {
@@ -110,6 +103,25 @@ public class NewRowBackedIndexRow implements RowBase
 
     @Override
     public Row subRow(RowType subRowType)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public PValueSource pvalue(int i) {
+        FieldDef fieldDef = index.getAllColumns().get(i).getColumn().getFieldDef();
+        int fieldPos = fieldDef.getFieldIndex();
+        FromObjectValueSource source = sources[fieldPos];
+        if (row.isColumnNull(fieldPos)) {
+            source.setNull();
+        } else {
+            source.setReflectively(row.get(fieldPos));
+        }
+        return PValueSources.fromValueSource(source, rowType.typeInstanceAt(fieldPos));
+    }
+
+    @Override
+    public int compareTo(RowBase row, int leftStartIndex, int rightStartIndex, int fieldCount)
     {
         throw new UnsupportedOperationException();
     }

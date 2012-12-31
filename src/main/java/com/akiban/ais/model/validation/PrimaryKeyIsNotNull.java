@@ -45,6 +45,9 @@ class PrimaryKeyIsNotNull implements AISValidation {
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
         for (UserTable table : ais.getUserTables().values()) {
             PrimaryKey index = table.getPrimaryKeyIncludingInternal();
+            if(index == null) {
+                continue; // Checked by TableHasPrimaryKey
+            }
             for (Column column : index.getColumns()) {
                 if (column.getNullable()) {
                     output.reportFailure(new AISValidationFailure (

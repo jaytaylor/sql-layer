@@ -26,11 +26,15 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.ProductRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.std.NestedLoopsExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -39,6 +43,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -120,6 +125,12 @@ class Product_NestedLoops extends Operator
         return String.format("%s(%s x %s)", getClass().getSimpleName(), outerType, innerType);
     }
 
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        return new NestedLoopsExplainer(getName(), innerInputOperator, outerInputOperator, innerType, outerType, context);
+    }
+    
     // Operator interface
 
     @Override

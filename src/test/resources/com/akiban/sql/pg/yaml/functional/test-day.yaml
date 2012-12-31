@@ -9,7 +9,9 @@
 ---
 - Include: all-datetime-schema.yaml
 ---
-- Statement: select id,DAY(time_field),expected_DAY from datetime_matrix where DAY(time_field) is not null;
+- Statement: !select-engine { 
+              all: "select id,DAY(time_field),expected_DAY from datetime_matrix where DAY(time_field) is not null",
+         newtypes: "select id,DAY(time_field),expected_DAY from datetime_matrix where DAY(time_field) <> 0" }
 - row_count: 0
 ---
 - Statement: select id,DAY(timestamp_field),expected_DAY from datetime_matrix where DAY(timestamp_field) <> expected_DAY;

@@ -26,32 +26,66 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TPreptimeContext;
+import com.akiban.server.types3.texpressions.TValidatedScalar;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
+import com.akiban.util.SparseArray;
 
 import java.util.List;
 
 /** A call to a function.
  */
-public class FunctionExpression extends BaseExpression
+public class FunctionExpression extends BaseExpression implements ResolvableExpression<TValidatedScalar>
 {
     private String function;
     private List<ExpressionNode> operands;
-    
+    private TValidatedScalar overload;
+    private SparseArray<Object> preptimeValues;
+    private TPreptimeContext preptimeContext;
+
     public FunctionExpression(String function,
                               List<ExpressionNode> operands,
                               DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, AkType.NULL, sqlSource); // TODO
+        super(sqlType, sqlSource);
         this.function = function;
         this.operands = operands;
     }
-                              
+
+    @Override
     public String getFunction() {
         return function;
     }
     public List<ExpressionNode> getOperands() {
         return operands;
+    }
+
+    @Override
+    public void setResolved(TValidatedScalar resolved) {
+        this.overload = resolved;
+    }
+
+    @Override
+    public TValidatedScalar getResolved() {
+        return overload;
+    }
+
+    public SparseArray<Object> getPreptimeValues() {
+        return preptimeValues;
+    }
+
+    public void setPreptimeValues(SparseArray<Object> values) {
+        this.preptimeValues = values;
+    }
+
+    @Override
+    public TPreptimeContext getPreptimeContext() {
+        return preptimeContext;
+    }
+
+    @Override
+    public void setPreptimeContext(TPreptimeContext context) {
+        this.preptimeContext = context;
     }
 
     @Override

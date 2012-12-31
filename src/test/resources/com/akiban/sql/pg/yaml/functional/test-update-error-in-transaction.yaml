@@ -1,0 +1,66 @@
+#
+# Autocommit case
+#
+---
+- CreateTable: t1 (id INT NOT NULL PRIMARY KEY, x INT, UNIQUE(x));
+---
+- Statement: INSERT INTO t1 VALUES (1,10), (2,20), (5,50), (10,100)
+---
+- Statement: SELECT id FROM t1
+- output: [[1], [2], [5], [10]]
+---
+- Statement: SELECT x FROM t1
+- output: [[10], [20], [50], [100]]
+---
+- Statement: UPDATE t1 SET x=50 WHERE id=10;
+- error: [23501]
+---
+- Statement: SELECT id FROM t1
+- output: [[1], [2], [5], [10]]
+---
+- Statement: SELECT x FROM t1
+- output: [[10], [20], [50], [100]]
+---
+- DropTable: t1
+
+#
+# User transaction case
+#
+---
+- CreateTable: t1 (id INT NOT NULL PRIMARY KEY, x INT, UNIQUE(x));
+---
+- Statement: BEGIN
+---
+- Statement: INSERT INTO t1 VALUES (1,10), (2,20), (5,50), (10,100)
+---
+- Statement: SELECT id FROM t1
+- output: [[1], [2], [5], [10]]
+---
+- Statement: SELECT x FROM t1
+- output: [[10], [20], [50], [100]]
+---
+- Statement: COMMIT
+---
+- Statement: BEGIN
+---
+- Statement: UPDATE t1 SET x=50 WHERE id=10;
+- error: [23501]
+---
+- Statement: SELECT id FROM t1
+- error: [25P02]
+---
+- Statement: ROLLBACK
+---
+- Statement: BEGIN
+---
+- Statement: SELECT id FROM t1
+- output: [[1], [2], [5], [10]]
+---
+- Statement: SELECT x FROM t1
+- output: [[10], [20], [50], [100]]
+---
+- Statement: COMMIT
+---
+- DropTable: t1
+
+...

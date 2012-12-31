@@ -26,19 +26,12 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.sql.optimizer.rule.EquivalenceFinder;
-
 /** A SQL DELETE statement.
  */
 public class DeleteStatement extends BaseUpdateStatement
 {
     public DeleteStatement(PlanNode query, TableNode targetTable,
-                           EquivalenceFinder<ColumnExpression> columnEquivalencies) {
-        super(query, targetTable, columnEquivalencies);
-    }
-
-    @Override
-    public String summaryString() {
-        return super.summaryString() + "(" + getTargetTable() + ")";
+                            TableSource table) {
+        super(query, StatementType.DELETE, targetTable, table);
     }
 }

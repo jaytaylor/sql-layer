@@ -29,7 +29,6 @@ package com.akiban.sql.optimizer.rule.nocost;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.rule.range.ColumnRanges;
-import com.akiban.sql.optimizer.rule.range.RangeSegment;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
@@ -148,10 +147,14 @@ public class IndexGoal implements Comparator<IndexScan>
                 conditions.addAll(cs);
             }
         }
-            
-        if ((query instanceof UpdateStatement) ||
-            (query instanceof DeleteStatement))
-          updateTarget = ((BaseUpdateStatement)query).getTargetTable();
+        
+        if (query instanceof DMLStatement) {
+            DMLStatement stmt = (DMLStatement) query;
+            if (stmt.getType() == BaseUpdateStatement.StatementType.DELETE ||
+                    stmt.getType() == BaseUpdateStatement.StatementType.UPDATE) {
+                updateTarget = stmt.getTargetTable();
+            }
+        }
 
         requiredColumns = new RequiredColumns(tables);
         Collection<PlanNode> orderings = (ordering == null) ? 
@@ -261,11 +264,11 @@ public class IndexGoal implements Comparator<IndexScan>
     // Also, correct traversal order to match sort if possible.
     protected IndexScan.OrderEffectiveness determineOrderEffectiveness(SingleIndexScan index) {
         List<OrderByExpression> indexOrdering = index.getOrdering();
+        IndexScan.OrderEffectiveness result = IndexScan.OrderEffectiveness.NONE;
+        if (indexOrdering == null) return result;
         BitSet reverse = new BitSet(indexOrdering.size());
         List<ExpressionNode> equalityComparands = index.getEqualityComparands();
         int nequals = (equalityComparands == null) ? 0 : equalityComparands.size();
-        IndexScan.OrderEffectiveness result = IndexScan.OrderEffectiveness.NONE;
-        if (indexOrdering == null) return result;
         try_sorted:
         if (ordering != null) {
             int idx = nequals;
@@ -754,8 +757,10 @@ public class IndexGoal implements Comparator<IndexScan>
         }
 
         // Remove the columns we do have from the index.
-        for (ExpressionNode column : index.getColumns()) {
-            if (column instanceof ColumnExpression) {
+        int ncols = index.getColumns().size();
+        for (int i = 0; i < ncols; i++) {
+            ExpressionNode column = index.getColumns().get(i);
+            if ((column instanceof ColumnExpression) && index.isRecoverableAt(i)) {
                 requiredAfter.have((ColumnExpression)column);
             }
         }

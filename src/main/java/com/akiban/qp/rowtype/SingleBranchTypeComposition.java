@@ -28,7 +28,6 @@ package com.akiban.qp.rowtype;
 
 
 import com.akiban.ais.model.UserTable;
-import com.akiban.util.ArgumentValidation;
 
 import java.util.*;
 

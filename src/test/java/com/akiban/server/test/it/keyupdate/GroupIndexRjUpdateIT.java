@@ -28,7 +28,6 @@ package com.akiban.server.test.it.keyupdate;
 
 import com.akiban.ais.model.Index;
 import com.akiban.server.api.dml.scan.NewRow;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public final class GroupIndexRjUpdateIT extends GIUpdateITBase {

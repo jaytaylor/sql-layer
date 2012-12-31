@@ -31,13 +31,14 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.ProjectedRowType;
 import com.akiban.qp.rowtype.ProjectedUserTableRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.explain.*;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  <h1>Overview</h1>
@@ -84,9 +85,9 @@ class Project_Default extends Operator
     public String toString()
     {
         if (projectType.hasUserTable()) {
-            return String.format("project to table %s (%s)", projectType.userTable(), projections);
+            return String.format("project to table %s (%s)", projectType.userTable(), (pExpressions != null) ? pExpressions.toString() : projections.toString());
         } else {
-            return String.format("project(%s)", projections);
+            return String.format("project(%s)", (pExpressions != null) ? pExpressions.toString() : projections.toString());
         }
     }
 
@@ -114,9 +115,7 @@ class Project_Default extends Operator
     @Override
     public List<Operator> getInputOperators()
     {
-        List<Operator> result = new ArrayList<Operator>(1);
-        result.add(inputOperator);
-        return result;
+        return Collections.singletonList(inputOperator);
     }
 
     @Override
@@ -127,32 +126,50 @@ class Project_Default extends Operator
 
     // Project_Default interface
 
-    public Project_Default(Operator inputOperator, RowType rowType, List<? extends Expression> projections)
+    public Project_Default(Operator inputOperator, RowType rowType, List<? extends Expression> projections, List<? extends TPreparedExpression> pExpressions)
     {
         ArgumentValidation.notNull("rowType", rowType);
-        ArgumentValidation.notEmpty("projections", projections);
+        if (projections == null && pExpressions == null)
+            throw new IllegalArgumentException("either projections or pExpressions must be present");
+        if (projections == null)
+            ArgumentValidation.isGT("pExpressions.size()", pExpressions.size(), 0);
+        else if (pExpressions == null)
+            ArgumentValidation.isGT("projections.size()", projections.size(), 0);
+        else
+            throw new IllegalArgumentException("only one of projections or pExpressions must be present");
         this.inputOperator = inputOperator;
         this.rowType = rowType;
-        this.projections = new ArrayList<Expression>(projections);
-        projectType = rowType.schema().newProjectType(this.projections);
+        this.pExpressions = pExpressions;
+        this.tInstances = TInstance.createTInstances(pExpressions);
+        this.projections = projections;
+        this.projectType = rowType.schema().newProjectType(this.projections, pExpressions);
     }
-    
-    // Project_Default constructor, returns ProjectedUserTableRowType rows 
+
+    // Project_Default constructor, returns ProjectedUserTableRowType rows
     public Project_Default(Operator inputOperator, RowType inputRowType,
-            RowType projectTableRowType, List<? extends Expression> projections)
+            RowType projectTableRowType, List<? extends Expression> projections, List<? extends TPreparedExpression> pExpressions)
     {
         ArgumentValidation.notNull("inputRowType", inputRowType);
-        ArgumentValidation.notEmpty("projections", projections);
+        if (pExpressions != null)
+            ArgumentValidation.notEmpty("new projections", pExpressions);
+        else if (projections != null)
+            ArgumentValidation.notEmpty("new projections", projections);
+        else
+            throw new IllegalArgumentException("both expressions lists can't be null");
+        assert (projections == null) || (pExpressions == null) : "both expressions lists can't be non-null";
         
         this.inputOperator = inputOperator;
         this.rowType = inputRowType;
-        this.projections = new ArrayList<Expression>(projections);
+        this.projections = projections;
         
         ArgumentValidation.notNull("projectRowType", projectTableRowType);
         ArgumentValidation.isTrue("RowType has UserTable", projectTableRowType.hasUserTable());
         projectType = new ProjectedUserTableRowType(projectTableRowType.schema(),
                                                     projectTableRowType.userTable(),
-                                                    projections);
+                                                    projections,
+                                                    pExpressions);
+        this.pExpressions = pExpressions; // TODO defensively copy once the old expressions are gone (until then, this may NPE)
+        this.tInstances = TInstance.createTInstances(pExpressions);
     }
 
 
@@ -165,8 +182,28 @@ class Project_Default extends Operator
 
     protected final Operator inputOperator;
     protected final RowType rowType;
-    protected final List<Expression> projections;
+    protected final List<? extends Expression> projections;
+    private final List<? extends TPreparedExpression> pExpressions;
+    private final List<? extends TInstance> tInstances;
     protected ProjectedRowType projectType;
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        Attributes att = new Attributes();
+        
+        att.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
+        if (projectType.hasUserTable())
+            att.put(Label.PROJECT_OPTION, projectType.getExplainer(context));
+        att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(context));
+        if (projections != null)
+            for (Expression ex : projections)
+                att.put(Label.PROJECTION, ex.getExplainer(context));
+        else
+            for (TPreparedExpression ex : pExpressions)
+                att.put(Label.PROJECTION, ex.getExplainer(context));
+        return new CompoundExplainer(Type.PROJECT, att);
+    }
 
     // Inner classes
 
@@ -199,7 +236,7 @@ class Project_Default extends Operator
                 if ((inputRow = input.next()) != null) {
                     projectedRow =
                         inputRow.rowType() == rowType
-                        ? new ProjectedRow(projectType, inputRow, context, projections)
+                        ? new ProjectedRow(projectType, inputRow, context, projections, pExpressions, tInstances)
                         : inputRow;
                 }
                 if (projectedRow == null) {

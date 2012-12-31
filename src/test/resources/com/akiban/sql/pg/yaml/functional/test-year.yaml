@@ -16,15 +16,20 @@
 - Statement: SELECT YEAR(varchar_field) FROM all_types
 - output: [[null],[1], [20], [300],
            [1961], [2001], [3210], [9999],
-           [1234567], [null]]
+           !select-engine { all: [1234567], newtypes: [null] } , [null]]
 --- # MySQL does not return '1234567-00-00'
 - Statement: SELECT varchar_field FROM all_types
     WHERE YEAR(varchar_field) > YEAR('0100-01-01') order by CAST(varchar_field as date) asc
-- output: [['0300-03-30'],
-           ['1961-01-11'], ['2001-09-11'], ['3210-04-04'], ['9999-01-01'],['1234567-00-00']]
+- output: !select-engine { 
+    all: [['0300-03-30'], ['1961-01-11'], ['2001-09-11'], ['3210-04-04'], ['9999-01-01'],['1234567-00-00']],
+    newtypes: [['0300-03-30'], ['1961-01-11'], ['2001-09-11'], ['3210-04-04'], ['9999-01-01']]
+    }
 --- 
 - Statement: SELECT YEAR(varchar_field) > '100' FROM all_types where varchar_field <> 'abc' order by CAST(varchar_field as date) asc 
-- output: [[false],[false],[true],[true],[true],[true],[true],[true]]
+- output: !select-engine {
+    all: [[false],[false],[true],[true],[true],[true],[true],[true]],
+    newtypes: [[false],[false],[true],[true],[true],[true],[true],[null]]
+    }
 ---
 - Statement: SELECT varchar_field FROM all_types
     WHERE YEAR(varchar_field) <= ?

@@ -5,7 +5,7 @@
 # Test empty list
 ---
 - Statement: SELECT COALESCE() FROM all_types
-- error: [42000]
+- error: !select-engine { all: [42000], sys-mysql: [1064] }
 
 # Test mixed types
 ---
@@ -152,7 +152,7 @@
 
 # clob
 ---
-- CreateTable: clobs (x clob, y clob)
+- CreateTable: !select-engine { all: "clobs (x clob, y clob)", sys-mysql: "clobs (x text, y text)" } 
 ---
 - Statement: INSERT INTO clobs VALUES (null, null)
 ---
@@ -197,5 +197,41 @@
 - output: [[null], [!re '1961-01-01 08:30:00([.]0)?'],
     [!re '2002-02-02 14:20:22([.]0)?'],
     [!re '2003-03-03 17:18:19([.]0)?']]
+
+---
+- Statement: SELECT COALESCE(bigint_field, double_field, double_field) FROM all_types;
+- output_types: [DOUBLE]
+
+---
+- Statement: SELECT COALESCE(bigint_field, varchar_field, varchar_field) FROM all_types;
+- output_types: !select-engine { all: [BIGINT], sys-mysql: [VARCHAR] }
+
+---
+- Statement: SELECT COALESCE(bigint_field, date_field, date_field) FROM all_types;
+- output_types: !select-engine { all: [DATE], sys-mysql: [VARCHAR] }
+
+---
+- Statement: SELECT COALESCE(bigint_field, integer_field, date_field) FROM all_types;
+- output_types: !select-engine { all: [DATE], sys-mysql: [VARCHAR] }
+
+---
+- Statement: SELECT COALESCE(bigint_field, double_field, integer_field) FROM all_types;
+- output_types: [DOUBLE]
+
+---
+- Statement: SELECT COALESCE(bigint_field, integer_field, decimal_field) FROM all_types;
+- output_types: [NUMERIC]
+
+---
+- Statement: SELECT COALESCE(bigint_field, double_field, decimal_field) FROM all_types;
+- output_types: [DOUBLE]
+
+---
+- Statement: SELECT COALESCE(bigint_field, double_field, varchar_field) FROM all_types;
+- output_types: !select-engine { all: [DOUBLE], sys-mysql: [VARCHAR] }
+
+---
+- Statement: SELECT COALESCE(bigint_field, integer_field, smallint_field) FROM all_types;
+- output_types: [BIGINT]
 
 ...

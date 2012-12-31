@@ -30,6 +30,7 @@ import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
+import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 
@@ -41,11 +42,13 @@ public class ServerCostEstimator extends CostEstimator
 
     public ServerCostEstimator(ServerSession session,
                                ServerServiceRequirements reqs,
-                               ServerOperatorCompiler compiler) {
-        super(compiler);
+                               ServerOperatorCompiler compiler, KeyCreator keyCreator) {
+        super(compiler, keyCreator);
         this.session = session;
         indexStatistics = reqs.indexStatistics();
         scaleIndexStatistics = Boolean.parseBoolean(getProperty("scaleIndexStatistics", "true"));
+        if (reqs.config().testing())
+            warningsEnabled = false;
     }
 
     @Override

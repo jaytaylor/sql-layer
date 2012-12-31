@@ -3,15 +3,18 @@
 - Include: all-types-schema.yaml
 ---
 - Statement: SELECT (DATE('0001-01-01') - DATE('0000-01-01')) + DATE('2000-01-01');
-- output: [['2001-01-01']]
+- output: !select-engine { all: [['2001-01-01']],      # type2 does this a bit better (ie., the output is a DATE) 
+                           newtypes: [[2.0010101E7]] } # for type3, it'd just be DOUBLE
+- output_types: !select-engine { all: [DATE], newtypes: [DOUBLE] }
+---
+- Statement: SELECT TO_DAYS('0001-01-01 23:5959');
+- output: !select-engine { all: [[366]],           # parse-datetime behaves differently in types2, ==> The input is actually accepted
+                           newtypes: [[null]] }    # This, on the other hand, is not a valid datetime string in types3 (or mysql)
 ---
 - Statement: SELECT TO_DAYS(DATE('0001-01-01'));
 - output: [[366]]
 ---
 - Statement: SELECT TO_DAYS('1-01-01');
-- output: [[366]]
----
-- Statement: SELECT TO_DAYS('0001-01-01 23:5959');
 - output: [[366]]
 ---
 - Statement: SELECT TO_DAYS('0000-01-01');

@@ -26,24 +26,33 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.qp.operator.Operator;
+import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.exec.Plannable;
+import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.format.DefaultFormatter;
 
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
 
 /** Physical operator plan */
 public abstract class BasePlannable extends BasePlanNode
 {
     private Plannable plannable;
     private DataTypeDescriptor[] parameterTypes;
+    private List<PhysicalResultColumn> resultColumns;
+    private RowType rowType;
+
     
     protected BasePlannable(Plannable plannable,
-                            DataTypeDescriptor[] parameterTypes) {
+                            DataTypeDescriptor[] parameterTypes,
+                            RowType rowType,
+                            List<PhysicalResultColumn> resultColumns) {
         this.plannable = plannable;
         this.parameterTypes = parameterTypes;
+        this.rowType = rowType;
+        this.resultColumns = resultColumns;
     }
 
     public Plannable getPlannable() {
@@ -53,6 +62,14 @@ public abstract class BasePlannable extends BasePlanNode
         return parameterTypes;
     }
 
+    public RowType getResultRowType() {
+        return rowType;
+    }
+
+    public List<PhysicalResultColumn> getResultColumns() {
+        return resultColumns;
+    }
+
     public abstract boolean isUpdate();
 
     @Override
@@ -60,44 +77,32 @@ public abstract class BasePlannable extends BasePlanNode
         return v.visit(this);
     }
 
-
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
         // Do not copy operators.
     }
-
-    public List<String> explainPlan() {
-        List<String> result = new ArrayList<String>();
-        explainPlan(plannable, result, 0);
-        return result;
-    }
-
-    protected static void explainPlan(Plannable operator,
-                                      List<String> into, int depth) {
-            
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < depth; i++)
-            sb.append("  ");
-        sb.append(operator);
-        into.add(sb.toString());
-        for (Operator inputOperator : operator.getInputOperators()) {
-            explainPlan(inputOperator, into, depth+1);
-        }
-    }
     
-    @Override
-    public String summaryString() {
-        return withIndentedExplain(new StringBuilder(super.summaryString()));
+    public String explainToString(ExplainContext context, String defaultSchemaName) {
+        return withIndentedExplain(new StringBuilder(getClass().getSimpleName()), context, defaultSchemaName);
     }
 
     @Override
     public String toString() {
-        return withIndentedExplain(new StringBuilder(getClass().getSimpleName()));
+        return explainToString(null, null);
     }
 
-    protected String withIndentedExplain(StringBuilder str) {
-        for (String operator : explainPlan()) {
+    @Override
+    public String summaryString() {
+        // Similar to above, but with @hash for consistency.
+        return withIndentedExplain(new StringBuilder(super.summaryString()), null, null);
+    }
+
+    protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName) {
+        if (context == null)
+            context = new ExplainContext(); // Empty
+        DefaultFormatter f = new DefaultFormatter(defaultSchemaName, true);
+        for (String operator : f.format(plannable.getExplainer(context))) {
             str.append("\n  ");
             str.append(operator);
         }

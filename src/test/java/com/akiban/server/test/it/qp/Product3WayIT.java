@@ -26,7 +26,7 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
@@ -51,8 +51,8 @@ import static org.junit.Assert.assertTrue;
 
 public class Product3WayIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         // Don't call super.before(). This is a different schema from most operator ITs.
         r = createTable(
@@ -81,14 +81,19 @@ public class Product3WayIT extends OperatorITBase
             "cvalue varchar(20)",
             "grouping foreign key(rid) references r(rid)");
         createIndex("schema", "c", "cvalue", "cvalue");
-        schema = new Schema(rowDefCache().ais());
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
+        schema = new Schema(ais());
         rRowType = schema.userTableRowType(userTable(r));
         aRowType = schema.userTableRowType(userTable(a));
         bRowType = schema.userTableRowType(userTable(b));
         cRowType = schema.userTableRowType(userTable(c));
         aValueIndexRowType = indexType(a, "avalue");
         rValueIndexRowType = indexType(r, "rvalue");
-        rabc = groupTable(r);
+        rabc = group(r);
         db = new NewRow[]{createNewRow(r, 1L, "r1"),
                           createNewRow(r, 2L, "r2"),
                           createNewRow(a, 13L, 1L, "a13"),
@@ -331,5 +336,5 @@ public class Product3WayIT extends OperatorITBase
     protected UserTableRowType bRowType;
     protected IndexRowType aValueIndexRowType;
     protected IndexRowType rValueIndexRowType;
-    protected GroupTable rabc;
+    protected Group rabc;
 }

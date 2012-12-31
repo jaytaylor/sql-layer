@@ -41,9 +41,21 @@ public interface ServerStatement
         READ,                   // New read only or existing allowed.
         WRITE,                  // New or existing read write allowed.
         REQUIRED,               // Must have transaction: read only okay.
-        REQUIRED_WRITE          // Must have read write transaction.
+        REQUIRED_WRITE,         // Must have read write transaction.
+        WRITE_STEP_ISOLATED     // Existing write must use step isolation.
     };
 
-    public TransactionMode getTransactionMode();
+    public enum TransactionAbortedMode {
+        ALLOWED,                // Statement always allowed
+        NOT_ALLOWED,            // Statement never allowed
+    }
 
+    public enum AISGenerationMode {
+        ALLOWED,               // Statement can be used under any generation
+        NOT_ALLOWED            // Statement can only be used under one generation
+    }
+
+    public TransactionMode getTransactionMode();
+    public TransactionAbortedMode getTransactionAbortedMode();
+    public AISGenerationMode getAISGenerationMode();
 }

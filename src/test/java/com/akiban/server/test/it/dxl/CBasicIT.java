@@ -44,6 +44,7 @@ import com.akiban.server.error.TableDefinitionMismatchException;
 import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.error.NoRowsUpdatedException;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.GrowableByteBuffer;
 import org.junit.Test;
 
@@ -136,10 +137,10 @@ public final class CBasicIT extends ITBase {
         assertEquals("rows scanned", 3, rows.size());
 
         List<NewRow> expectedRows = new ArrayList<NewRow>();
-        NiceRow r;
-        r = new NiceRow(tableId, store()); r.put(0, 11L); r.put(7, 18L); r.put(8, 19L); expectedRows.add(r);
-        r = new NiceRow(tableId, store()); r.put(0, 21L); r.put(7, 28L); r.put(8, 29L); expectedRows.add(r);
-        r = new NiceRow(tableId, store()); r.put(0, 31L); r.put(7, 38L); r.put(8, 39L); expectedRows.add(r);
+        NewRow r;
+        r = createNewRow(tableId); r.put(0, 11L); r.put(7, 18L); r.put(8, 19L); expectedRows.add(r);
+        r = createNewRow(tableId); r.put(0, 21L); r.put(7, 28L); r.put(8, 29L); expectedRows.add(r);
+        r = createNewRow(tableId); r.put(0, 31L); r.put(7, 38L); r.put(8, 39L); expectedRows.add(r);
         assertEquals("row content", expectedRows, rows);
     }
 
@@ -210,7 +211,7 @@ public final class CBasicIT extends ITBase {
         RowData rowData = new RowData(output.getOutputBuffer().array(), 0, output.getOutputBuffer().position());
         rowData.prepareRow(0);
         assertEquals("table ID", tableId, rowData.getRowDefId());
-        List<NewRow> converted = dml().convertRowDatas(Arrays.asList(rowData));
+        List<NewRow> converted = dml().convertRowDatas(session(), Arrays.asList(rowData));
         assertEquals("rows scanned", expectedRows, converted);
     }
     
@@ -228,7 +229,7 @@ public final class CBasicIT extends ITBase {
             throw new TestException(e);
         }
 
-        dml().openCursor(session(), ddl().getGeneration(), new ScanAllRequest(tableId1, ColumnSet.ofPositions(0)));
+        dml().openCursor(session(), ddl().getGenerationAsInt(session()), new ScanAllRequest(tableId1, ColumnSet.ofPositions(0)));
     }
 
     @Test(expected=RowDefNotFoundException.class)
@@ -236,7 +237,7 @@ public final class CBasicIT extends ITBase {
         final int tid;
         try {
             tid = createTable("test", "t", "id int not null primary key");
-            final String groupName = ddl().getAIS(session()).getUserTable("test", "t").getGroup().getName();
+            final TableName groupName = ddl().getAIS(session()).getUserTable("test", "t").getGroup().getName();
             ddl().dropGroup(session(), groupName);
 
             AkibanInformationSchema ais = ddl().getAIS(session());
@@ -248,7 +249,7 @@ public final class CBasicIT extends ITBase {
             throw new TestException(e);
         }
 
-        dml().openCursor(session(), ddl().getGeneration(), new ScanAllRequest(tid, ColumnSet.ofPositions(0)));
+        dml().openCursor(session(), ddl().getGenerationAsInt(session()), new ScanAllRequest(tid, ColumnSet.ofPositions(0)));
     }
 
     @Test(expected=OldAISException.class)
@@ -367,7 +368,7 @@ public final class CBasicIT extends ITBase {
         }
 
         try {
-            NiceRow old = new NiceRow(tableId, store());
+            NewRow old = createNewRow(tableId);
             old.put(1, "hello world");
             dml().updateRow(session(), old, createNewRow(tableId, 1, "goodbye cruel world"), null );
         } catch (NoSuchRowException e) {
@@ -401,6 +402,7 @@ public final class CBasicIT extends ITBase {
 
     @Test(expected=InvalidCharToNumException.class)
     public void updateOldNewHasWrongType() throws InvalidOperationException {
+        Types3Switch.ON = false;
         final int tableId;
         try {
             tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
@@ -429,6 +431,7 @@ public final class CBasicIT extends ITBase {
 
     @Test(expected=InvalidCharToNumException.class)
     public void insertHasWrongType() throws InvalidOperationException {
+        Types3Switch.ON = false;
         final int tableId;
         try {
             tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
@@ -525,7 +528,7 @@ public final class CBasicIT extends ITBase {
         }
 
         try {
-            NiceRow deleteAttempt = new NiceRow(tableId, store());
+            NewRow deleteAttempt = createNewRow(tableId);
             deleteAttempt.put(1, "the customer's name");
             dml().deleteRow(session(), deleteAttempt);
         } catch (NoSuchRowException e) {
@@ -545,7 +548,7 @@ public final class CBasicIT extends ITBase {
         }
 
         try {
-            NiceRow deleteAttempt = new NiceRow(tableId, store());
+            NewRow deleteAttempt = createNewRow(tableId);
             deleteAttempt.put(1, "the customer's name");
             dml().deleteRow(session(), createNewRow(tableId, 0, "this row doesn't exist"));
         } catch (NoSuchRowException e) {
@@ -557,9 +560,9 @@ public final class CBasicIT extends ITBase {
 
     @Test
     public void schemaIdIncrements() throws Exception {
-        int firstGen = ddl().getGeneration();
+        int firstGen = ddl().getGenerationAsInt(session());
         createTable("sch", "c1", "id int not null primary key");
-        int secondGen = ddl().getGeneration();
+        int secondGen = ddl().getGenerationAsInt(session());
         assertTrue(String.format("failed %d > %d", secondGen, firstGen), secondGen > firstGen);
     }
 
@@ -610,7 +613,7 @@ public final class CBasicIT extends ITBase {
     public void groupedTablesWithSameNameAndColumnNames() {
         createTable("s1", "t1", "id int not null primary key");
         createTable("s2", "t1", "some_id int not null primary key, id int, grouping foreign key(id) references s1.t1(id)");
-        createTable("s3", "t1", "some_id int not null primary key, id int, grouping foreign key(id) references s2.t1(id)");
+        createTable("s3", "t1", "some_id int not null primary key, id int, grouping foreign key(id) references s2.t1(some_id)");
         AkibanInformationSchema ais = ddl().getAIS(session());
         Group group = ais.getGroup("t1");
         assertNotNull("Found group", group);

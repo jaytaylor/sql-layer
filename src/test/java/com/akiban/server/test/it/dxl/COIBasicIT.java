@@ -36,19 +36,18 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.TableName;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NewRowBuilder;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.NoSuchTableIdException;
 import com.akiban.server.error.UnsupportedDropException;
 
 public final class COIBasicIT extends ITBase {
@@ -56,13 +55,11 @@ public final class COIBasicIT extends ITBase {
         public final int c;
         public final int o;
         public final int i;
-        public final int coi;
 
-        private TableIds(int c, int o, int i, int coi) {
+        private TableIds(int c, int o, int i) {
             this.c = c;
             this.o = o;
             this.i = i;
-            this.coi = coi;
         }
     }
 
@@ -116,18 +113,13 @@ public final class COIBasicIT extends ITBase {
             assertSame("parent join", oTable.getChildJoins().get(0), iTable.getParentJoin());
             assertEquals("child joins.size", 0, iTable.getChildJoins().size());
         }
-        final GroupTable gTable;
         {
             Group group = cTable.getGroup();
             assertSame("o's group", group, oTable.getGroup());
             assertSame("i's group", group, iTable.getGroup());
-            gTable = group.getGroupTable();
-
-            assertEquals("group table's columns size", 7, gTable.getColumns().size());
-            assertEquals("group table's indexes size", 5, gTable.getIndexes().size());
         }
 
-        return new TableIds(cId, oId, iId, gTable.getTableId());
+        return new TableIds(cId, oId, iId);
     }
 
     @Test
@@ -139,25 +131,23 @@ public final class COIBasicIT extends ITBase {
     public void insertToUTablesAndScan() throws InvalidOperationException {
         final TableIds tids = createTables();
 
-        final NewRow cRow = NewRowBuilder.forTable(tids.c, store()).put(1L).put("Robert").check(dml()).row();
-        final NewRow oRow = NewRowBuilder.forTable(tids.o, store()).put(10L).put(1L).check(dml()).row();
-        final NewRow iRow = NewRowBuilder.forTable(tids.i, store()).put(100L).put(10L).put("Desc 1").check(dml()).row();
+        final NewRow cRow = NewRowBuilder.forTable(tids.c, getRowDef(tids.c)).put(1L).put("Robert").check(session(), dml()).row();
+        final NewRow oRow = NewRowBuilder.forTable(tids.o, getRowDef(tids.o)).put(10L).put(1L).check(session(), dml()).row();
+        final NewRow iRow = NewRowBuilder.forTable(tids.i, getRowDef(tids.i)).put(100L).put(10L).put("Desc 1").check(session(), dml()).row();
 
         writeRows(cRow, oRow, iRow);
-        expectFullRows(tids.c, NewRowBuilder.copyOf(cRow, store()).row());
-        expectFullRows(tids.o, NewRowBuilder.copyOf(oRow, store()).row());
-        expectFullRows(tids.i, NewRowBuilder.copyOf(iRow, store()).row());
-
-//        expectFullRows(tids.coi, cRow, oRow, iRow); // TODO - commented out per 751883
+        expectFullRows(tids.c, NewRowBuilder.copyOf(cRow).row());
+        expectFullRows(tids.o, NewRowBuilder.copyOf(oRow).row());
+        expectFullRows(tids.i, NewRowBuilder.copyOf(iRow).row());
     }
 
     @Test
     public void insertToUTablesAndScanToLegacy() throws InvalidOperationException {
         final TableIds tids = createTables();
 
-        final NewRow cRow = NewRowBuilder.forTable(tids.c, store()).put(1L).put("Robert").check(dml()).row();
-        final NewRow oRow = NewRowBuilder.forTable(tids.o, store()).put(10L).put(1L).check(dml()).row();
-        final NewRow iRow = NewRowBuilder.forTable(tids.i, store()).put(100L).put(10L).put("Desc 1").check(dml()).row();
+        final NewRow cRow = NewRowBuilder.forTable(tids.c, getRowDef(tids.c)).put(1L).put("Robert").check(session(), dml()).row();
+        final NewRow oRow = NewRowBuilder.forTable(tids.o, getRowDef(tids.o)).put(10L).put(1L).check(session(), dml()).row();
+        final NewRow iRow = NewRowBuilder.forTable(tids.i, getRowDef(tids.i)).put(100L).put(10L).put("Desc 1").check(session(), dml()).row();
 
         writeRows(cRow, oRow, iRow);
         List<RowData> cRows = scanFull(scanAllRequest(tids.c));
@@ -167,8 +157,24 @@ public final class COIBasicIT extends ITBase {
         assertEquals("cRows", Arrays.asList(cRow), convertRowDatas(cRows));
         assertEquals("oRows", Arrays.asList(oRow), convertRowDatas(oRows));
         assertEquals("iRows", Arrays.asList(iRow), convertRowDatas(iRows));
+    }
 
-//        expectFullRows(tids.coi, cRow, oRow, iRow); // TODO - commented out per 751883
+    @Test
+    public void insertToUTablesBulkAndScanToLegacy() throws InvalidOperationException {
+        final TableIds tids = createTables();
+
+        final NewRow cRow = NewRowBuilder.forTable(tids.c, getRowDef(tids.c)).put(1L).put("Robert").check(session(), dml()).row();
+        final NewRow oRow = NewRowBuilder.forTable(tids.o, getRowDef(tids.o)).put(10L).put(1L).check(session(), dml()).row();
+        final NewRow iRow = NewRowBuilder.forTable(tids.i, getRowDef(tids.i)).put(100L).put(10L).put("Desc 1").check(session(), dml()).row();
+
+        dml().writeRows(session(), Arrays.asList(cRow.toRowData(), oRow.toRowData(), iRow.toRowData()));
+        List<RowData> cRows = scanFull(scanAllRequest(tids.c));
+        List<RowData> oRows = scanFull(scanAllRequest(tids.o));
+        List<RowData> iRows = scanFull(scanAllRequest(tids.i));
+
+        assertEquals("cRows", Arrays.asList(cRow), convertRowDatas(cRows));
+        assertEquals("oRows", Arrays.asList(oRow), convertRowDatas(oRows));
+        assertEquals("iRows", Arrays.asList(iRow), convertRowDatas(iRows));
     }
 
     @Test(expected=UnsupportedDropException.class)
@@ -187,9 +193,9 @@ public final class COIBasicIT extends ITBase {
     public void dropTableLeaves() throws InvalidOperationException {
         final TableIds tids = createTables();
 
-        final NewRow cRow = NewRowBuilder.forTable(tids.c, store()).put(1L).put("Robert").check(dml()).row();
-        final NewRow oRow = NewRowBuilder.forTable(tids.o, store()).put(10L).put(1L).check(dml()).row();
-        final NewRow iRow = NewRowBuilder.forTable(tids.i, store()).put(100L).put(10L).put("Desc 1").check(dml()).row();
+        final NewRow cRow = NewRowBuilder.forTable(tids.c, getRowDef(tids.c)).put(1L).put("Robert").check(session(), dml()).row();
+        final NewRow oRow = NewRowBuilder.forTable(tids.o, getRowDef(tids.o)).put(10L).put(1L).check(session(), dml()).row();
+        final NewRow iRow = NewRowBuilder.forTable(tids.i, getRowDef(tids.i)).put(100L).put(10L).put("Desc 1").check(session(), dml()).row();
 
         writeRows(cRow, oRow, iRow);
         List<RowData> cRows = scanFull(scanAllRequest(tids.c));
@@ -200,23 +206,14 @@ public final class COIBasicIT extends ITBase {
         assertEquals("oRows", Arrays.asList(oRow), convertRowDatas(oRows));
         assertEquals("iRows", Arrays.asList(iRow), convertRowDatas(iRows));
 
-//        expectFullRows(tids.coi, cRow, oRow, iRow); // TODO - commented out per 751883
-
         ddl().dropTable(session(), tableName(tids.i));
-//        expectFullRows(tids.coi, cRow, oRow); // TODO - commented out per 751883
+        assertEquals("oRows", Arrays.asList(oRow), convertRowDatas(oRows));
+        assertEquals("cRows", Arrays.asList(cRow), convertRowDatas(cRows));
 
         ddl().dropTable(session(), tableName(tids.o));
-//        expectFullRows(tids.coi, cRow); // TODO - commented out per 751883
+        assertEquals("cRows", Arrays.asList(cRow), convertRowDatas(cRows));
 
         ddl().dropTable(session(), tableName(tids.c));
-
-        try {
-            expectFullRows(tids.coi);
-            assertTrue("group table exists", false);
-        }
-        catch(NoSuchTableIdException e) {
-            // Expected, deleting root table should remove group table
-        }
     }
 
     @Test
@@ -230,7 +227,7 @@ public final class COIBasicIT extends ITBase {
     @Test
     public void dropGroup() throws InvalidOperationException {
         final TableIds tids = createTables();
-        final String groupName = ddl().getAIS(session()).getUserTable(tableName(tids.i)).getGroup().getName();
+        final TableName groupName = ddl().getAIS(session()).getUserTable(tableName(tids.i)).getGroup().getName();
 
         ddl().dropGroup(session(), groupName);
 

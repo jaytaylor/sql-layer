@@ -43,7 +43,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.assertNotNull;
 
 public class ScanFlagsIT extends ITBase
@@ -173,7 +172,7 @@ public class ScanFlagsIT extends ITBase
         RowData rowData = null;
         if (x != null) {
             rowData = new RowData(new byte[100]);
-            RowDef rowDef = rowDefCache().rowDef(rowDefId);
+            RowDef rowDef = getRowDef(rowDefId);
             rowData.createRow(rowDef, new Object[]{null, x});
         }
         return rowData;

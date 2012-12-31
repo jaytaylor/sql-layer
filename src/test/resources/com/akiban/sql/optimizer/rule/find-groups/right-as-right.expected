@@ -4,5 +4,5 @@ SelectQuery@300b6421
       Select@78d2883b[orders.order_date > Cast(2011-01-01 AS DATE NOT NULL)]
         TableGroupJoinTree@45ee1775(TableGroup@12462631(customers), customers RIGHT orders INNER items)
           TableSource@3899d56b(customers - TableGroup@12462631(customers))
-            TableSource@7b8a80d4(orders - TableGroupJoin@3b756456(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
-              TableSource@42101da9(items - TableGroupJoin@180e6899(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+            TableSource@7b8a80d4(orders - TableGroupJoin@3b756456(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
+              TableSource@42101da9(items - TableGroupJoin@180e6899(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

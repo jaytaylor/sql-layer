@@ -27,11 +27,13 @@
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.HKeySegment;
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.FlattenedRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.explain.*;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
@@ -43,6 +45,7 @@ import java.util.Set;
 
 import static com.akiban.qp.operator.API.FlattenOption.KEEP_CHILD;
 import static com.akiban.qp.operator.API.FlattenOption.KEEP_PARENT;
+import java.util.Map;
 
 /**
 
@@ -267,6 +270,34 @@ class Flatten_HKeyOrdered extends Operator
     private final int nChildHKeySegmentFields;
     private final int parentHKeySegments;
 
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+       
+        Attributes atts = new Attributes();
+        
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
+        if (keepParent) 
+            atts.put(Label.FLATTEN_OPTION, PrimitiveExplainer.getInstance("KEEP PARENT"));
+        if (keepChild) 
+            atts.put(Label.FLATTEN_OPTION, PrimitiveExplainer.getInstance("KEEP CHILD"));
+        if (leftJoin)
+            if (rightJoin)
+                atts.put(Label.JOIN_OPTION, PrimitiveExplainer.getInstance("FULL"));
+            else
+                atts.put(Label.JOIN_OPTION, PrimitiveExplainer.getInstance("LEFT"));
+        else
+            if (rightJoin)
+                atts.put(Label.JOIN_OPTION, PrimitiveExplainer.getInstance("RIGHT"));
+            else
+                atts.put(Label.JOIN_OPTION, PrimitiveExplainer.getInstance("INNER"));
+        atts.put(Label.PARENT_TYPE, parentType.getExplainer(context));
+        atts.put(Label.CHILD_TYPE, childType.getExplainer(context));
+        atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer(context));
+        
+        return new CompoundExplainer(Type.FLATTEN_OPERATOR, atts);
+    }
+
     // Inner classes
 
     private class Execution extends OperatorExecutionBase implements Cursor
@@ -450,6 +481,8 @@ class Flatten_HKeyOrdered extends Operator
             boolean readyForLeftJoinRow = false;
             if (leftJoin && childlessParent && parent.isHolding()) {
                 if (inputRow == null) {
+                    readyForLeftJoinRow = true;
+                } else if (inputRow.rowType() == parentType) {
                     readyForLeftJoinRow = true;
                 } else if (!parent.get().ancestorOf(inputRow)) {
                     readyForLeftJoinRow = true;

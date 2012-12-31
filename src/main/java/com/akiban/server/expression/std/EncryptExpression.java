@@ -62,6 +62,11 @@ public class EncryptExpression extends AbstractBinaryExpression
     @Scalar("aes_decrypt")
     public static final ExpressionComposer DECRYPT 
             = new InnerComposer(Cipher.DECRYPT_MODE);
+
+    @Override
+    public String name() {
+        return mode == Cipher.DECRYPT_MODE ? "DECRYPT" : "ENCRYPT";
+    }
     
     private static final class InnerComposer extends BinaryComposer
     {
@@ -73,7 +78,7 @@ public class EncryptExpression extends AbstractBinaryExpression
         }
         
         @Override
-        protected Expression compose(Expression first, Expression second)
+        protected Expression compose(Expression first, Expression second, ExpressionType firstType, ExpressionType secondType, ExpressionType resultType)
         {
             return new EncryptExpression(first, second, MODE);
         }
@@ -198,7 +203,7 @@ public class EncryptExpression extends AbstractBinaryExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append(mode == Cipher.DECRYPT_MODE ? "DECRYPT" : "ENCRYPT");
+        sb.append(name());
     }
 
     @Override

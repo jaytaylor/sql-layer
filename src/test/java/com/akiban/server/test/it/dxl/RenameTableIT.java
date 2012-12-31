@@ -181,7 +181,7 @@ public class RenameTableIT extends ITBase {
         createCTable();
         int rowCount = writeCRows();
         try {
-            ddl().renameTable(session(), tableName(SCHEMA, C_NAME), tableName(TableName.AKIBAN_INFORMATION_SCHEMA, C_NAME));
+            ddl().renameTable(session(), tableName(SCHEMA, C_NAME), tableName(TableName.INFORMATION_SCHEMA, C_NAME));
             Assert.fail("Expected ProtectedTableDDLException");
         }
         catch(ProtectedTableDDLException e) {

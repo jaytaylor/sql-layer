@@ -80,7 +80,7 @@ public class WeekDayNameExpression extends AbstractUnaryExpression
         }
 
         @Override
-        protected Expression compose(Expression argument)
+        protected Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType)
         {
             return new WeekDayNameExpression(argument, field);
         }
@@ -170,7 +170,7 @@ public class WeekDayNameExpression extends AbstractUnaryExpression
     }
 
     @Override
-    protected String name()
+    public String name()
     {
         return field.name();
     }

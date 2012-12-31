@@ -30,10 +30,13 @@ import com.akiban.sql.parser.FromTable;
 import com.akiban.sql.parser.ResultColumn;
 
 import com.akiban.sql.StandardException;
+import com.akiban.sql.types.CharacterTypeAttributes;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
+import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Type;
 
 /**
@@ -81,30 +84,64 @@ public class ColumnBinding
             return resultColumn.getType();
         }
         else {
-            Type aisType = column.getType();
-            String typeName = aisType.name().toUpperCase();
-            TypeId typeId = TypeId.getBuiltInTypeId(typeName);
-            if (typeId == null)
-                typeId = TypeId.getSQLTypeForJavaType(typeName);
-            boolean nullable = this.nullable || column.getNullable();
-            switch (aisType.nTypeParameters()) {
-            case 0:
-                return new DataTypeDescriptor(typeId, nullable);
-            case 1:
-                return new DataTypeDescriptor(typeId, nullable, 
-                                              column.getTypeParameter1().intValue());
-            case 2:
-                {
-                    int precision = column.getTypeParameter1().intValue();
-                    int scale = column.getTypeParameter2().intValue();
-                    int maxWidth = DataTypeDescriptor.computeMaxWidth(precision, scale);
-                    return new DataTypeDescriptor(typeId, precision, scale, 
-                                                  nullable, maxWidth);
+            return getType(column, nullable);
+        }
+    }
+    
+    public static DataTypeDescriptor getType(Column column, boolean nullable)
+            throws StandardException {
+        if (column.getNullable())
+            nullable = true;
+        return getType(column.getType(), 
+                       column.getTypeParameter1(), column.getTypeParameter2(), 
+                       column.getCharsetAndCollation(),
+                       nullable);
+    }
+
+    public static DataTypeDescriptor getType(Parameter param)
+            throws StandardException {
+        return getType(param.getType(), 
+                       param.getTypeParameter1(), param.getTypeParameter2(), 
+                       null, true);
+    }
+
+    public static DataTypeDescriptor getType(Type aisType, 
+                                             Long typeParameter1, Long typeParameter2,
+                                             CharsetAndCollation charsetAndCollation,
+                                             boolean nullable)
+            throws StandardException {
+        String typeName = aisType.name().toUpperCase();
+        TypeId typeId = TypeId.getBuiltInTypeId(typeName);
+        if (typeId == null)
+            typeId = TypeId.getSQLTypeForJavaType(typeName);
+        switch (aisType.nTypeParameters()) {
+        case 0:
+            return new DataTypeDescriptor(typeId, nullable);
+        case 1:
+            {
+                DataTypeDescriptor type = new DataTypeDescriptor(typeId, nullable, 
+                                                                 typeParameter1.intValue());
+                if (typeId.isStringTypeId() &&
+                    (charsetAndCollation != null)) {
+                    CharacterTypeAttributes cattrs = 
+                        new CharacterTypeAttributes(charsetAndCollation.charset(),
+                                                    charsetAndCollation.collation(),
+                                                    CharacterTypeAttributes.CollationDerivation.IMPLICIT);
+                    type = new DataTypeDescriptor(type, cattrs);
                 }
-            default:
-                assert false;
-                return new DataTypeDescriptor(typeId, nullable);
+                return type;
             }
+        case 2:
+            {
+                int precision = typeParameter1.intValue();
+                int scale = typeParameter2.intValue();
+                int maxWidth = DataTypeDescriptor.computeMaxWidth(precision, scale);
+                return new DataTypeDescriptor(typeId, precision, scale, 
+                                              nullable, maxWidth);
+            }
+        default:
+            assert false;
+            return new DataTypeDescriptor(typeId, nullable);
         }
     }
 

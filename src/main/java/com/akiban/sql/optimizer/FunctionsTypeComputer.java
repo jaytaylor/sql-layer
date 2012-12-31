@@ -32,6 +32,7 @@ import com.akiban.sql.StandardException;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
+import com.akiban.ais.model.Routine;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.TypesList;
@@ -39,20 +40,31 @@ import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.types.AkType;
 
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoSuchFunctionException;
 
 import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
+
+import static com.akiban.sql.optimizer.TypesTranslation.*;
 
 /** Calculate types from expression composers. */
 public class FunctionsTypeComputer extends AISTypeComputer
 {
     private FunctionsRegistry functionsRegistry;
+    private boolean useComposers;
 
     public FunctionsTypeComputer(FunctionsRegistry functionsRegistry) {
         this.functionsRegistry = functionsRegistry;
+        useComposers = true;
     }
     
+    public boolean isUseComposers() {
+        return useComposers;
+    }
+
+    public void setUseComposers(boolean useComposers) {
+        this.useComposers = useComposers;
+    }
+
     @Override
     protected DataTypeDescriptor computeType(ValueNode node) throws StandardException {
         switch (node.getNodeType()) {
@@ -82,10 +94,12 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return unaryOperatorFunction((UnaryOperatorNode)node);
         case NodeTypes.LIKE_OPERATOR_NODE:
         case NodeTypes.LOCATE_FUNCTION_NODE:
-        case NodeTypes.SUBSTRING_OPERATOR_NODE:  
+        case NodeTypes.SUBSTRING_OPERATOR_NODE:
         case NodeTypes.TIMESTAMP_ADD_FN_NODE:
         case NodeTypes.TIMESTAMP_DIFF_FN_NODE:
             return ternaryOperatorFunction((TernaryOperatorNode)node);
+        case NodeTypes.LEFT_FN_NODE:
+        case NodeTypes.RIGHT_FN_NODE:
         case NodeTypes.TRIM_OPERATOR_NODE:
         case NodeTypes.BINARY_DIVIDE_OPERATOR_NODE:
         case NodeTypes.BINARY_MINUS_OPERATOR_NODE:
@@ -113,6 +127,9 @@ public class FunctionsTypeComputer extends AISTypeComputer
                                                     ArgumentsAccess args,
                                                     boolean isNullable)
             throws StandardException {
+        if (!useComposers)
+            return null;
+
         ExpressionComposer composer;
         try {
             composer = functionsRegistry.composer(functionName);
@@ -298,17 +315,15 @@ public class FunctionsTypeComputer extends AISTypeComputer
 
     final class TernaryValuesAccess extends ValueNodesAccess {
         private final TernaryOperatorNode node;
-
+        private final int nargs;
         public TernaryValuesAccess(TernaryOperatorNode node) {
             this.node = node;
+            nargs = node.getRightOperand() == null ? 2 : 3;
         }
 
         @Override
         public int nargs() {
-            if (node.getRightOperand() != null)
-                return 3;
-            else
-                return 2;
+            return nargs;
         }
 
         @Override
@@ -319,6 +334,8 @@ public class FunctionsTypeComputer extends AISTypeComputer
             case 1:
                 return node.getLeftOperand();
             case 2:
+                if (nargs != 3)
+                    throw new IndexOutOfBoundsException("Out of range index: " + index);
                 return node.getRightOperand();
             default:
                 assert false;
@@ -359,6 +376,10 @@ public class FunctionsTypeComputer extends AISTypeComputer
 
     protected DataTypeDescriptor methodCallNode(MethodCallNode methodCall)
             throws StandardException {
+        if (methodCall.getUserData() != null) {
+            Routine routine = (Routine)methodCall.getUserData();
+            return ColumnBinding.getType(routine.getReturnValue());
+        }
         if ((methodCall.getMethodParameters() == null) ||
             (methodCall.getMethodParameters().length == 0)) {
             return noArgFunction(methodCall.getMethodName());
@@ -461,9 +482,10 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return "session_user";
         case NodeTypes.SYSTEM_USER_NODE:
             return "system_user";
+        case NodeTypes.CURRENT_SCHEMA_NODE:
+            return "current_schema";
         case NodeTypes.CURRENT_ISOLATION_NODE:
         case NodeTypes.IDENTITY_VAL_NODE:
-        case NodeTypes.CURRENT_SCHEMA_NODE:
         case NodeTypes.CURRENT_ROLE_NODE:
         default:
             return null;
@@ -502,211 +524,6 @@ public class FunctionsTypeComputer extends AISTypeComputer
             }
         }
         return toExpressionType(type);
-    }
-
-    /* Yet another translator between type regimes. */
-
-    protected ExpressionType toExpressionType(DataTypeDescriptor sqlType) {
-        if (sqlType == null)
-            return null;
-        TypeId typeId = sqlType.getTypeId();
-        switch (typeId.getTypeFormatId()) {
-        case TypeId.FormatIds.BOOLEAN_TYPE_ID:
-            return ExpressionTypes.BOOL;
-        case TypeId.FormatIds.DATE_TYPE_ID:
-            return ExpressionTypes.DATE;
-        case TypeId.FormatIds.DECIMAL_TYPE_ID:
-        case TypeId.FormatIds.NUMERIC_TYPE_ID:
-            return ExpressionTypes.decimal(sqlType.getPrecision(),
-                                           sqlType.getScale());
-        case TypeId.FormatIds.DOUBLE_TYPE_ID:
-            if (typeId.isUnsigned())
-                return ExpressionTypes.U_DOUBLE;
-            else
-                return ExpressionTypes.DOUBLE;
-        case TypeId.FormatIds.SMALLINT_TYPE_ID:
-            if (typeId == TypeId.YEAR_ID)
-                return ExpressionTypes.YEAR;
-            /* else falls through */
-        case TypeId.FormatIds.TINYINT_TYPE_ID:
-        case TypeId.FormatIds.INT_TYPE_ID:
-            if (typeId.isUnsigned())
-                return ExpressionTypes.U_INT;
-            else
-                return ExpressionTypes.INT;
-        case TypeId.FormatIds.LONGINT_TYPE_ID:
-            if (typeId.isUnsigned())
-                return ExpressionTypes.U_BIGINT;
-            else
-                return ExpressionTypes.LONG;
-        case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
-        case TypeId.FormatIds.LONGVARCHAR_TYPE_ID:
-        case TypeId.FormatIds.BLOB_TYPE_ID:
-        case TypeId.FormatIds.CLOB_TYPE_ID:
-        case TypeId.FormatIds.XML_TYPE_ID:
-            return ExpressionTypes.TEXT;
-        case TypeId.FormatIds.REAL_TYPE_ID:
-            if (typeId.isUnsigned())
-                return ExpressionTypes.U_FLOAT;
-            else
-                return ExpressionTypes.FLOAT;
-        case TypeId.FormatIds.TIME_TYPE_ID:
-            return ExpressionTypes.TIME;
-        case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
-            if (typeId == TypeId.DATETIME_ID)
-                return ExpressionTypes.DATETIME;
-            else
-                return ExpressionTypes.TIMESTAMP;
-        case TypeId.FormatIds.BIT_TYPE_ID:
-        case TypeId.FormatIds.VARBIT_TYPE_ID:
-            return ExpressionTypes.varbinary(sqlType.getMaximumWidth());
-        case TypeId.FormatIds.CHAR_TYPE_ID:
-        case TypeId.FormatIds.VARCHAR_TYPE_ID:
-            return ExpressionTypes.varchar(sqlType.getMaximumWidth());
-        case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
-            return ExpressionTypes.INTERVAL_MILLIS;
-        case TypeId.FormatIds.INTERVAL_YEAR_MONTH_ID:
-            return ExpressionTypes.INTERVAL_MONTH;
-        case TypeId.FormatIds.USERDEFINED_TYPE_ID:
-            return ExpressionTypes.newType(AkType.valueOf(sqlType.getFullSQLTypeName().toUpperCase()), 
-                                           sqlType.getPrecision(), sqlType.getScale());
-        default:
-            return null;
-        }
-    }
-
-    protected DataTypeDescriptor fromExpressionType(ExpressionType resultType)
-    {
-        return fromExpressionType (resultType, true);
-    }
-
-    protected DataTypeDescriptor fromExpressionType(ExpressionType resultType, boolean isNullable) {
-        switch (resultType.getType()) {
-        case BOOL:
-            return new DataTypeDescriptor(TypeId.BOOLEAN_ID, isNullable);
-        case INT:
-            return new DataTypeDescriptor(TypeId.INTEGER_ID, isNullable);
-        case LONG:
-            return new DataTypeDescriptor(TypeId.BIGINT_ID, isNullable);
-        case DOUBLE:
-            return new DataTypeDescriptor(TypeId.DOUBLE_ID, isNullable);
-        case FLOAT:
-            return new DataTypeDescriptor(TypeId.REAL_ID, isNullable);
-        case U_INT:
-            return new DataTypeDescriptor(TypeId.INTEGER_UNSIGNED_ID, isNullable);
-        case U_BIGINT:
-            return new DataTypeDescriptor(TypeId.BIGINT_UNSIGNED_ID, isNullable);
-        case U_FLOAT:
-            return new DataTypeDescriptor(TypeId.REAL_UNSIGNED_ID, isNullable);
-        case U_DOUBLE:
-            return new DataTypeDescriptor(TypeId.DOUBLE_UNSIGNED_ID, isNullable);
-        case DATE:
-            return new DataTypeDescriptor(TypeId.DATE_ID, isNullable);
-        case TIME:
-            return new DataTypeDescriptor(TypeId.TIME_ID, isNullable);
-        case TIMESTAMP:
-            return new DataTypeDescriptor(TypeId.TIMESTAMP_ID, isNullable);
-        case VARCHAR:
-            return new DataTypeDescriptor(TypeId.VARCHAR_ID, isNullable,
-                                          resultType.getPrecision());
-        case DECIMAL:
-            {
-                int precision = resultType.getPrecision();
-                int scale = resultType.getScale();
-                return new DataTypeDescriptor(TypeId.DECIMAL_ID, precision, scale, isNullable,
-                                              DataTypeDescriptor.computeMaxWidth(precision, scale));
-            }
-        case TEXT:
-            return new DataTypeDescriptor(TypeId.LONGVARCHAR_ID, isNullable);
-        case VARBINARY:
-            return new DataTypeDescriptor(TypeId.VARBIT_ID, isNullable);
-        case NULL:
-            return null;
-        case DATETIME:
-            return new DataTypeDescriptor(TypeId.DATETIME_ID, isNullable);
-        case YEAR:
-            return new DataTypeDescriptor(TypeId.YEAR_ID, isNullable);
-        case INTERVAL_MILLIS:
-            return new DataTypeDescriptor(TypeId.INTERVAL_SECOND_ID, isNullable);
-        case INTERVAL_MONTH:
-            return new DataTypeDescriptor(TypeId.INTERVAL_MONTH_ID, isNullable);
-        default:
-            try {
-                return new DataTypeDescriptor(TypeId.getUserDefinedTypeId(null,
-                                                                          resultType.getType().name(),
-                                                                          null),
-                                              isNullable);
-            }
-            catch (StandardException ex) {
-                throw new AkibanInternalException("Cannot make type for " + resultType,
-                                                  ex);
-            }
-        }
-    }
-
-    protected ExpressionType castType(ExpressionType fromType, AkType toType,
-                                      DataTypeDescriptor sqlType) {
-        switch (toType) {
-        case BOOL:
-            return ExpressionTypes.BOOL;
-        case INT:
-            return ExpressionTypes.INT;
-        case YEAR:
-            return ExpressionTypes.YEAR;
-        case LONG:
-            return ExpressionTypes.LONG;
-        case DOUBLE:
-            return ExpressionTypes.DOUBLE;
-        case FLOAT:
-            return ExpressionTypes.FLOAT;
-        case U_INT:
-            return ExpressionTypes.U_INT;
-        case U_BIGINT:
-            return ExpressionTypes.U_BIGINT;
-        case U_FLOAT:
-            return ExpressionTypes.U_FLOAT;
-        case U_DOUBLE:
-            return ExpressionTypes.U_DOUBLE;
-        case DATE:
-            return ExpressionTypes.DATE;
-        case TIME:
-            return ExpressionTypes.TIME;
-        case DATETIME:
-            return ExpressionTypes.DATETIME;
-        case TIMESTAMP:
-            return ExpressionTypes.TIMESTAMP;
-        case TEXT:
-            return ExpressionTypes.TEXT;
-        case VARCHAR:
-            if (sqlType != null)
-                return ExpressionTypes.varchar(sqlType.getMaximumWidth());
-            else
-                return ExpressionTypes.varchar(TypeId.VARCHAR_ID.getMaximumMaximumWidth());
-        case VARBINARY:
-            if (sqlType != null)
-                return ExpressionTypes.varbinary(sqlType.getMaximumWidth());
-            else
-                return ExpressionTypes.varbinary(TypeId.VARBIT_ID.getMaximumMaximumWidth());
-        case DECIMAL:
-            if (sqlType != null) {
-                TypeId typeId = sqlType.getTypeId();
-                if (typeId.isNumericTypeId())
-                    return ExpressionTypes.decimal(sqlType.getPrecision(),
-                                                   sqlType.getScale());
-                else
-                    return ExpressionTypes.decimal(typeId.getMaximumPrecision(),
-                                                   typeId.getMaximumScale());
-            }
-            else
-                return ExpressionTypes.decimal(TypeId.DECIMAL_ID.getMaximumPrecision(),
-                                               TypeId.DECIMAL_ID.getMaximumScale());
-        case INTERVAL_MILLIS:
-            return ExpressionTypes.INTERVAL_MILLIS;
-        case INTERVAL_MONTH:
-            return ExpressionTypes.INTERVAL_MONTH;
-        default:
-            return ExpressionTypes.newType(toType, 0, 0);
-        }
     }
 
 }

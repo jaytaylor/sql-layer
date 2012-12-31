@@ -28,5 +28,7 @@ select-9: extra true condition
 
 select-10: aggregate with DISTINCT
 
+select-12: two aggregates with DISTINCT on same column
+
 update-1: change column to literal
 

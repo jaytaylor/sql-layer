@@ -30,7 +30,6 @@ import java.nio.ByteBuffer;
 
 import com.akiban.server.api.common.ByteBufferWriter;
 import com.akiban.server.api.common.WrongByteAllocationException;
-import com.akiban.util.ArgumentValidation;
 
 public final class CursorId extends ByteBufferWriter {
     private static final int SIZE_ON_BUFFER = 2 * (Long.SIZE / 8) + Integer.SIZE / 8;

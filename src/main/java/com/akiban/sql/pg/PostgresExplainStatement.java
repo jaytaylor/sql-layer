@@ -26,10 +26,23 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.optimizer.OperatorCompiler;
+import com.akiban.sql.optimizer.plan.BasePlannable;
+import com.akiban.sql.optimizer.rule.ExplainPlanContext;
+import com.akiban.sql.parser.CallStatementNode;
+import com.akiban.sql.parser.DMLStatementNode;
+import com.akiban.sql.parser.ExplainStatementNode;
+import com.akiban.sql.parser.ParameterNode;
+import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.server.ServerValueEncoder;
 
+import com.akiban.server.explain.Explainable;
+import com.akiban.server.explain.format.DefaultFormatter;
+import com.akiban.server.explain.format.JsonFormatter;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 
+import java.util.Collections;
 import java.util.List;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -37,11 +50,18 @@ import java.io.IOException;
 /** SQL statement to explain another one. */
 public class PostgresExplainStatement implements PostgresStatement
 {
+    private OperatorCompiler compiler; // Used only to finish generation
     private List<String> explanation;
     private String colName;
     private PostgresType colType;
-    
-    public PostgresExplainStatement(List<String> explanation) {
+    private boolean usePVals;
+    private long aisGeneration;
+
+    public PostgresExplainStatement(OperatorCompiler compiler) {
+        this.compiler = compiler;
+    }
+
+    public void init(List<String> explanation, boolean usePVals) {
         this.explanation = explanation;
 
         int maxlen = 32;
@@ -50,8 +70,9 @@ public class PostgresExplainStatement implements PostgresStatement
                 maxlen = row.length();
         }
         colName = "OPERATORS";
-        colType = new PostgresType(PostgresType.TypeOid.VARCHAR_TYPE_OID.getOid(), (short)-1, maxlen,
-                                   AkType.VARCHAR);
+        colType = new PostgresType(PostgresType.TypeOid.VARCHAR_TYPE_OID, (short)-1, maxlen,
+                                   AkType.VARCHAR, MString.VARCHAR.instance(maxlen, false));
+        this.usePVals = usePVals;
     }
 
     @Override
@@ -78,19 +99,31 @@ public class PostgresExplainStatement implements PostgresStatement
 
     @Override
     public TransactionMode getTransactionMode() {
-        return TransactionMode.ALLOWED;
+        return TransactionMode.READ;
+    }
+
+    @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        return TransactionAbortedMode.NOT_ALLOWED;
+    }
+
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.NOT_ALLOWED;
     }
 
     @Override
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
-        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+        ServerValueEncoder encoder = server.getValueEncoder();
         int nrows = 0;
         for (String row : explanation) {
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(1);
-            ByteArrayOutputStream bytes = encoder.encodeObject(row, colType, false);
+            ByteArrayOutputStream bytes;
+            if (usePVals) bytes = encoder.encodePObject(row, colType, false);
+            else bytes = encoder.encodeObject(row, colType, false);
             messenger.writeInt(bytes.size());
             messenger.writeByteStream(bytes);
             messenger.sendMessage();
@@ -104,6 +137,53 @@ public class PostgresExplainStatement implements PostgresStatement
             messenger.sendMessage();
         }
         return nrows;
+    }
+
+    @Override
+    public boolean hasAISGeneration() {
+        return aisGeneration != 0;
+    }
+
+    @Override
+    public void setAISGeneration(long aisGeneration) {
+        this.aisGeneration = aisGeneration;
+    }
+
+    @Override
+    public long getAISGeneration() {
+        return aisGeneration;
+    }
+
+    @Override
+    public PostgresStatement finishGenerating(PostgresServerSession server, String sql, StatementNode stmt,
+                                              List<ParameterNode> params, int[] paramTypes) {
+        ExplainPlanContext context = new ExplainPlanContext(compiler);
+        StatementNode innerStmt = ((ExplainStatementNode)stmt).getStatement();
+        Explainable explainable;
+        if (innerStmt instanceof CallStatementNode) {
+            explainable = PostgresCallStatementGenerator.explainable(server, (CallStatementNode)innerStmt, params, paramTypes);
+        }
+        else {
+            BasePlannable result = compiler.compile((DMLStatementNode)innerStmt, params, context);
+            explainable = result.getPlannable();
+        }
+        List<String> explain;
+        if (compiler instanceof PostgresJsonCompiler) {
+            JsonFormatter f = new JsonFormatter();
+            explain = Collections.singletonList(f.format(explainable.getExplainer(context.getExplainContext())));
+        }
+        else {
+            DefaultFormatter f = new DefaultFormatter(server.getDefaultSchemaName(), true);
+            explain = f.format(explainable.getExplainer(context.getExplainContext()));
+        }
+        init(explain, compiler.usesPValues());
+        compiler = null;
+        return this;
+    }
+
+    @Override
+    public boolean putInCache() {
+        return false;
     }
 
 }

@@ -28,8 +28,6 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.plan.*;
 
-import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
-
 import com.akiban.server.error.UnsupportedSQLException;
 
 import org.slf4j.Logger;
@@ -97,6 +95,16 @@ public class MapFolder extends BaseRule
     public void apply(PlanContext planContext) {
         BaseQuery query = (BaseQuery)planContext.getPlan();
         List<MapJoin> maps = new MapJoinsFinder().find(query);
+        if (maps.isEmpty()) return;
+        if (query instanceof DMLStatement) {
+            DMLStatement update = (DMLStatement)query;
+            switch (update.getType()) {
+            case UPDATE:
+            case DELETE:
+                addUpdateInput(update);
+                break;
+            }
+        }
         for (MapJoin map : maps)
             handleJoinType(map);
         for (MapJoin map : maps)
@@ -115,7 +123,18 @@ public class MapFolder extends BaseRule
             map.setInner(new NullIfEmpty(map.getInner()));
             break;
         case SEMI:
-            map.setInner(new Limit(map.getInner(), 1));
+            {
+                PlanNode inner = map.getInner();
+                if ((inner instanceof Select) && 
+                    ((Select)inner).getConditions().isEmpty())
+                    inner = ((Select)inner).getInput();
+                // Right-nested semi-joins only need one Limit, since
+                // all the effects happen inside the fastest loop.
+                if (!((inner instanceof MapJoin) && 
+                      ((MapJoin)inner).getJoinType() == JoinNode.JoinType.SEMI))
+                    inner = new Limit(map.getInner(), 1);
+                map.setInner(inner);
+            }
             break;
         case ANTI:
             map.setInner(new OnlyIfEmpty(map.getInner()));
@@ -158,11 +177,27 @@ public class MapFolder extends BaseRule
                    (parent instanceof AggregateSource) ||
                    (parent instanceof Sort) ||
                    // Captures enough at the edge of the inside.
-                   (child instanceof Project)));
+                   (child instanceof Project) ||
+                   (child instanceof UpdateInput)));
         if (child != map) {
             map.getOutput().replaceInput(map, map.getInner());
             parent.replaceInput(child, map);
             map.setInner(child);
+        }
+    }
+
+    protected void addUpdateInput(DMLStatement update) {
+        BasePlanWithInput node = update;
+        while (true) {
+            PlanNode input = node.getInput();
+            if (!(input instanceof BasePlanWithInput))
+                break;
+            node = (BasePlanWithInput)input;
+            if (node instanceof BaseUpdateStatement) {
+                input = node.getInput();
+                node.replaceInput(input, new UpdateInput(input, update.getSelectTable()));
+                return;
+            }
         }
     }
 

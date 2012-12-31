@@ -26,26 +26,31 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.store.Store;
+import com.akiban.server.types.ValueSource;
 import com.akiban.util.tap.InOutTap;
 
 public abstract class StoreAdapter
 {
-    public abstract GroupCursor newGroupCursor(GroupTable groupTable);
+    public abstract GroupCursor newGroupCursor(Group group);
 
     public abstract Cursor newIndexCursor(QueryContext context,
                                           Index index,
                                           IndexKeyRange keyRange,
                                           API.Ordering ordering,
-                                          IndexScanSelector scanSelector);
+                                          IndexScanSelector scanSelector,
+                                          boolean usePValues);
 
     public abstract <HKEY extends com.akiban.qp.row.HKey> HKEY newHKey(HKey hKeyMetadata);
 
@@ -54,22 +59,35 @@ public abstract class StoreAdapter
         return schema;
     }
 
-    public abstract void updateRow(Row oldRow, Row newRow);
+    public abstract Store getUnderlyingStore();
+
+    public abstract void updateRow(Row oldRow, Row newRow, boolean usePValues);
     
-    public abstract void writeRow (Row newRow);
+    public abstract void writeRow (Row newRow, boolean usePValues);
     
-    public abstract void deleteRow (Row oldRow);
+    public abstract void deleteRow (Row oldRow, boolean usePValues);
+
+    public abstract void alterRow(Row oldRow, Row newRow, Index[] indexesToMaintain, boolean hKeyChanged, boolean usePValues);
 
     public abstract Cursor sort(QueryContext context,
                                 Cursor input,
                                 RowType rowType,
                                 API.Ordering ordering,
                                 API.SortOption sortOption,
-                                InOutTap loadTap);
+                                InOutTap loadTap,
+                                boolean usePValues);
 
-    public abstract long getQueryTimeoutSec();
+    public long getQueryTimeoutMilli() {
+        return config.queryTimeoutMilli();
+    }
 
     public abstract long rowCount(RowType tableType);
+    
+    public abstract long sequenceNextValue(TableName sequenceName);
+
+    public abstract long sequenceCurrentValue(TableName sequenceName);
+
+    public abstract long hash(ValueSource valueSource, AkCollator collator);
 
     public final Session getSession() {
         return session;
@@ -80,7 +98,7 @@ public abstract class StoreAdapter
         MEMORY_ADAPTER;
     }
     
-    protected final ConfigurationService getConfig() {
+    public final ConfigurationService getConfig() {
         return config;
     }
 
@@ -92,6 +110,10 @@ public abstract class StoreAdapter
         this.session = session;
         this.config = config;
     }
+
+    // Class state
+
+    public static final Session.Key<StoreAdapter> STORE_ADAPTER_KEY = Session.Key.named("STORE_ADAPTER");
 
     // Object state
 

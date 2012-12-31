@@ -26,15 +26,17 @@
 
 package com.akiban.qp.operator;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.util.ArgumentValidation;
+import com.akiban.server.explain.*;
 import com.akiban.util.tap.InOutTap;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
 
@@ -108,6 +110,20 @@ public class ValuesScan_Default extends Operator
     
     private final Collection<? extends BindableRow> rows;
     private final RowType rowType;
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        Attributes att = new Attributes();
+        
+        att.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
+        for (BindableRow row : rows)
+        {
+            att.put(Label.EXPRESSIONS, row.getExplainer(context));
+        }
+        
+        return new CompoundExplainer(Type.SCAN_OPERATOR, att);
+    }
     
     private static class Execution extends OperatorExecutionBase implements Cursor
     {
@@ -134,6 +150,7 @@ public class ValuesScan_Default extends Operator
                 if (iter != null && iter.hasNext()) {
                     return iter.next().bind(context);
                 } else {
+                    close();
                     return null;
                 }
             } finally {

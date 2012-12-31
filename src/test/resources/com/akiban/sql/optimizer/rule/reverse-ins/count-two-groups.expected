@@ -8,10 +8,10 @@ SelectQuery@53f64158
             MapJoin@470b9279()
               Flatten@588f07a1(customers)
                 AncestorLookup@4345de8a(items -> [customers])
-                  SingleIndexScan@20155887(Index(.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), NONE, =VALUES[0], rows = 100, cost = 702.774)
+                  SingleIndexScan@20155887(Index(test.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), NONE, =VALUES[0], rows = 100, cost = 702.774)
                   TableSource@5bdb6c36(customers - TableGroup@7315e196(customers))
               Select@1b31303f[]
                 Flatten@1629ce8c(child)
                   BranchLookup@12b754b2(parent -> parent)
                     SingleIndexScan@42197bb7(Index(test.parent.name[IndexColumn(name)]), NONE, =customers.name, rows = 10, cost = 426.731)
-                    TableSource@6855a338(child - TableGroupJoin@17094d48(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))
+                    TableSource@6855a338(child - TableGroupJoin@17094d48(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(test.parent))))

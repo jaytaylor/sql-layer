@@ -26,76 +26,29 @@
 
 package com.akiban.server;
 
+import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.rowdata.RowDef;
 import com.persistit.exception.PersistitInterruptedException;
 
 public interface TableStatusCache {
     /**
-     * Record that a row has been deleted.
-     * @param tableID ID of the modified table.
-     */
-    void rowDeleted(int tableID);
-
-    /**
-     * Record that a row has been written.
-     * @param tableID ID of the modified table.
-     */
-    void rowWritten(int tableID);
-
-    /**
-     * Reset, but do not remove, the state of a table.
-     * @param tableID ID of the table to truncate.
-     */
-    void truncate(int tableID) throws PersistitInterruptedException;
-
-    /**
-     * Completely remove the state of a table.
-     * @param tableID ID of the table to dop.
-     */
-    void drop(int tableID) throws PersistitInterruptedException;
-
-    /**
-     * Set the auto-increment value of a given table.
-     * @param tableID ID of the table.
-     * @param value The new auto-increment value.
-     */
-    void setAutoIncrement(int tableID, long value) throws PersistitInterruptedException;
-
-    /**
-     * Set the RowDef of a given table.
-     * @param tableID ID of the table.
-     * @param rowDef Associated RowDef.
-     */
-    void setRowDef(int tableID, RowDef rowDef);
-
-    /**
-     * Create a brand new, unique ID for the given table.
-     * @param tableID ID of the table.
-     * @return The new ID value.
-     */
-    long createNewUniqueID(int tableID) throws PersistitInterruptedException;
-
-    /**
-     * Set the ordinal value of a given table.
-     * @param tableID ID of the table.
-     * @param value Value to set the ordinal to.
-     */
-    void setOrdinal(int tableID, int value) throws PersistitInterruptedException;
-
-    /**
-     * Retrieve the, read-only, view of the table status for a given table.
-     * This method will instantiate a new TableStatus if one does not exist.
+     * Create a new TableStatus that will later be attached to the given
+     * tableID. It will not usable until {@link TableStatus#setRowDef(RowDef)}
+     * is called.
      * @param tableID ID of the table.
      * @return Associated TableStatus.
      */
-    TableStatus getTableStatus(int tableID);
+    TableStatus createTableStatus(int tableID);
 
     /**
-     * Load the saved state of all TableStatuses associated with the given volume.
-     * @param volumeName Name of the volume to load.
-     * @throws Exception For any error encountered during the load.
+     * Retrieve, or create, a new table status for a memory table that will be
+     * serviced by the given factory. Unlike statuses returned from the
+     * {@link #createTableStatus(int)} method, these are saved by the TableStatusCache.
+     * @param tableID ID of the table.
+     * @param factory Factory providing rowCount.
+     * @return Associated TableStatus;
      */
-    void loadAllInVolume(String volumeName) throws Exception;
+    TableStatus getOrCreateMemoryTableStatus(int tableID, MemoryTableFactory factory);
 
     /**
      * Clean up any AIS associated state stored by this cache or any of its 

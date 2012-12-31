@@ -10,7 +10,7 @@
 - Include: all-datetime-schema.yaml
 ---
 - Statement: select id,MONTH(time_field),expected_MONTH from datetime_matrix where MONTH(time_field) is not null;
-- row_count: 0
+- row_count: !select-engine { all: 0, newtypes: 840 }
 ---
 - Statement: select id,MONTH(timestamp_field),expected_MONTH from datetime_matrix where MONTH(timestamp_field) <> expected_MONTH;
 - row_count: 0

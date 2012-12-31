@@ -26,6 +26,7 @@
 
 package com.akiban.sql.optimizer.rule.cost;
 
+import com.akiban.server.geophile.BoxLatLon;
 import com.akiban.sql.optimizer.rule.cost.CostEstimator.IndexIntersectionCoster;
 import com.akiban.sql.optimizer.rule.range.RangeSegment;
 import static com.akiban.sql.optimizer.rule.OperatorAssembler.INSERTION_SORT_MAX_LIMIT;
@@ -36,7 +37,11 @@ import com.akiban.sql.optimizer.plan.*;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.geophile.SpaceLatLon;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types3.common.BigDecimalWrapper;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 public class PlanCostEstimator
@@ -62,6 +67,10 @@ public class PlanCostEstimator
         planEstimator = new IndexScanEstimator(index);
     }
 
+    public void spatialIndex(SingleIndexScan index) {
+        planEstimator = new SpatialIndexEstimator(index);
+    }
+
     public void flatten(TableGroupJoinTree tableGroup,
                         TableSource indexTable,
                         Set<TableSource> requiredTables) {
@@ -73,6 +82,12 @@ public class PlanCostEstimator
                           TableGroupJoinTree tableGroup,
                           Set<TableSource> requiredTables) {
         planEstimator = new GroupScanEstimator(scan, tableGroup, requiredTables);
+    }
+
+    public void groupLoop(GroupLoopScan scan,
+                          TableGroupJoinTree tableGroup,
+                          Set<TableSource> requiredTables) {
+        planEstimator = new GroupLoopEstimator(scan, tableGroup, requiredTables);
     }
 
     public void select(Collection<ConditionExpression> conditions,
@@ -150,6 +165,93 @@ public class PlanCostEstimator
         }
     }
 
+    protected class SpatialIndexEstimator extends PlanEstimator {
+        SingleIndexScan index;
+
+        protected SpatialIndexEstimator(SingleIndexScan index) {
+            super(null);
+            this.index = index;
+        }
+
+        @Override
+        protected void estimateCost() {
+            int nscans = 1;
+            FunctionExpression func = (FunctionExpression)index.getLowComparand();
+            List<ExpressionNode> operands = func.getOperands();
+            SpaceLatLon space = (SpaceLatLon)index.getIndex().space();
+            if ("_center".equals(func.getFunction())) {
+                nscans = 2;     // One in each direction.
+                costEstimate = costEstimator.costIndexScan(index.getIndex(),
+                                                           index.getEqualityComparands(),
+                                                           null, true,
+                                                           null, true);
+            } else if ("_center_radius".equals(func.getFunction())) {
+                BigDecimal lat = decimalConstant(operands.get(0));
+                BigDecimal lon = decimalConstant(operands.get(1));
+                BigDecimal r = decimalConstant(operands.get(2));
+                if ((lat != null) && (lon != null) && (r != null)) {
+                    BoxLatLon box = BoxLatLon.newBox(lat.subtract(r), lat.add(r), lon.subtract(r), lon.add(r));
+                    long[] zValues = new long[SpaceLatLon.MAX_DECOMPOSITION_Z_VALUES];
+                    space.decompose(box, zValues);
+                    for (int i = 0; i < SpaceLatLon.MAX_DECOMPOSITION_Z_VALUES; i++) {
+                        long z = zValues[i];
+                        if (z != -1L) {
+                            ExpressionNode lo = new ConstantExpression(space.zLo(z), AkType.LONG);
+                            ExpressionNode hi = new ConstantExpression(space.zHi(z), AkType.LONG);
+                            CostEstimate zScanCost =
+                                costEstimator.costIndexScan(index.getIndex(), index.getEqualityComparands(),
+                                                            lo, true,
+                                                            hi, true);
+                            costEstimate =
+                                costEstimate == null
+                                ? zScanCost
+                                : costEstimate.union(zScanCost);
+                        }
+                    }
+                } else {
+                    throw new AkibanInternalException("Operands for spatial index must all be constant numbers: " + func);
+                }
+            } else {
+                throw new AkibanInternalException("Unexpected function for spatial index: " + func);
+            }
+            index.setScanCostEstimate(costEstimate);
+            long totalRows = costEstimate.getRowCount();
+            long nrows = totalRows;
+            if (hasLimit() && (limit < totalRows)) {
+                nrows = limit;
+            }
+            if (nscans == 1) {
+                if (nrows != totalRows)
+                    costEstimate = costEstimator.costIndexScan(index.getIndex(), nrows);
+                return;
+            }
+            double setupCost = costEstimator.costIndexScan(index.getIndex(), 0).getCost();
+            double scanCost = costEstimate.getCost() - setupCost;
+            costEstimate = new CostEstimate(limit,
+                                            setupCost * nscans +
+                                            scanCost * nrows / totalRows);
+        }
+    }
+
+    protected static BigDecimal decimalConstant(ExpressionNode expr) {
+        // Because the distance_lat_lon function returns a double, the radius
+        // may be one for comparison.
+        // Also numbers may accidentally be given as integers due to formatting.
+        while (expr instanceof CastExpression) {
+            expr = ((CastExpression)expr).getOperand();
+        }
+        if (!(expr instanceof ConstantExpression)) return null;
+        Object obj = ((ConstantExpression)expr).getValue();
+        if (obj instanceof BigDecimalWrapper)
+            obj = ((BigDecimalWrapper)obj).asBigDecimal();
+        if (obj instanceof BigDecimal)
+            return (BigDecimal)obj;
+        else if (obj instanceof Number)
+            return BigDecimal.valueOf((long)(((Number)obj).doubleValue() * 1.0e6), 6);
+        else
+            return null;
+    }
+
     protected class FlattenEstimator extends PlanEstimator {
         private TableGroupJoinTree tableGroup;
         private TableSource indexTable;
@@ -203,6 +305,26 @@ public class PlanCostEstimator
             CostEstimate scanCost = costEstimator.costGroupScan(scan.getGroup().getGroup());
             CostEstimate flattenCost = costEstimator.costFlattenGroup(tableGroup, requiredTables);
             costEstimate = scanCost.sequence(flattenCost);
+        }
+    }
+
+    protected class GroupLoopEstimator extends PlanEstimator {
+        private GroupLoopScan scan;
+        private TableGroupJoinTree tableGroup;
+        private Set<TableSource> requiredTables;
+
+        protected GroupLoopEstimator(GroupLoopScan scan,
+                                     TableGroupJoinTree tableGroup,
+                                     Set<TableSource> requiredTables) {
+            super(null);
+            this.scan = scan;
+            this.tableGroup = tableGroup;
+            this.requiredTables = requiredTables;
+        }
+
+        @Override
+        protected void estimateCost() {
+            costEstimate = costEstimator.costFlattenNested(tableGroup, scan.getOutsideTable(), scan.getInsideTable(), scan.isInsideParent(), requiredTables);
         }
     }
 

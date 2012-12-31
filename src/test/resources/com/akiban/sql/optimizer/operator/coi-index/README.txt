@@ -12,6 +12,12 @@ delete-1: DELETE by primary key
 
 delete-2: DELETE by general condition
 
+delete-3: DELETE RETURNING basic
+
+delete-4: DELETE RETURNING with formula
+
+delete-5: DELETE RETURING *
+
 insert-1: INSERT single row VALUES
 
 insert-2: INSERT multiple row VALUES
@@ -19,6 +25,10 @@ insert-2: INSERT multiple row VALUES
 insert-3: INSERT with explicit columns
 
 insert-4: INSERT from SELECT
+
+insert-5: INSERT RETURNING basic
+
+insert-6: INSERT RETURING with formula
 
 select-0: single column from primary key match
 
@@ -66,8 +76,27 @@ select-13: cross group outer join
 
 select-14: NOT EXISTS
 
+select-15: index intersection and union
+
+select-15a: intersect two unions (one union all)
+
+select-15i: with different sized integers
+
+select-16: Use a Bloom filter to help with selective semi-join
+
+select-17: Various index uses to show EXPLAIN variation
+
+select-18: Really long IN shouldn't turn into UNIONs
+
 update-1: change column to literal
 
 update-2: change column to expression (column itself)
 
 update-3: update from (unnested) subquery
+
+update-4: returning
+
+update-5: returning with expressions
+
+update-6: update with subquery
+

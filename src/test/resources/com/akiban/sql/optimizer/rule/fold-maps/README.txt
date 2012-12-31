@@ -19,3 +19,5 @@ three-groups: General join and non-group join.
 three-groups-outer: Three LEFT joins into three groups.
 
 with-conditions: Additional conditions that need to be placed correctly.
+
+inside-branchpoint: Nested ancestor lookup that has children in group.

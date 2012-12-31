@@ -27,14 +27,12 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.expression.std.Comparison;
-import com.akiban.sql.optimizer.plan.BaseQuery;
 import com.akiban.sql.optimizer.plan.ColumnExpression;
 import com.akiban.sql.optimizer.plan.ComparisonCondition;
 import com.akiban.sql.optimizer.plan.ConditionExpression;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.ExpressionVisitor;
 import com.akiban.sql.optimizer.plan.JoinNode;
-import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.PlanNode;
 import com.akiban.sql.optimizer.plan.PlanVisitor;
 import com.akiban.sql.optimizer.plan.Select;
@@ -42,8 +40,6 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.List;
 
 public final class ColumnEquivalenceFinder extends BaseRule {

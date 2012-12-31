@@ -1,5 +1,8 @@
 # Test the bitwise OR function
 ---
+- Properties: sys-mysql
+- suppressed: true
+---
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types VALUES (null);

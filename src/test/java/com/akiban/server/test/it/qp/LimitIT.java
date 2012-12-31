@@ -31,17 +31,20 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.NegativeLimitException;
-import org.junit.Before;
+import com.akiban.server.types.FromObjectValueSource;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.pvalue.PValue;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.*;
 
 public class LimitIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupPostCreateSchema()
     {
-        super.before();
+        super.setupPostCreateSchema();
         NewRow[] dbRows = new NewRow[]{
             createNewRow(customer, 1L, "northbridge"),
             createNewRow(customer, 2L, "foundation"),
@@ -114,7 +117,10 @@ public class LimitIT extends OperatorITBase
         Operator plan = limit_Default(groupScan_Default(coi),
                                               0, false, 0, true);
         Cursor cursor = cursor(plan, queryContext);
-        queryContext.setValue(0, 2L);
+        if (Types3Switch.ON)
+            queryContext.setPValue(0, new PValue(MNumeric.INT.instance(false), 2));
+        else
+            queryContext.setValue(0, new FromObjectValueSource().setReflectively(2L));
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(customerRowType, 2L, "foundation"),
@@ -128,7 +134,10 @@ public class LimitIT extends OperatorITBase
         Operator plan = limit_Default(groupScan_Default(coi),
                                               0, false, 0, true);
         Cursor cursor = cursor(plan, queryContext);
-        queryContext.setValue(0, -1L);
+        if (Types3Switch.ON)
+            queryContext.setPValue(0, new PValue(MNumeric.INT.instance(false), -1));
+        else
+            queryContext.setValue(0, new FromObjectValueSource().setReflectively(-1L));
         RowBase[] expected = new RowBase[]{
         };
         compareRows(expected, cursor);

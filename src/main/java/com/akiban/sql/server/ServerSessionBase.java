@@ -26,44 +26,48 @@
 
 package com.akiban.sql.server;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.memoryadapter.MemoryAdapter;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.NoTransactionInProgressException;
+import com.akiban.server.error.TransactionAbortedException;
 import com.akiban.server.error.TransactionInProgressException;
 import com.akiban.server.error.TransactionReadOnlyException;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.service.instrumentation.SessionTracer;
+import com.akiban.server.service.monitor.SessionMonitor;
+import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.transaction.TransactionService;
+import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.sql.optimizer.AISBinderContext;
 import com.akiban.sql.optimizer.rule.cost.CostEstimator;
-import com.akiban.sql.parser.SQLParser;
 
 import java.util.*;
 
-public abstract class ServerSessionBase implements ServerSession
+public abstract class ServerSessionBase extends AISBinderContext implements ServerSession
 {
     public static final String COMPILER_PROPERTIES_PREFIX = "optimizer.";
 
     protected final ServerServiceRequirements reqs;
-    protected Properties properties, compilerProperties;
+    protected Properties compilerProperties;
     protected Map<String,Object> attributes = new HashMap<String,Object>();
     
     protected Session session;
-    protected long aisTimestamp = -1;
-    protected AkibanInformationSchema ais;
     protected Map<StoreAdapter.AdapterType, StoreAdapter> adapters = 
         new HashMap<StoreAdapter.AdapterType, StoreAdapter>();
-    //protected StoreAdapter adapter;
-    protected String defaultSchemaName;
-    protected SQLParser parser;
     protected ServerTransaction transaction;
     protected boolean transactionDefaultReadOnly = false;
-    protected ServerSessionTracer sessionTracer;
+    protected ServerSessionMonitor sessionMonitor;
 
-    protected Long queryTimeoutSec = null;
+    protected Long queryTimeoutMilli = null;
     protected ServerValueEncoder.ZeroDateTimeBehavior zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.NONE;
     protected QueryContext.NotificationLevel maxNotificationLevel = QueryContext.NotificationLevel.INFO;
 
@@ -72,38 +76,41 @@ public abstract class ServerSessionBase implements ServerSession
     }
 
     @Override
-    public Properties getProperties() {
-        return properties;
-    }
-
-    @Override
-    public String getProperty(String key) {
-        return properties.getProperty(key);
-    }
-
-    @Override
-    public String getProperty(String key, String defval) {
-        return properties.getProperty(key, defval);
-    }
-
-    @Override
     public void setProperty(String key, String value) {
-        if (value == null)
-            properties.remove(key);
-        else
-            properties.setProperty(key, value);
-        if (!propertySet(key, properties.getProperty(key)))
-            sessionChanged();   // Give individual handlers a chance.
+        String ovalue = (String)properties.get(key); // Not inheriting.
+        super.setProperty(key, value);
+        try {
+            if (!propertySet(key, properties.getProperty(key)))
+                sessionChanged();   // Give individual handlers a chance.
+        }
+        catch (InvalidOperationException ex) {
+            super.setProperty(key, ovalue);
+            try {
+                if (!propertySet(key, properties.getProperty(key)))
+                    sessionChanged();
+            }
+            catch (InvalidOperationException ex2) {
+                throw new AkibanInternalException("Error recovering " + key + " setting",
+                                                  ex2);
+            }
+            throw ex;
+        }
     }
 
     protected void setProperties(Properties properties) {
-        this.properties = properties;
+        super.setProperties(properties);
         for (String key : properties.stringPropertyNames()) {
             propertySet(key, properties.getProperty(key));
         }
         sessionChanged();
     }
 
+    /** React to a property change.
+     * Implementers are not required to remember the old state on
+     * error, but must not leave things in such a mess that reverting
+     * to the old value will not work.
+     * @see InvalidParameterValueException
+     **/
     protected boolean propertySet(String key, String value) {
         if ("zeroDateTimeBehavior".equals(key)) {
             zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.fromProperty(value);
@@ -116,10 +123,19 @@ public abstract class ServerSessionBase implements ServerSession
             return true;
         }
         if ("queryTimeoutSec".equals(key)) {
-            queryTimeoutSec = (value == null) ? null : Long.valueOf(value);
+            if (value == null)
+                queryTimeoutMilli = null;
+            else
+                queryTimeoutMilli = (long)(Double.parseDouble(value) * 1000);
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void setDefaultSchemaName(String defaultSchemaName) {
+        super.setDefaultSchemaName(defaultSchemaName);
+        sessionChanged();
     }
 
     protected abstract void sessionChanged();
@@ -151,26 +167,10 @@ public abstract class ServerSessionBase implements ServerSession
     }
 
     @Override
-    public String getDefaultSchemaName() {
-        return defaultSchemaName;
+    public AISBinderContext getBinderContext() {
+        return this;
     }
 
-    @Override
-    public void setDefaultSchemaName(String defaultSchemaName) {
-        this.defaultSchemaName = defaultSchemaName;
-        sessionChanged();
-    }
-
-    @Override
-    public AkibanInformationSchema getAIS() {
-        return ais;
-    }
-
-    @Override
-    public SQLParser getParser() {
-        return parser;
-    }
-    
     @Override
     public Properties getCompilerProperties() {
         if (compilerProperties == null)
@@ -179,8 +179,8 @@ public abstract class ServerSessionBase implements ServerSession
     }
 
     @Override
-    public SessionTracer getSessionTracer() {
-        return sessionTracer;
+    public SessionMonitor getSessionMonitor() {
+        return sessionMonitor;
      }
 
     @Override
@@ -189,8 +189,31 @@ public abstract class ServerSessionBase implements ServerSession
     }
     
     @Override
+    public StoreAdapter getStore(UserTable table) {
+        if (table.hasMemoryTableFactory()) {
+            return adapters.get(StoreAdapter.AdapterType.MEMORY_ADAPTER);
+        }
+        return adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
+    }
+
+    @Override
     public TreeService getTreeService() {
         return reqs.treeService();
+    }
+
+    @Override
+    public TransactionService getTransactionService() {
+        return reqs.txnService();
+    }
+
+    @Override
+    public boolean isTransactionActive() {
+        return (transaction != null);
+    }
+
+    @Override
+    public boolean isTransactionRollbackPending() {
+        return ((transaction != null) && transaction.isRollbackPending());
     }
 
     @Override
@@ -242,13 +265,26 @@ public abstract class ServerSessionBase implements ServerSession
     }
 
     @Override
+    public T3RegistryService t3RegistryService() {
+        return reqs.t3RegistryService();
+    }
+
+    @Override
+    public RoutineLoader getRoutineLoader() {
+        return reqs.routineLoader();
+    }
+
+    @Override
     public Date currentTime() {
         return new Date();
     }
 
     @Override
-    public Long getQueryTimeoutSec() {
-        return queryTimeoutSec;
+    public long getQueryTimeoutMilli() {
+        if (queryTimeoutMilli != null)
+            return queryTimeoutMilli;
+        else
+            return reqs.config().queryTimeoutMilli();
     }
 
     @Override
@@ -257,8 +293,23 @@ public abstract class ServerSessionBase implements ServerSession
     }
 
     @Override
-    public CostEstimator costEstimator(ServerOperatorCompiler compiler) {
-        return new ServerCostEstimator(this, reqs, compiler);
+    public CostEstimator costEstimator(ServerOperatorCompiler compiler, KeyCreator keyCreator) {
+        return new ServerCostEstimator(this, reqs, compiler, keyCreator);
+    }
+
+    protected void initAdapters(ServerOperatorCompiler compiler) {
+        // Add the Persisitit Adapter - default for most tables
+        adapters.put(StoreAdapter.AdapterType.PERSISTIT_ADAPTER, 
+                     new PersistitAdapter(compiler.getSchema(),
+                                          reqs.store(),
+                                          reqs.treeService(),
+                                          session,
+                                          reqs.config()));
+        // Add the Memory Adapter - for the in memory tables
+        adapters.put(StoreAdapter.AdapterType.MEMORY_ADAPTER, 
+                     new MemoryAdapter(compiler.getSchema(),
+                                       session,
+                                       reqs.config()));
     }
 
     /** Prepare to execute given statement.
@@ -283,11 +334,23 @@ public abstract class ServerSessionBase implements ServerSession
                 break;
             case WRITE:
             case NEW_WRITE:
+            case WRITE_STEP_ISOLATED:
                 if (transactionDefaultReadOnly)
                     throw new TransactionReadOnlyException();
                 localTransaction = new ServerTransaction(this, false);
-                localTransaction.beforeUpdate();
+                localTransaction.beforeUpdate(true);
                 break;
+            }
+        }
+        if (isTransactionRollbackPending()) {
+            ServerStatement.TransactionAbortedMode abortedMode = stmt.getTransactionAbortedMode();
+            switch (abortedMode) {
+                case ALLOWED:
+                    break;
+                case NOT_ALLOWED:
+                    throw new TransactionAbortedException();
+                default:
+                    throw new IllegalStateException("Unknown mode: " + abortedMode);
             }
         }
         return localTransaction;
@@ -307,13 +370,30 @@ public abstract class ServerSessionBase implements ServerSession
         }
         else {
             // Make changes visible in open global transaction.
-            switch (stmt.getTransactionMode()) {
+            ServerStatement.TransactionMode transactionMode = stmt.getTransactionMode();
+            switch (transactionMode) {
             case REQUIRED_WRITE:
             case WRITE:
-                transaction.afterUpdate();
+            case WRITE_STEP_ISOLATED:
+                transaction.afterUpdate(transactionMode == ServerStatement.TransactionMode.WRITE_STEP_ISOLATED);
                 break;
             }
         }
+    }
+
+    protected void inheritFromCall() {
+        ServerCallContextStack.Entry call = ServerCallContextStack.current();
+        if (call != null) {
+            ServerSessionBase server = (ServerSessionBase)call.getContext().getServer();
+            defaultSchemaName = server.defaultSchemaName;
+            transaction = server.transaction;
+            transactionDefaultReadOnly = server.transactionDefaultReadOnly;
+            sessionMonitor.setCallerSessionId(server.getSessionMonitor().getSessionId());
+        }
+    }
+
+    public boolean shouldNotify(QueryContext.NotificationLevel level) {
+        return (level.ordinal() <= maxNotificationLevel.ordinal());
     }
 
 }

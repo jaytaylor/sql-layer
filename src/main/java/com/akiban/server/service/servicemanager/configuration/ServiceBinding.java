@@ -40,6 +40,15 @@ public final class ServiceBinding {
         locked = true;
     }
 
+    public ClassLoader getClassLoader() {
+        return classLoader;
+    }
+
+    public void setClassLoader(ClassLoader classLoader) {
+        if (classLoader != null)
+            this.classLoader = classLoader;
+    }
+
     public String getInterfaceName() {
         return interfaceName;
     }
@@ -106,4 +115,5 @@ public final class ServiceBinding {
     private String implementingClassName;
     private boolean locked;
     private boolean directlyRequired;
+    private ClassLoader classLoader = ServiceBinding.class.getClassLoader();
 }

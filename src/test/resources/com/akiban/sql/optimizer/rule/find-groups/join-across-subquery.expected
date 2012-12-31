@@ -13,4 +13,4 @@ Subquery@3bc6d11a
           Select@3d73eca6[orders.cid == customers.cid]
             TableGroupJoinTree@679801c(TableGroup@1ebafdff(customers), orders INNER items)
               TableSource@5898bbf6(orders - TableGroup@1ebafdff(customers))
-                TableSource@135c40eb(items - TableGroupJoin@12c9b196(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+                TableSource@135c40eb(items - TableGroupJoin@12c9b196(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

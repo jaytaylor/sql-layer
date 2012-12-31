@@ -26,14 +26,22 @@
 
 package com.akiban.ais.model;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-
 import com.akiban.ais.model.validation.AISInvariants;
+import com.akiban.qp.persistitadapter.SpatialHelper;
+import com.akiban.server.AccumulatorAdapter;
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.geophile.Space;
+import com.akiban.server.geophile.SpaceLatLon;
 import com.akiban.server.rowdata.IndexDef;
+import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.persistit.Tree;
+
+import java.util.*;
 
 public abstract class Index implements Traversable
 {
@@ -43,6 +51,7 @@ public abstract class Index implements Traversable
     public abstract Table leafMostTable();
     public abstract Table rootMostTable();
     public abstract void checkMutability();
+    public abstract Collection<Integer> getAllTableIDs();
 
     protected Index(TableName tableName,
                     String indexName,
@@ -93,10 +102,18 @@ public abstract class Index implements Traversable
     @Override
     public String toString()
     {
-        return "Index(" + indexName + keyColumns + ")";
+        StringBuilder buffer = new StringBuilder();
+        buffer.append("Index(");
+        buffer.append(indexName.toString());
+        buffer.append(keyColumns.toString());
+        buffer.append(")");
+        if (space != null) {
+            buffer.append(space.toString());
+        }
+        return buffer.toString();
     }
 
-    public void addColumn(IndexColumn indexColumn)
+    void addColumn(IndexColumn indexColumn)
     {
         if (columnsFrozen) {
             throw new IllegalStateException("can't add column because columns list is frozen");
@@ -160,6 +177,51 @@ public abstract class Index implements Traversable
         return allColumns;
     }
 
+    public IndexMethod getIndexMethod()
+    {
+        if (space != null)
+            return IndexMethod.Z_ORDER_LAT_LON;
+        else
+            return IndexMethod.NORMAL;
+    }
+
+    public void markSpatial(int firstSpatialArgument, int dimensions)
+    {
+        checkMutability();
+        if (dimensions != Space.LAT_LON_DIMENSIONS) {
+            // Only lat/lon for now
+            throw new IllegalArgumentException();
+        }
+        this.firstSpatialArgument = firstSpatialArgument;
+        this.space = SpaceLatLon.create();
+    }
+
+    public int firstSpatialArgument()
+    {
+        return firstSpatialArgument;
+    }
+
+    public int dimensions()
+    {
+        // Only lat/lon for now
+        return Space.LAT_LON_DIMENSIONS;
+    }
+
+    public Space space()
+    {
+        return space;
+    }
+
+    public final boolean isSpatial()
+    {
+        switch (getIndexMethod()) {
+        case Z_ORDER_LAT_LON:
+            return true;
+        default:
+            return false;
+        }
+    }
+
     private void sortColumnsIfNeeded() {
         if (columnsStale) {
             Collections.sort(keyColumns,
@@ -176,6 +238,11 @@ public abstract class Index implements Traversable
     public Integer getIndexId()
     {
         return indexId;
+    }
+
+    public void setIndexId(Integer indexId)
+    {
+        this.indexId = indexId;
     }
 
     @Override
@@ -211,6 +278,11 @@ public abstract class Index implements Traversable
     public IndexRowComposition indexRowComposition()
     {
         return indexRowComposition;
+    }
+
+    public boolean isUniqueAndMayContainNulls()
+    {
+        return false;
     }
 
     protected static class AssociationBuilder {
@@ -265,6 +337,8 @@ public abstract class Index implements Traversable
     private static Integer extractIndexId(Integer idAndFlags) {
         if (idAndFlags == null)
             return null;
+        if (idAndFlags < 0)
+            throw new IllegalArgumentException("Negative idAndFlags: " + idAndFlags);
         return idAndFlags & INDEX_ID_BITS;
     }
 
@@ -281,7 +355,137 @@ public abstract class Index implements Traversable
         }
         return idAndFlags;
     }
-    
+
+    public boolean containsTableColumn(TableName tableName, String columnName) {
+        for(IndexColumn iCol : keyColumns) {
+            Column column = iCol.getColumn();
+            if(column.getTable().getName().equals(tableName) && column.getName().equals(columnName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Unique, non-PK indexes store a "null separator value", making index rows unique that would otherwise
+    // be considered duplicates due to nulls.
+    public long nextNullSeparatorValue(TreeService treeService)
+    {
+        Tree tree = indexDef.getTreeCache().getTree();
+        AccumulatorAdapter accumulator =
+            new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, treeService, tree);
+        return accumulator.updateAndGet(1);
+    }
+
+    // akTypes, akCollators and tInstances provide type info for physical index rows.
+    // Physical != logical for spatial indexes.
+
+    public AkType[] akTypes()
+    {
+        ensureTypeInfo(false);
+        return akTypes;
+    }
+
+    public AkCollator[] akCollators()
+    {
+        ensureTypeInfo(false);
+        return akCollators;
+    }
+
+    public TInstance[] tInstances()
+    {
+        ensureTypeInfo(true);
+        return tInstances;
+    }
+
+    private void ensureTypeInfo(boolean types3Info)
+    {
+        if (types3Info ? (tInstances == null) : (akTypes == null)) {
+            synchronized (this) {
+                if (types3Info ? (tInstances == null) : (akTypes == null)) {
+                    int physicalColumns;
+                    int firstSpatialColumn;
+                    int dimensions;
+                    if (isSpatial()) {
+                        dimensions = dimensions();
+                        physicalColumns = allColumns.size() - dimensions + 1;
+                        firstSpatialColumn = firstSpatialArgument();
+                    } else {
+                        dimensions = 0;
+                        physicalColumns = allColumns.size();
+                        firstSpatialColumn = Integer.MAX_VALUE;
+                    }
+                    AkType[] localAkTypes = null;
+                    AkCollator[] localAkCollators = null;
+                    TInstance[] localTInstances = null;
+                    if (types3Info) {
+                        localTInstances = new TInstance[physicalColumns];
+                    }
+                    else {
+                        localAkTypes = new AkType[physicalColumns];
+                        localAkCollators = new AkCollator[physicalColumns];
+                    }
+                    int logicalColumn = 0;
+                    int physicalColumn = 0;
+                    int nColumns = allColumns.size();
+                    while (logicalColumn < nColumns) {
+                        if (logicalColumn == firstSpatialColumn) {
+                            if (types3Info) {
+                                localTInstances[physicalColumn] =
+                                    MNumeric.BIGINT.instance(SpatialHelper.isNullable(this));
+                            } else {
+                                localAkTypes[physicalColumn] = AkType.LONG;
+                                localAkCollators[physicalColumn] = null;
+                            }
+                            logicalColumn += dimensions;
+                        } else {
+                            IndexColumn indexColumn = allColumns.get(logicalColumn);
+                            Column column = indexColumn.getColumn();
+                            if (types3Info) {
+                                localTInstances[physicalColumn] = column.tInstance();
+                            } else {
+                                localAkTypes[physicalColumn] = column.getType().akType();
+                                localAkCollators[physicalColumn] = column.getCollator();
+                            }
+                            logicalColumn++;
+                        }
+                        physicalColumn++;
+                    }
+                    if (types3Info) {
+                        tInstances = localTInstances;
+                    }
+                    else {
+                        akCollators = localAkCollators;
+                        akTypes = localAkTypes;
+                    }
+                }
+            }
+        }
+    }
+
+    public static boolean isSpatialCompatible(Index index)
+    {
+        boolean isSpatialCompatible = false;
+        List<IndexColumn> indexColumns = index.getKeyColumns();
+        if (indexColumns.size() >= Space.LAT_LON_DIMENSIONS) {
+            isSpatialCompatible = true;
+            for (int d = 0; d < index.dimensions(); d++) {
+                isSpatialCompatible =
+                    isSpatialCompatible &&
+                    isFixedDecimal(indexColumns.get(index.firstSpatialArgument() + d).getColumn());
+            }
+        }
+        return isSpatialCompatible;
+    }
+
+    private static boolean isFixedDecimal(Column column) {
+        if (Types3Switch.ON) {
+            return column.tInstance().typeClass() instanceof MBigDecimal;
+        } else {
+            AkType type = column.getType().akType();
+            return type == AkType.DECIMAL;
+        }
+    }
+
     public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
     public static final String UNIQUE_KEY_CONSTRAINT = "UNIQUE";
     public static final String KEY_CONSTRAINT = "KEY";
@@ -292,11 +496,11 @@ public abstract class Index implements Traversable
     private static final int IS_VALID_FLAG = INDEX_ID_BITS + 1;
     private static final int IS_RIGHT_JOIN_FLAG = IS_VALID_FLAG << 1;
 
-    private final Integer indexId;
     private final Boolean isUnique;
     private final String constraint;
     private final JoinType joinType;
     private final boolean isValid;
+    private Integer indexId;
     private IndexName indexName;
     private boolean columnsStale = true;
     private boolean columnsFrozen = false;
@@ -305,6 +509,12 @@ public abstract class Index implements Traversable
     protected IndexRowComposition indexRowComposition;
     protected List<IndexColumn> keyColumns;
     protected List<IndexColumn> allColumns;
+    private volatile AkType[] akTypes;
+    private volatile AkCollator[] akCollators;
+    private volatile TInstance[] tInstances;
+    // For a spatial index
+    private Space space;
+    private int firstSpatialArgument;
 
     public enum JoinType {
         LEFT, RIGHT
@@ -325,6 +535,10 @@ public abstract class Index implements Traversable
         }
 
         private final String asString;
+    }
+
+    public enum IndexMethod {
+        NORMAL, Z_ORDER_LAT_LON
     }
 
     public String getTreeName() {

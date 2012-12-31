@@ -56,6 +56,14 @@ public class IfElseExpression extends BaseExpression
         return elseExpression;
     }
 
+    public void setThenExpression(ExpressionNode thenExpression) {
+        this.thenExpression = thenExpression;
+    }
+
+    public void setElseExpression(ExpressionNode elseExpression) {
+        this.elseExpression = elseExpression;
+    }
+
     /** Get the single condition (after compaction). */
     public ConditionExpression getTestCondition() {
         assert (testConditions.size() == 1);

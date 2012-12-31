@@ -26,9 +26,13 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.exec.UpdatePlannable;
+import com.akiban.qp.operator.Operator;
+import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.explain.ExplainContext;
 
 import java.util.Arrays;
 import java.util.List;
@@ -36,13 +40,37 @@ import java.util.List;
 /** Physical INSERT/UPDATE/DELETE statement */
 public class PhysicalUpdate extends BasePlannable
 {
-    public PhysicalUpdate(UpdatePlannable updatePlannable,
-                          DataTypeDescriptor[] parameterTypes) {
-        super(updatePlannable, parameterTypes);
-    }
+    private boolean requireStepIsolation;
+    private boolean returning;
+    private boolean putInCache;
 
+    public PhysicalUpdate(Operator resultsOperator, 
+                          DataTypeDescriptor[] paramterTypes,
+                          RowType rowType, 
+                          List<PhysicalResultColumn> resultColumns,
+                          boolean returning, 
+                          boolean requireStepIsolation,
+                          boolean putInCache) {
+        super (resultsOperator, paramterTypes, rowType, resultColumns);
+        this.requireStepIsolation = requireStepIsolation;
+        this.returning = returning;
+        this.putInCache = putInCache;
+    }
+    
     public UpdatePlannable getUpdatePlannable() {
         return (UpdatePlannable)getPlannable();
+    }
+
+    public boolean isRequireStepIsolation() {
+        return requireStepIsolation;
+    }
+    
+    public boolean isReturning() { 
+        return returning;
+    }
+
+    public boolean putInCache() {
+        return putInCache;
     }
 
     @Override
@@ -51,10 +79,14 @@ public class PhysicalUpdate extends BasePlannable
     }
 
     @Override
-    protected String withIndentedExplain(StringBuilder str) {
+    protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName) {
         if (getParameterTypes() != null)
             str.append(Arrays.toString(getParameterTypes()));
-        return super.withIndentedExplain(str);
+        if (requireStepIsolation)
+            str.append("/STEP_ISOLATE");
+        if (!putInCache)
+            str.append("/NO_CACHE");
+        return super.withIndentedExplain(str, context, defaultSchemaName);
     }
 
 }

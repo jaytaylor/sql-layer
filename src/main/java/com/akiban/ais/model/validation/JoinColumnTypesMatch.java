@@ -43,6 +43,12 @@ public class JoinColumnTypesMatch implements AISValidation {
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
         for (Join join : ais.getJoins().values()) {
+            if (join.getParent().getPrimaryKey() == null) {
+                //bug 931258: Attempting to join to a table without a explicit PK,
+                // causes getJoinColumns to throw an JoinParentNoExplicitPK exception. 
+                // This is explicitly validated in JoinToParentPK
+                continue;
+            }
             for (JoinColumn column : join.getJoinColumns()) {
                 Column parentCol = column.getParent();
                 Column childCol = column.getChild();

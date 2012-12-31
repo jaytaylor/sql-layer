@@ -1,0 +1,10 @@
+# Bug 1060958 - inserting into table with default columns inserts nulls. 
+# WIth the bug in place the insert fails with a "null not allowed error"
+---
+- CreateTable: t2 (c1 int not null default 0, c2 varchar(10) not null default 'CHAR')
+---
+- Statement: insert into t2 (c1, c2) values (1, 'fred');
+---
+- Statement: Select * from t2
+- output: [[1, 'fred']]
+...

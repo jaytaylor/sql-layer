@@ -26,6 +26,8 @@
 
 package com.akiban.server.service.config;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -34,42 +36,50 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.TreeSet;
+import java.util.TreeMap;
 
-import com.akiban.admin.Admin;
+import com.akiban.server.error.BadConfigDirectoryException;
 import com.akiban.server.error.ConfigurationPropertiesLoadException;
 import com.akiban.server.error.ServiceNotStartedException;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
+import com.akiban.server.service.plugins.Plugin;
+import com.akiban.server.service.plugins.PluginsFinder;
 import com.akiban.util.tap.Tap;
+import com.google.inject.Inject;
 
 public class ConfigurationServiceImpl implements ConfigurationService,
         ConfigurationServiceMXBean, JmxManageable,
-        Service<ConfigurationService> {
+        Service {
     private final static String CONFIG_DEFAULTS_RESOURCE = "configuration-defaults.properties";
-    private final static String AKIBAN_ADMIN = "akiban.admin";
     private static final String INITIALLY_ENABLED_TAPS = "taps.initiallyenabled";
-    /** Chunkserver properties. Format specified by chunkserver. */
 
-    public static final String CONFIG_CHUNKSERVER = "/config/server.properties";
-    private Map<String,Property> properties = null;
+    /** Server properties. Format specified by server. */
+    public static final String CONFIG_DIR_PROP = "akserver.config_dir";
+    public static final String CONFIG_SERVER = "/config/server.properties";
+
+    private volatile Map<String,String> properties = null;
+    private final PluginsFinder pluginsFinder;
     private final Set<String> requiredKeys = new HashSet<String>();
 
-    private final Object INTERNAL_LOCK = new Object();
-    
-    private volatile long queryTimeoutSec = -1L; // No timeout
+    private volatile long queryTimeoutMilli = -1L; // No timeout
 
-    @Override
-    public long queryTimeoutSec()
-    {
-        return queryTimeoutSec;
+    @Inject
+    public ConfigurationServiceImpl(PluginsFinder pluginsFinder) {
+        this.pluginsFinder = pluginsFinder;
     }
 
     @Override
-    public void queryTimeoutSec(long queryTimeoutSec)
+    public long queryTimeoutMilli()
     {
-        this.queryTimeoutSec = queryTimeoutSec;
+        return queryTimeoutMilli;
+    }
+
+    @Override
+    public void queryTimeoutMilli(long queryTimeoutMilli)
+    {
+        this.queryTimeoutMilli = queryTimeoutMilli;
     }
 
     @Override
@@ -81,39 +91,44 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     @Override
     public final String getProperty(String propertyName)
             throws PropertyNotDefinedException {
-        Property property = internalGetProperty(propertyName);
+        String property = internalGetProperty(propertyName);
         if (property == null) {
             throw new PropertyNotDefinedException(propertyName);
         }
-        return property.getValue();
+        return property;
     }
 
-    private Property internalGetProperty(String propertyName) {
-        final Map<String, Property> map = internalGetProperties();
+    private String internalGetProperty(String propertyName) {
+        final Map<String, String> map = internalGetProperties();
         return map.get(propertyName);
     }
 
     @Override
-    public final Set<Property> getProperties() {
-        return new TreeSet<Property>(internalGetProperties().values());
+    public Map<String, String> getProperties() {
+        Map<String, String> internalProperties = internalGetProperties();
+        Map<String, String> results = new TreeMap<String, String>();
+        for (Map.Entry<String, String> entry : internalProperties.entrySet()) {
+            results.put(entry.getKey(), entry.getValue());
+        }
+        return Collections.unmodifiableMap(results);
     }
 
     @Override
-    public long getQueryTimeoutSec()
+    public long getQueryTimeoutMilli()
     {
-        return queryTimeoutSec();
+        return queryTimeoutMilli();
     }
 
     @Override
-    public void setQueryTimeoutSec(long queryTimeoutSec)
+    public void setQueryTimeoutMilli(long queryTimeoutMilli)
     {
-        queryTimeoutSec(queryTimeoutSec);
+        queryTimeoutMilli(queryTimeoutMilli);
     }
 
     @Override
     public Properties deriveProperties(String withPrefix) {
         Properties properties = new Properties();
-        for (Property configProp : internalGetProperties().values()) {
+        for (Map.Entry<String,String> configProp : internalGetProperties().entrySet()) {
             String key = configProp.getKey();
             if (key.startsWith(withPrefix)) {
                 properties.setProperty(
@@ -127,23 +142,11 @@ public class ConfigurationServiceImpl implements ConfigurationService,
 
     @Override
     public final void start() throws ServiceStartupException {
-        synchronized (INTERNAL_LOCK) {
-            if (properties == null) {
-                properties = null;
-                Map<String, Property> newMap = internalLoadProperties();
-                for (Map.Entry<String, Property> entry : newMap.entrySet()) {
-                    if (!entry.getKey().equals(entry.getValue().getKey())) {
-                        throw new ServiceStartupException(
-                                String.format(
-                                        "Invalidly constructed key-value pair: %s -> %s",
-                                        entry.getKey(), entry.getValue()));
-                    }
-                }
-                properties = Collections.unmodifiableMap(newMap);
-            }
-            Property initiallyEnabledTaps = properties.get(INITIALLY_ENABLED_TAPS);
+        if (properties == null) {
+            properties = internalLoadProperties();
+            String initiallyEnabledTaps = properties.get(INITIALLY_ENABLED_TAPS);
             if (initiallyEnabledTaps != null) {
-                Tap.setInitiallyEnabled(initiallyEnabledTaps.getValue());
+                Tap.setInitiallyEnabled(initiallyEnabledTaps);
             }
         }
     }
@@ -153,9 +156,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
         try {
             unloadProperties();
         } finally {
-            synchronized (INTERNAL_LOCK) {
-                properties = null;
-            }
+            properties = null;
         }
     }
     
@@ -163,9 +164,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     @Override
     public void crash() {
         // Note: do not call unloadProperties().
-        synchronized (INTERNAL_LOCK) {
-            properties = null;
-        }
+        properties = null;
     }
 
     @Override
@@ -174,19 +173,9 @@ public class ConfigurationServiceImpl implements ConfigurationService,
                 ConfigurationServiceMXBean.class);
     }
 
-    @Override
-    public ConfigurationService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<ConfigurationService> castClass() {
-        return ConfigurationService.class;
-    }
-
-    private Map<String, Property> internalLoadProperties()
+    private Map<String, String> internalLoadProperties()
             throws ServiceStartupException {
-        Map<String, Property> ret = loadProperties();
+        Map<String, String> ret = loadProperties();
 
         Set<String> missingKeys = new HashSet<String>();
         for (String required : getRequiredKeys()) {
@@ -209,45 +198,45 @@ public class ConfigurationServiceImpl implements ConfigurationService,
      * for customization in unit tests. For example, some unit tests create data
      * files in a temporary directory. These should also override
      * {@link #unloadProperties()} to clean them up.
-     * @throws IOException if loading the properties throws an IO exception
      * @return the configuration properties
      */
-    protected Map<String, Property> loadProperties() {
+    protected Map<String, String> loadProperties() {
         Properties props = null;
 
         props = loadResourceProperties(props);
-        props = loadSystemProperties(props);
-        if (shouldLoadAdminProperties()) {
-            props = loadAdminProperties(props);
+        for (Plugin plugin : pluginsFinder.get()) {
+            props = loadPluginProperties(props, plugin);
         }
+        props = loadSystemProperties(props);
+        props = loadConfigDirProperties(props);
 
-        return propetiesToMap(props);
+        return propertiesToMap(props);
+    }
+
+    private Properties loadPluginProperties(Properties mergeInto, Plugin plugin) {
+        Properties pluginProperties = plugin.readProperties();
+        mergeInto.putAll(pluginProperties);
+        return mergeInto;
     }
 
     /**
      * Override this method in unit tests to clean up any temporary files, etc.
      * A class that overrides {@link #loadProperties()} should probably also
      * override this method.
-     * @throws IOException not thrown by the default implementation
      */
     protected void unloadProperties() {
 
-    }
-
-    protected boolean shouldLoadAdminProperties() {
-        return true;
     }
 
     protected Set<String> getRequiredKeys() {
         return requiredKeys;
     }
 
-    private static Map<String, Property> propetiesToMap(
-            Properties properties) {
-        Map<String, Property> ret = new HashMap<String, Property>();
+    private static Map<String, String> propertiesToMap(Properties properties) {
+        Map<String, String> ret = new HashMap<String, String>();
         for (String keyStr : properties.stringPropertyNames()) {
             String value = properties.getProperty(keyStr);
-            ret.put(keyStr, new Property(keyStr, value));
+            ret.put(keyStr, value);
         }
         return ret;
     }
@@ -304,14 +293,34 @@ public class ConfigurationServiceImpl implements ConfigurationService,
         return loadedSystemProps;
     }
 
-    private static Properties loadAdminProperties(Properties defaults) {
-        Properties adminProps = chainProperties(defaults);
-        final String akibanAdmin = adminProps.getProperty(AKIBAN_ADMIN);
-        if (akibanAdmin != null && !"NONE".equals(akibanAdmin)) {
-            final Admin admin = Admin.only();
-            adminProps.putAll(admin.get(CONFIG_CHUNKSERVER).properties());
+    private static Properties loadConfigDirProperties(Properties defaults) {
+        Properties combined = chainProperties(defaults);
+        String configDirPath = combined.getProperty(CONFIG_DIR_PROP);
+        if (configDirPath != null && !"NONE".equals(configDirPath)) {
+            File configDir = new File(configDirPath);
+            if (!configDir.exists() || !configDir.isDirectory()) {
+                throw new BadConfigDirectoryException(configDir.getAbsolutePath());
+            }
+            try {
+                loadFromFile(combined, configDirPath, CONFIG_SERVER);
+            } catch(IOException e) {
+                throw new ConfigurationPropertiesLoadException(CONFIG_SERVER, e.getMessage());
+            }
         }
-        return adminProps;
+        return combined;
+    }
+
+    private static void loadFromFile(Properties props, String directory, String fileName) throws IOException {
+        FileInputStream fis = null;
+        try {
+            File file = new File(directory, fileName);
+            fis = new FileInputStream(file);
+            props.load(fis);
+        } finally {
+            if(fis != null) {
+                fis.close();
+            }
+        }
     }
 
     private static boolean keyIsInteresting(String key) {
@@ -319,11 +328,8 @@ public class ConfigurationServiceImpl implements ConfigurationService,
                 || key.startsWith("akserver");
     }
 
-    private Map<String, Property> internalGetProperties() {
-        final Map<String, Property> ret;
-        synchronized (INTERNAL_LOCK) {
-            ret = properties;
-        }
+    private Map<String, String> internalGetProperties() {
+        final Map<String, String> ret = properties;
         if (ret == null) {
             throw new ServiceNotStartedException("Configuration");
         }

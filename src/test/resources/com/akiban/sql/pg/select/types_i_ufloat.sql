@@ -1,1 +1,1 @@
-SELECT a_int FROM types_i WHERE a_ufloat = 1.23e0
+SELECT a_int FROM types_i WHERE a_ufloat = CAST('1.23' AS REAL)

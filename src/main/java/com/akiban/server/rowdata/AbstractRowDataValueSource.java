@@ -41,7 +41,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
-abstract class AbstractRowDataValueSource implements ValueSource {
+abstract class AbstractRowDataValueSource extends ValueSource {
 
     // ValueSource interface
 

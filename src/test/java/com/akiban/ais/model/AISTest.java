@@ -169,38 +169,19 @@ public class AISTest
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
         UserTable customer = ais.getUserTable("s", "customer");
-        GroupTable coi = customer.getGroup().getGroupTable();
         checkHKey(customer.hKey(),
                   customer, customer, "cid");
         // ---------------- Order -------------------------------------
         UserTable order = ais.getUserTable("s", "order");
-        assertSame(coi, order.getGroup().getGroupTable());
         checkHKey(order.hKey(),
                   customer, order, "cid",
                   order, order, "oid");
         // ---------------- Item -------------------------------------
         UserTable item = ais.getUserTable("s", "item");
-        assertSame(coi, item.getGroup().getGroupTable());
         checkHKey(item.hKey(),
                   customer, order, "cid",
                   order, item, "oid",
                   item, item, "iid");
-        // ---------------- Branch hkeys -------------------------------------
-        // customer
-        checkBranchHKeyColumn(customer.branchHKey(), coi,
-                              customer, "customer$cid", "order$cid");
-        // order
-        checkBranchHKeyColumn(order.branchHKey(), coi,
-                              customer, "order$cid", "customer$cid");
-        checkBranchHKeyColumn(order.branchHKey(), coi,
-                              order, "order$oid", "item$oid");
-        // item
-        checkBranchHKeyColumn(item.branchHKey(), coi,
-                              customer, "order$cid", "customer$cid");
-        checkBranchHKeyColumn(item.branchHKey(), coi,
-                              order, "item$oid", "order$oid");
-        checkBranchHKeyColumn(item.branchHKey(), coi,
-                              item, "item$iid");
     }
 
     @Test
@@ -232,50 +213,19 @@ public class AISTest
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
         UserTable customer = ais.getUserTable("s", "customer");
-        GroupTable coi = customer.getGroup().getGroupTable();
         checkHKey(customer.hKey(),
                   customer, customer, "cid0", customer, "cid1");
         // ---------------- Order -------------------------------------
         UserTable order = ais.getUserTable("s", "order");
-        assertSame(coi, order.getGroup().getGroupTable());
         checkHKey(order.hKey(),
                   customer, order, "cid0", order, "cid1",
                   order, order, "oid0", order, "oid1");
         // ---------------- Item -------------------------------------
         UserTable item = ais.getUserTable("s", "item");
-        assertSame(coi, item.getGroup().getGroupTable());
         checkHKey(item.hKey(),
                   customer, order, "cid0", order, "cid1",
                   order, item, "oid0", item, "oid1",
                   item, item, "iid0", item, "iid1");
-        // ---------------- Branch hkeys -------------------------------------
-        // customer
-        checkBranchHKeyColumn(customer.branchHKey(), coi,
-                              customer, "customer$cid0", "order$cid0");
-        checkBranchHKeyColumn(customer.branchHKey(), coi,
-                              customer, "customer$cid1", "order$cid1");
-        // order
-        checkBranchHKeyColumn(order.branchHKey(), coi,
-                              customer, "order$cid0", "customer$cid0");
-        checkBranchHKeyColumn(order.branchHKey(), coi,
-                              customer, "order$cid1", "customer$cid1");
-        checkBranchHKeyColumn(order.branchHKey(), coi,
-                              order, "order$oid0", "item$oid0");
-        checkBranchHKeyColumn(order.branchHKey(), coi,
-                              order, "order$oid1", "item$oid1");
-        // item
-        checkBranchHKeyColumn(item.branchHKey(), coi,
-                              customer, "order$cid0", "customer$cid0");
-        checkBranchHKeyColumn(item.branchHKey(), coi,
-                              customer, "order$cid1", "customer$cid1");
-        checkBranchHKeyColumn(item.branchHKey(), coi,
-                              order, "item$oid0", "order$oid0");
-        checkBranchHKeyColumn(item.branchHKey(), coi,
-                              order, "item$oid1", "order$oid1");
-        checkBranchHKeyColumn(item.branchHKey(), coi,
-                              item, "item$iid0");
-        checkBranchHKeyColumn(item.branchHKey(), coi,
-                              item, "item$iid1");
     }
 
     @Test
@@ -303,38 +253,19 @@ public class AISTest
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
         UserTable customer = ais.getUserTable("s", "customer");
-        GroupTable coi = customer.getGroup().getGroupTable();
         checkHKey(customer.hKey(),
                   customer, customer, "cid");
         // ---------------- Order -------------------------------------
         UserTable order = ais.getUserTable("s", "order");
-        assertSame(coi, order.getGroup().getGroupTable());
         checkHKey(order.hKey(),
                   customer, order, "cid",
                   order, order, "oid");
         // ---------------- Item -------------------------------------
         UserTable item = ais.getUserTable("s", "item");
-        assertSame(coi, item.getGroup().getGroupTable());
         checkHKey(item.hKey(),
                   customer, item, "cid",
                   order, item, "oid",
                   item, item, "iid");
-        // ---------------- Branch hkeys -------------------------------------
-        // customer
-        checkBranchHKeyColumn(customer.branchHKey(), coi,
-                              customer, "customer$cid", "order$cid", "item$cid");
-        // order
-        checkBranchHKeyColumn(order.branchHKey(), coi,
-                              customer, "order$cid", "customer$cid", "item$cid");
-        checkBranchHKeyColumn(order.branchHKey(), coi,
-                              order, "order$oid", "item$oid");
-        // item
-        checkBranchHKeyColumn(item.branchHKey(), coi,
-                              customer, "item$cid", "customer$cid", "order$cid");
-        checkBranchHKeyColumn(item.branchHKey(), coi,
-                              order, "item$oid", "order$oid");
-        checkBranchHKeyColumn(item.branchHKey(), coi,
-                              item, "item$iid");
     }
 
     @Test
@@ -368,50 +299,19 @@ public class AISTest
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
         UserTable customer = ais.getUserTable("s", "customer");
-        GroupTable coi = customer.getGroup().getGroupTable();
         checkHKey(customer.hKey(),
                   customer, customer, "cid0", customer, "cid1");
         // ---------------- Order -------------------------------------
         UserTable order = ais.getUserTable("s", "order");
-        assertSame(coi, order.getGroup().getGroupTable());
         checkHKey(order.hKey(),
                   customer, order, "cid0", order, "cid1",
                   order, order, "oid0", order, "oid1");
         // ---------------- Item -------------------------------------
         UserTable item = ais.getUserTable("s", "item");
-        assertSame(coi, item.getGroup().getGroupTable());
         checkHKey(item.hKey(),
                   customer, item, "cid0", item, "cid1",
                   order, item, "oid0", item, "oid1",
                   item, item, "iid0", item, "iid1");
-        // ---------------- Branch hkeys -------------------------------------
-        // customer
-        checkBranchHKeyColumn(customer.branchHKey(), coi,
-                              customer, "customer$cid0", "order$cid0", "item$cid0");
-        checkBranchHKeyColumn(customer.branchHKey(), coi,
-                              customer, "customer$cid1", "order$cid1", "item$cid1");
-        // order
-        checkBranchHKeyColumn(order.branchHKey(), coi,
-                              customer, "order$cid0", "customer$cid0", "item$cid0");
-        checkBranchHKeyColumn(order.branchHKey(), coi,
-                              customer, "order$cid1", "customer$cid1", "item$cid1");
-        checkBranchHKeyColumn(order.branchHKey(), coi,
-                              order, "order$oid0", "item$oid0");
-        checkBranchHKeyColumn(order.branchHKey(), coi,
-                              order, "order$oid1", "item$oid1");
-        // item
-        checkBranchHKeyColumn(item.branchHKey(), coi,
-                              customer, "item$cid0", "customer$cid0", "order$cid0");
-        checkBranchHKeyColumn(item.branchHKey(), coi,
-                              customer, "item$cid1", "customer$cid1", "order$cid1");
-        checkBranchHKeyColumn(item.branchHKey(), coi,
-                              order, "item$oid0", "order$oid0");
-        checkBranchHKeyColumn(item.branchHKey(), coi,
-                              order, "item$oid1", "order$oid1");
-        checkBranchHKeyColumn(item.branchHKey(), coi,
-                              item, "item$iid0");
-        checkBranchHKeyColumn(item.branchHKey(), coi,
-                              item, "item$iid1");
     }
 
     @Test
@@ -444,49 +344,24 @@ public class AISTest
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
         UserTable customer = ais.getUserTable("s", "customer");
-        GroupTable coi = customer.getGroup().getGroupTable();
         checkHKey(customer.hKey(),
                   customer, customer, "cid");
         // ---------------- Order -------------------------------------
         UserTable order = ais.getUserTable("s", "order");
-        assertSame(coi, order.getGroup().getGroupTable());
         checkHKey(order.hKey(),
                   customer, order, "cid",
                   order, order, "oid");
         // ---------------- Item -------------------------------------
         UserTable item = ais.getUserTable("s", "item");
-        assertSame(coi, item.getGroup().getGroupTable());
         checkHKey(item.hKey(),
                   customer, order, "cid",
                   order, item, "oid",
                   item, item, "iid");
         // ---------------- Address -------------------------------------
         UserTable address = ais.getUserTable("s", "address");
-        assertSame(coi, address.getGroup().getGroupTable());
         checkHKey(address.hKey(),
                   customer, address, "cid",
                   address, address, "aid");
-        // ---------------- Branch hkeys -------------------------------------
-        // customer
-        checkBranchHKeyColumn(customer.branchHKey(), coi,
-                              customer, "customer$cid", "order$cid", "address$cid");
-        // order
-        checkBranchHKeyColumn(order.branchHKey(), coi,
-                              customer, "order$cid", "customer$cid");
-        checkBranchHKeyColumn(order.branchHKey(), coi,
-                              order, "order$oid", "item$oid");
-        // item
-        checkBranchHKeyColumn(item.branchHKey(), coi,
-                              customer, "order$cid", "customer$cid");
-        checkBranchHKeyColumn(item.branchHKey(), coi,
-                              order, "item$oid", "order$oid");
-        checkBranchHKeyColumn(item.branchHKey(), coi,
-                              item, "item$iid");
-        // address
-        checkBranchHKeyColumn(address.branchHKey(), coi,
-                              customer, "address$cid", "customer$cid");
-        checkBranchHKeyColumn(address.branchHKey(), coi,
-                              address, "address$aid");
     }
 
     @Test
@@ -572,27 +447,6 @@ public class AISTest
             }
         }
         assertEquals(elements.length, e);
-    }
-
-    private void checkBranchHKeyColumn(HKey hKey, GroupTable groupTable,
-                                       UserTable segmentUserTable,
-                                       String columnName,
-                                       Object ... matches)
-    {
-        HKeySegment segment = null;
-        for (HKeySegment s : hKey.segments()) {
-            if (s.table() == segmentUserTable) {
-                segment = s;
-            }
-        }
-        assertNotNull(segment);
-        HKeyColumn column = null;
-        for (HKeyColumn c : segment.columns()) {
-            if (c.column().getName().equals(columnName)) {
-                column = c;
-            }
-        }
-        assertNotNull(column);
     }
 
     private void checkColumns(List<Column> actual, String ... expected)

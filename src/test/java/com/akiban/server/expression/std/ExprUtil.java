@@ -26,12 +26,16 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import java.util.Map;
 
 final class ExprUtil {
 
@@ -122,6 +126,17 @@ final class ExprUtil {
         private final AkType type;
 
         @Override
+        public String name()
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public CompoundExplainer getExplainer(ExplainContext context)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
         public boolean nullIsContaminating()
         {
             throw new UnsupportedOperationException("Not supported yet.");
@@ -200,6 +215,17 @@ final class ExprUtil {
         };
 
         @Override
+        public String name()
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public CompoundExplainer getExplainer(ExplainContext context)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
         public boolean nullIsContaminating()
         {
             return true;
@@ -245,6 +271,17 @@ final class ExprUtil {
         private final Expression delegate;
 
         @Override
+        public String name()
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public CompoundExplainer getExplainer(ExplainContext context)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+        
         public boolean nullIsContaminating()
         {
             return true;

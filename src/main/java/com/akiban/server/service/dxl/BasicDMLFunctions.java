@@ -26,7 +26,6 @@
 
 package com.akiban.server.service.dxl;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -147,7 +146,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     @Override
     public CursorId openCursor(Session session, int knownAIS, ScanRequest request)
     {
-        checkAISGeneration(knownAIS);
+        checkAISGeneration(session, knownAIS);
         logger.trace("opening scan:    {} -> {}", System.identityHashCode(request), request);
         if (request.scanAllColumns()) {
             request = scanAllColumns(session, request);
@@ -163,15 +162,15 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
     private void checkAISGeneration(int knownGeneration, Session session, CursorId cursorId) throws OldAISException {
         try {
-            checkAISGeneration(knownGeneration);
+            checkAISGeneration(session, knownGeneration);
         } catch (OldAISException e) {
             closeCursor(session, cursorId);
             throw e;
         }
     }
 
-    private void checkAISGeneration(int knownGeneration) throws OldAISException {
-        int currentGeneration = ddlFunctions.getGeneration();
+    private void checkAISGeneration(Session session, int knownGeneration) throws OldAISException {
+        int currentGeneration = ddlFunctions.getGenerationAsInt(session);
         if (currentGeneration != knownGeneration) {
             throw new OldAISException(knownGeneration, currentGeneration);
         }
@@ -344,22 +343,25 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             return router;
         }
 
-        public void setConverter(RowOutput output, Set<Integer> columns) {
-            converter.setOutput(output);
-            converter.setColumnsToScan(columns);
+        public void setConverter(Session session, RowOutput output, Set<Integer> columns) {
+            converter.reset(session, output, columns);
+        }
+
+        public void clearConverter() {
+            converter.clearSession();
         }
     }
 
     private final BlockingQueue<PooledConverter> convertersPool = new LinkedBlockingDeque<PooledConverter>();
 
-    private PooledConverter getPooledConverter(RowOutput output, Set<Integer> columns) {
+    private PooledConverter getPooledConverter(Session session, RowOutput output, Set<Integer> columns) {
         PooledConverter converter = convertersPool.poll();
         if (converter == null) {
             logger.debug("Allocating new PooledConverter");
             converter = new PooledConverter(this);
         }
         try {
-            converter.setConverter(output, columns);
+            converter.setConverter(session, output, columns);
         } catch (NoSuchTableException e) {
             releasePooledConverter(converter);
             throw e;
@@ -371,6 +373,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     }
 
     private void releasePooledConverter(PooledConverter which) {
+        which.clearConverter();
         if (!convertersPool.offer(which)) {
             logger.warn("Failed to release PooledConverter "
                     + which
@@ -392,7 +395,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         final ScanData scanData = getScanData(session, cursorId);
         assert scanData != null;
         Set<Integer> scanColumns = scanData.scanAll() ? null : scanData.getScanColumns();
-        final PooledConverter converter = getPooledConverter(output, scanColumns);
+        final PooledConverter converter = getPooledConverter(session, output, scanColumns);
         try {
             scanSome(session, cursorId, converter.getLegacyOutput(), scanHooks);
         }
@@ -547,14 +550,21 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public NewRow convertRowData(RowData rowData) {
+    public NewRow wrapRowData(Session session, RowData rowData) {
+        logger.trace("wrapping in NewRow: {}", rowData);
+        RowDef rowDef = ddlFunctions.getRowDef(session, rowData.getRowDefId());
+        return new LegacyRowWrapper(rowDef, rowData);
+    }
+
+    @Override
+    public NewRow convertRowData(Session session, RowData rowData) {
         logger.trace("converting to NewRow: {}", rowData);
-        RowDef rowDef = ddlFunctions.getRowDef(rowData.getRowDefId());
+        RowDef rowDef = ddlFunctions.getRowDef(session, rowData.getRowDefId());
         return NiceRow.fromRowData(rowData, rowDef);
     }
 
     @Override
-    public List<NewRow> convertRowDatas(List<RowData> rowDatas)
+    public List<NewRow> convertRowDatas(Session session, List<RowData> rowDatas)
     {
         logger.trace("converting {} RowData(s) to NewRow", rowDatas.size());
         if (rowDatas.isEmpty()) {
@@ -568,7 +578,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             int currRowDefId = rowData.getRowDefId();
             if ((rowDef == null) || (currRowDefId != lastRowDefId)) {
                 lastRowDefId = currRowDefId;
-                rowDef = ddlFunctions.getRowDef(currRowDefId);
+                rowDef = ddlFunctions.getRowDef(session, currRowDefId);
             }
             converted.add(NiceRow.fromRowData(rowData, rowDef));
         }
@@ -576,7 +586,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public Long writeRow(Session session, NewRow row)
+    public void writeRow(Session session, NewRow row)
     {
         logger.trace("writing a row");
         final RowData rowData = niceRowToRowData(row);
@@ -585,7 +595,18 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         } catch (PersistitException ex) {
             throw new PersistitAdapterException(ex);
         }
-        return null;
+    }
+
+    @Override
+    public void writeRows(Session session, List<RowData> rows) {
+        logger.trace("writing {} rows", rows.size());
+        try {
+            for(RowData rowData : rows) {
+                store().writeRow(session, rowData);
+            }
+        } catch (PersistitException ex) {
+            throw new PersistitAdapterException(ex);
+        }
     }
 
     @Override
@@ -625,7 +646,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         );
 
         try {
-            store().updateRow(session, oldData, newData, columnSelector);
+            store().updateRow(session, oldData, newData, columnSelector, null);
         } catch (PersistitException ex) {
             throw new PersistitAdapterException(ex);
         }
@@ -654,13 +675,13 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                         cursor.setScanModified();
                         break;
                     }
-                    scanTableId = ddlFunctions.getRowDef(scanTableId).getParentRowDefId();
+                    scanTableId = ddlFunctions.getRowDef(session, scanTableId).getParentRowDefId();
                 }
             }
             else {
                 IndexDef indexDef = rc.getIndexDef();
                 if (indexDef == null) {
-                    Index index = ddlFunctions.getRowDef(rc.getTableId()).getPKIndex();
+                    Index index = ddlFunctions.getRowDef(session, rc.getTableId()).getPKIndex();
                     indexDef = index != null ? index.indexDef() : null;
                 }
                 if (indexDef != null) {
@@ -711,33 +732,34 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
      * @throws Exception 
      */
     private boolean canFastTruncate(Session session, UserTable userTable) {
-        UserTable rootTable = userTable.getGroup().getGroupTable().getRoot();
-        for(Join join : rootTable.getChildJoins()) {
-            UserTable childTable = join.getChild();
-            if(!childTable.equals(userTable)) {
-                TableStatistics stats = getTableStatistics(session, childTable.getTableId(), false);
+        List<UserTable> tableList = new ArrayList<UserTable>();
+        tableList.add(userTable.getGroup().getRoot());
+        while(!tableList.isEmpty()) {
+            UserTable table = tableList.remove(tableList.size() - 1);
+            if(table != userTable) {
+                TableStatistics stats = getTableStatistics(session, table.getTableId(), false);
                 if(stats.getRowCount() > 0) {
                     return false;
                 }
             }
+            for(Join join : table.getChildJoins()) {
+                tableList.add(join.getChild());
+            }
         }
-        // Only iterated over children, also check root table
-        return rootTable.equals(userTable) ||
-               getTableStatistics(session, rootTable.getTableId(), false).getRowCount() == 0;
+        return true;
     }
 
     @Override
     public void truncateTable(final Session session, final int tableId)
     {
         logger.trace("truncating tableId={}", tableId);
-        final int knownAIS = ddlFunctions.getGeneration();
+        final int knownAIS = ddlFunctions.getGenerationAsInt(session);
         final Table table = ddlFunctions.getTable(session, tableId);
         final UserTable utable = table.isUserTable() ? (UserTable)table : null;
 
         if(utable == null || canFastTruncate(session, utable)) {
-            final RowDef rowDef = ddlFunctions.getRowDef(table.getTableId());
             try {
-                store().truncateGroup(session, rowDef.getRowDefId());
+                store().truncateGroup(session, table.getGroup());
             } catch (PersistitException ex) {
                 throw new PersistitAdapterException(ex);
             }

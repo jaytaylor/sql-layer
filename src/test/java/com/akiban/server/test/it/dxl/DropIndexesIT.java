@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.DDLGenerator;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -93,11 +92,6 @@ public final class DropIndexesIT extends ITBase {
         UserTable uTable = getUserTable("test", "t");
         assertNotNull(uTable);
         assertNull(uTable.getIndex("name"));
-
-        // Index should be gone from GroupTable
-        GroupTable gTable = uTable.getGroup().getGroupTable();
-        assertNotNull(gTable);
-        assertNull(gTable.getIndex("t$name"));
     }
     
     @Test
@@ -109,7 +103,7 @@ public final class DropIndexesIT extends ITBase {
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("name"));
         updateAISGeneration();
 
-        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `name` varchar(255), PRIMARY KEY(`id`)) engine=akibandb");
+        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `name` varchar(255) NULL, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin");
 
         List<NewRow> rows = scanAll(scanAllRequest(tId));
         assertEquals("rows from table scan", 2, rows.size());
@@ -136,8 +130,8 @@ public final class DropIndexesIT extends ITBase {
         ddl().dropTableIndexes(session(), tableName(oId), Arrays.asList("tag"));
         updateAISGeneration();
         
-        checkDDL(oId, "create table `coi`.`o`(`oid` int NOT NULL, `c_id` int, `tag` varchar(32), PRIMARY KEY(`oid`), "+
-                      "CONSTRAINT `__akiban_fk_c` FOREIGN KEY `__akiban_fk_c`(`c_id`) REFERENCES `c`(`cid`)) engine=akibandb");
+        checkDDL(oId, "create table `coi`.`o`(`oid` int NOT NULL, `c_id` int NULL, `tag` varchar(32) NULL, PRIMARY KEY(`oid`), "+
+                      "CONSTRAINT `__akiban_fk_c` FOREIGN KEY `__akiban_fk_c`(`c_id`) REFERENCES `c`(`cid`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin");
 
         List<NewRow> rows = scanAll(scanAllRequest(cId));
         assertEquals("customers from table scan", 1, rows.size());
@@ -157,7 +151,7 @@ public final class DropIndexesIT extends ITBase {
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("name"));
         updateAISGeneration();
         
-        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `first` varchar(255), `last` varchar(255), PRIMARY KEY(`id`)) engine=akibandb");
+        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `first` varchar(255) NULL, `last` varchar(255) NULL, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin");
 
         List<NewRow> rows = scanAll(scanAllRequest(tId));
         assertEquals("rows from table scan", 3, rows.size());
@@ -173,7 +167,7 @@ public final class DropIndexesIT extends ITBase {
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("state"));
         updateAISGeneration();
         
-        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `state` char(2), PRIMARY KEY(`id`)) engine=akibandb");
+        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `state` char(2) NULL, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin");
 
         List<NewRow> rows = scanAll(scanAllRequest(tId));
         assertEquals("rows from table scan", 3, rows.size());
@@ -190,7 +184,7 @@ public final class DropIndexesIT extends ITBase {
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("otherId", "price"));
         updateAISGeneration();
         
-        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `otherid` int, `price` decimal(10, 2), PRIMARY KEY(`id`)) engine=akibandb");
+        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `otherid` int NULL, `price` decimal(10, 2) NULL, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin");
 
         List<NewRow> rows = scanAll(scanAllRequest(tId));
         assertEquals("rows from table scan", 3, rows.size());

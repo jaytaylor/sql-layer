@@ -31,8 +31,6 @@ import com.akiban.server.error.OverflowException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueSourceIsNullException;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 
 public final class DoubleExtractor extends AbstractExtractor {
 

@@ -35,22 +35,26 @@ public abstract class PostgresOutputter<T>
 {
     protected PostgresMessenger messenger;
     protected PostgresQueryContext context;
-    protected PostgresBaseStatement statement;
+    protected PostgresDMLStatement statement;
     protected List<PostgresType> columnTypes;
     protected int ncols;
     protected ServerValueEncoder encoder;
 
     public PostgresOutputter(PostgresQueryContext context,
-                             PostgresBaseStatement statement) {
+                             PostgresDMLStatement statement) {
         this.context = context;
         this.statement = statement;
         PostgresServerSession server = context.getServer();
         messenger = server.getMessenger();
         columnTypes = statement.getColumnTypes();
-        ncols = columnTypes.size();
-        encoder = new ServerValueEncoder(messenger.getEncoding(), 
-                                         server.getZeroDateTimeBehavior());
+        if (columnTypes != null)
+            ncols = columnTypes.size();
+        encoder = server.getValueEncoder();
     }
 
-    public abstract void output(T row) throws IOException;
+    public void beforeData() throws IOException {}
+
+    public void afterData() throws IOException {}
+
+    public abstract void output(T row, boolean usePVals) throws IOException;
 }

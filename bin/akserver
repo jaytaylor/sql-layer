@@ -1,27 +1,42 @@
 #!/bin/bash
 #
-# Copyright (C) 2011 Akiban Technologies Inc.
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License, version 3,
-# as published by the Free Software Foundation.
+# END USER LICENSE AGREEMENT (“EULA”)
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
+# READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+# http://www.akiban.com/licensing/20110913
 #
-# You should have received a copy of the GNU Affero General Public License
-# along with this program.  If not, see http://www.gnu.org/licenses.
+# BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+# ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+# AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+#
+# IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+# THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+# NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+# YOUR INITIAL PURCHASE.
+#
+# IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+# CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+# FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+# LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+# BY SUCH AUTHORIZED PERSONNEL.
+#
+# IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+# USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+# PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
 #
 
 #
 # OPTIONS:
 #   -f: start in foreground
+#   -w: start console window
 #   -g: start the persistit GUI
 #   -p <filename>: log the pid to a file (useful to kill it later)
 #   -j <filename>: jar file of server to use
+#   -d <dirname>: directory with jar dependencies
+#   -c <dirname>: configuration directory to use
 #   -k: kill an akiban server process
 #   -v: print the version of akiban server
+#   -s: profile using Solaris Studio
 #
 # CONTROLLING STARTUP:
 # 
@@ -30,9 +45,13 @@
 #
 #   JVM_OPTS -- Additional arguments to the JVM for heap size, etc
 #   AKIBAN_CONF -- Directory containing configuration files.
+#   AKIBAN_HOME -- Directory passed as akiban.home (e.g. plugin loading)
 #
 
-akiban_home=$(cd $(dirname $0)/..; pwd -P)
+# Use AKIBAN_HOME if set, otherwise assume source checkout
+if [ -z "$AKIBAN_HOME" ]; then
+    AKIBAN_HOME=$(cd $(dirname $0)/..; pwd -P)
+fi
 
 # Use JAVA_HOME if set, otherwise look for java in PATH
 if [ -x $JAVA_HOME/bin/java ]; then
@@ -41,16 +60,55 @@ else
     JAVA=`which java`
 fi
 
+infer_jar_file()
+{
+    local loc_local="${AKIBAN_HOME}/target/akiban-server-1.4.5-SNAPSHOT.jar"
+    local loc_global="/usr/share/akiban/akiban-server.jar"
+
+    # Only infer if passed no argument
+    if [ -z "$1" ]; then
+        # Try local first so you can develop *and* nave a system package installed
+        if [ -f "$loc_local" ]; then
+            echo $loc_local
+        elif [ -f "$loc_global" ]; then
+            echo $loc_global
+        else
+            echo "<UNKNOWN>"
+        fi
+    else
+        echo "$1"
+    fi
+}
+
+infer_dep_dir()
+{
+    local loc_local="${AKIBAN_HOME}/target/dependency"
+    local loc_global="/usr/share/akiban/server"
+
+    # Only infer if passed no argument
+    if [ -z "$1" ]; then
+        # Try local first so you can develop *and* nave a system package installed
+        if [ -d "$loc_local" ]; then
+            echo $loc_local
+        elif [ -d "$loc_global" ]; then
+            echo $loc_global
+        else
+            echo "<UNKNOWN>"
+        fi
+    else
+        echo "$1"
+    fi
+}
+
+
 get_version()
 {
-    jar_file=$1
-    # the JAR file we use to grab the version
-    if [ "x$jar_file" == "x" ]; then
-        jar_file="${akiban_home}/target/akiban-server-1.2.2-SNAPSHOT-jar-with-dependencies.jar"
-    fi
+    jar_file=$(infer_jar_file $1)
+    dep_dir=$(infer_dep_dir $2)
+    CLASSPATH=$jar_file:$dep_dir/*
 
-    server_version=$(exec $JAVA -cp $jar_file com.akiban.server.GetVersion)
-    persistit_version=$(exec $JAVA -cp $jar_file com.persistit.GetVersion)
+    server_version=$(exec $JAVA -cp "$CLASSPATH" com.akiban.server.GetVersion)
+    persistit_version=$(exec $JAVA -cp "$CLASSPATH" com.persistit.GetVersion)
     echo "server   : ${server_version}"
     echo "persistit: ${persistit_version}"
 }
@@ -61,21 +119,15 @@ launch_service()
     props=$2
     usegui=$3
     pidpath=$4
-    JAR_FILE=$5
-    AKIBAN_CONF=$6
+    JAR_FILE=$(infer_jar_file $5)
+    DEP_DIR=$(infer_dep_dir $6)
+    AKIBAN_CONF=$7
 
-    # the JAR file we use to launch the akiban server
-    if [ "x$JAR_FILE" == "x" ]; then
-        JAR_FILE="${akiban_home}/target/akiban-server-1.2.2-SNAPSHOT-jar-with-dependencies.jar"
+    if [ -z "$AKIBAN_CONF" ]; then
+        AKIBAN_CONF="${AKIBAN_HOME}/conf"
     fi
 
-    if [ "x$AKIBAN_CONF" == "x" ]; then
-        # default AKIBAN_CONF dir
-        AKIBAN_CONF="${akiban_home}/conf"
-    fi
-    akiban_parms="-Dakiban.admin=$AKIBAN_CONF"
-
-    if [ "x$pidpath" != "x" ]; then
+    if [ -n "$pidpath" ]; then
         akiban_parms="$akiban_parms -Dakserver.pidfile=$pidpath"
     fi
 
@@ -83,26 +135,44 @@ launch_service()
         . "$AKIBAN_CONF/config/jvm.options"
     fi
 
-    if [ "x$usegui" != "x" ]; then
+    if [ -n "$usegui" ]; then
         akiban_parms="$akiban_parms -Dcom.persistit.showgui=true"
     fi
-    akiban_parms="$akiban_parms -Dservices.config=$AKIBAN_CONF/config/services-config.yaml"
 
-    if [ "x$foreground" != "x" ]; then
-        echo $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props
-        exec $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props
+    akiban_parms="$akiban_parms -Dakiban.home=$AKIBAN_HOME -Dakserver.config_dir=$AKIBAN_CONF"
+    akiban_parms="$akiban_parms -Dservices.config=$AKIBAN_CONF/config/services-config.yaml -Dlog4j.configuration=file:$AKIBAN_CONF/config/log4j.properties"
+    akiban_parms="$akiban_parms $print_compilation $props"
+
+    CLASSPATH=$JAR_FILE:$DEP_DIR/*
+    main_class="com.akiban.server.AkServer"
+    if [ -n "$mode" ]; then
+        if [ "$mode" == "window" ]; then
+          akiban_parms="$akiban_parms -Drequire:com.akiban.server.service.ui.SwingConsoleService -Dprioritize:com.akiban.server.service.ui.SwingConsoleService"
+          main_class=com.akiban.server.service.ui.AkServerWithSwingConsole
+        fi
+        if [ -n "$profile" ]
+        then
+            echo $profile "$JVM_OPTS $akiban_parms -cp $CLASSPATH" $JAVA  $main_class
+            exec $profile "$JVM_OPTS $akiban_parms -cp $CLASSPATH" $JAVA  $main_class
+        else
+            echo $JAVA $JVM_OPTS $akiban_parms -cp "$CLASSPATH" $main_class
+            exec $JAVA $JVM_OPTS $akiban_parms -cp "$CLASSPATH" $main_class
+        fi
     else
-        echo ${akiban_home}
-        # use log4j to log output
-        akiban_parms="$akiban_parms -Dlog4j.configuration=file:$AKIBAN_CONF/config/log4j.properties"
-        exec $JAVA $JVM_OPTS $akiban_parms -jar $JAR_FILE $props <&- &
+        echo ${AKIBAN_HOME}
+        if [ -n "$profile" ]
+        then
+            exec $profile "$JVM_OPTS $akiban_parms -cp $CLASSPATH" $JAVA $main_class <&- &
+        else
+            exec $JAVA $JVM_OPTS $akiban_parms -cp "$CLASSPATH" $main_class <&- &
+        fi
     fi
 
     return $?
 }
 
 # Parse any command line options.
-args=`getopt fkvghj:c:p:D: "$@"`
+args=`getopt fwkvghsj:d:c:p:D: "$@"`
 eval set -- "$args"
 
 while true; do
@@ -115,12 +185,20 @@ while true; do
             jarfile="$2"
             shift 2
         ;;
+        -d)
+            depdir="$2"
+            shift 2
+        ;;
         -c)
             conf="$2"
             shift 2
         ;;
         -f)
-            foreground="yes"
+            mode="foreground"
+            shift
+        ;;
+        -w)
+            mode="window"
             shift
         ;;
         -g)
@@ -128,12 +206,13 @@ while true; do
             shift
         ;;
         -h)
-            echo "Usage: $0 [-f] [-g] [-h] [-p pidfile] [-j jarfile]"
+            echo "Usage: $0 [-f] [-g] [-h] [-p pidfile] [-j jarfile] [-k] [-s] [-v]"
             echo "-f launch the akiban server process in the foreground"
             echo "-g launch the persistit admin tool"
             echo "-p specify a pid file"
             echo "-j specify a jar file for the server to use"
             echo "-k kill an akiban server process"
+            echo "-s profile using Solaris Studio"
             echo "-v print akiban server version"
             exit 0
         ;;
@@ -150,8 +229,14 @@ while true; do
             pgrep -u `whoami` -f akiban-server | xargs kill -9
             exit 0
         ;;
+        -s)
+            profile=`which collect`
+            profile="$profile -y SIGCONT -j on -J "
+            print_compilation="$akiban_parms -XX:+PrintCompilation"
+            shift
+        ;;
         -v)
-            get_version $jarfile
+            get_version $jarfile $depdir
             exit 0
         ;;
         --)
@@ -166,7 +251,7 @@ while true; do
 done
 
 # Start up the service
-launch_service "$foreground" "$properties" "$gui" "$pidfile" "$jarfile" "$conf"
+launch_service "$mode" "$properties" "$gui" "$pidfile" "$jarfile" "$depdir" "$conf"
 
 exit $?
 

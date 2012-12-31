@@ -27,6 +27,7 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
@@ -38,16 +39,16 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static com.akiban.server.expression.std.Expressions.field;
+import static com.akiban.server.test.ExpressionGenerators.field;
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.qp.operator.API.JoinType.*;
 
 public class ProjectIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupPostCreateSchema()
     {
-        super.before();
+        super.setupPostCreateSchema();
         NewRow[] dbWithOrphans = new NewRow[]{
             createNewRow(customer, 1L, "northbridge"),
             createNewRow(customer, 2L, "foundation"),
@@ -88,7 +89,7 @@ public class ProjectIT extends OperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testEmptyProjections()
     {
-        project_Default(groupScan_Default(coi), customerRowType, Collections.<Expression>emptyList());
+        project_Default(groupScan_Default(coi), customerRowType, Collections.<ExpressionGenerator>emptyList());
     }
 
     // Projection tests

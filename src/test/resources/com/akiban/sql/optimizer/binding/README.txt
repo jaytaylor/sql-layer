@@ -1,6 +1,12 @@
 delete-1: Column of target table.
 
+delete-2: Returning from target table
+
 insert-1: Columns from target and source tables.
+
+insert-2: Returning some columns from target table
+
+insert-3: Returning * columns from target table
 
 select-1: Single table columns.
 
@@ -44,4 +50,10 @@ select-8h: Column alias available in HAVING
 
 select-8n: Column alias not available in WHERE
 
+select-9a: Nested result set (hard way)
+
+select-9b: Easy way
+
 update-1: Columns of target table.
+
+update-2: Returning columns and functions

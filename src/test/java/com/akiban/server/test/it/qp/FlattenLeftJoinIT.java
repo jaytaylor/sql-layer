@@ -38,7 +38,8 @@ package com.akiban.server.test.it.qp;
  * of before_child and after_child rows.
  */
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -46,7 +47,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Comparison;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,15 +54,15 @@ import org.junit.Test;
 import static com.akiban.qp.operator.API.FlattenOption.KEEP_PARENT;
 import static com.akiban.qp.operator.API.JoinType.LEFT_JOIN;
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.server.expression.std.Expressions.*;
+import static com.akiban.server.test.ExpressionGenerators.*;
 
 import static com.akiban.qp.rowtype.RowTypeChecks.checkRowTypeFields;
 import static com.akiban.server.types.AkType.*;
 
 public class FlattenLeftJoinIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         // Don't call super.before(). This is a different schema from most operator ITs.
         ancestor = createTable(
@@ -93,14 +93,19 @@ public class FlattenLeftJoinIT extends OperatorITBase
             "pid int",
             "avalue varchar(20)",
             "grouping foreign key(pid) references parent(pid)");
-        schema = new Schema(rowDefCache().ais());
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
+        schema = new Schema(ais());
         ancestorRowType = schema.userTableRowType(userTable(ancestor));
         parentRowType = schema.userTableRowType(userTable(parent));
         beforeChildRowType = schema.userTableRowType(userTable(beforeChild));
         childRowType = schema.userTableRowType(userTable(child));
         afterChildRowType = schema.userTableRowType(userTable(afterChild));
         parentPidIndexType = indexType(parent, "pid");
-        group = groupTable(ancestor);
+        group = group(ancestor);
         db = new NewRow[]{
             // case 1: one row of each type (except child)
             createNewRow(ancestor, 1L, "a1"),
@@ -540,9 +545,9 @@ public class FlattenLeftJoinIT extends OperatorITBase
 
     // For use by this class
 
-    private Expression selectAncestor(long aid)
+    private ExpressionGenerator selectAncestor(long aid)
     {
-        return compare(field(ancestorRowType, 0), Comparison.EQ, literal(aid));
+        return compare(field(ancestorRowType, 0), Comparison.EQ, literal(aid), castResolver());
     }
 
     // Object state
@@ -558,5 +563,5 @@ public class FlattenLeftJoinIT extends OperatorITBase
     private UserTableRowType childRowType;
     private UserTableRowType afterChildRowType;
     private IndexRowType parentPidIndexType;
-    private GroupTable group;
+    private Group group;
 }

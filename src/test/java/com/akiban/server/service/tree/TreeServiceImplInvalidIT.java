@@ -26,23 +26,22 @@
 
 package com.akiban.server.service.tree;
 
-import com.akiban.server.service.config.Property;
 import com.akiban.server.service.tree.TreeServiceImpl.SchemaNode;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.SortedMap;
 
 import static org.junit.Assert.assertEquals;
 
 public class TreeServiceImplInvalidIT extends ITBase {
     @Override
-    protected Collection<Property> startupConfigProperties() {
-        final Collection<Property> properties = new ArrayList<Property>();
-        properties.add(new Property("akserver.treespace.a", "drupal*"));
-        properties.add(new Property("akserver.treespace.b", "liveops*"));
+    protected Map<String, String> startupConfigProperties() {
+        final Map<String, String> properties = new HashMap<String, String>();
+        properties.put("akserver.treespace.a", "drupal*");
+        properties.put("akserver.treespace.b", "liveops*");
         return properties;
     }
 

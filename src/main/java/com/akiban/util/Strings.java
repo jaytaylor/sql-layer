@@ -43,6 +43,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.JarURLConnection;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.jar.JarEntry;
@@ -52,7 +53,7 @@ import java.util.jar.JarEntry;
  */
 public abstract class Strings {
     
-    public static String NL = nl();
+    public static final String NL = nl();
     private static final int BASE_CHAR = 10 -'a';
     private static final Set<Character> LEGAL_HEX = new HashSet<Character>();
     static
@@ -91,7 +92,7 @@ public abstract class Strings {
      * @param strings the strings
      * @return the String
      */
-    public static String join(String... strings) {
+    public static String join(Object... strings) {
         return join(Arrays.asList(strings));
     }
 
@@ -205,17 +206,7 @@ public abstract class Strings {
     }
 
     @SuppressWarnings("unused") // primarily useful in debuggers
-    public static String dumpException(Throwable t) {
-        StringWriter stringWriter = new StringWriter();
-        PrintWriter printWriter = new PrintWriter(stringWriter);
-        t.printStackTrace(printWriter);
-        printWriter.flush();
-        stringWriter.flush();
-        return stringWriter.toString();
-    }
-
-    @SuppressWarnings("unused") // primarily useful in debuggers
-    public static String[] dumpExceptionAsArray(Throwable t) {
+    public static String[] dumpException(Throwable t) {
         StringWriter stringWriter = new StringWriter();
         PrintWriter printWriter = new PrintWriter(stringWriter);
         t.printStackTrace(printWriter);
@@ -396,5 +387,9 @@ public abstract class Strings {
         for (Object o : collection)
             strings.add(String.valueOf(o));
         return strings;
+    }
+
+    public static boolean equalCharsets(Charset one, String two) {
+        return one.name().equals(two) || one.equals(Charset.forName(two));
     }
 }

@@ -1,0 +1,11 @@
+PhysicalSelect[oid:int[INT], cid:int[INT], order_date:date[DATE], iid:int[INT], oid:int[INT], sku:varchar(32)[VARCHAR], quan:int[INT]]
+  Project_Default(orders.oid, orders.cid, orders.order_date, items.iid, items.oid, items.sku, items.quan)
+    Flatten_HKeyOrdered(orders INNER items)
+      AncestorLookup_Default(Index(items.PRIMARY) -> orders, items)
+        Intersect_Ordered(skip 1 left, skip 1 right, compare 2)
+          Union_Ordered(all, skip 1, compare 2)
+            IndexScan_Default(Index(items.PRIMARY), iid = 100, orders.cid ASC, oid)
+            IndexScan_Default(Index(items.PRIMARY), iid = 200, orders.cid ASC, oid)
+          Union_Ordered(skip 1, compare 2)
+            IndexScan_Default(Index(orders.order_date), order_date = DATE '2000-10-31', cid ASC, oid)
+            IndexScan_Default(Index(orders.order_date), order_date = DATE '2000-11-01', cid ASC, oid)

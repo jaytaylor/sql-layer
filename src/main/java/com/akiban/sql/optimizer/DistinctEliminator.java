@@ -32,6 +32,7 @@ import com.akiban.sql.StandardException;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Table;
 
 import java.util.*;
 
@@ -159,7 +160,7 @@ public class DistinctEliminator
                                       AndNode whereConditions, AndNode joinConditions)
             throws StandardException {
         boolean found = false;
-        for (Index index : binding.getTable().getIndexes()) {
+        for (Index index : ((Table)binding.getTable()).getIndexes()) {
             if (!index.isUnique()) continue;
             Set<FromTable> joinTables = null;
             Set<FromTable> columnJoinTables = new HashSet<FromTable>();

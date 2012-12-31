@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import com.akiban.ais.model.validation.AISValidation;
 import com.akiban.ais.model.validation.AISValidationFailure;
@@ -42,12 +44,23 @@ import com.akiban.ais.model.validation.AISValidationResults;
 
 public class AkibanInformationSchema implements Traversable
 {
+    public static String getDefaultCharset() {
+        return defaultCharset;
+    }
+    public static String getDefaultCollation() {
+        return defaultCollation;
+    }
+    public static void setDefaultCharsetAndCollation(String charset, String collation) {
+        defaultCharset = charset;
+        defaultCollation = collation;
+    }
+
     public AkibanInformationSchema()
     {
         for (Type type : Types.types()) {
             addType(type);
         }
-        charsetAndCollation = CharsetAndCollation.intern(DEFAULT_CHARSET, DEFAULT_COLLATION);
+        charsetAndCollation = CharsetAndCollation.intern(defaultCharset, defaultCollation);
     }
 
 
@@ -73,12 +86,27 @@ public class AkibanInformationSchema implements Traversable
         return buffer.toString();
     }
 
+    /** @deprecated Use the fully qualified version {@link #getGroup(TableName)} **/
     public Group getGroup(final String groupName)
+    {
+        Group candidate = null;
+        for(Group group : groups.values()) {
+            if(group.getName().getTableName().equals(groupName)) {
+                if(candidate != null) {
+                    throw new IllegalArgumentException("Ambiguous group name: " + groupName);
+                }
+                candidate = group;
+            }
+        }
+        return candidate;
+    }
+
+    public Group getGroup(final TableName groupName)
     {
         return groups.get(groupName);
     }
 
-    public Map<String, Group> getGroups()
+    public Map<TableName, Group> getGroups()
     {
         return groups;
     }
@@ -88,40 +116,18 @@ public class AkibanInformationSchema implements Traversable
         return userTables;
     }
 
-    public Map<TableName, GroupTable> getGroupTables()
-    {
-        return groupTables;
-    }
-
     public void removeGroup(Group group) {
         groups.remove(group.getName());
-        GroupTable groupTable = group.getGroupTable();
-        GroupTable removed = groupTables.remove(groupTable.getName());
-        assert removed == groupTable : removed + " != " + groupTable;
-        if (groupTablesById != null && groupTable.getTableId() != null) {
-            removed = groupTablesById.remove(groupTable.getTableId());
-        }
-        assert removed == groupTable : removed + " != " + groupTable;
     }
 
     public Table getTable(String schemaName, String tableName)
     {
-        Table table = getUserTable(schemaName, tableName);
-        if (table == null) {
-            table = getGroupTable(schemaName, tableName);
-        }
-
-        return table;
+        return getUserTable(schemaName, tableName);
     }
 
     public Table getTable(TableName tableName)
     {
-        Table table = getUserTable(tableName);
-        if (table == null) {
-            table = getGroupTable(tableName);
-        }
-
-        return table;
+        return getUserTable(tableName);
     }
 
     public UserTable getUserTable(final String schemaName, final String tableName)
@@ -140,20 +146,37 @@ public class AkibanInformationSchema implements Traversable
         return userTablesById.get(tableId);
     }
 
-    public GroupTable getGroupTable(final String schemaName, final String tableName)
+    public Map<TableName, View> getViews()
     {
-        return getGroupTable(new TableName(schemaName, tableName));
+        return views;
     }
 
-    public GroupTable getGroupTable(final TableName tableName)
+    public View getView(final String schemaName, final String tableName)
     {
-        return groupTables.get(tableName);
+        return getView(new TableName(schemaName, tableName));
     }
 
-    public GroupTable getGroupTable(int tableId)
+    public View getView(final TableName tableName)
     {
-        ensureTableIdLookup();
-        return groupTablesById.get(tableId);
+        return views.get(tableName);
+    }
+
+    public Columnar getColumnar(String schemaName, String tableName)
+    {
+        Columnar columnar = getTable(schemaName, tableName);
+        if (columnar == null) {
+            columnar = getView(schemaName, tableName);
+        }
+        return columnar;
+    }
+
+    public Columnar getColumnar(TableName tableName)
+    {
+        Columnar columnar = getTable(tableName);
+        if (columnar == null) {
+            columnar = getView(tableName);
+        }
+        return columnar;
     }
 
     public Collection<Type> getTypes()
@@ -208,6 +231,45 @@ public class AkibanInformationSchema implements Traversable
         return schemas.get(schema);
     }
 
+    public Map<TableName, Sequence> getSequences()
+    {
+        return sequences;
+    }
+    
+    public Sequence getSequence (final TableName sequenceName)
+    {
+        return sequences.get(sequenceName);
+    }
+    
+    public Map<TableName, Routine> getRoutines()
+    {
+        return routines;
+    }
+    
+    public Routine getRoutine(final String schemaName, final String routineName)
+    {
+        return getRoutine(new TableName(schemaName, routineName));
+    }
+    
+    public Routine getRoutine(final TableName routineName)
+    {
+        return routines.get(routineName);
+    }
+    
+    public Map<TableName, SQLJJar> getSQLJJars() {
+        return sqljJars;
+    }
+    
+    public SQLJJar getSQLJJar(final String schemaName, final String jarName)
+    {
+        return getSQLJJar(new TableName(schemaName, jarName));
+    }
+    
+    public SQLJJar getSQLJJar(final TableName name)
+    {
+        return sqljJars.get(name);
+    }
+    
     public CharsetAndCollation getCharsetAndCollation()
     {
         return charsetAndCollation;
@@ -226,10 +288,6 @@ public class AkibanInformationSchema implements Traversable
         for (Join join : joins.values()) {
             visitor.visitJoin(join);
             join.traversePreOrder(visitor);
-        }
-        for (GroupTable groupTable : groupTables.values()) {
-            visitor.visitGroupTable(groupTable);
-            groupTable.traversePreOrder(visitor);
         }
         for (Group group : groups.values()) {
             visitor.visitGroup(group);
@@ -250,10 +308,6 @@ public class AkibanInformationSchema implements Traversable
         for (Join join : joins.values()) {
             join.traversePreOrder(visitor);
             visitor.visitJoin(join);
-        }
-        for (GroupTable groupTable : groupTables.values()) {
-            groupTable.traversePostOrder(visitor);
-            visitor.visitGroupTable(groupTable);
         }
         for (Group group : groups.values()) {
             group.traversePostOrder(visitor);
@@ -282,9 +336,17 @@ public class AkibanInformationSchema implements Traversable
         schema.addUserTable(table);
     }
 
-    public void addGroupTable(GroupTable table)
+    public void addView(View view)
     {
-        groupTables.put(table.getName(), table);
+        TableName viewName = view.getName();
+        views.put(viewName, view);
+
+        Schema schema = getSchema(viewName.getSchemaName());
+        if (schema == null) {
+            schema = new Schema(viewName.getSchemaName());
+            addSchema(schema);
+        }
+        schema.addView(view);
     }
 
     public void addType(Type type)
@@ -317,14 +379,51 @@ public class AkibanInformationSchema implements Traversable
         schemas.put(schema.getName(), schema);
     }
 
-    public void deleteGroupAndGroupTable(Group group)
+    public void addSequence (Sequence seq)
+    {
+        TableName sequenceName = seq.getSequenceName();
+        sequences.put(sequenceName, seq);
+
+        // TODO: Create on demand until Schema is more of a first class citizen
+        Schema schema = getSchema(sequenceName.getSchemaName());
+        if (schema == null) {
+            schema = new Schema(sequenceName.getSchemaName());
+            addSchema(schema);
+        }
+        schema.addSequence(seq);
+    }
+    
+    public void addRoutine(Routine routine)
+    {
+        TableName routineName = routine.getName();
+        routines.put(routineName, routine);
+
+        // TODO: Create on demand until Schema is more of a first class citizen
+        Schema schema = getSchema(routineName.getSchemaName());
+        if (schema == null) {
+            schema = new Schema(routineName.getSchemaName());
+            addSchema(schema);
+        }
+        schema.addRoutine(routine);
+    }
+    
+    public void addSQLJJar(SQLJJar sqljJar) {
+        TableName jarName = sqljJar.getName();
+        sqljJars.put(jarName, sqljJar);
+
+        // TODO: Create on demand until Schema is more of a first class citizen
+        Schema schema = getSchema(jarName.getSchemaName());
+        if (schema == null) {
+            schema = new Schema(jarName.getSchemaName());
+            addSchema(schema);
+        }
+        schema.addSQLJJar(sqljJar);
+    }
+
+    public void deleteGroup(Group group)
     {
         Group removedGroup = groups.remove(group.getName());
         assert removedGroup == group;
-        GroupTable groupTable = group.getGroupTable();
-        assert groupTable.getRoot() == null;
-        GroupTable removedGroupTable = groupTables.remove(groupTable.getName());
-        assert removedGroupTable == groupTable;
     }
 
     private String normalizeTypename(String typename)
@@ -339,9 +438,9 @@ public class AkibanInformationSchema implements Traversable
      */
     private void checkGroups(List<String> out)
     {
-        for (Map.Entry<String,Group> entry : groups.entrySet())
+        for (Map.Entry<TableName,Group> entry : groups.entrySet())
         {
-            String name = entry.getKey();
+            TableName name = entry.getKey();
             Group group = entry.getValue();
             if (group == null) {
                 out.add("null group for name: " + name);
@@ -351,13 +450,6 @@ public class AkibanInformationSchema implements Traversable
             }
             else if (!name.equals(group.getName())) {
                 out.add("name mismatch, expected <" + name + "> for group " + group);
-            }
-            GroupTable groupTable = group.getGroupTable();
-            if (groupTable == null) {
-                out.add("null group table for group: " + name);
-            }
-            else if (!groupTables.containsKey(groupTable.getName())) {
-                out.add("group tables didn't contain group's getGroupTable(): " + groupTable.getName());
             }
             else {
                 group.checkIntegrity(out);
@@ -495,9 +587,8 @@ public class AkibanInformationSchema implements Traversable
     public void checkIntegrity(List<String> out) throws IllegalStateException
     {
         checkGroups(out);
-        Set<TableName> seenTables = new HashSet<TableName>(userTables.size() + groupTables.size(), 1.0f);
+        Set<TableName> seenTables = new HashSet<TableName>(userTables.size(), 1.0f);
         checkTables(out, userTables, true, seenTables);
-        checkTables(out, groupTables, false, seenTables);
         checkJoins(out);
         checkTypesNames(out);
     }
@@ -549,12 +640,6 @@ public class AkibanInformationSchema implements Traversable
                 userTablesById.put(userTable.getTableId(), userTable);
             }
         }
-        if (groupTablesById == null) {
-            groupTablesById = new HashMap<Integer, GroupTable>();
-            for (GroupTable groupTable : groupTables.values()) {
-                groupTablesById.put(groupTable.getTableId(), groupTable);
-            }
-        }
     }
 
     void removeTable(TableName name) {
@@ -565,22 +650,88 @@ public class AkibanInformationSchema implements Traversable
         }
         invalidateTableIdMap();
     }
+    
+    void removeSequence (TableName name) {
+        sequences.remove(name);
+        Schema schema = getSchema(name.getSchemaName());
+        if (schema != null) {
+            schema.removeSequence(name.getTableName());
+        }
+    }
+
+    public void removeRoutine(TableName name) {
+        routines.remove(name);
+        Schema schema = getSchema(name.getSchemaName());
+        if (schema != null) {
+            schema.removeRoutine(name.getTableName());
+        }
+    }
+
+    public void removeView(TableName name) {
+        views.remove(name);
+        Schema schema = getSchema(name.getSchemaName());
+        if (schema != null) {
+            schema.removeView(name.getTableName());
+        }
+    }
+
+    public void removeSQLJJar(TableName jarName) {
+        sqljJars.remove(jarName);
+        Schema schema = getSchema(jarName.getSchemaName());
+        if (schema != null) {
+            schema.removeSQLJJar(jarName.getTableName());
+        }
+    }
+
+    public long getGeneration() {
+        return generation;
+    }
+
+    public void setGeneration(long generation) {
+        if(this.generation != -1) { // TODO: Cleanup. Ideally add generation to constructor
+            checkMutability();
+        }
+        this.generation = generation;
+    }
+
+    @SuppressWarnings("unchecked") // Expected, value type varies
+    public <V> V getCachedValue(Object key, CacheValueGenerator<V> generator) {
+        Object val = cachedValues.get(key);
+        if(val == null) {
+            val = generator.valueFor(this);
+            Object firstVal = cachedValues.putIfAbsent(key, val);
+            if(firstVal != null) {
+                val = firstVal; // Someone got here before, use theirs
+            }
+        }
+        return (V)val;
+    }
+
+    @Override
+    public String toString() {
+        return "AIS(" + generation + ")";
+    }
+
 
     // State
 
-    public static final String DEFAULT_CHARSET = "latin1";
-    public static final String DEFAULT_COLLATION = "latin1_swedish_ci";
+    private static String defaultCharset = "utf8";
+    private static String defaultCollation = "utf8_bin";
 
-    private final Map<String, Group> groups = new TreeMap<String, Group>();
+    private final Map<TableName, Group> groups = new TreeMap<TableName, Group>();
     private final Map<TableName, UserTable> userTables = new TreeMap<TableName, UserTable>();
-    private final Map<TableName, GroupTable> groupTables = new TreeMap<TableName, GroupTable>();
+    private final Map<TableName, Sequence> sequences = new TreeMap<TableName, Sequence>();
+    private final Map<TableName, View> views = new TreeMap<TableName, View>();
+    private final Map<TableName, Routine> routines = new TreeMap<TableName, Routine>();
+    private final Map<TableName, SQLJJar> sqljJars = new TreeMap<TableName, SQLJJar>();
     private final Map<String, Join> joins = new TreeMap<String, Join>();
     private final Map<String, Type> types = new TreeMap<String, Type>();
     private final Map<String, Schema> schemas = new TreeMap<String, Schema>();
     private final CharsetAndCollation charsetAndCollation;
+    private final ConcurrentMap cachedValues = new ConcurrentHashMap(4,0.75f,4); // Very few, write-once entries expected
+    private long generation = -1;
 
     private Map<Integer, UserTable> userTablesById = null;
-    private Map<Integer, GroupTable> groupTablesById = null;
     private boolean isFrozen = false;
 
     private static class AISFailureList extends AISValidationResults implements AISValidationOutput {

@@ -32,13 +32,13 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,49 +48,48 @@ import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.memoryadapter.MemoryAdapter;
+import com.akiban.qp.memoryadapter.MemoryGroupCursor;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.operator.IndexScanSelector;
-import com.akiban.qp.operator.memoryadapter.MemoryTableFactory;
+import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.ISTableVersionMismatchException;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.JoinToProtectedTableException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.store.PersistitStoreSchemaManager;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;
+import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.test.it.ITBase;
-import com.google.inject.ProvisionException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.service.config.Property;
-
-import static com.akiban.server.store.PersistitStoreSchemaManager.SerializationType;
 
 public final class SchemaManagerIT extends ITBase {
-    private final static String SCHEMA = "my_schema";
-    private final static String VOL2_PREFIX = "foo_schema";
-    private final static String VOL3_PREFIX = "bar_schema";
+    final static String SCHEMA = "my_schema";
+    final static String VOL2_PREFIX = "foo_schema";
+    final static String VOL3_PREFIX = "bar_schema";
 
-    private final static String T1_NAME = "t1";
-    private final static String T1_DDL = "id int NOT NULL, PRIMARY KEY(id)";
-    private final static String T2_NAME = "t2";
-    private final static String T2_DDL = "id int NOT NULL, PRIMARY KEY(id)";
-    private final static String T3_CHILD_T1_NAME = "t3";
-    private final static String T3_CHILD_T1_DDL = "id int NOT NULL, t1id int, PRIMARY KEY(id), "+
-                                                  "grouping foreign key(t1id) references t1(id)";
+    final static String T1_NAME = "t1";
+    final static String T1_DDL = "id int NOT NULL, PRIMARY KEY(id)";
+    final static String T2_NAME = "t2";
+    final static String T2_DDL = "id int NOT NULL, PRIMARY KEY(id)";
+    final static String T3_CHILD_T1_NAME = "t3";
+    final static String T3_CHILD_T1_DDL = "id int NOT NULL, t1id int, PRIMARY KEY(id), "+
+                                          "grouping foreign key(t1id) references t1(id)";
 
     private SchemaManager schemaManager;
 
@@ -104,29 +103,17 @@ public final class SchemaManagerIT extends ITBase {
     }
 
     private void registerISTable(final UserTable table, final MemoryTableFactory factory) throws Exception {
-        transactionally(new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                schemaManager.registerMemoryInformationSchemaTable(session(), table, factory);
-                return null;
-            }
-        });
+        schemaManager.registerMemoryInformationSchemaTable(table, factory);
     }
 
     private void registerISTable(final UserTable table, final int version) throws Exception {
-        transactionally(new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                schemaManager.registerStoredInformationSchemaTable(session(), table, version);
-                return null;
-            }
-        });
+        schemaManager.registerStoredInformationSchemaTable(table, version);
     }
 
     private void deleteTableDef(final String schema, final String table) throws Exception {
         transactionally(new Callable<Void>() {
             public Void call() throws Exception {
-                schemaManager.deleteTableDefinition(session(), schema, table);
+                schemaManager.dropTableDefinition(session(), schema, table, SchemaManager.DropBehavior.RESTRICT);
                 return null;
             }
         });
@@ -140,18 +127,10 @@ public final class SchemaManagerIT extends ITBase {
         });
     }
 
-    private List<String> getSchemaStringsWithoutAIS(final boolean withGroupTables) throws Exception {
+    private List<String> getSchemaStringsWithoutAIS() throws Exception {
         return transactionally(new Callable<List<String>>() {
             public List<String> call() throws Exception {
-                List<String> statements = schemaManager.schemaStrings(session(), withGroupTables);
-                Iterator<String> it = statements.iterator();
-                while(it.hasNext()) {
-                    String ddl = it.next();
-                    if(ddl.contains("akiban_information_schema")) {
-                        it.remove();
-                    }
-                }
-                return statements;
+                return schemaManager.schemaStrings(session(), false);
             }
         });
     }
@@ -162,15 +141,15 @@ public final class SchemaManagerIT extends ITBase {
     }
     
     @Override
-    protected Collection<Property> startupConfigProperties() {
+    protected Map<String, String> startupConfigProperties() {
         // Set up multi-volume treespace policy so we can be sure schema is properly distributed.
-        final Collection<Property> properties = new ArrayList<Property>();
-        properties.add(new Property("akserver.treespace.a",
+        final Map<String, String> properties = new HashMap<String, String>();
+        properties.put("akserver.treespace.a",
                                     VOL2_PREFIX + "*:${datapath}/${schema}.v0,create,pageSize:${buffersize},"
-                                    + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
-        properties.add(new Property("akserver.treespace.b",
+                                    + "initialSize:10K,extensionSize:1K,maximumSize:10G");
+        properties.put("akserver.treespace.b",
                                     VOL3_PREFIX + "*:${datapath}/${schema}.v0,create,pageSize:${buffersize},"
-                                    + "initialSize:10K,extensionSize:1K,maximumSize:10G"));
+                                    + "initialSize:10K,extensionSize:1K,maximumSize:10G");
         return properties;
     }
 
@@ -195,7 +174,7 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test
     public void getTableDefinitionsUnknownSchema() throws Exception {
-        final SortedMap<String, TableDefinition> defs = schemaManager.getTableDefinitions(session(), "fooschema");
+        final SortedMap<String, TableDefinition> defs = getTableDefinitions("fooschema");
         assertEquals("no defs", 0, defs.size());
     }
 
@@ -204,7 +183,7 @@ public final class SchemaManagerIT extends ITBase {
         createTableDef(SCHEMA, T1_NAME, T1_DDL);
         createTableDef(SCHEMA, T2_NAME, T2_DDL);
         createTableDef(SCHEMA + "_bob", T1_NAME, T1_DDL);
-        final SortedMap<String, TableDefinition> defs = schemaManager.getTableDefinitions(session(), SCHEMA);
+        final SortedMap<String, TableDefinition> defs = getTableDefinitions(SCHEMA);
         assertTrue("contains t1", defs.containsKey(T1_NAME));
         assertTrue("contains t2", defs.containsKey(T2_NAME));
         assertEquals("no defs", 2, defs.size());
@@ -224,12 +203,10 @@ public final class SchemaManagerIT extends ITBase {
         assertTablesInSchema(SCHEMA);
     }
 
-    @Test
+    @Test(expected=NoSuchTableException.class)
     public void deleteUnknownDefinition() throws Exception {
-        deleteTableDef("schema1", "table1");
         assertTablesInSchema(SCHEMA);
         deleteTableDef("schema1", "table1");
-        assertTablesInSchema(SCHEMA);
     }
 
     @Test
@@ -237,8 +214,6 @@ public final class SchemaManagerIT extends ITBase {
         createTableDef(SCHEMA, T1_NAME, T1_DDL);
         assertTablesInSchema(SCHEMA, T1_NAME);
         
-        deleteTableDef(SCHEMA, T1_NAME);
-        assertTablesInSchema(SCHEMA);
         deleteTableDef(SCHEMA, T1_NAME);
         assertTablesInSchema(SCHEMA);
     }
@@ -350,83 +325,29 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test
     public void updateTimestampChangesWithCreate() throws Exception {
-        final long first = schemaManager.getUpdateTimestamp();
+        final long first = ais().getGeneration();
         createTableDef(SCHEMA, T1_NAME, T1_DDL);
-        final long second = schemaManager.getUpdateTimestamp();
+        final long second = ais().getGeneration();
         assertTrue("timestamp changed", first != second);
     }
 
     @Test
     public void updateTimestampChangesWithDelete() throws Exception {
         createTableDef(SCHEMA, T1_NAME, T1_DDL);
-        final long first = schemaManager.getUpdateTimestamp();
+        final long first = ais().getGeneration();
         deleteTableDef(SCHEMA, T1_NAME);
-        final long second = schemaManager.getUpdateTimestamp();
+        final long second = ais().getGeneration();
         assertTrue("timestamp changed", first != second);
     }
-
-    @Test
-    public void schemaGenChangesWithCreate() throws Exception {
-        final int first = schemaManager.getSchemaGeneration();
-        createTableDef(SCHEMA, T1_NAME, T1_DDL);
-        final int second = schemaManager.getSchemaGeneration();
-        assertTrue("timestamp changed", first != second);
-    }
-
-    @Test
-    public void schemaGenChangesWithDelete() throws Exception {
-        createTableDef(SCHEMA, T1_NAME, T1_DDL);
-        final int first = schemaManager.getSchemaGeneration();
-        deleteTableDef(SCHEMA, T1_NAME);
-        final int second = schemaManager.getSchemaGeneration();
-        assertTrue("timestamp changed", first != second);
-    }
-
-    @Test
-    public void forceNewTimestampChangesTimestamp() throws Exception {
-        final long first = schemaManager.getUpdateTimestamp();
-        schemaManager.forceNewTimestamp();
-        final long second = schemaManager.getUpdateTimestamp();
-        assertTrue("timestamp changed", first != second);
-    }
-
-    @Test
-    public void forceNewTimestampChangesSchemaGen() throws Exception {
-        final int first = schemaManager.getSchemaGeneration();
-        schemaManager.forceNewTimestamp();
-        final int second = schemaManager.getSchemaGeneration();
-        assertTrue("timestamp changed", first != second);
-    }
-
-    @Test
-    public void tableIDsAreLow() throws Exception {
-        // TODO: Delete this test, only confirming temporarily desired behavior
-        // Purely testing initial table IDs start at 1 and don't change when adding new tables
-        // Partly required by com.akiban.qp.operator.AcenstorLookup_Default creating an array sized by max table id
-        createTableDef(SCHEMA, T1_NAME, T1_DDL);
-        assertTablesInSchema(SCHEMA, T1_NAME);
-        assertEquals("t1 id", 1, getUserTable(SCHEMA, T1_NAME).getTableId().intValue());
-        createTableDef(SCHEMA, T2_NAME, T2_DDL);
-        assertTablesInSchema(SCHEMA, T1_NAME, T2_NAME);
-        assertEquals("t1 id", 1, getUserTable(SCHEMA, T1_NAME).getTableId().intValue());
-        // 3: t1 group table got 2
-        assertEquals("t2 id", 3, getUserTable(SCHEMA, T2_NAME).getTableId().intValue());
-        createTableDef(SCHEMA, T3_CHILD_T1_NAME, T3_CHILD_T1_DDL);
-        assertTablesInSchema(SCHEMA, T1_NAME, T2_NAME, T3_CHILD_T1_NAME);
-        assertEquals("t1 id", 1, getUserTable(SCHEMA, T1_NAME).getTableId().intValue());
-        assertEquals("t2 id", 3, getUserTable(SCHEMA, T2_NAME).getTableId().intValue());
-        // 4: t2 group table got 4
-        assertEquals("t3 id", 5, getUserTable(SCHEMA, T3_CHILD_T1_NAME).getTableId().intValue());
-    }
-
+    
     @Test
     public void schemaStringsSingleTable() throws Exception {
         // Check 1) basic ordering 2) that the statements are 'canonicalized'
         final String TABLE_DDL =  "id int not null primary key";
         final String SCHEMA_DDL = "create schema if not exists `foo`;";
-        final String TABLE_CANONICAL = "create table `foo`.`bar`(`id` int NOT NULL, PRIMARY KEY(`id`)) engine=akibandb";
+        final String TABLE_CANONICAL = "create table `foo`.`bar`(`id` int NOT NULL, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
         createTableDef("foo", "bar", TABLE_DDL);
-        final List<String> ddls = getSchemaStringsWithoutAIS(false);
+        final List<String> ddls = getSchemaStringsWithoutAIS();
         assertEquals("ddl count", 2, ddls.size()); // schema and table
         assertTrue("create schema", ddls.get(0).startsWith("create schema"));
         assertEquals("create schema is canonical", SCHEMA_DDL, ddls.get(0));
@@ -436,10 +357,12 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test
     public void schemaStringsSingleGroup() throws Exception {
+        final String SCHEMA = "s1";
         createTableDef(SCHEMA, T1_NAME, T1_DDL);
         createTableDef(SCHEMA, T3_CHILD_T1_NAME, T3_CHILD_T1_DDL);
         Map<String, List<String>> schemaAndTables = new HashMap<String, List<String>>();
         schemaAndTables.put(SCHEMA, Arrays.asList(T1_NAME, T3_CHILD_T1_NAME));
+        assertSchemaStrings(schemaAndTables);
     }
 
     @Test
@@ -459,8 +382,7 @@ public final class SchemaManagerIT extends ITBase {
     @Test
     public void manyTablesAndRestart() throws Exception {
         final int TABLE_COUNT = 50;
-        final int UT_COUNT = schemaManager.getAis(session()).getUserTables().size();
-        final int GT_COUNT = schemaManager.getAis(session()).getGroupTables().size();
+        final int UT_COUNT = ais().getUserTables().size();
 
         String tableNames[] = new String[TABLE_COUNT];
         for(int i = 0; i < TABLE_COUNT; ++i) {
@@ -468,44 +390,51 @@ public final class SchemaManagerIT extends ITBase {
             createTable(SCHEMA, tableNames[i], "id int not null primary key");
         }
 
-        AkibanInformationSchema ais = schemaManager.getAis(session());
+        AkibanInformationSchema ais = ais();
+        Collection<UserTable> before = new ArrayList<UserTable>(ais.getUserTables().values());
         assertEquals("user tables count before", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
-        assertEquals("group tables count before", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
         assertTablesInSchema(SCHEMA, tableNames);
 
         safeRestart();
-        ais = schemaManager.getAis(session());
+        ais = ais();
         assertNotNull(ais);
-
+        Collection<UserTable> after = ais.getUserTables().values();
+        // Diagnostics for occasional assertion violation of user table count
+        if (ais.getUserTables().size() != TABLE_COUNT + UT_COUNT) {
+            System.out.println("BEFORE");
+            for (UserTable userTable : before) {
+                System.out.println(String.format("    %s", userTable));
+            }
+            System.out.println("AFTER");
+            for (UserTable userTable : after) {
+                System.out.println(String.format("    %s", userTable));
+            }
+        }
         assertEquals("user tables count after", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
-        assertEquals("group tables count after", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
         assertTablesInSchema(SCHEMA, tableNames);
     }
 
     @Test
     public void multipleSchemasAndRestart() throws Exception {
         final int TABLE_COUNT = 3;
-        AkibanInformationSchema ais = schemaManager.getAis(session());
+        AkibanInformationSchema ais = ais();
         final int UT_COUNT = ais.getUserTables().size();
-        final int GT_COUNT = ais.getGroupTables().size();
 
         createTable(SCHEMA+"1", "t1", "id int not null primary key");
         createTable(SCHEMA+"2", "t2", "id int not null primary key");
         createTable(SCHEMA+"3", "t3", "id int not null primary key");
 
-        ais = schemaManager.getAis(session());
+        ais = ais();
         assertEquals("user tables count", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
-        assertEquals("group tables count", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
         assertTablesInSchema(SCHEMA+"1", "t1");
         assertTablesInSchema(SCHEMA+"2", "t2");
         assertTablesInSchema(SCHEMA+"3", "t3");
 
         safeRestart();
-        ais = schemaManager.getAis(session());
+        ais = ais();
         assertNotNull("ais exists", ais);
 
         assertEquals("user tables count", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
-        assertEquals("group tables count", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
         assertTablesInSchema(SCHEMA+"1", "t1");
         assertTablesInSchema(SCHEMA+"2", "t2");
         assertTablesInSchema(SCHEMA+"3", "t3");
@@ -525,8 +454,8 @@ public final class SchemaManagerIT extends ITBase {
         for(TableName pair[] : testNames) {
             createTable(pair[0].getSchemaName(), pair[0].getTableName(), "id int not null primary key");
             createTable(pair[1].getSchemaName(), pair[1].getTableName(), "id int not null primary key");
-            String treeName1 = ddl().getAIS(session()).getUserTable(pair[0]).getTreeName();
-            String treeName2 = ddl().getAIS(session()).getUserTable(pair[1]).getTreeName();
+            String treeName1 = ddl().getAIS(session()).getUserTable(pair[0]).getGroup().getTreeName();
+            String treeName2 = ddl().getAIS(session()).getUserTable(pair[1]).getGroup().getTreeName();
             assertFalse("Non unique tree name: " + treeName1, treeName1.equals(treeName2));
         }
     }
@@ -561,25 +490,24 @@ public final class SchemaManagerIT extends ITBase {
     @Test
     public void changeInAISTableIsUpgradeIssue() throws Exception {
         /*
-         * Simple sanity check. Change as needed but heed the
-         * warnings that are in PSSM#createPrimordialAIS().
+         * Simple sanity check. Change as needed but remember it is an UPGRADE ISSUE.
          */
-        final String SCHEMA = "akiban_information_schema";
-        final String STATS_TABLE = "zindex_statistics";
-        final String ENTRY_TABLE = "zindex_statistics_entry";
-        final String STATS_DDL = "create table `akiban_information_schema`.`zindex_statistics`("+
-            "`table_id` int NOT NULL, `index_id` int NOT NULL, `analysis_timestamp` timestamp, "+
-            "`row_count` bigint, `sampled_count` bigint, "+
+        final String SCHEMA = "information_schema";
+        final String STATS_TABLE = "index_statistics";
+        final String ENTRY_TABLE = "index_statistics_entry";
+        final String STATS_DDL = "create table `information_schema`.`index_statistics`("+
+            "`table_id` int NOT NULL, `index_id` int NOT NULL, `analysis_timestamp` timestamp NULL, "+
+            "`row_count` bigint NULL, `sampled_count` bigint NULL, "+
             "PRIMARY KEY(`table_id`, `index_id`)"+
-        ") engine=akibandb";
-        final String ENTRY_DDL = "create table `akiban_information_schema`.`zindex_statistics_entry`("+
+        ") engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
+        final String ENTRY_DDL = "create table `information_schema`.`index_statistics_entry`("+
             "`table_id` int NOT NULL, `index_id` int NOT NULL, `column_count` int NOT NULL, "+
-            "`item_number` int NOT NULL, `key_string` varchar(2048), `key_bytes` varbinary(4096), "+
-            "`eq_count` bigint, `lt_count` bigint, `distinct_count` bigint, "+
+            "`item_number` int NOT NULL, `key_string` varchar(2048) CHARACTER SET latin1 NULL, `key_bytes` varbinary(4096) NULL, "+
+            "`eq_count` bigint NULL, `lt_count` bigint NULL, `distinct_count` bigint NULL, "+
             "PRIMARY KEY(`table_id`, `index_id`, `column_count`, `item_number`), "+
             "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0`(`table_id`, `index_id`) "+
-                "REFERENCES `zindex_statistics`(`table_id`, `index_id`)"+
-        ") engine=akibandb";
+                "REFERENCES `index_statistics`(`table_id`, `index_id`)"+
+        ") engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
 
         TableDefinition statsDef = getTableDef(SCHEMA, STATS_TABLE);
         assertNotNull("Stats table present", statsDef);
@@ -596,11 +524,10 @@ public final class SchemaManagerIT extends ITBase {
         ddl().renameTable(session(), tableName(SCHEMA, T1_NAME), tableName("foo", "bar"));
         createTable(SCHEMA, T1_NAME, T1_DDL);
 
-        String originalTreeName = getUserTable(SCHEMA, T1_NAME).getTreeName();
-        String newTreeName = getUserTable("foo", "bar").getTreeName();
+        String originalTreeName = getUserTable(SCHEMA, T1_NAME).getGroup().getTreeName();
+        String newTreeName = getUserTable("foo", "bar").getGroup().getTreeName();
         assertTrue("Unique tree names", !originalTreeName.equals(newTreeName));
     }
-
 
     @Test
     public void createRestartAndCreateMore() throws Exception {
@@ -615,7 +542,7 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test
     public void registerMemoryTableBasic() throws Exception {
-        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+        final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
         MemoryTableFactory factory = new MemoryTableFactoryMock();
         registerISTable(makeSimpleISTable(tableName), factory);
 
@@ -641,18 +568,25 @@ public final class SchemaManagerIT extends ITBase {
         }
     }
 
-    @Test(expected=DuplicateTableNameException.class)
+    @Test
     public void noDuplicateMemoryTables() throws Exception {
-        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+        final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
         final UserTable sourceTable = makeSimpleISTable(tableName);
         MemoryTableFactory factory = new MemoryTableFactoryMock();
         registerISTable(sourceTable, factory);
-        registerISTable(sourceTable, factory);
+        try {
+            registerISTable(sourceTable, factory);
+            fail("Expected DuplicateTableNameException");
+        } catch(DuplicateTableNameException e) {
+            // expected
+        } finally {
+            schemaManager.unRegisterMemoryInformationSchemaTable(tableName);
+        }
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void noNullMemoryTableFactory() throws Exception {
-        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+        final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
         registerISTable(makeSimpleISTable(tableName), null);
     }
 
@@ -665,7 +599,7 @@ public final class SchemaManagerIT extends ITBase {
     @Test
     public void registerStoredTableBasic() throws Exception {
         final Integer VERSION = 5;
-        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+        final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
 
         registerISTable(makeSimpleISTable(tableName), VERSION);
         {
@@ -692,7 +626,7 @@ public final class SchemaManagerIT extends ITBase {
     @Test
     public void canRegisterStoredTableWithSameVersion() throws Exception {
         final Integer VERSION = 5;
-        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+        final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
         final UserTable sourceTable = makeSimpleISTable(tableName);
         registerISTable(sourceTable, VERSION);
         registerISTable(sourceTable, VERSION);
@@ -701,7 +635,7 @@ public final class SchemaManagerIT extends ITBase {
     @Test(expected=ISTableVersionMismatchException.class)
     public void cannotRegisterStoredTableWithDifferentVersion() throws Exception {
         final Integer VERSION = 5;
-        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+        final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
         final UserTable sourceTable = makeSimpleISTable(tableName);
         registerISTable(sourceTable, VERSION);
         registerISTable(sourceTable, VERSION + 1);
@@ -714,64 +648,51 @@ public final class SchemaManagerIT extends ITBase {
         registerISTable(makeSimpleISTable(tableName), VERSION);
     }
 
+    @Test
+    public void sameRootNameMultipleSchemasAndRestart() throws Exception {
+        final String SCHEMA1 = SCHEMA + "1";
+        final String SCHEMA2 = SCHEMA + "2";
+        createTable(SCHEMA1, T1_NAME, T1_DDL);
+        createTable(SCHEMA2, T1_NAME, T1_DDL);
+        assertTablesInSchema(SCHEMA1, T1_NAME);
+        assertTablesInSchema(SCHEMA2, T1_NAME);
 
-    /*
-     * Next three tests are confirming that the MetaModel and Protobuf
-     * serialization switch behaves as is claimed.
-     *
-     * TODO: These will need to change when the upgrade code goes in
-     */
+        safeRestart();
+        assertTablesInSchema(SCHEMA1, T1_NAME);
+        assertTablesInSchema(SCHEMA2, T1_NAME);
+    }
 
-    private PersistitStoreSchemaManager castToPSSM() {
-        if(schemaManager instanceof PersistitStoreSchemaManager) {
-            return (PersistitStoreSchemaManager)schemaManager;
-        }
-        throw new IllegalStateException("Expected PersistitStoreSchemaManager!");
+    @Test(expected=JoinToProtectedTableException.class)
+    public void joinToISTable() throws Exception {
+        TableName name = new TableName(TableName.INFORMATION_SCHEMA, "p");
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.userTable(name).colLong("id", false).pk("id");
+        builder.userTable(T1_NAME).colLong("id", false).colLong("pid", true).pk("id").joinTo("information_schema", "p").on("pid", "id");
+        registerISTable(builder.unvalidatedAIS().getUserTable(name), new MemoryTableFactoryMock());
+        ddl().createTable(session(), builder.unvalidatedAIS().getUserTable(SCHEMA, T1_NAME));
     }
 
     @Test
-    public void existingMetaModelReadAndSavedAsIs() throws Exception {
-        PersistitStoreSchemaManager pssm = castToPSSM();
-        pssm.setSerializationType(SerializationType.META_MODEL);
-        createTable(SCHEMA, T1_NAME, T1_DDL);
-        pssm.setSerializationType(PersistitStoreSchemaManager.DEFAULT_SERIALIZATION);
+    public void userAndSystemRoutines() {
+        final TableName sysName = new TableName(TableName.SYS_SCHEMA, "sys");
+        final TableName userName = new TableName(SCHEMA, "user");
+        AkibanInformationSchema temp = new AkibanInformationSchema();
+        final Routine sysR = Routine.create(temp, sysName.getSchemaName(), sysName.getTableName(), "other", Routine.CallingConvention.SQL_ROW);
+        final Routine userR = Routine.create(temp, userName.getSchemaName(), userName.getTableName(), "java", Routine.CallingConvention.JAVA);
 
-        safeRestart();
-        pssm = castToPSSM();
+        schemaManager.registerSystemRoutine(sysR);
+        assertNotNull("Found sys routine after register", ais().getRoutine(sysName));
 
-        assertEquals("Saw MetaModel on load", SerializationType.META_MODEL, pssm.getSerializationType());
-        createTable(SCHEMA, T2_NAME, T2_DDL);
-        assertEquals("Still MetaModel after save", "[META_MODEL]", pssm.getAllSerializationTypes(session()).toString());
+        transactionallyUnchecked(new Runnable() {
+            @Override
+            public void run() {
+                schemaManager.createRoutine(session(), userR);
+            }
+        });
+
+        assertNotNull("Found user routine after create", ais().getRoutine(userName));
+        assertNotNull("Found sys routine after user create", ais().getRoutine(sysName));
     }
-
-    @Test
-    public void newDataSetReadAndSavedAsProtobuf() throws Exception {
-        PersistitStoreSchemaManager pssm = castToPSSM();
-        assertEquals("No type on new volume", SerializationType.NONE, pssm.getSerializationType());
-        createTable(SCHEMA, T1_NAME, T1_DDL);
-        assertEquals("Saved as PROTOBUF", SerializationType.PROTOBUF, pssm.getSerializationType());
-
-        safeRestart();
-        pssm = castToPSSM();
-
-        assertEquals("Saw PROTOBUF on load", SerializationType.PROTOBUF, pssm.getSerializationType());
-    }
-
-    // Provision = error during startup of PSSM
-    @Test(expected=ProvisionException.class)
-    public void mixedMetaModelAndProtobufIsIllegal() throws Exception {
-        PersistitStoreSchemaManager pssm = castToPSSM();
-
-        // Create a bad volume on purpose to make sure we detect on load
-        pssm.setSerializationType(SerializationType.META_MODEL);
-        createTable(SCHEMA, T1_NAME, T1_DDL);
-
-        pssm.setSerializationType(SerializationType.PROTOBUF);
-        createTable(SCHEMA, T2_NAME, T2_DDL);
-
-        safeRestart();
-    }
-
 
     /**
      * Assert that the given tables in the given schema has the, and only the, given tables. Also
@@ -780,26 +701,25 @@ public final class SchemaManagerIT extends ITBase {
      * @param tableNames List of table names to check.
      * @throws Exception For any internal error.
      */
-    private void assertTablesInSchema(String schema, String... tableNames) throws Exception {
+    private void assertTablesInSchema(String schema, String... tableNames) {
         final SortedSet<String> expected = new TreeSet<String>();
         final AkibanInformationSchema ais = ddl().getAIS(session());
-        final Session session = session();
         for (String name : tableNames) {
             final Table table = ais.getTable(schema, name);
             assertNotNull(schema + "." + name + " in AIS", table);
-            final TableDefinition def = schemaManager.getTableDefinition(session, table.getName());
+            final TableDefinition def = getTableDefinitions(schema).get(table.getName().getTableName());
             assertNotNull(schema + "." + name  + " has definition", def);
             expected.add(name);
         }
         final SortedSet<String> actual = new TreeSet<String>();
-        for (TableDefinition def : schemaManager.getTableDefinitions(session, schema).values()) {
+        for (TableDefinition def : getTableDefinitions(schema).values()) {
             final Table table = ais.getTable(schema, def.getTableName());
             assertNotNull(def + " in AIS", table);
             actual.add(def.getTableName());
         }
         assertEquals("tables in: " + schema, expected, actual);
     }
-
+    
     /**
      * Check that the result of {@link SchemaManager#schemaStrings(Session, boolean)} is correct for
      * the given tables. The only guarantees are that schemas are created with 'if not exists',
@@ -810,7 +730,7 @@ public final class SchemaManagerIT extends ITBase {
     private void assertSchemaStrings(Map<String, List<String>> schemaAndTables) throws Exception {
         final String CREATE_SCHEMA = "create schema if not exists `";
         final String CREATE_TABLE = "create table `";
-        final List<String> ddls = getSchemaStringsWithoutAIS(false);
+        final List<String> ddls = getSchemaStringsWithoutAIS();
         final Set<String> sawSchemas = new HashSet<String>();
         for(String statement : ddls) {
             if(statement.startsWith(CREATE_SCHEMA)) {
@@ -835,6 +755,15 @@ public final class SchemaManagerIT extends ITBase {
         }
     }
 
+    private SortedMap<String, TableDefinition> getTableDefinitions(final String schema) {
+        return transactionallyUnchecked(new Callable<SortedMap<String, TableDefinition>>() {
+            @Override
+            public SortedMap<String, TableDefinition> call() throws Exception {
+                return schemaManager.getTableDefinitions(session(), schema);
+            }
+        });
+    }
+
     private static UserTable makeSimpleISTable(TableName name) {
         NewAISBuilder builder = AISBBasedBuilder.create(name.getSchemaName());
         builder.userTable(name.getTableName()).colLong("id", false).pk("id");
@@ -848,12 +777,7 @@ public final class SchemaManagerIT extends ITBase {
         }
 
         @Override
-        public Table getTableDefinition() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public GroupCursor getGroupCursor(Session session) {
+        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter) {
             throw new UnsupportedOperationException();
         }
 
@@ -864,6 +788,11 @@ public final class SchemaManagerIT extends ITBase {
 
         @Override
         public long rowCount() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public IndexStatistics computeIndexStatistics(Session session, Index index) {
             throw new UnsupportedOperationException();
         }
     }

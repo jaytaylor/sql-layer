@@ -101,6 +101,7 @@ public abstract class RangeEndpoint implements Comparable<RangeEndpoint> {
         return comparison;
     }
 
+    @SuppressWarnings("unchecked") // We know that oneT and twoT are both Comparables of the same class.
     private static ComparisonResult compareObjects(Object one, Object two) {
         // if both are null, they're equal. Otherwise, at most one can be null; if either is null, we know the
         // answer. Otherwise, we know neither is null, and we can test their values (after checking the classes)
@@ -110,12 +111,26 @@ public abstract class RangeEndpoint implements Comparable<RangeEndpoint> {
             return ComparisonResult.LT;
         if (two == null)
             return ComparisonResult.GT;
-        if (!one.getClass().equals(two.getClass()) || !Comparable.class.isInstance(one))
+        int compareResult;
+        if (one.getClass().equals(two.getClass())) {
+            if (!(one instanceof Comparable))
+                return ComparisonResult.INVALID;
+            Comparable oneT = (Comparable) one;
+            Comparable twoT = (Comparable) two;
+            compareResult = (oneT).compareTo(twoT);
+        }
+        else if (((one.getClass() == Byte.class) || (one.getClass() == Short.class) ||
+                  (one.getClass() == Integer.class) || (one.getClass() == Long.class)) &&
+                 ((two.getClass() == Byte.class) || (two.getClass() == Short.class) ||
+                  (two.getClass() == Integer.class) || (two.getClass() == Long.class))) {
+            Number oneT = (Number) one;
+            Number twoT = (Number) two;
+            // TODO: JDK 7 this is in Long.
+            compareResult = com.google.common.primitives.Longs.compare(oneT.longValue(),
+                                                                       twoT.longValue());
+        }
+        else
             return ComparisonResult.INVALID;
-        Comparable oneT = (Comparable) one;
-        Comparable twoT = (Comparable) two;
-        @SuppressWarnings("unchecked") // we know that oneT and twoT are both Comparables of the same class
-                int compareResult = (oneT).compareTo(twoT);
         if (compareResult < 0)
             return ComparisonResult.LT;
         else if (compareResult > 0)

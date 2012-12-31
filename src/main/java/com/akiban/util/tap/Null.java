@@ -58,7 +58,7 @@ class Null extends Tap
         // do nothing
     }
 
-    public void appendReport(final StringBuilder buffer)
+    public void appendReport(String label, final StringBuilder buffer)
     {
         // do nothing;
     }

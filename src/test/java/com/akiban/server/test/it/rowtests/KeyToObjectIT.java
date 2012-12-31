@@ -56,6 +56,11 @@ public class KeyToObjectIT extends ITBase {
     private final boolean IS_PK = false;
     private final boolean INDEXES = true;
 
+    @Override
+    protected boolean testSupportsPValues() {
+        return false;
+    }
+
     /**
      * Internal helper for comparing all indexed values in an index tree to their values in the row after
      * going through Encoder.toObject(RowData) and Encoder.toObject(Key), respectively.

@@ -1,0 +1,1 @@
+INSERT INTO t1 (x, y) values (1, 3) RETURNING x, y

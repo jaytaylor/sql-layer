@@ -50,11 +50,14 @@
 package com.akiban.sql.optimizer;
 
 import com.akiban.sql.parser.*;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.TypeId;
 
 import com.akiban.sql.StandardException;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Table;
 
 import java.util.*;
 
@@ -220,10 +223,11 @@ public class SubqueryFlattener
         currentSelectNode.getFromList().addAll(selectNode.getFromList());
         currentSelectNode.setWhereClause(mergeWhereClause(currentSelectNode.getWhereClause(),
                                                           selectNode.getWhereClause()));
-        if (leftOperand == null)
-            return (ValueNode)nodeFactory.getNode(NodeTypes.BOOLEAN_CONSTANT_NODE,
-                                                  Boolean.TRUE,
-                                                  parserContext);
+        if (leftOperand == null) {
+            ValueNode node = (ValueNode)nodeFactory.getNode(NodeTypes.BOOLEAN_CONSTANT_NODE, Boolean.TRUE, parserContext);
+            node.setType(new DataTypeDescriptor(TypeId.BOOLEAN_ID, false));
+            return node;
+        }
 
         int nodeType = 0;
         switch (subqueryNode.getSubqueryType()) {
@@ -263,9 +267,9 @@ public class SubqueryFlattener
         default:
             assert false;
         }
-        return (ValueNode)nodeFactory.getNode(nodeType,
-                                              leftOperand, rightOperand, 
-                                              parserContext);
+        ValueNode newNode = (ValueNode)nodeFactory.getNode(nodeType, leftOperand, rightOperand, parserContext);
+        newNode.setType(new DataTypeDescriptor(TypeId.BOOLEAN_ID, false));
+        return newNode;
     }
 
     protected boolean flattenableFromSubquery(FromSubquery fromSubquery)
@@ -276,6 +280,10 @@ public class SubqueryFlattener
                 (selectNode.getGroupByList() != null) ||
                 (selectNode.getHavingClause() != null))
                 return false;
+        }
+        else if ((fromSubquery.getSubquery() instanceof SetOperatorNode) ||
+                 (fromSubquery.getSubquery() instanceof RowsResultSetNode)) {
+            return false;
         }
         if ((fromSubquery.getOrderByList() != null) ||
             (fromSubquery.getOffset() != null) ||
@@ -327,7 +335,7 @@ public class SubqueryFlattener
         for (FromTable fromTable : fromTables) {
             TableBinding binding = (TableBinding)fromTable.getUserData();
             boolean anyIndex = false;
-            for (Index index : binding.getTable().getIndexes()) {
+            for (Index index : ((Table)binding.getTable()).getIndexes()) {
                 if (!index.isUnique()) continue;
                 boolean allColumns = true, allStronger = true;
                 for (IndexColumn indexColumn : index.getKeyColumns()) {

@@ -43,7 +43,7 @@ public final class NotExpression extends AbstractUnaryExpression {
 
     @Scalar("not") public static final ExpressionComposer COMPOSER = new UnaryComposer() {
         @Override
-        protected Expression compose(Expression argument) {
+        protected Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType) {
             return new NotExpression(argument);
         }
 
@@ -57,7 +57,7 @@ public final class NotExpression extends AbstractUnaryExpression {
     };
 
     @Override
-    protected String name() {
+    public String name() {
         return "NOT";
     }
 

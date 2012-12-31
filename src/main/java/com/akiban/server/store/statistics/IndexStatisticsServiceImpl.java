@@ -27,13 +27,20 @@
 package com.akiban.server.store.statistics;
 
 import com.akiban.ais.model.*;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.error.PersistitAdapterException;
+import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.service.Service;
-import com.akiban.server.service.dxl.DXLTransactionHook;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.SchemaManager;
@@ -54,45 +61,78 @@ import java.util.*;
 import java.io.File;
 import java.io.IOException;
 
-public class IndexStatisticsServiceImpl implements IndexStatisticsService, Service<IndexStatisticsService>, JmxManageable
+public class IndexStatisticsServiceImpl implements IndexStatisticsService, Service, JmxManageable
 {
+    private final static int INDEX_STATISTICS_TABLE_VERSION = 1;
+
     private static final Logger log = LoggerFactory.getLogger(IndexStatisticsServiceImpl.class);
 
     private final PersistitStore store;
     private final TreeService treeService;
+    private final TransactionService txnService;
     // Following couple only used by JMX method, where there is no context.
     private final SchemaManager schemaManager;
     private final SessionService sessionService;
+    private final ConfigurationService configurationService;
 
     private PersistitStoreIndexStatistics storeStats;
     private Map<Index,IndexStatistics> cache;
 
     @Inject
-    public IndexStatisticsServiceImpl(Store store, TreeService treeService,
-                                      SchemaManager schemaManager, SessionService sessionService) {
+    public IndexStatisticsServiceImpl(Store store,
+                                      TreeService treeService,
+                                      TransactionService txnService,
+                                      SchemaManager schemaManager,
+                                      SessionService sessionService,
+                                      ConfigurationService configurationService) {
         this.store = store.getPersistitStore();
         this.treeService = treeService;
+        this.txnService = txnService;
         this.schemaManager = schemaManager;
         this.sessionService = sessionService;
+        this.configurationService = configurationService;
     }
     
     /* Service */
-
-    @Override
-    public IndexStatisticsService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<IndexStatisticsService> castClass() {
-        return IndexStatisticsService.class;
-    }
 
     @Override
     public void start() {
         store.setIndexStatistics(this);
         cache = Collections.synchronizedMap(new WeakHashMap<Index,IndexStatistics>());
         storeStats = new PersistitStoreIndexStatistics(store, treeService, this);
+        registerStatsTables();
+    }
+
+    private static AkibanInformationSchema createStatsTables() {
+        NewAISBuilder builder = AISBBasedBuilder.create(INDEX_STATISTICS_TABLE_NAME.getSchemaName());
+        builder.userTable(INDEX_STATISTICS_TABLE_NAME.getTableName())
+                .colLong("table_id", false)
+                .colLong("index_id", false)
+                .colTimestamp("analysis_timestamp", true)
+                .colBigInt("row_count", true)
+                .colBigInt("sampled_count", true)
+                .pk("table_id", "index_id");
+        builder.userTable(INDEX_STATISTICS_ENTRY_TABLE_NAME.getTableName())
+                .colLong("table_id", false)
+                .colLong("index_id", false)
+                .colLong("column_count", false)
+                .colLong("item_number", false)
+                .colString("key_string", 2048, true, "latin1")
+                .colVarBinary("key_bytes", 4096, true)
+                .colBigInt("eq_count", true)
+                .colBigInt("lt_count", true)
+                .colBigInt("distinct_count", true)
+                .pk("table_id", "index_id", "column_count", "item_number")
+                .joinTo(INDEX_STATISTICS_TABLE_NAME.getSchemaName(), INDEX_STATISTICS_TABLE_NAME.getTableName(), "fk_0")
+                    .on("table_id", "table_id")
+                    .and("index_id", "index_id");
+        return builder.ais(true);
+    }
+
+    private void registerStatsTables() {
+        AkibanInformationSchema ais = createStatsTables();
+        schemaManager.registerStoredInformationSchemaTable(ais.getUserTable(INDEX_STATISTICS_TABLE_NAME), INDEX_STATISTICS_TABLE_VERSION);
+        schemaManager.registerStoredInformationSchemaTable(ais.getUserTable(INDEX_STATISTICS_ENTRY_TABLE_NAME), INDEX_STATISTICS_TABLE_VERSION);
     }
 
     @Override
@@ -111,7 +151,12 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Override
     public long countEntries(Session session, Index index) throws PersistitInterruptedException {
         if (index.isTableIndex()) {
-            return store.getTableStatus(((TableIndex)index).getTable()).getRowCount();
+            final UserTable table = (UserTable)((TableIndex)index).getTable();
+            if (table.hasMemoryTableFactory()) {
+                return table.getMemoryTableFactory().rowCount();
+            } else {
+                return store.getTableStatus(table).getRowCount();
+            }
         }
         final Exchange ex = store.getExchange(session, index);
         try {
@@ -157,8 +202,17 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         try {
             result = storeStats.loadIndexStatistics(session, index);
         }
+        catch (PersistitInterruptedException ex) {
+            throw new QueryCanceledException(session);
+        }
         catch (PersistitException ex) {
             throw new PersistitAdapterException(ex);
+        }
+        catch (PersistitAdapterException ex) {
+            if (ex.getCause() instanceof PersistitInterruptedException)
+                throw new QueryCanceledException(session);
+            else
+                throw ex;
         }
         if (result != null) {
             cache.put(index, result);
@@ -173,19 +227,47 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Override
     public void updateIndexStatistics(Session session, 
                                       Collection<? extends Index> indexes) {
-        final Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics>(indexes.size());
+        ensureAdapter(session);
+        final Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics> (indexes.size());
+
+        if (indexes.size() > 0) {
+            final Index first = indexes.iterator().next();
+            final UserTable table =  (UserTable)first.rootMostTable();
+            if (table.hasMemoryTableFactory()) {
+                updates.putAll(updateMemoryTableIndexStatistics (session, indexes));
+            } else {
+                updates.putAll(updatePersistitTableIndexStatistics (session, indexes));
+            }
+        }
+        txnService.addCallback(session, TransactionService.CallbackType.COMMIT, new TransactionService.Callback() {
+            @Override
+            public void run(Session session, long timestamp) {
+                cache.putAll(updates);
+            }
+        });
+    }
+
+    private Map<Index,IndexStatistics> updatePersistitTableIndexStatistics (Session session, Collection<? extends Index> indexes) {
+        Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics>(indexes.size());
         for (Index index : indexes) {
             try {
-                IndexStatistics indexStatistics = 
-                    storeStats.computeIndexStatistics(session, index);
-                if (indexStatistics != null) {
-                    storeStats.storeIndexStatistics(session, index, indexStatistics);
-                    updates.put(index, indexStatistics);
-                }
+                IndexStatistics indexStatistics = storeStats.computeIndexStatistics(session, index);
+                storeStats.storeIndexStatistics(session, index, indexStatistics);
+                updates.put(index, indexStatistics);
+            }
+            catch (PersistitInterruptedException ex) {
+                log.debug("interrupt while analyzing " + index, ex);
+                throw new QueryCanceledException(session);
             }
             catch (PersistitException ex) {
                 log.error("error while analyzing " + index, ex);
                 throw new PersistitAdapterException(ex);
+            }
+            catch (PersistitAdapterException ex) {
+                if (ex.getCause() instanceof PersistitInterruptedException)
+                    throw new QueryCanceledException(session);
+                else
+                    throw ex;
             }
             catch (RuntimeException e) {
                 log.error("error while analyzing " + index, e);
@@ -196,23 +278,44 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 throw e;
             }
         }
-        DXLTransactionHook.addCommitSuccessCallback(session, new Runnable() {
-            @Override
-            public void run() {
-                cache.putAll(updates);
+        return updates;
+    }
+    
+    private Map<Index,IndexStatistics> updateMemoryTableIndexStatistics (Session session, Collection<? extends Index> indexes) {
+        Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics>(indexes.size());
+        IndexStatistics indexStatistics;
+        for (Index index : indexes) {
+            // memory store, when it calculates index statistics, and supports group indexes
+            // will work on the root table. 
+            final UserTable table =  (UserTable)index.rootMostTable();
+            indexStatistics = table.getMemoryTableFactory().computeIndexStatistics(session, index);
+
+            if (indexStatistics != null) {
+                updates.put(index, indexStatistics);
             }
-        });
+        }
+        return updates;
     }
 
     @Override
     public void deleteIndexStatistics(Session session, 
                                       Collection<? extends Index> indexes) {
+        ensureAdapter(session);
         for (Index index : indexes) {
             try {
                 storeStats.deleteIndexStatistics(session, index);
             }
+            catch (PersistitInterruptedException ex) {
+                throw new QueryCanceledException(session);
+            }
             catch (PersistitException ex) {
                 throw new PersistitAdapterException(ex);
+            }
+            catch (PersistitAdapterException ex) {
+                if (ex.getCause() instanceof PersistitInterruptedException)
+                    throw new QueryCanceledException(session);
+                else
+                    throw ex;
             }
             cache.remove(index);
         }
@@ -221,17 +324,27 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Override
     public void loadIndexStatistics(Session session, 
                                     String schema, File file) throws IOException {
+        ensureAdapter(session);
         AkibanInformationSchema ais = schemaManager.getAis(session);
         Map<Index,IndexStatistics> stats = 
-            new IndexStatisticsYamlLoader(ais, schema).load(file);
+            new IndexStatisticsYamlLoader(ais, schema, treeService).load(file);
         for (Map.Entry<Index,IndexStatistics> entry : stats.entrySet()) {
             Index index = entry.getKey();
             IndexStatistics indexStatistics = entry.getValue();
             try {
                 storeStats.storeIndexStatistics(session, index, indexStatistics);
             }
+            catch (PersistitInterruptedException ex) {
+                throw new QueryCanceledException(session);
+            }
             catch (PersistitException ex) {
                 throw new PersistitAdapterException(ex);
+            }
+            catch (PersistitAdapterException ex) {
+                if (ex.getCause() instanceof PersistitInterruptedException)
+                    throw new QueryCanceledException(session);
+                else
+                    throw ex;
             }
             cache.put(index, indexStatistics);
         }
@@ -258,7 +371,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 toDump.put(index, stats);
             }
         }
-        new IndexStatisticsYamlLoader(ais, schema).dump(toDump, file);
+        new IndexStatisticsYamlLoader(ais, schema, treeService).dump(toDump, file);
     }
 
     @Override
@@ -275,16 +388,29 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                                  IndexStatisticsMXBean.class);
     }
 
+    private void ensureAdapter(Session session)
+    {
+        PersistitAdapter adapter = (PersistitAdapter) session.get(StoreAdapter.STORE_ADAPTER_KEY);
+        if (adapter == null) {
+            adapter = new PersistitAdapter(SchemaCache.globalSchema(schemaManager.getAis(session)),
+                                           store,
+                                           treeService,
+                                           session,
+                                           configurationService,
+                                           true);
+            session.put(StoreAdapter.STORE_ADAPTER_KEY, adapter);
+        }
+    }
+
     class JmxBean implements IndexStatisticsMXBean {
         @Override
-        public String dumpIndexStatistics(String schema, String toFile) 
-                throws IOException {
+        public String dumpIndexStatistics(String schema, String toFile) throws IOException {
             Session session = sessionService.createSession();
             try {
                 File file = new File(toFile);
                 FileWriter writer = new FileWriter(file);
                 try {
-                    IndexStatisticsServiceImpl.this.dumpIndexStatistics(session, schema, writer);
+                    dumpInternal(session, writer, schema);
                 }
                 finally {
                     writer.close();
@@ -299,9 +425,9 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         @Override
         public String dumpIndexStatisticsToString(String schema) throws IOException {
             Session session = sessionService.createSession();
+            StringWriter writer = new StringWriter();
             try {
-                StringWriter writer = new StringWriter();
-                IndexStatisticsServiceImpl.this.dumpIndexStatistics(session, schema, writer);
+                dumpInternal(session, writer, schema);
                 writer.close();
                 return writer.toString();
             }
@@ -311,15 +437,38 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         }
 
         @Override
-        public void loadIndexStatistics(String schema, String fromFile) 
-                throws IOException {
+        public void loadIndexStatistics(String schema, String fromFile)  throws IOException {
             Session session = sessionService.createSession();
             try {
                 File file = new File(fromFile);
-                IndexStatisticsServiceImpl.this.loadIndexStatistics(session, schema, file);
+                txnService.beginTransaction(session);
+                try {
+                    IndexStatisticsServiceImpl.this.loadIndexStatistics(session, schema, file);
+                    txnService.commitTransaction(session);
+                } finally {
+                    txnService.rollbackTransactionIfOpen(session);
+                }
+            }
+            catch (RuntimeException ex) {
+                log.error("Error loading " + schema, ex);
+                throw ex;
             }
             finally {
                 session.close();
+            }
+        }
+
+        private void dumpInternal(Session session, Writer writer, String schema) throws IOException {
+            txnService.beginTransaction(session);
+            try {
+                IndexStatisticsServiceImpl.this.dumpIndexStatistics(session, schema, writer);
+                txnService.commitTransaction(session);
+            }
+            catch (RuntimeException ex) {
+                log.error("Error dumping " + schema, ex);
+                throw ex;
+            } finally {
+                txnService.rollbackTransactionIfOpen(session);
             }
         }
     }

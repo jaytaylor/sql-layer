@@ -1,0 +1,6 @@
+PhysicalSelect[_SQL_COL_1:MCOMPAT_ BIGINT(21) NOT NULL]
+  Project_Default(Field(0))
+    Count_Default(*)
+      Filter_Default(customers - orders)
+        Flatten_HKeyOrdered(customers INNER orders)
+          GroupScan_Default(customers)

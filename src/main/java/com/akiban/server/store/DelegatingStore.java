@@ -26,23 +26,24 @@
 
 package com.akiban.server.store;
 
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
-import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
-import com.persistit.Exchange;
+import com.akiban.server.service.tree.TreeLink;
 import com.persistit.exception.PersistitException;
 
 import java.util.Collection;
 
-public abstract class DelegatingStore<S extends Store> implements Store {
+public abstract class DelegatingStore<S extends Store & Service> implements Store, Service {
 
     private final S delegate;
 
@@ -55,11 +56,6 @@ public abstract class DelegatingStore<S extends Store> implements Store {
     }
 
     // Store interface -- non-delegating
-
-    @Override
-    public Store cast() {
-        return this;
-    }
 
     // Store interface -- auto-generated
 
@@ -75,54 +71,51 @@ public abstract class DelegatingStore<S extends Store> implements Store {
         delegate.crash();
     }
 
-    public Class<Store> castClass() {
-        return delegate.castClass();
+    public RowDef getRowDef(Session session, int rowDefID) {
+        return delegate.getRowDef(session, rowDefID);
     }
 
-    public RowDefCache getRowDefCache() {
-        return delegate.getRowDefCache();
-    }
-
-    public void writeRow(final Session session, final RowData rowData) throws PersistitException {
+    public void writeRow(Session session, RowData rowData) throws PersistitException {
         delegate.writeRow(session, rowData);
     }
 
-    public void writeRowForBulkLoad(final Session session, Exchange hEx, RowDef rowDef, RowData rowData, int[] ordinals, int[] nKeyColumns, FieldDef[] hKeyFieldDefs, Object[] hKeyValues) throws PersistitException {
-        delegate.writeRowForBulkLoad(session, hEx, rowDef, rowData, ordinals, nKeyColumns, hKeyFieldDefs, hKeyValues);
-    }
-
-    public void updateTableStats(final Session session, RowDef rowDef, long rowCount) {
-        delegate.updateTableStats(session, rowDef, rowCount);
-    }
-
-    public void deleteRow(final Session session, final RowData rowData) throws PersistitException {
+    public void deleteRow(Session session, RowData rowData) throws PersistitException {
         delegate.deleteRow(session, rowData);
     }
 
-    public void updateRow(final Session session, final RowData oldRowData, final RowData newRowData, final ColumnSelector columnSelector) throws PersistitException {
-        delegate.updateRow(session, oldRowData, newRowData, columnSelector);
+    public void deleteRow(Session session, RowData rowData, boolean deleteIndexes) throws PersistitException {
+        delegate.deleteRow(session, rowData);
     }
 
-    public void truncateGroup(final Session session, final int rowDefId) throws PersistitException {
-        delegate.truncateGroup(session, rowDefId);
+    public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector, Index[] indexes) throws PersistitException {
+        delegate.updateRow(session, oldRowData, newRowData, columnSelector, indexes);
     }
 
-    public void truncateTableStatus(final Session session, final int rowDefId) throws PersistitException {
+    public void dropGroup(Session session, Group group) {
+        delegate.dropGroup(session, group);
+    }
+
+    public void truncateGroup(Session session, Group group) throws PersistitException {
+        delegate.truncateGroup(session, group);
+    }
+
+    public void truncateTableStatus(Session session, int rowDefId) throws PersistitException {
         delegate.truncateTableStatus(session, rowDefId);
     }
 
-    public RowCollector getSavedRowCollector(final Session session, final int tableId) throws InvalidOperationException {
+    public RowCollector getSavedRowCollector(Session session, int tableId) throws InvalidOperationException {
         return delegate.getSavedRowCollector(session, tableId);
     }
 
-    public void addSavedRowCollector(final Session session, final RowCollector rc) {
+    public void addSavedRowCollector(Session session, RowCollector rc) {
         delegate.addSavedRowCollector(session, rc);
     }
 
-    public void removeSavedRowCollector(final Session session, final RowCollector rc) throws InvalidOperationException {
+    public void removeSavedRowCollector(Session session, RowCollector rc) throws InvalidOperationException {
         delegate.removeSavedRowCollector(session, rc);
     }
 
+    @SuppressWarnings("deprecation")
     public RowCollector newRowCollector(Session session, int rowDefId, int indexId, int scanFlags, RowData start, RowData end, byte[] columnBitMap, ScanLimit scanLimit) {
         return delegate.newRowCollector(session, rowDefId, indexId, scanFlags, start, end, columnBitMap, scanLimit);
     }
@@ -131,15 +124,15 @@ public abstract class DelegatingStore<S extends Store> implements Store {
         return delegate.newRowCollector(session, scanFlags, rowDefId, indexId, columnBitMap, start, startColumns, end, endColumns, scanLimit);
     }
 
-    public long getRowCount(final Session session, final boolean exact, final RowData start, final RowData end, final byte[] columnBitMap) {
+    public long getRowCount(Session session, boolean exact, RowData start, RowData end, byte[] columnBitMap) {
         return delegate.getRowCount(session, exact, start, end, columnBitMap);
     }
 
-    public TableStatistics getTableStatistics(final Session session, int tableId) {
+    public TableStatistics getTableStatistics(Session session, int tableId) {
         return delegate.getTableStatistics(session, tableId);
     }
 
-    public void flushIndexes(final Session session) {
+    public void flushIndexes(Session session) {
         delegate.flushIndexes(session);
     }
 
@@ -151,20 +144,29 @@ public abstract class DelegatingStore<S extends Store> implements Store {
         delegate.deleteIndexes(session, indexes);
     }
 
+    public void deleteSequences (Session session, Collection<? extends Sequence> sequences) {
+        delegate.deleteSequences(session, sequences);
+    }
+    
     public void removeTrees(Session session, Table table) {
         delegate.removeTrees(session, table);
-    }
-
-    @Override
-    public void buildAllIndexes(Session session, boolean deferIndexes) {
-        delegate.buildAllIndexes(session, deferIndexes);
     }
 
     public boolean isDeferIndexes() {
         return delegate.isDeferIndexes();
     }
 
-    public void setDeferIndexes(final boolean defer) {
+    public void setDeferIndexes(boolean defer) {
         delegate.setDeferIndexes(defer);
+    }
+
+    @Override
+    public void truncateIndexes(Session session, Collection<? extends Index> indexes) {
+        delegate.truncateIndexes(session, indexes);
+    }
+
+    @Override
+    public void removeTrees(Session session, Collection<? extends TreeLink> treeLinks) {
+        delegate.removeTrees(session, treeLinks);
     }
 }

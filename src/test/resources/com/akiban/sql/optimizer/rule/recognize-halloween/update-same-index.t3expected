@@ -1,0 +1,7 @@
+DMLStatement@150aff2c(t, HALLOWEEN)
+  UpdateStatement@4f6ac7f(t[t.n = Cast(plus(t.n,1) AS MCOMPAT_ INTEGER(11) NULL)])
+    Select@5eb6c864[]
+      Flatten@5c86c46a(t)
+        AncestorLookup@13c93a9b(t -> [t])
+          SingleIndexScan@26a043(Index(test.t.t_n[IndexColumn(n)]), NONE, >1, rows = 1, cost = 12.2006)
+          TableSource@30e2742a(t - TableGroup@67e38ec8(t))

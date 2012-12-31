@@ -41,26 +41,26 @@ public final class DDLGeneratorTest {
         builder.userTable("schema", "table");
         builder.column("schema", "table", "col", 0, "decimal unsigned", 11L, 3L, true, false, null, null);
         builder.basicSchemaIsComplete();
-        builder.createGroup("myGroup", "some_group_schema", "_group0");
+        builder.createGroup("myGroup", "some_group_schema");
         builder.addTableToGroup("myGroup", "schema", "table");
         builder.groupingIsComplete();
 
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         DDLGenerator generator = new DDLGenerator();
 
-        assertEquals("group table",
-                "create table `some_group_schema`.`_group0`(`table$col` decimal(11, 3) unsigned, `table$__akiban_pk` bigint NOT NULL, KEY `table$PRIMARY`(`table$__akiban_pk`)) engine=AKIBANDB",
-                generator.createTable(ais.getGroup("myGroup").getGroupTable()));
+        assertEquals("table",
+                "create table `schema`.`table`(`col` decimal(11, 3) unsigned NULL) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin",
+                generator.createTable(ais.getUserTable("schema", "table")));
     }
 
     @Test
     public void testColumnCharset() throws Exception {
         AISBuilder builder = new AISBuilder();
         builder.userTable("schema", "table");
-        builder.column("schema", "table", "c1", 0, "varchar", 255L, null, true, false, "utf8", null);
+        builder.column("schema", "table", "c1", 0, "varchar", 255L, null, true, false, "utf-16", null);
         builder.basicSchemaIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
-        assertEquals("create table `schema`.`table`(`c1` varchar(255) CHARACTER SET utf8) engine=akibandb",
+        assertEquals("create table `schema`.`table`(`c1` varchar(255) CHARACTER SET utf-16 NULL) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin",
                      new DDLGenerator().createTable(ais.getTable("schema", "table")));
     }
 
@@ -68,10 +68,10 @@ public final class DDLGeneratorTest {
     public void testColumnCollation() throws Exception {
         AISBuilder builder = new AISBuilder();
         builder.userTable("schema", "table");
-        builder.column("schema", "table", "c1", 0, "varchar", 255L, null, true, false, null, "utf8_bin");
+        builder.column("schema", "table", "c1", 0, "varchar", 255L, null, true, false, null, "euckr_korean_ci");
         builder.basicSchemaIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
-        assertEquals("create table `schema`.`table`(`c1` varchar(255) COLLATE utf8_bin) engine=akibandb",
+        assertEquals("create table `schema`.`table`(`c1` varchar(255) COLLATE euckr_korean_ci NULL) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin",
                      new DDLGenerator().createTable(ais.getTable("schema", "table")));
     }
 
@@ -82,7 +82,7 @@ public final class DDLGeneratorTest {
         builder.column("schema", "table", "c1", 0, "int", null, null, false, false, null, null);
         builder.basicSchemaIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
-        assertEquals("create table `schema`.`table`(`c1` int NOT NULL) engine=akibandb",
+        assertEquals("create table `schema`.`table`(`c1` int NOT NULL) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin",
                     new DDLGenerator().createTable(ais.getTable("schema", "table")));
     }
 
@@ -93,7 +93,18 @@ public final class DDLGeneratorTest {
         builder.column("schema", "table", "c1", 0, "int", null, null, true, true, null, null);
         builder.basicSchemaIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
-        assertEquals("create table `schema`.`table`(`c1` int AUTO_INCREMENT) engine=akibandb",
+        assertEquals("create table `schema`.`table`(`c1` int NULL AUTO_INCREMENT) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin",
+                     new DDLGenerator().createTable(ais.getTable("schema", "table")));
+    }
+
+    @Test
+    public void testTimestampColumn() {
+        AISBuilder builder = new AISBuilder();
+        builder.userTable("schema", "table");
+        builder.column("schema", "table", "c1", 0, "timestamp", null, null, true, false, null, null);
+        builder.basicSchemaIsComplete();
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
+        assertEquals("create table `schema`.`table`(`c1` timestamp NULL) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin",
                      new DDLGenerator().createTable(ais.getTable("schema", "table")));
     }
 }

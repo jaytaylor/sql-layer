@@ -26,29 +26,29 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.PrimaryKey;
-import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.*;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowPool;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.error.PersistitAdapterException;
-import com.akiban.server.error.QueryCanceledException;
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.error.*;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
-import com.akiban.server.types.ToObjectValueTarget;
+import com.akiban.server.store.Store;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.tap.InOutTap;
 import com.persistit.Exchange;
@@ -56,19 +56,23 @@ import com.persistit.Key;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InterruptedIOException;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class PersistitAdapter extends StoreAdapter
 {
+    private static final Logger logger = LoggerFactory.getLogger(PersistitAdapter.class);
     // StoreAdapter interface
 
     @Override
-    public GroupCursor newGroupCursor(GroupTable groupTable)
+    public GroupCursor newGroupCursor(Group group)
     {
         GroupCursor cursor;
         try {
-            cursor = new PersistitGroupCursor(this, groupTable);
+            cursor = new PersistitGroupCursor(this, group);
         } catch (PersistitException e) {
             handlePersistitException(e);
             throw new AssertionError();
@@ -77,16 +81,27 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public Cursor newIndexCursor(QueryContext context, Index index, IndexKeyRange keyRange, API.Ordering ordering, IndexScanSelector selector)
+    public Cursor newIndexCursor(QueryContext context, Index index, IndexKeyRange keyRange, API.Ordering ordering,
+                                 IndexScanSelector selector, boolean usePValues)
     {
         Cursor cursor;
         try {
-            cursor = new PersistitIndexCursor(context, schema.indexRowType(index), keyRange, ordering, selector);
+            cursor = new PersistitIndexCursor(context,
+                                              schema.indexRowType(index),
+                                              keyRange,
+                                              ordering,
+                                              selector,
+                                              usePValues);
         } catch (PersistitException e) {
             handlePersistitException(e);
             throw new AssertionError();
         }
         return cursor;
+    }
+
+    @Override
+    public Store getUnderlyingStore() {
+        return store;
     }
 
     @Override
@@ -95,14 +110,10 @@ public class PersistitAdapter extends StoreAdapter
                        RowType rowType,
                        API.Ordering ordering,
                        API.SortOption sortOption,
-                       InOutTap loadTap)
+                       InOutTap loadTap,
+                       boolean usePValues)
     {
-        return new SorterToCursorAdapter(this, context, input, rowType, ordering, sortOption, loadTap);
-    }
-
-    @Override
-    public long getQueryTimeoutSec() {
-        return getConfig().queryTimeoutSec();
+        return new SorterToCursorAdapter(this, context, input, rowType, ordering, sortOption, loadTap, usePValues);
     }
 
     @Override
@@ -112,19 +123,28 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public void updateRow(Row oldRow, Row newRow) {
+    public void updateRow(Row oldRow, Row newRow, boolean usePValues) {
         RowDef rowDef = oldRow.rowType().userTable().rowDef();
         RowDef rowDefNewRow = newRow.rowType().userTable().rowDef();
-        if (rowDef != rowDefNewRow) {
+        if (rowDef.getRowDefId() != rowDefNewRow.getRowDefId()) {
             throw new IllegalArgumentException(String.format("%s != %s", rowDef, rowDefNewRow));
         }
 
-        RowData oldRowData = rowData(rowDef, oldRow);
-        RowData newRowData = rowData(rowDef, newRow);
-        int oldStep = enterUpdateStep();
+        RowData oldRowData = rowData(rowDef, oldRow, rowDataCreator(usePValues));
+        int oldStep = 0;
         try {
-            persistit.updateRow(getSession(), oldRowData, newRowData, null);
+            // For Update row, the new row (value being inserted) does not 
+            // need the default value (including identity set)
+            RowData newRowData = rowData(rowDefNewRow, newRow, rowDataCreator(usePValues));
+            oldStep = enterUpdateStep();
+            oldRowData.setExplicitRowDef(rowDef);
+            newRowData.setExplicitRowDef(rowDefNewRow);
+            store.updateRow(getSession(), oldRowData, newRowData, null, null);
+        } catch (InvalidOperationException e) {
+            rollbackIfNeeded(e);
+            throw e;
         } catch (PersistitException e) {
+            rollbackIfNeeded(e);
             handlePersistitException(e);
             assert false;
         }
@@ -133,13 +153,18 @@ public class PersistitAdapter extends StoreAdapter
         }
     }
     @Override
-    public void writeRow (Row newRow) {
+    public void writeRow (Row newRow, boolean usePValues) {
         RowDef rowDef = newRow.rowType().userTable().rowDef();
-        RowData newRowData = rowData (rowDef, newRow);
-        int oldStep = enterUpdateStep();
+        int oldStep = 0;
         try {
-            persistit.writeRow(getSession(), newRowData);
+            RowData newRowData = rowData (rowDef, newRow, rowDataCreator(usePValues));
+            oldStep = enterUpdateStep();
+            store.writeRow(getSession(), newRowData);
+        } catch (InvalidOperationException e) {
+            rollbackIfNeeded(e);
+            throw e;
         } catch (PersistitException e) {
+            rollbackIfNeeded(e);
             handlePersistitException(e);
             assert false;
         }
@@ -149,13 +174,51 @@ public class PersistitAdapter extends StoreAdapter
     }
     
     @Override
-    public void deleteRow (Row oldRow) {
+    public void deleteRow (Row oldRow, boolean usePValues) {
         RowDef rowDef = oldRow.rowType().userTable().rowDef();
-        RowData oldRowData = rowData(rowDef, oldRow);
+        RowData oldRowData = rowData(rowDef, oldRow, rowDataCreator(usePValues));
+        oldRowData.setExplicitRowDef(rowDef);
         int oldStep = enterUpdateStep();
         try {
-            persistit.deleteRow(getSession(), oldRowData);
+            store.deleteRow(getSession(), oldRowData);
+        } catch (InvalidOperationException e) {
+            rollbackIfNeeded(e);
+            throw e;
         } catch (PersistitException e) {
+            rollbackIfNeeded(e);
+            handlePersistitException(e);
+            assert false;
+        }
+        finally {
+            leaveUpdateStep(oldStep);
+        }
+    }
+
+    @Override
+    public void alterRow(Row oldRow, Row newRow, Index[] indexes, boolean hKeyChanged, boolean usePValues) {
+        RowDef rowDef = oldRow.rowType().userTable().rowDef();
+        RowDef rowDefNewRow = newRow.rowType().userTable().rowDef();
+        RowData oldRowData = rowData(rowDef, oldRow, rowDataCreator(usePValues));
+
+        int oldStep = 0;
+        try {
+            // Altered row does not need defaults from newRowData()
+            RowData newRowData = rowData(rowDefNewRow, newRow, rowDataCreator(usePValues));
+            oldRowData.setExplicitRowDef(rowDef);
+            newRowData.setExplicitRowDef(rowDefNewRow);
+            if(hKeyChanged) {
+                store.deleteRow(getSession(), oldRowData, false);
+                oldStep = enterUpdateStep();
+                store.writeRow(getSession(), newRowData);
+            } else {
+                oldStep = enterUpdateStep();
+                store.updateRow(getSession(), oldRowData, newRowData, null, indexes);
+            }
+        } catch (InvalidOperationException e) {
+            rollbackIfNeeded(e);
+            throw e;
+        } catch (PersistitException e) {
+            rollbackIfNeeded(e);
             handlePersistitException(e);
             assert false;
         }
@@ -174,6 +237,26 @@ public class PersistitAdapter extends StoreAdapter
         }
     }
 
+    @Override
+    public long hash(ValueSource valueSource, AkCollator collator)
+    {
+        assert collator != null; // Caller should have hashed in this case
+        long hash;
+        Key key;
+        int depth;
+        if (valueSource instanceof PersistitKeyValueSource) {
+            PersistitKeyValueSource persistitKeyValueSource = (PersistitKeyValueSource) valueSource;
+            key = persistitKeyValueSource.key();
+            depth = persistitKeyValueSource.depth();
+        } else {
+            key = persistit.getKey();
+            collator.append(key, valueSource.getString());
+            depth = 0;
+        }
+        hash = keyHasher.hash(key, depth);
+        return hash;
+    }
+
     // PersistitAdapter interface
 
     public PersistitStore persistit()
@@ -183,7 +266,7 @@ public class PersistitAdapter extends StoreAdapter
 
     public RowDef rowDef(int tableId)
     {
-        return persistit.getRowDefCache().getRowDef(tableId);
+        return schema.ais().getUserTable(tableId).rowDef();
     }
 
     public NewRow newRow(RowDef rowDef)
@@ -199,16 +282,20 @@ public class PersistitAdapter extends StoreAdapter
         return row;
     }
 
-    public RowData rowData(RowDef rowDef, RowBase row)
-    {
+    private RowDataCreator<?> rowDataCreator(boolean usePValues) {
+        return usePValues
+                ? new PValueRowDataCreator()
+                : new OldRowDataCreator();
+    }
+
+    private <S> RowData rowData (RowDef rowDef, RowBase row, RowDataCreator<S> creator) {
         if (row instanceof PersistitGroupRow) {
             return ((PersistitGroupRow) row).rowData();
         }
-        ToObjectValueTarget target = new ToObjectValueTarget();
         NewRow niceRow = newRow(rowDef);
         for(int i = 0; i < row.rowType().nFields(); ++i) {
-            ValueSource source = row.eval(i);
-            niceRow.put(i, target.convertFromSource(source));
+            S source = creator.eval(row, i);
+            creator.put(source, niceRow, rowDef.getFieldDef(i), i);
         }
         return niceRow.toRowData();
     }
@@ -218,18 +305,20 @@ public class PersistitAdapter extends StoreAdapter
         return PersistitGroupRow.newPersistitGroupRow(this);
     }
 
-    public PersistitIndexRow newIndexRow(IndexRowType indexRowType) throws PersistitException
+    public PersistitIndexRow takeIndexRow(IndexRowType indexRowType)
     {
-        return
-            indexRowType.index().isTableIndex()
-            ? PersistitIndexRow.tableIndexRow(this, indexRowType)
-            : PersistitIndexRow.groupIndexRow(this, indexRowType);
+        return indexRowPool.takeIndexRow(this, indexRowType);
     }
 
-
-    public Exchange takeExchange(GroupTable table) throws PersistitException
+    public void returnIndexRow(PersistitIndexRow indexRow)
     {
-        return persistit.getExchange(getSession(), table.rowDef());
+        assert !indexRow.isShared();
+        indexRowPool.returnIndexRow(this, (IndexRowType) indexRow.rowType(), indexRow);
+    }
+
+    public Exchange takeExchange(Group group) throws PersistitException
+    {
+        return persistit.getExchange(getSession(), group);
     }
 
     public Exchange takeExchange(Index index)
@@ -247,16 +336,25 @@ public class PersistitAdapter extends StoreAdapter
         handlePersistitException(getSession(), e);
     }
 
-    public static void handlePersistitException(Session session, PersistitException e)
+    public static boolean isFromInterruption(Exception e) {
+        Throwable cause = e.getCause();
+        return (e instanceof PersistitInterruptedException) ||
+               ((cause != null) && (cause instanceof InterruptedIOException || cause instanceof InterruptedException));
+    }
+
+    public static RuntimeException wrapPersistitException(Session session, PersistitException e)
     {
         assert e != null;
-        Throwable cause = e.getCause();
-        if (e instanceof PersistitInterruptedException ||
-            cause != null && (cause instanceof InterruptedIOException || cause instanceof InterruptedException)) {
-            throw new QueryCanceledException(session);
+        if (isFromInterruption(e)) {
+            return new QueryCanceledException(session);
         } else {
-            throw new PersistitAdapterException(e);
+            return new PersistitAdapterException(e);
         }
+    }
+
+    public static void handlePersistitException(Session session, PersistitException e)
+    {
+        throw wrapPersistitException(session, e);
     }
 
     public void returnExchange(Exchange exchange)
@@ -268,32 +366,117 @@ public class PersistitAdapter extends StoreAdapter
         return treeService.getTransaction(getSession());
     }
 
+    public boolean withStepChanging() {
+        return withStepChanging;
+    }
+    public void withStepChanging(boolean withStepChanging) {
+        this.withStepChanging = withStepChanging;
+    }
+
     public int enterUpdateStep()
+    {
+        return enterUpdateStep(false);
+    }
+
+    public int enterUpdateStep(boolean evenIfZero)
     {
         Transaction transaction = transaction();
         int step = transaction.getStep();
-        if (step > 0)
+        if ((evenIfZero || step > 0) && withStepChanging)
             transaction.incrementStep();
         return step;
     }
 
     public void leaveUpdateStep(int step) {
-        transaction().setStep(step);
+        Transaction txn = transaction();
+        if(txn.isActive() && !txn.isRollbackPending()) {
+            txn.setStep(step);
+        }
+    }
+
+    public long id() {
+        return id;
     }
 
     public PersistitAdapter(Schema schema,
-                            PersistitStore persistit,
+                            Store store,
                             TreeService treeService,
                             Session session,
                             ConfigurationService config)
     {
+        this(schema, store, treeService, session, config, true);
+    }
+
+    public PersistitAdapter(Schema schema,
+                            Store store,
+                            TreeService treeService,
+                            Session session,
+                            ConfigurationService config,
+                            boolean withStepChanging)
+    {
         super(schema, session, config);
-        this.persistit = persistit;
+        this.store = store;
+        this.persistit = store.getPersistitStore();
+        assert this.persistit != null : store;
         this.treeService = treeService;
+        this.withStepChanging = withStepChanging;
+        session.put(STORE_ADAPTER_KEY, this);
+    }
+
+    // For use by this class
+    private void rollbackIfNeeded(Exception e) {
+        if((e instanceof DuplicateKeyException) || (e instanceof PersistitException) || isFromInterruption(e)) {
+            Transaction txn = transaction();
+            if(txn.isActive()) {
+                txn.rollback();
+            }
+        }
+    }
+
+    @Override
+    public long sequenceNextValue(TableName sequenceName) {
+        Sequence sequence = schema().ais().getSequence(sequenceName);
+        if (sequence == null) {
+            throw new NoSuchSequenceException (sequenceName);
+        }
+        return sequenceValue (sequence, false);
+    }
+
+    @Override
+    public long sequenceCurrentValue(TableName sequenceName) {
+        Sequence sequence = schema().ais().getSequence(sequenceName);
+        if (sequence == null) {
+            throw new NoSuchSequenceException (sequenceName);
+        }
+        return sequenceValue (sequence, true);
     }
     
+    private long sequenceValue (Sequence sequence, boolean getCurrentValue) {
+        try {
+            if (getCurrentValue) {
+                return sequence.currentValue(treeService);
+            } else {
+                return sequence.nextValue(treeService);
+            }
+        } catch (PersistitException e) {
+            rollbackIfNeeded(e);
+            handlePersistitException(e);
+            assert false;
+            return 0;
+        }
+    }
+
+    // Class state
+
+    private static final AtomicLong idCounter = new AtomicLong(0);
+    private static PersistitIndexRowPool indexRowPool = new PersistitIndexRowPool();
+
     // Object state
 
+    private final long id = idCounter.getAndIncrement();
     private final TreeService treeService;
+    private final Store store;
     private final PersistitStore persistit;
+    private boolean withStepChanging;
+    private final PersistitKeyHasher keyHasher = new PersistitKeyHasher();
 }

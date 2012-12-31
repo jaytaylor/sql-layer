@@ -27,6 +27,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.service.functions.FunctionsRegistry;
+import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.rule.cost.CostEstimator;
@@ -40,9 +41,10 @@ import com.akiban.qp.util.SchemaCache;
 public abstract class SchemaRulesContext extends RulesContext
 {
     private Schema schema;
+
     private FunctionsRegistry functionsRegistry;
     private CostEstimator costEstimator;
-
+    private T3RegistryService t3Registry;
     protected SchemaRulesContext() {
     }
 
@@ -54,7 +56,11 @@ public abstract class SchemaRulesContext extends RulesContext
         this.functionsRegistry = functionsRegistry;
     }
 
-    protected void initCostEstimator(CostEstimator costEstimator) {
+    protected void initT3Registry(T3RegistryService overloadResolver) {
+        this.t3Registry = overloadResolver;
+    }
+
+    protected void initCostEstimator(CostEstimator costEstimator, boolean usePValues) {
         this.costEstimator = costEstimator;
     }
 
@@ -63,15 +69,23 @@ public abstract class SchemaRulesContext extends RulesContext
         super.initDone();
         assert (schema != null) : "initSchema() not called";
         assert (functionsRegistry != null) : "initFunctionsRegistry() not called";
-      //assert (costEstimator != null) : "initCostEstimator() not called";
+        assert (costEstimator != null) : "initCostEstimator() not called";
     }
 
     public Schema getSchema() {
         return schema;
     }
 
+    public AkibanInformationSchema getAIS() {
+        return schema.ais();
+    }
+
     public PhysicalResultColumn getResultColumn(ResultField field) {
         return new PhysicalResultColumn(field.getName());
+    }
+
+    public T3RegistryService getT3Registry() {
+        return t3Registry;
     }
 
     public FunctionsRegistry getFunctionsRegistry() {

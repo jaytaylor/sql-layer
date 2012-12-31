@@ -1,0 +1,8 @@
+PhysicalSelect[_SQL_COL_1:MCOMPAT_ BIGINT(21) NOT NULL]
+  Project_Default(Field(0))
+    Count_Default(*)
+      Flatten_HKeyOrdered(customers - orders INNER items)
+        Flatten_HKeyOrdered(customers INNER orders)
+          Select_HKeyOrdered(items.quan == 100)
+            AncestorLookup_Default(Index(items.sku) -> customers, orders, items)
+              IndexScan_Default(Index(items.sku), sku < '8888')

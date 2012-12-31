@@ -35,7 +35,7 @@ import com.akiban.util.ByteSource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public final class FromObjectValueSource implements ValueSource {
+public final class FromObjectValueSource extends ValueSource {
 
     // FromObjectValueSource interface
 
@@ -208,7 +208,7 @@ public final class FromObjectValueSource implements ValueSource {
     public static AkType reflectivelyGetAkType(Object object) {
         if (object == null)
             return AkType.NULL;
-        if (object instanceof Integer || object instanceof Long)
+        if (object instanceof Integer || object instanceof Long || object instanceof Short)
             return AkType.LONG;
         else if (object instanceof String)
             return AkType.VARCHAR;

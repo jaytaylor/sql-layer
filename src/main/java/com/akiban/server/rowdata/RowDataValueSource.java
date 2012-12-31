@@ -28,10 +28,11 @@ package com.akiban.server.rowdata;
 
 import com.akiban.server.types.AkType;
 
-public final class RowDataValueSource extends AbstractRowDataValueSource {
+public final class RowDataValueSource extends AbstractRowDataValueSource implements RowDataSource {
 
     // FieldDefConversionBase interface
 
+    @Override
     public void bind(FieldDef fieldDef, RowData rowData) {
         if(fieldDef.getType().akType() == AkType.INTERVAL_MILLIS || fieldDef.getType().akType() == AkType.INTERVAL_MONTH)
             throw new UnsupportedOperationException();

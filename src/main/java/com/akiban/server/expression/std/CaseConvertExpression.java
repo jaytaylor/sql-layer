@@ -67,7 +67,7 @@ public class CaseConvertExpression extends AbstractUnaryExpression
         }
         
         @Override
-        protected Expression compose(Expression argument) 
+        protected Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType) 
         {
             return new CaseConvertExpression(argument, conversionType);
         }         
@@ -118,7 +118,8 @@ public class CaseConvertExpression extends AbstractUnaryExpression
     }
 
     @Override
-    protected String name() {
+    public String name() 
+    {
         return conversionType.name();
     }
 

@@ -62,11 +62,6 @@ public class ColumnExpression extends BaseExpression
         this.position = position;
     }
 
-    @Override
-    public void setSQLtype(DataTypeDescriptor type) {
-        super.setSQLtype(type);
-    }
-
     // Generated column references without an original SQL source.
     public ColumnExpression(TableSource table, Column column) {
         this(table, column, null, null);

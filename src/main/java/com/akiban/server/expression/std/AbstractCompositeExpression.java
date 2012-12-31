@@ -26,6 +26,11 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.exec.Plannable;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Type;
+import com.akiban.server.explain.std.ExpressionExplainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
@@ -35,11 +40,18 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public abstract class AbstractCompositeExpression implements Expression {
 
     // Expression interface
 
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        return new ExpressionExplainer(Type.FUNCTION, name(), context, children);
+    }
+    
     @Override
     public boolean isConstant() {
         boolean hasNonConst = false;
@@ -87,8 +99,8 @@ public abstract class AbstractCompositeExpression implements Expression {
     @Override
     public final AkType valueType() {
         return type;
-    }
-
+    }    
+    
     // Object interface
 
     @Override
@@ -99,7 +111,7 @@ public abstract class AbstractCompositeExpression implements Expression {
     }
 
     // for use by subclasses
-
+    
     protected abstract void describe(StringBuilder sb);
 
     protected final List<? extends Expression> children() {
@@ -142,8 +154,8 @@ public abstract class AbstractCompositeExpression implements Expression {
 //            }
         }
         return type;
-    }
-
+    }   
+    
     // for use in this class
 
     /**
@@ -175,13 +187,11 @@ public abstract class AbstractCompositeExpression implements Expression {
         }
         sb.append(" -> ").append(valueType()).append(')');
     }
-
+    
     // object state
 
     private final List<? extends Expression> children;
     private final AkType type;
-
-    // const
-
+    
     private static final String EXPRESSION_SUFFIX = "Expression";
 }

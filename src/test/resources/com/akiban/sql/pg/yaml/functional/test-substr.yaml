@@ -6,6 +6,9 @@
 --- # test SUBSTRINNG in SELECT clause, with 3 args
 - Statement: SELECT SUBSTR(varchar_field, 5, LENGTH(varchar_field) - 4) from all_types;
 - output: [['ratically'], ['la']]
+--- # test with 3 args
+- Statement: SELECT SUBSTR('quadratically', integer_field, 6) from all_types WHERE integer_field  = 3;
+- output: [['adrati']]
 --- # test SUBSTR with 3 args
 - Statement: SELECT SUBSTR('quadratically', integer_field, double_field + 1) FROM all_types WHERE integer_field = 3;
 - output: [['adrati']]
@@ -33,8 +36,8 @@
 - params: [[2]]
 - output: [['yzt'], ['yzt']]
 --- # test index out of bound
-- Statement: SELECT SUBSTR('ABC', 4 ) from all_types;
-- output: [[null], [null]]
+- Statement: SELECT SUBSTR('ABC', 4 );
+- output: [['']]
 --- # test empty string
 - Statement: SELECT SUBSTR('', 2, 0) from all_types;
 - output: [[''], ['']]
@@ -49,5 +52,14 @@
 - output: [[''], ['']]
 --- # test wrong arity: excessive arguments
 - Statement: SELECT SUBSTR('ABC', 1, 2, 3) from all_types;
-- error: [42000]
+- error: !select-engine { all: [42000], sys-mysql: [1064] }
+--- # test SUBSTR called with 2 args
+- Statement: SELECT SUBSTR('abcd', 1);
+- output: [['abcd']]
+--- # test with null literal
+- Statement: SELECT SUBSTR('abcd', null);
+- output: [[null]]
+---
+- Statement: SELECT SUBSTRING('abcd', 1, null);
+- output: [[null]]
 ...

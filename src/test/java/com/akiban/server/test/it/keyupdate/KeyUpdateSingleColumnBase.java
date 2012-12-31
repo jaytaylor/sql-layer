@@ -26,20 +26,9 @@
 
 package com.akiban.server.test.it.keyupdate;
 
-import com.akiban.ais.model.Index;
-import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.test.it.ITBase;
-import com.akiban.util.tap.Tap;
-import com.akiban.util.tap.TapReport;
-import org.junit.Before;
 import org.junit.Test;
-
-import java.util.*;
-import java.util.concurrent.Callable;
 
 import static com.akiban.server.test.it.keyupdate.Schema.*;
 import static junit.framework.Assert.*;

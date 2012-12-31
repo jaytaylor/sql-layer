@@ -35,6 +35,10 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.Parameter;
+import com.akiban.ais.model.Routine;
+import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.SQLJJar;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
@@ -78,6 +82,20 @@ public class ProtobufReaderWriterTest {
                 on(CAOIBuilderFiller.ITEM_TABLE, "unit_price").
                 and(CAOIBuilderFiller.ORDER_TABLE, "order_date");
         
+        final AkibanInformationSchema inAIS = builder.ais();
+        final AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        compareAndAssert(inAIS, outAIS, false);
+    }
+
+    @Test
+    public void caoiWithView() {
+        NewAISBuilder builder = CAOIBuilderFiller.createAndFillBuilder(SCHEMA);
+        builder.view("recent_orders").
+            definition("CREATE VIEW recent_order AS SELECT * FROM order WHERE order_date > CURRENT_DATE - INTERVAL '30' DAY").
+            references(CAOIBuilderFiller.ORDER_TABLE).
+            colBigInt("order_id", false).
+            colBigInt("customer_id", false).
+            colLong("order_date", false);
         final AkibanInformationSchema inAIS = builder.ais();
         final AkibanInformationSchema outAIS = writeAndRead(inAIS);
         compareAndAssert(inAIS, outAIS, false);
@@ -187,25 +205,27 @@ public class ProtobufReaderWriterTest {
         builder.userTable(SCHEMA, TABLE);
         builder.column(SCHEMA, TABLE, "valid", 0, "TINYINT", null, null, true, false, null, null);
         builder.column(SCHEMA, TABLE, "state", 1, "CHAR", 2L, null, true, false, null, null);
-        builder.createGroup(TABLE, SCHEMA, "akiban_"+TABLE);
+        builder.createGroup(TABLE, SCHEMA);
         builder.addTableToGroup(TABLE, SCHEMA, TABLE);
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
 
         // AIS does not have to be validate-able to be serialized (this is how it comes from adapter)
         final AkibanInformationSchema inAIS = builder.akibanInformationSchema();
         final UserTable t1_1 = inAIS.getUserTable(SCHEMA, TABLE);
         assertNull("Source table should not have declared PK", t1_1.getPrimaryKey());
-        assertNull("Source table should have internal PK", t1_1.getPrimaryKeyIncludingInternal());
+        assertNotNull("Source table should have internal PK", t1_1.getPrimaryKeyIncludingInternal());
 
         // Serialized AIS did not create an internal column, PK
         AkibanInformationSchema outAIS = writeAndRead(inAIS);
         UserTable t1_2 = outAIS.getUserTable(SCHEMA, TABLE);
         assertNull("Deserialized should not have declared PK", t1_2.getPrimaryKey());
-        assertNull("Deserialized should have internal PK", t1_2.getPrimaryKeyIncludingInternal());
+        assertNotNull("Deserialized should have internal PK", t1_2.getPrimaryKeyIncludingInternal());
 
         compareAndAssert(inAIS, outAIS, false);
 
         // Now add an internal PK and run through again
-        t1_1.endTable();
+        t1_1.endTable(builder.getNameGenerator());
         assertNull("Source table should not have declared PK", t1_1.getPrimaryKey());
         assertNotNull("Source table should have internal PK", t1_1.getPrimaryKeyIncludingInternal());
 
@@ -255,7 +275,7 @@ public class ProtobufReaderWriterTest {
         GrowableByteBuffer bbs[] = new GrowableByteBuffer[COUNT];
         for(int i = 0; i < COUNT; ++i) {
             bbs[i] = createByteBuffer();
-            new ProtobufWriter(bbs[i], new ProtobufWriter.SchemaSelector(SCHEMA+i)).save(inAIS);
+            new ProtobufWriter(bbs[i], new ProtobufWriter.SingleSchemaSelector(SCHEMA+i)).save(inAIS);
         }
 
         AkibanInformationSchema outAIS = new AkibanInformationSchema();
@@ -270,7 +290,7 @@ public class ProtobufReaderWriterTest {
     }
 
     @Test
-    public void tableAndIndexTreeNames() {
+    public void groupAndIndexTreeNames() {
         final String GROUP_TREENAME = "foo";
         final String PARENT_PK_TREENAME = "bar";
         final String GROUP_INDEX_TREENAME = "zap";
@@ -281,21 +301,15 @@ public class ProtobufReaderWriterTest {
 
         AkibanInformationSchema inAIS = builder.ais();
         UserTable inParent = inAIS.getUserTable(SCHEMA, "parent");
-        UserTable inChild = inAIS.getUserTable(SCHEMA, "child");
-        inParent.getGroup().getGroupTable().setTreeName(GROUP_TREENAME);
+        inParent.getGroup().setTreeName(GROUP_TREENAME);
         inParent.getGroup().getIndex("v_cid").setTreeName(GROUP_INDEX_TREENAME);
-        inParent.setTreeName(GROUP_TREENAME);
         inParent.getIndex("PRIMARY").setTreeName(PARENT_PK_TREENAME);
-        inChild.setTreeName(GROUP_TREENAME);
 
         AkibanInformationSchema outAIS = writeAndRead(inAIS);
         compareAndAssert(inAIS, outAIS, true);
 
         UserTable outParent = outAIS.getUserTable(SCHEMA, "parent");
-        UserTable outChild = outAIS.getUserTable(SCHEMA, "child");
-        assertEquals("group table treename", GROUP_TREENAME, outParent.getGroup().getGroupTable().getTreeName());
-        assertEquals("parent table treename", GROUP_TREENAME, outParent.getTreeName());
-        assertEquals("child table treename", GROUP_TREENAME, outChild.getTreeName());
+        assertEquals("group treename", GROUP_TREENAME, outParent.getGroup().getTreeName());
         assertEquals("parent pk treename", PARENT_PK_TREENAME, inParent.getIndex("PRIMARY").getTreeName());
         assertEquals("group index treename", GROUP_INDEX_TREENAME, inParent.getGroup().getIndex("v_cid").getTreeName());
     }
@@ -316,6 +330,218 @@ public class ProtobufReaderWriterTest {
         assertEquals("Table with version", VERSION, outAIS.getUserTable(SCHEMA, TABLE).getVersion());
     }
 
+    @Test
+    public void sameRootTableNameTwoSchemas() {
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        builder.userTable(SCHEMA+"1", "t").colLong("id", false).pk("id");
+        builder.userTable(SCHEMA+"2", "t").colLong("id", false).pk("id");
+        AkibanInformationSchema inAIS = builder.ais();
+        writeAndRead(inAIS);
+    }
+    
+    @Test
+    public void sequenceSimple () {
+        TableName seqName = new TableName (SCHEMA, "Sequence-1");
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        builder.defaultSchema(SCHEMA);
+        builder.sequence(seqName.getTableName());
+        AkibanInformationSchema inAIS = builder.ais();
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        assertNotNull(outAIS.getSequence(new TableName(SCHEMA, "Sequence-1")));
+        Sequence sequence = outAIS.getSequence(new TableName(SCHEMA, "Sequence-1"));
+        assertEquals(1, sequence.getStartsWith());
+        assertEquals(1, sequence.getIncrement());
+        assertEquals(Long.MIN_VALUE, sequence.getMinValue());
+        assertEquals(Long.MAX_VALUE, sequence.getMaxValue());
+        assertTrue(!sequence.isCycle());
+        assertNotNull (sequence.getTreeName());
+        assertNull (sequence.getAccumIndex());
+    }
+    
+    @Test
+    public void sequenceComplex() {
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        builder.defaultSchema(SCHEMA);
+        builder.sequence("sequence-2", 42, -2, true);
+        AkibanInformationSchema inAIS = builder.ais();
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        assertNotNull(outAIS.getSequence(new TableName(SCHEMA, "sequence-2")));
+        Sequence sequence = outAIS.getSequence(new TableName(SCHEMA, "sequence-2"));
+        assertEquals(42, sequence.getStartsWith());
+        assertEquals(-2, sequence.getIncrement());
+        assertTrue(sequence.isCycle());
+        assertNotNull (sequence.getTreeName());
+        assertNull (sequence.getAccumIndex());
+    }
+    
+    @Test
+    public void sequenceTree() {
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        TableName seqName = new TableName (SCHEMA, "sequence-3");
+        builder.defaultSchema(SCHEMA);
+        builder.sequence("sequence-3", 42, -2, true);
+        AkibanInformationSchema inAIS = builder.ais();
+        Sequence inSeq = inAIS.getSequence(seqName);
+        inSeq.setTreeName("sequence-3.tree");
+        inSeq.setAccumIndex(3);
+        
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        assertNotNull(outAIS.getSequence(seqName));
+        Sequence sequence = outAIS.getSequence(seqName);
+        assertEquals ("sequence-3.tree", sequence.getTreeName());
+    }
+    
+    @Test 
+    public void columnSequence() {
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        TableName sequenceName = new TableName (SCHEMA, "sequence-4");
+        builder.sequence(sequenceName.getTableName());
+        builder.userTable("customers").
+            colBigInt("customer_id", false).
+            colString("customer_name", 100, false).
+            pk("customer_id");
+        AkibanInformationSchema inAIS = builder.unvalidatedAIS();
+        Column idColumn = inAIS.getTable(new TableName (SCHEMA, "customers")).getColumn(0);
+        idColumn.setDefaultIdentity(true);
+        idColumn.setIdentityGenerator(inAIS.getSequence(sequenceName));
+        
+        AkibanInformationSchema outAIS = writeAndRead(builder.ais());
+        
+        assertNotNull(outAIS.getSequence(sequenceName));
+        Column outColumn = outAIS.getTable(new TableName(SCHEMA, "customers")).getColumn(0);
+        assertNotNull (outColumn.getDefaultIdentity());
+        assertTrue (outColumn.getDefaultIdentity());
+        assertNotNull (outColumn.getIdentityGenerator());
+        assertSame (outColumn.getIdentityGenerator(), outAIS.getSequence(sequenceName));
+    }
+
+    @Test
+    public void indexColumnIndexedLength() {
+        final String TABLE = "t";
+        final Integer INDEXED_LENGTH = 16;
+        AISBuilder builder = new AISBuilder();
+        builder.userTable(SCHEMA, TABLE);
+        builder.column(SCHEMA, TABLE, "v", 0, "VARCHAR", 32L, null, false, false, null, null);
+        builder.index(SCHEMA, TABLE, "v", false, Index.KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, TABLE, "v", "v", 0, true, INDEXED_LENGTH);
+        builder.createGroup(TABLE, SCHEMA);
+        builder.addTableToGroup(TABLE, SCHEMA, TABLE);
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
+
+        AkibanInformationSchema outAIS = writeAndRead(builder.akibanInformationSchema());
+        UserTable table = outAIS.getUserTable(SCHEMA, TABLE);
+        assertNotNull("found table", table);
+        assertNotNull("has v index", table.getIndex("v"));
+        assertEquals("v indexed length", INDEXED_LENGTH, table.getIndex("v").getKeyColumns().get(0).getIndexedLength());
+    }
+
+    @Test
+    public void maxStorageSizeAndPrefixSize() {
+        final String TABLE = "t";
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.userTable(TABLE).colBigInt("id");
+        AkibanInformationSchema inAIS = builder.unvalidatedAIS();
+
+        // Note: If storage* methods go away, or are non-null by default, that is *good* and these can go away
+        Column inCol = inAIS.getTable(SCHEMA, TABLE).getColumn(0);
+        assertNull("storedMaxStorageSize null by default", inCol.getMaxStorageSizeWithoutComputing());
+        assertNull("storedPrefixSize null by default", inCol.getPrefixSizeWithoutComputing());
+
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        Column outCol = outAIS.getTable(SCHEMA, TABLE).getColumn(0);
+        assertNull("storedMaxStorageSize null preserved", outCol.getMaxStorageSizeWithoutComputing());
+        assertNull("storedPrefixSize null preserved", outCol.getPrefixSizeWithoutComputing());
+
+        inCol.getMaxStorageSize();
+        inCol.getPrefixSize();
+
+        outAIS = writeAndRead(inAIS);
+        outCol = outAIS.getTable(SCHEMA, TABLE).getColumn(0);
+        assertEquals("storedMaxStorageSize", Long.valueOf(8L), outCol.getMaxStorageSizeWithoutComputing());
+        assertEquals("storedPrefixSize", Integer.valueOf(0), outCol.getPrefixSizeWithoutComputing());
+    }
+
+    @Test
+    public void columnDefaultValue() {
+        final String TABLE = "t";
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.userTable(TABLE).colBigInt("id");
+
+        AkibanInformationSchema inAIS = builder.unvalidatedAIS();
+        Column inCol = inAIS.getUserTable(SCHEMA, TABLE).getColumn("id");
+
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        Column outCol = outAIS.getUserTable(SCHEMA, TABLE).getColumn("id");
+        assertEquals("default defaultValue null", inCol.getDefaultValue(), outCol.getDefaultValue());
+
+        inCol.setDefaultValue("100");
+        outAIS = writeAndRead(inAIS);
+        outCol = outAIS.getUserTable(SCHEMA, TABLE).getColumn("id");
+        assertEquals("defaultValue", inCol.getDefaultValue(), outCol.getDefaultValue());
+    }
+
+    @Test
+    public void procedureJava() {
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.sqljJar("myjar")
+            // A file URL would vary by testing system. But don't check exists.
+            .url("http://software.akiban.com/procs.jar", false);
+        builder.procedure("PROC1")
+            .language("java", Routine.CallingConvention.JAVA)
+            .paramLongIn("x1")
+            .paramLongIn("x2")
+            .paramDoubleOut("d")
+            .externalName("myjar", "com.acme.Procs", "proc1")
+            .sqlAllowed(Routine.SQLAllowed.READS_SQL_DATA)
+            .dynamicResultSets(2);
+        
+        AkibanInformationSchema inAIS = builder.ais();
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+
+        Routine proc = outAIS.getRoutine(SCHEMA, "PROC1");
+        assertNotNull(proc);
+        
+        SQLJJar jar = proc.getSQLJJar();
+        assertNotNull(jar);
+        assertEquals("myjar", jar.getName().getTableName());
+        assertEquals("http://software.akiban.com/procs.jar", jar.getURL().toString());
+
+        assertEquals("java", proc.getLanguage());
+        assertEquals(Routine.CallingConvention.JAVA, proc.getCallingConvention());
+        assertEquals(3, proc.getParameters().size());
+        assertEquals("x1", proc.getParameters().get(0).getName());
+        assertEquals(Parameter.Direction.IN, proc.getParameters().get(0).getDirection());
+        assertEquals(Types.BIGINT, proc.getParameters().get(0).getType());
+        assertEquals("x2", proc.getParameters().get(1).getName());
+        assertEquals(Types.BIGINT, proc.getParameters().get(1).getType());
+        assertEquals(Parameter.Direction.IN, proc.getParameters().get(1).getDirection());
+        assertEquals("d", proc.getParameters().get(2).getName());
+        assertEquals(Types.DOUBLE, proc.getParameters().get(2).getType());
+        assertEquals(Parameter.Direction.OUT, proc.getParameters().get(2).getDirection());
+        assertEquals("com.acme.Procs", proc.getClassName());
+        assertEquals("proc1", proc.getMethodName());
+        assertEquals(Routine.SQLAllowed.READS_SQL_DATA, proc.getSQLAllowed());
+        assertEquals(2, proc.getDynamicResultSets());
+    }
+
+    @Test
+    public void procedureLoadablePlan() {
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.procedure("PROC2")
+            .language("java", Routine.CallingConvention.LOADABLE_PLAN)
+            .externalName("com.acme.Procs", "proc1");
+        
+        AkibanInformationSchema inAIS = builder.ais();
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+
+        Routine proc = outAIS.getRoutine(SCHEMA, "PROC2");
+        
+        assertEquals("java", proc.getLanguage());
+        assertEquals(Routine.CallingConvention.LOADABLE_PLAN, proc.getCallingConvention());
+        assertEquals(0, proc.getParameters().size());
+    }
+
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS) {
         return writeAndRead(inAIS, null);
     }
@@ -327,7 +553,7 @@ public class ProtobufReaderWriterTest {
         if(restrictSchema == null) {
             writer = new ProtobufWriter(bb);
         } else {
-            writer = new ProtobufWriter(bb, new ProtobufWriter.SchemaSelector(restrictSchema));
+            writer = new ProtobufWriter(bb, new ProtobufWriter.SingleSchemaSelector(restrictSchema));
         }
         writer.save(inAIS);
 

@@ -27,6 +27,7 @@
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.server.service.session.Session;
@@ -34,12 +35,17 @@ import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.BloomFilter;
 
 import java.util.Date;
 
 public interface QueryContext 
 {
+    public PValueSource getPValue(int index);
+
+    public void setPValue(int index, PValueSource value);
+
     /**
      * Gets the value bound to the given index.
      * @param index the index to look up
@@ -62,20 +68,6 @@ public interface QueryContext
      * @param type the type to convert the value to for binding
      */
     public void setValue(int index, ValueSource value, AkType type);
-
-    /**
-     * Bind a value to the given index.
-     * @param index the index to set
-     * @param value the value to assign
-     */
-    public void setValue(int index, Object value);
-
-    /**
-     * Bind a value to the given index.
-     * @param index the index to set
-     * @param value the value to assign
-     */
-    public void setValue(int index, Object value, AkType type);
 
     /**
      * Gets the row bound to the given index.
@@ -123,11 +115,15 @@ public interface QueryContext
     public void setBloomFilter(int index, BloomFilter filter);
 
     /**
+     * Clear all bindings.
+     */
+    public void clear();
+
+    /**
      * Get the store associated with this query.
      */
     public StoreAdapter getStore();
-    public StoreAdapter getStore(final TableName table);
-
+    public StoreAdapter getStore(UserTable table);
     /**
      * Get the session associated with this context.
      */
@@ -140,7 +136,7 @@ public interface QueryContext
     public Date getCurrentDate();
 
     /**
-     * Get the current schema name.
+     * Get the current user name.
      */
     public String getCurrentUser();
 
@@ -153,6 +149,16 @@ public interface QueryContext
      * Get the system identity of the server process.
      */
     public String getSystemUser();
+
+    /**
+     * Get the current schema name.
+     */
+    public String getCurrentSchema();
+
+    /**
+     * Get the server session id.
+     */
+    public int getSessionId();
 
     /**
      * Get the system time at which the query started.
@@ -179,10 +185,24 @@ public interface QueryContext
      */
     public void warnClient(InvalidOperationException exception);
 
-    /** Get the query timeout in seconds or <code>-1</code> if no limit. */
-    public long getQueryTimeoutSec();
+    /** Get the query timeout in milliseconds or <code>-1</code> if no limit. */
+    public long getQueryTimeoutMilli();
 
     /** Check whether query has been cancelled or timeout has been exceeded. */
     public void checkQueryCancelation();
 
+    /** Check constraints on row.
+     * @throws InvalidOperationException thrown if a constraint on the row is violated.
+     */
+    public void checkConstraints(Row row, boolean usePValues) throws InvalidOperationException;    
+    /**
+     * Get the next value for the named Sequence. 
+     * @throws NoSuchSequenceException if the name does not exist in the system.  
+     */
+    public long sequenceNextValue(TableName sequence); 
+    /**
+     * Get the current value for the named Sequence. 
+     * @throws NoSuchSequenceException if the name does not exist in the system.  
+     */
+    public long sequenceCurrentValue(TableName sequence); 
 }

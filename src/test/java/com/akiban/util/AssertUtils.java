@@ -31,8 +31,6 @@ import org.junit.Assert;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 public final class AssertUtils {
     public static void assertCollectionEquals(String message, Collection<?> expected, Collection<?> actual) {

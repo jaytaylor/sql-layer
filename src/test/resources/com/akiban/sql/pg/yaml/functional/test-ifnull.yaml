@@ -17,7 +17,7 @@
 ---
 - Statement: SELECT IFNULL (2, 2.5) FROM all_types;
 - output: [[2]]
-- output_types: [NUMERIC]
+- output_types: !select-engine { sys-mysql: [DECIMAL], all: [NUMERIC] }
 ---
 - Statement: SELECT IFNULL ('', 3) FROM all_types;
 - output: [['']]
@@ -27,6 +27,7 @@
 ---
 - Statement: SELECT IFNULL (DATE('1991-12-12'), 123.4) FROM all_types;
 - output: [['1991-12-12']]
+- output_types: [VARCHAR]
 ## Test with params
 ---
 - Statement: SELECT IFNULL (?, 1) FROM all_types;
@@ -57,8 +58,30 @@
 ## Test wrong arity:
 --- # test empty list
 - Statement: SELECT IFNULL () FROM all_types;
-- error: [4250C]
+- error: !select-engine { sys-mysql: [1582], all: [4250C] }
 --- # test extraneous arg
 - Statement: SELECT IFNULL (1, 2, 3) FROM all_types;
-- error: [4250C]
+- error: !select-engine { sys-mysql: [1582], all: [4250C] }
+## Test output types
+---
+- Statement: SELECT IFNULL(bigint_field, varchar_field) from all_types
+- output_types: [VARCHAR]
+---
+- Statement: SELECT IFNULL(bigint_field, date_field) from all_types
+- output_types: [VARCHAR]
+---
+- Statement: SELECT IFNULL(bigint_field, integer_field) from all_types
+- output_types: [BIGINT]
+---
+- Statement: SELECT IFNULL(bigint_field, double_field) from all_types
+- output_types: [DOUBLE]
+---
+- Statement: SELECT IFNULL(integer_field, decimal_field) from all_types
+- output_types: [NUMERIC]
+---
+- Statement: SELECT IFNULL(double_field, decimal_field) from all_types
+- output_types: !select-engine { all: [NUMERIC], newtypes: [DOUBLE] }
+---
+- Statement: SELECT IFNULL(double_field, varchar_field) from all_types
+- output_types: [VARCHAR]
 ...

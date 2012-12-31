@@ -28,6 +28,7 @@ package com.akiban.server.service.servicemanager;
 
 import com.akiban.server.service.servicemanager.configuration.DefaultServiceConfigurationHandler;
 import com.akiban.util.JUnitUtils;
+import com.google.inject.Module;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,7 +41,19 @@ import static org.junit.Assert.assertTrue;
 public final class GuiceInjectionTester {
 
     public <I> GuiceInjectionTester bind(Class<I> anInterface, Class<? extends I> anImplementation) {
-        configHandler.bind(anInterface.getName(), anImplementation.getName());
+        configHandler.bind(anInterface.getName(), anImplementation.getName(), null);
+        return this;
+    }
+
+    public <I extends ServiceManagerBase> GuiceInjectionTester manager(Class<I> serviceManagerInterfaceClass,
+                                        I serviceManager) {
+        this.serviceManagerInterfaceClass = serviceManagerInterfaceClass;
+        this.serviceManager = serviceManager;
+        return this;
+    }
+
+    public <I> GuiceInjectionTester prioritize(Class<I> anInterface) {
+        configHandler.prioritize(anInterface.getName());
         return this;
     }
 
@@ -49,7 +62,9 @@ public final class GuiceInjectionTester {
             configHandler.require(requiredClass.getName());
         }
         try {
-            guicer = Guicer.forServices(configHandler.serviceBindings());
+            guicer = Guicer.forServices((Class)serviceManagerInterfaceClass, serviceManager,
+                                        configHandler.serviceBindings(true), configHandler.priorities(),
+                                        Collections.<Module>emptyList());
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -122,6 +137,8 @@ public final class GuiceInjectionTester {
 
     private final DefaultServiceConfigurationHandler configHandler = new DefaultServiceConfigurationHandler();
     private final ListOnShutdown shutdownHook = new ListOnShutdown();
+    private Class<? extends ServiceManagerBase> serviceManagerInterfaceClass;
+    private ServiceManagerBase serviceManager;
     private Guicer guicer;
 
     // nested classes

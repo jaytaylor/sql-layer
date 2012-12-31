@@ -53,8 +53,8 @@ public final class SpuriousDuplicateKeyIT extends ITBase {
         createIndex("test", "t1", "token", "token");
         int t2 = createTable("test", "t2", "bid int not null, theme varchar(64), primary key (bid), unique(theme)");
 
-        confirmIds("t1", 1, 2, 2);
-        confirmIds("t2", 1, 2, 2);
+        confirmIds("t1", 1, 2);
+        confirmIds("t2", 1, 2);
 
         writeRows(
                 createNewRow(t2, 1, "0"),
@@ -74,9 +74,9 @@ public final class SpuriousDuplicateKeyIT extends ITBase {
                     "GROUPING FOREIGN KEY (bid_id) REFERENCES t2 (bid)");
         createIndex("test", "t3", "__akiban_fk", "bid_id");
 
-        confirmIds("t1", 1, 2, 2);
-        confirmIds("t2", 1, 2, 4);
-        confirmIds("t3", 3, 2, 4);
+        confirmIds("t1", 1, 2);
+        confirmIds("t2", 1, 2);
+        confirmIds("t3", 3, 2);
     }
 
     /**
@@ -85,10 +85,9 @@ public final class SpuriousDuplicateKeyIT extends ITBase {
      * @param tableName the table to start at
      * @param startingAt the index to start at
      * @param expectedUIndexes how many indexes you expect on the user table
-     * @param expectedGIndexes how many indexes you expect on the group table
      * @throws Exception if there's a problem!
      */
-    private void confirmIds(String tableName, int startingAt, int expectedUIndexes, int expectedGIndexes)
+    private void confirmIds(String tableName, int startingAt, int expectedUIndexes)
             throws Exception {
         UserTable uTable = ddl().getAIS(session()).getUserTable("test", tableName);
 
@@ -99,19 +98,6 @@ public final class SpuriousDuplicateKeyIT extends ITBase {
             expectedUTableIds.add( expectedUTableIds.size() + startingAt );
         }
 
-        Set<Integer> actualGTableIds = new HashSet<Integer>();
-        for(Index index : uTable.getGroup().getGroupTable().getIndexes()) {
-            actualGTableIds.add(index.getIndexId());
-        }
-
         assertEquals("uTable index count", expectedUIndexes, actualUTableIds.size());
-        assertEquals("actualUTableIds", actualUTableIds, expectedUTableIds);
-
-        if(!actualGTableIds.containsAll(actualUTableIds)) {
-            Set<Integer> missing = new HashSet<Integer>(actualUTableIds);
-            missing.removeAll(actualGTableIds);
-            fail(String.format("missing %s: %s doesn't contain all of %s", missing, actualGTableIds, actualUTableIds));
-        }
-        assertEquals("gTable index count", expectedGIndexes, actualGTableIds.size());
     }
 }

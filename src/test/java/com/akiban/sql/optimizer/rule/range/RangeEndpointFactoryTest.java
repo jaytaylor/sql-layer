@@ -26,7 +26,6 @@
 
 package com.akiban.sql.optimizer.rule.range;
 
-import com.akiban.server.expression.std.CompareExpression;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.ConstantExpression;
 import org.junit.Test;

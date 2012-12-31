@@ -49,11 +49,6 @@ public final class InExpression extends AbstractCompositeExpression {
     @Scalar("in")
     public static final ExpressionComposer COMPOSER = new ExpressionComposer() {
         @Override
-        public Expression compose(List<? extends Expression> arguments) {
-            return new InExpression(arguments.get(0), arguments.subList(0, arguments.size()));
-        }
-
-        @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             AkType firstArg = argumentTypes.get(0).getType();
@@ -65,13 +60,13 @@ public final class InExpression extends AbstractCompositeExpression {
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported in IN yet.");
+            return new InExpression(arguments.get(0), arguments.subList(0, arguments.size()));
         }
 
         @Override
         public NullTreating getNullTreating()
         {
-            return NullTreating.IGNORE;
+            return NullTreating.RETURN_NULL; // NULL is actually contaminating in IN
         }
     };
 
@@ -80,6 +75,7 @@ public final class InExpression extends AbstractCompositeExpression {
         sb.append("IN");
     }
 
+
     @Override
     public ExpressionEvaluation evaluation() {
         return new InnerEvaluation(childrenEvaluations());
@@ -87,7 +83,7 @@ public final class InExpression extends AbstractCompositeExpression {
 
     @Override
     public boolean nullIsContaminating() {
-        return false;
+        return true;
     }
 
     public InExpression(Expression lhs, List<? extends Expression> rhs) {
@@ -101,6 +97,12 @@ public final class InExpression extends AbstractCompositeExpression {
         list.add(head);
         list.addAll(tail);
         return list;
+    }
+
+    @Override
+    public String name()
+    {
+        return "IN";
     }
 
     private static final class InnerEvaluation extends AbstractCompositeExpressionEvaluation {

@@ -42,7 +42,7 @@ public final class RangeSegment {
 
     private static final Logger log = LoggerFactory.getLogger(RangeSegment.class);
 
-    public static RangeSegment ONLY_NULL = new RangeSegment(RangeEndpoint.NULL_INCLUSIVE, RangeEndpoint.NULL_INCLUSIVE);
+    public static final RangeSegment ONLY_NULL = new RangeSegment(RangeEndpoint.NULL_INCLUSIVE, RangeEndpoint.NULL_INCLUSIVE);
 
     public static List<RangeSegment> fromComparison(Comparison op, ConstantExpression constantExpression) {
         final RangeEndpoint startPoint;
@@ -245,14 +245,24 @@ public final class RangeSegment {
         return end;
     }
 
+    public boolean isSingle() {
+        return start.equals(end);
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(start.describeValue());
-        sb.append(start.isInclusive() ? " <= % " : " < % ");
-        if (!end.isUpperWild()) {
-            sb.append(end.isInclusive() ? "<= " : "< ");
-            sb.append(end.describeValue());
+        if (isSingle()) {
+            sb.append("% = ");
+            sb.append(start.describeValue());
+        }
+        else {
+            sb.append(start.describeValue());
+            sb.append(start.isInclusive() ? " <= % " : " < % ");
+            if (!end.isUpperWild()) {
+                sb.append(end.isInclusive() ? "<= " : "< ");
+                sb.append(end.describeValue());
+            }
         }
         return sb.toString();
     }

@@ -38,8 +38,6 @@ import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.sql.RegexFilenameFilter;
 
-import com.akiban.ais.model.Index.JoinType;
-
 import org.junit.Ignore;
 
 import java.io.BufferedReader;
@@ -48,10 +46,7 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.List;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -61,7 +56,6 @@ import java.util.regex.Pattern;
 @Ignore
 public class PostgresServerFilesITBase extends PostgresServerITBase
 {
-    private static final Pattern INDEX_PATTERN = Pattern.compile("CREATE INDEX (\\w+) ON (\\w+)\\((.*)\\);");
     public void loadDatabase(File dir) throws Exception {
         loadSchemaFile(new File(dir, "schema.ddl"));
         for (File data : dir.listFiles(new RegexFilenameFilter(".*\\.dat"))) {
@@ -87,7 +81,7 @@ public class PostgresServerFilesITBase extends PostgresServerITBase
                 String line = brdr.readLine();
                 if (line == null) break;
                 String[] cols = line.split("\t");
-                NewRow row = new NiceRow(tableId, store());
+                NewRow row = createNewRow(tableId);
                 for (int i = 0; i < cols.length; i++)
                     row.put(i, cols[i]);
                 dml().writeRow(session(), row);

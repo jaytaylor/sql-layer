@@ -27,7 +27,6 @@
 package com.akiban.ais.model;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class AISTableNameChanger {
     public AISTableNameChanger(UserTable table)
@@ -35,6 +34,10 @@ public class AISTableNameChanger {
         this.table = table;
         this.newSchemaName = table.getName().getSchemaName();
         this.newTableName = table.getName().getTableName();
+    }
+
+    public AISTableNameChanger(UserTable table, TableName newName) {
+        this(table, newName.getSchemaName(), newName.getTableName());
     }
 
     public AISTableNameChanger(UserTable table, String newSchemaName, String newTableName) {

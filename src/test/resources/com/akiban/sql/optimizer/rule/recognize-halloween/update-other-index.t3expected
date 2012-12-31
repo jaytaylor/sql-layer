@@ -1,0 +1,7 @@
+DMLStatement@9f6bfca(t)
+  UpdateStatement@26a96be2(t[t.n = Cast(plus(t.n,1) AS MCOMPAT_ INTEGER(11) NULL)])
+    Select@3ce9d642[]
+      Flatten@2060182(t)
+        AncestorLookup@584cfed7(t -> [t])
+          SingleIndexScan@26ef028b(Index(test.t.PRIMARY[IndexColumn(id)]), NONE, <1000, rows = 1, cost = 12.0678)
+          TableSource@20ca0c9(t - TableGroup@159007a5(t))

@@ -39,7 +39,7 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.std.Comparison;
-import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.test.ExpressionGenerators;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -51,8 +51,8 @@ import static org.junit.Assert.fail;
 
 public class Select_BloomFilterIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupCreateSchema()
     {
         // Tables are Driving (D) and Filtering (F). Find Filtering rows with a given test id, yielding
         // a set of (a, b) rows. Then find Driving rows matching a and b.
@@ -66,13 +66,18 @@ public class Select_BloomFilterIT extends OperatorITBase
             "test_id int not null",
             "a int",
             "b int");
-        Index dIndex = createIndex("schema", "driving", "idx_d", "test_id", "a", "b");
-        Index fab = createIndex("schema", "filtering", "idx_fab", "a", "b");
-        schema = new Schema(rowDefCache().ais());
+        createIndex("schema", "driving", "idx_d", "test_id", "a", "b");
+        createIndex("schema", "filtering", "idx_fab", "a", "b");
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
+        schema = new Schema(ais());
         dRowType = schema.userTableRowType(userTable(d));
         fRowType = schema.userTableRowType(userTable(f));
-        dIndexRowType = dRowType.indexRowType(dIndex);
-        fabIndexRowType = fRowType.indexRowType(fab);
+        dIndexRowType = indexType(d, "test_id", "a", "b");
+        fabIndexRowType = indexType(f, "a", "b");
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[]{
@@ -104,6 +109,10 @@ public class Select_BloomFilterIT extends OperatorITBase
             createNewRow(f, 6L, 61L, 601L),
             createNewRow(f, 6L, 62L, 602L),
             createNewRow(f, 6L, 63L, 699L),
+            // Test 7: Null columns in d
+            createNewRow(d, 7L, null, null),
+            // Test 8: Null columns in f
+            createNewRow(f, 8L, null, null),
         };
         use(db);
     }
@@ -209,6 +218,24 @@ public class Select_BloomFilterIT extends OperatorITBase
     }
 
     @Test
+    public void test7()
+    {
+        Operator plan = plan(7);
+        RowBase[] expected = new RowBase[] {
+        };
+        compareRows(expected, cursor(plan, queryContext));
+    }
+
+    @Test
+    public void test8()
+    {
+        Operator plan = plan(8);
+        RowBase[] expected = new RowBase[] {
+        };
+        compareRows(expected, cursor(plan, queryContext));
+    }
+
+    @Test
     public void testCursor()
     {
         Operator plan = plan(6);
@@ -232,16 +259,16 @@ public class Select_BloomFilterIT extends OperatorITBase
         Operator loadFilter = project_Default(
             select_HKeyOrdered(
                 filter_Default(
-                    groupScan_Default(groupTable(f)),
+                    groupScan_Default(group(f)),
                     Collections.singleton(fRowType)),
                 fRowType,
-                Expressions.compare(
-                    Expressions.field(fRowType, 0),
+                ExpressionGenerators.compare(
+                    ExpressionGenerators.field(fRowType, 0),
                     Comparison.EQ,
-                    Expressions.literal(testId))),
+                    ExpressionGenerators.literal(testId), castResolver())),
             fRowType,
-            Arrays.asList(Expressions.field(fRowType, 1),
-                          Expressions.field(fRowType, 2)));
+            Arrays.asList(ExpressionGenerators.field(fRowType, 1),
+                          ExpressionGenerators.field(fRowType, 2)));
         // For the index scan retriving rows from the D(test_id) index
         IndexBound testIdBound =
             new IndexBound(row(dIndexRowType, testId), new SetColumnSelector(0));
@@ -252,8 +279,8 @@ public class Select_BloomFilterIT extends OperatorITBase
             new RowBasedUnboundExpressions(
                 loadFilter.rowType(),
                 Arrays.asList(
-                    Expressions.boundField(dIndexRowType, 0, 1),
-                    Expressions.boundField(dIndexRowType, 0, 2))),
+                    ExpressionGenerators.boundField(dIndexRowType, 0, 1),
+                    ExpressionGenerators.boundField(dIndexRowType, 0, 2))),
             new SetColumnSelector(0, 1));
         IndexKeyRange fabKeyRange =
             IndexKeyRange.bounded(fabIndexRowType, abBound, true, abBound, true);
@@ -281,15 +308,15 @@ public class Select_BloomFilterIT extends OperatorITBase
                             new Ordering()),
                         // filterFields
                         Arrays.asList(
-                            Expressions.field(dIndexRowType, 1),
-                            Expressions.field(dIndexRowType, 2)),
+                            ExpressionGenerators.field(dIndexRowType, 1),
+                            ExpressionGenerators.field(dIndexRowType, 2)),
                         // filterBindingPosition
                         0)),
                 dIndexRowType,
                 Arrays.asList(
-                    Expressions.field(dIndexRowType, 0),   // test_id
-                    Expressions.field(dIndexRowType, 1),   // a
-                    Expressions.field(dIndexRowType, 2))); // b
+                    ExpressionGenerators.field(dIndexRowType, 0),   // test_id
+                    ExpressionGenerators.field(dIndexRowType, 1),   // a
+                    ExpressionGenerators.field(dIndexRowType, 2))); // b
         outputRowType = plan.rowType();
         return plan;
     }

@@ -38,10 +38,10 @@ import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.OperatorCompilerTest;
 import com.akiban.sql.optimizer.SubqueryFlattener;
 import com.akiban.sql.optimizer.plan.AST;
-import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.PlanToString;
 import com.akiban.sql.optimizer.rule.BaseRule;
 import static com.akiban.sql.optimizer.rule.DefaultRules.*;
+import com.akiban.sql.optimizer.rule.PlanContext;
 import com.akiban.sql.optimizer.rule.RulesContext;
 import com.akiban.sql.optimizer.rule.RulesTestContext;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
@@ -51,9 +51,6 @@ import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
-
-import com.akiban.server.service.functions.FunctionsRegistryImpl;
 
 import java.util.*;
 import java.io.*;
@@ -202,16 +199,8 @@ public class Tester
         statsFile = file;
     }
 
-    public void addView(String sql) throws Exception {
-        ViewDefinition view = new ViewDefinition(sql, parser);
-        if (binder != null)
-            binder.addView(view);
-        if (operatorCompiler != null)
-            operatorCompiler.addView(view);
-    }
-
     public void defaultPlanRules() throws Exception {
-        planRules = DEFAULT_RULES_CBO;
+        planRules = DEFAULT_RULES_NEWTYPES;
     }
 
     public void loadPlanRules(File file) throws Exception {
@@ -292,8 +281,6 @@ public class Tester
                     tester.setSchema(maybeFile(args[i++]));
                 else if ("-index-stats".equals(arg))
                     tester.setIndexStatistics(new File(args[i++]));
-                else if ("-view".equals(arg))
-                    tester.addView(maybeFile(args[i++]));
                 else if ("-types".equals(arg))
                     tester.addAction(Action.COMPUTE_TYPES);
                 else if ("-boolean".equals(arg))

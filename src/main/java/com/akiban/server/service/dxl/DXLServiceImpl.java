@@ -29,19 +29,26 @@ package com.akiban.server.service.dxl;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.error.ServiceNotStartedException;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
+import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
+import com.akiban.server.t3expressions.T3RegistryService;
 import com.google.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,7 +56,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManageable {
+public class DXLServiceImpl implements DXLService, Service, JmxManageable {
+    private final static String CONFIG_USE_GLOBAL_LOCK = "akserver.dxl.use_global_lock";
+    private final static Logger LOG = LoggerFactory.getLogger(DXLServiceImpl.class);
 
     private final Object MONITOR = new Object();
 
@@ -60,6 +69,10 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     private final TreeService treeService;
     private final SessionService sessionService;
     private final IndexStatisticsService indexStatisticsService;
+    private final ConfigurationService configService;
+    private final T3RegistryService t3Registry;
+    private final TransactionService txnService;
+    private final LockService lockService;
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
@@ -67,18 +80,11 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     }
 
     @Override
-    public DXLService cast() {
-        return this;
-    }
-
-    @Override
-    public Class<DXLService> castClass() {
-        return DXLService.class;
-    }
-
-    @Override
     public void start() {
-        List<DXLFunctionsHook> hooks = getHooks();
+        boolean useGlobalLock = Boolean.parseBoolean(configService.getProperty(CONFIG_USE_GLOBAL_LOCK));
+        DXLReadWriteLockHook.only().setDDLLockEnabled(useGlobalLock);
+        LOG.debug("Using global DDL lock: {}", useGlobalLock);
+        List<DXLFunctionsHook> hooks = getHooks(useGlobalLock);
         BasicDXLMiddleman middleman = BasicDXLMiddleman.create();
         HookableDDLFunctions localDdlFunctions
                 = new HookableDDLFunctions(createDDLFunctions(middleman), hooks,sessionService);
@@ -99,7 +105,8 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     }
 
     DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
-        return new BasicDDLFunctions(middleman, schemaManager, store, treeService, indexStatisticsService);
+        return new BasicDDLFunctions(middleman, schemaManager, store, treeService, indexStatisticsService, configService,
+                                     t3Registry, lockService, txnService);
     }
 
     @Override
@@ -138,7 +145,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
         try {
             DDLFunctions ddl = ddlFunctions();
             AkibanInformationSchema ais = ddl.getAIS(session);
-            Map<String,List<GroupIndex>> gisByGroup = new HashMap<String, List<GroupIndex>>();
+            Map<TableName,List<GroupIndex>> gisByGroup = new HashMap<TableName, List<GroupIndex>>();
             for (com.akiban.ais.model.Group group : ais.getGroups().values()) {
                 ArrayList<GroupIndex> groupGis = new ArrayList<GroupIndex>(group.getIndexes());
                 for (Iterator<GroupIndex> iterator = groupGis.iterator(); iterator.hasNext(); ) {
@@ -151,7 +158,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
                 }
                 gisByGroup.put(group.getName(), groupGis);
             }
-            for (Map.Entry<String,List<GroupIndex>> entry : gisByGroup.entrySet()) {
+            for (Map.Entry<TableName,List<GroupIndex>> entry : gisByGroup.entrySet()) {
                 List<GroupIndex> gis = entry.getValue();
                 List<String> giNames = new ArrayList<String>(gis.size());
                 for (Index gi : gis) {
@@ -165,10 +172,13 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
         }
     }
 
-    protected List<DXLFunctionsHook> getHooks() {
+    protected List<DXLFunctionsHook> getHooks(boolean useGlobalLock) {
         List<DXLFunctionsHook> hooks = new ArrayList<DXLFunctionsHook>();
-        hooks.add(DXLReadWriteLockHook.only());
-        hooks.add(new DXLTransactionHook(treeService));
+        if(useGlobalLock) {
+            LOG.warn("Global DDL lock is enabled");
+            hooks.add(DXLReadWriteLockHook.only());
+        }
+        hooks.add(new DXLTransactionHook(txnService));
         return hooks;
     }
 
@@ -178,12 +188,18 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     }
 
     @Inject
-    public DXLServiceImpl(SchemaManager schemaManager, Store store, TreeService treeService, SessionService sessionService, IndexStatisticsService indexStatisticsService) {
+    public DXLServiceImpl(SchemaManager schemaManager, Store store, TreeService treeService, SessionService sessionService,
+                          IndexStatisticsService indexStatisticsService, ConfigurationService configService, T3RegistryService t3Registry,
+                          TransactionService txnService, LockService lockService) {
         this.schemaManager = schemaManager;
         this.store = store;
         this.treeService = treeService;
         this.sessionService = sessionService;
         this.indexStatisticsService = indexStatisticsService;
+        this.configService = configService;
+        this.t3Registry = t3Registry;
+        this.txnService = txnService;
+        this.lockService = lockService;
     }
 
     // for use by subclasses
@@ -202,6 +218,22 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
 
     protected final IndexStatisticsService indexStatisticsService() {
         return indexStatisticsService;
+    }
+
+    protected final ConfigurationService configService() {
+        return configService;
+    }
+
+    protected final T3RegistryService t3Registry() {
+        return t3Registry;
+    }
+
+    protected final TransactionService txnService() {
+        return txnService;
+    }
+
+    protected final LockService lockService() {
+        return lockService;
     }
 
     protected final Session session() {

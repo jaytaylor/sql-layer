@@ -26,11 +26,13 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.server.CacheCounters;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerStatementCache;
 
-import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.server.error.InvalidPortException;
+import com.akiban.server.service.monitor.MonitorStage;
+import com.akiban.server.service.monitor.ServerMonitor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,45 +41,55 @@ import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.security.auth.Subject;
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 
 /** The PostgreSQL server.
  * Listens of a given port and spawns <code>PostgresServerConnection</code> threads
  * to process requests.
  * Also keeps global state for shutdown and inter-connection communication like cancel.
 */
-public class PostgresServer implements Runnable, PostgresMXBean {
+public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     public static final String SERVER_PROPERTIES_PREFIX = "akserver.postgres.";
+    protected static final String SERVER_TYPE = "Postgres";
+    private static final String THREAD_NAME_PREFIX = "PostgresServer_Accept-"; // Port is appended
+
+    protected static enum AuthenticationType {
+        NONE, CLEAR_TEXT, GSS
+    };
 
     private final Properties properties;
     private final int port;
     private final ServerServiceRequirements reqs;
     private ServerSocket socket = null;
-    private boolean running = false;
-    private volatile long startTime = 0;
+    private volatile boolean running = false;
+    private volatile long startTimeMillis, startTimeNanos;
     private boolean listening = false;
+    private int nconnections = 0;
     private Map<Integer,PostgresServerConnection> connections =
         new HashMap<Integer,PostgresServerConnection>();
     private Thread thread;
-    private final AtomicBoolean instrumentationEnabled = new AtomicBoolean(false);
     // AIS-dependent state
-    private volatile long aisTimestamp = -1;
     private volatile int statementCacheCapacity;
-    private final Map<Object,ServerStatementCache<PostgresStatement>> statementCaches = new HashMap<Object,ServerStatementCache<PostgresStatement>>();
-    private final Map<String, LoadablePlan<?>> loadablePlans = new HashMap<String, LoadablePlan<?>>();
+    private final Map<ObjectLongPair,ServerStatementCache<PostgresStatement>> statementCaches =
+        new HashMap<ObjectLongPair,ServerStatementCache<PostgresStatement>>(); // key and aisGeneration
     // end AIS-dependent state
     private volatile Date overrideCurrentTime;
+    private final CacheCounters cacheCounters = new CacheCounters();
+    private AuthenticationType authenticationType;
+    private Subject gssLogin;
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresServer.class);
 
@@ -106,8 +118,9 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         running in its own thread. */
     public void start() {
         running = true;
-        startTime = System.nanoTime();
-        thread = new Thread(this);
+        startTimeMillis = System.currentTimeMillis();
+        startTimeNanos = System.nanoTime();
+        thread = new Thread(this, THREAD_NAME_PREFIX + getPort());
         thread.start();
     }
 
@@ -151,11 +164,12 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         }
     }
 
+    @Override
     public void run() {
-        logger.debug("Postgres server listening on port {}", port);
-        int sessionId = 0;
+        logger.info("Postgres server listening on port {}", port);
         Random rand = new Random();
         try {
+            reqs.monitor().registerServerMonitor(this);
             synchronized(this) {
                 if (!running) return;
                 socket = new ServerSocket(port);
@@ -163,10 +177,11 @@ public class PostgresServer implements Runnable, PostgresMXBean {
             }
             while (running) {
                 Socket sock = socket.accept();
-                sessionId++;
+                int sessionId = reqs.monitor().allocateSessionId();
                 int secret = rand.nextInt();
                 PostgresServerConnection connection = 
                     new PostgresServerConnection(this, sock, sessionId, secret, reqs);
+                nconnections++;
                 connections.put(sessionId, connection);
                 connection.start();
             }
@@ -183,6 +198,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
                 catch (IOException ex) {
                 }
             }
+            reqs.monitor().deregisterServerMonitor(this);
             running = false;
         }
     }
@@ -199,60 +215,60 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         connections.remove(sessionId);
     }
     
+    public synchronized Collection<PostgresServerConnection> getConnections() {
+        return new ArrayList<PostgresServerConnection>(connections.values());
+    }
+
     @Override
     public String getSqlString(int sessionId) {
-        return getConnection(sessionId).getSqlString();
+        return getConnection(sessionId).getSessionMonitor().getCurrentStatement();
     }
     
     @Override
     public String getRemoteAddress(int sessionId) {
-        return getConnection(sessionId).getRemoteAddress();
+        return getConnection(sessionId).getSessionMonitor().getRemoteAddress();
     }
 
     @Override
     public void cancelQuery(int sessionId) {
-        getConnection(sessionId).cancelQuery();
+        getConnection(sessionId).cancelQuery(null, "JMX");
     }
 
     @Override
     public void killConnection(int sessionId) {
         PostgresServerConnection conn = getConnection(sessionId);
-        conn.cancelQuery();
-        conn.stop();
+        conn.cancelQuery("your session being disconnected", "JMX");
+        conn.waitAndStop();
     }
 
-    public ServerStatementCache<PostgresStatement> getStatementCache(Object key) {
-        if (statementCacheCapacity <= 0) 
+    void cleanStatementCaches() {
+        long oldestGeneration = reqs.dxl().ddlFunctions().getOldestActiveGeneration();
+        synchronized (statementCaches) {
+            Iterator<ObjectLongPair> it = statementCaches.keySet().iterator();
+            while(it.hasNext()) {
+                if (it.next().longVal < oldestGeneration)
+                    it.remove();
+            }
+        }
+    }
+
+    /** This is the version for use by connections. */
+    public ServerStatementCache<PostgresStatement> getStatementCache(Object key, long aisGeneration) {
+        if (statementCacheCapacity <= 0)
             return null;
 
+        ObjectLongPair fullKey = new ObjectLongPair(key, aisGeneration);
         ServerStatementCache<PostgresStatement> statementCache;
         synchronized (statementCaches) {
             statementCache = statementCaches.get(key);
             if (statementCache == null) {
-                statementCache = new ServerStatementCache<PostgresStatement>(statementCacheCapacity);
-                statementCaches.put(key, statementCache);
+                // No cache => recent DDL, reasonable time to do a little cleaning
+                cleanStatementCaches();
+                statementCache = new ServerStatementCache<PostgresStatement>(cacheCounters, statementCacheCapacity);
+                statementCaches.put(fullKey, statementCache);
             }
         }
         return statementCache;
-    }
-
-    public LoadablePlan<?> loadablePlan(String planName) {
-        return loadablePlans.get(planName);
-    }
-
-    /** This is the version for use by connections. */
-    public ServerStatementCache<PostgresStatement> getStatementCache(Object key, long timestamp) {
-        synchronized (statementCaches) {
-            if (aisTimestamp != timestamp) {
-                assert aisTimestamp < timestamp : timestamp;
-                for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
-                    statementCache.invalidate();
-                }
-                clearPlans();
-                aisTimestamp = timestamp;
-            }
-        }
-        return getStatementCache(key);
     }
 
     @Override
@@ -275,29 +291,18 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     @Override
     public int getStatementCacheHits() {
-        int total = 0;
-        synchronized (statementCaches) {
-            for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
-                total += statementCache.getHits();
-            }        
-        }
-        return total;
+        return cacheCounters.getHits();
     }
 
     @Override
     public int getStatementCacheMisses() {
-        int total = 0;
-        synchronized (statementCaches) {
-            for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
-                total += statementCache.getMisses();
-            }        
-        }
-        return total;
+        return cacheCounters.getMisses();
     }
     
     @Override
     public void resetStatementCache() {
         synchronized (statementCaches) {
+            cacheCounters.reset();
             for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
                 statementCache.reset();
             }        
@@ -311,120 +316,29 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     }
 
     @Override
-    public boolean isInstrumentationEnabled() {
-        return instrumentationEnabled.get();
-    }
-
-    @Override
-    public void enableInstrumentation() {
-        for (PostgresServerConnection conn : connections.values()) {
-            conn.getSessionTracer().enable();
-        }
-        instrumentationEnabled.set(true);
-    }
-
-    @Override
-    public void disableInstrumentation() {
-        for (PostgresServerConnection conn : connections.values()) {
-            conn.getSessionTracer().disable();
-        }
-        instrumentationEnabled.set(false);
-    }
-
-    @Override
-    public boolean isInstrumentationEnabled(int sessionId) {
-        return getConnection(sessionId).isInstrumentationEnabled();
-    }
-
-    @Override
-    public void enableInstrumentation(int sessionId) {
-        getConnection(sessionId).enableInstrumentation();
-    }
-
-    @Override
-    public void disableInstrumentation(int sessionId) {
-        getConnection(sessionId).disableInstrumentation();
-    }
-
-    @Override
     public Date getStartTime(int sessionId) {
-        return getConnection(sessionId).getSessionTracer().getStartTime();
+        return new Date(getConnection(sessionId).getSessionMonitor().getStartTimeMillis());
     }
 
     @Override
     public long getProcessingTime(int sessionId) {
-        return getConnection(sessionId).getSessionTracer().getProcessingTime();
+        return getConnection(sessionId).getSessionMonitor().getNonIdleTimeNanos();
     }
 
     @Override
     public long getEventTime(int sessionId, String eventName) {
-        return getConnection(sessionId).getSessionTracer().getEventTime(eventName);
+        return getConnection(sessionId).getSessionMonitor().getLastTimeStageNanos(MonitorStage.valueOf(eventName));
     }
 
     @Override
     public long getTotalEventTime(int sessionId, String eventName) {
-        return getConnection(sessionId).getSessionTracer().getTotalEventTime(eventName);
+        return getConnection(sessionId).getSessionMonitor().getTotalTimeStageNanos(MonitorStage.valueOf(eventName));
     }
 
     @Override
     public long getUptime()
     {
-        return (System.nanoTime() - startTime);
-    }
-
-    @Override
-    public void clearPlans()
-    {
-        loadablePlans.clear();
-        loadInitialPlans();
-    }
-
-    // (Re-)load any initial plans.
-    private void loadInitialPlans() {
-        String plans = properties.getProperty("loadablePlans");
-        if (plans.length() > 0) {
-            for (String className : plans.split(",")) {
-                try {
-                    Class klass = Class.forName(className);
-                    LoadablePlan<?> loadablePlan = (LoadablePlan)klass.newInstance();
-                    LoadablePlan<?> prev = loadablePlans.put(loadablePlan.name(), loadablePlan);
-                    assert (prev == null) : className;
-                }
-                catch (ClassNotFoundException ex) {
-                    logger.error("Failed to load plan", ex);
-                }
-                catch (InstantiationException ex) {
-                    logger.error("Failed to create plan", ex);
-                }
-                catch (IllegalAccessException ex) {
-                    logger.error("Failed to create plan", ex);
-                }
-            }
-        }
-    }
-
-    @Override
-    public String loadPlan(String jarFilePath, String className) {
-        String status;
-        try {
-            File jarFile = new File(jarFilePath);
-            if (!jarFile.isAbsolute()) {
-                throw new IOException(String.format("jar file name does not specify an absolute path: %s",
-                                                    jarFilePath));
-            }
-            URL url = new URL(String.format("file://%s", jarFilePath));
-            URLClassLoader classLoader = new URLClassLoader(new URL[]{url});
-            Class klass = classLoader.loadClass(className);
-            LoadablePlan<?> loadablePlan = (LoadablePlan) klass.newInstance();
-            LoadablePlan<?> previousPlan = loadablePlans.put(loadablePlan.name(), loadablePlan);
-            status = String.format("%s %s -> %s",
-                                   (previousPlan == null ? "Loaded" : "Reloaded"),
-                                   loadablePlan.name(),
-                                   className);
-        } catch (Exception e) {
-            status = e.toString();
-        }
-        return status;
+        return (System.nanoTime() - startTimeNanos);
     }
 
     /** For testing, set the server's idea of the current time. */
@@ -435,4 +349,51 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     public Date getOverrideCurrentTime() {
         return overrideCurrentTime;
     }
+
+    public synchronized AuthenticationType getAuthenticationType() {
+        if (authenticationType == null) {
+            if (properties.getProperty("gssConfigName") != null)
+                authenticationType = AuthenticationType.GSS;
+            else if (Boolean.parseBoolean(properties.getProperty("require_password", "false")))
+                authenticationType = AuthenticationType.CLEAR_TEXT;
+            else
+                authenticationType = AuthenticationType.NONE;
+        }
+        return authenticationType;
+    }
+
+    public synchronized Subject getGSSLogin() throws LoginException {
+        if (gssLogin == null) {
+            LoginContext lc = new LoginContext(properties.getProperty("gssConfigName"));
+            lc.login();
+            gssLogin = lc.getSubject();
+        }
+        return gssLogin;
+    }
+
+    /* ServerMonitor */
+
+    @Override
+    public String getServerType() {
+        return SERVER_TYPE;
+    }
+
+    @Override
+    public int getLocalPort() {
+        if (listening)
+            return port;
+        else
+            return -1;
+    }
+
+    @Override
+    public long getStartTimeMillis() {
+        return startTimeMillis;
+    }
+    
+    @Override
+    public int getSessionCount() {
+        return nconnections;
+    }
+
 }

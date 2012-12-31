@@ -5,4 +5,4 @@ SelectQuery@3954e1b1
         Select@16f2914[]
           TableGroupJoinTree@28f1e0c8(TableGroup@1fdc7f78(customers), customers INNER orders - SingleIndexScan@4534af9f(Index(test.customers.name[IndexColumn(name)]), SORTED, rows = 1000, cost = 105259))
             TableSource@57f59a7f(customers - TableGroup@1fdc7f78(customers))
-              TableSource@3d7234f6(orders - TableGroupJoin@5f61338(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+              TableSource@3d7234f6(orders - TableGroupJoin@5f61338(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

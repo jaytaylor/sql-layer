@@ -26,7 +26,6 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.types.AkType;
 import java.util.EnumMap;
 import java.util.HashMap;

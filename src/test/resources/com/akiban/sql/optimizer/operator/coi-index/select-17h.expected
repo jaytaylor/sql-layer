@@ -1,0 +1,3 @@
+PhysicalSelect[name:varchar(32)[VARCHAR]]
+  Project_Default(customers.name)
+    IndexScan_Default(Index(customers.name), name <= 'Smith')

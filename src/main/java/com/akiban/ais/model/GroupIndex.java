@@ -26,6 +26,7 @@
 
 package com.akiban.ais.model;
 
+import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.IndexColNotInGroupException;
 
@@ -52,7 +53,17 @@ public class GroupIndex extends Index
     @Override
     public void checkMutability()
     {
-        group.getGroupTable().checkMutability();
+        group.getRoot().checkMutability();
+    }
+
+    @Override
+    public Collection<Integer> getAllTableIDs()
+    {
+        List<Integer> branchIDs = new ArrayList<Integer>(tablesByDepth.size());
+        for (UserTable userTable = leafMostTable(); userTable != null; userTable = userTable.parentTable()) {
+            branchIDs.add(userTable.getTableId());
+        }
+        return branchIDs;
     }
 
     @Override
@@ -153,29 +164,24 @@ public class GroupIndex extends Index
         return group;
     }
 
-    public static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
-                                    Boolean isUnique, String constraint)
+    public static GroupIndex create(AkibanInformationSchema ais, Group group, GroupIndex index)
     {
-        ais.checkMutability();
-        GroupIndex index = new GroupIndex(group, indexName, indexId, isUnique, constraint);
-        group.addIndex(index);
-        return index;
+        GroupIndex copy = create(ais, group, index.getIndexName().getName(), index.getIndexId(),
+                                 index.isUnique(), index.getConstraint(), index.getJoinType());
+        if (index.getIndexMethod() == IndexMethod.Z_ORDER_LAT_LON) {
+            copy.markSpatial(index.firstSpatialArgument(), index.dimensions());
+        }
+        return copy;
     }
 
     public static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
                                     Boolean isUnique, String constraint, JoinType joinType)
     {
         ais.checkMutability();
+        AISInvariants.checkDuplicateIndexesInGroup(group, indexName);
         GroupIndex index = new GroupIndex(group, indexName, indexId, isUnique, constraint, joinType);
         group.addIndex(index);
         return index;
-    }
-
-    public GroupIndex(Group group, String indexName, Integer indexId, Boolean isUnique, String constraint)
-    {
-        // index checks index name.
-        super(new TableName("", group.getName()), indexName, indexId, isUnique, constraint);
-        this.group = group;
     }
 
     public GroupIndex(Group group,
@@ -185,8 +191,7 @@ public class GroupIndex extends Index
                       String constraint,
                       JoinType joinType)
     {
-        // index checks index name.
-        super(new TableName("", group.getName()), indexName, indexId, isUnique, constraint, joinType, true);
+        super(group.getName(), indexName, indexId, isUnique, constraint, joinType, true);
         this.group = group;
     }
 
@@ -201,6 +206,10 @@ public class GroupIndex extends Index
             throw new IllegalArgumentException(Integer.toString(tableDepth));
         }
         return indexToHKeys[tableDepth];
+    }
+
+    public void disassociate() {
+        GroupIndexHelper.actOnGroupIndexTables(this, GroupIndexHelper.REMOVE);
     }
 
     // For use by this class

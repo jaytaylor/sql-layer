@@ -1,0 +1,6 @@
+# Inserting a non-null blob value after a null one
+---
+- CreateTable: t (blob_field blob)
+---
+- Statement: INSERT INTO t (blob_field) VALUES (null), ('abc')
+...

@@ -27,27 +27,25 @@
 package com.akiban.server.store;
 
 import com.akiban.server.AkServerUtil;
-import com.akiban.server.error.RowDataCorruptionException;
 import com.akiban.server.rowdata.CorruptRowDataException;
 import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
 import com.persistit.Value;
 import com.persistit.encoding.CoderContext;
+import com.persistit.encoding.HandleCache;
 import com.persistit.encoding.ValueDisplayer;
 import com.persistit.encoding.ValueRenderer;
 import com.persistit.exception.ConversionException;
 
-public class RowDataValueCoder implements ValueDisplayer, ValueRenderer {
+public class RowDataValueCoder implements ValueDisplayer, ValueRenderer, HandleCache {
     final static int INITIAL_BUFFER_SIZE = 1024;
 
-    final PersistitStore store;
+    private volatile int handle;
 
-    RowDataValueCoder(final PersistitStore store) {
-        this.store = store;
+    RowDataValueCoder() {
     }
 
     @Override
-    public void put(Value value, Object object, CoderContext context) throws ConversionException {
+    public void put(final Value value, final Object object, final CoderContext context) throws ConversionException {
         final RowData rowData = (RowData) object;
         final int start = rowData.getInnerStart();
         final int size = rowData.getInnerSize();
@@ -58,14 +56,15 @@ public class RowDataValueCoder implements ValueDisplayer, ValueRenderer {
     }
 
     @Override
-    public Object get(Value value, Class<?> clazz, CoderContext context) throws ConversionException {
+    public Object get(final Value value, final Class<?> clazz, final CoderContext context) throws ConversionException {
         final RowData rowData = new RowData(new byte[INITIAL_BUFFER_SIZE]);
         render(value, rowData, RowData.class, null);
         return rowData;
     }
 
     @Override
-    public void render(Value value, Object target, Class<?> clazz, CoderContext context) throws ConversionException {
+    public void render(final Value value, final Object target, final Class<?> clazz, final CoderContext context)
+            throws ConversionException {
         final RowData rowData = (RowData) target;
         final int at = value.getCursor();
         final int end = value.getEncodedSize();
@@ -85,7 +84,7 @@ public class RowDataValueCoder implements ValueDisplayer, ValueRenderer {
         }
 
         //
-        // Assemble the Row in a byte array 
+        // Assemble the Row in a byte array
         //
         AkServerUtil.putInt(rowDataBytes, RowData.O_LENGTH_A, rowDataSize);
         AkServerUtil.putShort(rowDataBytes, RowData.O_SIGNATURE_A, RowData.SIGNATURE_A);
@@ -98,15 +97,27 @@ public class RowDataValueCoder implements ValueDisplayer, ValueRenderer {
     }
 
     @Override
-    public void display(Value value, StringBuilder target, Class<?> clazz, CoderContext context) throws ConversionException {
-        Object object = get(value, clazz, context);
+    public void display(final Value value, final StringBuilder target, final Class<?> clazz, final CoderContext context)
+            throws ConversionException {
+        final Object object = get(value, clazz, context);
         if (object instanceof RowData) {
             final RowData rowData = (RowData) object;
-            final int rowDefId = rowData.getRowDefId();
-            final RowDef rowDef = store.getRowDefCache().getRowDef(rowDefId);
-            target.append(rowData.toString(rowDef));
+            target.append(rowData.toString());
         } else {
             target.append(object);
         }
+    }
+
+    @Override
+    public synchronized void setHandle(final int handle) {
+        if (this.handle != 0 && this.handle != handle) {
+            throw new IllegalStateException("Attempt to change handle from " + this.handle + " to " + handle);
+        }
+        this.handle = handle;
+    }
+
+    @Override
+    public int getHandle() {
+        return this.handle;
     }
 }

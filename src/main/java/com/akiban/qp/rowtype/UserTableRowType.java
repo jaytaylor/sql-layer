@@ -29,8 +29,11 @@ package com.akiban.qp.rowtype;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.explain.*;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
 import com.akiban.util.FilteringIterator;
 
 import java.util.ArrayList;
@@ -65,6 +68,27 @@ public class UserTableRowType extends AisRowType
     public HKey hKey()
     {
         return table.hKey();
+    }
+
+    @Override
+    public TInstance typeInstanceAt(int index) {
+        return table.getColumnsIncludingInternal().get(index).tInstance();
+    }
+
+    @Override
+    public ConstraintChecker constraintChecker()
+    {
+        return constraintChecker;
+    }
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        CompoundExplainer explainer = super.getExplainer(context);
+        TableName tableName = table.getName();
+        explainer.addAttribute(Label.TABLE_SCHEMA, PrimitiveExplainer.getInstance(tableName.getSchemaName()));
+        explainer.addAttribute(Label.TABLE_NAME, PrimitiveExplainer.getInstance(tableName.getTableName()));
+        return explainer;
     }
 
     // UserTableRowType interface
@@ -116,8 +140,10 @@ public class UserTableRowType extends AisRowType
         List<Column> columns = table.getColumnsIncludingInternal();
         akTypes = new AkType[columns.size()];
         for (int i = 0; i < columns.size(); i++) {
-            akTypes[i] = table.getColumnsIncludingInternal().get(i).getType().akType();
+            Column column = columns.get(i);
+            akTypes[i] = column.getType().akType();
         }
+        constraintChecker = new UserTableRowChecker(this);
     }
 
     // Object state
@@ -126,4 +152,5 @@ public class UserTableRowType extends AisRowType
     // Type of indexRowTypes is ArrayList, not List, to make it clear that null values are permitted.
     private final ArrayList<IndexRowType> indexRowTypes = new ArrayList<IndexRowType>();
     private final AkType[] akTypes;
+    private final ConstraintChecker constraintChecker;
 }

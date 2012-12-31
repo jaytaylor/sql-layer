@@ -31,6 +31,7 @@ import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
@@ -39,11 +40,14 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.std.BoundFieldExpression;
 import com.akiban.server.expression.std.Comparison;
-import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.LiteralExpression;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -54,14 +58,14 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.server.expression.std.Expressions.*;
+import static com.akiban.server.test.ExpressionGenerators.*;
 
 public class Map_NestedLoopsIT extends OperatorITBase
 {
-    @Before
-    public void before()
+    @Override
+    protected void setupPostCreateSchema()
     {
-        super.before();
+        super.setupPostCreateSchema();
         NewRow[] db = new NewRow[]{
             createNewRow(customer, 1L, "northbridge"), // two orders, two addresses
             createNewRow(order, 100L, 1L, "ori"),
@@ -165,7 +169,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
                     compare(
                             field(orderRowType, 1) /* order.cid */,
                             Comparison.EQ,
-                            boundField(customerRowType, 0, 0) /* customer.cid */)),
+                            boundField(customerRowType, 0, 0) /* customer.cid */, castResolver())),
                 orderRowType,
                 Arrays.asList(boundField(customerRowType, 0, 0) /* customer.cid */, field(orderRowType, 0) /* order.oid */));
         Operator plan =
@@ -201,7 +205,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
                 compare(
                         field(orderRowType, 1) /* order.cid */,
                         Comparison.EQ,
-                        boundField(customerRowType, 0, 0) /* customer.cid */)),
+                        boundField(customerRowType, 0, 0) /* customer.cid */, castResolver())),
             orderRowType,
             Arrays.asList(boundField(customerRowType, 0, 0) /* customer.cid */, field(orderRowType, 0) /* order.oid */));
         RowType projectRowType = project.rowType();
@@ -265,13 +269,10 @@ public class Map_NestedLoopsIT extends OperatorITBase
     public void testIndexScanUnderMapNestedLoopsUsedAsInnerLoopOfAnotherMapNestedLoops()
     {
         RowType cidValueRowType = schema.newValuesType(AkType.INT);
+        List<ExpressionGenerator> expressions = Arrays.asList(boundField(cidValueRowType, 1, 0));
         IndexBound cidBound =
             new IndexBound(
-                new RowBasedUnboundExpressions(
-                    customerCidIndexRowType,
-                    Arrays.asList((Expression) new BoundFieldExpression(
-                        1,
-                        new FieldExpression(cidValueRowType, 0)))),
+                new RowBasedUnboundExpressions(customerCidIndexRowType, expressions),
                 new SetColumnSelector(0));
         IndexKeyRange cidRange = IndexKeyRange.bounded(customerCidIndexRowType, cidBound, true, cidBound, true);
         Operator plan =
@@ -300,14 +301,24 @@ public class Map_NestedLoopsIT extends OperatorITBase
 
     private Row intRow(RowType rowType, int x)
     {
-        return new ExpressionRow(rowType, queryContext,
-                                 Arrays.asList((Expression) new LiteralExpression(AkType.INT, x)));
+        List<Expression> expressions;
+        List<TPreparedExpression> pExpressions;
+        if (Types3Switch.ON) {
+            expressions = null;
+            pExpressions = Arrays.asList((TPreparedExpression) new TPreparedLiteral(
+                    MNumeric.INT.instance(false), new PValue(MNumeric.INT.instance(false), x)));
+        }
+        else {
+            expressions = Arrays.asList((Expression) new LiteralExpression(AkType.INT, x));
+            pExpressions = null;
+        }
+        return new ExpressionRow(rowType, queryContext, expressions, pExpressions);
     }
 
     private Collection<? extends BindableRow> bindableExpressions(Row... rows) {
         List<BindableRow> result = new ArrayList<BindableRow>();
         for (Row row : rows) {
-            result.add(BindableRow.of(row));
+            result.add(BindableRow.of(row, Types3Switch.ON));
         }
         return result;
     }

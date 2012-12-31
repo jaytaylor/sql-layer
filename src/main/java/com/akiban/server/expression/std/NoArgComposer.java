@@ -43,7 +43,7 @@ abstract class NoArgComposer implements ExpressionComposer {
 
     protected Expression compose (ExpressionType type)
     {
-        throw new UnsupportedOperationException("not supported");
+        return compose();
     }
     
     @Override
@@ -61,13 +61,6 @@ abstract class NoArgComposer implements ExpressionComposer {
         if (typesList.size() != 1)
             throw new IllegalArgumentException("invalid argc");
         return compose(typesList.get(0));
-    }
-    
-    @Override
-    public Expression compose(List<? extends Expression> arguments) {
-        if (arguments.size() != 0)
-            throw new WrongExpressionArityException(0, arguments.size());
-        return compose();
     }
 
     @Override

@@ -41,6 +41,8 @@ import java.util.List;
 public interface ExpressionComposer {
     public static enum NullTreating
     {
+        REMOVE_AFTER_FIRST,  // only remove the NULLs if it's the first arg (ELT and CONCAT_WS)
+        
         IGNORE,       // The function will treat NULL as if it were any regular value
        
         RETURN_NULL,  // The function will return NULL if at least one of its operands is NULL
@@ -67,10 +69,7 @@ public interface ExpressionComposer {
      * methods to get the argument values, after checking
      * {@link com.akiban.server.types.ValueSource#isNull} as necessary.
      * Otherwise, it can use one of the {@link com.akiban.server.types.extract.Extractors}.
-     */
-    Expression compose(List<? extends Expression> arguments);
-    
-    /**
+     *
      * typesList.size() should be (arguments.size() + 1), where the last element 
      * in typesList is the return type, and the rest is the arguments' type
      * 

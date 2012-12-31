@@ -28,19 +28,35 @@ package com.akiban.server.store;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.SortedMap;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Routine;
+import com.akiban.ais.model.Sequence;
+import com.akiban.ais.model.SQLJJar;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.memoryadapter.MemoryTableFactory;
+import com.akiban.ais.model.View;
+import com.akiban.ais.util.ChangedTableDescription;
+import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.service.session.Session;
 
 public interface SchemaManager {
+    /** Flags indicating behavior regarding contained objects in DROP calls **/
+    static enum DropBehavior {
+        /** Reject if there are contained objects **/
+        RESTRICT,
+
+        /** Allow and also drop contained objects **/
+        CASCADE
+    }
+
     /**
      * <p>
-     * Create a new table in the {@link TableName#AKIBAN_INFORMATION_SCHEMA}
+     * Create a new table in the {@link TableName#INFORMATION_SCHEMA}
      * schema. This table will be be populated and accessed through the normal
      * {@link Store} methods.
      * </p>
@@ -57,10 +73,10 @@ public interface SchemaManager {
      *
      * @return Name of the table that was created.
      */
-    TableName registerStoredInformationSchemaTable(Session session, UserTable newTable, int version);
+    TableName registerStoredInformationSchemaTable(UserTable newTable, int version);
 
     /**
-     * Create a new table in the {@link TableName#AKIBAN_INFORMATION_SCHEMA}
+     * Create a new table in the {@link TableName#INFORMATION_SCHEMA}
      * schema. This table will be be populated on demand and accessed through
      * the given {@link MemoryTableFactory}.
      *
@@ -69,12 +85,18 @@ public interface SchemaManager {
      *
      * @return Name of the table that was created.
      */
-    TableName registerMemoryInformationSchemaTable(Session session, UserTable newTable, MemoryTableFactory factory);
+    TableName registerMemoryInformationSchemaTable(UserTable newTable, MemoryTableFactory factory);
 
     /**
-     * Create a new table in the SchemaManager. Successful completion of this
-     * method results in a new timestamp and schema generation, see
-     * {@link #getUpdateTimestamp()} and {@link #getSchemaGeneration()} respectively.
+     * Delete the definition of a table in the {@link TableName#INFORMATION_SCHEMA}
+     * schema. The table must exist and be a memory table.
+     *
+     * @param tableName Table to delete.
+     */
+    void unRegisterMemoryInformationSchemaTable(TableName tableName);
+
+    /**
+     * Create a new table in the SchemaManager.
      * @param session Session to operate under
      * @param newTable New table to add
      * @return The name of the table that was created.
@@ -97,7 +119,7 @@ public interface SchemaManager {
      * @param indexes List of index definitions to add.
      * @return List of newly created indexes.
      */
-    Collection<Index> createIndexes(Session session, Collection<? extends Index> indexes);
+    Collection<Index> createIndexes(Session session, Collection<? extends Index> indexes, boolean keepTree);
 
     /**
      * Modifying the existing schema definitions by adding indexes. Both Table and Group indexes are
@@ -105,16 +127,24 @@ public interface SchemaManager {
      * @param session Session to operate under.
      * @param indexes List of indexes to drop.
      */
-    void dropIndexes(Session session, Collection<Index> indexes);
+    void dropIndexes(Session session, Collection<? extends Index> indexes);
 
     /**
-     * Delete the definition of the table with the given name. This method does nothing if
-     * the table does not exist.
+     * Delete the definition of the table with the given name. Throws
+     * NoSuchTableException if the table does not exist.
      * @param session The session to operate under.
      * @param schemaName The name of the schema the table is in.
      * @param tableName The name of the table.
+     * @param dropBehavior How to handle child tables.
      */
-    void deleteTableDefinition(Session session, String schemaName, String tableName);
+    void dropTableDefinition(Session session, String schemaName, String tableName, DropBehavior dropBehavior);
+
+    /**
+     * Change an existing table definition to be new value specified.
+     * @param session Session to operate under.
+     * @param alteredTables Description of tables being altered.
+     */
+    void alterTableDefinitions(Session session, Collection<ChangedTableDescription> alteredTables);
 
     /**
      * Generate a TableDefinition, which includes a canonical 'create table' statement,
@@ -142,34 +172,60 @@ public interface SchemaManager {
     AkibanInformationSchema getAis(Session session);
 
     /**
-     * Generate DDL statements for every schema, user, and, optionally, group tables.
+     * Generate DDL statements for every schema and table.
      * The format of the 'create schema' contains if not exists and will occur before
      * any table in that schema. No other guarantees are given about ordering.
      *
      * @param session The Session to operate under.
-     * @param withGroupTables If true, include 'create table' statements for every GroupTable.
+     * @param withISTables  true, include 'create table' statements for tables in the I_S.
      * @return List of every create statement request.
      */
-    List<String> schemaStrings(Session session, boolean withGroupTables);
+    List<String> schemaStrings(Session session, boolean withISTables);
 
-    /**
-     * Return the last timestamp for the last successful change through the SchemaManager.
-     * This value changes for any create, delete, or alter method executed.
-     * @return The timestamp at which a change last occurred.
-     */
-    long getUpdateTimestamp();
+    /** Add the given view to the current AIS. */
+    void createView(Session session, View view);
 
-    /**
-     * Force a new timestamp as returned by {@link #getUpdateTimestamp()}. Primarily
-     * intended for testing and diagnostics.
-     */
-    void forceNewTimestamp();
+    /** Drop the given view from the current AIS. */
+    void dropView(Session session, TableName viewName);
+    
+    /** Add the Sequence to the current AIS */
+    void createSequence(Session session, Sequence sequence);
+    
+    /** Drop the given sequence from the current AIS. */
+    void dropSequence(Session session, Sequence sequence);
 
-    /**
-     * Get the value associated with the current state of the SchemaManager. This
-     * changes under every condition that {@link #getUpdateTimestamp()} does but
-     * implies no other ordering other than being distinct from the last.
-     * @return The current schema generation value.
-     */
-    int getSchemaGeneration();
+    /** Add the Routine to the current AIS */
+    void createRoutine(Session session, Routine routine);
+    
+    /** Drop the given routine from the current AIS. */
+    void dropRoutine(Session session, TableName routineName);
+
+    /** Add an SQL/J jar to the current AIS. */
+    void createSQLJJar(Session session, SQLJJar sqljJar);
+    
+    /** Update an SQL/J jar in the current AIS. */
+    void replaceSQLJJar(Session session, SQLJJar sqljJar);
+    
+    /** Drop the given SQL/J jar from the current AIS. */
+    void dropSQLJJar(Session session, TableName jarName);
+
+    /** Add the Routine to live AIS */
+    void registerSystemRoutine(Routine routine);
+    
+    /** Drop a system routine from the live AIS. */
+    void unRegisterSystemRoutine(TableName routineName);
+
+    /** Whether or not tree removal should happen immediately */
+    boolean treeRemovalIsDelayed();
+
+    /** Removal of treeName in schemaName took place (e.g. by Store) */
+    void treeWasRemoved(Session session, String schemaName, String treeName);
+
+    /** Get all known/allocated tree names */
+    Set<String> getTreeNames();
+
+    /** Get oldest AIS generation still in memory */
+    long getOldestActiveAISGeneration();
+
+    boolean hasTableChanged(Session session, int tableID);
 }

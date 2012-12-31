@@ -26,9 +26,10 @@
 
 package com.akiban.server.test.pt.gi;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
@@ -83,11 +84,11 @@ public class GIUpdateProfilePT extends PTBase
                 "address varchar(100)",
                 "constraint __akiban_ac foreign key __akiban_ac(cid) references customer(cid)",
                 "index(address)");
-        coi = groupTable(customer);
-        String groupName = coi.getGroup().getName();
+        coi = group(customer);
+        TableName groupName = coi.getName();
         createGroupIndex(groupName, "name_salesman", "customer.name, order.salesman");
         createGroupIndex(groupName, "name_address", "customer.name, address.address");
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         customerRowType = schema.userTableRowType(userTable(customer));
         orderRowType = schema.userTableRowType(userTable(order));
         itemRowType = schema.userTableRowType(userTable(item));
@@ -120,7 +121,7 @@ public class GIUpdateProfilePT extends PTBase
             while ((row = cursor.next()) != null) {
                 NiceRow oldRow = new NiceRow(customer, customerRowDef);
                 NiceRow newRow  = new NiceRow(customer, customerRowDef);
-                long cid = row.eval(0).getInt();
+                long cid = getLong(row, 0);
                 String name = row.eval(1).getString();
                 oldRow.put(0, cid);
                 oldRow.put(1, name);
@@ -151,15 +152,14 @@ public class GIUpdateProfilePT extends PTBase
         }
     }
 
-    private GroupTable groupTable(int userTableId)
+    private Group group(int userTableId)
     {
-        RowDef userTableRowDef = rowDefCache().rowDef(userTableId);
-        return userTableRowDef.table().getGroup().getGroupTable();
+        return getRowDef(userTableId).table().getGroup();
     }
 
     private UserTable userTable(int userTableId)
     {
-        RowDef userTableRowDef = rowDefCache().rowDef(userTableId);
+        RowDef userTableRowDef = getRowDef(userTableId);
         return userTableRowDef.userTable();
     }
 
@@ -183,7 +183,7 @@ public class GIUpdateProfilePT extends PTBase
     private int order;
     private int item;
     private int address;
-    private GroupTable coi;
+    private Group coi;
     private Schema schema;
     private RowType customerRowType;
     private RowType orderRowType;

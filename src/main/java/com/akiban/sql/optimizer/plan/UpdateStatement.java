@@ -26,17 +26,17 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.ais.model.Column;
-import com.akiban.sql.optimizer.rule.EquivalenceFinder;
+import java.util.List;
 
-import java.util.*;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.ColumnContainer;
 
 /** A SQL UPDATE statement. */
 public class UpdateStatement extends BaseUpdateStatement
 {
     /** One of the SET clauses of an UPDATE statement.
      */
-    public static class UpdateColumn extends AnnotatedExpression {
+    public static class UpdateColumn extends AnnotatedExpression implements ColumnContainer {
         private Column column;
 
         public UpdateColumn(Column column, ExpressionNode value) {
@@ -44,6 +44,7 @@ public class UpdateStatement extends BaseUpdateStatement
             this.column = column;
         }
 
+        @Override
         public Column getColumn() {
             return column;
         }
@@ -57,11 +58,12 @@ public class UpdateStatement extends BaseUpdateStatement
     private List<UpdateColumn> updateColumns;
 
     public UpdateStatement(PlanNode query, TableNode targetTable,
-                           List<UpdateColumn> updateColumns,
-                           EquivalenceFinder<ColumnExpression> columnEquivalencies) {
-        super(query, targetTable, columnEquivalencies);
+            List<UpdateColumn> updateColumns,
+                           TableSource table) {
+        super(query, StatementType.UPDATE, targetTable, table);
         this.updateColumns = updateColumns;
     }
+
 
     public List<UpdateColumn> getUpdateColumns() {
         return updateColumns;
@@ -88,9 +90,11 @@ public class UpdateStatement extends BaseUpdateStatement
         return v.visitLeave(this);
     }
     
+
     @Override
-    public String summaryString() {
-        return super.summaryString() + "(" + getTargetTable() + updateColumns + ")";
+    protected void fillSummaryString(StringBuilder str) {
+        super.fillSummaryString(str);
+        str.append(updateColumns);
     }
 
     @Override

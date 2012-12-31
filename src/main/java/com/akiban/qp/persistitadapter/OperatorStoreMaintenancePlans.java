@@ -31,7 +31,6 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.NoLimit;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -39,11 +38,7 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.util.CachePair;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 final class OperatorStoreMaintenancePlans {
 
@@ -77,7 +72,7 @@ final class OperatorStoreMaintenancePlans {
     static Operator groupIndexCreationPlan(Schema schema, GroupIndex groupIndex) {
         OperatorStoreMaintenance.BranchTables branchTables = branchTablesRootToLeaf(schema, groupIndex);
 
-        Operator plan = API.groupScan_Default(groupIndex.getGroup().getGroupTable());
+        Operator plan = API.groupScan_Default(groupIndex.getGroup());
 
         RowType parentRowType = null;
         API.JoinType joinType = API.JoinType.RIGHT_JOIN;

@@ -4,4 +4,4 @@ SelectQuery@1654f367
       Select@310c4878[orders.order_date >= 2010-01-01, orders.order_date <= 2019-12-31]
         TableGroupJoinTree@1d69d770(TableGroup@5d60238e(customers), customers INNER orders - SingleIndexScan@52be6f86(Index(test.customers.name[IndexColumn(name)]), NONE, >=A, <=B, rows = 29, cost = 3212.17))
           TableSource@1dff92c6(customers - TableGroup@5d60238e(customers))
-            TableSource@75fd148c(orders - TableGroupJoin@548bf0da(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+            TableSource@75fd148c(orders - TableGroupJoin@548bf0da(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

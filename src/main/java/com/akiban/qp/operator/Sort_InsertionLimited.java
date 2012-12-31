@@ -29,12 +29,18 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.explain.*;
+import com.akiban.server.explain.std.SortOperatorExplainer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.WrappingByteSource;
 import com.akiban.util.tap.InOutTap;
 
 import java.util.*;
@@ -142,6 +148,7 @@ class Sort_InsertionLimited extends Operator
         this.sortType = sortType;
         this.ordering = ordering;
         this.preserveDuplicates = sortOption == API.SortOption.PRESERVE_DUPLICATES;
+        this.sortOption = sortOption;
         this.limit = limit;
     }
 
@@ -151,12 +158,20 @@ class Sort_InsertionLimited extends Operator
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_InsertionLimited next");
     
     // Object state
-
+    private final API.SortOption sortOption;
     private final Operator inputOperator;
     private final RowType sortType;
     private final API.Ordering ordering;
     private final boolean preserveDuplicates;
     private final int limit;
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        CompoundExplainer ex = new SortOperatorExplainer(getName(), sortOption, sortType, inputOperator, ordering, context);
+        ex.addAttribute(Label.LIMIT, PrimitiveExplainer.getInstance(limit));
+        return ex;
+    }
 
     // Inner classes
 
@@ -174,8 +189,14 @@ class Sort_InsertionLimited extends Operator
                 CursorLifecycle.checkIdle(this);
                 input.open();
                 state = State.FILLING;
-                for (ExpressionEvaluation eval : evaluations)
-                    eval.of(context);
+                if (usingPValues()) {
+                    for (TEvaluatableExpression eval : tEvaluations)
+                        eval.with(context);
+                }
+                else {
+                    for (ExpressionEvaluation eval : oEvaluations)
+                        eval.of(context);
+                }
                 sorted = new TreeSet<Holder>();
             } finally {
                 TAP_OPEN.out();
@@ -197,7 +218,11 @@ class Sort_InsertionLimited extends Operator
                         Row row;
                         while ((row = input.next()) != null) {
                             assert row.rowType() == sortType : row;
-                            Holder holder = new Holder(label, row, evaluations);
+                            Holder holder;
+                            if (usingPValues())
+                                holder = new Holder(label, row, tEvaluations, null);
+                            else
+                                holder = new Holder(label, row, oEvaluations);
                             if (preserveDuplicates) {
                                 label++;
                             }
@@ -278,8 +303,13 @@ class Sort_InsertionLimited extends Operator
         {
             close();
             input.destroy();
-            for (ExpressionEvaluation evaluation : evaluations) {
-                evaluation.destroy();
+            if (usingPValues()) {
+                // TODO nothing to destroy yet...
+            }
+            else {
+                for (ExpressionEvaluation evaluation : oEvaluations) {
+                    evaluation.destroy();
+                }
             }
             state = State.DESTROYED;
         }
@@ -301,6 +331,12 @@ class Sort_InsertionLimited extends Operator
         {
             return state == State.DESTROYED;
         }
+        
+        // private methods
+        
+        private boolean usingPValues() {
+            return tEvaluations != null;
+        }
 
         // Execution interface
 
@@ -309,17 +345,29 @@ class Sort_InsertionLimited extends Operator
             super(context);
             this.input = input;
             int nsort = ordering.sortColumns();
-            evaluations = new ArrayList<ExpressionEvaluation>(nsort);
-            for (int i = 0; i < nsort; i++) {
-                ExpressionEvaluation evaluation = ordering.expression(i).evaluation();
-                evaluations.add(evaluation);
+            if (ordering.usingPVals()) {
+                tEvaluations = new ArrayList<TEvaluatableExpression>(nsort);
+                for (int i = 0; i < nsort; ++i) {
+                    TEvaluatableExpression evaluation = ordering.tExpression(i).build();
+                    tEvaluations.add(evaluation);
+                }
+                oEvaluations = null;
+            }
+            else {
+                tEvaluations = null;
+                oEvaluations = new ArrayList<ExpressionEvaluation>(nsort);
+                for (int i = 0; i < nsort; i++) {
+                    ExpressionEvaluation evaluation = ordering.expression(i).evaluation();
+                    oEvaluations.add(evaluation);
+                }
             }
         }
 
         // Object state
 
         private final Cursor input;
-        private final List<ExpressionEvaluation> evaluations;
+        private final List<TEvaluatableExpression> tEvaluations;
+        private final List<ExpressionEvaluation> oEvaluations;
         private State state = State.CLOSED;
         private SortedSet<Holder> sorted;
         private Iterator<Holder> iterator;
@@ -334,14 +382,30 @@ class Sort_InsertionLimited extends Operator
     private class Holder implements Comparable<Holder> {
         private int index;
         private ShareHolder<Row> row;
-        private ToObjectValueTarget target = new ToObjectValueTarget();
-        private Comparable[] values;
+        private Comparable<Holder>[] values;
+
+        public Holder(int index, Row arow, List<TEvaluatableExpression> evaluations, Void usingPValues) {
+            this.index = index;
+
+            row = new ShareHolder<Row>();
+            row.hold(arow);
+
+            values = new Comparable[ordering.sortColumns()];
+            for (int i = 0; i < values.length; i++) {
+                TEvaluatableExpression evaluation = evaluations.get(i);
+                evaluation.with(arow);
+                evaluation.evaluate();
+                values[i] = toObject(evaluation.resultValue());
+            }
+        }
 
         public Holder(int index, Row arow, List<ExpressionEvaluation> evaluations) {
             this.index = index;
 
             row = new ShareHolder<Row>();
             row.hold(arow);
+
+            ToObjectValueTarget target = new ToObjectValueTarget();
 
             values = new Comparable[ordering.sortColumns()];
             for (int i = 0; i < values.length; i++) {
@@ -391,7 +455,13 @@ class Sort_InsertionLimited extends Operator
                 else if (v2 == null) {
                     return greater;
                 }
-                int comp = v1.compareTo(v2);
+                int comp;
+                if (ordering.collator(i) == null) {
+                    comp = v1.compareTo(v2);
+                }
+                else {
+                    comp = ordering.collator(i).compare(v1.toString(), v2.toString());
+                }
                 if (comp != 0) {
                     if (comp < 0)
                         return less;
@@ -404,6 +474,35 @@ class Sort_InsertionLimited extends Operator
 
         public String toString() {
             return row.toString();
+        }
+
+        private Comparable toObject(PValueSource valueSource) {
+            if (valueSource.isNull())
+                return null;
+            switch (PValueSources.pUnderlying(valueSource)) {
+            case BOOL:
+                return valueSource.getBoolean();
+            case INT_8:
+                return valueSource.getInt8();
+            case INT_16:
+                return valueSource.getInt16();
+            case UINT_16:
+                return valueSource.getUInt16();
+            case INT_32:
+                return valueSource.getInt32();
+            case INT_64:
+                return valueSource.getInt64();
+            case FLOAT:
+                return valueSource.getFloat();
+            case DOUBLE:
+                return valueSource.getDouble();
+            case BYTES:
+                return new WrappingByteSource(valueSource.getBytes());
+            case STRING:
+                return valueSource.getString();
+            default:
+                throw new AssertionError(valueSource.tInstance());
+            }
         }
     }
 }

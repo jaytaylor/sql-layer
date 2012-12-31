@@ -26,8 +26,10 @@
 
 package com.akiban.server.service.tree;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.akiban.server.TableStatusCache;
-import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -36,7 +38,6 @@ import com.persistit.Transaction;
 import com.persistit.Tree;
 import com.persistit.Volume;
 import com.persistit.exception.PersistitException;
-import com.persistit.exception.PersistitInterruptedException;
 
 /**
  * An abstraction for a layer that stores and retrieves data
@@ -44,7 +45,9 @@ import com.persistit.exception.PersistitInterruptedException;
  * @author peter
  * 
  */
-public interface TreeService extends Service<TreeService> {
+public interface TreeService extends KeyCreator {
+
+    final static Logger logger = LoggerFactory.getLogger(TreeService.class.getName());
 
     final static int MAX_TABLES_PER_VOLUME = 100000;
 
@@ -62,10 +65,11 @@ public interface TreeService extends Service<TreeService> {
 
     Exchange getExchange(Session session, Tree tree);
 
-    Key getKey(Session session);
+    Key getKey();
 
     void releaseExchange(Session session, Exchange exchange);
 
+    /** @deprecated Use the TransactionService */
     Transaction getTransaction(Session session);
 
     void visitStorage(Session session, TreeVisitor visitor, String treeName) throws PersistitException;
@@ -91,4 +95,6 @@ public interface TreeService extends Service<TreeService> {
     boolean treeExists(final String schemaName, final String treeName);
 
     TreeCache populateTreeCache(TreeLink link) throws PersistitException;
+
+    void flushAll() throws Exception;
 }

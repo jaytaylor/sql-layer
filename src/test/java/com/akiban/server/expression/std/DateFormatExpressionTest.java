@@ -113,7 +113,7 @@ public class DateFormatExpressionTest extends ComposedExpressionTestBase
         else
             formatExp = LiteralExpression.forNull();
 
-        Expression top = DateFormatExpression.COMPOSER.compose(Arrays.asList(date, formatExp));
+        Expression top = compose(DateFormatExpression.COMPOSER, Arrays.asList(date, formatExp));
         check(top, expected);
 
         alreadyExc = true;

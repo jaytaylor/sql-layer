@@ -1,5 +1,6 @@
 ---
-- Statement: SET cbo TO 'true'
+- Properties: sys-mysql
+- suppressed: true
 ---  # based on files in server /src/test/resources/com/akiban/sql/pg/select
 - Include: all-schema.yaml
 ---
@@ -182,5 +183,3 @@
 - Statement: SELECT customers.name,sku FROM customers LEFT JOIN orders ON customers.cid = orders.cid LEFT JOIN items ON orders.oid = items.oid WHERE name > 'M' 
 - output_ordered: [['Smith',null],['Smith','1234'],['Smith','4567']]
 #- comment: ['select-9g: LEFT join covering group index']
----
-- Statement: SET cbo TO DEFAULT

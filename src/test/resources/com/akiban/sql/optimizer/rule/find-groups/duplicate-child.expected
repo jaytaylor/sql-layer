@@ -4,5 +4,5 @@ SelectQuery@615724a0
       Select@7669521[]
         TableGroupJoinTree@5fc8ad52(TableGroup@5dee69d3(parent), p INNER c1 INNER c2)
           TableSource@37f808e6(p - TableGroup@5dee69d3(parent))
-            TableSource@7d1050be(c1 - TableGroupJoin@6feb139e(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))
-            TableSource@3a252a17(c2 - TableGroupJoin@32552379(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))
+            TableSource@7d1050be(c1 - TableGroupJoin@6feb139e(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(test.parent))))
+            TableSource@3a252a17(c2 - TableGroupJoin@32552379(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(test.parent))))

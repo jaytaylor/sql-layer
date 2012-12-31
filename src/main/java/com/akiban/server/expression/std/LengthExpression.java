@@ -53,7 +53,7 @@ public class LengthExpression  extends AbstractUnaryExpression
     protected static class InternalComposer extends UnaryComposer
     {
         @Override
-        protected Expression compose(Expression argument) 
+        protected Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType) 
         {
             return new LengthExpression(argument);
         }
@@ -94,8 +94,9 @@ public class LengthExpression  extends AbstractUnaryExpression
     }
 
     @Override
-    protected String name() 
+    public String name() 
     {
+
         return "CHAR_LENGTH";
     }
 

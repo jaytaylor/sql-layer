@@ -30,6 +30,7 @@ package com.akiban.server.test.it.qp;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.SetColumnSelector;
@@ -47,15 +48,14 @@ import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.groupScan_Default;
 import static com.akiban.qp.operator.API.ifEmpty_Default;
 import static com.akiban.qp.operator.API.indexScan_Default;
-import static com.akiban.server.expression.std.Expressions.field;
-import static com.akiban.server.expression.std.Expressions.literal;
+import static com.akiban.server.test.ExpressionGenerators.field;
+import static com.akiban.server.test.ExpressionGenerators.literal;
 
 public class IfEmptyIT extends OperatorITBase
 {
-    @Before
-    public void before()
-    {
-        super.before();
+    @Override
+    protected void setupPostCreateSchema() {
+        super.setupPostCreateSchema();
         NewRow[] db = new NewRow[]{
             createNewRow(customer, 0L, "matrix"), // no orders
             createNewRow(customer, 2L, "foundation"), // two orders
@@ -70,13 +70,13 @@ public class IfEmptyIT extends OperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testInputNull()
     {
-        ifEmpty_Default(null, customerRowType, Collections.<Expression>emptyList(), API.InputPreservationOption.KEEP_INPUT);
+        ifEmpty_Default(null, customerRowType, Collections.<ExpressionGenerator>emptyList(), API.InputPreservationOption.KEEP_INPUT);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testRowTypeNull()
     {
-        ifEmpty_Default(groupScan_Default(coi), null, Collections.<Expression>emptyList(), API.InputPreservationOption.KEEP_INPUT);
+        ifEmpty_Default(groupScan_Default(coi), null, Collections.<ExpressionGenerator>emptyList(), API.InputPreservationOption.KEEP_INPUT);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -88,7 +88,7 @@ public class IfEmptyIT extends OperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testInputPreservationNull()
     {
-        ifEmpty_Default(groupScan_Default(coi), customerRowType, Collections.<Expression>emptyList(), null);
+        ifEmpty_Default(groupScan_Default(coi), customerRowType, Collections.<ExpressionGenerator>emptyList(), null);
     }
 
     // Test operator execution
@@ -286,7 +286,7 @@ public class IfEmptyIT extends OperatorITBase
     private API.Ordering asc()
     {
         API.Ordering ordering = new API.Ordering();
-        ordering.append(new FieldExpression(orderCidIndexRowType, 0), true);
+        ordering.append(field(orderCidIndexRowType, 0), true);
         return ordering;
     }
 }

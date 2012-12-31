@@ -36,6 +36,8 @@ select-7oo: ordering group index with left join at leaf
 
 select-7ooo: ordering group index with left joins along
 
+select-12: various multi-column index uses
+
 select-13: IN using index union
 
 select-14: IN using index

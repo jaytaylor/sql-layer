@@ -60,6 +60,14 @@ public final class Bucket<T> {
         ltDistinctCount += value;
     }
 
+    public void markMinKeyBucket() {
+        minKeyBucket = true;
+    }
+
+    public boolean isMinKeyBucket() {
+        return minKeyBucket;
+    }
+
     // for use in this class
 
     void init(T value, int count) {
@@ -106,4 +114,5 @@ public final class Bucket<T> {
     private long equalsCount;
     private long ltCount;
     private long ltDistinctCount;
+    private boolean minKeyBucket = false;
 }

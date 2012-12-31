@@ -31,6 +31,13 @@ import com.akiban.server.expression.ExpressionType;
 
 import com.akiban.server.types.AkType;
 
+import com.akiban.sql.types.CharacterTypeAttributes;
+import com.akiban.sql.StandardException;
+import com.akiban.server.error.SQLParserInternalException;
+
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.collation.AkCollatorFactory;
+
 public class ExpressionTypes
 {
     public static final ExpressionType BOOL = newType(AkType.BOOL);
@@ -58,7 +65,11 @@ public class ExpressionTypes
     }
 
     public static ExpressionType varchar(int length) {
-        return newType(AkType.VARCHAR, length);
+        return varchar(length, null);
+    }
+
+    public static ExpressionType varchar(int length, CharacterTypeAttributes characterAttributes) {
+        return newType(AkType.VARCHAR, length, 0, characterAttributes);
     }
 
     public static ExpressionType varbinary(int length) {
@@ -66,15 +77,20 @@ public class ExpressionTypes
     }
 
     private static ExpressionType newType(AkType type) {
-        return new ExpressionTypeImpl(type, 0, 0);
+        return new ExpressionTypeImpl(type, 0, 0, null);
     }
 
     private static ExpressionType newType(AkType type, int precision) {
-        return new ExpressionTypeImpl(type, precision, 0);
+        return new ExpressionTypeImpl(type, precision, 0, null);
     }
 
     public static ExpressionType newType(AkType type, int precision, int scale) {
-        return new ExpressionTypeImpl(type, precision, scale);
+        return new ExpressionTypeImpl(type, precision, scale, null);
+    }
+
+    public static ExpressionType newType(AkType type, int precision, int scale, 
+                                         CharacterTypeAttributes characterAttributes) {
+        return new ExpressionTypeImpl(type, precision, scale, characterAttributes);
     }
 
     static class ExpressionTypeImpl implements ExpressionType {
@@ -94,20 +110,60 @@ public class ExpressionTypes
         }
 
         @Override
+        public CharacterTypeAttributes getCharacterAttributes() {
+            return characterAttributes;
+        }
+
+        @Override
         public String toString() {
-            return type + "(" + precision + "," + scale + ")";
+            StringBuilder str = new StringBuilder(type.toString());
+            str.append("(").append(precision).append(",").append(scale).append(")");
+            if (characterAttributes != null)
+                str.append(" ").append(characterAttributes);
+            return str.toString();
         }
         
-        ExpressionTypeImpl(AkType type, int precision, int scale) {
+        ExpressionTypeImpl(AkType type, int precision, int scale, CharacterTypeAttributes characterAttributes) {
             this.type = type;
             this.precision = precision;
             this.scale = scale;
+            this.characterAttributes = characterAttributes;
         }
 
         private AkType type;
         private int precision, scale;
+        private CharacterTypeAttributes characterAttributes;
     }
-    
+
+    /** If operating on <code>type1</code> and <code>type2</code>,
+     * would the operation be under some appropriate collation? 
+     * @return that collation or <code>null</code>
+     */
+    public static AkCollator operationCollation(ExpressionType type1, ExpressionType type2) {
+        if (!((type1 != null) &&
+              ((type1.getType() == AkType.VARCHAR) || (type1.getType() == AkType.TEXT)) &&
+              (type2 != null) &&
+              ((type2.getType() == AkType.VARCHAR) || (type2.getType() == AkType.TEXT))))
+            return null;
+        return mergeAkCollators(type1.getCharacterAttributes(), type2.getCharacterAttributes());
+    }
+
+    public static AkCollator mergeAkCollators(CharacterTypeAttributes type1Atts, CharacterTypeAttributes type2Atts) {
+        CharacterTypeAttributes att;
+        try {
+            att = CharacterTypeAttributes.mergeCollations(type1Atts, type2Atts);
+        }
+        catch (StandardException ex) {
+            throw new SQLParserInternalException(ex);
+        }
+        if (att != null) {
+            String coll = att.getCollation();
+            if (coll != null)
+                return AkCollatorFactory.getAkCollator(coll);
+        }
+        return null;
+    }
+
     private ExpressionTypes() {
     }
 }

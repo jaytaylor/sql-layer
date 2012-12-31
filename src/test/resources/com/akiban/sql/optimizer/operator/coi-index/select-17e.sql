@@ -1,0 +1,1 @@
+SELECT cid FROM customers WHERE name = 'Smith'

@@ -27,6 +27,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.server.types.AkType;
+import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertTrue;
 
@@ -34,13 +35,17 @@ public class BidirectionalMapTest
 {
     private static BidirectionalMap map = new BidirectionalMap(12, 0.5f);
 
-    @Test
-    public void testPutGet ()
+    @Before
+    public void initMap ()
     {
         map.put(AkType.DATE, 1);
         map.put(AkType.DATETIME, 3);
         map.put(AkType.TIME, 5);
+    }
 
+    @Test
+    public void testPutGet ()
+    {
         assertTrue (map.get(1) == map.get(map.get(AkType.DATE)));
         assertTrue (map.get(3) == AkType.DATETIME);
         assertTrue (map.get(6) == null);

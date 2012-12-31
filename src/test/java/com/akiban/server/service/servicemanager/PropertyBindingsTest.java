@@ -28,6 +28,7 @@ package com.akiban.server.service.servicemanager;
 
 import com.akiban.server.service.servicemanager.configuration.ServiceConfigurationHandler;
 import com.akiban.server.service.servicemanager.GuicedServiceManager.PropertyBindings;
+import com.google.inject.Module;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -86,6 +87,13 @@ public final class PropertyBindingsTest {
         compare(config, "require foo");
     }
 
+    @Test
+    public void prioritize() {
+        StringsConfig config = new StringsConfig();
+        new PropsBuilder().add("require:foo", "").add("require:bar", "").add("prioritize:foo", "").get().loadInto(config);
+        compare(config, "require foo", "prioritize foo", "require bar");
+    }
+
     private static void compare(StringsConfig actual, String... expected) {
         assertEquals("strings", Arrays.asList(expected), actual.messages());
     }
@@ -106,7 +114,7 @@ public final class PropertyBindingsTest {
 
     private static class StringsConfig implements ServiceConfigurationHandler {
         @Override
-        public void bind(String interfaceName, String implementingClassName) {
+        public void bind(String interfaceName, String implementingClassName, ClassLoader ignored) {
             messages.add("bind " + interfaceName + " to " + implementingClassName);
         }
 
@@ -131,6 +139,11 @@ public final class PropertyBindingsTest {
         }
 
         @Override
+        public void prioritize(String interfaceName) {
+            messages.add("prioritize " + interfaceName);
+        }
+
+        @Override
         public void sectionEnd() {
             messages.add("section end");
         }
@@ -138,6 +151,17 @@ public final class PropertyBindingsTest {
         @Override
         public void unrecognizedCommand(String where, Object command, String message) {
             messages.add("unrecognized command");
+        }
+
+        @Override
+        public void bindModules(List<Module> modules) {
+            for (Module module : modules)
+                messages.add("binding module " + module.getClass());
+        }
+
+        @Override
+        public void bindModulesError(String where, Object command, String message) {
+            messages().add("bind-modules error");
         }
 
         public List<String> messages() {

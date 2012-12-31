@@ -44,8 +44,8 @@
 ## Test with fields
 ---
 - Statement: SELECT ELT(1, bigint_field, double_field) from all_types;
-- output_types: [DOUBLE]
-- output: [[2.0]]
+- output_types: !select-engine { all: [DOUBLE], newtypes: [VARCHAR] }
+- output: !select-engine { all: [[2.0]], newtypes: [['2']] }
 ---
 - Statement: SELECT ELT(1, bigint_field, double_field, date_field) from all_types;
 - output_types: [VARCHAR]

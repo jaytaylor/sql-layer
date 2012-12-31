@@ -37,9 +37,6 @@ import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.ByteSource;
 import com.akiban.util.WrappingByteSource;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Random;
-import java.util.Set;
 import org.junit.Test;
 
 import static org.junit.Assert.*;

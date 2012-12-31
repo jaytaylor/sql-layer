@@ -29,14 +29,17 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.util.ValueSourceHasher;
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.explain.*;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.BloomFilter;
-import com.akiban.util.ByteSource;
 import com.akiban.util.tap.InOutTap;
-
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -122,18 +125,31 @@ class Using_BloomFilter extends Operator
                              RowType filterRowType,
                              long estimatedRowCount,
                              int filterBindingPosition,
-                             Operator streamInput)
+                             Operator streamInput,
+                             List<AkCollator> collators,
+                             boolean usePValues)
     {
         ArgumentValidation.notNull("filterInput", filterInput);
         ArgumentValidation.notNull("filterRowType", filterRowType);
         ArgumentValidation.isGTE("estimatedRowCount", estimatedRowCount, 0);
         ArgumentValidation.isGTE("filterBindingPosition", filterBindingPosition, 0);
         ArgumentValidation.notNull("streamInput", streamInput);
+        if (collators != null)
+            ArgumentValidation.isEQ("collators length", collators.size(), filterRowType.nFields());
         this.filterInput = filterInput;
         this.filterRowType = filterRowType;
         this.estimatedRowCount = estimatedRowCount;
         this.filterBindingPosition = filterBindingPosition;
         this.streamInput = streamInput;
+        this.collators = collators;
+        this.usePValues = usePValues;
+    }
+
+    // For use by this class
+
+    private AkCollator collator(int f)
+    {
+        return collators == null ? null : collators.get(f);
     }
 
     // Class state
@@ -149,6 +165,18 @@ class Using_BloomFilter extends Operator
     private final long estimatedRowCount;
     private final int filterBindingPosition;
     private final Operator streamInput;
+    private final List<AkCollator> collators;
+    private final boolean usePValues;
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context) {
+        Attributes atts = new Attributes();
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
+        atts.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(filterBindingPosition));
+        atts.put(Label.INPUT_OPERATOR, filterInput.getExplainer(context));
+        atts.put(Label.INPUT_OPERATOR, streamInput.getExplainer(context));
+        return new CompoundExplainer(Type.BLOOM_FILTER, atts);
+    }
 
     // Inner classes
 
@@ -244,8 +272,14 @@ class Using_BloomFilter extends Operator
             while ((row = loadCursor.next()) != null) {
                 int h = 0;
                 for (int f = 0; f < fields; f++) {
-                    ValueSource valueSource = row.eval(f);
-                    h = h ^ ValueSourceHasher.hash(valueSource);
+                    if (usePValues) {
+                        PValueSource valueSource = row.pvalue(f);
+                        h = h ^ PValueSources.hash(valueSource, collator(f));
+                    }
+                    else {
+                        ValueSource valueSource = row.eval(f);
+                        h = h ^ ValueSourceHasher.hash(adapter(), valueSource, collator(f));
+                    }
                 }
                 filter.add(h);
                 rows++;

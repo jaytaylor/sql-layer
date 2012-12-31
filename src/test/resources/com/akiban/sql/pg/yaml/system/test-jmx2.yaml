@@ -1,6 +1,6 @@
-#---
-#- Properties: sys-aksql
-#- suppressed: true
+---
+- Properties: sys-mysql
+- suppressed: true
 ---
 - CreateTable: t1 (c1 int);
 ---
@@ -19,6 +19,7 @@
 ['SampledCount: 6'],
 ['Statistics:'],
 ['- Columns: 1'],
+['  FirstColumn: 0'],
 ['  Histogram:'],
 ['  - distinct: 0'],
 ['    eq: 1'],
@@ -60,6 +61,7 @@
 ['SampledCount: 6'],
 ['Statistics:'],
 ['- Columns: 1'],
+['  FirstColumn: 0'],
 ['  Histogram:'],
 ['  - distinct: 0'],
 ['    eq: 1'],
@@ -93,6 +95,7 @@
 ['SampledCount: 6'],
 ['Statistics:'],
 ['- Columns: 1'],
+['  FirstColumn: 0'],
 ['  Histogram:'],
 ['  - distinct: 0'],
 ['    eq: 1'],
@@ -126,10 +129,10 @@
 - output: [[!dc dc]]
 ---
 - JMX: com.akiban:type=Configuration
-- set: QueryTimeoutSec
-- params: ['2']
+- set: QueryTimeoutMilli
+- params: ['2000']
 ---
 - JMX: com.akiban:type=Configuration
-- get: QueryTimeoutSec
-- output: [['2']]
+- get: QueryTimeoutMilli
+- output: [['2000']]
 ...

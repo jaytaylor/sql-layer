@@ -20,6 +20,8 @@ redhat/rpmbuild
 ./.settings
 ./.idea
 ./target
+./plugins/*
 data
 log
 .idea
+.metadata

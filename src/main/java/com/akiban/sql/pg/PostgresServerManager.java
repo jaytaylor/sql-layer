@@ -26,16 +26,19 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.qp.operator.memoryadapter.MemoryStore;
+import com.akiban.server.service.transaction.TransactionService;
+import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.server.ServerServiceRequirements;
 
+import com.akiban.server.AkServerInterface;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.service.instrumentation.InstrumentationService;
+import com.akiban.server.service.monitor.MonitorService;
 import com.akiban.server.service.jmx.JmxManageable;
+import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
@@ -46,40 +49,35 @@ import com.google.inject.Inject;
 /** The PostgreSQL server service.
  * @see PostgresServer
 */
-public class PostgresServerManager implements PostgresService, Service<PostgresService>, JmxManageable {
+public class PostgresServerManager implements PostgresService, Service, JmxManageable {
     private final ServerServiceRequirements reqs;
     private PostgresServer server = null;
 
     @Inject
-    public PostgresServerManager(ConfigurationService config,
+    public PostgresServerManager(AkServerInterface akServer,
                                  DXLService dxlService,
-                                 InstrumentationService instrumentation,
+                                 MonitorService monitor,
                                  SessionService sessionService,
                                  Store store,
                                  TreeService treeService,
                                  FunctionsRegistry functionsRegistry,
+                                 ConfigurationService config,
                                  IndexStatisticsService indexStatisticsService,
-                                 MemoryStore memoryStore) {
-        reqs = new ServerServiceRequirements(dxlService, instrumentation, 
+                                 T3RegistryService overloadResolutionService,
+                                 RoutineLoader routineLoader,
+                                 TransactionService txnService) {
+        reqs = new ServerServiceRequirements(akServer, dxlService, monitor, 
                 sessionService, store, treeService, functionsRegistry, 
-                config, indexStatisticsService, memoryStore);
+                config, indexStatisticsService, overloadResolutionService, routineLoader, txnService);
     }
 
-    /*** Service<PostgresService> ***/
-
-    public PostgresService cast() {
-        return this;
-    }
-
-    public Class<PostgresService> castClass() {
-        return PostgresService.class;
-    }
-
+    @Override
     public void start() throws ServiceStartupException {
         server = new PostgresServer(reqs);
         server.start();
     }
 
+    @Override
     public void stop() {
         if (server != null) {
             server.stop();
@@ -87,16 +85,19 @@ public class PostgresServerManager implements PostgresService, Service<PostgresS
         }
     }
 
+    @Override
     public void crash() {
         stop();
     }
 
     /*** PostgresService ***/
 
+    @Override
     public int getPort() {
         return server.getPort();
     }
     
+    @Override
     public PostgresServer getServer() {
         return server;
     }

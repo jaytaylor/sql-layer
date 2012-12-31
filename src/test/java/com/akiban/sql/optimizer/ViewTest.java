@@ -37,7 +37,6 @@ import com.akiban.junit.Parameterization;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import static junit.framework.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -62,7 +61,6 @@ public class ViewTest extends OptimizerTestBase
     @Before
     public void loadDDL() throws Exception {
         loadSchema(new File(RESOURCE_DIR, "schema.ddl"));
-        loadView(new File(RESOURCE_DIR, "view-1.ddl"));
     }
 
     @Test

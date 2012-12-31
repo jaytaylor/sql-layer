@@ -26,45 +26,57 @@
 
 package com.akiban.sql.server;
 
-import com.akiban.qp.operator.memoryadapter.MemoryStore;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.service.instrumentation.InstrumentationService;
+import com.akiban.server.service.monitor.MonitorService;
+import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
+import com.akiban.server.t3expressions.T3RegistryService;
 
 public final class ServerServiceRequirements {
 
-    public ServerServiceRequirements(DXLService dxlService,
-                                     InstrumentationService instrumentation,
+    public ServerServiceRequirements(AkServerInterface akServer,
+                                     DXLService dxlService,
+                                     MonitorService monitor,
                                      SessionService sessionService,
                                      Store store,
                                      TreeService treeService,
                                      FunctionsRegistry functionsRegistry,
                                      ConfigurationService config,
                                      IndexStatisticsService indexStatistics,
-                                     MemoryStore memoryStore) {
-        this.instrumentation = instrumentation;
+                                     T3RegistryService t3RegistryService,
+                                     RoutineLoader routineLoader,
+                                     TransactionService txnService) {
+        this.akServer = akServer;
         this.dxlService = dxlService;
+        this.monitor = monitor;
         this.sessionService = sessionService;
         this.store = store;
         this.treeService = treeService;
         this.functionsRegistry = functionsRegistry;
         this.config = config;
         this.indexStatistics = indexStatistics;
-        this.memoryStore = memoryStore;
+        this.t3RegistryService = t3RegistryService;
+        this.routineLoader = routineLoader;
+        this.txnService = txnService;
     }
 
-    public InstrumentationService instrumentation() {
-        return instrumentation;
+    public AkServerInterface akServer() {
+        return akServer;
     }
 
     public DXLService dxl() {
         return dxlService;
+    }
+
+    public MonitorService monitor() {
+        return monitor;
     }
 
     public SessionService sessionService() {
@@ -83,6 +95,10 @@ public final class ServerServiceRequirements {
         return functionsRegistry;
     }
 
+    public T3RegistryService t3RegistryService() {
+        return t3RegistryService;
+    }
+
     public ConfigurationService config() {
         return config;
     }
@@ -91,17 +107,24 @@ public final class ServerServiceRequirements {
         return indexStatistics;
     }
 
-    public MemoryStore getMemoryStore() {
-        return memoryStore;
+    public RoutineLoader routineLoader() {
+        return routineLoader;
     }
 
-    private final InstrumentationService instrumentation;
+    public TransactionService txnService() {
+        return txnService;
+    }
+
+    private final AkServerInterface akServer;
     private final DXLService dxlService;
+    private final MonitorService monitor;
     private final SessionService sessionService;
     private final Store store;
     private final TreeService treeService;
     private final FunctionsRegistry functionsRegistry;
     private final ConfigurationService config;
     private final IndexStatisticsService indexStatistics;
-    private final MemoryStore memoryStore;
+    private final T3RegistryService t3RegistryService;
+    private final RoutineLoader routineLoader;
+    private final TransactionService txnService;
 }

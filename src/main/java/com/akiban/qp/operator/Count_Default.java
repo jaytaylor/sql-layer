@@ -26,15 +26,19 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.row.PValuesRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.ValuesRowType;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.std.CountOperatorExplainer;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
 
 import java.util.Collections;
 import java.util.List;
@@ -122,12 +126,15 @@ class Count_Default extends Operator
 
     // Count_Default interface
 
-    public Count_Default(Operator inputOperator, RowType countType)
+    public Count_Default(Operator inputOperator, RowType countType, boolean usePValues)
     {
         ArgumentValidation.notNull("countType", countType);
         this.inputOperator = inputOperator;
         this.countType = countType;
-        this.resultType = countType.schema().newValuesType(AkType.LONG);
+        this.usePValues = usePValues;
+        this.resultType = usePValues
+            ? countType.schema().newValuesType(MNumeric.BIGINT.instance(false))
+            : countType.schema().newValuesType(AkType.LONG);
     }
     
     // Class state
@@ -140,6 +147,13 @@ class Count_Default extends Operator
     private final Operator inputOperator;
     private final RowType countType;
     private final ValuesRowType resultType;
+    private final boolean usePValues;
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        return new CountOperatorExplainer(getName(), countType, resultType, inputOperator, context);
+    }
 
     // Inner classes
 
@@ -173,7 +187,9 @@ class Count_Default extends Operator
                     row = input.next();
                     if (row == null) {
                         close();
-                        row = new ValuesRow(resultType, new Object[] { count });
+                        row = usePValues
+                                ? new PValuesRow(resultType, new PValue(MNumeric.BIGINT.instance(false), count))
+                                : new ValuesRow(resultType, new Object[] { count });
                     } else if (row.rowType() == countType) {
                         row = null;
                         count++;

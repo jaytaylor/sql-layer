@@ -31,38 +31,20 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.*;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.protobuf.ProtobufWriter;
+import com.akiban.server.error.*;
+import com.akiban.sql.parser.*;
+import com.akiban.sql.parser.IndexColumn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.IndexTableNotInGroupException;
-import com.akiban.server.error.IndistinguishableIndexException;
-import com.akiban.server.error.MissingGroupIndexJoinTypeException;
-import com.akiban.server.error.NoSuchColumnException;
-import com.akiban.server.error.NoSuchGroupException;
-import com.akiban.server.error.NoSuchIndexException;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.error.TableIndexJoinTypeException;
-import com.akiban.server.error.UnsupportedGroupIndexJoinTypeException;
-import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.server.error.UnsupportedUniqueGroupIndexException;
 import com.akiban.server.service.session.Session;
-import com.akiban.sql.parser.CreateIndexNode;
-import com.akiban.sql.parser.DropIndexNode;
-import com.akiban.sql.parser.IndexColumn;
-import com.akiban.sql.parser.RenameNode;
 
-import com.akiban.ais.metamodel.io.AISTarget;
-import com.akiban.ais.metamodel.io.TableSubsetWriter;
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.QueryContext;
 
 /** DDL operations on Indices */
 public class IndexDDL
@@ -71,12 +53,29 @@ public class IndexDDL
     private IndexDDL() {
     }
 
+    private static boolean returnHere(ExistenceCheck condition, InvalidOperationException error, QueryContext context)
+    {
+        switch(condition)
+        {
+            case IF_EXISTS:
+                    // doesn't exist, does nothing
+                context.warnClient(error);
+                return true;
+            case NO_CONDITION:
+                throw error;
+            default:
+                throw new IllegalStateException("Unexpected condition in DROP INDEX: " + condition);
+        }
+    }
+
     public static void dropIndex (DDLFunctions ddlFunctions,
                                     Session session,
                                     String defaultSchemaName,
-                                    DropIndexNode dropIndex) {
-        String groupName = null;
+                                    DropIndexNode dropIndex,
+                                    QueryContext context) {
+        TableName groupName = null;
         TableName tableName = null;
+        ExistenceCheck condition = dropIndex.getExistenceCheck();
 
         final String indexSchemaName = dropIndex.getObjectName() != null && dropIndex.getObjectName().getSchemaName() != null ?
                 dropIndex.getObjectName().getSchemaName() :
@@ -92,7 +91,8 @@ public class IndexDDL
             tableName = TableName.create(indexSchemaName == null ? defaultSchemaName : indexSchemaName, indexTableName);
             UserTable table = ddlFunctions.getAIS(session).getUserTable(tableName);
             if (table == null) {
-                throw new NoSuchTableException(tableName);
+                if(returnHere(condition, new NoSuchTableException(tableName), context))
+                    return;
             }
             // if we can't find the index, set tableName to null
             // to flag not a user table index. 
@@ -142,10 +142,11 @@ public class IndexDDL
         } else if (tableName != null) {
             ddlFunctions.dropTableIndexes(session, tableName, indexesToDrop);
         } else {
-            throw new NoSuchIndexException (indexName);
+            if(returnHere(condition, new NoSuchIndexException (indexName), context))
+                return;
         }
     }
-    
+
     public static void renameIndex (DDLFunctions ddlFunctions,
                                     Session session,
                                     String defaultSchemaName, 
@@ -154,7 +155,7 @@ public class IndexDDL
     }
     
     public static void createIndex(DDLFunctions ddlFunctions,
-                                    Session session,
+                                   Session session,
                                    String defaultSchemaName,
                                    CreateIndexNode createIndex)  {
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
@@ -171,14 +172,14 @@ public class IndexDDL
         final TableName tableName = TableName.create(schemaName, index.getIndexTableName().getTableName());
         
         if (checkIndexType (index, tableName) == Index.IndexType.TABLE) {
-            logger.info ("Building Table index on table {}", tableName);
+            logger.debug ("Building Table index on table {}", tableName) ;
             return buildTableIndex (ais, tableName, index);
         } else {
-            logger.info ("Building Group index on table {}", tableName);
+            logger.debug ("Building Group index on table {}", tableName);
             return buildGroupIndex (ais, tableName, index);
         }
     }
-    
+
     /**
      * Check if the index specification is for a table index or a group index. We distinguish between 
      * them by checking the columns specified in the index, if they all belong to the table 
@@ -211,7 +212,8 @@ public class IndexDDL
     private static Index buildTableIndex (AkibanInformationSchema ais, TableName tableName, CreateIndexNode index) {
         final String indexName = index.getObjectName().getTableName();
 
-        if (ais.getUserTable(tableName) == null) {
+        UserTable table = ais.getUserTable(tableName);
+        if (table == null) {
             throw new NoSuchTableException (tableName);
         }
 
@@ -220,26 +222,40 @@ public class IndexDDL
         }
 
         AISBuilder builder = new AISBuilder();
-        addTable (builder, ais, tableName);
+        clone(builder, ais);
         
         builder.index(tableName.getSchemaName(), tableName.getTableName(), indexName, index.getUniqueness(),
-                index.getUniqueness() ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT);
-
+                      index.getUniqueness() ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT);
+        TableIndex tableIndex = builder.akibanInformationSchema().getTable(tableName).getIndex(indexName);
+        IndexColumnList indexColumns = index.getColumnList();
+        boolean indexIsSpatial = indexColumns.functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON;
+        if (indexIsSpatial) {
+            tableIndex.markSpatial(indexColumns.firstFunctionArg(),
+                                   indexColumns.lastFunctionArg() + 1 - indexColumns.firstFunctionArg());
+        }
         int i = 0;
-        for (IndexColumn col : index.getColumnList()) {
+        for (IndexColumn col : indexColumns) {
             Column tableCol = ais.getTable(tableName).getColumn(col.getColumnName());
             if (tableCol == null) {
                 throw new NoSuchColumnException (col.getColumnName());
             }          
-            builder.indexColumn(tableName.getSchemaName(), tableName.getTableName(), indexName, tableCol.getName(), i, col.isAscending(), null);
+            builder.indexColumn(tableName.getSchemaName(),
+                                tableName.getTableName(),
+                                indexName,
+                                tableCol.getName(),
+                                i,
+                                col.isAscending(),
+                                null);
             i++;
         }
+        // Can't check isSpatialCompatible before the index columns have been added.
+        if (indexIsSpatial && !Index.isSpatialCompatible(tableIndex)) {
+            throw new BadSpatialIndexException(indexName, index);
+        }
         builder.basicSchemaIsComplete();
-        
-        return builder.akibanInformationSchema().getTable(tableName).getIndex(indexName);
+        return tableIndex;
     }
-    
-    
+
     private static Index buildGroupIndex (AkibanInformationSchema ais, TableName tableName, CreateIndexNode index) {
         final String indexName = index.getObjectName().getTableName();
         
@@ -247,7 +263,7 @@ public class IndexDDL
             throw new NoSuchTableException (tableName);
         }
         
-        final String groupName = ais.getUserTable(tableName).getGroup().getName();
+        final TableName groupName = ais.getUserTable(tableName).getGroup().getName();
         
         if (ais.getGroup(groupName) == null) {
             throw new NoSuchGroupException(groupName);
@@ -282,9 +298,15 @@ public class IndexDDL
         }
 
         AISBuilder builder = new AISBuilder();
-        addGroup(builder, ais, groupName);
+        clone(builder, ais);
         builder.groupIndex(groupName, indexName, index.getUniqueness(), joinType);
-        
+        GroupIndex groupIndex = builder.akibanInformationSchema().getGroup(groupName).getIndex(indexName);
+        IndexColumnList indexColumns = index.getColumnList();
+        boolean indexIsSpatial = indexColumns.functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON;
+        if (indexIsSpatial) {
+            groupIndex.markSpatial(indexColumns.firstFunctionArg(),
+                                   indexColumns.lastFunctionArg() + 1 - indexColumns.firstFunctionArg());
+        }
         int i = 0;
         String schemaName;
         TableName columnTable;
@@ -314,28 +336,15 @@ public class IndexDDL
             builder.groupIndexColumn(groupName, indexName, schemaName, columnTable.getTableName(), columnName, i);
             i++;
         }
+        // Can't check isSpatialCompatible before the index columns have been added.
+        if (indexIsSpatial && !Index.isSpatialCompatible(groupIndex)) {
+            throw new BadSpatialIndexException(indexName, index);
+        }
         builder.basicSchemaIsComplete();
         return builder.akibanInformationSchema().getGroup(groupName).getIndex(indexName);
     }
 
-    private static void addGroup (AISBuilder builder, AkibanInformationSchema ais, final String groupName) {
-
-        new TableSubsetWriter(new AISTarget(builder.akibanInformationSchema())) {
-            @Override
-            public boolean shouldSaveTable(Table table) {
-                return table.getGroup().getName().equalsIgnoreCase(groupName);
-            }
-        }.save(ais);
-    }
-    
-    private static void addTable (AISBuilder builder, AkibanInformationSchema ais, TableName tableName) {
-        final UserTable userTable = ais.getUserTable(tableName);
-        final GroupTable groupTable = userTable.getGroup().getGroupTable();
-        new TableSubsetWriter(new AISTarget(builder.akibanInformationSchema())) {
-            @Override
-            public boolean shouldSaveTable(Table table) {
-                return table == userTable || table == groupTable;
-            }
-        }.save(ais);
+    private static void clone(AISBuilder builder, AkibanInformationSchema ais) {
+        AISCloner.clone(builder.akibanInformationSchema(), ais, ProtobufWriter.ALL_SELECTOR);
     }
 }

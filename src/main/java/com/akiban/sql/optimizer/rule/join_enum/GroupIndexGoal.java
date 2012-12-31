@@ -37,11 +37,20 @@ import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Index.JoinType;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.expression.std.Comparison;
+import com.akiban.server.types.AkType;
+import com.akiban.server.geophile.Space;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.sql.optimizer.TypesTranslation;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.TypeId;
 
 import com.google.common.base.Function;
 import org.slf4j.Logger;
@@ -50,7 +59,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /** The goal of a indexes within a group. */
-public class GroupIndexGoal implements Comparator<IndexScan>
+public class GroupIndexGoal implements Comparator<BaseScan>
 {
     private static final Logger logger = LoggerFactory.getLogger(GroupIndexGoal.class);
     static volatile Function<? super IndexScan,Void> intersectionEnumerationHook = null;
@@ -167,6 +176,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                 conditions.addAll(conditionSource);
             }
         }
+        columnsToRanges = null;
     }
 
     public void updateRequiredColumns(Collection<JoinOperator> joins,
@@ -194,6 +204,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
      */
     public boolean usable(SingleIndexScan index) {
         int nequals = insertLeadingEqualities(index, conditions);
+        if (index.getIndex().isSpatial()) return spatialUsable(index, nequals);
         List<ExpressionNode> indexExpressions = index.getColumns();
         if (nequals < indexExpressions.size()) {
             ExpressionNode indexExpression = indexExpressions.get(nequals);
@@ -202,19 +213,14 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                 for (ConditionExpression condition : conditions) {
                     if (condition instanceof ComparisonCondition) {
                         ComparisonCondition ccond = (ComparisonCondition)condition;
-                        if (ccond.getOperation().equals(Comparison.NE))
+                        if (ccond.getOperation() == Comparison.NE)
                             continue; // ranges are better suited for !=
-                        ExpressionNode otherComparand = null;
-                        if (indexExpressionMatches(indexExpression, ccond.getLeft())) {
-                            otherComparand = ccond.getRight();
-                        }
-                        else if (indexExpressionMatches(indexExpression, ccond.getRight())) {
-                            otherComparand = ccond.getLeft();
-                        }
-                        if ((otherComparand != null) && constantOrBound(otherComparand)) {
-                            index.addInequalityCondition(condition,
-                                                         ccond.getOperation(),
-                                                         otherComparand);
+                        ExpressionNode otherComparand = matchingComparand(indexExpression, ccond);
+                        if (otherComparand != null) {
+                            Comparison op = ccond.getOperation();
+                            if (otherComparand == ccond.getLeft())
+                                op = ComparisonCondition.reverseComparison(op);
+                            index.addInequalityCondition(condition, op, otherComparand);
                             foundInequalityCondition = true;
                         }
                     }
@@ -236,8 +242,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return true;
     }
 
-    private int insertLeadingEqualities(SingleIndexScan index, List<ConditionExpression> localConds)
-    {
+    private int insertLeadingEqualities(SingleIndexScan index, List<ConditionExpression> localConds) {
         setColumnsAndOrdering(index);
         int nequals = 0;
         List<ExpressionNode> indexExpressions = index.getColumns();
@@ -250,16 +255,10 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             for (ConditionExpression condition : localConds) {
                 if (condition instanceof ComparisonCondition) {
                     ComparisonCondition ccond = (ComparisonCondition)condition;
-                    ExpressionNode comparand = null;
-                    if (ccond.getOperation() == Comparison.EQ) {
-                        if (indexExpressionMatches(indexExpression, ccond.getLeft())) {
-                            comparand = ccond.getRight();
-                        }
-                        else if (indexExpressionMatches(indexExpression, ccond.getRight())) {
-                            comparand = ccond.getLeft();
-                        }
-                    }
-                    if ((comparand != null) && constantOrBound(comparand)) {
+                    if (ccond.getOperation() != Comparison.EQ)
+                        continue; // only doing equalities
+                    ExpressionNode comparand = matchingComparand(indexExpression, ccond);
+                    if (comparand != null) {
                         equalityCondition = condition;
                         otherComparand = comparand;
                         break;
@@ -269,7 +268,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                     FunctionCondition fcond = (FunctionCondition)condition;
                     if (fcond.getFunction().equals("isNull") &&
                         (fcond.getOperands().size() == 1) &&
-                        (fcond.getOperands().get(0).equals(indexExpression))) {
+                        indexExpressionMatches(indexExpression, 
+                                               fcond.getOperands().get(0))) {
                         equalityCondition = condition;
                         otherComparand = null; // TODO: Or constant NULL, depending on API.
                         break;
@@ -284,16 +284,60 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return nequals;
     }
 
+    private ExpressionNode matchingComparand(ExpressionNode indexExpression, 
+                                             ComparisonCondition ccond) {
+        ExpressionNode comparand;
+        if (indexExpressionMatches(indexExpression, ccond.getLeft())) {
+            comparand = ccond.getRight();
+            if (constantOrBound(comparand))
+                return comparand;
+        }
+        if (indexExpressionMatches(indexExpression, ccond.getRight())) {
+            comparand = ccond.getLeft();
+            if (constantOrBound(comparand))
+                return comparand;
+        }
+        return null;
+    }
+
     private static void setColumnsAndOrdering(SingleIndexScan index) {
         List<IndexColumn> indexColumns = index.getAllColumns();
         int ncols = indexColumns.size();
+        int firstSpatialColumn, dimensions;
+        SpecialIndexExpression.Function spatialFunction;
+        if (index.getIndex().isSpatial()) {
+            Index spatialIndex = index.getIndex();
+            firstSpatialColumn = spatialIndex.firstSpatialArgument();
+            dimensions = spatialIndex.dimensions();
+            assert (dimensions == Space.LAT_LON_DIMENSIONS);
+            spatialFunction = SpecialIndexExpression.Function.Z_ORDER_LAT_LON;
+        }
+        else {
+            firstSpatialColumn = Integer.MAX_VALUE;
+            dimensions = 0;
+            spatialFunction = null;
+        }
         List<OrderByExpression> orderBy = new ArrayList<OrderByExpression>(ncols);
         List<ExpressionNode> indexExpressions = new ArrayList<ExpressionNode>(ncols);
-        for (IndexColumn indexColumn : indexColumns) {
-            ExpressionNode indexExpression = getIndexExpression(index, indexColumn);
+        int i = 0;
+        while (i < ncols) {
+            ExpressionNode indexExpression;
+            boolean ascending;
+            if (i == firstSpatialColumn) {
+                List<ExpressionNode> operands = new ArrayList<ExpressionNode>(dimensions);
+                for (int j = 0; j < dimensions; j++) {
+                    operands.add(getIndexExpression(index, indexColumns.get(i++)));
+                }
+                indexExpression = new SpecialIndexExpression(spatialFunction, operands);
+                ascending = true;
+            }
+            else {
+                IndexColumn indexColumn = indexColumns.get(i++);
+                indexExpression = getIndexExpression(index, indexColumn);
+                ascending = indexColumn.isAscending();
+            }
             indexExpressions.add(indexExpression);
-            orderBy.add(new OrderByExpression(indexExpression,
-                    indexColumn.isAscending()));
+            orderBy.add(new OrderByExpression(indexExpression, ascending));
         }
         index.setColumns(indexExpressions);
         index.setOrdering(orderBy);
@@ -340,11 +384,9 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         List<OrderByExpression> indexOrdering = index.getOrdering();
         if (indexOrdering == null) return result;
         BitSet reverse = new BitSet(indexOrdering.size());
-        List<ExpressionNode> equalityComparands = index.getEqualityComparands();
-        int nequals = 0;
+        int nequals = index.getNEquality();
         List<ExpressionNode> equalityColumns = null;
-        if (equalityComparands != null) {
-            nequals = equalityComparands.size();
+        if (nequals > 0) {
             equalityColumns = index.getColumns().subList(0, nequals);
         }
         try_sorted:
@@ -378,8 +420,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                         indexColumn = null; // Index sorts by unknown column.
                 }
                 if ((indexColumn != null) && 
-                    orderingExpressionMatches(indexColumn.getExpression(), 
-                                              targetExpression)) {
+                    orderingExpressionMatches(indexColumn, targetExpression)) {
                     if (indexColumn.isAscending() != targetColumn.isAscending()) {
                         // To avoid mixed mode as much as possible,
                         // defer changing the index order until
@@ -389,6 +430,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                             // Likewise reverse the initial equals segment.
                             reverse.set(0, nequals, true);
                     }
+                    if (idx >= index.getNKeyColumns())
+                        index.setUsesAllColumns(true);
                     idx++;
                     continue;
                 }
@@ -419,7 +462,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             for (ExpressionNode targetExpression : groupBy) {
                 int found = -1;
                 for (int i = nequals; i < indexOrdering.size(); i++) {
-                    if (targetExpression.equals(indexOrdering.get(i).getExpression())) {
+                    if (orderingExpressionMatches(indexOrdering.get(i), targetExpression)) {
                         found = i - nequals;
                         break;
                     }
@@ -436,6 +479,9 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                     // partially grouped.
                     allFound = false;
                 }
+                if (found >= index.getNKeyColumns()) {
+                    index.setUsesAllColumns(true);
+                }
                 anyFound = true;
             }
             if (anyFound) {
@@ -449,7 +495,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         }
         else if (queryGoal.getProjectDistinct() != null) {
             assert (queryGoal.getOrdering() == null);
-            if (orderedForDistinct(queryGoal.getProjectDistinct(), 
+            if (orderedForDistinct(index, queryGoal.getProjectDistinct(), 
                                    indexOrdering, nequals)) {
                 return IndexScan.OrderEffectiveness.SORTED;
             }
@@ -461,19 +507,18 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     public boolean orderedForDistinct(Project projectDistinct, IndexScan index) {
         List<OrderByExpression> indexOrdering = index.getOrdering();
         if (indexOrdering == null) return false;
-        List<ExpressionNode> equalityComparands = index.getEqualityComparands();
-        int nequals = (equalityComparands == null) ? 0 : equalityComparands.size();
-        return orderedForDistinct(projectDistinct, indexOrdering, nequals);
+        int nequals = index.getNEquality();
+        return orderedForDistinct(index, projectDistinct, indexOrdering, nequals);
     }
 
-    protected boolean orderedForDistinct(Project projectDistinct, 
+    protected boolean orderedForDistinct(IndexScan index, Project projectDistinct, 
                                          List<OrderByExpression> indexOrdering,
                                          int nequals) {
         List<ExpressionNode> distinct = projectDistinct.getFields();
         for (ExpressionNode targetExpression : distinct) {
             int found = -1;
             for (int i = nequals; i < indexOrdering.size(); i++) {
-                if (targetExpression.equals(indexOrdering.get(i).getExpression())) {
+                if (orderingExpressionMatches(indexOrdering.get(i), targetExpression)) {
                     found = i - nequals;
                     break;
                 }
@@ -481,22 +526,31 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             if ((found < 0) || (found >= distinct.size())) {
                 return false;
             }
+            if (found >= index.getNKeyColumns()) {
+                index.setUsesAllColumns(true);
+            }
         }
         return true;
     }
 
     // Does the column expression coming from the index match the ORDER BY target,
     // allowing for column equivalences?
-    protected boolean orderingExpressionMatches(ExpressionNode columnExpression,
+    protected boolean orderingExpressionMatches(OrderByExpression orderByExpression,
                                                 ExpressionNode targetExpression) {
+        ExpressionNode columnExpression = orderByExpression.getExpression();
+        if (columnExpression == null)
+            return false;
         if (columnExpression.equals(targetExpression))
             return true;
         if (!(columnExpression instanceof ColumnExpression) ||
             !(targetExpression instanceof ColumnExpression))
             return false;
-        EquivalenceFinder<ColumnExpression> equivs = queryGoal.getQuery().getColumnEquivalencies();
-        return equivs.areEquivalent((ColumnExpression)columnExpression,
-                                    (ColumnExpression)targetExpression);
+        return getColumnEquivalencies().areEquivalent((ColumnExpression)columnExpression,
+                                                      (ColumnExpression)targetExpression);
+    }
+
+    protected EquivalenceFinder<ColumnExpression> getColumnEquivalencies() {
+        return queryGoal.getQuery().getColumnEquivalencies();
     }
 
     protected class UnboundFinder implements ExpressionVisitor {
@@ -545,7 +599,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
     /** Get an expression form of the given index column. */
     protected static ExpressionNode getIndexExpression(IndexScan index,
-                                                IndexColumn indexColumn) {
+                                                       IndexColumn indexColumn) {
         Column column = indexColumn.getColumn();
         UserTable indexTable = column.getUserTable();
         for (TableSource table = index.getLeafMostTable();
@@ -563,13 +617,14 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                                              ExpressionNode comparisonOperand) {
         if (indexExpression.equals(comparisonOperand))
             return true;
-        if (!(comparisonOperand instanceof ColumnExpression))
+        if (!(indexExpression instanceof ColumnExpression) ||
+            !(comparisonOperand instanceof ColumnExpression))
             return false;
+        if (getColumnEquivalencies().areEquivalent((ColumnExpression)indexExpression,
+                                                   (ColumnExpression)comparisonOperand))
+            return true;
         // See if comparing against a result column of the subquery,
         // that is, a join to the subquery that we can push down.
-        // TODO: Should check column equivalences here, too. If we
-        // added the below that earlier, could count such a join as a
-        // group join: p JOIN (SELECT fk) sq ON p.pk = sq.fk.
         ColumnExpression comparisonColumn = (ColumnExpression)comparisonOperand;
         ColumnSource comparisonTable = comparisonColumn.getTable();
         if (!(comparisonTable instanceof SubquerySource))
@@ -590,32 +645,39 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     /** Find the best index among the branches. */
     public BaseScan pickBestScan() {
         Set<TableSource> required = tables.getRequired();
-        IndexScan bestIndex = null;
+        BaseScan bestScan = null;
+
+        if (tables.getGroup().getRejectedJoins() != null) {
+            bestScan = pickBestGroupLoop();
+        }
 
         IntersectionEnumerator intersections = new IntersectionEnumerator();
         for (TableGroupJoinNode table : tables) {
             IndexScan tableIndex = pickBestIndex(table, required, intersections);
             if ((tableIndex != null) &&
-                ((bestIndex == null) || (compare(tableIndex, bestIndex) > 0)))
-                bestIndex = tableIndex;
+                ((bestScan == null) || (compare(tableIndex, bestScan) > 0)))
+                bestScan = tableIndex;
         }
-        bestIndex = pickBestIntersection(bestIndex, intersections);
-        if (bestIndex != null)
-            return bestIndex;
+        bestScan = pickBestIntersection(bestScan, intersections);
 
-        GroupScan groupScan = new GroupScan(tables.getGroup());
-        groupScan.setCostEstimate(estimateCost(groupScan));
-        return groupScan;
+        if (bestScan == null) {
+            GroupScan groupScan = new GroupScan(tables.getGroup());
+            groupScan.setCostEstimate(estimateCost(groupScan));
+            bestScan = groupScan;
+        }
+
+        return bestScan;
     }
 
-    private IndexScan pickBestIntersection(IndexScan previousBest, IntersectionEnumerator enumerator) {
+    private BaseScan pickBestIntersection(BaseScan previousBest, IntersectionEnumerator enumerator) {
         // filter out all leaves which are obviously bad
         if (previousBest != null) {
             CostEstimate previousBestCost = previousBest.getCostEstimate();
             for (Iterator<SingleIndexScan> iter = enumerator.leavesIterator(); iter.hasNext(); ) {
                 SingleIndexScan scan = iter.next();
-                if (scan.getScanCostEstimate().compareTo(previousBestCost) > 0) {
-                    logger.debug("Not intersecting {} {}", scan, scan.getScanCostEstimate());
+                CostEstimate scanCost = estimateIntersectionCost(scan);
+                if (scanCost.compareTo(previousBestCost) > 0) {
+                    logger.debug("Not intersecting {} {}", scan, scanCost);
                     iter.remove();
                 }
             }
@@ -694,19 +756,19 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
         @Override
         protected List<Column> getComparisonColumns(IndexScan first, IndexScan second) {
-            EquivalenceFinder<ColumnExpression> equivs = queryGoal.getQuery().getColumnEquivalencies();
+            EquivalenceFinder<ColumnExpression> equivs = getColumnEquivalencies();
             List<ExpressionNode> firstOrdering = orderingCols(first);
             List<ExpressionNode> secondOrdering = orderingCols(second);
             int ncols = Math.min(firstOrdering.size(), secondOrdering.size());
             List<Column> result = new ArrayList<Column>(ncols);
             for (int i=0; i < ncols; ++i) {
-                ColumnExpression firstCol = (ColumnExpression) firstOrdering.get(i);
-                ColumnExpression secondCol = (ColumnExpression) secondOrdering.get(i);
-                if ((firstCol == null) || (secondCol == null))
+                ExpressionNode firstCol = firstOrdering.get(i);
+                ExpressionNode secondCol = secondOrdering.get(i);
+                if (!(firstCol instanceof ColumnExpression) || !(secondCol instanceof ColumnExpression))
                     break;
-                if (!equivs.areEquivalent(firstCol, secondCol))
+                if (!equivs.areEquivalent((ColumnExpression) firstCol, (ColumnExpression) secondCol))
                     break;
-                result.add(firstCol.getColumn());
+                result.add(((ColumnExpression)firstCol).getColumn());
             }
             return result;
         }
@@ -752,6 +814,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                         }
                         else {
                             if (leafRequired != null) {
+                                // Optional above required, not LEFT join compatible.
                                 leafRequired = null;
                                 break;
                             }
@@ -768,26 +831,32 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                         continue;
                 }
                 else {
-                    if (!table.isRequired())
+                    if (!required.contains(table))
                         continue;
                     leafRequired = table;
-                    TableSource childTable = null;
+                    boolean optionalSeen = false;
                     while (rootTable != null) {
-                        if (rootTable.isRequired()) {
-                            if (rootRequired != null) {
+                        if (required.contains(rootTable)) {
+                            if (optionalSeen) {
+                                // Required above optional, not RIGHT join compatible.
                                 rootRequired = null;
                                 break;
                             }
+                            rootRequired = rootTable;
                         }
                         else {
-                            if (rootRequired == null)
-                                rootRequired = childTable;
+                            optionalSeen = true;
                         }
                         if (index.rootMostTable() == rootTable.getTable().getTable())
                             break;
-                        childTable = rootTable;
                         rootTable = rootTable.getParentTable();
                     }
+                    // TODO: There are no INNER JOIN group indexes,
+                    // but this would support them.
+                    /*
+                    if (optionalSeen && (index.getJoinType() == JoinType.INNER))
+                        continue;
+                    */
                     if ((rootTable == null) ||
                         (rootRequired == null))
                         continue;
@@ -835,7 +904,66 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return bestIndex;
     }
 
-    public int compare(IndexScan i1, IndexScan i2) {
+    private GroupLoopScan pickBestGroupLoop() {
+        GroupLoopScan bestScan = null;
+        
+        Set<TableSource> outsideSameGroup = new HashSet<TableSource>(tables.getGroup().getTables());
+        outsideSameGroup.retainAll(boundTables);
+
+        for (TableGroupJoin join : tables.getGroup().getRejectedJoins()) {
+            TableSource parent = join.getParent();
+            TableSource child = join.getChild();
+            TableSource inside, outside;
+            boolean insideIsParent;
+            if (outsideSameGroup.contains(parent) && tables.containsTable(child)) {
+                inside = child;
+                outside = parent;
+                insideIsParent = false;
+            }
+            else if (outsideSameGroup.contains(child) && tables.containsTable(parent)) {
+                inside = parent;
+                outside = child;
+                insideIsParent = true;
+            }
+            else {
+                continue;
+            }
+            if (mightFlatten(outside)) {
+                continue;       // Lookup_Nested won't be allowed.
+            }
+            GroupLoopScan forJoin = new GroupLoopScan(inside, outside, insideIsParent,
+                                                      join.getConditions());
+            determineRequiredTables(forJoin);
+            forJoin.setCostEstimate(estimateCost(forJoin));
+            if (bestScan == null) {
+                logger.debug("Selecting {}", forJoin);
+                bestScan = forJoin;
+            }
+            else if (compare(forJoin, bestScan) > 0) {
+                logger.debug("Preferring {}", forJoin);
+                bestScan = forJoin;
+            }
+            else {
+                logger.debug("Rejecting {}", forJoin);
+            }
+        }
+
+        return bestScan;
+    }
+
+    private boolean mightFlatten(TableSource table) {
+        if (!(table.getOutput() instanceof TableGroupJoinTree))
+            return true;        // Don't know; be conservative.
+        TableGroupJoinTree tree = (TableGroupJoinTree)table.getOutput();
+        TableGroupJoinNode root = tree.getRoot();
+        if (root.getTable() != table)
+            return true;
+        if (root.getFirstChild() != null)
+            return true;
+        return false;           // Only table in this join tree, shouldn't flatten.
+    }
+
+    public int compare(BaseScan i1, BaseScan i2) {
         return i2.getCostEstimate().compareTo(i1.getCostEstimate());
     }
 
@@ -896,15 +1024,54 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         }
 
         // Remove the columns we do have from the index.
-        for (ExpressionNode column : index.getColumns()) {
-            if (column instanceof ColumnExpression) {
-                requiredAfter.have((ColumnExpression)column);
+        int ncols = index.getColumns().size();
+        for (int i = 0; i < ncols; i++) {
+            ExpressionNode column = index.getColumns().get(i);
+            if ((column instanceof ColumnExpression) && index.isRecoverableAt(i)) {
+                if (requiredAfter.have((ColumnExpression)column) &&
+                    (i >= index.getNKeyColumns())) {
+                    index.setUsesAllColumns(true);
+                }
             }
         }
         return requiredAfter.isEmpty();
     }
 
-    protected CostEstimate estimateCost(IndexScan index) {
+    protected void determineRequiredTables(GroupLoopScan scan) {
+        // Include the non-condition requirements.
+        RequiredColumns requiredAfter = new RequiredColumns(requiredColumns);
+        RequiredColumnsFiller filler = new RequiredColumnsFiller(requiredAfter);
+        // Add in any non-join conditions.
+        for (ConditionExpression condition : conditions) {
+            boolean found = false;
+            for (ConditionExpression joinCondition : scan.getJoinConditions()) {
+                if (joinCondition == condition) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+                condition.accept(filler);
+        }
+        // Does not sort.
+        if (queryGoal.getOrdering() != null) {
+            // Only this node, not its inputs.
+            filler.setIncludedPlanNodes(Collections.<PlanNode>singletonList(queryGoal.getOrdering()));
+            queryGoal.getOrdering().accept(filler);
+        }
+        // The only table we can exclude is the one initially joined to, in the case
+        // where all the data comes from elsewhere on that branch.
+        Set<TableSource> required = new HashSet<TableSource>(requiredAfter.getTables());
+        if (!requiredAfter.hasColumns(scan.getInsideTable()))
+            required.remove(scan.getInsideTable());
+        scan.setRequiredTables(required);
+    }
+
+    public CostEstimate estimateCost(IndexScan index) {
+        return estimateCost(index, queryGoal.getLimit());
+    }
+
+    public CostEstimate estimateCost(IndexScan index, long limit) {
         PlanCostEstimator estimator = 
             new PlanCostEstimator(queryGoal.getCostEstimator());
         Set<TableSource> requiredTables = index.getRequiredTables();
@@ -929,8 +1096,24 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             estimator.sort(queryGoal.sortFields());
         }
 
-        estimator.setLimit(queryGoal.getLimit());
+        estimator.setLimit(limit);
 
+        return estimator.getCostEstimate();
+    }
+
+    public CostEstimate estimateIntersectionCost(IndexScan index) {
+        if (index.getOrderEffectiveness() == IndexScan.OrderEffectiveness.NONE)
+            return index.getScanCostEstimate();
+        long limit = queryGoal.getLimit();
+        if (limit < 0)
+            return index.getScanCostEstimate();
+        // There is a limit and this index looks to be sorted, so adjust for that
+        // limit. Otherwise, the scan only cost, which includes all rows, will appear
+        // too large compared to a limit-aware best plan.
+        PlanCostEstimator estimator = 
+            new PlanCostEstimator(queryGoal.getCostEstimator());
+        estimator.indexScan(index);
+        estimator.setLimit(limit);
         return estimator.getCostEstimate();
     }
 
@@ -951,8 +1134,36 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return estimator.getCostEstimate();
     }
 
+    public CostEstimate estimateCost(GroupLoopScan scan) {
+        PlanCostEstimator estimator = 
+            new PlanCostEstimator(queryGoal.getCostEstimator());
+        Set<TableSource> requiredTables = scan.getRequiredTables();
+
+        estimator.groupLoop(scan, tables, requiredTables);
+
+        Collection<ConditionExpression> unhandledConditions = 
+            new HashSet<ConditionExpression>(conditions);
+        unhandledConditions.removeAll(scan.getJoinConditions());
+        if (!unhandledConditions.isEmpty()) {
+            estimator.select(unhandledConditions,
+                             selectivityConditions(unhandledConditions, requiredTables));
+        }
+
+        if (queryGoal.needSort(IndexScan.OrderEffectiveness.NONE)) {
+            estimator.sort(queryGoal.sortFields());
+        }
+
+        estimator.setLimit(queryGoal.getLimit());
+
+        return estimator.getCostEstimate();
+    }
+
+    public double estimateSelectivity(IndexScan index) {
+        return queryGoal.getCostEstimator().conditionsSelectivity(selectivityConditions(index.getConditions(), index.getTables()));
+    }
+
     // Conditions that might have a recognizable selectivity.
-    protected Map<ColumnExpression,Collection<ComparisonCondition>> selectivityConditions(Collection<ConditionExpression> conditions, Set<TableSource> requiredTables) {
+    protected Map<ColumnExpression,Collection<ComparisonCondition>> selectivityConditions(Collection<ConditionExpression> conditions, Collection<TableSource> requiredTables) {
         Map<ColumnExpression,Collection<ComparisonCondition>> result = new
             HashMap<ColumnExpression,Collection<ComparisonCondition>>();
         for (ConditionExpression condition : conditions) {
@@ -976,28 +1187,90 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return result;
     }
 
-    public void install(PlanNode scan, List<ConditionList> conditionSources) {
-        tables.setScan(scan);
+    // Recognize the case of a join that is only used for predication.
+    // TODO: This is only covers the simplest case, namely an index that is unique
+    // none of whose columns are actually used.
+    public boolean semiJoinEquivalent(BaseScan scan) {
+        if (scan instanceof SingleIndexScan) {
+            SingleIndexScan indexScan = (SingleIndexScan)scan;
+            if (indexScan.isCovering() && isUnique(indexScan) && 
+                requiredColumns.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Does this scan return at most one row?
+    protected boolean isUnique(SingleIndexScan indexScan) {
+        List<ExpressionNode> equalityComparands = indexScan.getEqualityComparands();
+        if (equalityComparands == null)
+            return false;
+        int nequals = equalityComparands.size();
+        Index index = indexScan.getIndex();
+        if (index.isUnique() && (nequals >= index.getKeyColumns().size()))
+            return true;
+        if (index.isGroupIndex())
+            return false;
+        Set<Column> equalityColumns = new HashSet<Column>(nequals);
+        for (int i = 0; i < nequals; i++) {
+            ExpressionNode equalityExpr = indexScan.getColumns().get(i);
+            if (equalityExpr instanceof ColumnExpression) {
+                equalityColumns.add(((ColumnExpression)equalityExpr).getColumn());
+            }
+        }
+        TableIndex tableIndex = (TableIndex)index;
+        find_index:             // Find a unique index all of whose columns are equaled.
+        for (TableIndex otherIndex : tableIndex.getTable().getIndexes()) {
+            if (!otherIndex.isUnique()) continue;
+            for (IndexColumn otherColumn : otherIndex.getKeyColumns()) {
+                if (!equalityColumns.contains(otherColumn.getColumn()))
+                    continue find_index;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public TableGroupJoinTree install(BaseScan scan,
+                                      List<ConditionList> conditionSources,
+                                      boolean sortAllowed, boolean copy) {
+        TableGroupJoinTree result = tables;
+        // Need to have more than one copy of this tree in the final result.
+        if (copy) result = new TableGroupJoinTree(result.getRoot());
+        result.setScan(scan);
+        this.sortAllowed = sortAllowed;
         if (scan instanceof IndexScan) {
             IndexScan indexScan = (IndexScan)scan;
             if (indexScan instanceof MultiIndexIntersectScan) {
                 MultiIndexIntersectScan multiScan = (MultiIndexIntersectScan)indexScan;
                 installOrdering(indexScan, multiScan.getOrdering(), multiScan.getPeggedCount(), multiScan.getComparisonFields());
             }
-            installConditions(indexScan, conditionSources);
-            queryGoal.installOrderEffectiveness(indexScan.getOrderEffectiveness());
+            installConditions(indexScan.getConditions(), conditionSources);
+            if (sortAllowed)
+                queryGoal.installOrderEffectiveness(indexScan.getOrderEffectiveness());
         }
+        else {
+            if (scan instanceof GroupLoopScan) {
+                installConditions(((GroupLoopScan)scan).getJoinConditions(), 
+                                  conditionSources);
+            }
+            if (sortAllowed)
+                queryGoal.installOrderEffectiveness(IndexScan.OrderEffectiveness.NONE);
+        }
+        return result;
     }
 
     /** Change WHERE as a consequence of <code>index</code> being
      * used, using either the sources returned by {@link updateContext} or the
      * current ones if nothing has been changed.
      */
-    public void installConditions(IndexScan index, List<ConditionList> conditionSources) {
-        if (index.getConditions() != null) {
+    public void installConditions(Collection<? extends ConditionExpression> conditions,
+                                  List<ConditionList> conditionSources) {
+        if (conditions != null) {
             if (conditionSources == null)
                 conditionSources = this.conditionSources;
-            for (ConditionExpression condition : index.getConditions()) {
+            for (ConditionExpression condition : conditions) {
                 for (ConditionList conditionSource : conditionSources) {
                     if (conditionSource.remove(condition))
                         break;
@@ -1005,6 +1278,10 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             }
         }
     }
+
+    // Too-many-way UNION can consume too many resources (and overflow
+    // the stack explaining).
+    protected static int COLUMN_RANGE_MAX_SEGMENTS_DEFAULT = 16;
 
     // Get Range-expressible conditions for given column.
     protected ColumnRanges rangeForIndex(ExpressionNode expressionNode) {
@@ -1019,6 +1296,20 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                         if (oldRange != null)
                             range = ColumnRanges.andRanges(range, oldRange);
                         columnsToRanges.put(rangeColumn, range);
+                    }
+                }
+                if (!columnsToRanges.isEmpty()) {
+                    int maxSegments;
+                    String prop = queryGoal.getRulesContext().getProperty("columnRangeMaxSegments");
+                    if (prop != null)
+                        maxSegments = Integer.parseInt(prop);
+                    else
+                        maxSegments = COLUMN_RANGE_MAX_SEGMENTS_DEFAULT;
+                    Iterator<ColumnRanges> iter = columnsToRanges.values().iterator();
+                    while (iter.hasNext()) {
+                        if (iter.next().getSegments().size() > maxSegments) {
+                            iter.remove();
+                        }
                     }
                 }
             }
@@ -1070,10 +1361,12 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         }
 
         /** Opposite of {@link require}: note that we have a source for this column. */
-        public void have(ColumnExpression expr) {
+        public boolean have(ColumnExpression expr) {
             Set<ColumnExpression> entry = map.get(expr.getTable());
             if (entry != null)
-                entry.remove(expr);
+                return entry.remove(expr);
+            else
+                return false;
         }
 
         public void clear() {
@@ -1184,4 +1477,172 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                      (subqueryDepth == 0)));
         }
     }
+
+    /* Spatial indexes */
+
+    /** For now, a spatial index is a special kind of table index on
+     * Z-order of two coordinates.
+     */
+    public boolean spatialUsable(SingleIndexScan index, int nequals) {
+        // There are two cases to recognize:
+        // ORDER BY znear(column_lat, column_lon, start_lat, start_lon), which
+        // means fan out from that center in Z-order.
+        // WHERE distance_lat_lon(column_lat, column_lon, start_lat, start_lon) <= radius
+        
+        ExpressionNode nextColumn = index.getColumns().get(nequals);
+        if (!(nextColumn instanceof SpecialIndexExpression)) 
+            return false;       // Did not have enough equalities to get to spatial part.
+        SpecialIndexExpression indexExpression = (SpecialIndexExpression)nextColumn;
+        assert (indexExpression.getFunction() == SpecialIndexExpression.Function.Z_ORDER_LAT_LON);
+        List<ExpressionNode> operands = indexExpression.getOperands();
+
+        boolean matched = false;
+        for (ConditionExpression condition : conditions) {
+            if (condition instanceof ComparisonCondition) {
+                ComparisonCondition ccond = (ComparisonCondition)condition;
+                ExpressionNode centerRadius = null;
+                switch (ccond.getOperation()) {
+                case LE:
+                case LT:
+                    centerRadius = matchDistanceLatLon(operands,
+                                                       ccond.getLeft(), 
+                                                       ccond.getRight());
+                    break;
+                case GE:
+                case GT:
+                    centerRadius = matchDistanceLatLon(operands,
+                                                       ccond.getRight(), 
+                                                       ccond.getLeft());
+                    break;
+                }
+                if (centerRadius != null) {
+                    index.setLowComparand(centerRadius, true);
+                    index.setOrderEffectiveness(IndexScan.OrderEffectiveness.NONE);
+                    matched = true;
+                    break;
+                }
+            }
+        }
+        if (!matched) {
+            if (sortAllowed && (queryGoal.getOrdering() != null)) {
+                List<OrderByExpression> orderBy = queryGoal.getOrdering().getOrderBy();
+                if (orderBy.size() == 1) {
+                    ExpressionNode center = matchZnear(operands,
+                                                       orderBy.get(0));
+                    if (center != null) {
+                        index.setLowComparand(center, true);
+                        index.setOrderEffectiveness(IndexScan.OrderEffectiveness.SORTED);
+                        matched = true;
+                    }
+                }
+            }
+            if (!matched)
+                return false;
+        }
+
+        index.setCovering(determineCovering(index));
+        index.setCostEstimate(estimateCostSpatial(index));
+        return true;
+    }
+
+    private ExpressionNode matchDistanceLatLon(List<ExpressionNode> indexExpressions,
+                                               ExpressionNode left, ExpressionNode right) {
+        if (!((left instanceof FunctionExpression) &&
+              ((FunctionExpression)left).getFunction().equalsIgnoreCase("distance_lat_lon") &&
+              constantOrBound(right)))
+            return null;
+        ExpressionNode col1 = indexExpressions.get(0);
+        ExpressionNode col2 = indexExpressions.get(1);
+        List<ExpressionNode> operands = ((FunctionExpression)left).getOperands();
+        if (operands.size() != 4) return null; // TODO: Would error here be better?
+        ExpressionNode op1 = operands.get(0);
+        ExpressionNode op2 = operands.get(1);
+        ExpressionNode op3 = operands.get(2);
+        ExpressionNode op4 = operands.get(3);
+        if (right.getAkType() != AkType.DECIMAL) {
+            DataTypeDescriptor sqlType = 
+                new DataTypeDescriptor(TypeId.DECIMAL_ID, 10, 6, true, 12);
+            right = new CastExpression(right, sqlType, right.getSQLsource());
+            if (Types3Switch.ON) {
+                TInstance instance = TypesTranslation.toTInstance(sqlType);
+                right.setPreptimeValue(new TPreptimeValue(instance));
+            }
+        }
+        if (columnMatches(col1, op1) && columnMatches(col2, op2) &&
+            constantOrBound(op3) && constantOrBound(op4)) {
+            return new FunctionExpression("_center_radius",
+                                          Arrays.asList(op3, op4, right),
+                                          null, null);
+        }
+        if (columnMatches(col1, op3) && columnMatches(col2, op4) &&
+            constantOrBound(op1) && constantOrBound(op2)) {
+            return new FunctionExpression("_center_radius",
+                                          Arrays.asList(op1, op2, right),
+                                          null, null);
+        }
+        return null;
+    }
+
+    private ExpressionNode matchZnear(List<ExpressionNode> indexExpressions, 
+                                      OrderByExpression orderBy) {
+        if (!orderBy.isAscending()) return null;
+        ExpressionNode orderExpr = orderBy.getExpression();
+        if (!((orderExpr instanceof FunctionExpression) &&
+              ((FunctionExpression)orderExpr).getFunction().equalsIgnoreCase("znear")))
+            return null;
+        ExpressionNode col1 = indexExpressions.get(0);
+        ExpressionNode col2 = indexExpressions.get(1);
+        List<ExpressionNode> operands = ((FunctionExpression)orderExpr).getOperands();
+        if (operands.size() != 4) return null; // TODO: Would error here be better?
+        ExpressionNode op1 = operands.get(0);
+        ExpressionNode op2 = operands.get(1);
+        ExpressionNode op3 = operands.get(2);
+        ExpressionNode op4 = operands.get(3);
+        if (columnMatches(col1, op1) && columnMatches(col2, op2) &&
+            constantOrBound(op3) && constantOrBound(op4))
+            return new FunctionExpression("_center",
+                                          Arrays.asList(op3, op4),
+                                          null, null);
+        if (columnMatches(col1, op3) && columnMatches(col2, op4) &&
+            constantOrBound(op1) && constantOrBound(op2))
+            return new FunctionExpression("_center",
+                                          Arrays.asList(op1, op2),
+                                          null, null);
+        return null;
+    }
+
+    private static boolean columnMatches(ExpressionNode col, ExpressionNode op) {
+        if (op instanceof CastExpression)
+            op = ((CastExpression)op).getOperand();
+        return col.equals(op);
+    }
+
+    public CostEstimate estimateCostSpatial(SingleIndexScan index) {
+        PlanCostEstimator estimator = 
+            new PlanCostEstimator(queryGoal.getCostEstimator());
+        Set<TableSource> requiredTables = requiredColumns.getTables();
+
+        estimator.spatialIndex(index);
+
+        if (!index.isCovering()) {
+            estimator.flatten(tables, index.getLeafMostTable(), requiredTables);
+        }
+
+        Collection<ConditionExpression> unhandledConditions = new HashSet<ConditionExpression>(conditions);
+        if (index.getConditions() != null)
+            unhandledConditions.removeAll(index.getConditions());
+        if (!unhandledConditions.isEmpty()) {
+            estimator.select(unhandledConditions,
+                             selectivityConditions(unhandledConditions, requiredTables));
+        }
+
+        if (queryGoal.needSort(index.getOrderEffectiveness())) {
+            estimator.sort(queryGoal.sortFields());
+        }
+
+        estimator.setLimit(queryGoal.getLimit());
+
+        return estimator.getCostEstimate();
+    }
+
 }

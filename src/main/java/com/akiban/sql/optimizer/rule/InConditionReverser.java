@@ -32,7 +32,6 @@ import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
 
 import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.error.UnsupportedSQLException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +52,7 @@ public class InConditionReverser extends BaseRule
     public void apply(PlanContext planContext) {
         List<TopLevelSubqueryCondition> conds = 
             new ConditionFinder().find(planContext.getPlan());
+        Collections.reverse(conds); // Transform depth first.
         for (TopLevelSubqueryCondition cond : conds) {
             if (cond.subqueryCondition instanceof AnyCondition)
                 convert(cond.select, cond.selectElement, 
@@ -90,13 +90,10 @@ public class InConditionReverser extends BaseRule
         Project project = (Project)input;
         input = project.getInput();
         List<ExpressionNode> projectFields = project.getFields();
-        ConditionList joinConditions = new ConditionList(projectFields.size());
-        // TODO: Right now, always one condition.  For row constructor
-        // IN, will it be like this or an AND or even something with a
-        // ConditionList?
-        for (ExpressionNode cexpr : projectFields) {
-            joinConditions.add((ConditionExpression)cexpr);
-        }
+        if (projectFields.size() != 1)
+            return;
+        ConditionList joinConditions = new ConditionList();
+        addAnyConditions(joinConditions, (ConditionExpression)projectFields.get(0));
         if (!negated) {
             if (input instanceof ExpressionsSource) {
                 ExpressionsSource expressionsSource = (ExpressionsSource)input;
@@ -123,19 +120,45 @@ public class InConditionReverser extends BaseRule
                                         joinConditions, hasDistinct))
                 return;
         }
+        ConditionList insideJoinConditions = null;
         if (input instanceof Select) {
             Select inselect = (Select)input;
-            joinConditions.addAll(inselect.getConditions());
+            insideJoinConditions = inselect.getConditions();
             input = inselect.getInput();
         }
         if (input instanceof Joinable) {
+            if (insideJoinConditions != null) {
+                if (input instanceof JoinNode) {
+                    JoinNode insideJoin = (JoinNode)input;
+                    if (insideJoin.getJoinConditions() != null)
+                        insideJoin.getJoinConditions().addAll(insideJoinConditions);
+                    else
+                        insideJoin.setJoinConditions(insideJoinConditions);
+                }
+                else {
+                    joinConditions.addAll(insideJoinConditions);
+                }
+            }
             convertToSemiJoin(select, selectElement, selectInput, 
                               (Joinable)input, joinConditions, 
                               (negated) ? JoinType.ANTI : JoinType.SEMI);
             return;
         }
     }
-        
+
+    private void addAnyConditions(ConditionList joinConditions,
+                                  ConditionExpression condition) {
+        if (condition instanceof LogicalFunctionCondition) {
+            LogicalFunctionCondition lcond = (LogicalFunctionCondition)condition;
+            if ("and".equals(lcond.getFunction())) {
+                addAnyConditions(joinConditions, lcond.getLeft());
+                addAnyConditions(joinConditions, lcond.getRight());
+                return;
+            }
+        }
+        joinConditions.add(condition);
+    }
+
     protected boolean convertToSubquerySource(Select select, 
                                               ConditionExpression selectElement, AnyCondition any, 
                                               Joinable selectInput, PlanNode input,
@@ -210,9 +233,7 @@ public class InConditionReverser extends BaseRule
     }
 
     public static void didNotReverseSemiJoin(JoinNode join) {
-        assert ((join.getJoinType() == JoinType.SEMI) ||
-                (join.getJoinType() == JoinType.SEMI_INNER_ALREADY_DISTINCT) ||
-                (join.getJoinType() == JoinType.SEMI_INNER_IF_DISTINCT));
+        assert join.getJoinType().isSemi() : join.getJoinType();
         cleanUpSemiJoin(join, join.getRight());
         join.setJoinType(JoinType.SEMI);
     }

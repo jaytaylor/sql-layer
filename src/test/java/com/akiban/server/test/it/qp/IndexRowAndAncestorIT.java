@@ -49,14 +49,8 @@ import static org.junit.Assert.assertEquals;
 
 public class IndexRowAndAncestorIT extends OperatorITBase
 {
-    @Before
-    public void before()
-    {
-        createSchema();
-        loadDatabase();
-    }
-
-    private void createSchema()
+    @Override
+    protected void setupCreateSchema()
     {
         // A bizarre coih schema in which all FKs are PKs. I.e., all joins are 1:1.
         c = createTable(
@@ -92,7 +86,12 @@ public class IndexRowAndAncestorIT extends OperatorITBase
         // ch left/right indexes declare an hky column from an internal table (neither leafmost nor rootmost)
         idxCHLeft = createGroupIndex("c", "idxCHLeft", "c.cx, o.ox, i.ix, h.hx, o.id", Index.JoinType.LEFT);
         idxCHRight = createGroupIndex("c", "idxCHRight", "c.cx, o.ox, i.ix, h.hx, o.id", Index.JoinType.RIGHT);
-        schema = new com.akiban.qp.rowtype.Schema(rowDefCache().ais());
+    }
+
+    @Override
+    protected void setupPostCreateSchema()
+    {
+        schema = new com.akiban.qp.rowtype.Schema(ais());
         cRowType = schema.userTableRowType(userTable(c));
         oRowType = schema.userTableRowType(userTable(o));
         iRowType = schema.userTableRowType(userTable(i));
@@ -108,9 +107,10 @@ public class IndexRowAndAncestorIT extends OperatorITBase
         oOrdinal = ddl().getTable(session(), o).rowDef().getOrdinal();
         iOrdinal = ddl().getTable(session(), i).rowDef().getOrdinal();
         hOrdinal = ddl().getTable(session(), h).rowDef().getOrdinal();
-        group = groupTable(c);
+        group = group(c);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
+        loadDatabase();
     }
 
     private void loadDatabase()
@@ -677,7 +677,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
     private IndexRowType ohRightIndexRowType;
     private IndexRowType chLeftIndexRowType;
     private IndexRowType chRightIndexRowType;
-    private GroupTable group;
+    private Group group;
     private int cOrdinal;
     private int oOrdinal;
     private int iOrdinal;

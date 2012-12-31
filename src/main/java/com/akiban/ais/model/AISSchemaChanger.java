@@ -67,11 +67,6 @@ public class AISSchemaChanger implements Visitor
     }
 
     @Override
-    public void visitGroupTable(GroupTable groupTable)
-    {
-    }
-
-    @Override
     public void visitIndex(Index index)
     {
         IndexName indexName = index.getIndexName();

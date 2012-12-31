@@ -38,27 +38,22 @@ import java.util.HashMap;
 import java.util.TreeMap;
 
 class IndexIDsUnique implements AISValidation {
-
-    private Map<Group, Map<Integer, Index>> byGroup;
-    private AISValidationOutput failures; 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        byGroup = new HashMap<Group, Map<Integer, Index>>();
-        this.failures = output;
-        
+        Map<Group, Map<Integer, Index>> byGroup = new HashMap<Group, Map<Integer, Index>>();
         for (UserTable table : ais.getUserTables().values()) {
-            for (Index index : table.getIndexes()) {
-                checkIndexID(table.getGroup(), index);
+            for (Index index : table.getIndexesIncludingInternal()) {
+                checkIndexID(byGroup, table.getGroup(), index, output);
             }
         }
         for (Group group : ais.getGroups().values()) {
             for (Index index : group.getIndexes()) {
-                checkIndexID(group, index);
+                checkIndexID(byGroup, group, index, output);
             }
         }
     }
     
-    private void checkIndexID(Group group, Index index) {
+    private static void checkIndexID(Map<Group, Map<Integer, Index>> byGroup, Group group, Index index, AISValidationOutput failures) {
         Map<Integer, Index> forGroup = byGroup.get(group);
         if (forGroup == null) {
             forGroup = new TreeMap<Integer, Index>();

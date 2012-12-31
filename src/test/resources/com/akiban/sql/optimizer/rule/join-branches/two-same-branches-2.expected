@@ -7,4 +7,4 @@ SelectQuery@4267cbc
             AncestorLookup@383ee79b(orders -> [customers])
               SingleIndexScan@5e6a3582(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, =2012-01-01, rows = 1, cost = 904.378)
               TableSource@6c2e5c47(customers - TableGroup@52bb42eb(customers))
-            TableSource@57ac70cd(o1 - TableGroupJoin@259052ac(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+            TableSource@57ac70cd(o1 - TableGroupJoin@259052ac(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

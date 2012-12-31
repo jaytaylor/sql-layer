@@ -36,7 +36,6 @@ import java.util.List;
 
 import static com.akiban.server.test.it.keyupdate.Schema.*;
 import static junit.framework.Assert.*;
-import static junit.framework.Assert.assertEquals;
 
 // Like KeyUpdateIT, but with multi-column keys
 
@@ -54,12 +53,12 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
         updateRow(updatedItem, i_oid1, 0L, null);
         startMonitoringHKeyPropagation();
         dbUpdate(originalItem, updatedItem);
-        checkHKeyPropagation(2, 0);
+        checkHKeyPropagation(0, 0);
         checkDB();
         // Revert change
         startMonitoringHKeyPropagation();
         dbUpdate(updatedItem, originalItem);
-        checkHKeyPropagation(2, 0);
+        checkHKeyPropagation(0, 0);
         checkDB();
         checkInitialState();
     }
@@ -80,12 +79,12 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
         updateRow(updatedItem, i_iid2, 0L, order);
         startMonitoringHKeyPropagation();
         dbUpdate(originalItem, updatedItem);
-        checkHKeyPropagation(2, 0);
+        checkHKeyPropagation(0, 0);
         checkDB();
         // Revert change
         startMonitoringHKeyPropagation();
         dbUpdate(updatedItem, originalItem);
-        checkHKeyPropagation(2, 0);
+        checkHKeyPropagation(0, 0);
         checkDB();
         checkInitialState();
     }
@@ -409,12 +408,12 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
                                                   itemRD, 2222L, 2222L));
         startMonitoringHKeyPropagation();
         dbDelete(itemRow);
-        checkHKeyPropagation(1, 0);
+        checkHKeyPropagation(0, 0);
         checkDB();
         // Revert change
         startMonitoringHKeyPropagation();
         dbInsert(itemRow);
-        checkHKeyPropagation(1, 0);
+        checkHKeyPropagation(0, 0);
         checkDB();
         checkInitialState();
     }
@@ -595,12 +594,11 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
         i_oid2 = 2;
         i_ix = 0;
         // group
-        vendorRD = rowDefCache().getRowDef(vendorId);
-        customerRD = rowDefCache().getRowDef(customerId);
-        orderRD = rowDefCache().getRowDef(orderId);
-        itemRD = rowDefCache().getRowDef(itemId);
-        int groupRowDefId = customerRD.getGroupRowDefId();
-        groupRD = store().getRowDefCache().getRowDef(groupRowDefId);
+        vendorRD = getRowDef(vendorId);
+        customerRD = getRowDef(customerId);
+        orderRD = getRowDef(orderId);
+        itemRD = getRowDef(itemId);
+        group = customerRD.getGroup();
     }
 
     @Override
@@ -651,7 +649,8 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     protected List<List<Object>> orderWhenIndex(List<TreeRecord> records)
     {
         return indexFromRecords(records, orderRD, 
-                                o_when, 
+                                o_when,
+                                NULL_SEPARATOR_COLUMN,
                                 HKeyElement.from(1), HKeyElement.from(2),
                                 o_cid1, o_cid2,
                                 o_oid1, o_oid2);
@@ -771,7 +770,7 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
 
     private TestRow vendorRow(long vid, long vx)
     {
-        TestRow vendor = new TestRow(vendorId, store());
+        TestRow vendor = createTestRow(vendorId);
         vendor.put(v_vid1, vid);
         vendor.put(v_vid2, vid);
         vendor.put(v_vx, vx);
@@ -781,7 +780,7 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
 
     private TestRow customerRow(long cid, long vid, long cx)
     {
-        TestRow customer = new TestRow(customerId, store());
+        TestRow customer = createTestRow(customerId);
         customer.put(c_cid1, cid);
         customer.put(c_cid2, cid);
         customer.put(c_vid1, vid);
@@ -793,7 +792,7 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     
     private TestRow orderRow(TestRow customer, long oid, long cid, long ox, long priority, long when)
     {
-        TestRow order = new TestRow(orderId, store());
+        TestRow order = createTestRow(orderId);
         order.put(o_oid1, oid);
         order.put(o_oid2, oid);
         order.put(o_cid1, cid);
@@ -810,7 +809,7 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
     
     private TestRow itemRow(TestRow customer, TestRow order, long iid, long oid, long ix)
     {
-        TestRow item = new TestRow(itemId, store());
+        TestRow item = createTestRow(itemId);
         item.put(i_iid1, iid);
         item.put(i_iid2, iid);
         item.put(i_oid1, oid);

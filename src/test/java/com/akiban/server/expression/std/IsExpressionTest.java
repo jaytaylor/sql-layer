@@ -84,7 +84,7 @@ public class IsExpressionTest extends ComposedExpressionTestBase
     @Test
     public void test ()
     {
-        Expression top = composer.compose(Arrays.asList(arg));
+        Expression top = compose(composer, Arrays.asList(arg));
 
         assertTrue("Top is BOOL", top.valueType() == AkType.BOOL);
         assertEquals(expected, top.evaluation().eval().getBool());

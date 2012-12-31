@@ -5,5 +5,5 @@ SelectQuery@5376bbc6
         Select@78df166[addresses.state == MA]
           TableGroupJoinTree@77e36369(TableGroup@1bc53a00(customers), customers INNER addresses INNER orders - SingleIndexScan@7193bffc(Index(test.orders.order_date[IndexColumn(order_date)]), SORTED/reverse, rows = 10, cost = 13527.8))
             TableSource@7f8db517(customers - TableGroup@1bc53a00(customers))
-              TableSource@116fe2f1(addresses - TableGroupJoin@1b2173a5(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(customers))))
-              TableSource@306c3a6d(orders - TableGroupJoin@312f638d(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+              TableSource@116fe2f1(addresses - TableGroupJoin@1b2173a5(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(test.customers))))
+              TableSource@306c3a6d(orders - TableGroupJoin@312f638d(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))

@@ -40,8 +40,8 @@ public class TruncateStringExpression extends AbstractUnaryExpression
     }
 
     @Override
-    protected String name() {
-        return "TruncateString";
+    public String name() {
+        return "TRUNCATE_STRING";
     }
 
     @Override

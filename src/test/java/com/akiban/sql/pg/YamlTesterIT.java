@@ -27,12 +27,12 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.types.extract.ConverterTestUtils;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.Writer;
-import java.sql.Connection;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -124,7 +124,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 
     @Test
     public void testSelectEngineNoMatch() throws Exception {
-	testYaml("- Statement: !select-engine { foo: bar }");
+	testYamlFail("- Statement: !select-engine { foo: bar }"); // Empty statement
     }
 
     @Test
@@ -148,9 +148,9 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     @Test
     public void testSelectEngineKeyItOverAllPrecedenceNull() throws Exception {
 	testYaml("---\n" +
-                 "- Statement: !select-engine { it: null, all: oops }");
+                 "- Statement: !select-engine { it: select null, all: oops }");
 	testYaml("---\n" +
-                 "- Statement: !select-engine { all: oops, it: null }");
+                 "- Statement: !select-engine { all: oops, it: select null }");
 	testYamlFail("---\n" +
                      "- Statement: !select-engine { it: oops, all: null }");
 	testYamlFail("---\n" +
@@ -169,9 +169,9 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     @Test
     public void testSelectEngineKeyAllNull() throws Exception {
 	testYaml("---\n" +
-                 "- Statement: !select-engine { all: null, foo: oops }");
+                 "- Statement: !select-engine { all: select null, foo: oops }");
 	testYaml("---\n" +
-                 "- Statement: !select-engine { foo: oops, all: null }");
+                 "- Statement: !select-engine { foo: oops, all: select null }");
     }
 
     /* Test Include */
@@ -411,6 +411,12 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testCreateTableSuccess() throws Exception {
 	testYaml("- CreateTable: foo (int_field int)");
     }
+    
+    @Test
+    public void testCreateTableSelectEngine1() throws Exception {
+        testYaml("- CreateTable: !select-engine { all: 't (int_field int)', it: 't (int_field int)' } ");
+        testYaml("- CreateTable: !select-engine {it: 't2 (int_field int)', sys-mysql: 't2 (int_field int)', all: 't2 (int_field int)' } ");
+    }
 
     /* Test CreateTable error */
 
@@ -503,12 +509,12 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "- error:\n" +
 	    "  - 42000\n" +
 	    "  - |\n" +
-	    "    ERROR: Encountered \"<EOF>\" at line 1, column 21.\n" +
+	    "    ERROR: Encountered \"<EOF>\" at line 1, column 22.\n" +
 	    "    Was expecting one of:\n" +
 	    "        \")\" ...\n" +
 	    "        \",\" ...\n" +
 	    "        \n" +
-	    "      Position: 21");
+	    "      Position: 22");
     }
 
     @Test
@@ -523,12 +529,12 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 
     @Test
     public void testStatementNoValue() throws Exception {
-	testYaml("- Statement:");
+	testYamlFail("- Statement:"); // Empty statement
     }
 
     @Test
     public void testStatementNullValue() throws Exception {
-	testYaml("- Statement: null");
+	testYamlFail("- Statement: null"); // Empty statement
     }
 
     @Test
@@ -549,7 +555,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 
     @Test
     public void testStatementCreateTable() throws Exception {
-	testYamlFail("- Statement: create TABLE foo (int_field int)");
+	testYaml("- Statement: create TABLE foo (int_field int)");
     }
 
     @Test
@@ -566,7 +572,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 
     @Test
     public void testStatementSelectEngineNoMatch() throws Exception {
-	testYaml("- Statement: !select-engine { sys: MORP }");
+	testYamlFail("- Statement: !select-engine { sys: MORP }"); // Empty statement
     }
 
     /* Test Statement params */
@@ -1338,9 +1344,9 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "---\n" +
 	    "- Statement: SELECT * FROM c\n" +
 	    "- explain: |\n" +
-	    "    project([Field(0), Field(1)])\n" +
-	    "      Filter_Default(["+PostgresServerITBase.SCHEMA_NAME+".c])\n" +
-	    "        GroupScan_Default(full scan on _akiban_c)\n");
+	    "    Project_Default(c.cid, c.name)\n" +
+	    "      Filter_Default(c)\n" +
+	    "        GroupScan_Default(c)");
     }
 
     @Test
@@ -1787,9 +1793,10 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                  "- Statement: INSERT INTO t VALUES ('a')\n" +
                  "---\n" +
                  "- Statement: SELECT DATE(vc) FROM t\n" +
-                 "- warnings: [[55003, \"Can't convert source type `VARCHAR` to target `DATETIME`\"]]");
+                 "- warnings: !select-engine { newtypes: [[22007, \"Invalid date format: a\"]], all: [[55003,\"Can't convert source type `VARCHAR` to target `DATETIME`\"]] }");
     }
 
+    
     @Test
     public void testStatementWarningsDontMatchCount() throws Exception {
         testYamlFail("---\n" +
@@ -1814,7 +1821,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                  "---\n" +
                  "- Statement: SELECT DATE(vc) FROM t\n" +
                  "- warnings_count: 1\n" +
-                 "- warnings: [[55003, \"Can\'t convert source type `VARCHAR` to target `DATETIME`\"]]");
+                "- warnings: !select-engine { newtypes: [[22007, \"Invalid date format: a\"]], all: [[55003,\"Can't convert source type `VARCHAR` to target `DATETIME`\"]] }");
     }
 
     @Test
@@ -1825,7 +1832,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                  "- Statement: INSERT INTO t VALUES ('a')\n" +
                  "---\n" +
                  "- Statement: SELECT DATE(vc) FROM t\n" +
-                 "- warnings: [[!re '[0-9]+', !re \"Can't convert .*\"]]");
+                 "- warnings: [[!re '[0-9]+', !re \".*\"]]");
     }
 
     @Test
@@ -2113,9 +2120,8 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 		System.err.println(testMethod + ": ");
 	    }
 	}
-	Connection connection = getConnection();
 	try {
-	    new YamlTester(null, new StringReader(yaml), connection).test();
+	    new YamlTester(null, new StringReader(yaml), getConnection()).test();
 	} catch (Exception e) {
 	    if (DEBUG) {
 		System.err.println("Test failed:");
@@ -2146,9 +2152,8 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 		System.err.println(testMethod + ": ");
 	    }
 	}
-	Connection connection = getConnection();
         try {
-	    new YamlTester(null, new StringReader(yaml), connection).test();
+	    new YamlTester(null, new StringReader(yaml), getConnection()).test();
 	    if (DEBUG) {
 		System.err.println("Test failed: Expected exception");
 	    }
@@ -2170,7 +2175,4 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    out.close();
 	}
     }
-    
-    
-    
 }

@@ -1,0 +1,9 @@
+# bug901347: character set
+---
+- CreateTable: t (v1 varchar(32) CHARACTER SET latin1)
+---
+- Statement: INSERT INTO t VALUES ('abc');
+---
+- Statement: SELECT * FROM t
+- output: [['abc']]
+...

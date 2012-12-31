@@ -30,8 +30,6 @@ import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
 
-import java.util.List;
-
 public abstract class AbstractBinaryExpression extends AbstractCompositeExpression {
 
     protected final Expression left() {

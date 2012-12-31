@@ -30,30 +30,21 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.DuplicateTableIdException;
 
 class TableIDsUnique implements AISValidation {
-
-    private Map<Integer, Table> tableIDList;
-    private AISValidationOutput failures; 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        tableIDList = new TreeMap<Integer, Table>();
-        this.failures = output;
-        
+        final Map<Integer, Table> tableIDList= new TreeMap<Integer, Table>();
         for (UserTable table : ais.getUserTables().values()) {
-            checkTableID (table);
-        }
-        for (GroupTable table : ais.getGroupTables().values()) {
-            checkTableID (table);
+            checkTableID (output, tableIDList, table);
         }
     }
     
-    private void checkTableID (Table table) {
+    private void checkTableID (AISValidationOutput failures, Map<Integer, Table> tableIDList, Table table) {
         if (tableIDList.containsKey(table.getTableId())) {
             TableName name = tableIDList.get(table.getTableId()).getName();
             

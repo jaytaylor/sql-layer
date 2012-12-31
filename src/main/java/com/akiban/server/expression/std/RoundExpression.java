@@ -32,7 +32,6 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.expression.ExpressionComposer.NullTreating;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.TypesList;
@@ -70,12 +69,6 @@ public class RoundExpression extends AbstractCompositeExpression
         }
 
         @Override
-        public Expression compose(List<? extends Expression> arguments)
-        {
-            return new RoundExpression(arguments);
-        }
-
-        @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
             return new RoundExpression(arguments);
@@ -88,6 +81,11 @@ public class RoundExpression extends AbstractCompositeExpression
         }
         
     };
+
+    @Override
+    public String name() {
+        return "ROUND";
+    }
     
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
@@ -205,7 +203,7 @@ public class RoundExpression extends AbstractCompositeExpression
     
     private static AkType getTopType(List<? extends Expression> args)
     {
-        if (args.size() != 1 & args.size() != 2)
+        if (args.size() != 1 && args.size() != 2)
             throw new WrongExpressionArityException(2, args.size());
         return args.get(0).valueType();
     }
@@ -213,7 +211,7 @@ public class RoundExpression extends AbstractCompositeExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("ROUND");
+        sb.append(name());
     }
 
     @Override

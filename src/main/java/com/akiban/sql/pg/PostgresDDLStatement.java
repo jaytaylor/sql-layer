@@ -26,44 +26,31 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.SQLParserInternalException;
-import com.akiban.server.error.UnsupportedParametersException;
-import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.server.service.dxl.DXLFunctionsHook;
-import com.akiban.server.service.dxl.DXLReadWriteLockHook;
-import com.akiban.server.service.session.Session;
-import com.akiban.sql.aisddl.*;
-
-import com.akiban.sql.StandardException;
-
-import com.akiban.sql.parser.AlterTableNode;
-import com.akiban.sql.parser.CreateIndexNode;
-import com.akiban.sql.parser.CreateTableNode;
-import com.akiban.sql.parser.CreateSchemaNode;
-import com.akiban.sql.parser.DropIndexNode;
-import com.akiban.sql.parser.DropTableNode;
-import com.akiban.sql.parser.DropSchemaNode;
+import com.akiban.sql.aisddl.AISDDL;
 import com.akiban.sql.parser.DDLStatementNode;
-import com.akiban.sql.parser.DropViewNode;
-import com.akiban.sql.parser.NodeTypes;
-import com.akiban.sql.parser.RenameNode;
 
-import com.akiban.sql.optimizer.AISBinder;
-import com.akiban.sql.views.ViewDefinition;
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.Tap;
 
-import com.akiban.ais.model.AkibanInformationSchema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
+import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 /** SQL DDL statements. */
-public class PostgresDDLStatement implements PostgresStatement
+public class PostgresDDLStatement extends PostgresBaseStatement
 {
-    private DDLStatementNode ddl;
+    private static final Logger logger = LoggerFactory.getLogger(PostgresDDLStatement.class);
+    private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresDDLStatement: execute shared");
+    private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresDDLStatement: acquire shared lock");
 
-    public PostgresDDLStatement(DDLStatementNode ddl) {
+    private DDLStatementNode ddl;
+    private String sql;
+
+    public PostgresDDLStatement(DDLStatementNode ddl, String sql) {
+        this.sql = sql;
         this.ddl = ddl;
     }
 
@@ -89,63 +76,34 @@ public class PostgresDDLStatement implements PostgresStatement
     }
 
     @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        return TransactionAbortedMode.NOT_ALLOWED;
+    }
+
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.ALLOWED;
+    }
+
+    @Override
+    public boolean putInCache() {
+        return false;
+    }
+
+    @Override
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
-        AkibanInformationSchema ais = server.getAIS();
-        String schema = server.getDefaultSchemaName();
-        DDLFunctions ddlFunctions = server.getDXL().ddlFunctions();
-        Session session = server.getSession();
-        lock(session);
+        PostgresMessenger messenger = server.getMessenger();
+        boolean lockSuccess = false;
         try {
-            switch (ddl.getNodeType()) {
-            case NodeTypes.CREATE_SCHEMA_NODE:
-                SchemaDDL.createSchema(ais, schema, (CreateSchemaNode)ddl);
-                break;
-            case NodeTypes.DROP_SCHEMA_NODE:
-                SchemaDDL.dropSchema(ddlFunctions, session, (DropSchemaNode)ddl);
-                break;
-            case NodeTypes.CREATE_TABLE_NODE:
-                TableDDL.createTable(ddlFunctions, session, schema, (CreateTableNode)ddl);
-                break;
-            case NodeTypes.DROP_TABLE_NODE:
-                TableDDL.dropTable(ddlFunctions, session, schema, (DropTableNode)ddl);
-                break;
-            case NodeTypes.CREATE_VIEW_NODE:
-                // TODO: Need to store persistently in AIS (or its extension).
-                try {
-                    ((AISBinder)server.getAttribute("aisBinder")).addView(new ViewDefinition(ddl, server.getParser()));
-                } 
-                catch (StandardException ex) {
-                    throw new SQLParserInternalException(ex);
-                }
-                break;
-            case NodeTypes.DROP_VIEW_NODE:
-                ((AISBinder)server.getAttribute("aisBinder")).removeView(((DropViewNode)ddl).getObjectName());
-                break;
-            case NodeTypes.CREATE_INDEX_NODE:
-                IndexDDL.createIndex(ddlFunctions, session, schema, (CreateIndexNode)ddl);
-                break;
-            case NodeTypes.DROP_INDEX_NODE:
-                IndexDDL.dropIndex(ddlFunctions, session, schema, (DropIndexNode)ddl);
-                break;
-            case NodeTypes.ALTER_TABLE_NODE:
-                AlterTableDDL.alterTable(ddlFunctions, session, schema, (AlterTableNode)ddl);
-                break;
-            case NodeTypes.RENAME_NODE:
-                if (((RenameNode)ddl).getRenameType() == RenameNode.RenameType.INDEX) {
-                    IndexDDL.renameIndex(ddlFunctions, session, schema, (RenameNode)ddl);
-                } else if (((RenameNode)ddl).getRenameType() == RenameNode.RenameType.TABLE) {
-                    TableDDL.renameTable(ddlFunctions, session, schema, (RenameNode)ddl);
-                }
-            case NodeTypes.REVOKE_NODE:
-            default:
-                throw new UnsupportedSQLException (ddl.statementToString(), ddl);
-            }
-        } finally {
-            unlock(session);
+            lock(context, DXLFunction.UNSPECIFIED_DDL_WRITE);
+            lockSuccess = true;
+            AISDDL.execute(ddl, sql, context);
+        }
+        finally {
+            unlock(context, DXLFunction.UNSPECIFIED_DDL_WRITE, lockSuccess);
         }
         {        
-            PostgresMessenger messenger = server.getMessenger();
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
             messenger.writeString(ddl.statementToString());
             messenger.sendMessage();
@@ -153,13 +111,16 @@ public class PostgresDDLStatement implements PostgresStatement
         return 0;
     }
 
-    private void lock(Session session)
+    @Override
+    protected InOutTap executeTap()
     {
-        DXLReadWriteLockHook.only().hookFunctionIn(session, UNSPECIFIED_DDL_WRITE);
+        return EXECUTE_TAP;
     }
 
-    private void unlock(Session session)
+    @Override
+    protected InOutTap acquireLockTap()
     {
-        DXLReadWriteLockHook.only().hookFunctionFinally(session, UNSPECIFIED_DDL_WRITE, null);
+        return ACQUIRE_LOCK_TAP;
     }
+
 }

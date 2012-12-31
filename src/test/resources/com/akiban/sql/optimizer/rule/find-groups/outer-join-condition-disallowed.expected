@@ -5,6 +5,6 @@ SelectQuery@3899d56b
         JoinNode@3bdacb2b(LEFT/GROUP[items.oid == orders.oid, items.sku != customers.name])
           TableGroupJoinTree@78d2883b(TableGroup@45ee1775(customers), customers LEFT orders)
             TableSource@f2e5ce6(customers - TableGroup@45ee1775(customers))
-              TableSource@2cd507d3(orders - TableGroupJoin@12462631(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+              TableSource@2cd507d3(orders - TableGroupJoin@12462631(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(test.customers))))
           TableGroupJoinTree@3b756456(TableGroup@45ee1775(customers), items)
             TableSource@55f4c4a3(items - TableGroup@45ee1775(customers))

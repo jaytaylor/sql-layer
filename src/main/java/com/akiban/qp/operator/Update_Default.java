@@ -29,6 +29,8 @@ package com.akiban.qp.operator;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
+import com.akiban.server.explain.*;
+import com.akiban.server.explain.std.DUIOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.InOutTap;
@@ -36,6 +38,7 @@ import com.akiban.util.tap.Tap;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
 
@@ -93,13 +96,13 @@ import java.util.List;
 
 */
 
-class Update_Default extends OperatorExecutionBase implements UpdatePlannable {
+class Update_Default implements UpdatePlannable {
 
     // Object interface
 
     @Override
     public String toString() {
-        return String.format("%s(%s -> %s)", getClass().getSimpleName(), inputOperator, updateFunction);
+        return String.format("%s(%s -> %s)", getName(), inputOperator, updateFunction);
     }
 
     // constructor
@@ -115,33 +118,16 @@ class Update_Default extends OperatorExecutionBase implements UpdatePlannable {
 
     @Override
     public UpdateResult run(QueryContext context) {
-        context(context);
-        int seen = 0, modified = 0;
-        Cursor inputCursor = null;
-        UPDATE_TAP.in();
-        try {
-            inputCursor = inputOperator.cursor(context);
-            inputCursor.open();
-            Row oldRow;
-            while ((oldRow = inputCursor.next()) != null) {
-                checkQueryCancelation();
-                ++seen;
-                if (updateFunction.rowIsSelected(oldRow)) {
-                    Row newRow = updateFunction.evaluate(oldRow, context);
-                    adapter().updateRow(oldRow, newRow);
-                    ++modified;
-                }
-            }
-        } finally {
-            if (inputCursor != null) {
-                inputCursor.close();
-            }
-            UPDATE_TAP.out();
-        }
-        return new StandardUpdateResult(seen, modified);
+        return new Execution(context, inputOperator.cursor(context)).run();
     }
 
     // Plannable interface
+
+    @Override
+    public String getName()
+    {
+        return getClass().getSimpleName();
+    }
 
     @Override
     public List<Operator> getInputOperators() {
@@ -164,5 +150,55 @@ class Update_Default extends OperatorExecutionBase implements UpdatePlannable {
     private final Operator inputOperator;
     private final UpdateFunction updateFunction;
     private static final InOutTap UPDATE_TAP = Tap.createTimer("operator: Update_Default");
-    
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        Attributes atts = new Attributes();
+        if (context.hasExtraInfo(this))
+            atts.putAll(context.getExtraInfo(this).get()); 
+        atts.put(Label.EXTRA_TAG, PrimitiveExplainer.getInstance(updateFunction.toString()));
+        CompoundExplainer ex = new DUIOperatorExplainer(getName(), atts, inputOperator, context);
+        return ex;
+    }
+
+    // Inner classes
+
+    private class Execution extends ExecutionBase
+    {
+        public UpdateResult run()
+        {
+            boolean usePValues = updateFunction.usePValues();
+            int seen = 0, modified = 0;
+            UPDATE_TAP.in();
+            try {
+                input.open();
+                Row oldRow;
+                while ((oldRow = input.next()) != null) {
+                    checkQueryCancelation();
+                    ++seen;
+                    if (updateFunction.rowIsSelected(oldRow)) {
+                        Row newRow = updateFunction.evaluate(oldRow, context);
+                        context.checkConstraints(newRow, usePValues);
+                        adapter().updateRow(oldRow, newRow, usePValues);
+                        ++modified;
+                    }
+                }
+            } finally {
+                if (input != null) {
+                    input.close();
+                }
+                UPDATE_TAP.out();
+            }
+            return new StandardUpdateResult(seen, modified);
+        }
+
+        public Execution(QueryContext queryContext, Cursor input)
+        {
+            super(queryContext);
+            this.input = input;
+        }
+
+        private final Cursor input;
+    }
 }

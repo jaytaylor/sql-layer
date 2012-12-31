@@ -33,7 +33,6 @@ import java.io.StringWriter;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
@@ -88,12 +87,6 @@ public class AISPrinter
             public void visitUserTable(UserTable userTable) 
             {
                 output.println(userTable);
-            }
-
-            @Override
-            public void visitGroupTable(GroupTable groupTable) 
-            {
-                output.println(groupTable);
             }
 
             @Override

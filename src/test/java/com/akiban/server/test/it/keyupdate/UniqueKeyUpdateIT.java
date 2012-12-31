@@ -156,7 +156,7 @@ public final class UniqueKeyUpdateIT extends ITBase {
             assertEquals("scan[1][0]", 2L, scan.get(1).get(0));
 
             original = scan.get(0); // (1)
-            updated = new NiceRow(tableId, store());
+            updated = createNewRow(tableId);
             updated.put(0, scan.get(1).get(0)); // (2)
             original.put(1, 1L); // (1, 1)
             updated.put(1, 1L); // (2, 1)
@@ -307,5 +307,21 @@ public final class UniqueKeyUpdateIT extends ITBase {
                 createNewRow(tableId, 11L, null),
                 createNewRow(tableId, 12L, null)
         );
+    }
+
+    @Test
+    public void pkEnforcement() {
+        String tableName = "t1";
+        String schemaName = "s1";
+        int tableId;
+        try {
+            tableId = createTable(schemaName, tableName, "cid int not null primary key, cx int");
+            writeRows(
+                createNewRow(tableId, 1, 1),
+                createNewRow(tableId, 1, 2));
+            fail();
+        } catch (DuplicateKeyException e) {
+            // Expected
+        }
     }
 }

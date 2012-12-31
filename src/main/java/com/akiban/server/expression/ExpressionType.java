@@ -27,6 +27,7 @@
 package com.akiban.server.expression;
 
 import com.akiban.server.types.AkType;
+import com.akiban.sql.types.CharacterTypeAttributes;
 
 public interface ExpressionType {
     /**
@@ -50,4 +51,9 @@ public interface ExpressionType {
      * Others return <code>0</code>.
      */
     int getScale();
+
+    /**
+     * The character set and collation of the value or <code>null</code>.
+     */
+    CharacterTypeAttributes getCharacterAttributes();
 }

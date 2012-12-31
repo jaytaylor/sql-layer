@@ -17,3 +17,7 @@ select-6n: uniqueness from index and join condition
 select-7: EXISTS with unique constraint
 
 select-8: view
+
+select-9: VALUES single row
+
+select-9x: VALUES multiple rows (no change)

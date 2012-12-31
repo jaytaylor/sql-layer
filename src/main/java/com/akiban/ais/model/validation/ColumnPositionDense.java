@@ -37,10 +37,6 @@ class ColumnPositionDense implements AISValidation {
         for (Table table : ais.getUserTables().values()) {
             checkTable (table, output);
         }
-        
-        for (Table table : ais.getGroupTables().values()) {
-            checkTable (table, output);
-        }
     }
 
     private void checkTable (Table table, AISValidationOutput output) {

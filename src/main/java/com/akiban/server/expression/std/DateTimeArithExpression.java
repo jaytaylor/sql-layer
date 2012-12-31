@@ -79,7 +79,7 @@ public class DateTimeArithExpression extends ArithExpression
             return ExpressionTypes.TIME;
         }
 
-        private void adjustType (TypesList argumentTypes, int index) throws StandardException
+        protected void adjustType (TypesList argumentTypes, int index) throws StandardException
         {
             ExpressionType dateType = argumentTypes.get(index);
             switch (dateType.getType())
@@ -127,7 +127,7 @@ public class DateTimeArithExpression extends ArithExpression
             this.type = type;
         }
         @Override
-        protected Expression compose(Expression first, Expression second)
+        protected Expression compose(Expression first, Expression second, ExpressionType firstType, ExpressionType secondType, ExpressionType resultType)
         {
             if (ArithExpression.isNumeric(second.valueType()))
                 second = new NumericToIntervalMillis(second, type);
@@ -189,7 +189,7 @@ public class DateTimeArithExpression extends ArithExpression
         }
 
         @Override
-        protected Expression compose(Expression first, Expression second)
+        protected Expression compose(Expression first, Expression second, ExpressionType firstType, ExpressionType secondType, ExpressionType resultType)
         {
             return new DateTimeArithExpression(first, second, topT);
         }
@@ -205,9 +205,16 @@ public class DateTimeArithExpression extends ArithExpression
          * @return interval in day
          *
          */
-        public static long getDay (long interval)
+        public static long getDay (double interval)
         {
-            return interval / M_SECS_OF_DAY;
+            // due to leap seconds, interval might not be divisible by M_SECS_OF_DAY
+            // thus we take the ceiling (or floor if it's negative) of the result.
+            // The idea is that even if it's more than 1.00000009 day ==> 2 days.
+            double ret = interval / M_SECS_OF_DAY;
+            if (ret >= 0)
+                return (long)Math.ceil(ret);
+            else
+                return (long)Math.floor(ret);
         }
 
         /**
@@ -275,7 +282,7 @@ public class DateTimeArithExpression extends ArithExpression
     {
         super(left, ArithOps.MINUS, right, topT);        
     }
-
+    
     @Override
     protected InnerValueSource getValueSource (ArithOp op)
     {

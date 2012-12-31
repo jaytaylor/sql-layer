@@ -1,0 +1,4 @@
+PhysicalUpdate
+  Project_Default(items.iid - 1000, CURRENT_DATETIME())
+    Delete_Returning(FROM items)
+      ValuesScan_Default()

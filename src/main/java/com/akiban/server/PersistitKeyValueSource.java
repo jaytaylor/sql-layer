@@ -28,6 +28,7 @@ package com.akiban.server;
 
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
@@ -38,20 +39,32 @@ import com.persistit.Key;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public final class PersistitKeyValueSource implements ValueSource {
+import static java.lang.Math.min;
+
+public final class PersistitKeyValueSource extends ValueSource {
+
+    private AkCollator collator = null;
 
     // PersistitKeyValueSource interface
 
     public void attach(Key key, IndexColumn indexColumn) {
-        attach(key, indexColumn.getPosition(), indexColumn.getColumn().getType().akType());
+        attach(key,
+               indexColumn.getPosition(),
+               indexColumn.getColumn().getType().akType(),
+               indexColumn.getColumn().getCollator());
     }
 
     public void attach(Key key, int depth, AkType type) {
+        attach(key, depth, type, null);
+    }
+
+    public void attach(Key key, int depth, AkType type, AkCollator collator) {
         if (type == AkType.INTERVAL_MILLIS || type == AkType.INTERVAL_MONTH)
             throw new UnsupportedOperationException();
         this.key = key;
         this.depth = depth;
         this.akType = type;
+        this.collator = collator;
         clear();
     }
     
@@ -64,7 +77,14 @@ public final class PersistitKeyValueSource implements ValueSource {
 
     @Override
     public boolean isNull() {
-        return decode().isNull();
+        /*
+         * No need to decode the value to detect null
+         */
+        if (needsDecoding) {
+            key.indexTo(depth);
+            return key.isNull();
+        }
+        return valueHolder.isNull();
     }
 
     @Override
@@ -185,7 +205,41 @@ public final class PersistitKeyValueSource implements ValueSource {
     public AkType getConversionType() {
         return akType;
     }
-    
+
+    // PersistitKeyValueSource interface
+
+    public Key key()
+    {
+        return key;
+    }
+
+    public int depth()
+    {
+        return depth;
+    }
+
+    public int compare(PersistitKeyValueSource that)
+    {
+        that.key.indexTo(that.depth);
+        int thatPosition = that.key.getIndex();
+        that.key.indexTo(that.depth + 1);
+        int thatEnd = that.key.getIndex();
+        return compareOneKeySegment(that.key.getEncodedBytes(), thatPosition, thatEnd);
+    }
+
+    public int compare(AkCollator collator, String string)
+    {
+        assert collator != null;
+        Key thatKey = new Key(key);
+        thatKey.clear();
+        collator.append(thatKey, string);
+        thatKey.indexTo(0);
+        int thatPosition = thatKey.getIndex();
+        thatKey.indexTo(1);
+        int thatEnd = thatKey.getIndex();
+        return compareOneKeySegment(thatKey.getEncodedBytes(), thatPosition, thatEnd);
+    }
+
     // object interface
 
     @Override
@@ -203,25 +257,50 @@ public final class PersistitKeyValueSource implements ValueSource {
             }
             else
             {
-                switch (akType.underlyingType()) {
-                    case BOOLEAN_AKTYPE:valueHolder.putBool(key.decodeBoolean());       break;
-                    case LONG_AKTYPE:   valueHolder.putRaw(akType, key.decodeLong());   break;
-                    case FLOAT_AKTYPE:  valueHolder.putRaw(akType, key.decodeFloat());  break;
-                    case DOUBLE_AKTYPE: valueHolder.putRaw(akType, key.decodeDouble()); break;
-                    case OBJECT_AKTYPE: valueHolder.putRaw(akType, key.decode());       break;
-                    default: throw new UnsupportedOperationException(akType.name());
+                if (collator != null) {
+                    valueHolder.putRaw(akType, collator.decode(key));
+                } else {
+                    switch (akType.underlyingType()) {
+                        case BOOLEAN_AKTYPE:valueHolder.putBool(key.decodeBoolean());       break;
+                        case LONG_AKTYPE:   valueHolder.putRaw(akType, key.decodeLong());   break;
+                        case FLOAT_AKTYPE:  valueHolder.putRaw(akType, key.decodeFloat());  break;
+                        case DOUBLE_AKTYPE: valueHolder.putRaw(akType, key.decodeDouble()); break;
+                        case OBJECT_AKTYPE: valueHolder.putRaw(akType, key.decode());       break;
+                        default: throw new UnsupportedOperationException(akType.name());
+                    }
                 }
             }
             needsDecoding = false;
         }
         return valueHolder;
     }
-    
+
+    private int compareOneKeySegment(byte[] thatBytes, int thatPosition, int thatEnd)
+    {
+        this.key.indexTo(this.depth);
+        int thisPosition = this.key.getIndex();
+        this.key.indexTo(this.depth + 1);
+        int thisEnd = this.key.getIndex();
+        byte[] thisBytes = this.key.getEncodedBytes();
+        // Compare until end or mismatch
+        int thisN = thisEnd - thisPosition;
+        int thatN = thatEnd - thatPosition;
+        int n = min(thisN, thatN);
+        int end = thisPosition + n;
+        while (thisPosition < end) {
+            int c = thisBytes[thisPosition++] - thatBytes[thatPosition++];
+            if (c != 0) {
+                return c;
+            }
+        }
+        return thisN - thatN;
+    }
+
     private void clear() {
         needsDecoding = true;
     }
 
-    // object state
+    // Object state
 
     private Key key;
     private int depth;

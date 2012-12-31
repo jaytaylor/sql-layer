@@ -26,11 +26,13 @@
 
 package com.akiban.server.expression;
 
+import com.akiban.qp.exec.Plannable;
+import com.akiban.server.explain.Explainable;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.util.Shareable;
+import java.util.Map;
 
-public interface Expression {
+public interface Expression extends Explainable {
     boolean nullIsContaminating();
             
     /**
@@ -70,4 +72,11 @@ public interface Expression {
      */
     // TODO: Should this return ExpressionType? Or is the precision / scale not relevant?
     AkType valueType();
+    
+    /**
+     * 
+     * @return The name of the function/arithmetic operator implemented by this
+     * expression.
+     */
+    String name ();
 }

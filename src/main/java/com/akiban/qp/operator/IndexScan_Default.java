@@ -26,14 +26,21 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.explain.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 /**
 
@@ -175,13 +182,16 @@ class IndexScan_Default extends Operator
     public IndexScan_Default(IndexRowType indexType,
                              IndexKeyRange indexKeyRange,
                              API.Ordering ordering,
-                             IndexScanSelector scanSelector)
+                             IndexScanSelector scanSelector,
+                             boolean usePValues)
     {
         ArgumentValidation.notNull("indexType", indexType);
+        this.indexType = indexType;
         this.index = indexType.index();
         this.ordering = ordering;
         this.indexKeyRange = indexKeyRange;
         this.scanSelector = scanSelector;
+        this.usePValues = usePValues;
     }
 
     // Class state
@@ -192,10 +202,87 @@ class IndexScan_Default extends Operator
 
     // Object state
 
+    private final IndexRowType indexType;
     private final Index index;
     private final API.Ordering ordering;
     private final IndexKeyRange indexKeyRange;
     private final IndexScanSelector scanSelector;
+    private final boolean usePValues;
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        Attributes atts = new Attributes();
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
+        atts.put(Label.INDEX, indexType.getExplainer(context));
+        for (IndexColumn indexColumn : index.getAllColumns()) {
+            Column column = indexColumn.getColumn();
+            atts.put(Label.TABLE_SCHEMA, PrimitiveExplainer.getInstance(column.getTable().getName().getSchemaName()));
+            atts.put(Label.TABLE_NAME, PrimitiveExplainer.getInstance(column.getTable().getName().getTableName()));
+            atts.put(Label.COLUMN_NAME, PrimitiveExplainer.getInstance(column.getName()));
+        }
+        if (index.isGroupIndex())
+            atts.put(Label.INDEX_KIND, PrimitiveExplainer.getInstance("GROUP"));
+        if (!indexKeyRange.unbounded()) {
+            List<Explainer> loExprs = null, hiExprs = null;
+            if (indexKeyRange.lo() != null) {
+                loExprs = indexKeyRange.lo().getExplainer(context).get().get(Label.EXPRESSIONS);
+            }
+            if (indexKeyRange.hi() != null) {
+                hiExprs = indexKeyRange.hi().getExplainer(context).get().get(Label.EXPRESSIONS);
+            }
+            if (indexKeyRange.spatial()) {
+                if (index.isGroupIndex()) {
+                    atts.remove(Label.INDEX_KIND);
+                    atts.put(Label.INDEX_KIND, PrimitiveExplainer.getInstance("SPATIAL GROUP"));
+                } else {
+                    atts.put(Label.INDEX_KIND, PrimitiveExplainer.getInstance("SPATIAL"));
+                }
+                int nequals = indexKeyRange.boundColumns() - index.dimensions();
+                if (nequals > 0) {
+                    for (int i = 0; i < nequals; i++) {
+                        atts.put(Label.EQUAL_COMPARAND, loExprs.get(i));
+                    }
+                    loExprs = loExprs.subList(nequals, loExprs.size());
+                    if (hiExprs != null) {
+                        hiExprs = hiExprs.subList(nequals, hiExprs.size());
+                    }
+                }
+                atts.put(Label.LOW_COMPARAND, loExprs);
+                if (hiExprs != null) {
+                    atts.put(Label.HIGH_COMPARAND, hiExprs);
+                }
+            }
+            else {
+                int boundColumns = indexKeyRange.boundColumns();
+                for (int i = 0; i < boundColumns; i++) {
+                    boolean equals = ((i < boundColumns-1) ||
+                                      ((loExprs != null) && (hiExprs != null) &&
+                                       indexKeyRange.loInclusive() && indexKeyRange.hiInclusive() &&
+                                       loExprs.get(i).equals(hiExprs.get(i))));
+                    if (equals) {
+                        atts.put(Label.EQUAL_COMPARAND, loExprs.get(i));
+                    }
+                    else {
+                        if (loExprs != null) {
+                            atts.put(Label.LOW_COMPARAND, loExprs.get(i));
+                            atts.put(Label.LOW_COMPARAND, PrimitiveExplainer.getInstance(indexKeyRange.loInclusive()));
+                        }
+                        if (hiExprs != null) {
+                            atts.put(Label.HIGH_COMPARAND, hiExprs.get(i));
+                            atts.put(Label.HIGH_COMPARAND, PrimitiveExplainer.getInstance(indexKeyRange.hiInclusive()));
+                        }
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < ordering.sortColumns(); i++) {
+            atts.put(Label.ORDERING, PrimitiveExplainer.getInstance(ordering.ascending(i) ? "ASC" : "DESC"));
+        }
+        if (context.hasExtraInfo(this))
+            atts.putAll(context.getExtraInfo(this).get()); 
+        return new CompoundExplainer(Type.SCAN_OPERATOR, atts);
+    }
 
     // Inner classes
 
@@ -234,6 +321,12 @@ class IndexScan_Default extends Operator
         }
 
         @Override
+        public void jump(Row row, ColumnSelector columnSelector)
+        {
+            cursor.jump(row, columnSelector);
+        }
+
+        @Override
         public void close()
         {
             cursor.close();
@@ -268,7 +361,8 @@ class IndexScan_Default extends Operator
         Execution(QueryContext context)
         {
             super(context);
-            this.cursor = adapter().newIndexCursor(context, index, indexKeyRange, ordering, scanSelector);
+            UserTable table = (UserTable)index.rootMostTable();
+            this.cursor = adapter(table).newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, usePValues);
         }
 
         // Object state

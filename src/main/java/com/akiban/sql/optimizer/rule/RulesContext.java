@@ -26,8 +26,6 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.sql.optimizer.plan.PlanContext;
-
 import org.slf4j.Logger;
 
 import java.util.List;
@@ -54,6 +52,10 @@ public class RulesContext
     protected void initDone() {
         assert (properties != null) : "initProperties() not called";
         assert (rules != null) : "initRules() not called";
+    }
+
+    protected boolean rulesAre(List<? extends BaseRule> expected) {
+        return rules == expected;
     }
 
     /** Make context with these rules. Just for testing. */

@@ -26,7 +26,7 @@
 
 package com.akiban.ais.model;
 
-import com.akiban.qp.operator.memoryadapter.MemoryTableFactory;
+import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.*;
@@ -43,7 +43,17 @@ public class UserTable extends Table
         return userTable;
     }
 
-    public UserTable(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
+    /**
+     * Create an independent copy of an existing UserTable.
+     * @param ais Destination AkibanInformationSchema.
+     * @param userTable UserTable to copy.
+     * @return The new copy of the UserTable.
+     */
+    public static UserTable create(AkibanInformationSchema ais, UserTable userTable) {
+        return create(ais, userTable.tableName.getSchemaName(), userTable.tableName.getTableName(), userTable.getTableId());
+    }
+
+    private UserTable(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
     {
         super(ais, schemaName, tableName, tableId);
     }
@@ -62,6 +72,20 @@ public class UserTable extends Table
             assert primaryKey == null;
             primaryKey = new PrimaryKey(index);
         }
+    }
+
+    @Override
+    public void dropColumns() {
+        columnsStale = true;
+        super.dropColumns();
+    }
+
+    @Override
+    public void removeIndexes(Collection<TableIndex> indexesToDrop) {
+        if((primaryKey != null) && indexesToDrop.contains(primaryKey.getIndex())) {
+            primaryKey = null;
+        }
+        super.removeIndexes(indexesToDrop);
     }
     
     /**
@@ -129,6 +153,16 @@ public class UserTable extends Table
         candidateChildJoins.add(childJoin);
     }
 
+    public void removeCandidateParentJoin(Join parentJoin)
+    {
+        candidateParentJoins.remove(parentJoin);
+    }
+
+    public void removeCandidateChildJoin(Join childJoin)
+    {
+        candidateChildJoins.remove(childJoin);
+    }
+
     public List<Join> getCandidateParentJoins()
     {
         return Collections.unmodifiableList(candidateParentJoins);
@@ -176,6 +210,17 @@ public class UserTable extends Table
             }
         }
         return autoIncrementColumn;
+    }
+    
+    public Column getIdentityColumn() 
+    {
+        Column identity = null;
+        for (Column column : getColumns()) {
+            if (column.getIdentityGenerator() != null) {
+                identity = column;
+            }
+        }
+        return identity;
     }
 
     @Override
@@ -247,6 +292,23 @@ public class UserTable extends Table
         }
     }
 
+    public void traverseTableAndDescendants(Visitor visitor) {
+        List<UserTable> remainingTables = new ArrayList<UserTable>();
+        List<Join> remainingJoins = new ArrayList<Join>();
+        remainingTables.add(this);
+        remainingJoins.addAll(getCandidateChildJoins());
+        // Add before visit in-case visitor changes group or joins
+        while(!remainingJoins.isEmpty()) {
+            Join join = remainingJoins.remove(remainingJoins.size() - 1);
+            UserTable child = join.getChild();
+            remainingTables.add(child);
+            remainingJoins.addAll(child.getCandidateChildJoins());
+        }
+        for(UserTable table : remainingTables) {
+            visitor.visitUserTable(table);
+        }
+    }
+
     public void setInitialAutoIncrementValue(Long initialAutoIncrementValue)
     {
         for (Column column : getColumns()) {
@@ -273,7 +335,7 @@ public class UserTable extends Table
         return primaryKey;
     }
 
-    public synchronized void endTable()
+    public synchronized void endTable(NameGenerator generator)
     {
         // Creates a PK for a pk-less table.
         if (primaryKey == null) {
@@ -285,38 +347,30 @@ public class UserTable extends Table
                 }
             }
             if (primaryKeyIndex == null) {
-                primaryKeyIndex = createAkibanPrimaryKeyIndex();
+                final int rootID;
+                if(group == null) {
+                    rootID = getTableId();
+                } else {
+                    assert group.getRoot() != null : "Null root: " + group;
+                    rootID = group.getRoot().getTableId();
+                }
+                primaryKeyIndex = createAkibanPrimaryKeyIndex(generator.generateIndexID(rootID));
             }
             assert primaryKeyIndex != null : this;
             primaryKey = new PrimaryKey(primaryKeyIndex);
         }
     }
 
-    public synchronized Integer getDepth()
+    public Integer getDepth()
     {
         if (depth == null && getGroup() != null) {
-            depth = getParentJoin() == null ? 0 : getParentJoin().getParent().getDepth() + 1;
-        }
-        return depth;
-    }
-
-    /**
-     * Returns a list of ancestors, starting from the root and ending with this table
-     * @return ancestors, including this table and starting from the root
-     */
-    public synchronized List<UserTable> getAncestors() {
-        if (ancestors == null) {
-            synchronized (lazyEvaluationLock) {
-                if (ancestors == null) {
-                    ancestors = new ArrayList<UserTable>(getDepth());
-                    for (UserTable table = this; table != null; table = table.parentTable()) {
-                        ancestors.add(table);
-                    }
-                    Collections.reverse(ancestors);
+            synchronized (this) {
+                if (depth == null && getGroup() != null) {
+                    depth = getParentJoin() == null ? 0 : getParentJoin().getParent().getDepth() + 1;
                 }
             }
         }
-        return ancestors;
+        return depth;
     }
 
     public Boolean isRoot()
@@ -350,22 +404,6 @@ public class UserTable extends Table
         return hKey;
     }
 
-    // An HKey in terms of group table columns, for a branch of a group, terminating with this user table.
-    public HKey branchHKey()
-    {
-        if (branchHKey == null) {
-            // Construct an hkey in which group columns replace user columns.
-            branchHKey = new HKey(this);
-            for (HKeySegment userHKeySegment : hKey().segments()) {
-                HKeySegment branchHKeySegment = branchHKey.addSegment(userHKeySegment.table());
-                for (HKeyColumn userHKeyColumn : userHKeySegment.columns()) {
-                    branchHKeySegment.addColumn(userHKeyColumn.column().getGroupColumn());
-                }
-            }
-        }
-        return branchHKey;
-    }
-
     public List<Column> allHKeyColumns()
     {
         assert getGroup() != null;
@@ -377,6 +415,7 @@ public class UserTable extends Table
                     allHKeyColumns.add(hKeyColumn.column());
                 }
             }
+            allHKeyColumns = Collections.unmodifiableList(allHKeyColumns);
         }
         return allHKeyColumns;
     }
@@ -487,7 +526,7 @@ public class UserTable extends Table
         }
     }
 
-    private TableIndex createAkibanPrimaryKeyIndex()
+    private TableIndex createAkibanPrimaryKeyIndex(int indexID)
     {
         // Create a column for a PK
         Column pkColumn = Column.create(this,
@@ -495,22 +534,13 @@ public class UserTable extends Table
                                         getColumns().size(),
                                         Types.BIGINT); // adds column to table
         pkColumn.setNullable(false);
-        // Create an index for the PK column
-        // Starting index should be id 1
-        int maxIndexId = 0;
-        for (Index index : getIndexes()) {
-            if (index.getIndexId() > maxIndexId) {
-                maxIndexId = index.getIndexId();
-            }
-        }
         TableIndex pkIndex = TableIndex.create(ais,
                                                this,
                                                Index.PRIMARY_KEY_CONSTRAINT,
-                                               maxIndexId + 1,
+                                               indexID,
                                                true,
                                                Index.PRIMARY_KEY_CONSTRAINT);
-        IndexColumn pkIndexColumn = new IndexColumn(pkIndex, pkColumn, 0, true, null);
-        pkIndex.addColumn(pkIndexColumn);
+        IndexColumn.create(pkIndex, pkColumn, 0, true, null);
         return pkIndex;
     }
 
@@ -525,6 +555,14 @@ public class UserTable extends Table
             }
         }
         return declaredIndexes;
+    }
+
+    public PendingOSC getPendingOSC() {
+        return pendingOSC;
+    }
+
+    public void setPendingOSC(PendingOSC pendingOSC) {
+        this.pendingOSC = pendingOSC;
     }
 
     // State
@@ -543,6 +581,7 @@ public class UserTable extends Table
     private volatile List<UserTable> ancestors;
     private MemoryTableFactory tableFactory;
     private Integer version;
+    private PendingOSC pendingOSC;
 
     // consts
 

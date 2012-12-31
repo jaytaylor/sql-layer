@@ -26,35 +26,31 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.persistitadapter.sort.Sorter;
-import com.akiban.qp.row.Row;
+import com.akiban.qp.persistitadapter.TempVolume;
+import com.akiban.qp.persistitadapter.indexcursor.Sorter;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.std.LiteralExpression;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.types.AkType;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
 
-import static com.akiban.server.expression.std.Expressions.field;
 import static com.akiban.qp.operator.API.*;
+import static com.akiban.server.test.ExpressionGenerators.field;
 import static junit.framework.Assert.assertTrue;
 
 public class Sort_TreeIT extends OperatorITBase
 {
-    @Before
-    public void before()
-    {
-        super.before();
+    @Override
+    protected void setupPostCreateSchema() {
+        super.setupPostCreateSchema();
         NewRow[] dbRows = new NewRow[]{
             createNewRow(customer, 1L, "northbridge"),
             createNewRow(customer, 2L, "foundation"),
@@ -156,9 +152,9 @@ public class Sort_TreeIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_Tree(
                 filter_Default(
@@ -191,9 +187,9 @@ public class Sort_TreeIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_Tree(
                 filter_Default(
@@ -226,9 +222,9 @@ public class Sort_TreeIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_Tree(
                 filter_Default(
@@ -261,9 +257,9 @@ public class Sort_TreeIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_Tree(
                 filter_Default(
@@ -296,9 +292,9 @@ public class Sort_TreeIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_Tree(
                 filter_Default(
@@ -331,9 +327,9 @@ public class Sort_TreeIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_Tree(
                 filter_Default(
@@ -366,9 +362,9 @@ public class Sort_TreeIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_Tree(
                 filter_Default(
@@ -401,9 +397,9 @@ public class Sort_TreeIT extends OperatorITBase
             JoinType.INNER_JOIN);
         RowType oiType = flattenOI.rowType();
         // flattenOI columns: oid, cid, salesman, iid, oid
-        Expression cidField = field(oiType, 1);
-        Expression oidField = field(oiType, 0);
-        Expression iidField = field(oiType, 3);
+        ExpressionGenerator cidField = field(oiType, 1);
+        ExpressionGenerator oidField = field(oiType, 0);
+        ExpressionGenerator iidField = field(oiType, 3);
         Operator plan =
             sort_Tree(
                 filter_Default(
@@ -430,8 +426,8 @@ public class Sort_TreeIT extends OperatorITBase
     @Test
     public void testReusedSort()
     {
-        Expression iidField = field(itemRowType, 0);
-        Expression oidField = field(itemRowType, 1);
+        ExpressionGenerator iidField = field(itemRowType, 0);
+        ExpressionGenerator oidField = field(itemRowType, 1);
         Operator plan =
             sort_Tree(
                 sort_Tree(
@@ -455,8 +451,8 @@ public class Sort_TreeIT extends OperatorITBase
             row(itemRowType, 111L, 11L),
         };
         for (int i = 0; i < 10; i++) {
-            Session.Key<Sorter.TempVolumeState> tempVolumeStateKey = Session.Key.named("TEMP_VOLUME_STATE");
-            Sorter.TempVolumeState tempVolumeState = session().get(tempVolumeStateKey);
+            Session.Key<TempVolume.TempVolumeState> tempVolumeStateKey = Session.Key.named("TEMP_VOLUME_STATE");
+            TempVolume.TempVolumeState tempVolumeState = session().get(tempVolumeStateKey);
             assertTrue(tempVolumeState == null);
             compareRows(expected, cursor(plan, queryContext));
             tempVolumeState = session().get(tempVolumeStateKey);
@@ -552,16 +548,10 @@ public class Sort_TreeIT extends OperatorITBase
         Ordering ordering = API.ordering();
         int i = 0;
         while (i < objects.length) {
-            Expression expression = (Expression) objects[i++];
+            ExpressionGenerator expression = (ExpressionGenerator) objects[i++];
             Boolean ascending = (Boolean) objects[i++];
             ordering.append(expression, ascending);
         }
         return ordering;
-    }
-
-    private Row intRow(RowType rowType, int x)
-    {
-        return new ExpressionRow(rowType, queryContext,
-                                 Arrays.asList((Expression) new LiteralExpression(AkType.INT, x)));
     }
 }

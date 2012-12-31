@@ -26,40 +26,47 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Type;
+import com.akiban.server.explain.std.ExpressionExplainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.TypesList;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.sql.StandardException;
-import com.akiban.server.expression.TypesList;
 import java.util.List;
+import java.util.Map;
 
 
 public class LikeExpression extends AbstractCompositeExpression
 {
     @Scalar("ilike")
-    public static final ExpressionComposer ILIKE_COMPOSER = new InnerComposer(true);
+    public static final ExpressionComposer ILIKE_COMPOSER = new InnerComposer(Boolean.TRUE);
 
     @Scalar("blike")
-    public static final ExpressionComposer BLIKE_COMPOSER = new InnerComposer(false);
+    public static final ExpressionComposer BLIKE_COMPOSER = new InnerComposer(Boolean.FALSE);
 
     @Scalar("like")
-    public static final ExpressionComposer LIKE_COMPOSER = ILIKE_COMPOSER;
+    public static final ExpressionComposer LIKE_COMPOSER = new InnerComposer(null);
 
 
     private static final class InnerComposer implements ExpressionComposer
     {
-        private final boolean case_insensitive;
-        public InnerComposer (boolean mode)
+        private final Boolean case_insensitive;
+        public InnerComposer (Boolean mode)
         {
             this.case_insensitive = mode;
         }
@@ -67,13 +74,10 @@ public class LikeExpression extends AbstractCompositeExpression
         @Override
         public String toString ()
         {
-            return "LIKE " + (case_insensitive ? "IN" : "" ) + "SENSITIVE";
-        }
-
-        @Override
-        public Expression compose(List<? extends Expression> arguments)
-        {
-            return new LikeExpression(arguments, case_insensitive);
+            if (case_insensitive == null)
+                return "LIKE";
+            else
+                return "LIKE " + (case_insensitive ? "IN" : "" ) + "SENSITIVE";
         }
 
         @Override
@@ -90,7 +94,20 @@ public class LikeExpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported in LIKE yet.");
+            Boolean case_insensitive = this.case_insensitive;
+            if (case_insensitive == null) {
+                // Figure out case sensitivity from collation.
+                if (typesList.size() >= 3) {
+                    AkCollator collator = ExpressionTypes.operationCollation(typesList.get(0), typesList.get(1));
+                    if (collator != null) {
+                        case_insensitive = !collator.isCaseSensitive();
+                    }
+                }
+                if (case_insensitive == null) {
+                    case_insensitive = false;
+                }
+            }
+            return new LikeExpression(arguments, case_insensitive);
         }
 
         @Override
@@ -153,7 +170,7 @@ public class LikeExpression extends AbstractCompositeExpression
            
             try
             {
-                return BoolValueSource.of(matcher.match(left));
+                return BoolValueSource.of(matcher.match(left, 1) >= 0);
             }
             catch (InvalidOperationException e)
             {
@@ -184,13 +201,23 @@ public class LikeExpression extends AbstractCompositeExpression
     {
         return true;
     }
+    
+    @Override
+    public String name ()
+    {
+        return "LIKE_" + (ignore_case? "IN" : "") + "SENSITIVE";
+    }
+    
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        return new ExpressionExplainer(Type.BINARY_OPERATOR, name(), context, children());
+    }
 
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("LIKE_");
-        sb.append(ignore_case? "IN" : "");
-        sb.append("SENSITIVE");
+        sb.append(name());
     }
 
     @Override

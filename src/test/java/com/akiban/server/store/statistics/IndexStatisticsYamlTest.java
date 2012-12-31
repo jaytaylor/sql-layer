@@ -28,6 +28,7 @@ package com.akiban.server.store.statistics;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.server.collation.TestKeyCreator;
 
 import static com.akiban.sql.TestBase.*;
 import static com.akiban.sql.optimizer.OptimizerTestBase.*;
@@ -57,7 +58,7 @@ public class IndexStatisticsYamlTest
 
     @Test
     public void testLoadDump() throws Exception {
-        IndexStatisticsYamlLoader loader = new IndexStatisticsYamlLoader(ais, "test");
+        IndexStatisticsYamlLoader loader = new IndexStatisticsYamlLoader(ais, "test", new TestKeyCreator());
         Map<Index,IndexStatistics> stats = loader.load(YAML_FILE);
         File tempFile = File.createTempFile("stats", ".yaml");
         StringWriter tempWriter = new StringWriter();

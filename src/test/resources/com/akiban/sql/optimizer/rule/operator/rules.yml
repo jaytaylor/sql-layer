@@ -1,6 +1,7 @@
 - com.akiban.sql.optimizer.rule.ASTStatementLoader
 - com.akiban.sql.optimizer.rule.AggregateMapper
 #- com.akiban.sql.optimizer.rule.AggregateToDistinctMapper
+- com.akiban.sql.optimizer.rule.ConditionalOverloadAndTInstanceResolver
 #- com.akiban.sql.optimizer.rule.ConstantFolder
 #- com.akiban.sql.optimizer.rule.OuterJoinPromoter
 - com.akiban.sql.optimizer.rule.GroupJoinFinder
@@ -13,4 +14,5 @@
 #- com.akiban.sql.optimizer.rule.SortSplitter
 - com.akiban.sql.optimizer.rule.MapFolder
 #- com.akiban.sql.optimizer.rule.ExpressionCompactor
+#- com.akiban.sql.optimizer.rule.HalloweenRecognizer
 - com.akiban.sql.optimizer.rule.OperatorAssembler

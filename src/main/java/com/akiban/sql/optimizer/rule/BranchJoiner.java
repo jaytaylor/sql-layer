@@ -114,6 +114,9 @@ public class BranchJoiner extends BaseRule
                 return indexScan;
             requiredTables = indexScan.getRequiredTables();
         }
+        else if (scan instanceof GroupLoopScan) {
+            requiredTables = ((GroupLoopScan)scan).getRequiredTables();
+        }
         markBranches(tableGroup, requiredTables);
         top:
         if (scan instanceof IndexScan) {
@@ -151,6 +154,26 @@ public class BranchJoiner extends BaseRule
             List<TableSource> tables = new ArrayList<TableSource>();
             groupScan.setTables(tables);
             scan = fillBranch(scan, tables, rootTable, rootTable, rootTable);
+        }
+        else if (scan instanceof GroupLoopScan) {
+            GroupLoopScan groupLoop = (GroupLoopScan)scan;
+            TableSource outsideTable = groupLoop.getOutsideTable();
+            TableSource insideTable = groupLoop.getInsideTable();
+            if (groupLoop.isInsideParent()) {
+                TableGroupJoinNode parent = rootTable.findTable(groupLoop.getInsideTable());
+                assert (parent != null) : groupLoop;
+                List<TableSource> ancestors = new ArrayList<TableSource>();
+                pendingTableSources(parent, rootTable, ancestors);
+                scan = new AncestorLookup(scan, outsideTable, ancestors);
+                scan = flatten(scan, parent, rootTable);
+                scan = fillGroupLoopBranches(scan, parent, rootTable);
+            }
+            else {
+                assert (groupLoop.getInsideTable() == rootTable.getTable());
+                List<TableSource> tables = new ArrayList<TableSource>();
+                scan = new BranchLookup(scan, outsideTable.getTable(), insideTable.getTable(), tables);
+                scan = fillBranch(scan, tables, rootTable, rootTable, rootTable);
+            }
         }
         else {
             throw new AkibanInternalException("Unknown TableGroupJoinTree scan");
@@ -267,15 +290,18 @@ public class BranchJoiner extends BaseRule
         List<TableSource> tableSources = new ArrayList<TableSource>();
         List<TableNode> tableNodes = new ArrayList<TableNode>();
         List<JoinType> joinTypes = new ArrayList<JoinType>();
+        JoinType joinType = null;
         ConditionList joinConditions = new ConditionList(0);
         TableGroupJoinNode table = leafTable;
         while (true) {
             if (isRequired(table)) {
                 assert !isPending(table);
+                if (joinType != null) 
+                    joinTypes.add(joinType);
                 tableSources.add(table.getTable());
                 tableNodes.add(table.getTable().getTable());
                 if (table != rootTable) {
-                    joinTypes.add(table.getParentJoinType());
+                    joinType = table.getParentJoinType();
                     if (table.getJoinConditions() != null) {
                         for (ConditionExpression joinCondition : table.getJoinConditions()) {
                             if (joinCondition.getImplementation() != ConditionExpression.Implementation.GROUP_JOIN) {
@@ -332,6 +358,28 @@ public class BranchJoiner extends BaseRule
         return input;
     }
 
+    /** Given ancestors from <code>parentTable</code> through
+     * <code>rootTable</code> whose child is in another group tree,
+     * fill out branches.
+     */
+    protected PlanNode fillGroupLoopBranches(PlanNode input, 
+                                             TableGroupJoinNode parentTable,
+                                             TableGroupJoinNode rootTable) {
+        TableGroupJoinNode leafTable = parentTable;
+        if (isParent(parentTable)) {
+            // Also has children within the group tree. Take one for
+            // in-stream branch.
+            leafTable = parentTable.getFirstChild();
+            List<TableSource> tables = new ArrayList<TableSource>();
+            input = new BranchLookup(input,
+                                     parentTable.getTable().getTable(),
+                                     leafTable.getTable().getTable(), 
+                                     tables);
+            input = fillBranch(input, tables, leafTable, parentTable, leafTable);
+        }
+        return fillSideBranches(input, leafTable, rootTable);
+    }
+    
     /** Pick a branch beneath <code>rootTable</code> that is pending,
      * gather it into <code>tableSources</code> and return its leaf.
      */

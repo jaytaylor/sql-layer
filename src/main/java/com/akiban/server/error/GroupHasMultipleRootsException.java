@@ -29,10 +29,10 @@ package com.akiban.server.error;
 import com.akiban.ais.model.TableName;
 
 public class GroupHasMultipleRootsException extends InvalidOperationException {
-    //Group `%s` has multiple root tables: `%s`.`%s` and `%s`.`%s`
-    public GroupHasMultipleRootsException (String groupName, TableName table1, TableName table2) {
-        super(ErrorCode.GROUP_MULTIPLE_ROOTS, groupName, 
-                table1.getSchemaName(), table1.getTableName(),
-                table2.getSchemaName(), table2.getTableName());
+    public GroupHasMultipleRootsException (TableName groupName, TableName table1, TableName table2) {
+        super(ErrorCode.GROUP_MULTIPLE_ROOTS,
+              groupName.getSchemaName(), groupName.getTableName(),
+              table1.getSchemaName(), table1.getTableName(),
+              table2.getSchemaName(), table2.getTableName());
     }
 }

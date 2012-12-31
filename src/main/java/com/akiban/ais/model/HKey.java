@@ -27,6 +27,7 @@
 package com.akiban.ais.model;
 
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.pvalue.PUnderlying;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -129,20 +130,22 @@ public class HKey
                     columnTypes = new AkType[columnList.size()];
                     int c = 0;
                     for (Column column : columnList) {
+                        Type type = column.getType();
                         columns[c] = column;
-                        columnTypes[c] = column.getType().akType();
+                        columnTypes[c] = type.akType();
                         c++;
                     }
                     // keyDepth
                     keyDepth = new int[segments.size() + 1];
                     int hKeySegments = segments.size();
-                    for (int hKeySegment = 0; hKeySegment <= hKeySegments; hKeySegment++) {
+                    for (int hKeySegment = 0; hKeySegment < hKeySegments; hKeySegment++) {
                         this.keyDepth[hKeySegment] =
                             hKeySegment == 0
-                            ? 0
+                            ? 1
                             // + 1 to account for the ordinal
                             : keyDepth[hKeySegment - 1] + 1 + segments.get(hKeySegment - 1).columns().size();
                     }
+                    keyDepth[hKeySegments] = columns.length + hKeySegments;
                 }
             }
         }

@@ -27,6 +27,7 @@
 package com.akiban.server.rowdata;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.ais.model.aisb2.NewUserTableBuilder;
@@ -181,9 +182,10 @@ public final class RowDataFormatTest {
         tableMaker.make(tableBuilder);
         tableBuilder.pk("pkid");
         AkibanInformationSchema ais = aisBuilder.ais();
-        ais.getTable(SCHEMA, TABLE).setTableId(1);
-        RowDefCache rdc = new SchemaFactory().rowDefCache(ais);
-        rowDef = rdc.getRowDef(SCHEMA, TABLE);
+        UserTable table = ais.getUserTable(SCHEMA, TABLE);
+        table.setTableId(1);
+        new SchemaFactory().buildRowDefs(ais);
+        rowDef = ais.getTable(SCHEMA, TABLE).rowDef();
         this.fields = Arrays.copyOf(fields, fields.length);
         this.bytesString = bytesString;
     }

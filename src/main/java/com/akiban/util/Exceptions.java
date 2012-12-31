@@ -26,9 +26,85 @@
 
 package com.akiban.util;
 
+import com.google.common.io.Closeables;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.List;
 
 public final class Exceptions {
+
+    private static final Logger logger = LoggerFactory.getLogger(Exceptions.class);
+
+    @SuppressWarnings("unused")
+    public static void dumpTraceToFile(String dir, String include, String exclude) {
+        StackTraceElement[] trace = Thread.currentThread().getStackTrace();
+        if (!match(trace, include, exclude))
+            return;
+        String traceString = Strings.join(trace);
+        FileWriter writer = null;
+        try {
+            File tmpFile = File.createTempFile("trace-", ".txt", new File(dir));
+            writer = new FileWriter(tmpFile);
+            writer.write(traceString);
+        }
+        catch (IOException e) {
+            logger.error("while outputting to " + dir, e);
+        }
+        finally {
+            Closeables.closeQuietly(writer);
+        }
+    }
+
+    /**
+     * <p>Returns whether this trace matches a pair of include and exclude prefixes. An element is included if the
+     * include string is null or empty, or if the element's full class name starts with the include. An element is
+     * excluded if the exclude string is not null or empty, and the full class name starts with the exclude string.
+     * The full trace matches if any elements are included and none are excluded.</p>
+     *
+     * <p>The include and exclude strings are split on spaces before being fed here.</p>
+     *
+     * <p>For instance, if <tt>include="com.akiban.foo", exclude="com.akiban.foo.bar"</tt> then
+     * <tt>com.akiban.foo.*</tt> classes are included, but <tt>com.akiban.foo.bar.*</tt> classes are excluded.</p>
+     * @param trace the trace elements
+     * @param includes the include prefix
+     * @param excludes the exclude prefix
+     * @return whether the trace matches
+     */
+    private static boolean match(StackTraceElement[] trace, String includes, String excludes) {
+        String[] includeSplit = (includes != null && includes.length() > 0) ? includes.split("\\s+") : EMPTY_STRINGS;
+        String[] excludeSplit = (excludes != null && excludes.length() > 0) ? excludes.split("\\s+") : EMPTY_STRINGS;
+
+        // if neither includes nor excludes were given, then we know this matches
+        if (includeSplit == EMPTY_STRINGS && excludeSplit == EMPTY_STRINGS)
+            return true;
+
+        boolean anyIncluded = (includeSplit != EMPTY_STRINGS); // if no includes given, all are included
+        for (StackTraceElement element : trace) {
+            String className = element.getClassName();
+            for (String exclude : excludeSplit)
+                if (className.startsWith(exclude))
+                    return false;
+            if (!anyIncluded) {
+                for (String include : includeSplit) {
+                    if (className.startsWith(include)) {
+                        anyIncluded = true;
+                        break;
+                    }
+                }
+            }
+            // if we got any matches, and there's no exclude, then we know we matched
+            if (anyIncluded && (excludeSplit == EMPTY_STRINGS))
+                return true;
+        }
+        return anyIncluded;
+    }
+
+    private static final String[] EMPTY_STRINGS = new String[0];
+
     /**
      * Throws the given throwable, downcast, if it's of the appropriate type
      *

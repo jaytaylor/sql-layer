@@ -26,8 +26,10 @@
 
 package com.akiban.sql.optimizer;
 
-import com.akiban.server.service.functions.FunctionsRegistry;
+
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
+import com.akiban.server.t3expressions.T3RegistryServiceImpl;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.TestBase;
 
@@ -38,14 +40,13 @@ import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
+import com.akiban.sql.optimizer.rule.ExplainPlanContext;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
-import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 import com.akiban.sql.optimizer.rule.cost.TestCostEstimator;
 
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.NamedParameterizedRunner.TestParameters;
 import com.akiban.junit.Parameterization;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -123,10 +124,13 @@ public class OperatorCompilerTest extends NamedParamsTestBase
             compiler.initAIS(ais, OptimizerTestBase.DEFAULT_SCHEMA);
             compiler.initParser(parser);
             compiler.initFunctionsRegistry(new FunctionsRegistryImpl());
-            if (Boolean.parseBoolean(properties.getProperty("cbo", "true")))
-                compiler.initCostEstimator(new TestCostEstimator(ais, compiler.getSchema(), statsFile, false, properties));
-            else
-                compiler.initCostEstimator(null);
+            boolean usePValues = Types3Switch.ON;
+            if (usePValues) {
+                T3RegistryServiceImpl t3Registry = new T3RegistryServiceImpl();
+                t3Registry.start();
+                compiler.initT3Registry(t3Registry);
+            }
+            compiler.initCostEstimator(new TestCostEstimator(ais, compiler.getSchema(), statsFile, false, properties), usePValues);
             compiler.initDone();
             return compiler;
         }
@@ -134,6 +138,9 @@ public class OperatorCompilerTest extends NamedParamsTestBase
         @Override
         public PhysicalResultColumn getResultColumn(ResultField field) {
             String type = String.valueOf(field.getSQLtype());
+            if (field.getTInstance() != null) {
+                type = String.valueOf(field.getTInstance());
+            }
             Column column = field.getAIScolumn();
             if (column != null) {
                 type = column.getTypeDescription() +
@@ -163,6 +170,11 @@ public class OperatorCompilerTest extends NamedParamsTestBase
                     File propertiesFile = new File(subdir, args[0] + ".properties");
                     if (!propertiesFile.exists())
                         propertiesFile = compilerPropertiesFile;
+                    // If the is a t3expected file, this 
+                    File t3Results = new File (subdir, args[0] + ".t3expected");
+                    if (t3Results.exists() && Types3Switch.ON) {
+                        args[2] = fileContents(t3Results);
+                    }
                     Object[] nargs = new Object[args.length+3];
                     nargs[0] = subdir.getName() + "/" + args[0];
                     nargs[1] = schemaFile;
@@ -193,14 +205,14 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     @Override
     public String generateResult() throws Exception {
         StatementNode stmt = parser.parseStatement(sql);
+        ExplainPlanContext context = new ExplainPlanContext(compiler);
         BasePlannable result = compiler.compile((DMLStatementNode)stmt, 
-                                                parser.getParameterList());
-        return result.toString();
+                                                parser.getParameterList(), context);
+        return result.explainToString(context.getExplainContext(), OptimizerTestBase.DEFAULT_SCHEMA);
     }
 
     @Override
     public void checkResult(String result) throws IOException{
         assertEqualsWithoutHashes(caseName, expected, result);
     }
-
 }

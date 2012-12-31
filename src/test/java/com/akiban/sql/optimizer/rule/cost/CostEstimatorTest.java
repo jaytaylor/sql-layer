@@ -30,7 +30,6 @@ import com.akiban.sql.optimizer.OptimizerTestBase;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
-import static com.akiban.sql.optimizer.rule.cost.CostEstimator.*;
 
 import com.akiban.ais.model.*;
 import com.akiban.qp.rowtype.Schema;

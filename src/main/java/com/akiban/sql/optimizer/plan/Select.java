@@ -26,8 +26,6 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import java.util.List;
-
 /** Apply a conjunction of Boolean expressions to the input.
  */
 public class Select extends BasePlanWithInput

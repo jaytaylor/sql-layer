@@ -38,4 +38,5 @@ public interface UpdateFunction extends SelectionFunction {
      * (ie, if {@linkplain #rowIsSelected(Row)} returned {@code false})
      */
     Row evaluate(Row original, QueryContext context);
+    boolean usePValues();
 }

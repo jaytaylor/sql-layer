@@ -37,11 +37,12 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.test.ExpressionGenerators;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.LiteralExpression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.pvalue.PValueSource;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -52,14 +53,14 @@ import java.util.List;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.akiban.server.test.ExpressionGenerators.field;
 import static junit.framework.Assert.assertEquals;
 
 public class IndexScanIT extends OperatorITBase
 {
-    @Before
-    public void before()
-    {
-        super.before();
+    @Override
+    protected void setupPostCreateSchema() {
+        super.setupPostCreateSchema();
         use(db);
     }
 
@@ -121,8 +122,8 @@ public class IndexScanIT extends OperatorITBase
         IndexBound hiBound = new IndexBound(row(itemOidIidIndexRowType, 20, 20), new SetColumnSelector(0, 1));
         IndexKeyRange keyRange = IndexKeyRange.bounded(itemOidIidIndexRowType, loBound, false, hiBound, false);
         API.Ordering ordering = new API.Ordering();
-        ordering.append(Expressions.field(itemOidIidIndexRowType, 0), true);
-        ordering.append(Expressions.field(itemOidIidIndexRowType, 1), false);
+        ordering.append(ExpressionGenerators.field(itemOidIidIndexRowType, 0), true);
+        ordering.append(ExpressionGenerators.field(itemOidIidIndexRowType, 1), false);
         Operator indexScan = indexScan_Default(itemOidIidIndexRowType, keyRange, ordering);
         String[] expected = new String[]{};
         compareRenderedHKeys(expected, cursor(indexScan, queryContext));
@@ -158,7 +159,7 @@ public class IndexScanIT extends OperatorITBase
     }
 
     // The next three tests are light tests of unbounded multi-column index scanning, including mixed-mode.
-    // A more serious test of index scans with mixed-mode and bounds is in IndexScanComplexIT
+    // More serious tests of index scans with mixed-mode and bounds are in IndexScanBoundedIT
 
     @Test
     public void testFullScan()
@@ -200,8 +201,8 @@ public class IndexScanIT extends OperatorITBase
     public void testMixedMode()
     {
         API.Ordering ordering = new API.Ordering();
-        ordering.append(new FieldExpression(itemOidIidIndexRowType, 0), true);
-        ordering.append(new FieldExpression(itemOidIidIndexRowType, 1), false);
+        ordering.append(field(itemOidIidIndexRowType, 0), true);
+        ordering.append(field(itemOidIidIndexRowType, 1), false);
         Operator indexScan = indexScan_Default(itemOidIidIndexRowType,
                                                IndexKeyRange.unbounded(itemOidIidIndexRowType),
                                                ordering,
@@ -573,14 +574,26 @@ public class IndexScanIT extends OperatorITBase
         Cursor cursor = cursor(indexScan, queryContext);
         cursor.open();
         Row row = cursor.next();
-        // Get and checking each field should work
-        assertEquals(11L, row.eval(0).getInt());
-        assertEquals(111L, row.eval(1).getInt());
-        // Getting all value sources and then using them should also work
-        ValueSource v0 = row.eval(0);
-        ValueSource v1 = row.eval(1);
-        assertEquals(11L, v0.getInt());
-        assertEquals(111L, v1.getInt());
+        if (usingPValues()) {
+            // Get and checking each field should work
+            assertEquals(11, row.pvalue(0).getInt32());
+            assertEquals(111, row.pvalue(1).getInt32());
+            // Getting all value sources and then using them should also work
+            PValueSource v0 = row.pvalue(0);
+            PValueSource v1 = row.pvalue(1);
+            assertEquals(11, v0.getInt32());
+            assertEquals(111, v1.getInt32());
+        }
+        else {
+            // Get and checking each field should work
+            assertEquals(Long.valueOf(11L), getLong(row, 0));
+            assertEquals(Long.valueOf(111L), getLong(row, 1));
+            // Getting all value sources and then using them should also work
+            ValueSource v0 = row.eval(0);
+            ValueSource v1 = row.eval(1);
+            assertEquals(11L, v0.getInt());
+            assertEquals(111L, v1.getInt());
+        }
     }
 
     // For use by this class
@@ -598,19 +611,5 @@ public class IndexScanIT extends OperatorITBase
     private String hkey(int cid, int oid, int iid)
     {
         return String.format("{1,(long)%s,2,(long)%s,3,(long)%s}", cid, oid, iid);
-    }
-
-    private Row intRow(RowType rowType, int x)
-    {
-        return new ExpressionRow(rowType, queryContext,
-                                 Arrays.asList((Expression) new LiteralExpression(AkType.INT, x)));
-    }
-
-    private Collection<? extends BindableRow> bindableExpressions(Row... rows) {
-        List<BindableRow> result = new ArrayList<BindableRow>();
-        for (Row row : rows) {
-            result.add(BindableRow.of(row));
-        }
-        return result;
     }
 }

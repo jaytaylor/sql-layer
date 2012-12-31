@@ -27,30 +27,37 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.ais.model.*;
+import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
+import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.row.RowValuesHolder;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.*;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.util.ValueHolder;
-import com.persistit.Transaction;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
+import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.persistit.exception.PersistitException;
 import com.akiban.util.Strings;
 import org.junit.After;
 import org.junit.Before;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -62,56 +69,65 @@ import static org.junit.Assert.fail;
 
 public class OperatorITBase extends ITBase
 {
-    private Transaction transaction;
-
     @Before
-    public final void before_beginTransaction() throws PersistitException {
-        transaction = treeService().getTransaction(session());
-        transaction.begin();
+    public void before_beginTransaction() throws PersistitException {
+        txnService().beginTransaction(session());
     }
 
     @After
-    public final void after_endTransaction() throws PersistitException {
-        try {
-            transaction.commit();
-        }
-        finally {
-            transaction.end();
-        }
+    public void after_endTransaction() throws PersistitException {
+        txnService().commitTransaction(session());
     }
 
     @Before
-    public void before() throws InvalidOperationException
-    {
+    public final void runAllSetup() {
+        // DDL cannot be performed in an open transaction, close (and reopen) if one exists
+        boolean wasActive = txnService().isTransactionActive(session());
+        if(wasActive)
+            txnService().commitTransaction(session());
+        try {
+            setupCreateSchema();
+        } finally {
+            if(wasActive)
+                txnService().beginTransaction(session());
+        }
+        setupPostCreateSchema();
+    }
+
+    protected void setupCreateSchema() {
         customer = createTable(
-            "schema", "customer",
-            "cid int not null primary key",
-            "name varchar(20)");
+                "schema", "customer",
+                "cid int not null primary key",
+                "name varchar(20)");
         createIndex("schema", "customer", "name", "name");
         order = createTable(
-            "schema", "order",
-            "oid int not null primary key",
-            "cid int",
-            "salesman varchar(20)",
-            "grouping foreign key (cid) references customer(cid)");
+                "schema", "order",
+                "oid int not null primary key",
+                "cid int",
+                "salesman varchar(20)",
+                "grouping foreign key (cid) references customer(cid)");
         createIndex("schema", "order", "salesman", "salesman");
         createIndex("schema", "order", "cid", "cid");
         item = createTable(
-            "schema", "item",
-            "iid int not null primary key",
-            "oid int",
-            "grouping foreign key (oid) references \"order\"(oid)");
+                "schema", "item",
+                "iid int not null primary key",
+                "oid int",
+                "grouping foreign key (oid) references \"order\"(oid)");
         createIndex("schema", "item", "oid", "oid");
         createIndex("schema", "item", "oid2", "oid", "iid");
         address = createTable(
-            "schema", "address",
-            "aid int not null primary key",
-            "cid int",
-            "address varchar(100)",
-            "grouping foreign key (cid) references customer(cid)");
+                "schema", "address",
+                "aid int not null primary key",
+                "cid int",
+                "address varchar(100)",
+                "grouping foreign key (cid) references customer(cid)");
         createIndex("schema", "address", "cid", "cid");
         createIndex("schema", "address", "address", "address");
-        schema = new Schema(rowDefCache().ais());
+        createGroupIndex("customer", "cname_ioid", "customer.name,item.oid", Index.JoinType.LEFT);
+    }
+
+    protected void setupPostCreateSchema() {
+        schema = new Schema(ais());
         customerRowType = schema.userTableRowType(userTable(customer));
         orderRowType = schema.userTableRowType(userTable(order));
         itemRowType = schema.userTableRowType(userTable(item));
@@ -126,7 +142,8 @@ public class OperatorITBase extends ITBase
         customerCidIndexRowType = indexType(customer, "cid");
         addressCidIndexRowType = indexType(address, "cid");
         addressAddressIndexRowType = indexType(address, "address");
-        coi = groupTable(customer);
+        customerNameItemOidIndexRowType = groupIndexType(Index.JoinType.LEFT, "customer.name", "item.oid");
+        coi = group(customer);
         customerOrdinal =  ddl().getTable(session(),  customer).rowDef().getOrdinal();
         orderOrdinal =  ddl().getTable(session(),  order).rowDef().getOrdinal();
         itemOrdinal = ddl().getTable(session(),  item).rowDef().getOrdinal();
@@ -149,7 +166,7 @@ public class OperatorITBase extends ITBase
         queryContext = queryContext(adapter);
     }
 
-    protected void testCursorLifecycle(Operator scan, CursorLifecycleTestCase testCase)
+    protected void testCursorLifecycle(Operator scan, CursorLifecycleTestCase testCase, AkCollator ... collators)
     {
         Cursor cursor = cursor(scan, queryContext);
         // Check idle following creation
@@ -171,7 +188,7 @@ public class OperatorITBase extends ITBase
         if (testCase.hKeyComparison()) {
             compareRenderedHKeys(testCase.firstExpectedHKeys(), cursor);
         } else {
-            compareRows(testCase.firstExpectedRows(), cursor);
+            compareRows(testCase.firstExpectedRows(), cursor, collators);
         }
         assertTrue(cursor.isIdle());
         // Check close during iteration.
@@ -190,7 +207,7 @@ public class OperatorITBase extends ITBase
         if (testCase.hKeyComparison()) {
             compareRenderedHKeys(testCase.secondExpectedHKeys(), cursor);
         } else {
-            compareRows(testCase.secondExpectedRows(), cursor);
+            compareRows(testCase.secondExpectedRows(), cursor, collators);
         }
         assertTrue(cursor.isIdle());
         // Check close of idle cursor is permitted
@@ -231,29 +248,45 @@ public class OperatorITBase extends ITBase
         writeRows(db);
     }
 
-    protected GroupTable groupTable(int userTableId)
+    protected Group group(int userTableId)
     {
-        RowDef userTableRowDef = rowDefCache().rowDef(userTableId);
-        return userTableRowDef.table().getGroup().getGroupTable();
+        return getRowDef(userTableId).table().getGroup();
     }
 
     protected UserTable userTable(int userTableId)
     {
-        RowDef userTableRowDef = rowDefCache().rowDef(userTableId);
+        RowDef userTableRowDef = getRowDef(userTableId);
         return userTableRowDef.userTable();
     }
 
-    protected IndexRowType indexType(int userTableId, String... searchIndexColumnNamesArray)
+    protected IndexRowType indexType(int userTableId, String... columnNamesArray)
     {
+        List<String> searchIndexColumnNames = Arrays.asList(columnNamesArray);
         UserTable userTable = userTable(userTableId);
         for (Index index : userTable.getIndexesIncludingInternal()) {
             List<String> indexColumnNames = new ArrayList<String>();
             for (IndexColumn indexColumn : index.getKeyColumns()) {
                 indexColumnNames.add(indexColumn.getColumn().getName());
             }
-            List<String> searchIndexColumnNames = Arrays.asList(searchIndexColumnNamesArray);
             if (searchIndexColumnNames.equals(indexColumnNames)) {
                 return schema.userTableRowType(userTable(userTableId)).indexRowType(index);
+            }
+        }
+        return null;
+    }
+
+    protected IndexRowType groupIndexType(TableName groupName, String... columnNamesArray)
+    {
+        List<String> searchIndexColumnNames = Arrays.asList(columnNamesArray);
+        for (Index index : ais().getGroup(groupName).getIndexes()) {
+            List<String> indexColumnNames = new ArrayList<String>();
+            for (IndexColumn indexColumn : index.getKeyColumns()) {
+                Column column = indexColumn.getColumn();
+                indexColumnNames.add(String.format("%s.%s",
+                                                   column.getTable().getName().getTableName(), column.getName()));
+            }
+            if (searchIndexColumnNames.equals(indexColumnNames)) {
+                return schema.indexRowType(index);
             }
         }
         return null;
@@ -302,9 +335,14 @@ public class OperatorITBase extends ITBase
         return new TestRow(rowType, fields, hKeyString);
     }
 
+    protected TestRow row(RowType rowType, Object[] fields, AkType[] types)
+    {
+        return new TestRow(rowType, new RowValuesHolder(fields, types), null);
+    }
+
     protected RowBase row(int tableId, Object... values /* alternating field position and value */)
     {
-        NiceRow niceRow = new NiceRow(tableId, store());
+        NewRow niceRow = createNewRow(tableId);
         int i = 0;
         while (i < values.length) {
             int position = (Integer) values[i++];
@@ -318,20 +356,46 @@ public class OperatorITBase extends ITBase
 /*
         try {
 */
-            ValuesHolderRow row = new ValuesHolderRow(indexRowType);
+            ValuesHolderRow row = new ValuesHolderRow(indexRowType, usingPValues());
             for (int i = 0; i < values.length; i++) {
                 Object value = values[i];
-                ValueHolder valueHolder = row.holderAt(i);
-                if (value == null) {
-                    valueHolder.putRawNull();
-                } else if (value instanceof Integer) {
-                    valueHolder.putInt((Integer) value);
-                } else if (value instanceof Long) {
-                    valueHolder.putInt((Long) value);
-                } else if (value instanceof String) {
-                    valueHolder.putString((String) value);
-                } else {
-                    fail();
+                if (row.usingPValues()) {
+                    PValue pvalue = row.pvalueAt(i);
+                    if (value == null) {
+                        pvalue.putNull();
+                    } else if (value instanceof Integer) {
+                        if (PValueSources.pUnderlying(pvalue) == PUnderlying.INT_64)
+                            pvalue.putInt64(((Integer) value).longValue());
+                        else
+                            pvalue.putInt32((Integer) value);
+                    } else if (value instanceof Long) {
+                        if (PValueSources.pUnderlying(pvalue) == PUnderlying.INT_32)
+                            pvalue.putInt32(((Long) value).intValue());
+                        else
+                            pvalue.putInt64((Long) value);
+                    } else if (value instanceof String) {
+                        pvalue.putString((String) value, null);
+                    } else if (value instanceof BigDecimal) {
+                        pvalue.putObject(new MBigDecimalWrapper((BigDecimal) value));
+                    } else {
+                        fail();
+                    }
+                }
+                else {
+                    ValueHolder valueHolder = row.holderAt(i);
+                    if (value == null) {
+                        valueHolder.putRawNull();
+                    } else if (value instanceof Integer) {
+                        valueHolder.putInt((Integer) value);
+                    } else if (value instanceof Long) {
+                        valueHolder.putLong((Long) value);
+                    } else if (value instanceof String) {
+                        valueHolder.putString((String) value);
+                    } else if (value instanceof BigDecimal) {
+                        valueHolder.putDecimal((BigDecimal) value);
+                    } else {
+                        fail();
+                    }
                 }
             }
             return row;
@@ -427,6 +491,23 @@ public class OperatorITBase extends ITBase
         return rowType.userTable().rowDef().getOrdinal();
     }
 
+
+    public Operator rowsToValueScan(Row... rows) {
+        List<BindableRow> bindableRows = new ArrayList<BindableRow>();
+        RowType type = null;
+        for(Row row : rows) {
+            RowType newType = row.rowType();
+            if(type == null) {
+                type = newType;
+            } else if(type != newType) {
+                fail("Multiple row types: " + type + " vs " + newType);
+            }
+            bindableRows.add(BindableRow.of(row, usingPValues()));
+        }
+        return API.valuesScan_Default(bindableRows, type);
+    }
+
+
     protected int customer;
     protected int order;
     protected int item;
@@ -445,12 +526,14 @@ public class OperatorITBase extends ITBase
     protected IndexRowType itemIidIndexRowType;
     protected IndexRowType addressCidIndexRowType;
     protected IndexRowType addressAddressIndexRowType;
-    protected GroupTable coi;
+    protected IndexRowType customerNameItemOidIndexRowType;
+    protected Group coi;
     protected Schema schema;
     protected NewRow[] db;
     protected NewRow[] emptyDB = new NewRow[0];
     protected PersistitAdapter adapter;
     protected QueryContext queryContext;
+    protected AkCollator ciCollator;
     protected int customerOrdinal;
     protected int orderOrdinal;
     protected int itemOrdinal;

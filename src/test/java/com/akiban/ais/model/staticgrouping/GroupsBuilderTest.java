@@ -31,6 +31,7 @@ import static junit.framework.Assert.fail;
 
 import java.util.List;
 
+import com.akiban.ais.model.TableName;
 import org.junit.Test;
 
 import com.akiban.ais.model.AISBuilder;
@@ -51,8 +52,8 @@ public class GroupsBuilderTest {
         List<Group> groups = grouping.getGroups();
         assertEquals("groups size", 2, groups.size());
         
-        assertSimilarGroup("first", "group_a", groups.get(0));
-        assertSimilarGroup("second", "group_b", groups.get(1));
+        assertSimilarGroup("first", new TableName(SCHEMA, "group_a"), groups.get(0));
+        assertSimilarGroup("second", new TableName(SCHEMA, "group_b"), groups.get(1));
     }
 
     @Test(expected=IllegalStateException.class)
@@ -139,12 +140,13 @@ public class GroupsBuilderTest {
         aisBuilder.indexColumn("s2", "customer", Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
 
         aisBuilder.basicSchemaIsComplete();
-        aisBuilder.createGroup("group1", "group_schema", "_akiban_customer");
+        aisBuilder.createGroup("group1", "group_schema");
         aisBuilder.addTableToGroup("group1", "s", "customer");
         aisBuilder.addJoinToGroup("group1", "join3", 1);
         aisBuilder.addJoinToGroup("group1", "join2", 1);
-        aisBuilder.createGroup("group2", "group_schema", "_akiban_customer$1");
+        aisBuilder.createGroup("group2", "group_schema");
         aisBuilder.addTableToGroup("group2", "s2", "customer");
+        aisBuilder.groupingIsComplete();
 
         GroupsBuilder expectedGrouping = new GroupsBuilder("s");
         expectedGrouping.rootTable("s", "customer", "group1");
@@ -163,7 +165,7 @@ public class GroupsBuilderTest {
         assertEquals("grouping", "groupschema " + SCHEMA, grouping.toString().trim());
     }
 
-    private static void assertSimilarGroup(String message, String expectedName,
+    private static void assertSimilarGroup(String message, TableName expectedName,
                                            Group actualGroup)
     {
         assertEquals(message + " group name", expectedName, actualGroup.getGroupName());

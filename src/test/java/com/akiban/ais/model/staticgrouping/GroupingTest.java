@@ -60,7 +60,7 @@ public class GroupingTest {
 
         @Override
         public void visitGroup(Group group, TableName rootTable) {
-            say("group: name " + group.getGroupName() + " using table " + rootTable.escaped(seenSchema));
+            say("group: name " + group.getGroupName().getTableName() + " using table " + rootTable.escaped(seenSchema));
         }
 
         @Override
@@ -211,7 +211,7 @@ public class GroupingTest {
     public void promoteChild() {
         Grouping actual = getGrouping();
         Group newGroup = actual.newGroupFromChild(SCHEMA, "orders", "group_beta");
-        assertEquals("group name", "group_beta", newGroup.getGroupName());
+        assertEquals("group name", "group_beta", newGroup.getGroupName().getTableName());
         actual.checkIntegrity();
 
         GroupsBuilder builder = new GroupsBuilder(SCHEMA);
@@ -229,7 +229,7 @@ public class GroupingTest {
         Grouping actual = getGrouping();
 
         Group newGroup = actual.newGroupFromChild(SCHEMA, "customers", "the_new_group_name");
-        assertEquals("group name", "the_new_group_name", newGroup.getGroupName());
+        assertEquals("group name", "the_new_group_name", newGroup.getGroupName().getTableName());
         actual.checkIntegrity();
 
         GroupsBuilder builder = new GroupsBuilder(SCHEMA);

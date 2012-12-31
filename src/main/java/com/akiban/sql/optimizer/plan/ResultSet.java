@@ -26,6 +26,8 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.ais.model.ColumnContainer;
+import com.akiban.server.types3.TInstance;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.ais.model.Column;
 
@@ -34,10 +36,12 @@ import java.util.List;
 /** Name the columns in a SELECT. */
 public class ResultSet extends BasePlanWithInput
 {
-    public static class ResultField extends BaseDuplicatable {
+    public static class ResultField extends BaseDuplicatable implements ColumnContainer {
+
         private String name;
         private DataTypeDescriptor sqlType;
         private Column aisColumn;
+        private TInstance TInstance;
 
         public ResultField(String name, DataTypeDescriptor sqlType, Column aisColumn) {
             this.name = name;
@@ -54,10 +58,26 @@ public class ResultSet extends BasePlanWithInput
         }
 
         public DataTypeDescriptor getSQLtype() {
+            if (sqlType == null && TInstance != null) {
+                sqlType = TInstance.dataTypeDescriptor();
+            }
             return sqlType;
         }
 
         public Column getAIScolumn() {
+            return aisColumn;
+        }
+
+        public TInstance getTInstance() {
+            return TInstance;
+        }
+
+        public void setTInstance(TInstance tInstance) {
+            this.TInstance = tInstance;
+        }
+
+        @Override
+        public Column getColumn() {
             return aisColumn;
         }
 

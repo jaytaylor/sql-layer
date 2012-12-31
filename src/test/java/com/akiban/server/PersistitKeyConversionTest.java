@@ -28,6 +28,7 @@ package com.akiban.server;
 
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
+import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
@@ -98,7 +99,7 @@ public final class PersistitKeyConversionTest extends ConversionTestBase {
         public void setUp(TestCase<?> testCase) {
             key.clear();
             target.attach(key);
-            target.expectingType(testCase.type());
+            target.expectingType(testCase.type(), AkCollatorFactory.getAkCollator(testCase.charset()));
             source.attach(key, 0, testCase.type());
         }
 

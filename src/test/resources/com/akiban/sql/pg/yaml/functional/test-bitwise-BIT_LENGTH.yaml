@@ -1,5 +1,8 @@
 # Test the bitwise BIT_LENGTH() function
 ---
+- Properties: sys-mysql
+- suppressed: true
+---
 - Include: all-types-schema.yaml
 ---
 - Include: all-classes-schema.yaml
@@ -26,7 +29,9 @@
 ---
 - Statement: SELECT BIT_LENGTH('2001-12-31 02:45:33') from all_types;
 - output: [[152]]
-#--- bug 947554
+---
+- Message: "bug 947554"
+#---
 #- Statement: SELECT BIT_LENGTH(0x234) from all_types;
 #- output: [[16]]
 ---

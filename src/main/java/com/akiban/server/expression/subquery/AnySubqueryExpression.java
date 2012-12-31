@@ -29,9 +29,9 @@ package com.akiban.server.expression.subquery;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.explain.*;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.types.AkType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.BooleanExtractor;
@@ -57,6 +57,13 @@ public final class AnySubqueryExpression extends SubqueryExpression {
         return "ANY(" + subquery() + ")";
     }
 
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context) {
+        CompoundExplainer explainer = super.getExplainer(context);
+        explainer.addAttribute(Label.EXPRESSIONS, expression.getExplainer(context));
+        return explainer;
+    }
+
     public AnySubqueryExpression(Operator subquery, Expression expression,
                                  RowType outerRowType, RowType innerRowType, 
                                  int bindingPosition) {
@@ -65,6 +72,12 @@ public final class AnySubqueryExpression extends SubqueryExpression {
     }
                                  
     private final Expression expression;
+
+    @Override
+    public String name()
+    {
+        return "ANY";
+    }
 
     private static final class InnerEvaluation extends SubqueryExpressionEvaluation {
         @Override

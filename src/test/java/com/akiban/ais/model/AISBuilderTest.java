@@ -26,6 +26,10 @@
 
 package com.akiban.ais.model;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.Iterator;
 import java.util.List;
 
@@ -48,7 +52,6 @@ public class AISBuilderTest
         builder.basicSchemaIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(0, ais.getUserTables().size());
-        Assert.assertEquals(0, ais.getGroupTables().size());
         Assert.assertEquals(0, ais.getGroups().size());
         Assert.assertEquals(0, ais.getJoins().size());
 
@@ -64,10 +67,10 @@ public class AISBuilderTest
         builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
         builder.basicSchemaIsComplete();
-        builder.setTableTreeNamesForTest();
+        builder.groupingIsComplete();
+        builder.setGroupTreeNamesForTest();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(1, ais.getUserTables().size());
-        Assert.assertEquals(0, ais.getGroupTables().size());
         Assert.assertEquals(0, ais.getGroups().size());
         Assert.assertEquals(0, ais.getJoins().size());
 
@@ -84,18 +87,13 @@ public class AISBuilderTest
         builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
         builder.basicSchemaIsComplete();
-        builder.createGroup("group", "groupschema", "coi");
+        builder.createGroup("group", "groupschema");
         builder.addTableToGroup("group", "schema", "customer");
         builder.groupingIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(1, ais.getUserTables().size());
-        Assert.assertEquals(1, ais.getGroupTables().size());
         Assert.assertEquals(1, ais.getGroups().size());
         Assert.assertEquals(0, ais.getJoins().size());
-        Group group = ais.getGroup("group");
-        GroupTable groupTable = group.getGroupTable();
-        Assert.assertEquals("customer$customer_id", groupTable.getColumn(0).getName());
-        Assert.assertEquals("customer$customer_name", groupTable.getColumn(1).getName());
 
         Assert.assertEquals(0, 
                 builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
@@ -127,86 +125,16 @@ public class AISBuilderTest
         builder.column("schema", tableName, columnOne, 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", tableName, columnTwo, 1, "varchar", 64L, 0L, false, false, null, null);
         builder.basicSchemaIsComplete();
-        builder.createGroup("group", "groupschema", "coi");
+        builder.createGroup("group", "groupschema");
         builder.addTableToGroup("group", "schema", "customer");
         builder.groupingIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(1, ais.getUserTables().size());
-        Assert.assertEquals(1, ais.getGroupTables().size());
         Assert.assertEquals(1, ais.getGroups().size());
         Assert.assertEquals(0, ais.getJoins().size());
-        Group group = ais.getGroup("group");
-        GroupTable groupTable = group.getGroupTable();
-        
-        String groupCol1 = groupTable.getColumn(0).getName();
-        String groupCol2 = groupTable.getColumn(1).getName();
-        // test truncation:
-        // First column should be the last AISBuilder.MAX_COLUMN_NAME_LENGTH digits of columnOne (which should be all x's)
-        // Second column should be that, with the last two chars replaced with "$1"
-        Assert.assertEquals(groupCol1,
-                columnOne.substring(columnOne.length()-AISBuilder.MAX_COLUMN_NAME_LENGTH, columnOne.length())
-        );
-        for (int i=0, len=groupCol1.length(); i < len; ++i)
-        {
-            Assert.assertEquals('x', groupCol1.charAt(i));
-        }
-        Assert.assertEquals(groupCol2,
-                columnOne.substring(columnOne.length()-AISBuilder.MAX_COLUMN_NAME_LENGTH, columnOne.length()-2) + "$1"
-        );
-        Assert.assertFalse("equal names: " + groupCol1, groupCol1.equals(groupCol2));
 
         Assert.assertEquals(0,
                 builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
-    }
-
-    @Test
-    public void testMultipleTableSameColumnNameLongGroupTableNames() {
-        final int TABLE_COUNT = 11;
-        final String SCHEMA = "schema";
-        final String PARENT_NAME = "p";
-        final String PARENT_PK_COL = "id";
-        final String CHILD_PREFIX = "t";
-        final String CHILD_JOIN_COL = "pid";
-
-        String longName = "";
-        while(longName.length() < AISBuilder.MAX_COLUMN_NAME_LENGTH) {
-            longName += "x";
-        }
-
-        AISBuilder builder = new AISBuilder();
-        for(int i = 0; i < TABLE_COUNT; ++i) {
-            String name = i == 0 ? PARENT_NAME : CHILD_PREFIX + i;
-            String pkCol = i == 0 ? PARENT_PK_COL : longName;
-            builder.userTable(SCHEMA, name);
-            builder.column(SCHEMA, name, pkCol, 0, "int", 0L, 0L, false, false, null, null);
-            builder.index(SCHEMA, name, "PRIMARY", true, "PRIMARY");
-            builder.indexColumn(SCHEMA, name, "PRIMARY", pkCol, 0, true, null);
-            if(i > 0) {
-                builder.column(SCHEMA, name, CHILD_JOIN_COL, 1, "int", 0L, 0L, true, false, null, null);
-            }
-        }
-        builder.basicSchemaIsComplete();
-
-        String groupTableName = "_" + PARENT_NAME;
-        builder.createGroup(PARENT_NAME, SCHEMA, groupTableName);
-        for(int i = 1; i < TABLE_COUNT; ++i) {
-            String childName = CHILD_PREFIX + i;
-            builder.joinTables(childName, SCHEMA, PARENT_NAME, SCHEMA, childName);
-            builder.joinColumns(childName, SCHEMA, PARENT_NAME, "id", SCHEMA, childName, CHILD_JOIN_COL);
-            builder.addJoinToGroup(PARENT_NAME, childName, 0);
-        }
-        builder.groupingIsComplete();
-
-        GroupTable groupTable = builder.akibanInformationSchema().getGroupTable(SCHEMA, groupTableName);
-        Assert.assertNotNull("Found group table", groupTable);
-
-        for(Column column : groupTable.getColumns()) {
-            int len = column.getName().length();
-            Assert.assertTrue("Less or equal than max length: "+len, len <= AISBuilder.MAX_COLUMN_NAME_LENGTH);
-            if (column.getUserColumn().getName().equals(longName)) {
-                Assert.assertEquals("Group table column length", AISBuilder.MAX_COLUMN_NAME_LENGTH, len);
-            }
-        }
     }
 
     @Test
@@ -225,19 +153,14 @@ public class AISBuilderTest
         builder.joinTables("co", "schema", "customer", "schema", "order");
         builder.joinColumns("co", "schema", "customer", "customer_id", "schema", "order", "customer_id");
         builder.basicSchemaIsComplete();
-        builder.createGroup("group", "groupschema", "coi");
+        builder.createGroup("group", "groupschema");
         builder.addJoinToGroup("group", "co", 0);
         builder.groupingIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(2, ais.getUserTables().size());
-        Assert.assertEquals(1, ais.getGroupTables().size());
         Assert.assertEquals(1, ais.getGroups().size());
         Assert.assertEquals(1, ais.getJoins().size());
-        Group group = ais.getGroup("group");
-        GroupTable groupTable = group.getGroupTable();
-        Assert.assertEquals("customer$customer_id", groupTable.getColumn(0).getName());
-        Assert.assertEquals("customer$customer_name", groupTable.getColumn(1).getName());
-        Assert.assertEquals(0, 
+        Assert.assertEquals(0,
                 builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
 
@@ -257,19 +180,14 @@ public class AISBuilderTest
         builder.joinTables("co", "schema", "customer", "schema", "order");
         builder.joinColumns("co", "schema", "customer", "customer_id", "schema", "order", "customer_id");
         builder.basicSchemaIsComplete();
-        builder.createGroup("group", "groupschema", "coi");
+        builder.createGroup("group", "groupschema");
         builder.addTableToGroup("group", "schema", "customer");
         builder.addJoinToGroup("group", "co", 0);
         builder.groupingIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(2, ais.getUserTables().size());
-        Assert.assertEquals(1, ais.getGroupTables().size());
         Assert.assertEquals(1, ais.getGroups().size());
         Assert.assertEquals(1, ais.getJoins().size());
-        Group group = ais.getGroup("group");
-        GroupTable groupTable = group.getGroupTable();
-        Assert.assertEquals("customer$customer_id", groupTable.getColumn(0).getName());
-        Assert.assertEquals("customer$customer_name", groupTable.getColumn(1).getName());
 
         Assert.assertEquals(0, 
                 builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
@@ -299,26 +217,14 @@ public class AISBuilderTest
         builder.joinTables("oi", "schema", "order", "schema", "item");
         builder.joinColumns("oi", "schema", "order", "order_id", "schema", "item", "item_id");
         builder.basicSchemaIsComplete();
-        builder.createGroup("group", "groupschema", "coi");
+        builder.createGroup("group", "groupschema");
         builder.addJoinToGroup("group", "co", 0);
         builder.addJoinToGroup("group", "oi", 0);
         builder.groupingIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(3, ais.getUserTables().size());
-        Assert.assertEquals(1, ais.getGroupTables().size());
         Assert.assertEquals(1, ais.getGroups().size());
         Assert.assertEquals(2, ais.getJoins().size());
-        Group group = ais.getGroup("group");
-        GroupTable groupTable = group.getGroupTable();
-        int c = 0;
-        Assert.assertEquals("customer$customer_id", groupTable.getColumn(c++).getName());
-        Assert.assertEquals("customer$customer_name", groupTable.getColumn(c++).getName());
-        Assert.assertEquals("order$order_id", groupTable.getColumn(c++).getName());
-        Assert.assertEquals("order$customer_id", groupTable.getColumn(c++).getName());
-        Assert.assertEquals("order$order_date", groupTable.getColumn(c++).getName());
-        Assert.assertEquals("item$item_id", groupTable.getColumn(c++).getName());
-        Assert.assertEquals("item$order_id", groupTable.getColumn(c++).getName());
-        Assert.assertEquals("item$quantity", groupTable.getColumn(c++).getName());
 
         Assert.assertEquals(0, 
                 builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
@@ -350,26 +256,14 @@ public class AISBuilderTest
         builder.basicSchemaIsComplete();
 
         // Step 1 -- group
-        builder.createGroup("group", "groupschema", "coi");
+        builder.createGroup("group", "groupschema");
         builder.addJoinToGroup("group", "co", 0);
         builder.addJoinToGroup("group", "oi", 0);
         {
             AkibanInformationSchema ais = builder.akibanInformationSchema();
             Assert.assertEquals(3, ais.getUserTables().size());
-            Assert.assertEquals(1, ais.getGroupTables().size());
             Assert.assertEquals(1, ais.getGroups().size());
             Assert.assertEquals(2, ais.getJoins().size());
-            Group group = ais.getGroup("group");
-            GroupTable groupTable = group.getGroupTable();
-            int c = 0;
-            Assert.assertEquals("customer$customer_id", groupTable.getColumn(c++).getName());
-            Assert.assertEquals("customer$customer_name", groupTable.getColumn(c++).getName());
-            Assert.assertEquals("order$order_id", groupTable.getColumn(c++).getName());
-            Assert.assertEquals("order$customer_id", groupTable.getColumn(c++).getName());
-            Assert.assertEquals("order$order_date", groupTable.getColumn(c++).getName());
-            Assert.assertEquals("item$item_id", groupTable.getColumn(c++).getName());
-            Assert.assertEquals("item$order_id", groupTable.getColumn(c++).getName());
-            Assert.assertEquals("item$quantity", groupTable.getColumn(c++).getName());
         }
 
         // Step 2 -- clear
@@ -377,40 +271,26 @@ public class AISBuilderTest
         {
             AkibanInformationSchema ais = builder.akibanInformationSchema();
             Assert.assertEquals(3, ais.getUserTables().size());
-            Assert.assertEquals(0, ais.getGroupTables().size());
             Assert.assertEquals(0, ais.getGroups().size());
             Assert.assertEquals(2, ais.getJoins().size());
             Assert.assertNull( ais.getGroup("group") );
         }
 
         // Step 3 -- regroup with different name
-        builder.createGroup("group2", "groupschema", "coi");
+        builder.createGroup("group2", "groupschema");
         builder.addJoinToGroup("group2", "co", 0);
         builder.addJoinToGroup("group2", "oi", 0);
         {
             builder.groupingIsComplete();
             AkibanInformationSchema ais = builder.akibanInformationSchema();
             Assert.assertEquals(3, ais.getUserTables().size());
-            Assert.assertEquals(1, ais.getGroupTables().size());
             Assert.assertEquals(1, ais.getGroups().size());
             Assert.assertEquals(2, ais.getJoins().size());
-            Group group = ais.getGroup("group2");
-            GroupTable groupTable = group.getGroupTable();
-            int c = 0;
-            Assert.assertEquals("customer$customer_id", groupTable.getColumn(c++).getName());
-            Assert.assertEquals("customer$customer_name", groupTable.getColumn(c++).getName());
-            Assert.assertEquals("order$order_id", groupTable.getColumn(c++).getName());
-            Assert.assertEquals("order$customer_id", groupTable.getColumn(c++).getName());
-            Assert.assertEquals("order$order_date", groupTable.getColumn(c++).getName());
-            Assert.assertEquals("item$item_id", groupTable.getColumn(c++).getName());
-            Assert.assertEquals("item$order_id", groupTable.getColumn(c++).getName());
-            Assert.assertEquals("item$quantity", groupTable.getColumn(c++).getName());
         }
         
         Assert.assertEquals(0, 
                 builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
-
 
     @Test
     public void testRemoval()
@@ -437,49 +317,25 @@ public class AISBuilderTest
         builder.joinTables("oi", "schema", "order", "schema", "item");
         builder.joinColumns("oi", "schema", "order", "order_id", "schema", "item", "item_id");
         builder.basicSchemaIsComplete();
-        builder.createGroup("group", "groupschema", "coi");
+        builder.createGroup("group", "groupschema");
         builder.addJoinToGroup("group", "co", 0);
         builder.addJoinToGroup("group", "oi", 0);
+        builder.groupingIsComplete();
+
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(3, ais.getUserTables().size());
-        Assert.assertEquals(1, ais.getGroupTables().size());
         Assert.assertEquals(1, ais.getGroups().size());
         Assert.assertEquals(2, ais.getJoins().size());
-        Group group = ais.getGroup("group");
-        GroupTable groupTable = group.getGroupTable();
-        int c = 0;
-        Assert.assertEquals("customer$customer_id", groupTable.getColumn(c++).getName());
-        Assert.assertEquals("customer$customer_name", groupTable.getColumn(c++).getName());
-        Assert.assertEquals("order$order_id", groupTable.getColumn(c++).getName());
-        Assert.assertEquals("order$customer_id", groupTable.getColumn(c++).getName());
-        Assert.assertEquals("order$order_date", groupTable.getColumn(c++).getName());
-        Assert.assertEquals("item$item_id", groupTable.getColumn(c++).getName());
-        Assert.assertEquals("item$order_id", groupTable.getColumn(c++).getName());
-        Assert.assertEquals("item$quantity", groupTable.getColumn(c++).getName());
         // Remove customer/order join
         builder.removeJoinFromGroup("group", "co");
         Assert.assertEquals(3, ais.getUserTables().size());
-        Assert.assertEquals(1, ais.getGroupTables().size());
         Assert.assertEquals(1, ais.getGroups().size());
         Assert.assertEquals(2, ais.getJoins().size());
-        group = ais.getGroup("group");
-        groupTable = group.getGroupTable();
-        c = 0;
-        Assert.assertEquals("order$order_id", groupTable.getColumn(c++).getName());
-        Assert.assertEquals("order$customer_id", groupTable.getColumn(c++).getName());
-        Assert.assertEquals("order$order_date", groupTable.getColumn(c++).getName());
-        Assert.assertEquals("item$item_id", groupTable.getColumn(c++).getName());
-        Assert.assertEquals("item$order_id", groupTable.getColumn(c++).getName());
-        Assert.assertEquals("item$quantity", groupTable.getColumn(c++).getName());
         // Remove order/item join
         builder.removeJoinFromGroup("group", "oi");
         Assert.assertEquals(3, ais.getUserTables().size());
-        Assert.assertEquals(1, ais.getGroupTables().size());
         Assert.assertEquals(1, ais.getGroups().size());
         Assert.assertEquals(2, ais.getJoins().size());
-        group = ais.getGroup("group");
-        groupTable = group.getGroupTable();
-        Assert.assertEquals(0, groupTable.getColumns().size());
 
         AISValidationResults results = builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS);
         
@@ -511,19 +367,14 @@ public class AISBuilderTest
         builder.index("schema", "customer", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("schema", "customer", "pk", "customer_id", 0, true, null);
         builder.basicSchemaIsComplete();
-        builder.createGroup("group", "groupschema", "coi");
+        builder.createGroup("group", "groupschema");
         builder.addTableToGroup("group", "schema", "customer");
         builder.addJoinToGroup("group", "co", 0);
         builder.groupingIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(2, ais.getUserTables().size());
-        Assert.assertEquals(1, ais.getGroupTables().size());
         Assert.assertEquals(1, ais.getGroups().size());
         Assert.assertEquals(1, ais.getJoins().size());
-        Group group = ais.getGroup("group");
-        GroupTable groupTable = group.getGroupTable();
-        Assert.assertEquals("customer$customer_id", groupTable.getColumn(0).getName());
-        Assert.assertEquals("customer$customer_name", groupTable.getColumn(1).getName());
 
         Assert.assertEquals(0, 
                 builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
@@ -539,13 +390,12 @@ public class AISBuilderTest
         builder.index("schema", "customer", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn("schema", "customer", "pk", "customer_id", 0, true, null);
         builder.basicSchemaIsComplete();
-        builder.createGroup("group", "groupschema", "coi");
+        builder.createGroup("group", "groupschema");
         builder.addTableToGroup("group", "schema", "customer");
         builder.removeTableFromGroup("group", "schema", "customer");
         builder.deleteGroup("group");
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(1, ais.getUserTables().size());
-        Assert.assertEquals(0, ais.getGroupTables().size());
         Assert.assertEquals(0, ais.getGroups().size());
         Assert.assertEquals(0, ais.getJoins().size());
 
@@ -571,14 +421,13 @@ public class AISBuilderTest
         builder.joinTables("co", "schema", "customer", "schema", "order");
         builder.joinColumns("co", "schema", "customer", "customer_id", "schema", "order", "customer_id");
         builder.basicSchemaIsComplete();
-        builder.createGroup("group", "groupschema", "coi");
+        builder.createGroup("group", "groupschema");
         builder.addTableToGroup("group", "schema", "customer");
         builder.addJoinToGroup("group", "co", 0);
         builder.removeJoinFromGroup("group", "co");
         builder.deleteGroup("group");
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(2, ais.getUserTables().size());
-        Assert.assertEquals(0, ais.getGroupTables().size());
         Assert.assertEquals(0, ais.getGroups().size());
         Assert.assertEquals(1, ais.getJoins().size());
 
@@ -614,28 +463,27 @@ public class AISBuilderTest
         builder.joinColumns("bd", "s", "b", "bid", "s", "d", "bid");
         // Source and target groups
         builder.basicSchemaIsComplete();
-        builder.createGroup("source", "g", "source_table");
+        builder.createGroup("source", "g");
         builder.addJoinToGroup("source", "ab", 0);
         builder.addJoinToGroup("source", "bc", 0);
         builder.addJoinToGroup("source", "bd", 0);
-        builder.createGroup("target", "g", "target_table");
+        builder.createGroup("target", "g");
+
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(4, ais.getUserTables().size());
-        Assert.assertEquals(2, ais.getGroupTables().size());
         Assert.assertEquals(2, ais.getGroups().size());
         Assert.assertEquals(3, ais.getJoins().size());
         // Move b to target
         builder.moveTreeToEmptyGroup("s", "b", "target");
+        builder.groupingIsComplete();
+
         UserTable a = ais.getUserTable("s", "a");
         List<Join> aChildren = a.getChildJoins();
         Assert.assertTrue(aChildren.isEmpty());
         UserTable b = ais.getUserTable("s", "b");
-        Assert.assertSame(b, ais.getGroup("target").getGroupTable().getRoot());
-        int count = 0;
         for (Join join : b.getChildJoins()) {
             if (join.getChild() == ais.getUserTable("s", "c") ||
                 join.getChild() == ais.getUserTable("s", "d")) {
-                count++;
             } else {
                 Assert.fail();
             }
@@ -667,25 +515,23 @@ public class AISBuilderTest
         builder.joinTables("co", "s", "c", "s", "o");
         builder.joinColumns("co", "s", "c", "c_id", "s", "o", "c_id");
 
-        builder.createGroup("group_01", "s", "customers");
+        builder.createGroup("group_01", "s");
         builder.addTableToGroup("group_01", "s", "c");
         builder.addJoinToGroup("group_01", "co", 1);
         builder.groupingIsComplete();
 
-        
-        Assert.assertEquals(0, 
+        Assert.assertEquals(0,
                 builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
 
-        builder.createGroup("group_02", "s", "orders");
+        builder.createGroup("group_02", "s");
         builder.moveTreeToEmptyGroup("s", "o", "group_02");
+        builder.groupingIsComplete();
 
-        //Assert.assertEquals("number of joins", 0, builder.akibanInformationSchema().getJoins().size());
-
-        Assert.assertEquals(0, 
+        Assert.assertEquals(0,
                 builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
 
         builder.groupingIsComplete();
-        Assert.assertEquals(0, 
+        Assert.assertEquals(0,
                 builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
 
@@ -724,15 +570,16 @@ public class AISBuilderTest
         builder.indexColumn("s", "z", "pk", "zid", 0, true, null);
         // Source and target groups
         builder.basicSchemaIsComplete();
-        builder.createGroup("source", "g", "source_table");
+        builder.createGroup("source", "g");
         builder.addJoinToGroup("source", "ab", 0);
         builder.addJoinToGroup("source", "bc", 0);
         builder.addJoinToGroup("source", "bd", 0);
-        builder.createGroup("target", "g", "target_table");
+        builder.createGroup("target", "g");
         builder.addTableToGroup("target", "s", "z");
+        builder.groupingIsComplete();
+
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(5, ais.getUserTables().size());
-        Assert.assertEquals(2, ais.getGroupTables().size());
         Assert.assertEquals(2, ais.getGroups().size());
         Assert.assertEquals(4, ais.getJoins().size());
         // Move b to target
@@ -741,22 +588,17 @@ public class AISBuilderTest
         List<Join> aChildren = a.getChildJoins();
         Assert.assertTrue(aChildren.isEmpty());
         UserTable z = ais.getUserTable("s", "z");
-        Assert.assertSame(z, ais.getGroup("target").getGroupTable().getRoot());
         Assert.assertEquals(1, z.getChildJoins().size());
         Join bz = z.getChildJoins().get(0);
         UserTable b = ais.getUserTable("s", "b");
         Assert.assertSame(b, bz.getChild());
-        int count = 0;
         for (Join join : b.getChildJoins()) {
             if (join.getChild() == ais.getUserTable("s", "c") ||
                 join.getChild() == ais.getUserTable("s", "d")) {
-                count++;
             } else {
                 Assert.fail();
             }
         }
-        // AISPrinter.print(ais);
-
         AISValidationResults vResults = builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS);
         
         Assert.assertEquals(1, vResults.failures().size());
@@ -774,7 +616,8 @@ public class AISBuilderTest
         builder.column("s", "b", "z", 2, "int", 0L, 0L, false, false, null, null);
         builder.userTableInitialAutoIncrement("s", "b", 5L);
         builder.basicSchemaIsComplete();
-        builder.setTableTreeNamesForTest();
+        builder.groupingIsComplete();
+        builder.setGroupTreeNamesForTest();
         // Check autoinc state
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         UserTable table = ais.getUserTable("s", "b");
@@ -798,7 +641,8 @@ public class AISBuilderTest
         builder.column("s", "b", "z", 2, "int", 0L, 0L, false, false, null, null);
         builder.userTableInitialAutoIncrement("s", "b", 5L);
         builder.basicSchemaIsComplete();
-        builder.setTableTreeNamesForTest();
+        builder.groupingIsComplete();
+        builder.setGroupTreeNamesForTest();
         // Check autoinc state
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         UserTable table = ais.getUserTable("s", "b");
@@ -811,45 +655,6 @@ public class AISBuilderTest
         Assert.assertEquals(1, 
                 builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
     }
-
-/*
-
-    @Test
-    public void testDDLGen()
-    {
-        AISBuilder builder = new AISBuilder();
-        builder.userTable("schema", "customer");
-        builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
-        builder.index("schema", "customer", "customer_pk", true, "primary key");
-        builder.indexColumn("schema", "customer", "customer_pk", "customer_id", 0, true, null);
-        builder.index("schema", "customer", "customer_name", false, "key");
-        builder.indexColumn("schema", "customer", "customer_name", "customer_name", 0, true, null);
-        builder.userTable("schema", "order");
-        builder.column("schema", "order", "order_id", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "order", "customer_id", 1, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "order", "order_date", 2, "int", 0L, 0L, false, false, null, null);
-        builder.userTable("schema", "item");
-        builder.column("schema", "item", "item_id", 0, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "item", "order_id", 1, "int", 0L, 0L, false, false, null, null);
-        builder.column("schema", "item", "quantity", 2, "int", 0L, 0L, false, false, null, null);
-        builder.joinTables("co", "schema", "customer", "schema", "order");
-        builder.joinColumns("co", "schema", "customer", "customer_id", "schema", "order", "customer_id");
-        builder.joinTables("oi", "schema", "order", "schema", "item");
-        builder.joinColumns("oi", "schema", "order", "order_id", "schema", "item", "item_id");
-        builder.basicSchemaIsComplete();
-        builder.createGroup("group", "groupschema", "coi");
-        builder.addJoinToGroup("group", "co", 0);
-        builder.addJoinToGroup("group", "oi", 0);
-        builder.groupingIsComplete();
-        AkibanInformationSchema ais = builder.akibanInformationSchema();
-        DDLGenerator ddlGenerator = new DDLGenerator();
-        print(ddlGenerator.dropAllGroupTables(ais));
-        print(ddlGenerator.createAllGroupTables(ais));
-
-        builder.akibanInformationSchema().checkIntegrity();
-    }
-*/
 
     @Test
     public void testCycles()
@@ -881,7 +686,7 @@ public class AISBuilderTest
         builder.joinColumns("tp", "s", "p", "k", "s", "t", "p");
         builder.basicSchemaIsComplete();
         // group: p->q, t->p, t->t
-        builder.createGroup("group", "s", "g");
+        builder.createGroup("group", "s");
         builder.addTableToGroup("group", "s", "q");
         builder.addJoinToGroup("group", "pq", 0);
         builder.addTableToGroup("group", "s", "p");
@@ -897,8 +702,6 @@ public class AISBuilderTest
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Table userTable = ais.getTable("s", "t");
         userTable.getColumns();
-        Table groupTable = ais.getTable("s", "g");
-        groupTable.getColumns();
 
         AISValidationResults vResults = builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS);
         
@@ -940,7 +743,7 @@ public class AISBuilderTest
         builder.joinColumns("nkjoin", "s", "parent", "nk", "s", "child", "fk_nk");
         // Create group
         builder.basicSchemaIsComplete();
-        builder.createGroup("g", "s", "g");
+        builder.createGroup("g", "s");
         // Add pk join to group
         builder.addTableToGroup("g", "s", "parent");
         builder.addJoinToGroup("g", "pkjoin", 0);
@@ -1010,8 +813,8 @@ public class AISBuilderTest
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         CharsetAndCollation charsetAndCollation = ais.getCharsetAndCollation();
         Assert.assertNotNull(charsetAndCollation);
-        Assert.assertEquals(AkibanInformationSchema.DEFAULT_CHARSET, charsetAndCollation.charset());
-        Assert.assertEquals(AkibanInformationSchema.DEFAULT_COLLATION, charsetAndCollation.collation());
+        Assert.assertEquals(AkibanInformationSchema.getDefaultCharset(), charsetAndCollation.charset());
+        Assert.assertEquals(AkibanInformationSchema.getDefaultCollation(), charsetAndCollation.collation());
     }
 
     @Test
@@ -1024,28 +827,8 @@ public class AISBuilderTest
         UserTable table = ais.getUserTable("schema", "customer");
         CharsetAndCollation charsetAndCollation = table.getCharsetAndCollation();
         Assert.assertNotNull(charsetAndCollation);
-        Assert.assertEquals(AkibanInformationSchema.DEFAULT_CHARSET, charsetAndCollation.charset());
-        Assert.assertEquals(AkibanInformationSchema.DEFAULT_COLLATION, charsetAndCollation.collation());
-    }
-
-    @Test
-    public void testGroupTableCharsetAndCollation()
-    {
-        AISBuilder builder = new AISBuilder();
-        builder.userTable("schema", "customer");
-        builder.basicSchemaIsComplete();
-        builder.createGroup("group", "schema", "customer_group");
-        AkibanInformationSchema ais = builder.akibanInformationSchema();
-        builder.addTableToGroup("group", "schema", "customer");
-        builder.groupingIsComplete();
-        GroupTable table = ais.getGroupTable("schema", "customer_group");
-        CharsetAndCollation charsetAndCollation = table.getCharsetAndCollation();
-        Assert.assertNotNull(charsetAndCollation);
-        Assert.assertEquals(AkibanInformationSchema.DEFAULT_CHARSET, charsetAndCollation.charset());
-        Assert.assertEquals(AkibanInformationSchema.DEFAULT_COLLATION, charsetAndCollation.collation());
-
-        Assert.assertEquals(0, 
-                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
+        Assert.assertEquals(AkibanInformationSchema.getDefaultCharset(), charsetAndCollation.charset());
+        Assert.assertEquals(AkibanInformationSchema.getDefaultCollation(), charsetAndCollation.collation());
     }
 
     @Test
@@ -1060,8 +843,8 @@ public class AISBuilderTest
         Column column = table.getColumn("customer_name");
         CharsetAndCollation charsetAndCollation = column.getCharsetAndCollation();
         Assert.assertNotNull(charsetAndCollation);
-        Assert.assertEquals(AkibanInformationSchema.DEFAULT_CHARSET, charsetAndCollation.charset());
-        Assert.assertEquals(AkibanInformationSchema.DEFAULT_COLLATION, charsetAndCollation.collation());
+        Assert.assertEquals(AkibanInformationSchema.getDefaultCharset(), charsetAndCollation.charset());
+        Assert.assertEquals(AkibanInformationSchema.getDefaultCollation(), charsetAndCollation.collation());
     }
 
     @Test
@@ -1071,16 +854,9 @@ public class AISBuilderTest
         builder.userTable("schema", "customer");
         builder.column("schema", "customer", "customer_name", 0, "varchar", 100L, 0L, false, false, null, null);
         builder.basicSchemaIsComplete();
-        builder.createGroup("group", "schema", "customer_group");
-        AkibanInformationSchema ais = builder.akibanInformationSchema();
+        builder.createGroup("group", "schema");
         builder.addTableToGroup("group", "schema", "customer");
         builder.groupingIsComplete();
-        GroupTable table = ais.getGroupTable("schema", "customer_group");
-        Column column = table.getColumn(0);
-        CharsetAndCollation charsetAndCollation = column.getCharsetAndCollation();
-        Assert.assertNotNull(charsetAndCollation);
-        Assert.assertEquals(AkibanInformationSchema.DEFAULT_CHARSET, charsetAndCollation.charset());
-        Assert.assertEquals(AkibanInformationSchema.DEFAULT_COLLATION, charsetAndCollation.collation());
 
         Assert.assertEquals(0, 
                 builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
@@ -1091,9 +867,9 @@ public class AISBuilderTest
     {
         AISBuilder builder = new AISBuilder();
         builder.userTable("schema", "customer");
-        builder.column("schema", "customer", "customer_name", 0, "varchar", 100L, 0L, false, false, "another_charset", "another_collation");
+        builder.column("schema", "customer", "customer_name", 0, "varchar", 100L, 0L, false, false, "UTF16", "latin1_swedish_ci");
         builder.basicSchemaIsComplete();
-        builder.createGroup("group", "schema", "customer_group");
+        builder.createGroup("group", "schema");
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         builder.addTableToGroup("group", "schema", "customer");
         builder.groupingIsComplete();
@@ -1101,14 +877,8 @@ public class AISBuilderTest
         Column userColumn = userTable.getColumn(0);
         CharsetAndCollation charsetAndCollation = userColumn.getCharsetAndCollation();
         Assert.assertNotNull(charsetAndCollation);
-        Assert.assertEquals("another_charset", charsetAndCollation.charset());
-        Assert.assertEquals("another_collation", charsetAndCollation.collation());
-        GroupTable groupTable = ais.getGroupTable("schema", "customer_group");
-        Column groupColumn = groupTable.getColumn(0);
-        charsetAndCollation = groupColumn.getCharsetAndCollation();
-        Assert.assertNotNull(charsetAndCollation);
-        Assert.assertEquals("another_charset", charsetAndCollation.charset());
-        Assert.assertEquals("another_collation", charsetAndCollation.collation());
+        Assert.assertEquals("UTF16", charsetAndCollation.charset());
+        Assert.assertEquals("latin1_swedish_ci", charsetAndCollation.collation());
 
         Assert.assertEquals(0, 
                 builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
@@ -1130,7 +900,7 @@ public class AISBuilderTest
         builder.joinTables("c/id/o/cid", "test", "c", "test", "o");
         builder.joinColumns("c/id/o/cid", "test", "c", "id", "test", "o", "cid");
         builder.basicSchemaIsComplete();
-        builder.createGroup("coi", "test", "_akiban_c");
+        builder.createGroup("coi", "test");
         builder.addJoinToGroup("coi", "c/id/o/cid", 0);
         builder.groupIndex("coi", "name_date", false, Index.JoinType.LEFT);
         builder.groupIndexColumn("coi", "name_date", "test", "c",  "name", 0);
@@ -1143,7 +913,6 @@ public class AISBuilderTest
         
         final AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(2, ais.getUserTables().size());
-        Assert.assertEquals(1, ais.getGroupTables().size());
         Assert.assertEquals(1, ais.getGroups().size());
 
         final Group group = ais.getGroup("coi");
@@ -1194,7 +963,7 @@ public class AISBuilderTest
         builder.joinColumns("o/oid/i/iid", "test", "o", "oid", "test", "i", "iid");
 
         builder.basicSchemaIsComplete();
-        builder.createGroup("coi", "test", "_akiban_c");
+        builder.createGroup("coi", "test");
         builder.addJoinToGroup("coi", "c/id/o/cid", 0);
         builder.addJoinToGroup("coi", "o/oid/i/iid", 0);
         builder.groupIndex("coi", "name_sku", false, Index.JoinType.LEFT);
@@ -1207,7 +976,6 @@ public class AISBuilderTest
         
         final AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(3, ais.getUserTables().size());
-        Assert.assertEquals(1, ais.getGroupTables().size());
         Assert.assertEquals(1, ais.getGroups().size());
 
         final Group group = ais.getGroup("coi");
@@ -1222,8 +990,8 @@ public class AISBuilderTest
                 ais.getUserTable("test", "c").getGroupIndexes().contains(groupIndex)
         );
 
-        Assert.assertEquals("group indexes for o", 0, ais.getUserTable("test", "o").getGroupIndexes().size());
-        Assert.assertFalse("GI for o has its group index",
+        Assert.assertEquals("group indexes for o", 1, ais.getUserTable("test", "o").getGroupIndexes().size());
+        Assert.assertTrue("GI for o has its group index",
                 ais.getUserTable("test", "o").getGroupIndexes().contains(groupIndex)
         );
 
@@ -1264,7 +1032,7 @@ public class AISBuilderTest
         builder.joinColumns("o/oid/i/iid", "test", "o", "oid", "test", "i", "iid");
 
         builder.basicSchemaIsComplete();
-        builder.createGroup("coi", "test", "_akiban_c");
+        builder.createGroup("coi", "test");
         builder.addJoinToGroup("coi", "c/id/o/cid", 0);
         builder.addJoinToGroup("coi", "o/oid/i/iid", 0);
         builder.groupIndex("coi", "name_date_sku", false, Index.JoinType.LEFT);
@@ -1278,7 +1046,6 @@ public class AISBuilderTest
         
         final AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(3, ais.getUserTables().size());
-        Assert.assertEquals(1, ais.getGroupTables().size());
         Assert.assertEquals(1, ais.getGroups().size());
 
         final Group group = ais.getGroup("coi");
@@ -1316,7 +1083,7 @@ public class AISBuilderTest
             builder.column("test", "c", "id", 0, "int", 0L, 0L, false, false, null, null);
             builder.column("test", "c", "name", 1, "varchar", 64L, 0L, false, false, null, null);
             builder.basicSchemaIsComplete();
-            builder.createGroup("coi", "test", "_akiban_c");
+            builder.createGroup("coi", "test");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -1337,8 +1104,8 @@ public class AISBuilderTest
             builder.column("test", "o", "cid", 1, "int", 0L, 0L, false, false, null, null);
             builder.column("test", "o", "date", 2, "int", 0L, 0L, false, false, null, null);
             builder.basicSchemaIsComplete();
-            builder.createGroup("coi1", "test", "_akiban_c");
-            builder.createGroup("coi2", "test", "_akiban_o");
+            builder.createGroup("coi1", "test");
+            builder.createGroup("coi2", "test");
             builder.addTableToGroup("coi1", "test", "c");
             builder.addTableToGroup("coi2", "test", "o");
             builder.groupIndex("coi1", "name_date", false, Index.JoinType.LEFT);
@@ -1373,7 +1140,7 @@ public class AISBuilderTest
             builder.joinColumns("c/id/a/cid", "test", "c", "id", "test", "a", "cid");
 
             builder.basicSchemaIsComplete();
-            builder.createGroup("coi", "test", "_akiban_c");
+            builder.createGroup("coi", "test");
             builder.addJoinToGroup("coi", "c/id/o/cid", 0);
             builder.addJoinToGroup("coi", "c/id/a/cid", 0);
             builder.groupIndex("coi", "name_date", false, Index.JoinType.LEFT);
@@ -1382,5 +1149,99 @@ public class AISBuilderTest
             throw new RuntimeException(e);
         }
         builder.groupIndexColumn("coi", "name_date", "test", "a",  "address", 1);
+    }
+    
+    @Test
+    public void setIdentityValues() {
+        final AISBuilder builder = new AISBuilder();
+        builder.userTable("test", "t1");
+        builder.column("test", "t1", "id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.sequence("test", "seq-1", 1, 1, 0, 1000, false);
+        builder.columnAsIdentity("test", "t1", "id", "seq-1", true);
+        builder.column("test", "t1", "name", 1, "varchar", 10L, 0L, false, false, null, null);
+        builder.basicSchemaIsComplete();
+        builder.createGroup("group", "test");
+        builder.addTableToGroup("group", "test", "t1");
+        builder.groupingIsComplete();
+        
+        UserTable table = builder.akibanInformationSchema().getUserTable("test", "t1");
+        Column column = table.getColumn(0);
+        assertNotNull (column.getDefaultIdentity());
+        assertNotNull (column.getIdentityGenerator());
+        assertNotNull (column.getIdentityGenerator().getTreeName());
+    }
+    
+    @Test
+    public void validateIdentityGoodValues() {
+        final AISBuilder builder = new AISBuilder();
+        builder.userTable("test", "t1");
+        builder.column("test", "t1", "id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.sequence("test", "seq-1", 1, 1, 0, 1000, false);
+        builder.columnAsIdentity("test", "t1", "id", "seq-1", true);
+        builder.basicSchemaIsComplete();
+        builder.createGroup("group", "test");
+        builder.addTableToGroup("group", "test", "t1");
+        builder.groupingIsComplete();
+        Assert.assertEquals(0, 
+                builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
+        
+    }
+    
+    @Test
+    public void validateIdentityZeroIncrement() {
+        final AISBuilder builder = new AISBuilder();
+        builder.userTable("test", "t1");
+        builder.column("test", "t1", "id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.sequence("test", "seq-1", 1, 0, 0, 1000, false);
+        builder.columnAsIdentity("test", "t1", "id", "seq-1", true);
+        builder.basicSchemaIsComplete();
+        builder.createGroup("group", "test");
+        builder.addTableToGroup("group", "test", "t1");
+        builder.groupingIsComplete();
+        AISValidationResults vResults = builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS);
+        
+        Assert.assertEquals(1, vResults.failures().size());
+        AISValidationFailure fail = vResults.failures().iterator().next();
+        Assert.assertEquals(ErrorCode.SEQUENCE_INTERVAL_ZERO, fail.errorCode());
+    }
+
+    @Test
+    public void validateIdentityMinMax1() {
+        final AISBuilder builder = new AISBuilder();
+        builder.userTable("test", "t1");
+        builder.column("test", "t1", "id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.sequence("test", "seq-1", 1, 1, 1000, 0, false);
+        builder.columnAsIdentity("test", "t1", "id", "seq-1", true);
+        builder.basicSchemaIsComplete();
+        builder.createGroup("group", "test");
+        builder.addTableToGroup("group", "test", "t1");
+        builder.groupingIsComplete();
+        AISValidationResults vResults = builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS);
+        
+        Assert.assertEquals(2, vResults.failures().size());
+        Iterator<AISValidationFailure> errors = vResults.failures().iterator();
+        
+        AISValidationFailure fail = errors.next();
+        assertEquals(ErrorCode.SEQUENCE_MIN_GE_MAX, fail.errorCode());
+        fail = errors.next();
+        assertEquals(ErrorCode.SEQUENCE_START_IN_RANGE, fail.errorCode());
+    }
+
+    @Test
+    public void validateIdentityMinMax2() {
+        final AISBuilder builder = new AISBuilder();
+        builder.userTable("test", "t1");
+        builder.column("test", "t1", "id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.sequence("test", "seq-1", 1000, 1, 1000, 1000, false);
+        builder.columnAsIdentity("test", "t1", "id", "seq-1", true);
+        builder.basicSchemaIsComplete();
+        builder.createGroup("group", "test");
+        builder.addTableToGroup("group", "test", "t1");
+        builder.groupingIsComplete();
+        AISValidationResults vResults = builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS);
+        
+        Assert.assertEquals(1, vResults.failures().size());
+        AISValidationFailure fail = vResults.failures().iterator().next();
+        Assert.assertEquals(ErrorCode.SEQUENCE_MIN_GE_MAX, fail.errorCode());
     }
 }

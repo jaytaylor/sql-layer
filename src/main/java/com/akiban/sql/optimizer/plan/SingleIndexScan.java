@@ -28,6 +28,7 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.ConditionsCount.HowMany;
@@ -48,6 +49,7 @@ public final class SingleIndexScan extends IndexScan {
     private List<OrderByExpression> ordering;
 
     private OrderEffectiveness orderEffectiveness;
+    private boolean usesAllColumns;
 
     // Conditions subsumed by this index.
     // TODO: any cases where a condition is only partially handled and
@@ -186,6 +188,16 @@ public final class SingleIndexScan extends IndexScan {
         return highInclusive;
     }
 
+    public void setLowComparand(ExpressionNode comparand, boolean inclusive) {
+        lowComparand = comparand;
+        lowInclusive = inclusive;
+    }
+
+    public void setHighComparand(ExpressionNode comparand, boolean inclusive) {
+        highComparand = comparand;
+        highInclusive = inclusive;
+    }
+
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
@@ -229,13 +241,47 @@ public final class SingleIndexScan extends IndexScan {
     }
 
     @Override
+    public int getNKeyColumns() {
+        return index.getKeyColumns().size();
+    }
+
+    @Override
+    public boolean usesAllColumns() {
+        return usesAllColumns;
+    }
+
+    @Override
+    public void setUsesAllColumns(boolean usesAllColumns) {
+        this.usesAllColumns = usesAllColumns;
+    }
+
+    @Override
     protected String summarizeIndex(int indentation) {
         return String.valueOf(index);
     }
 
     @Override
-    protected boolean isAscendingAt(int i) {
+    public boolean isAscendingAt(int i) {
+        if (index.isSpatial()) {
+            int firstSpatialColumn = index.firstSpatialArgument();
+            if (i == firstSpatialColumn)
+                return true;
+            if (i > firstSpatialColumn)
+                i += index.dimensions() - 1;
+        }
         return index.getAllColumns().get(i).isAscending();
+    }
+
+    @Override
+    public boolean isRecoverableAt(int i) {
+        if (index.isSpatial()) {
+            int firstSpatialColumn = index.firstSpatialArgument();
+            if (i == firstSpatialColumn)
+                return false;
+            if (i > firstSpatialColumn)
+                i += index.dimensions() - 1;
+        }
+        return index.getAllColumns().get(i).isRecoverable();
     }
 
     @Override
@@ -249,12 +295,13 @@ public final class SingleIndexScan extends IndexScan {
     }
 
     @Override
-    public int getPeggedCount() {
-        // Note! Really what we want are the *leading* equalities. But this method is only
-        // used in the context of MultiIndexEnumerator, which will only put in leading
-        // equalities.
-        List<ExpressionNode> equalityComparands = getEqualityComparands();
-        return (equalityComparands == null) ? 0 : equalityComparands.size();
+    public int getNEquality() {
+        int nequals = 0;
+        if (equalityComparands != null)
+            nequals = equalityComparands.size();
+        if ((conditionRange != null) && conditionRange.isAllSingle())
+            nequals++;
+        return nequals;
     }
 
     @Override

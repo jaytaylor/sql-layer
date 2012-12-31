@@ -126,6 +126,16 @@ public final class ColumnRanges {
         return segments.toString();
     }
 
+    public boolean isAllSingle() {
+        boolean all = true;
+        for (RangeSegment segment : segments) {
+            if (!segment.isSingle()) {
+                return false;
+            }
+        }
+        return all;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

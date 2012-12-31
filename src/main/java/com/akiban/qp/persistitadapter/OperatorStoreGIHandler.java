@@ -30,18 +30,27 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.row.Row;
 import com.akiban.server.AccumulatorAdapter;
-import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.error.PersistitAdapterException;
+import com.akiban.server.geophile.Space;
+import com.akiban.server.geophile.SpaceLatLon;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
+
+import java.math.BigDecimal;
 
 class OperatorStoreGIHandler {
 
@@ -53,29 +62,25 @@ class OperatorStoreGIHandler {
         if (sourceRowPosition.equals(GroupIndexPosition.BELOW_SEGMENT)) { // asserts sourceRowPosition != null :-)
             return; // nothing to do
         }
-
+        int firstSpatialColumn = groupIndex.isSpatial() ? groupIndex.firstSpatialArgument() : -1;
         Exchange exchange = adapter.takeExchange(groupIndex);
         try {
-            Key key = exchange.getKey();
-            key.clear();
-            target.attach(key);
+            indexRow.resetForWrite(groupIndex, exchange.getKey(), exchange.getValue());
             IndexRowComposition irc = groupIndex.indexRowComposition();
-
-            for(int i=0, LEN = irc.getLength(); i < LEN; ++i) {
-                assert irc.isInRowData(i);
-                assert ! irc.isInHKey(i);
-
-                final int flattenedIndex = irc.getFieldPosition(i);
-                Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
-
-                ValueSource source = row.eval(flattenedIndex);
-                Converters.convert(source, target.expectingType(column));
+            int nFields = irc.getLength();
+            int f = 0;
+            while (f < nFields) {
+                assert irc.isInRowData(f);
+                assert ! irc.isInHKey(f);
+                if (f == firstSpatialColumn) {
+                    copyZValueToIndexRow(groupIndex, row, irc);
+                    f += groupIndex.dimensions();
+                } else {
+                    copyFieldToIndexRow(groupIndex, row, irc.getFieldPosition(f++));
+                }
             }
-            // The group index row's value contains a bitmap indicating which of the tables covered by the index
-            // have rows contributing to this index row. The leafmost table of the index is represented by bit position 0.
-            exchange.getValue().clear();
-            exchange.getValue().put(tableBitmap(groupIndex, row));
-
+            indexRow.close(action == Action.STORE);
+            indexRow.tableBitmap(tableBitmap(groupIndex, row));
             switch (action) {
             case STORE:
                 storeExchange(groupIndex, exchange);
@@ -137,17 +142,64 @@ class OperatorStoreGIHandler {
         }
     }
 
+    private void copyFieldToIndexRow(GroupIndex groupIndex, Row row, int flattenedIndex)
+    {
+        Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
+        if (Types3Switch.ON) {
+            indexRow.append(row.pvalue(flattenedIndex), column.getType().akType(), column.tInstance(), null);
+        } else {
+            indexRow.append(row.eval(flattenedIndex), column.getType().akType(), column.tInstance(), null);
+        }
+    }
+
+    private void copyZValueToIndexRow(GroupIndex groupIndex,
+                                      Row row,
+                                      IndexRowComposition irc)
+    {
+        BigDecimal[] coords = new BigDecimal[Space.LAT_LON_DIMENSIONS];
+        SpaceLatLon space = (SpaceLatLon) groupIndex.space();
+        int firstSpatialColumn = groupIndex.firstSpatialArgument();
+        boolean zNull = false;
+        for (int d = 0; d < Space.LAT_LON_DIMENSIONS; d++) {
+            if (!zNull) {
+                ValueSource columnValue = row.eval(irc.getFieldPosition(firstSpatialColumn + d));
+                if (columnValue.isNull()) {
+                    zNull = true;
+                } else {
+                    coords[d] = columnValue.getDecimal();
+                }
+            }
+        }
+        if (Types3Switch.ON) {
+            if (zNull) {
+                zSource_t3.putNull();
+                indexRow.append(zSource_t3, AkType.NULL, NON_NULL_Z_TYPE, null);
+            } else {
+                zSource_t3.putInt64(space.shuffle(coords));
+                indexRow.append(zSource_t3, AkType.LONG, NON_NULL_Z_TYPE, null);
+            }
+        } else {
+            if (zNull) {
+                zSource_t2.putNull();
+                indexRow.append(zSource_t2, AkType.NULL, NON_NULL_Z_TYPE, null);
+            } else {
+                zSource_t2.putLong(space.shuffle(coords));
+                indexRow.append(zSource_t2, AkType.LONG, NON_NULL_Z_TYPE, null);
+            }
+        }
+    }
+
+    // The group index row's value contains a bitmap indicating which of the tables covered by the index
+    // have rows contributing to this index row. The leafmost table of the index is represented by bit
+    // position 0.
     private static long tableBitmap(GroupIndex groupIndex, Row row) {
         long result = 0;
-         int indexFromEnd = 0;
          for(UserTable table=groupIndex.leafMostTable(), END=groupIndex.rootMostTable().parentTable();
                 !(table == null || table.equals(END));
-                table = table.parentTable()
-        ){
-            if (row.containsRealRowOf(table)) {
+                table = table.parentTable()) {
+             if (row.containsRealRowOf(table)) {
                 result |= 1 << table.getDepth();
             }
-            ++indexFromEnd;
         }
         return result;
     }
@@ -175,6 +227,7 @@ class OperatorStoreGIHandler {
 
     private OperatorStoreGIHandler(PersistitAdapter adapter, UserTable sourceTable) {
         this.adapter = adapter;
+        this.indexRow = new PersistitIndexRowBuffer(adapter);
         this.sourceTable = sourceTable;
     }
 
@@ -182,11 +235,14 @@ class OperatorStoreGIHandler {
 
     private final PersistitAdapter adapter;
     private final UserTable sourceTable;
-    private final PersistitKeyValueTarget target = new PersistitKeyValueTarget();
-    
+    private final PersistitIndexRowBuffer indexRow;
+    private final ValueHolder zSource_t2 = new ValueHolder();
+    private final PValue zSource_t3 = new PValue(MNumeric.BIGINT.instance(true));
+
     // class state
     private static volatile GIHandlerHook giHandlerHook;
     private static final PointTap UNNEEDED_DELETE_TAP = Tap.createCount("superfluous_delete");
+    private static final TInstance NON_NULL_Z_TYPE = MNumeric.BIGINT.instance(false);
 
     // nested classes
 

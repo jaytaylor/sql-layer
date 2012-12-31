@@ -37,29 +37,29 @@ import java.util.List;
  */
 public abstract class DirectObjectCursor implements CursorBase<List<?>>
 {
-    // TODO: Assuming these cursors are used outside of execution plans, and that these methods
-    // TODO: are not consulted.
+    // These cursors are used outside of execution plans. These methods should not be called.
 
     @Override
     public void destroy()
     {
+        throw new UnsupportedOperationException(getClass().getName());
     }
 
     @Override
     public boolean isIdle()
     {
-        return false;
+        throw new UnsupportedOperationException(getClass().getName());
     }
 
     @Override
     public boolean isActive()
     {
-        return true;
+        throw new UnsupportedOperationException(getClass().getName());
     }
 
     @Override
     public boolean isDestroyed()
     {
-        return false;
+        throw new UnsupportedOperationException(getClass().getName());
     }
 }

@@ -26,7 +26,6 @@
 
 package com.akiban.server.test.costmodel;
 
-import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
@@ -46,7 +45,7 @@ import org.junit.Test;
 import java.util.Random;
 
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.akiban.server.test.ExpressionGenerators.field;
 
 public class IntersectCT extends CostModelBase
 {
@@ -74,8 +73,7 @@ public class IntersectCT extends CostModelBase
             "c5 int not null",
             "primary key(c1, c2, c3, c4, c5)");
         Index index = createIndex(schemaName(), tableName, "idx", "index_key");
-        group = groupTable(t);
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         indexRowType = schema.indexRowType(index);
         adapter = persistitAdapter(schema);
@@ -109,11 +107,11 @@ public class IntersectCT extends CostModelBase
     private void intersect(int runs, int leftIndexKey, int rightIndexKey, String label)
     {
         Ordering ordering = new Ordering();
-        ordering.append(new FieldExpression(indexRowType, 1), true);
-        ordering.append(new FieldExpression(indexRowType, 2), true);
-        ordering.append(new FieldExpression(indexRowType, 3), true);
-        ordering.append(new FieldExpression(indexRowType, 4), true);
-        ordering.append(new FieldExpression(indexRowType, 5), true);
+        ordering.append(field(indexRowType, 1), true);
+        ordering.append(field(indexRowType, 2), true);
+        ordering.append(field(indexRowType, 3), true);
+        ordering.append(field(indexRowType, 4), true);
+        ordering.append(field(indexRowType, 5), true);
         IndexBound leftBound = new IndexBound(row(indexRowType, leftIndexKey), new SetColumnSelector(0));
         IndexKeyRange leftKeyRange = IndexKeyRange.bounded(indexRowType, leftBound, true, leftBound, true);
         IndexBound rightBound = new IndexBound(row(indexRowType, rightIndexKey), new SetColumnSelector(0));
@@ -132,7 +130,7 @@ public class IntersectCT extends CostModelBase
                 5,
                 5,
                 JoinType.INNER_JOIN,
-                IntersectOutputOption.OUTPUT_LEFT);
+                IntersectOption.OUTPUT_LEFT);
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
             Cursor cursor = cursor(intersect, queryContext);
@@ -157,7 +155,6 @@ public class IntersectCT extends CostModelBase
 
     private final Random random = new Random();
     private int t;
-    private GroupTable group;
     private Schema schema;
     private UserTableRowType tRowType;
     private IndexRowType indexRowType;

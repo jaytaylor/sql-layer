@@ -46,7 +46,7 @@ public class IsNullExpression extends AbstractUnaryExpression
     public static final ExpressionComposer COMPOSER = new  UnaryComposer ()
     {
         @Override
-        protected Expression compose(Expression argument) 
+        protected Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType) 
         {
             return new IsNullExpression(argument);
         }
@@ -81,9 +81,9 @@ public class IsNullExpression extends AbstractUnaryExpression
     }
 
     @Override
-    protected String name() 
+    public String name() 
     {
-        return "IsNull";
+        return "ISNULL";
     }
 
     @Override

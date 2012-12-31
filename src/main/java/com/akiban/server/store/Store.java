@@ -26,18 +26,17 @@
 
 package com.akiban.server.store;
 
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.rowdata.RowDefCache;
-import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
-import com.persistit.Exchange;
+import com.akiban.server.service.tree.TreeLink;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
 
@@ -45,29 +44,23 @@ import java.util.Collection;
 
 /**
  * An abstraction for a layer that stores and retrieves data
- * 
+ *
  * @author peter
- * 
+ *
  */
-public interface Store extends Service<Store> {
+public interface Store {
 
-    RowDefCache getRowDefCache();
+    /** Get the RowDef for the given ID. Note, a transaction should be active before calling this. */
+    RowDef getRowDef(Session session, int rowDefID);
 
     void writeRow(Session session, RowData rowData) throws PersistitException;
 
-    void writeRowForBulkLoad(Session session, Exchange hEx,
-            RowDef rowDef, RowData rowData, int[] ordinals,
-            int[] nKeyColumns, FieldDef[] fieldDefs,
-            Object[] hKey) throws PersistitException;
-
-    void updateTableStats(Session session, RowDef rowDef,
-            long rowCount);
-
     void deleteRow(Session session, RowData rowData) throws PersistitException;
+    void deleteRow(Session session, RowData rowData, boolean deleteIndexes) throws PersistitException;
 
     void updateRow(Session session, RowData oldRowData,
                    RowData newRowData,
-                   ColumnSelector columnSelector) throws PersistitException;
+                   ColumnSelector columnSelector, Index[] indexes) throws PersistitException;
 
     /**
      * See {@link #newRowCollector(Session, int, int, int, byte[], RowData, ColumnSelector, RowData, ColumnSelector, ScanLimit)}
@@ -131,7 +124,7 @@ public interface Store extends Service<Store> {
     /***
      * Remove a previously saved RowCollector. Must the the most recently added
      * RowCollector for a table.
-     * 
+     *
      * @param rc
      */
     void removeSavedRowCollector(Session session, RowCollector rc);
@@ -141,7 +134,17 @@ public interface Store extends Service<Store> {
 
     TableStatistics getTableStatistics(Session session, int tableId);
 
-    void truncateGroup(Session session, int rowDefId) throws PersistitException;
+    /**
+     * Delete all data associated with the group. This includes
+     * all indexes from all tables, group indexes, and the group itself.
+     */
+    void dropGroup(Session session, Group group);
+
+    /**
+     * Truncate the given group. This includes indexes from all tables, group
+     * indexes, the group itself, and all table statuses.
+     */
+    void truncateGroup(Session session, Group group) throws PersistitException;
 
     void truncateTableStatus(Session session, int rowDefId) throws RollbackException, PersistitException;
 
@@ -149,9 +152,9 @@ public interface Store extends Service<Store> {
     void setDeferIndexes(boolean b);
     void flushIndexes(Session session);
     void deleteIndexes(Session session, Collection<? extends Index> indexes);
-    void buildAllIndexes(Session session, boolean deferIndexes);
     void buildIndexes(Session session, Collection<? extends Index> indexes, boolean deferIndexes);
 
+    void deleteSequences (Session session, Collection<? extends Sequence> sequences);
     /**
      * Remove all trees, and their contents, associated with the given table.
      * @param session Session
@@ -161,6 +164,15 @@ public interface Store extends Service<Store> {
      */
     void removeTrees(Session session, Table table);
 
+    /**
+     * Low level operation. Removes the given trees and <i>only</i> the given trees.
+     * To ensure metadata and other state is updated, check if another method for
+     * specific entities is more appropriate (e.g. {@link #deleteIndexes(Session, Collection)}).
+     */
+    void removeTrees(Session session, Collection<? extends TreeLink> treeLinks);
+
     /** Get the underlying {@link PersistitStore}. */
     public PersistitStore getPersistitStore();
+
+    void truncateIndexes(Session session, Collection<? extends Index> indexes);
 }

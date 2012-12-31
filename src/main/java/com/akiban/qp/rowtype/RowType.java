@@ -32,6 +32,8 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.explain.*;
 
 public abstract class RowType
 {
@@ -82,6 +84,13 @@ public abstract class RowType
     public abstract int nFields();
 
     public abstract AkType typeAt(int index);
+
+    public abstract TInstance typeInstanceAt(int index);
+
+    public ConstraintChecker constraintChecker()
+    {
+        return NOOP_CONSTRAINT_CHECKER;
+    }
 
     public HKey hKey()
     {
@@ -143,6 +152,13 @@ public abstract class RowType
     public boolean hasUserTable() {
         return false;
     }
+    
+    // Will want to override in most cases.
+    public CompoundExplainer getExplainer(ExplainContext context) {
+        Attributes atts = new Attributes();
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance(toString()));
+        return new CompoundExplainer(Type.ROWTYPE, atts);
+    }
 
     // For use by subclasses
 
@@ -164,6 +180,10 @@ public abstract class RowType
     {
         this.typeId = typeId;
     }
+
+    // Class state
+
+    private static final ConstraintChecker NOOP_CONSTRAINT_CHECKER = new NoopConstraintChecker();
 
     // Object state
 

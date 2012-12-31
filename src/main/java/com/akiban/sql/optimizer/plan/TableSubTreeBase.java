@@ -26,11 +26,8 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.server.rowdata.RowDef;
-
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupTable;
 
 import java.util.Iterator;
 
@@ -51,10 +48,6 @@ public class TableSubTreeBase<T extends TableSubTreeBase.TableNodeBase<T>>
 
         public Group getGroup() {
             return table.getGroup();
-        }
-
-        public GroupTable getGroupTable() {
-            return table.getGroup().getGroupTable();
         }
 
         public int getNFields() {

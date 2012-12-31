@@ -26,8 +26,15 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.server.Quote;
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Label;
+import com.akiban.server.explain.PrimitiveExplainer;
+import com.akiban.server.explain.Type;
+import com.akiban.server.explain.std.ExpressionExplainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -39,16 +46,14 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.sql.StandardException;
 import com.akiban.util.AkibanAppender;
+import java.math.BigDecimal;
 
 import java.util.List;
+import java.util.Map;
 
 public final class ConcatExpression extends AbstractCompositeExpression {
 
     static class ConcatComposer implements ExpressionComposer {
-        @Override
-        public Expression compose(List<? extends Expression> arguments) {
-            return new ConcatExpression(arguments);
-        }
 
         @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
@@ -74,7 +79,7 @@ public final class ConcatExpression extends AbstractCompositeExpression {
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported in CONCAT yet.");
+            return new ConcatExpression(arguments);
         }
 
         @Override
@@ -94,7 +99,21 @@ public final class ConcatExpression extends AbstractCompositeExpression {
     protected void describe(StringBuilder sb) {
         sb.append("CONCAT");
     }
-
+    
+    @Override
+    public String name () {
+        return "CONCATENATE";
+    }
+    
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        CompoundExplainer ex = super.getExplainer(context);
+        ex.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance("||"));
+        ex.addAttribute(Label.ASSOCIATIVE, PrimitiveExplainer.getInstance(true));
+        return ex;
+    }
+    
     @Override
     public ExpressionEvaluation evaluation() {
         return new InnerEvaluation(childrenEvaluations());

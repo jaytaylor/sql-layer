@@ -62,6 +62,7 @@ public class AISMergeTest {
         b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
         
         b.basicSchemaIsComplete();
+        b.groupingIsComplete();
         
         assertNotNull(s.getUserTable(SCHEMA, TABLE));
         assertNotNull(s.getUserTable(SCHEMA, TABLE).getAIS());
@@ -90,7 +91,6 @@ public class AISMergeTest {
         // merge will have created a group table for the user table we merged.
         assertEquals (t.getGroups().keySet().size(), 1);
         assertNotNull(t.getGroup(TABLE));
-        checkColumns (t.getGroup(TABLE).getGroupTable().getColumns(), "t1$c1", "t1$c2", "t1$"+Column.AKIBAN_PK_NAME);
     }
 
     @Test
@@ -112,7 +112,6 @@ public class AISMergeTest {
         checkColumns(targetTable.getPrimaryKey().getColumns(), "c1");
         
         assertNotNull(t.getGroup(TABLE));
-        assertNotNull(t.getGroup(TABLE).getGroupTable().getIndex("t1$PRIMARY"));
     }
     
     @Test
@@ -134,7 +133,6 @@ public class AISMergeTest {
         assertNotNull (targetTable.getIndex("c1"));
         checkIndexColumns (targetTable.getIndex("c1").getKeyColumns(), "c1");
         assertNotNull(t.getGroup(TABLE));
-        assertNotNull(t.getGroup(TABLE).getGroupTable().getIndex("t1$c1"));
         assertNull (targetTable.getPrimaryKey());
 
     }
@@ -147,15 +145,14 @@ public class AISMergeTest {
         b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, null);
         b.basicSchemaIsComplete();
-        b.createGroup("FRED", SCHEMA, "_akiban_t1");
+        b.createGroup("FRED", SCHEMA);
         b.addTableToGroup("FRED", SCHEMA, TABLE);
         b.groupingIsComplete();
         AISMerge merge = new AISMerge (t,s.getUserTable(TABLENAME));
         t = merge.merge().getAIS();
         assertTrue (t.isFrozen());
-        assertEquals (TABLE, t.getUserTable(TABLENAME).getGroup().getName());
-        assertEquals ("test._akiban_t1", t.getUserTable(TABLENAME).getGroup().getGroupTable().getName().toString());
-        
+        assertEquals (TABLENAME, t.getUserTable(TABLENAME).getGroup().getName());
+
         b.userTable(SCHEMA, "t2");
         b.column(SCHEMA, "t2", "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
         b.column(SCHEMA, "t2", "c2", 1, "INT", (long)0, (long)0, true, false, null, null);
@@ -172,8 +169,7 @@ public class AISMergeTest {
         assertNotNull (t.getUserTable(SCHEMA, "t2").getParentJoin());
         assertEquals (1, t.getUserTable(TABLENAME).getChildJoins().size());
         assertNotNull (t.getGroup(TABLE));
-        assertEquals (TABLE, t.getUserTable(SCHEMA, "t2").getGroup().getName());
-        assertEquals (5, t.getGroupTable(SCHEMA, "_akiban_t1").getColumnsIncludingInternal().size());
+        assertEquals (TABLENAME, t.getUserTable(SCHEMA, "t2").getGroup().getName());
     }
     
     @Test
@@ -184,7 +180,7 @@ public class AISMergeTest {
         b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, null);
         b.basicSchemaIsComplete();
-        b.createGroup("FRED", SCHEMA, "_akiban_t1");
+        b.createGroup("FRED", SCHEMA);
         b.addTableToGroup("FRED", SCHEMA, TABLE);
         b.groupingIsComplete();
         AISMerge merge = new AISMerge (t,s.getUserTable(TABLENAME));
@@ -220,8 +216,7 @@ public class AISMergeTest {
         assertNotNull (t.getUserTable(SCHEMA, "t3").getParentJoin());
         assertEquals (2, t.getUserTable(TABLENAME).getChildJoins().size());
         assertNotNull (t.getGroup(TABLE));
-        assertEquals (TABLE, t.getUserTable(SCHEMA, "t3").getGroup().getName());
-        assertEquals (8, t.getGroupTable(SCHEMA, "_akiban_t1").getColumnsIncludingInternal().size());
+        assertEquals (TABLENAME, t.getUserTable(SCHEMA, "t3").getGroup().getName());
     }
 
     
@@ -235,7 +230,7 @@ public class AISMergeTest {
         b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, null);
         b.basicSchemaIsComplete();
-        b.createGroup("FRED", SCHEMA, "_akiban_t1");
+        b.createGroup("FRED", SCHEMA);
         b.addTableToGroup("FRED", SCHEMA, TABLE);
         b.groupingIsComplete();
         AISMerge merge = new AISMerge (t,s.getUserTable(TABLENAME));
@@ -247,7 +242,7 @@ public class AISMergeTest {
         b.column(SCHEMA, "t3", "c1", 0, "int", 0L, 0L, false, false, null, null);
         b.index(SCHEMA, "t3", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, "t3", "pk", "c1", 0, true, null);
-        b.createGroup("DOUG", SCHEMA, "_akiban_t3");
+        b.createGroup("DOUG", SCHEMA);
         b.addTableToGroup("DOUG", SCHEMA, "t3");
         // table 2 : join to wrong table. 
         b.userTable(SCHEMA, "t2");
@@ -273,7 +268,7 @@ public class AISMergeTest {
         b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, null);
         b.basicSchemaIsComplete();
-        b.createGroup("FRED", SCHEMA, "_akiban_t1");
+        b.createGroup("FRED", SCHEMA);
         b.addTableToGroup("FRED", SCHEMA, TABLE);
         b.groupingIsComplete();
         AISMerge merge = new AISMerge (t,s.getUserTable(TABLENAME));
@@ -287,7 +282,7 @@ public class AISMergeTest {
         b.column(SCHEMA, "t1", "c5", 0, "int", 0L, 0L, false, false, null, null);
         b.index(SCHEMA, "t1", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, "t1", "pk", "c5", 0, true, null);
-        b.createGroup("DOUG", SCHEMA, "_akiban_t1");
+        b.createGroup("DOUG", SCHEMA);
         b.addTableToGroup("DOUG", SCHEMA, "t1");
         // table 2 : join to wrong table. 
         b.userTable(SCHEMA, "t2");
@@ -314,7 +309,7 @@ public class AISMergeTest {
         b.index(SCHEMA, TABLE, "PK", true, Index.PRIMARY_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, TABLE, "PK", "c1", 0, true, null);
         b.basicSchemaIsComplete();
-        b.createGroup("FRED", SCHEMA, "_akiban_t1");
+        b.createGroup("FRED", SCHEMA);
         b.addTableToGroup("FRED", SCHEMA, TABLE);
         b.groupingIsComplete();
         AISMerge merge = new AISMerge (t,s.getUserTable(TABLENAME));
@@ -327,7 +322,7 @@ public class AISMergeTest {
         b.column(SCHEMA, "t1", "c1", 0, "int", 0L, 0L, false, false, null, null);
         b.index(SCHEMA, "t1", "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, "t1", "pk", "c1", 0, true, null);
-        b.createGroup("DOUG", SCHEMA, "_akiban_t1");
+        b.createGroup("DOUG", SCHEMA);
         b.addTableToGroup("DOUG", SCHEMA, "t1");
         // table 2 : join to wrong table. 
         b.userTable(SCHEMA, "t2");
@@ -346,9 +341,9 @@ public class AISMergeTest {
         assertNotNull (t.getUserTable(SCHEMA, "t2").getParentJoin());
         assertEquals (1, t.getUserTable(TABLENAME).getChildJoins().size());
         assertNotNull (t.getGroup(TABLE));
-        assertEquals (TABLE, t.getUserTable(SCHEMA, "t2").getGroup().getName());
+        assertEquals (TABLENAME, t.getUserTable(SCHEMA, "t2").getGroup().getName());
         assertNotNull (t.getUserTable(SCHEMA, TABLE));
-        assertEquals (TABLE, t.getUserTable(SCHEMA, TABLE).getGroup().getName());
+        assertEquals (TABLENAME, t.getUserTable(SCHEMA, TABLE).getGroup().getName());
 
     }
 
@@ -359,15 +354,14 @@ public class AISMergeTest {
         b.index(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
         b.basicSchemaIsComplete();
-        b.createGroup(TABLE, SCHEMA, "_akiban_t1");
+        b.createGroup(TABLE, SCHEMA);
         b.addTableToGroup(TABLE, SCHEMA, TABLE);
         b.groupingIsComplete();
         
         AISMerge merge = new AISMerge(t, s.getUserTable(TABLENAME));
         t = merge.merge().getAIS();
         assertTrue(t.isFrozen());
-        assertEquals(TABLE, t.getUserTable(TABLENAME).getGroup().getName());
-        assertEquals("test._akiban_t1", t.getUserTable(TABLENAME).getGroup().getGroupTable().getName().toString());
+        assertEquals(TABLENAME, t.getUserTable(TABLENAME).getGroup().getName());
 
         b.userTable(SCHEMA, "t2");
         b.column(SCHEMA, "t2", "c1", 0, "INT", 0L, 0L, false, false, null, null);
@@ -387,7 +381,7 @@ public class AISMergeTest {
         assertNotNull(t.getUserTable(SCHEMA, "t2").getParentJoin());
         assertEquals(1, t.getUserTable(TABLENAME).getChildJoins().size());
         assertNotNull(t.getGroup(TABLE));
-        assertEquals(TABLE, t.getUserTable(SCHEMA, "t2").getGroup().getName());
+        assertEquals(TABLENAME, t.getUserTable(SCHEMA, "t2").getGroup().getName());
     }
 
     @Test(expected= InvalidOperationException.class)
@@ -397,15 +391,14 @@ public class AISMergeTest {
         b.index(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         b.indexColumn(SCHEMA, TABLE, Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
         b.basicSchemaIsComplete();
-        b.createGroup(TABLE, SCHEMA, "_akiban_t1");
+        b.createGroup(TABLE, SCHEMA);
         b.addTableToGroup(TABLE, SCHEMA, TABLE);
         b.groupingIsComplete();
 
         AISMerge merge = new AISMerge(t, s.getUserTable(TABLENAME));
         t = merge.merge().getAIS();
         assertTrue(t.isFrozen());
-        assertEquals(TABLE, t.getUserTable(TABLENAME).getGroup().getName());
-        assertEquals("test._akiban_t1", t.getUserTable(TABLENAME).getGroup().getGroupTable().getName().toString());
+        assertEquals(TABLENAME, t.getUserTable(TABLENAME).getGroup().getName());
 
         b.userTable(SCHEMA, "t2");
         b.column(SCHEMA, "t2", "c1", 0, "INT", 0L, 0L, false, false, null, null);
@@ -419,6 +412,109 @@ public class AISMergeTest {
         b.groupingIsComplete();
 
         merge = new AISMerge(t, s.getUserTable(SCHEMA, "t2"));
+        t = merge.merge().getAIS();
+    }
+    
+    @Test
+    public void columnIdentity () {
+        b.userTable(SCHEMA, TABLE);
+        b.column(SCHEMA, TABLE, "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
+        b.sequence(SCHEMA, "seq-1", 5, 2, 0, 1000, false);
+        b.columnAsIdentity(SCHEMA, TABLE, "c1", "seq-1", true);
+        b.basicSchemaIsComplete();
+
+        b.createGroup("FRED", SCHEMA);
+        b.addTableToGroup("FRED", SCHEMA, TABLE);
+        b.groupingIsComplete();
+        AISMerge merge = new AISMerge (t,s.getUserTable(TABLENAME));
+        t = merge.merge().getAIS();
+        
+        assertNotNull (t.getTable(TABLENAME).getColumn(0).getIdentityGenerator());
+        Sequence identityGenerator = t.getTable(TABLENAME).getColumn(0).getIdentityGenerator();
+        assertEquals (5, identityGenerator.getStartsWith());
+        assertEquals (2, identityGenerator.getIncrement());
+        assertEquals (1000, identityGenerator.getMaxValue());
+        assertNotNull (identityGenerator.getTreeName());
+    }
+
+    /*
+     * Not really behavior that needs preserved, but at least one data set observed
+     * to contain IDs outside of what we assume the valid UserTable range to be.
+     */
+    @Test
+    public void userTableIDUniqueIncludingIS() {
+        /*
+         * Set up this scenario:
+         * table id -> table_name
+         * x   -> test.bar
+         * x+1 -> test._akiban_bar
+         *   (x+2 = invalid next user table id)
+         * x+2 -> i_s.foo
+         * x+3 -> i_s._akiban_foo
+         */
+        AISBuilder tb = new AISBuilder(t);
+
+        tb.userTable(SCHEMA, "bar");
+        tb.column(SCHEMA, "bar", "id", 0, "INT", null, null, false, false, null, null);
+        tb.createGroup("bar", SCHEMA);
+        tb.addTableToGroup("bar", SCHEMA, "bar");
+
+        tb.userTable(TableName.INFORMATION_SCHEMA, "foo");
+        tb.column(TableName.INFORMATION_SCHEMA, "foo", "id", 0, "INT", null, null, false, false, null, null);
+        tb.createGroup("foo", TableName.INFORMATION_SCHEMA);
+        tb.addTableToGroup("foo", TableName.INFORMATION_SCHEMA, "foo");
+
+        tb.basicSchemaIsComplete();
+        tb.groupingIsComplete();
+        t.freeze();
+
+        assertNotNull("bar table", tb.akibanInformationSchema().getUserTable(SCHEMA, "bar"));
+        assertNotNull("foo table", t.getUserTable(TableName.INFORMATION_SCHEMA, "foo"));
+
+        b.userTable(SCHEMA, "zap");
+        b.column(SCHEMA, "zap", "id", 0, "INT", null, null, false, false, null, null);
+        
+        AISMerge merge = new AISMerge(t, s.getUserTable(SCHEMA, "zap"));
+        t = merge.merge().getAIS();
+    }
+
+    @Test
+    public void groupTableIDUniqueIncludingIS() {
+        /*
+         * Set up this scenario:
+         * table id -> table_name
+         * x   -> i_s.foo
+         * x+1 -> i_s._akiban_foo
+         *    (x+2 = valid next i_s table ID)
+         *    (x+3 = invalid next i_s group table id)
+         * x+3 -> test.bar
+         * x+4 -> test._akiban_bar
+         */
+        final String I_S = TableName.INFORMATION_SCHEMA;
+        AISBuilder tb = new AISBuilder(t);
+
+        tb.userTable(I_S, "foo");
+        tb.column(I_S, "foo", "id", 0, "INT", null, null, false, false, null, null);
+        tb.createGroup("foo", I_S);
+        tb.addTableToGroup("foo", I_S, "foo");
+
+        tb.userTable(SCHEMA, "bar");
+        tb.column(SCHEMA, "bar", "id", 0, "INT", null, null, false, false, null, null);
+        tb.createGroup("bar", SCHEMA);
+        tb.addTableToGroup("bar", SCHEMA, "bar");
+
+        tb.basicSchemaIsComplete();
+        tb.groupingIsComplete();
+        t.freeze();
+
+        assertNotNull("bar table", tb.akibanInformationSchema().getUserTable(SCHEMA, "bar"));
+        assertNotNull("foo table", t.getUserTable(I_S, "foo"));
+
+        b.userTable(I_S, "zap");
+        b.column(I_S, "zap", "id", 0, "INT", null, null, false, false, null, null);
+
+        AISMerge merge = new AISMerge(t, s.getUserTable(I_S, "zap"));
         t = merge.merge().getAIS();
     }
 

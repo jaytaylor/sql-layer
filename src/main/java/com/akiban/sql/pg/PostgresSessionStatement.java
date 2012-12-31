@@ -31,6 +31,7 @@ import com.akiban.server.error.UnsupportedConfigurationException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.aisddl.SchemaDDL;
 import com.akiban.sql.parser.AccessMode;
+import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.SetConfigurationNode;
 import com.akiban.sql.parser.SetSchemaNode;
 import com.akiban.sql.parser.SetTransactionAccessNode;
@@ -39,6 +40,7 @@ import com.akiban.sql.parser.StatementType;
 
 import java.util.Arrays;
 import java.io.IOException;
+import java.util.List;
 
 /** SQL statements that affect session / environment state. */
 public class PostgresSessionStatement implements PostgresStatement
@@ -46,19 +48,26 @@ public class PostgresSessionStatement implements PostgresStatement
     enum Operation {
         USE, CONFIGURATION,
         BEGIN_TRANSACTION, COMMIT_TRANSACTION, ROLLBACK_TRANSACTION,
-        TRANSACTION_ISOLATION, TRANSACTION_ACCESS
+        TRANSACTION_ISOLATION, TRANSACTION_ACCESS;
+        
+        public PostgresSessionStatement getStatement(StatementNode statement) {
+            return new PostgresSessionStatement (this, statement);
+        }
     };
 
     public static final String[] ALLOWED_CONFIGURATION = new String[] {
+      "columnAsFunc",
       "client_encoding", "DateStyle", "geqo", "ksqo",
       "queryTimeoutSec", "zeroDateTimeBehavior", "maxNotificationLevel", "OutputFormat",
-      "cbo"
+      "parserInfixBit", "parserInfixLogical", "parserDoubleQuoted",
+      "newtypes"
     };
 
     private Operation operation;
     private StatementNode statement;
+    private long aisGeneration;
     
-    public PostgresSessionStatement(Operation operation, StatementNode statement) {
+    protected PostgresSessionStatement(Operation operation, StatementNode statement) {
         this.operation = operation;
         this.statement = statement;
     }
@@ -85,6 +94,23 @@ public class PostgresSessionStatement implements PostgresStatement
     }
 
     @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        switch (operation) {
+            case USE:
+            case ROLLBACK_TRANSACTION:
+            case CONFIGURATION:
+                return TransactionAbortedMode.ALLOWED;
+            default:
+                return TransactionAbortedMode.NOT_ALLOWED;
+        }
+    }
+
+    @Override
+    public AISGenerationMode getAISGenerationMode() {
+        return AISGenerationMode.ALLOWED;
+    }
+
+    @Override
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         doOperation(server);
@@ -97,6 +123,33 @@ public class PostgresSessionStatement implements PostgresStatement
         return 0;
     }
 
+    @Override
+    public boolean hasAISGeneration() {
+        return aisGeneration != 0;
+    }
+
+    @Override
+    public void setAISGeneration(long aisGeneration) {
+        this.aisGeneration = aisGeneration;
+    }
+
+    @Override
+    public long getAISGeneration() {
+        return aisGeneration;
+    }
+
+    @Override
+    public PostgresStatement finishGenerating(PostgresServerSession server,
+                                              String sql, StatementNode stmt,
+                                              List<ParameterNode> params, int[] paramTypes) {
+        return this;
+    }
+
+    @Override
+    public boolean putInCache() {
+        return false;
+    }
+
     protected void doOperation(PostgresServerSession server) {
         switch (operation) {
         case USE:
@@ -104,7 +157,7 @@ public class PostgresSessionStatement implements PostgresStatement
                 SetSchemaNode node = (SetSchemaNode)statement;
                 String schemaName = (node.statementType() == StatementType.SET_SCHEMA_USER ? 
                                      server.getProperty("user") : node.getSchemaName());
-                if (SchemaDDL.checkSchema(server.getAIS(), schemaName)) {
+                if (server.getAIS().getSchema(schemaName) != null) {
                     server.setDefaultSchemaName(schemaName);
                 } 
                 else {
@@ -136,15 +189,17 @@ public class PostgresSessionStatement implements PostgresStatement
         case CONFIGURATION:
             {
                 SetConfigurationNode node = (SetConfigurationNode)statement;
-                String variable = node.getVariable();
-                if (!Arrays.asList(ALLOWED_CONFIGURATION).contains(variable))
-                    throw new UnsupportedConfigurationException(variable);
-                server.setProperty(variable, node.getValue());
+                setVariable (server, node.getVariable(), node.getValue());
             }
             break;
         default:
             throw new UnsupportedSQLException("session control", statement);
         }
     }
-
+    
+    protected void setVariable(PostgresServerSession server, String variable, String value) {
+        if (!Arrays.asList(ALLOWED_CONFIGURATION).contains(variable))
+            throw new UnsupportedConfigurationException (variable);
+        server.setProperty(variable, value);
+    }
 }

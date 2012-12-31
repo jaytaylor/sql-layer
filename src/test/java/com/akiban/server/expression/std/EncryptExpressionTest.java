@@ -78,7 +78,7 @@ public class EncryptExpressionTest extends ComposedExpressionTestBase
     
     private static Expression getEncrypted (String st, String k)
     {
-        return  EncryptExpression.ENCRYPT.compose(Arrays.asList(
+        return  compose(EncryptExpression.ENCRYPT, Arrays.asList(
                 st == null 
                     ? LiteralExpression.forNull() 
                     : new LiteralExpression(AkType.VARBINARY, new WrappingByteSource(st.getBytes())),
@@ -87,7 +87,7 @@ public class EncryptExpressionTest extends ComposedExpressionTestBase
     
     private static Expression getDecrypted (Expression encrypted, String k)
     {
-        return EncryptExpression.DECRYPT.compose(Arrays.asList(
+        return compose(EncryptExpression.DECRYPT, Arrays.asList(
                 new LiteralExpression(AkType.VARBINARY, encrypted.evaluation().eval().getVarBinary()),
                 new LiteralExpression(AkType.VARCHAR, k)));
     }

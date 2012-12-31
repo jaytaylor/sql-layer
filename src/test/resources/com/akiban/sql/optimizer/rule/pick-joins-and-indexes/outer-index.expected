@@ -2,6 +2,6 @@ SelectQuery@34014067
   ResultSet@3e2b44dd[order_date]
     Project@ab6290e[orders.order_date]
       Select@3d415ba0[]
-        TableGroupJoinTree@de684cb(TableGroup@1918328e(customers), orders LEFT items - SingleIndexScan@39f1581(Index(.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), covering/SORTED/reverse, =null, rows = 100, cost = 83.6140))
+        TableGroupJoinTree@de684cb(TableGroup@1918328e(customers), orders LEFT items - SingleIndexScan@39f1581(Index(test.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), covering/SORTED/reverse, =null, rows = 100, cost = 83.6140))
           TableSource@74403594(orders - TableGroup@1918328e(customers))
-            TableSource@237dc32c(items - TableGroupJoin@413cca02(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+            TableSource@237dc32c(items - TableGroupJoin@413cca02(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(test.customers))))

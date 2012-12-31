@@ -26,7 +26,7 @@
 
 package com.akiban.server.test.costmodel;
 
-import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Group;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.TimeOperator;
@@ -69,11 +69,11 @@ public class MapCT extends CostModelBase
                         "pid int",
                         "primary key(did)",
                         String.format("grouping foreign key(pid) references %s(pid)", pTableName));
-        schema = new Schema(rowDefCache().ais());
+        schema = new Schema(ais());
         pRowType = schema.userTableRowType(userTable(p));
         cRowType = schema.userTableRowType(userTable(c));
         dRowType = schema.userTableRowType(userTable(d));
-        group = groupTable(p);
+        group = group(p);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
     }
@@ -119,5 +119,5 @@ public class MapCT extends CostModelBase
     private UserTableRowType pRowType;
     private UserTableRowType cRowType;
     private UserTableRowType dRowType;
-    private GroupTable group;
+    private Group group;
 }

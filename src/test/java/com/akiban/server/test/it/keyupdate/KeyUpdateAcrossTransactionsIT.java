@@ -30,18 +30,9 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.api.dml.ConstantColumnSelector;
-import com.akiban.server.api.dml.SetColumnSelector;
-import com.akiban.server.api.dml.scan.*;
-import com.akiban.server.error.DuplicateKeyException;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.IndexKeyVisitor;
 import com.akiban.server.test.it.ITBase;
-import com.persistit.Transaction;
-import junit.framework.Assert;
-import org.antlr.misc.Barrier;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -49,12 +40,8 @@ import org.junit.Test;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.akiban.server.test.it.keyupdate.Schema.*;
-import static com.akiban.server.test.it.keyupdate.Schema.itemRD;
 import static junit.framework.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
@@ -133,8 +120,7 @@ public final class KeyUpdateAcrossTransactionsIT extends ITBase
         {
             try {
                 Session session = createNewSession();
-                Transaction txn = treeService().getTransaction(session);
-                txn.begin();
+                txnService().beginTransaction(session);
                 try {
                     System.out.println(String.format("(%s, %s), %s: Starting", id, u, session));
                     barrier.await();
@@ -143,10 +129,10 @@ public final class KeyUpdateAcrossTransactionsIT extends ITBase
                     System.out.println(String.format("(%s, %s), %s: Wrote", id, u, session));
                     barrier.await();
                     System.out.println(String.format("(%s, %s), %s: Exiting", id, u, session));
-                    txn.commit();
+                    txnService().commitTransaction(session);
                 }
                 finally {
-                    txn.end();
+                    txnService().rollbackTransactionIfOpen(session);
                 }
             } catch (Exception e) {
                 fail(e.getMessage());

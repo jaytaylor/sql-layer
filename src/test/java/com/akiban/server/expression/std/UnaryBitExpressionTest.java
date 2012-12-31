@@ -173,7 +173,7 @@ public class UnaryBitExpressionTest extends ComposedExpressionTestBase
   
     private ValueSource getActualSource (Expression arg)
     {
-        return getComposer().compose(Arrays.asList(arg)).evaluation().eval();
+        return compose(getComposer(), Arrays.asList(arg)).evaluation().eval();
     }
     
     @Override

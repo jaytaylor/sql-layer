@@ -26,12 +26,21 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Label;
+import com.akiban.server.explain.PrimitiveExplainer;
+import com.akiban.server.explain.Type;
+import com.akiban.server.explain.std.ExpressionExplainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import java.util.List;
+import java.util.Map;
 
 public final class VariableExpression implements Expression {
 
@@ -80,12 +89,26 @@ public final class VariableExpression implements Expression {
     private final int position;
 
     @Override
+    public String name()
+    {
+        return "Variable";
+    }
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        CompoundExplainer ex = new ExpressionExplainer(Type.VARIABLE, name(), context);
+        ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(position));
+        return ex;
+    }
+
     public boolean nullIsContaminating()
     {
         return true;
     }
 
-   private static class InnerEvaluation extends ExpressionEvaluation.Base {
+    private static class InnerEvaluation extends ExpressionEvaluation.Base {
+
         @Override
         public void of(Row row) {
         }

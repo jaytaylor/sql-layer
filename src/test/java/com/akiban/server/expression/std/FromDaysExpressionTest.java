@@ -31,7 +31,6 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
 
-import com.akiban.server.types.extract.ConverterTestUtils;
 import com.akiban.server.types.extract.Extractors;
 import static org.junit.Assert.*;
 

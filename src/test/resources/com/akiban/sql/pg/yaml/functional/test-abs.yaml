@@ -4,10 +4,10 @@
 ---
 # Test arity
 - Statement: SELECT ABS() FROM all_types
-- error: [42000]
+- error: !select-engine { all: [42000], sys-mysql: [1582] }
 ---
 - Statement: SELECT ABS(1, 2) from all_types;
-- error: [42000]
+- error: !select-engine {all:  [42000], sys-mysql: [1582] }
 ---
 # Test NULL
 - Statement: INSERT INTO all_types (float_field, double_field, smallint_field,
@@ -46,9 +46,14 @@
 ---
 - Statement: SELECT ABS(double_field), ABS(float_field), ABS(real_field)
     FROM all_types
-- output: [['Infinity', 'Infinity', 'Infinity'], 
-          ['Infinity', 'Infinity', 'Infinity'], 
-          [NaN, NaN, NaN]]
+- output: !select-engine {
+    all: [['Infinity', 'Infinity', 'Infinity'],
+          ['Infinity', 'Infinity', 'Infinity'],
+          [NaN, NaN, NaN]],
+    newtypes: [[0.0, 0.0, 0.0],
+               [0.0, 0.0, 0.0],
+               [0.0, 0.0, 0.0]]
+   }
 
 # Literals
 ---

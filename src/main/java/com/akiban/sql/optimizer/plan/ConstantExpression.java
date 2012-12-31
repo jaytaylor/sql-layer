@@ -31,19 +31,31 @@ import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
+import com.akiban.util.AkibanAppender;
 
 /** An operand with a constant value. */
 public class ConstantExpression extends BaseExpression 
 {
     private Object value;
+    private TPreptimeValue preptimeValue;
+
+    public static ConstantExpression typedNull(DataTypeDescriptor sqlType, ValueNode sqlSource, TInstance tInstance) {
+        ConstantExpression result = new ConstantExpression(null, sqlType, AkType.NULL, sqlSource);
+        PValueSource nullSource = PValueSources.getNullSource(tInstance);
+        result.preptimeValue = new TPreptimeValue(tInstance, nullSource);
+        return result;
+    }
 
     public ConstantExpression(Object value, 
                               DataTypeDescriptor sqlType, AkType type, ValueNode sqlSource) {
         super(sqlType, type, sqlSource);
-        if (value instanceof Integer)
-            value = new Long(((Integer)value).intValue());
         this.value = value;
     }
 
@@ -64,12 +76,35 @@ public class ConstantExpression extends BaseExpression
         this(value, null, type, null);
     }
 
+    public ConstantExpression(TPreptimeValue preptimeValue) {
+        this(preptimeValue.instance().dataTypeDescriptor());
+        // only store the preptimeValue if its value is not null. If it's null, #value will just stay null.
+        this.preptimeValue = preptimeValue;
+    }
+
+    private ConstantExpression(DataTypeDescriptor sqlType) {
+        this(null, sqlType, TypesTranslation.sqlTypeToAkType(sqlType), null);
+    }
+
+    @Override
+    public TPreptimeValue getPreptimeValue() {
+        if (preptimeValue == null)
+            preptimeValue = PValueSources.fromObject(value, getAkType());
+        return preptimeValue;
+    }
+
     @Override
     public boolean isConstant() {
         return true;
     }
 
     public Object getValue() {
+        if (value == null && preptimeValue != null) {
+            PValueSource pValueSource = preptimeValue.value();
+            if (pValueSource == null || pValueSource.isNull())
+                return null;
+            value = PValueSources.toObject(pValueSource, getAkType());
+        }
         return value;
     }
 
@@ -77,13 +112,22 @@ public class ConstantExpression extends BaseExpression
     public boolean equals(Object obj) {
         if (!(obj instanceof ConstantExpression)) return false;
         ConstantExpression other = (ConstantExpression)obj;
+        // Normalize to the value (from TPreptimeContext)
+        ensureValueObject(this);
+        ensureValueObject(other);
         return ((value == null) ?
                 (other.value == null) :
                 value.equals(other.value));
     }
 
+    private static void ensureValueObject(ConstantExpression constantExpression) {
+        if ( (constantExpression.value == null) && (constantExpression.preptimeValue != null) )
+            constantExpression.getValue();
+    }
+
     @Override
     public int hashCode() {
+        ensureValueObject(this);
         return (value == null) ? 0 : value.hashCode();
     }
 
@@ -99,6 +143,15 @@ public class ConstantExpression extends BaseExpression
 
     @Override
     public String toString() {
+        if (preptimeValue != null) {
+            PValueSource valueSource = preptimeValue.value();
+            if (valueSource == null || valueSource.isNull())
+                return "NULL";
+            TInstance tInstance = preptimeValue.instance();
+            StringBuilder sb = new StringBuilder();
+            tInstance.format(valueSource, AkibanAppender.of(sb));
+            return sb.toString();
+        }
         ValueSource valueSource;
         if (getAkType() == null)
             valueSource = new FromObjectValueSource().setReflectively(value);

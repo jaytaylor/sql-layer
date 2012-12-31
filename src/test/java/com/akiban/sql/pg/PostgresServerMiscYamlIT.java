@@ -33,8 +33,6 @@ import com.akiban.sql.NamedParamsTestBase;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.regex.Pattern;

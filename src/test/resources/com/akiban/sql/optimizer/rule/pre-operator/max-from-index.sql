@@ -1,0 +1,1 @@
+SELECT MAX(name) FROM customers

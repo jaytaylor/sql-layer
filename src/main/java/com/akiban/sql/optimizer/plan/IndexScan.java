@@ -34,7 +34,7 @@ import java.util.*;
 public abstract class IndexScan extends BaseScan implements IndexIntersectionNode<ConditionExpression,IndexScan>
 {
     public static enum OrderEffectiveness {
-        NONE, PARTIAL_GROUPED, GROUPED, SORTED
+        NONE, PARTIAL_GROUPED, GROUPED, SORTED, FOR_MIN_MAX
     }
 
     private TableSource rootMostTable, rootMostInnerTable, leafMostInnerTable, leafMostTable;
@@ -132,10 +132,18 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
         super.deepCopy(map);
     }
 
+    @Override
+    public int getPeggedCount() {
+        return getNEquality();
+    }
+
     public abstract List<OrderByExpression> getOrdering();
     public abstract OrderEffectiveness getOrderEffectiveness();
     public abstract List<ExpressionNode> getColumns();
     public abstract List<IndexColumn> getIndexColumns();
+    public abstract int getNKeyColumns();
+    public abstract boolean usesAllColumns();
+    public abstract void setUsesAllColumns(boolean usesAllColumns);
     public abstract List<ExpressionNode> getEqualityComparands();
     public abstract List<ConditionExpression> getConditions();
     public abstract boolean hasConditions();
@@ -145,6 +153,9 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
     public abstract boolean isHighInclusive();
     public abstract void visitComparands(ExpressionRewriteVisitor v);
     public abstract void visitComparands(ExpressionVisitor v);
+    public abstract int getNEquality();
+    public abstract boolean isAscendingAt(int index);
+    public abstract boolean isRecoverableAt(int index);
     
     @Override
     public String summaryString() {
@@ -228,5 +239,4 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
     protected abstract String summarizeIndex(int indentation);
     protected void describeConditionRange(StringBuilder output) {}
     protected void describeEqualityComparands(StringBuilder output) {}
-    protected abstract boolean isAscendingAt(int index);
 }

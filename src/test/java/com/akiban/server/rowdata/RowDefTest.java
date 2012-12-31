@@ -28,6 +28,7 @@ package com.akiban.server.rowdata;
 
 import java.util.Arrays;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.AkServerUtil;
 import junit.framework.TestCase;
 
@@ -173,8 +174,8 @@ public class RowDefTest extends TestCase {
         SchemaFactory schemaFactory = new SchemaFactory("schema");
         for (int def = 0; def < TEST_CASES.length; def++) {
             String[] ddl = TEST_CASES[def];
-            RowDefCache rowDefCache = schemaFactory.rowDefCache(ddl);
-            RowDef rowDef = rowDefCache.getRowDef("schema", "test");
+            AkibanInformationSchema ais = schemaFactory.aisWithRowDefs(ddl);
+            RowDef rowDef = ais.getTable("schema", "test").rowDef();
             FieldDef[] fieldDefs = rowDef.getFieldDefs();
             if (VERBOSE) {
                 System.out.println(rowDef);

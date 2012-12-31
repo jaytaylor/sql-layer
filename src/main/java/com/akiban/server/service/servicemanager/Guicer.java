@@ -33,6 +33,7 @@ import com.akiban.util.Exceptions;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Module;
 import com.google.inject.ProvisionException;
 import com.google.inject.Scopes;
 import com.google.inject.grapher.GrapherModule;
@@ -79,7 +80,11 @@ public final class Guicer {
     }
 
     public boolean serviceIsStarted(Class<?> serviceClass) {
-        return services.contains(serviceClass);
+        for (Object service : services) {
+            if (serviceClass.isInstance(service))
+                return true;
+        }
+        return false;
     }
 
     public boolean isRequired(Class<?> interfaceClass) {
@@ -167,17 +172,39 @@ public final class Guicer {
     // public class methods
 
     public static Guicer forServices(Collection<ServiceBinding> serviceBindings)
-    throws ClassNotFoundException
+            throws ClassNotFoundException 
+    {
+        return forServices(null, null, serviceBindings, Collections.<String>emptyList(),
+                Collections.<Module>emptyList());
+    }
+
+    public static <M extends ServiceManagerBase> Guicer forServices(Class<M> serviceManagerInterfaceClass,
+                                                                    M serviceManager,
+                                                                    Collection<ServiceBinding> serviceBindings,
+                                                                    List<String> priorities,
+                                                                    Collection<? extends Module> modules)
+            throws ClassNotFoundException 
     {
         ArgumentValidation.notNull("bindings", serviceBindings);
-        return new Guicer(serviceBindings);
+        if (serviceManagerInterfaceClass != null) {
+            if (!serviceManagerInterfaceClass.isInstance(serviceManager)) {
+                throw new IllegalArgumentException(serviceManager + " is not a "
+                                                   + serviceManagerInterfaceClass);
+            }
+        }
+        return new Guicer(serviceManagerInterfaceClass, serviceManager, 
+                          serviceBindings, priorities, modules);
     }
 
     // private methods
 
-    private Guicer(Collection<ServiceBinding> serviceBindings)
+    private Guicer(Class<? extends ServiceManagerBase> serviceManagerInterfaceClass, ServiceManagerBase serviceManager,
+                   Collection<ServiceBinding> serviceBindings, List<String> priorities,
+                   Collection<? extends Module> modules)
     throws ClassNotFoundException
     {
+        this.serviceManagerInterfaceClass = serviceManagerInterfaceClass;
+        
         List<Class<?>> localDirectlyRequiredClasses = new ArrayList<Class<?>>();
         List<ResolvedServiceBinding> resolvedServiceBindings = new ArrayList<ResolvedServiceBinding>();
 
@@ -189,12 +216,26 @@ public final class Guicer {
             }
         }
         Collections.sort(localDirectlyRequiredClasses, BY_CLASS_NAME);
+        // Pull to front in reverse order.
+        for (int i = priorities.size() - 1; i >= 0; i--) {
+            Class<?> clazz = Class.forName(priorities.get(i));
+            if (localDirectlyRequiredClasses.remove(clazz)) {
+                localDirectlyRequiredClasses.add(0, clazz);
+            }
+            else {
+                throw new IllegalArgumentException("priority service " + priorities.get(i) + " is not a dependency");
+            }
+        }
         directlyRequiredClasses = Collections.unmodifiableCollection(localDirectlyRequiredClasses);
 
         this.services = Collections.synchronizedSet(new LinkedHashSet<Object>());
 
-        AbstractModule module = new ServiceBindingsModule(resolvedServiceBindings);
-        _injector = Guice.createInjector(module);
+        AbstractModule module = new ServiceBindingsModule(serviceManagerInterfaceClass, serviceManager,
+                                                          resolvedServiceBindings);
+        List<Module> modulesList = new ArrayList<Module>(modules.size() + 1);
+        modulesList.add(module);
+        modulesList.addAll(modules);
+        _injector = Guice.createInjector(modulesList.toArray(new Module[modulesList.size()]));
     }
 
     private void buildDependencies(Class<?> forClass, LinkedHashMap<Class<?>,Object> results, Deque<Object> dependents) {
@@ -227,6 +268,9 @@ public final class Guicer {
                 dependencyClasses.add(dependency.getKey().getTypeLiteral().getRawType());
             }
         }
+
+        // This dependency is already handled.
+        dependencyClasses.remove(serviceManagerInterfaceClass);
 
         // Sort it and recursively invoke
         Collections.sort(dependencyClasses, BY_CLASS_NAME);
@@ -341,6 +385,7 @@ public final class Guicer {
 
     // object state
 
+    private final Class<? extends ServiceManagerBase> serviceManagerInterfaceClass;
     private final Collection<Class<?>> directlyRequiredClasses;
     private final Set<Object> services;
     private final Injector _injector;
@@ -377,8 +422,9 @@ public final class Guicer {
         }
 
         public ResolvedServiceBinding(ServiceBinding serviceBinding) throws ClassNotFoundException {
-            this.serviceInterfaceClass = Class.forName(serviceBinding.getInterfaceName());
-            this.serviceImplementationClass = Class.forName(serviceBinding.getImplementingClassName());
+            ClassLoader loader = serviceBinding.getClassLoader();
+            this.serviceInterfaceClass = Class.forName(serviceBinding.getInterfaceName(), true, loader);
+            this.serviceImplementationClass = Class.forName(serviceBinding.getImplementingClassName(), true, loader);
             if (!this.serviceInterfaceClass.isAssignableFrom(this.serviceImplementationClass)) {
                 throw new IllegalArgumentException(this.serviceInterfaceClass + " is not assignable from "
                         + this.serviceImplementationClass);
@@ -395,6 +441,8 @@ public final class Guicer {
         // we use unchecked, raw Class, relying on the invariant established by ResolvedServiceBinding's ctor
         @SuppressWarnings("unchecked")
         protected void configure() {
+            if (serviceManagerInterfaceClass != null)
+                bind((Class)serviceManagerInterfaceClass).toInstance(serviceManager);
             for (ResolvedServiceBinding binding : bindings) {
                 Class unchecked = binding.serviceInterfaceClass();
                 bind(unchecked).to(binding.serviceImplementationClass()).in(Scopes.SINGLETON);
@@ -403,13 +451,18 @@ public final class Guicer {
 
         // ServiceBindingsModule interface
 
-        private ServiceBindingsModule(Collection<ResolvedServiceBinding> bindings)
+        private ServiceBindingsModule(Class<? extends ServiceManagerBase> serviceManagerInterfaceClass, ServiceManagerBase serviceManager,
+                                      Collection<ResolvedServiceBinding> bindings)
         {
+            this.serviceManagerInterfaceClass = serviceManagerInterfaceClass;
+            this.serviceManager = serviceManager;
             this.bindings = bindings;
         }
 
         // object state
 
+        private final Class<? extends ServiceManagerBase> serviceManagerInterfaceClass;
+        private final ServiceManagerBase serviceManager;
         private final Collection<ResolvedServiceBinding> bindings;
     }
 

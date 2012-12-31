@@ -28,6 +28,7 @@ package com.akiban.qp.rowtype;
 
 import com.akiban.ais.model.HKey;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
 
 public class HKeyRowType extends DerivedRowType
 {
@@ -45,6 +46,11 @@ public class HKeyRowType extends DerivedRowType
     public int nFields()
     {
         return nFields;
+    }
+
+    @Override
+    public TInstance typeInstanceAt(int index) {
+        return hKey().column(index).tInstance();
     }
 
     @Override

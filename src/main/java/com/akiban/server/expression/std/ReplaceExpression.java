@@ -45,9 +45,9 @@ public class ReplaceExpression extends AbstractTernaryExpression
     public static final ExpressionComposer COMPOSER = new TernaryComposer()
     {
         @Override
-        protected Expression compose(Expression first, Expression second, Expression third)
+        protected Expression doCompose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            return new ReplaceExpression(first, second, third);
+            return new ReplaceExpression(arguments);
         }
 
         @Override
@@ -63,13 +63,13 @@ public class ReplaceExpression extends AbstractTernaryExpression
             }
             return ExpressionTypes.varchar(length);
         }
-
-        @Override
-        public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
-        {
-            throw new UnsupportedOperationException("Not supported in REPLACE yet.");
-        }
     };
+
+    @Override
+    public String name()
+    {
+        return "REPLACE";
+    }
 
     private static final class InnerEvaluation extends AbstractThreeArgExpressionEvaluation
     {
@@ -94,9 +94,9 @@ public class ReplaceExpression extends AbstractTernaryExpression
         }
     }
 
-    public ReplaceExpression (Expression first, Expression second, Expression third)
+    public ReplaceExpression (List<? extends Expression> arguments)
     {
-        super(AkType.VARCHAR, first, second, third);
+        super(AkType.VARCHAR, arguments);
     }
 
     @Override
@@ -104,7 +104,7 @@ public class ReplaceExpression extends AbstractTernaryExpression
     {
         return true;
     }
-
+    
     @Override
     protected void describe(StringBuilder sb)
     {

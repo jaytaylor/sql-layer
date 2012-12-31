@@ -11,16 +11,16 @@
 - output: [['yup']]
 ---
 - Statement: SELECT IF() FROM all_types
-- error: [4250C]
+- error: !select-engine {all: [4250C], sys-mysql: [1064] }
 ---
 - Statement: SELECT IF(bigint_field = 1) FROM all_types
-- error: [4250C]
+- error: !select-engine {all: [4250C], sys-mysql: [1064] }
 ---
 - Statement: SELECT IF(bigint_field = 1, double_field) FROM all_types
-- error: [4250C]
+- error: !select-engine {all: [4250C], sys-mysql: [1064] }
 ---
 - Statement: SELECT IF(bigint_field = 1, double_field,) FROM all_types
-- error: [42000]
+- error: !select-engine {all: [42000], sys-mysql: [1064] }
 
 ---
 - Statement: INSERT INTO all_types
@@ -42,5 +42,41 @@
 - Statement: SELECT IF(?, double_field, varchar_field) FROM all_types
 - params: [[0]]
 - output: [[null], [one], [two]]
+
+---
+- Statement: SELECT IF(bigint_field, double_field, double_field) FROM all_types;
+- output_types: [DOUBLE]
+
+---
+- Statement: SELECT IF(bigint_field, varchar_field, varchar_field) FROM all_types;
+- output_types: [VARCHAR]
+
+---
+- Statement: SELECT IF(bigint_field, date_field, date_field) FROM all_types;
+- output_types: [DATE]
+
+---
+- Statement: SELECT IF(bigint_field, integer_field, date_field) FROM all_types;
+- output_types: [VARCHAR]
+
+---
+- Statement: SELECT IF(bigint_field, double_field, integer_field) FROM all_types;
+- output_types: [DOUBLE]
+
+---
+- Statement: SELECT IF(bigint_field, integer_field, decimal_field) FROM all_types;
+- output_types: [NUMERIC]
+
+---
+- Statement: SELECT IF(bigint_field, double_field, decimal_field) FROM all_types;
+- output_types: !select-engine { all: [NUMERIC], newtypes: [DOUBLE] }
+
+---
+- Statement: SELECT IF(bigint_field, double_field, varchar_field) FROM all_types;
+- output_types: [VARCHAR]
+
+---
+- Statement: SELECT IF(bigint_field, integer_field, smallint_field) FROM all_types;
+- output_types: [INTEGER]
 
 ...

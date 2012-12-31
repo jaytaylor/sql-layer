@@ -26,9 +26,11 @@
 
 package com.akiban.server.test.pt;
 
+import com.akiban.qp.operator.ExpressionGenerator;
 import com.akiban.server.test.ApiTestBase;
 
 import com.akiban.ais.model.TableIndex;
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
@@ -38,7 +40,6 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.OperatorExecutionBase;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.row.ImmutableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.row.ValuesRow;
@@ -49,19 +50,22 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.error.QueryCanceledException;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.std.BoundFieldExpression;
 import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.test.ExpressionGenerators;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.ValueHolder;
-import com.akiban.util.ShareHolder;
-import com.akiban.util.Shareable;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -75,6 +79,9 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.LockSupport;
+
+import static com.akiban.server.test.ExpressionGenerators.boundField;
+import static com.akiban.server.test.ExpressionGenerators.field;
 
 public class AggregatePT extends ApiTestBase {
     public static final int NKEYS = 10;
@@ -126,11 +133,11 @@ public class AggregatePT extends ApiTestBase {
 
     @Test
     public void normalOperators() {
-        Schema schema = new Schema(rowDefCache().ais());
+        Schema schema = new Schema(ais());
         IndexRowType indexType = schema.indexRowType(index);
         IndexKeyRange keyRange = IndexKeyRange.unbounded(indexType);
         API.Ordering ordering = new API.Ordering();
-        ordering.append(new FieldExpression(indexType, 0), true);
+        ordering.append(field(indexType, 0), true);
         
         Operator plan = API.indexScan_Default(indexType, keyRange, ordering);
         RowType rowType = indexType;
@@ -164,36 +171,48 @@ public class AggregatePT extends ApiTestBase {
         ExpressionComposer and = functions.composer("and");
         Expression pred1 = functions.composer("greaterOrEquals")
             .compose(Arrays.asList(Expressions.field(rowType, 1),
-                                   Expressions.literal("M")));
+                                   Expressions.literal("M")),
+                     Arrays.asList(ExpressionTypes.varchar(20),
+                                   ExpressionTypes.varchar(1),
+                                   ExpressionTypes.BOOL));
         Expression pred2 = functions.composer("lessOrEquals")
             .compose(Arrays.asList(Expressions.field(rowType, 1),
-                                   Expressions.literal("Y")));
-        Expression pred = and.compose(Arrays.asList(pred1, pred2));
+                                   Expressions.literal("Y")),
+                     Arrays.asList(ExpressionTypes.varchar(20),
+                                   ExpressionTypes.varchar(1),
+                                   ExpressionTypes.BOOL));
+        Expression pred = and.compose(Arrays.asList(pred1, pred2), 
+                                      Arrays.asList(ExpressionTypes.BOOL, ExpressionTypes.BOOL, ExpressionTypes.BOOL));
         pred2 = functions.composer("notEquals")
             .compose(Arrays.asList(Expressions.field(rowType, 2),
-                                   Expressions.literal(1L)));
-        pred = and.compose(Arrays.asList(pred, pred2));
+                                   Expressions.literal(1L)),
+                     Arrays.asList(ExpressionTypes.LONG,
+                                   ExpressionTypes.LONG,
+                                   ExpressionTypes.BOOL));
+        pred = and.compose(Arrays.asList(pred, pred2),
+                           Arrays.asList(ExpressionTypes.BOOL, ExpressionTypes.BOOL, ExpressionTypes.BOOL));
         
         plan = API.select_HKeyOrdered(plan, rowType, pred);
         plan = API.project_Default(plan, rowType,
-                                   Arrays.asList(Expressions.field(rowType, 0),
-                                                 Expressions.field(rowType, 3),
-                                                 Expressions.field(rowType, 4),
-                                                 Expressions.field(rowType, 5)));
+                                   Arrays.asList(ExpressionGenerators.field(rowType, 0),
+                                           ExpressionGenerators.field(rowType, 3),
+                                           ExpressionGenerators.field(rowType, 4),
+                                           ExpressionGenerators.field(rowType, 5)));
         rowType = plan.rowType();
         plan = API.aggregate_Partial(plan, rowType, 
                                      1, functions,
-                                     Arrays.asList("count", "sum", "sum"));
+                                     Arrays.asList("count", "sum", "sum"),
+                                     new ArrayList<Object>(3));
         return plan;
     }
 
     @Test
     public void bespokeOperator() {
-        Schema schema = new Schema(rowDefCache().ais());
+        Schema schema = new Schema(ais());
         IndexRowType indexType = schema.indexRowType(index);
         IndexKeyRange keyRange = IndexKeyRange.unbounded(indexType);
         API.Ordering ordering = new API.Ordering();
-        ordering.append(new FieldExpression(indexType, 0), true);
+        ordering.append(field(indexType, 0), true);
         
         Operator plan = API.indexScan_Default(indexType, keyRange, ordering);
         RowType rowType = indexType;
@@ -274,6 +293,11 @@ public class AggregatePT extends ApiTestBase {
         public RowType rowType() {
             return outputType;
         }
+
+        @Override
+        public CompoundExplainer getExplainer(ExplainContext context) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     }
 
     static class BespokeCursor extends OperatorExecutionBase implements Cursor {
@@ -347,6 +371,10 @@ public class AggregatePT extends ApiTestBase {
     static final AkType[] TYPES = { 
         AkType.LONG, AkType.LONG, AkType.LONG, AkType.LONG
     };
+    
+    static final TInstance[] TINSTANCES = {
+        MNumeric.INT.instance(true),MNumeric.INT.instance(true) ,MNumeric.INT.instance(true) ,MNumeric.INT.instance(true)
+    };
 
     static class BespokeRowType extends RowType {
         public BespokeRowType() {
@@ -361,9 +389,15 @@ public class AggregatePT extends ApiTestBase {
         public int nFields() {
             return TYPES.length;
         }
-        
+
+        @Override
         public AkType typeAt(int index) {
             return TYPES[index];
+        }
+
+        @Override
+        public TInstance typeInstanceAt(int index) {
+            return TINSTANCES[index];
         }
     }
 
@@ -386,13 +420,13 @@ public class AggregatePT extends ApiTestBase {
             if (("M".compareTo(sval) > 0) ||
                 ("Y".compareTo(sval) < 0))
                 return false;
-            long flag = inputRow.eval(2).getInt();
+            long flag = getLong(inputRow, 2);
             if (flag == 1)
                 return false;
 
             // The actual aggregate part.
             boolean emit = false, reset = false;
-            long nextKey = inputRow.eval(0).getInt();
+            long nextKey = getLong(inputRow, 0);
             if (!key_init) {
                 key_init = reset = true;
                 key = nextKey;
@@ -512,11 +546,11 @@ public class AggregatePT extends ApiTestBase {
 
     @Test
     public void sorted() {
-        Schema schema = new Schema(rowDefCache().ais());
+        Schema schema = new Schema(ais());
         IndexRowType indexType = schema.indexRowType(index);
         IndexKeyRange keyRange = IndexKeyRange.unbounded(indexType);
         API.Ordering ordering = new API.Ordering();
-        ordering.append(new FieldExpression(indexType, 0), true);
+        ordering.append(field(indexType, 0), true);
         
         Operator plan = API.indexScan_Default(indexType, keyRange, ordering);
         RowType rowType = indexType;
@@ -525,7 +559,7 @@ public class AggregatePT extends ApiTestBase {
         rowType = plan.rowType();
         
         ordering = new API.Ordering();
-        ordering.append(new FieldExpression(rowType, 2), true);
+        ordering.append(field(rowType, 2), true);
         plan = API.sort_InsertionLimited(plan, rowType, ordering, 
                                          API.SortOption.PRESERVE_DUPLICATES, 100);
         
@@ -553,14 +587,14 @@ public class AggregatePT extends ApiTestBase {
 
     @Test
     public void parallel() {
-        Schema schema = new Schema(rowDefCache().ais());
+        Schema schema = new Schema(ais());
         IndexRowType indexType = schema.indexRowType(index);
         ValuesRowType valuesType = schema.newValuesType(AkType.LONG, AkType.LONG);
-        IndexBound lo = new IndexBound(new RowBasedUnboundExpressions(indexType, Collections.<Expression>singletonList(new BoundFieldExpression(0, new FieldExpression(valuesType, 0)))), new SetColumnSelector(0));
-        IndexBound hi = new IndexBound(new RowBasedUnboundExpressions(indexType, Collections.<Expression>singletonList(new BoundFieldExpression(0, new FieldExpression(valuesType, 1)))), new SetColumnSelector(0));
+        IndexBound lo = new IndexBound(new RowBasedUnboundExpressions(indexType, Collections.<ExpressionGenerator>singletonList(boundField(valuesType, 0, 0))), new SetColumnSelector(0));
+        IndexBound hi = new IndexBound(new RowBasedUnboundExpressions(indexType, Collections.<ExpressionGenerator>singletonList(boundField(valuesType, 0, 1))), new SetColumnSelector(0));
         IndexKeyRange keyRange = IndexKeyRange.bounded(indexType, lo, true, hi, false);
         API.Ordering ordering = new API.Ordering();
-        ordering.append(new FieldExpression(indexType, 0), true);
+        ordering.append(field(indexType, 0), true);
         
         Operator plan = API.indexScan_Default(indexType, keyRange, ordering);
         RowType rowType = indexType;
@@ -580,7 +614,7 @@ public class AggregatePT extends ApiTestBase {
         plan = new Map_Parallel(plan, rowType, valuesType, keyRows, 0);
                                 
         ordering = new API.Ordering();
-        ordering.append(new FieldExpression(rowType, 2), true);
+        ordering.append(field(rowType, 2), true);
         plan = API.sort_InsertionLimited(plan, rowType, ordering, 
                                          API.SortOption.PRESERVE_DUPLICATES, 100);
         
@@ -630,6 +664,11 @@ public class AggregatePT extends ApiTestBase {
         public List<Operator> getInputOperators() {
             return Collections.singletonList(inputOperator);
         }
+
+        @Override
+        public CompoundExplainer getExplainer(ExplainContext context) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     }
 
     // Nulls are not allowed in ConcurrentLinkedQueue.
@@ -671,13 +710,13 @@ public class AggregatePT extends ApiTestBase {
     }
 
     class ParallelCursor extends OperatorExecutionBase implements Cursor {
-        private QueryContext context;
         private RowQueue queue;
         private List<WorkerThread> threads;
         private int nrunning;
         private Row heldRow;
 
         public ParallelCursor(QueryContext context, Operator inputOperator, ValuesRowType valuesType, List<ValuesRow> valuesRows, int bindingPosition) {
+            super(context);
             this.context = context;
             int nthreads = valuesRows.size();
             queue = new RowQueue(Thread.currentThread());
@@ -772,7 +811,7 @@ public class AggregatePT extends ApiTestBase {
         
         public WorkerThread(QueryContext context, Operator inputOperator, ValuesRowType valuesType, ValuesRow valuesRow, int bindingPosition, RowQueue queue) {
             session = createNewSession();
-            adapter = new PersistitAdapter((Schema)valuesType.schema(), persistitStore(), treeService(), session, configService());
+            adapter = new PersistitAdapter((Schema)valuesType.schema(), store(), treeService(), session, configService());
             context = queryContext(adapter);
             context.setRow(bindingPosition, valuesRow);
             inputCursor = API.cursor(inputOperator, context);
@@ -802,11 +841,10 @@ public class AggregatePT extends ApiTestBase {
 
         @Override
         public void run() {
-            Transaction transaction = treeService().getTransaction(session);
             inputCursor.open();
             open = true;
+            txnService().beginTransaction(session);
             try {
-                transaction.begin();
                 while (open) {
                     Row row = inputCursor.next();
                     if (row == null) 
@@ -815,17 +853,14 @@ public class AggregatePT extends ApiTestBase {
                         row.acquire();
                     queue.put(row);
                 }
-                transaction.commit();
+                txnService().commitTransaction(session);
             }
             catch (InterruptedException ex) {
                 throw new QueryCanceledException(context.getSession());
             }
-            catch (PersistitException ex) {
-                PersistitAdapter.handlePersistitException(session, ex);
-            } 
             finally {
                 inputCursor.close();
-                transaction.end();
+                txnService().commitTransaction(session);
             }
         }
 

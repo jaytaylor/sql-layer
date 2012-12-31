@@ -26,7 +26,14 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.server.error.WrongExpressionArityException;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.Label;
+import com.akiban.server.explain.PrimitiveExplainer;
+import com.akiban.server.explain.Type;
+import com.akiban.server.explain.std.ExpressionExplainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -41,16 +48,30 @@ import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.sql.StandardException;
 
 import java.util.List;
+import java.util.Map;
 
 public final class BoolLogicExpression extends AbstractBinaryExpression {
 
     // AbstractTwoArgExpression interface
-
+    
     @Override
     protected void describe(StringBuilder sb) {
         sb.append(logic.name());
     }
 
+    @Override
+    public String name () {
+        return logic.name();
+    }
+    
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context) {
+        CompoundExplainer ex = new ExpressionExplainer(Type.BINARY_OPERATOR, name(), context, children());
+        ex.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance(name()));
+        ex.addAttribute(Label.ASSOCIATIVE, PrimitiveExplainer.getInstance(true));
+        return ex;
+    }
+    
     @Override
     public ExpressionEvaluation evaluation() {
         return new InternalEvaluation(logic, childrenEvaluations());
@@ -116,7 +137,7 @@ public final class BoolLogicExpression extends AbstractBinaryExpression {
 
     private static class InternalComposer extends BinaryComposer {
         @Override
-        protected Expression compose(Expression first, Expression second) {
+        protected Expression compose(Expression first, Expression second, ExpressionType firstType, ExpressionType secondType, ExpressionType resultType) {
             return new BoolLogicExpression(first, logic, second);
         }
 

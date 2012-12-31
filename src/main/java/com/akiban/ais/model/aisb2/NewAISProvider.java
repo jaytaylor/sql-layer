@@ -44,6 +44,13 @@ public interface NewAISProvider {
     AkibanInformationSchema ais(boolean freezeAIS);
 
     /**
+     * Gets the AIS that's been built, but without performing
+     * AIS validations. Used for building test schemas which may 
+     * be invalid, but that's ok for testing purposes.  
+     * @return the AIS
+     */
+    AkibanInformationSchema unvalidatedAIS();
+    /**
      * <p>Defines (but does not yet start building) a LEFT JOIN group index.</p>
      *
      * <p>Note that this puts you into the realm of a cousin interface branch;

@@ -38,7 +38,6 @@ import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.RowCollector;
 
 public class OneTableRowCollector extends OperatorBasedRowCollector
 {
@@ -71,7 +70,7 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
         predicateType = queryRootType;
         if (predicateIndex != null) {
             // Index bounds
-            IndexRowType indexRowType = schema.indexRowType(predicateIndex);
+            IndexRowType indexRowType = schema.indexRowType(predicateIndex).physicalRowType();
             if (start == null && end == null) {
                 indexKeyRange = IndexKeyRange.unbounded(indexRowType);
             } else {
@@ -80,13 +79,13 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
                 IndexBound lo = null;
                 if (start != null) {
                     assert start.getRowDefId() == queryRootTable.getTableId();
-                    NewRow loRow = new LegacyRowWrapper(start, store);
+                    NewRow loRow = new LegacyRowWrapper(rowDef, start);
                     lo = new IndexBound(new NewRowBackedIndexRow(queryRootType, loRow, predicateIndex), indexStartSelector);
                 }
                 IndexBound hi = null;
                 if (end != null) {
                     assert end.getRowDefId() == queryRootTable.getTableId();
-                    NewRow hiRow = new LegacyRowWrapper(end, store);
+                    NewRow hiRow = new LegacyRowWrapper(rowDef, end);
                     hi = new IndexBound(new NewRowBackedIndexRow(queryRootType, hiRow, predicateIndex), indexEndSelector);
                 }
                 boolean loInclusive = start != null && (scanFlags & (SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE)) == 0;

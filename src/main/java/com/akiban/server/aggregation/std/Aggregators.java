@@ -42,10 +42,19 @@ public class Aggregators
             public Aggregator get() {return AbstractBitAggregator.getAgg(type, Processors.bitXOrProcessor); }
 
             @Override
+            public String getName () {return name;}
+
+            @Override
             public String toString () {return name + type.name();}
 
             @Override
             public AkType outputType () { return type;}
+            
+            @Override
+            public Aggregator get(Object obj)
+            {
+                return get();
+            }
         };
     }
 
@@ -58,10 +67,19 @@ public class Aggregators
             public Aggregator get() {return AbstractBitAggregator.getAgg(type, Processors.bitOrProcessor); }
 
             @Override
+            public String getName () {return name;}
+
+            @Override
             public String toString () {return name + type.name();}
 
             @Override
             public AkType outputType () { return type;}
+            
+            @Override
+            public Aggregator get(Object obj)
+            {
+                return get();
+            }
         };
     }
 
@@ -74,10 +92,19 @@ public class Aggregators
             public Aggregator get() {return AbstractBitAggregator.getAgg(type, Processors.bitAndProcessor); }
 
             @Override
+            public String getName () {return name;}
+
+            @Override
             public String toString () {return name + type.name();}
 
             @Override
             public AkType outputType () { return type;}
+
+            @Override
+            public Aggregator get(Object obj)
+            {
+                return get();
+            }
         };
     }
 
@@ -90,10 +117,19 @@ public class Aggregators
             public Aggregator get() {return AbstractAggregator.getAgg(type, Processors.minProcessor); }
 
             @Override
+            public String getName () {return name;}
+
+            @Override
             public String toString () {return name + type.name();}
             
             @Override
             public AkType outputType () { return type;}
+             
+            @Override
+            public Aggregator get(Object obj)
+            {
+                return get();
+            }
         };
     }
 
@@ -106,10 +142,19 @@ public class Aggregators
             public Aggregator get() {return AbstractAggregator.getAgg(type, Processors.maxProcessor); }
 
             @Override
+            public String getName () {return name;}
+
+            @Override
             public String toString () {return name + type.name();}
            
             @Override
             public AkType outputType () { return type;}
+            
+            @Override
+            public Aggregator get(Object obj)
+            {
+                return get();
+            }
         };
     }
 
@@ -122,10 +167,19 @@ public class Aggregators
             public Aggregator get() { return AbstractAggregator.getAgg(type, Processors.sumProcessor);}
 
             @Override
+            public String getName () {return name;}
+
+            @Override
             public String toString() { return name + type.name();}
             
             @Override
             public AkType outputType () { return type;}
+            
+            @Override
+            public Aggregator get(Object obj)
+            {
+                return get();
+            }
         };
     }
 

@@ -30,10 +30,11 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.BitSet;
 
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Table;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.Quote;
 import com.akiban.server.encoding.EncodingException;
-import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.util.AkibanAppender;
 import com.persistit.Key;
 
@@ -84,7 +85,7 @@ public class RowData {
     // Arbitrary sanity bound on maximum size
     // Needs to be about the same size as the smaller of:
     // com.akiban.network.AkibanCommPipelineFactory#MAX_PACKET_SIZE
-    // com.akiban.message.NettyAkibanConnectionImpl#MAX_PACKET_SIZE
+    // com.akiban.mysql.adapter.protocol.NettyAkibanConnectionImpl#MAX_PACKET_SIZE
     // These two limit the network throughput message size.
     public final static int MAXIMUM_RECORD_LENGTH = 8 * 1024 * 1024;
 
@@ -116,6 +117,9 @@ public class RowData {
     private int rowEnd;
 
     private Key hKey;
+
+    // Usually null, defer to packed rowDefId
+    private RowDef explicitRowDef;
 
     // In an hkey-ordered sequence of RowData objects, adjacent hkeys indicate how the corresponding RowDatas
     // relate to one another -- the second one can be a child of the first, a descendent, have a common ancestor,
@@ -262,6 +266,14 @@ public class RowData {
 
     public int getRowDefId() {
         return AkServerUtil.getInt(bytes, rowStart + O_ROW_DEF_ID);
+    }
+
+    public RowDef getExplicitRowDef() {
+        return explicitRowDef;
+    }
+
+    public void setExplicitRowDef(RowDef explicitRowDef) {
+        this.explicitRowDef = explicitRowDef;
     }
 
     public byte[] getBytes() {
@@ -440,29 +452,21 @@ public class RowData {
         AkServerUtil.putLong(bytes, offset, rowId);
     }
 
-    /**
-     * Debug-only: returns a hex-dump of the backing buffer.
-     */
     @Override
     public String toString() {
-        // return AkSserverUtil.dump(bytes, rowStart, rowEnd - rowStart);
-        return toString(RowDefCache.latest());
+        return toString(RowDefCache.latestForDebugging().ais());
     }
 
-    public String toString(final RowDefCache cache) {
-        String toString;
-        if (cache == null) {
-            toString = toStringWithoutRowDef("no RowDefCache");
+    public String toString(AkibanInformationSchema ais) {
+        if (ais == null) {
+            return toStringWithoutRowDef("No AIS");
         }
-        else {
-            try {
-                toString = toString(cache.getRowDef(getRowDefId()));
-            }
-            catch ( RowDefNotFoundException e) {
-                toString = toStringWithoutRowDef(String.format("rowDefId %s not in cache", getRowDefId()));
-            }
+        int rowDefID = getRowDefId();
+        Table table = ais.getUserTable(rowDefID);
+        if(table == null) {
+            return toStringWithoutRowDef("Unknown RowDefID(" + rowDefID + ")");
         }
-        return toString;
+        return toString(table.rowDef());
     }
 
     public String toString(final RowDef rowDef)
@@ -564,7 +568,8 @@ public class RowData {
                (rowDef.getFieldCount() + 7) / 8; // null bitmap
     }
 
-    private String toStringWithoutRowDef(String missingRowDefExplanation) {
+    /** Returns a hex-dump of the backing buffer. */
+    public String toStringWithoutRowDef(String missingRowDefExplanation) {
         final AkibanAppender sb = AkibanAppender.of(new StringBuilder());
         try {
             sb.append("RowData[");

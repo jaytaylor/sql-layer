@@ -1,0 +1,1 @@
+insert into customers values (4, 'Brown') RETURNING cid

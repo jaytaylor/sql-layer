@@ -26,15 +26,27 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
+import com.akiban.server.explain.Explainer;
+import com.akiban.server.explain.Label;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.PrimitiveExplainer;
+import com.akiban.server.explain.Type;
+import com.akiban.server.explain.std.ExpressionExplainer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.BoolValueSource;
+import com.akiban.server.types.util.SqlLiteralValueFormatter;
 import com.akiban.server.types.util.ValueHolder;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 public final class LiteralExpression implements Expression {
 
@@ -121,6 +133,20 @@ public final class LiteralExpression implements Expression {
     private static final Expression BOOL_NULL = new LiteralExpression(new InternalEvaluation(BoolValueSource.OF_NULL));
 
     @Override
+    public String name()
+    {
+        return "LITERAL";
+    }
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        CompoundExplainer ex = new ExpressionExplainer(Type.LITERAL, name(), context);
+        String sql = SqlLiteralValueFormatter.format(evaluation.eval());
+        ex.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance(sql));
+        return ex;
+    }
+    
     public boolean nullIsContaminating()
     {
         return true;

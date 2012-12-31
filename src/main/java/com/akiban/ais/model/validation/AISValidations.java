@@ -26,16 +26,18 @@
 
 package com.akiban.ais.model.validation;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
 public final class AISValidations {
-    //public static final AISValidation NO_NULL_IDENTIFIERS;
     public static final AISValidation CHARACTER_SET_SUPPORTED = new CharacterSetSupported();
+    public static final AISValidation COLLATION_SUPPORTED = new CollationSupported();
     public static final AISValidation COLUMN_POSITION_DENSE = new ColumnPositionDense();
     public static final AISValidation GROUP_INDEX_NOT_UNIQUE = new GroupIndexesNotUnique();
-    public static final AISValidation GROUP_TABLE_SINGLE_ROOT = new GroupTableSingleRoot();
+    public static final AISValidation GROUP_SINGLE_ROOT = new GroupSingleRoot();
     public static final AISValidation INDEX_HAS_COLUMNS = new IndexHasColumns();
     public static final AISValidation INDEX_IDS_UNIQUE = new IndexIDsUnique();
     public static final AISValidation INDEX_SIZES = new IndexSizes();
@@ -46,21 +48,25 @@ public final class AISValidations {
     public static final AISValidation PRIMARY_KEY_IS_NOT_NULL = new PrimaryKeyIsNotNull();
     public static final AISValidation REFERENCES_CORRECT = new ReferencesCorrect();
     public static final AISValidation SUPPORTED_COLUMN_TYPES = new SupportedColumnTypes();    
-    public static final AISValidation TABLE_COLUMNS_MATCH_GROUP = new TableColumnsMatchGroupColumns();
-    public static final AISValidation TABLE_INDEXES_MATCH_GROUP = new TableIndexesMatchGroupIndexes();
     public static final AISValidation TABLE_HAS_PRIMARY_KEY = new TableHasPrimaryKey();
     public static final AISValidation TABLEID_UNIQUE = new TableIDsUnique();
     public static final AISValidation TABLES_IN_A_GROUP = new TablesInAGroup();
-    public static final AISValidation TABLES_IN_GROUP_SAME_TREE_NAME = new TablesInGroupSameTreeName();
-    public static final AISValidation TABLE_TREE_NAMES_UNIQUE = new TableTreeNamesUnique();
+    public static final AISValidation GROUP_TREE_NAMES_UNIQUE = new GroupTreeNamesUnique();
     public static final AISValidation TYPES_ARE_FROM_STATIC = new TypesAreFromStatic();
     public static final AISValidation GROUP_INDEX_DEPTH = new GroupIndexDepth();
     public static final AISValidation TREE_NAMES_NOT_NULL = new TreeNamesAreNotNull();
+    public static final AISValidation MEMORY_TABLES_NOT_MIXED = new MemoryTablesNotMixed();
+    public static final AISValidation MEMORY_TABLES_SINGLE = new MemoryTableSingleTableGroup();
+    public static final AISValidation VIEW_REFERENCES = new ViewReferences();
+    public static final AISValidation INDEX_COLUMN_IS_NOT_PARTIAL = new IndexColumnIsNotPartial();
+    public static final AISValidation COLUMN_SIZES_MATCH = new ColumnMaxAndPrefixSizesMatch();
+    public static final AISValidation SEQUENCE_VALUES_VALID = new SequenceValuesValid();
+    public static final AISValidation INDEX_IDS_POSITIVE = new IndexIDsPositive();
 
-    public static final Collection<AISValidation> LIVE_AIS_VALIDATIONS;
+    public static final Collection<AISValidation> LIVE_AIS_VALIDATIONS = buildValidationList();
     
-    static {
-        LIVE_AIS_VALIDATIONS = Collections.unmodifiableList(Arrays.asList(
+    private static Collection<AISValidation> buildValidationList() {
+        Collection<AISValidation> validations = Collections.unmodifiableList(Arrays.asList(
                 TABLE_HAS_PRIMARY_KEY,
                 PRIMARY_KEY_IS_NOT_NULL,
                 SUPPORTED_COLUMN_TYPES,
@@ -71,21 +77,38 @@ public final class AISValidations {
                 TABLES_IN_A_GROUP,
                 INDEX_HAS_COLUMNS,
                 INDEX_SIZES,
-                TABLE_COLUMNS_MATCH_GROUP,
-                TABLE_INDEXES_MATCH_GROUP,
-                GROUP_TABLE_SINGLE_ROOT,
+                GROUP_SINGLE_ROOT,
                 GROUP_INDEX_NOT_UNIQUE,
                 JOIN_TO_ONE_PARENT,
                 JOIN_TO_PARENT_PK,
                 JOIN_COLUMN_TYPES_MATCH,
-                TABLES_IN_GROUP_SAME_TREE_NAME,
-                TABLE_TREE_NAMES_UNIQUE,
+                GROUP_TREE_NAMES_UNIQUE,
                 INDEX_TREE_NAMES_UNIQUE,
                 TYPES_ARE_FROM_STATIC,
                 GROUP_INDEX_DEPTH,
-                TREE_NAMES_NOT_NULL
+                TREE_NAMES_NOT_NULL,
+                MEMORY_TABLES_NOT_MIXED,
+                MEMORY_TABLES_SINGLE,
+                //VIEW_REFERENCES
                 //CHARACTER_SET_SUPPORTED
+                COLLATION_SUPPORTED,
+                INDEX_COLUMN_IS_NOT_PARTIAL,
+                COLUMN_SIZES_MATCH,
+                SEQUENCE_VALUES_VALID,
+                INDEX_IDS_POSITIVE
                 ));
+
+        // Since we have one instance of the validation that is reused, they may not contain instance data.
+        // Added to prevent something like bug1078746 happening again (instance data changing concurrently).
+        for(AISValidation v : validations) {
+            for(Field f : v.getClass().getDeclaredFields()) {
+                if((f.getModifiers() & Modifier.STATIC) == 0) {
+                    throw new IllegalStateException("Field " + f.getName() + " of " + v.getClass().getName() + " is not static");
+                }
+            }
+        }
+
+        return validations;
     }
     
     private AISValidations () {}

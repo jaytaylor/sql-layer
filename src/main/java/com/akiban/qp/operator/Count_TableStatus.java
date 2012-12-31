@@ -26,12 +26,18 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.row.PValuesRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.rowtype.ValuesRowType;
+import com.akiban.server.explain.CompoundExplainer;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.std.CountOperatorExplainer;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 
@@ -106,13 +112,16 @@ class Count_TableStatus extends Operator
 
     // Count_TableStatus interface
 
-    public Count_TableStatus(RowType tableType)
+    public Count_TableStatus(RowType tableType, boolean usePValues)
     {
         ArgumentValidation.notNull("tableType", tableType);
         ArgumentValidation.isTrue("tableType instanceof UserTableRowType",
                                   tableType instanceof UserTableRowType);
         this.tableType = tableType;
-        this.resultType = tableType.schema().newValuesType(AkType.LONG);
+        this.resultType = usePValues
+                ? tableType.schema().newValuesType(MNumeric.BIGINT.instance(false))
+                : tableType.schema().newValuesType(AkType.LONG);
+        this.usePValues = usePValues;
     }
 
     // Class state
@@ -124,6 +133,13 @@ class Count_TableStatus extends Operator
 
     private final RowType tableType;
     private final ValuesRowType resultType;
+    private final boolean usePValues;
+
+    @Override
+    public CompoundExplainer getExplainer(ExplainContext context)
+    {
+        return new CountOperatorExplainer(getName(), tableType, resultType, null, context);
+    }
 
     // Inner classes
 
@@ -153,7 +169,9 @@ class Count_TableStatus extends Operator
                 if (pending) {
                     long rowCount = adapter().rowCount(tableType);
                     close();
-                    return new ValuesRow(resultType, new Object[] { rowCount });
+                    return usePValues
+                            ? new PValuesRow(resultType, new PValue(MNumeric.BIGINT.instance(false), rowCount))
+                            : new ValuesRow(resultType, new Object[] { rowCount });
                 }
                 else {
                     return null;

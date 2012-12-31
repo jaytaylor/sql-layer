@@ -26,28 +26,29 @@
 
 package com.akiban.server.rowdata;
 
-import com.akiban.ais.metamodel.io.AISTarget;
-import com.akiban.ais.metamodel.io.Writer;
 import com.akiban.ais.model.AISMerge;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.DefaultNameGenerator;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.View;
 import com.akiban.server.MemoryOnlyTableStatusCache;
-import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.error.NoSuchTableIdException;
+import com.akiban.server.api.ddl.DDLFunctionsMockBase;
 import com.akiban.server.error.PersistitAdapterException;
-import com.akiban.server.error.RowDefNotFoundException;
-import com.akiban.server.service.dxl.IndexCheckSummary;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.store.PersistitStoreSchemaManager;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.aisddl.IndexDDL;
+import com.akiban.sql.aisddl.SequenceDDL;
 import com.akiban.sql.aisddl.TableDDL;
+import com.akiban.sql.aisddl.ViewDDL;
+import com.akiban.sql.optimizer.AISBinderContext;
 import com.akiban.sql.parser.CreateIndexNode;
 import com.akiban.sql.parser.CreateTableNode;
+import com.akiban.sql.parser.CreateViewNode;
+import com.akiban.sql.parser.CreateSequenceNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.util.Strings;
@@ -64,7 +65,6 @@ public class SchemaFactory {
     private final static String DEFAULT_DEFAULT_SCHEMA = "test";
     private final String defaultSchema;
 
-
     public SchemaFactory() {
         this(DEFAULT_DEFAULT_SCHEMA);
     }
@@ -73,9 +73,10 @@ public class SchemaFactory {
         this.defaultSchema = defaultSchema;
     }
 
-    public RowDefCache rowDefCache(String... ddl) throws Exception {
+    public AkibanInformationSchema aisWithRowDefs(String... ddl) {
         AkibanInformationSchema ais = ais(ddl);
-        return rowDefCache(ais);
+        buildRowDefs(ais);
+        return ais;
     }
 
     public AkibanInformationSchema ais(String... ddl) {
@@ -108,9 +109,14 @@ public class SchemaFactory {
         }
         for(StatementNode stmt : nodes) {
             if (stmt instanceof CreateTableNode) {
-                TableDDL.createTable(ddlFunctions , null, defaultSchema, (CreateTableNode) stmt);
+                TableDDL.createTable(ddlFunctions , null, defaultSchema, (CreateTableNode) stmt, null);
             } else if (stmt instanceof CreateIndexNode) {
                 IndexDDL.createIndex(ddlFunctions, null, defaultSchema, (CreateIndexNode) stmt);
+            } else if (stmt instanceof CreateViewNode) {
+                ViewDDL.createView(ddlFunctions, null, defaultSchema, (CreateViewNode) stmt,
+                                   new AISBinderContext(ddlFunctions.getAIS(null), defaultSchema), null);
+            } else if (stmt instanceof CreateSequenceNode) {
+                SequenceDDL.createSequence(ddlFunctions, null, defaultSchema, (CreateSequenceNode)stmt);
             } else {
                 throw new IllegalStateException("Unsupported StatementNode type: " + stmt);
             }
@@ -118,14 +124,13 @@ public class SchemaFactory {
         return ddlFunctions.getAIS(null);
     }
 
-    public RowDefCache rowDefCache(AkibanInformationSchema ais) {
+    public void buildRowDefs(AkibanInformationSchema ais) {
         RowDefCache rowDefCache = new FakeRowDefCache();
         try {
             rowDefCache.setAIS(ais);
         } catch(PersistitInterruptedException e) {
             throw new PersistitAdapterException(e);
         }
-        return rowDefCache;
     }
 
     private static class FakeRowDefCache extends RowDefCache {
@@ -135,24 +140,22 @@ public class SchemaFactory {
 
         @Override
         protected Map<Table,Integer> fixUpOrdinals() throws PersistitInterruptedException {
+            Map<Group,List<RowDef>> groupToRowDefs = getRowDefsByGroup();
             Map<Table,Integer> ordinalMap = new HashMap<Table,Integer>();
-            for (RowDef groupRowDef : getRowDefs()) {
-                if (groupRowDef.isGroupTable()) {
-                    ordinalMap.put(groupRowDef.table(), 0);
-                    int userTableOrdinal = 1;
-                    for (RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
-                        int ordinal = userTableOrdinal++;
-                        tableStatusCache.setOrdinal(userRowDef.getRowDefId(), ordinal);
-                        userRowDef.setOrdinalCache(ordinal);
-                        ordinalMap.put(userRowDef.table(), ordinal);
-                    }
+            for(List<RowDef> allRowDefs  : groupToRowDefs.values()) {
+                int userTableOrdinal = 1;
+                for(RowDef userRowDef : allRowDefs) {
+                    int ordinal = userTableOrdinal++;
+                    userRowDef.getTableStatus().setOrdinal(ordinal);
+                    userRowDef.setOrdinalCache(ordinal);
+                    ordinalMap.put(userRowDef.table(), ordinal);
                 }
             }
             return ordinalMap;
         }
     }
 
-    private static class CreateOnlyDDLMock implements DDLFunctions {
+    private static class CreateOnlyDDLMock extends DDLFunctionsMockBase {
         AkibanInformationSchema ais = new AkibanInformationSchema();
 
         public CreateOnlyDDLMock(AkibanInformationSchema ais) {
@@ -161,29 +164,14 @@ public class SchemaFactory {
 
         @Override
         public void createTable(Session session, UserTable newTable) {
-            AISMerge merge = new AISMerge (ais, newTable);
+            AISMerge merge = AISMerge.newForAddTable(new DefaultNameGenerator(ais), ais, newTable);
             merge.merge();
             ais = merge.getAIS();
         }
 
         @Override
-        public void renameTable(Session session, TableName currentName, TableName newName) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void dropTable(Session session, TableName tableName) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void dropSchema(Session session, String schemaName) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void dropGroup(Session session, String groupName) {
-            throw new UnsupportedOperationException();
+        public void createView(Session session, View view) {
+            ais = AISMerge.mergeView(ais, view);
         }
 
         @Override
@@ -192,81 +180,18 @@ public class SchemaFactory {
         }
 
         @Override
-        public TableName getTableName(Session session, int tableId) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int getTableId(Session session, TableName tableName) throws NoSuchTableException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Table getTable(Session session, int tableId) throws NoSuchTableIdException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Table getTable(Session session, TableName tableName) throws NoSuchTableException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public UserTable getUserTable(Session session, TableName tableName) throws NoSuchTableException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public RowDef getRowDef(int tableId) throws RowDefNotFoundException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public List<String> getDDLs(Session session) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int getGeneration() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public long getTimestamp() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void forceGenerationUpdate() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public void createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
-            AkibanInformationSchema newAIS = new AkibanInformationSchema();
-            new Writer(new AISTarget(newAIS)).save(ais);
-            PersistitStoreSchemaManager.createIndexes(newAIS, indexesToAdd);
-            ais = newAIS;
+            AISMerge merge = AISMerge.newForAddIndex(new DefaultNameGenerator(ais), ais);
+            for(Index newIndex : indexesToAdd) {
+                merge.mergeIndex(newIndex);
+            }
+            merge.merge();
+            ais = merge.getAIS();
         }
-
+        
         @Override
-        public void dropTableIndexes(Session session, TableName tableName, Collection<String> indexesToDrop) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void dropGroupIndexes(Session session, String groupName, Collection<String> indexesToDrop) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void updateTableStatistics(Session session, TableName tableName, Collection<String> indexesToUpdate) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public IndexCheckSummary checkAndFixIndexes(Session session, String schemaRegex, String tableRegex) {
-            throw new UnsupportedOperationException();
+        public void createSequence(Session session, Sequence sequence) {
+            ais = AISMerge.mergeSequence(ais, sequence);
         }
     }
 }

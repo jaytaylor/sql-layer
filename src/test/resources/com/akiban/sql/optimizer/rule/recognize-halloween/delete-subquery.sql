@@ -1,0 +1,1 @@
+DELETE FROM t WHERE EXISTS (SELECT * FROM t ot WHERE t.n = ot.n AND t.id <> ot.id)

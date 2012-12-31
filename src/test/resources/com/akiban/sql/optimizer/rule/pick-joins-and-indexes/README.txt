@@ -1,3 +1,15 @@
+bloom-filter-1: Use a Bloom filter to help with selective semi-join
+
+bloom-filter-1l: LIMIT adjusted when costing
+
+bloom-filter-1n: Extra columns means not semi-join
+
+bloom-filter-1o: Outer join
+
+bloom-filter-1x: Written with EXISTS
+
+bloom-filter-2: Do not use when not selective
+
 choose-condition-1: narrow and wide
 
 choose-condition-2: wide and narrow
@@ -14,11 +26,19 @@ in-index: IN that can use index
 
 in-sorted: IN that needs sorting
 
+in-many: IN with lots of values
+
 equals-sorted: Same with = for comparison.
+
+equivalence-1: Equivalence column used in index.
+
+equivalence-2: Equivalence column used in GROUP BY.
 
 in-subquery: IN SELECT to semi-join (not indexable).
 
 in-subquery-indexed: IN that is indexed.
+
+in-subquery-distinct: IN with cross-group subquery with DISTINCT
 
 join-across-subquery: group join in subquery expression
 
@@ -46,6 +66,8 @@ two-groups-indexed: two groups with condition on one
 
 two-groups-not-covering: join condition makes outer index not covering
 
+two-groups-aggregated: ordered index drives aggregate
+
 no-stats: no statistics
 
 no-stats-group: no statistics and group joins
@@ -64,6 +86,12 @@ outer-index: LEFT using an index
 
 outer-no-index-extra-conditions: LEFT with extra conditions cannot use index
 
+right-outer-index: RIGHT using an index
+
+left-as-inner: LEFT index used for INNER join
+
+right-as-inner: RIGHT index used for INNER join
+
 cross-product: Conditions but no joins
 
 competing-indexes-no-limit: WHERE beats ORDER BY
@@ -75,3 +103,18 @@ group-scan-no-limit: group scan and flatten
 group-scan-large-limit: with limit larger than expected
 
 group-scan-small-limit: with much smaller limit
+
+duplicate-table-conditions: condition between two occurrences of same table
+
+whole-group-nested: whole group as nested result set
+
+group-branch-subquery: subquery from different branch (no group loop from flatten)
+
+geospatial-1: compute max radius for N neighbors
+
+geospatial-2: get within that radius
+
+geospatial-3: covering spatial index
+
+geospatial-4: two spatial indexes considered for intersection
+

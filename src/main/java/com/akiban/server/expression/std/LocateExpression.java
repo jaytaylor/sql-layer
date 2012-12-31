@@ -49,7 +49,7 @@ public class LocateExpression extends AbstractCompositeExpression
     {
 
         @Override
-        protected Expression compose(Expression first, Expression second) 
+        protected Expression compose(Expression first, Expression second, ExpressionType firstType, ExpressionType secondType, ExpressionType resultType) 
         {
             return new LocateExpression(Arrays.asList(first, second));
         }
@@ -69,12 +69,6 @@ public class LocateExpression extends AbstractCompositeExpression
     public static final ExpressionComposer LOCATE_COMPOSER = new ExpressionComposer ()
     {
         @Override
-        public Expression compose(List<? extends Expression> arguments) 
-        {
-            return new LocateExpression(arguments);
-        }
-
-        @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             int s = argumentTypes.size();
@@ -89,7 +83,7 @@ public class LocateExpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported in LOCATE yet.");
+            return new LocateExpression(arguments);
         }
 
         @Override
@@ -99,6 +93,12 @@ public class LocateExpression extends AbstractCompositeExpression
         }
         
     };
+
+    @Override
+    public String name()
+    {
+        return "LOCATE";
+    }
     
     private static final class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
@@ -153,11 +153,11 @@ public class LocateExpression extends AbstractCompositeExpression
     {
         return true;
     }
-
+    
     @Override
     protected void describe(StringBuilder sb) 
     {
-        sb.append("LOCATE");
+        sb.append(name());
     }
 
     @Override

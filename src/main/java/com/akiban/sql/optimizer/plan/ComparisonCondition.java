@@ -28,6 +28,7 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TKeyComparable;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
@@ -38,6 +39,7 @@ public class ComparisonCondition extends BaseExpression implements ConditionExpr
     private Comparison operation;
     private ExpressionNode left, right;
     private Implementation implementation;
+    private TKeyComparable keyComparable;
 
     public ComparisonCondition(Comparison operation,
                                ExpressionNode left, ExpressionNode right,
@@ -68,6 +70,14 @@ public class ComparisonCondition extends BaseExpression implements ConditionExpr
     }
     public void setRight(ExpressionNode right) {
         this.right = right;
+    }
+
+    public TKeyComparable getKeyComparable() {
+        return keyComparable;
+    }
+
+    public void setKeyComparable(TKeyComparable keyComparable) {
+        this.keyComparable = keyComparable;
     }
 
     @Override

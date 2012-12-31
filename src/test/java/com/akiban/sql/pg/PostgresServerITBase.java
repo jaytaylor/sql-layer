@@ -27,10 +27,9 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.test.it.ITBase;
+import com.akiban.server.service.servicemanager.GuicedServiceManager;
 
-import org.junit.After;
 import static org.junit.Assert.fail;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +38,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 
 import java.io.File;
+import java.util.Map;
+import java.util.concurrent.Callable;
 
 @Ignore
 public class PostgresServerITBase extends ITBase
@@ -54,8 +55,19 @@ public class PostgresServerITBase extends ITBase
     public static final String USER_NAME = "auser";
     public static final String USER_PASSWORD = "apassword";
 
+    @Override
+    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
+        return super.serviceBindingsProvider()
+                .bindAndRequire(PostgresService.class, PostgresServerManager.class);
+    }
+
+    @Override
+    protected Map<String, String> startupConfigProperties() {
+        return uniqueStartupConfigProperties(PostgresServerITBase.class);
+    }
+
     protected Connection openConnection() throws Exception {
-        int port = serviceManager().getPostgresService().getPort();
+        int port = getPostgresService().getPort();
         if (port <= 0) {
             throw new Exception("akserver.postgres.port is not set.");
         }
@@ -64,41 +76,57 @@ public class PostgresServerITBase extends ITBase
         return DriverManager.getConnection(url, USER_NAME, USER_PASSWORD);
     }
 
-    protected void closeConnection(Connection Connection) throws Exception {
+    protected static void closeConnection(Connection connection) throws Exception {
         connection.close();
     }
 
+    protected PostgresService getPostgresService() {
+        return serviceManager().getServiceByClass(PostgresService.class);
+    }
+
     protected PostgresServer server() {
-        return serviceManager().getPostgresService().getServer();
+        return getPostgresService().getServer();
     }
 
-    protected Connection connection;
+    private static final Callable<Void> forgetOnStopServices = new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                forgetConnection();
+                return null;
+            }
+        };
 
-    @Before
-    public void openTheConnection() throws Exception {
-        for (int i = 0; i < 6; i++) {
-            if (server().isListening())
-                break;
-            if (i == 1)
-                LOG.warn("Postgres server not listening. Waiting...");
-            else if (i == 5)
-                fail("Postgres server still not listening. Giving up.");
-            try {
-                Thread.sleep(200);
+    // One element connection pool.
+    private static Connection connection = null;
+
+    protected Connection getConnection() throws Exception {
+        if (connection == null) {
+            beforeStopServices.add(forgetOnStopServices);
+            for (int i = 0; i < 6; i++) {
+                if (server().isListening())
+                    break;
+                if (i == 1)
+                    LOG.warn("Postgres server not listening. Waiting...");
+                else if (i == 5)
+                    fail("Postgres server still not listening. Giving up.");
+                try {
+                    Thread.sleep(200);
+                }
+                catch (InterruptedException ex) {
+                    LOG.warn("caught an interrupted exception; re-interrupting", ex);
+                    Thread.currentThread().interrupt();
+                }
             }
-            catch (InterruptedException ex) {
-                LOG.warn("caught an interrupted exception; re-interrupting", ex);
-                Thread.currentThread().interrupt();
-            }
+            connection = openConnection();
         }
-        connection = openConnection();
+        return connection;
     }
 
-    @After
-    public void closeTheConnection() throws Exception {
+    public static void forgetConnection() throws Exception {
         if (connection != null) {
             closeConnection(connection);
             connection = null;
+            beforeStopServices.remove(forgetOnStopServices);
         }
     }
 

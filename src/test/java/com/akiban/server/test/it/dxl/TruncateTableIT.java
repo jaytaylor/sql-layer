@@ -194,4 +194,34 @@ public final class TruncateTableIT extends ITBase {
         List<NewRow> rows = scanAll(new ScanAllRequest(tableId, null));
         assertEquals("Rows scanned", 0, rows.size());
     }
+
+    // bug1024501: Truncate table incorrectly deletes entire group
+    @Test
+    public void truncateOFromCOIAllWithRows() throws InvalidOperationException {
+        int cId = createTable("test", "c", "id int not null primary key");
+        int oId = createTable("test", "o", "id int not null primary key, cid int, grouping foreign key (cid) references c(id)");
+        int iId = createTable("test", "i", "id int not null primary key, oid int, grouping foreign key (oid) references o(id)");
+
+        dml().writeRow(session(), createNewRow(cId, 1));
+        dml().writeRow(session(), createNewRow(oId, 10, 1));
+        dml().writeRow(session(), createNewRow(iId, 100, 10));
+        expectRowCount(cId, 1);
+        expectRowCount(oId, 1);
+        expectRowCount(iId, 1);
+
+        dml().truncateTable(session(), cId);
+        expectRowCount(cId, 0);
+        expectRowCount(oId, 1);
+        expectRowCount(iId, 1);
+
+        dml().truncateTable(session(), oId);
+        expectRowCount(cId, 0);
+        expectRowCount(oId, 0);
+        expectRowCount(iId, 1);
+
+        dml().truncateTable(session(), iId);
+        expectRowCount(cId, 0);
+        expectRowCount(oId, 0);
+        expectRowCount(iId, 0);
+    }
 }
