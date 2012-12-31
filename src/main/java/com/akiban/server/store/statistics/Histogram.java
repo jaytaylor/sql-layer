@@ -67,6 +67,10 @@ public class Histogram
         return entries;
     }
 
+    public IndexStatistics getIndexStatistics() {
+        return indexStatistics;
+    }
+
     public long totalDistinctCount()
     {
         long total = 0;
@@ -85,6 +89,11 @@ public class Histogram
         this.entries = entries;
     }
 
+    void setIndexStatistics(IndexStatistics indexStatistics) {
+        this.indexStatistics = indexStatistics;
+    }
+
+    private IndexStatistics indexStatistics;
     private final int firstColumn;
     private final int columnCount;
     private final List<HistogramEntry> entries;
