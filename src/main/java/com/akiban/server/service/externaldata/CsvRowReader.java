@@ -44,9 +44,10 @@ public class CsvRowReader extends RowReader
     private enum State { ROW_START, FIELD_START, IN_FIELD, IN_QUOTE, AFTER_QUOTE };
     private State state;
 
-    public CsvRowReader(UserTable table, List<Column> columns, CsvFormat format,
-                        QueryContext queryContext) {
-        super(table, columns, format.getEncoding(), format.getNullBytes(), queryContext);
+    public CsvRowReader(UserTable table, List<Column> columns, InputStream inputStream,
+                        CsvFormat format, QueryContext queryContext) {
+        super(table, columns, inputStream, format.getEncoding(), format.getNullBytes(), 
+              queryContext);
         this.format = format;
         this.delim = format.getDelimiterByte();
         this.quote = format.getQuoteByte();
@@ -55,9 +56,9 @@ public class CsvRowReader extends RowReader
         this.cr = format.getReturn();
     }
 
-    public void skipRows(InputStream inputStream, long nrows) throws IOException {
+    public void skipRows(long nrows) throws IOException {
         while (true) {
-            int b = inputStream.read();
+            int b = read();
             if (b < 0) break;
             if (b == nl) {
                 nrows--;
@@ -67,15 +68,15 @@ public class CsvRowReader extends RowReader
     }
 
     @Override
-    public NewRow nextRow(InputStream inputStream) throws IOException {
-        int lb = inputStream.read();
+    public NewRow nextRow() throws IOException {
+        int lb = read();
         if (lb < 0) return null;
         newRow();
         state = State.ROW_START;
         while (true) {
             int b = lb;
             if (b < 0) 
-                b = inputStream.read();
+                b = read();
             else
                 lb = -1;
             switch (state) {
@@ -101,7 +102,7 @@ public class CsvRowReader extends RowReader
             case FIELD_START:
                 if ((b < 0) || (b == cr) || (b == nl)) {
                     addField(false);
-                    return row;
+                    return row();
                 }
                 else if (b == delim) {
                     addField(false);
@@ -117,7 +118,7 @@ public class CsvRowReader extends RowReader
             case IN_FIELD:
                 if ((b < 0) || (b == cr) || (b == nl)) {
                     addField(false);
-                    return row;
+                    return row();
                 }
                 else if (b == delim) {
                     addField(false);
@@ -136,7 +137,7 @@ public class CsvRowReader extends RowReader
                 else if (b == quote) {
                     if (escape == quote) {
                         // Must be doubled; peek next character.
-                        lb = inputStream.read();
+                        lb = read();
                         if (lb == quote) {
                             addToField(b);
                             lb = -1;
@@ -147,7 +148,7 @@ public class CsvRowReader extends RowReader
                 }
                 else if (b == escape) {
                     // Non-doubling escape.
-                    b = inputStream.read();
+                    b = read();
                     if (b < 0) throw new ExternalRowReaderException("EOF after ESCAPE");
                     addToField(b);
                 }
@@ -158,7 +159,7 @@ public class CsvRowReader extends RowReader
             case AFTER_QUOTE:
                 if ((b < 0) || (b == cr) || (b == nl)) {
                     addField(true);
-                    return row;
+                    return row();
                 }
                 else if (b == delim) {
                     addField(true);

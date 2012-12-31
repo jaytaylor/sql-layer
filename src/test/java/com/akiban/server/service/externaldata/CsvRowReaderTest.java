@@ -60,14 +60,14 @@ public final class CsvRowReaderTest {
         SchemaFactory schemaFactory = new SchemaFactory("test");
         AkibanInformationSchema ais = schemaFactory.aisWithRowDefs(DDL);
         UserTable t1 = ais.getUserTable("test", "t1");
-        CsvRowReader reader = new CsvRowReader(t1, t1.getColumns(),
-                                               new CsvFormat("UTF-8"), 
-                                               null);
-        List<NewRow> rows = new ArrayList<NewRow>();
         InputStream istr = new ByteArrayInputStream(Strings.join(CSV).getBytes("UTF-8"));
-        reader.skipRows(istr, 1); // Header
+        CsvRowReader reader = new CsvRowReader(t1, t1.getColumns(),
+                                               istr, new CsvFormat("UTF-8"), 
+                                               null);
+        reader.skipRows(1); // Header
+        List<NewRow> rows = new ArrayList<NewRow>();
         NewRow row;
-        while ((row = reader.nextRow(istr)) != null)
+        while ((row = reader.nextRow()) != null)
             rows.add(row);
         assertEquals("number of rows", ROWS.length, rows.size());
         for (int i = 0; i < ROWS.length; i++) {

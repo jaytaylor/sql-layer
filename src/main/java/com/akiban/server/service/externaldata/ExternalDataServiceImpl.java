@@ -150,15 +150,16 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                                  long commitFrequency, QueryContext context) 
             throws IOException {
         DMLFunctions dml = dxlService.dmlFunctions();
-        CsvRowReader reader = new CsvRowReader(toTable, toColumns, format, context);
+        CsvRowReader reader = new CsvRowReader(toTable, toColumns, inputStream, format,
+                                               context);
         if (skipRows > 0)
-            reader.skipRows(inputStream, skipRows);
+            reader.skipRows(skipRows);
         long pending = 0, total = 0;
         boolean transaction = false;
         try {
             NewRow row;
             do {
-                row = reader.nextRow(inputStream);
+                row = reader.nextRow();
                 if (row != null) {
                     logger.trace("Read row: {}", row);
                     if (!transaction) {
