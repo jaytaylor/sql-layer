@@ -26,6 +26,8 @@
 
 package com.akiban.sql.optimizer.rule.cost;
 
+import com.akiban.server.store.statistics.Histogram;
+import com.akiban.server.store.statistics.HistogramEntry;
 import com.akiban.sql.optimizer.rule.SchemaRulesContext;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
@@ -39,17 +41,14 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.store.statistics.IndexStatistics;
-import static com.akiban.server.store.statistics.IndexStatistics.*;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.persistit.Key;
-import com.persistit.Persistit;
 
 import com.google.common.primitives.UnsignedBytes;
 
@@ -214,6 +213,7 @@ public abstract class CostEstimator implements TableRowCounts
         }
         UserTable indexedTable = (UserTable) index.leafMostTable();
         long rowCount = getTableRowCount(indexedTable);
+        // TODO: FIX THIS COMMENT. Should it refer to getSingleColumnHistogram?
         // Get IndexStatistics for each column. If the ith element is non-null, then it definitely has
         // a leading-column histogram (obtained by IndexStats.getHistogram(1)).
         // else: There are no index stats for the first column of the index. Either there is no such index,
@@ -315,7 +315,7 @@ public abstract class CostEstimator implements TableRowCounts
             missingStats(column, index);
             return missingStatsSelectivity();
         } else {
-            Histogram histogram = indexStats.getHistogram(1);
+            Histogram histogram = indexStats.getHistogram(0, 1);
             if ((histogram == null) || histogram.getEntries().isEmpty()) {
                 missingStats(column, index);
                 return missingStatsSelectivity();
@@ -377,7 +377,7 @@ public abstract class CostEstimator implements TableRowCounts
         if (loBytes == null && hiBytes == null) {
             return missingStatsSelectivity();
         }
-        Histogram histogram = indexStats.getHistogram(1);
+        Histogram histogram = indexStats.getHistogram(0, 1);
         if ((histogram == null) || histogram.getEntries().isEmpty()) {
             missingStats(column, index);
             return missingStatsSelectivity();
@@ -450,7 +450,7 @@ public abstract class CostEstimator implements TableRowCounts
 
     private boolean mostlyDistinct(IndexStatistics indexStats)
     {
-        Histogram histogram = indexStats.getHistogram(1);
+        Histogram histogram = indexStats.getHistogram(0, 1);
         if (histogram == null) return false;
         return histogram.totalDistinctCount() * 10 > indexStats.getSampledCount() * 9;
     }

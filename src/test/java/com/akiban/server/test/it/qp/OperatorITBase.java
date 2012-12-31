@@ -51,6 +51,7 @@ import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.persistit.exception.PersistitException;
 import com.akiban.util.Strings;
 import org.junit.After;
@@ -363,12 +364,12 @@ public class OperatorITBase extends ITBase
                     if (value == null) {
                         pvalue.putNull();
                     } else if (value instanceof Integer) {
-                        if (pvalue.getUnderlyingType() == PUnderlying.INT_64)
+                        if (PValueSources.pUnderlying(pvalue) == PUnderlying.INT_64)
                             pvalue.putInt64(((Integer) value).longValue());
                         else
                             pvalue.putInt32((Integer) value);
                     } else if (value instanceof Long) {
-                        if (pvalue.getUnderlyingType() == PUnderlying.INT_32)
+                        if (PValueSources.pUnderlying(pvalue) == PUnderlying.INT_32)
                             pvalue.putInt32(((Long) value).intValue());
                         else
                             pvalue.putInt64((Long) value);

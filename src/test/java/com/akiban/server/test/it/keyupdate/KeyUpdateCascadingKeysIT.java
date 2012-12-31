@@ -50,12 +50,12 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
         updateRow(updatedItem, i_oid, 0L);
         startMonitoringHKeyPropagation();
         dbUpdate(originalItem, updatedItem);
-        checkHKeyPropagation(2, 0);
+        checkHKeyPropagation(0, 0);
         checkDB();
         // Revert change
         startMonitoringHKeyPropagation();
         dbUpdate(updatedItem, originalItem);
-        checkHKeyPropagation(2, 0);
+        checkHKeyPropagation(0, 0);
         checkDB();
         checkInitialState();
     }
@@ -69,12 +69,12 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
         updateRow(newItem, i_iid, 0L);
         startMonitoringHKeyPropagation();
         dbUpdate(originalItem, newItem);
-        checkHKeyPropagation(2, 0);
+        checkHKeyPropagation(0, 0);
         checkDB();
         // Revert change
         startMonitoringHKeyPropagation();
         dbUpdate(newItem, originalItem);
-        checkHKeyPropagation(2, 0);
+        checkHKeyPropagation(0, 0);
         checkDB();
         checkInitialState();
     }
@@ -245,12 +245,12 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
         TestRow itemRow = testStore.find(new HKey(vendorRD, 2L, customerRD, 22L, orderRD, 222L, itemRD, 2222L));
         startMonitoringHKeyPropagation();
         dbDelete(itemRow);
-        checkHKeyPropagation(1, 0);
+        checkHKeyPropagation(0, 0);
         checkDB();
         // Revert change
         startMonitoringHKeyPropagation();
         dbInsert(itemRow);
-        checkHKeyPropagation(1, 0);
+        checkHKeyPropagation(0, 0);
         checkDB();
         checkInitialState();
     }

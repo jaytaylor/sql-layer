@@ -26,7 +26,6 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.AggregatedRowType;
@@ -646,13 +645,12 @@ final class Aggregate_Partial extends Operator
                 keyValues = null;
                 keyPValues = new ArrayList<PValue>(inputsIndex);
                 for (int i = 0; i < inputsIndex; ++i) {
-                    keyPValues.add(new PValue(outputType.typeInstanceAt(i).typeClass().underlyingType()));
+                    keyPValues.add(new PValue(outputType.typeInstanceAt(i)));
                 }
                 int nAggrs = pAggrs.size();
                 pAggrsStates = new ArrayList<PValue>(nAggrs);
                 for (int i = 0; i < nAggrs; i++) {
-                    TInstance stateInstance = pAggrTypes.get(i);
-                    PValue state = new PValue(stateInstance.typeClass().underlyingType());
+                    PValue state = new PValue(pAggrTypes.get(i));
                     pAggrsStates.add(state);
                 }
             }

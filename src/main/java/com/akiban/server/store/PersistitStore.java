@@ -50,6 +50,8 @@ import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.statistics.Histogram;
+import com.akiban.server.store.statistics.HistogramEntry;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.util.tap.InOutTap;
@@ -59,7 +61,6 @@ import com.persistit.*;
 import com.persistit.Management.DisplayFilter;
 import com.persistit.encoding.CoderManager;
 import com.persistit.exception.PersistitException;
-import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -346,13 +347,8 @@ public class PersistitStore implements Store, Service {
                           BitSet tablesRequiringHKeyMaintenance,
                           boolean propagateHKeyChanges) throws PersistitException
     {
-        final int rowDefId = rowData.getRowDefId();
-
         if (rowData.getRowSize() > MAX_ROW_SIZE) {
-            if (LOG.isWarnEnabled()) {
-                LOG.warn("RowData size " + rowData.getRowSize() + " is larger than current limit of " + MAX_ROW_SIZE
-                                 + " bytes");
-            }
+            LOG.warn("RowData size {} is larger than current limit of {} bytes" + rowData.getRowSize(), MAX_ROW_SIZE);
         }
 
         final RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
@@ -392,7 +388,7 @@ public class PersistitStore implements Store, Service {
                 insertIntoIndex(session, index, rowData, hEx.getKey(), indexRow, deferIndexes);
             }
 
-            if (propagateHKeyChanges) {
+            if (propagateHKeyChanges && hasChildren(rowDef.userTable())) {
                 // The row being inserted might be the parent of orphan rows
                 // already present. The hkeys of these
                 // orphan rows need to be maintained. The hkeys of interest
@@ -457,7 +453,6 @@ public class PersistitStore implements Store, Service {
                            BitSet tablesRequiringHKeyMaintenance, boolean propagateHKeyChanges)
         throws PersistitException
     {
-        int rowDefId = rowData.getRowDefId();
         RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
         checkNoGroupIndexes(rowDef.table());
         lockAndCheckVersion(session, rowDef);
@@ -491,7 +486,7 @@ public class PersistitStore implements Store, Service {
             // The row being deleted might be the parent of rows that
             // now become orphans. The hkeys
             // of these rows need to be maintained.
-            if(propagateHKeyChanges) {
+            if(propagateHKeyChanges && hasChildren(rowDef.userTable())) {
                 propagateDownGroup(session, hEx, tablesRequiringHKeyMaintenance, indexRow, deleteIndexes);
             }
         } finally {
@@ -935,7 +930,7 @@ public class PersistitStore implements Store, Service {
         if (stats == null) {
             return null;
         }
-        IndexStatistics.Histogram fromHistogram = stats.getHistogram(index.getKeyColumns().size());
+        Histogram fromHistogram = stats.getHistogram(0, index.getKeyColumns().size());
         if (fromHistogram == null) {
             return null;
         }
@@ -946,7 +941,7 @@ public class PersistitStore implements Store, Service {
         RowData indexRowData = new RowData(new byte[4096]);
         Object[] indexValues = new Object[indexRowDef.getFieldCount()];
         long count = 0;
-        for (IndexStatistics.HistogramEntry entry : fromHistogram.getEntries()) {
+        for (HistogramEntry entry : fromHistogram.getEntries()) {
             // Decode the key.
             int keylen = entry.getKeyBytes().length;
             System.arraycopy(entry.getKeyBytes(), 0, key.getEncodedBytes(), 0, keylen);
@@ -1473,5 +1468,10 @@ public class PersistitStore implements Store, Service {
     private static PersistitAdapter adapter(Session session)
     {
         return (PersistitAdapter) session.get(StoreAdapter.STORE_ADAPTER_KEY);
+    }
+
+    private static boolean hasChildren(UserTable table) {
+        // At runtime, getCandidateChildJoins() = getChildJoins() and doesn't involve building a temp list
+        return !table.getCandidateChildJoins().isEmpty();
     }
 }

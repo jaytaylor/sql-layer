@@ -796,7 +796,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 ErrorHandlingMode.ERROR,
                 ErrorHandlingMode.ERROR
         );
-        PValue result = new PValue(targetInstance.typeClass().underlyingType());
+        PValue result = new PValue(targetInstance);
         try {
             cast.evaluate(context, source.value(), result);
         } catch (Exception e) {
@@ -963,7 +963,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             return castExpression;
         }
         if (expression instanceof NullSource) {
-            PValueSource nullSource = PValueSources.getNullSource(targetInstance.typeClass().underlyingType());
+            PValueSource nullSource = PValueSources.getNullSource(targetInstance);
             expression.setPreptimeValue(new TPreptimeValue(targetInstance, nullSource));
             return expression;
         }

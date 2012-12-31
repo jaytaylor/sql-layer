@@ -3,6 +3,7 @@ RowCount: 1600
 SampledCount: 100
 Statistics:
 - Columns: 1
+  FirstColumn: 0
   Histogram:
   - distinct: 200
     eq: 1
@@ -30,6 +31,7 @@ RowCount: 1600
 SampledCount: 100
 Statistics:
 - Columns: 1
+  FirstColumn: 0
   Histogram:
   - distinct: 200
     eq: 1
@@ -57,6 +59,7 @@ RowCount: 1600
 SampledCount: 100
 Statistics:
 - Columns: 1
+  FirstColumn: 0
   Histogram:
   - distinct: 200
     eq: 1
@@ -67,6 +70,7 @@ Statistics:
     key: [MMM]
     lt: 900
 - Columns: 2
+  FirstColumn: 0
   Histogram:
   - distinct: 200
     eq: 0
@@ -75,6 +79,57 @@ Statistics:
   - distinct: 100
     eq: 0
     key: [MMM, '99.99']
+    lt: 900
+- Columns: 1
+  FirstColumn: 1
+  Histogram:
+  - distinct: 200
+    eq: 0
+    key: ['1.23']
+    lt: 500
+  - distinct: 100
+    eq: 0
+    key: ['99.99']
+    lt: 900
+Table: parent
+Timestamp: 2010-01-01T00:00:00Z
+---
+Index: when_name
+RowCount: 1600
+SampledCount: 100
+Statistics:
+- Columns: 1
+  FirstColumn: 0
+  Histogram:
+  - distinct: 200
+    eq: 0
+    key: ['2012-01-01']
+    lt: 500
+  - distinct: 100
+    eq: 0
+    key: ['2012-01-02']
+    lt: 900
+- Columns: 2
+  FirstColumn: 0
+  Histogram:
+  - distinct: 200
+    eq: 0
+    key: ['2012-01-01', AAA]
+    lt: 500
+  - distinct: 100
+    eq: 0
+    key: ['2012-01-02', MMM]
+    lt: 900
+- Columns: 1
+  FirstColumn: 1
+  Histogram:
+  - distinct: 200
+    eq: 1
+    key: [AAA]
+    lt: 500
+  - distinct: 100
+    eq: 2
+    key: [MMM]
     lt: 900
 Table: parent
 Timestamp: 2010-01-01T00:00:00Z

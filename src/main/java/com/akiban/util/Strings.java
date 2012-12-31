@@ -43,6 +43,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.JarURLConnection;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.jar.JarEntry;
@@ -386,5 +387,9 @@ public abstract class Strings {
         for (Object o : collection)
             strings.add(String.valueOf(o));
         return strings;
+    }
+
+    public static boolean equalCharsets(Charset one, String two) {
+        return one.name().equals(two) || one.equals(Charset.forName(two));
     }
 }

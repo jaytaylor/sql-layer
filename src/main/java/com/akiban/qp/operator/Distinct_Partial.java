@@ -26,7 +26,6 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.collation.AkCollator;
@@ -254,7 +253,7 @@ class Distinct_Partial extends Operator
                 currentValues = null;
                 currentPValues = new PValue[nfields];
                 for (int i = 0; i < nfields; ++i) {
-                    currentPValues[i] = new PValue(distinctType.typeInstanceAt(i).typeClass().underlyingType());
+                    currentPValues[i] = new PValue(distinctType.typeInstanceAt(i));
                 }
             }
         }

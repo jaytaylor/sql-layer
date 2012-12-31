@@ -94,6 +94,10 @@ public final class WrappingByteSource implements ByteSource {
         wrap(bytes);
     }
 
+    public WrappingByteSource(byte[] bytes, int offset, int length) {
+        wrap(bytes, offset, length);
+    }
+
     // ByteSource interface
 
     @Override

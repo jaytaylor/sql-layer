@@ -1,1 +1,0 @@
-SELECT c1 FROM tc

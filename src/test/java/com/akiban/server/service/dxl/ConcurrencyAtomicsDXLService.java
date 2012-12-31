@@ -165,12 +165,11 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
         }
 
         @Override
-        public Long writeRow(Session session, NewRow row) {
+        public void writeRow(Session session, NewRow row) {
             BeforeAndAfter hook = getIUDHook(session);
             hook.doBefore();
-            Long ret = super.writeRow(session, row);
+            super.writeRow(session, row);
             hook.doAfter();
-            return ret;
         }
 
         @Override

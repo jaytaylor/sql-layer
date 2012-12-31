@@ -49,6 +49,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 import com.akiban.util.AkibanAppender;
+import com.akiban.util.ByteSource;
 
 import java.math.BigDecimal;
 
@@ -114,6 +115,11 @@ public class MBigDecimal extends TClassBase {
     public MBigDecimal(String name, int defaultVarcharLen){
         super(MBundle.INSTANCE.id(), name, AkCategory.DECIMAL, Attrs.class, NumericFormatter.FORMAT.BIGDECIMAL, 1, 1, 8,
                 PUnderlying.BYTES, TParsers.DECIMAL, defaultVarcharLen);
+    }
+
+    @Override
+    public Object formatCachedForNiceRow(PValueSource source) {
+        return ((BigDecimalWrapper)source.getObject()).asBigDecimal();
     }
 
     @Override
@@ -235,6 +241,11 @@ public class MBigDecimal extends TClassBase {
             else if (object instanceof String)
                 return new MBigDecimalWrapper((String)object);
             throw new UnsupportedOperationException(String.valueOf(object));
+        }
+
+        @Override
+        public boolean canConvertToValue(Object cached) {
+            return true;
         }
     };
 

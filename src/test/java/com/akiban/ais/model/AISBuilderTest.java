@@ -990,8 +990,8 @@ public class AISBuilderTest
                 ais.getUserTable("test", "c").getGroupIndexes().contains(groupIndex)
         );
 
-        Assert.assertEquals("group indexes for o", 0, ais.getUserTable("test", "o").getGroupIndexes().size());
-        Assert.assertFalse("GI for o has its group index",
+        Assert.assertEquals("group indexes for o", 1, ais.getUserTable("test", "o").getGroupIndexes().size());
+        Assert.assertTrue("GI for o has its group index",
                 ais.getUserTable("test", "o").getGroupIndexes().contains(groupIndex)
         );
 

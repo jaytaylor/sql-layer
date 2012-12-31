@@ -32,7 +32,6 @@ import com.akiban.server.explain.*;
 import com.akiban.server.explain.std.TExpressionExplainer;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.pvalue.PValueTargets;
@@ -50,7 +49,7 @@ public final class TPreparedField implements TPreparedExpression {
 
     @Override
     public TEvaluatableExpression build() {
-        return new Evaluation(typeInstance.typeClass().underlyingType(), fieldIndex);
+        return new Evaluation(typeInstance, fieldIndex);
     }
 
     @Override
@@ -88,7 +87,7 @@ public final class TPreparedField implements TPreparedExpression {
             setContext(row);
         }
 
-        private Evaluation(PUnderlying underlyingType, int fieldIndex) {
+        private Evaluation(TInstance underlyingType, int fieldIndex) {
             super(underlyingType);
             this.fieldIndex = fieldIndex;
         }

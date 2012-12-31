@@ -58,7 +58,7 @@ import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -306,7 +306,7 @@ public final class ExpressionGenerators {
                                 eval.with(context);
                             }
 
-                            private final PValue pValue = new PValue(PUnderlying.STRING);
+                            private final PValue pValue = new PValue(MString.VARCHAR.instance(255, true));
                         };
                     }
 

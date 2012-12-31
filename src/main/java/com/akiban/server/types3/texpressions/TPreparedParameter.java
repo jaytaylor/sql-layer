@@ -114,7 +114,7 @@ public final class TPreparedParameter implements TPreparedExpression {
         private InnerEvaluation(int position, TInstance tInstance) {
             this.position = position;
             this.tInstance = tInstance;
-            this.pValue = new PValue(tInstance.typeClass().underlyingType());
+            this.pValue = new PValue(tInstance);
         }
 
         private final int position;
