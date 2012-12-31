@@ -60,12 +60,13 @@ public final class MysqlDumpRowReaderTest {
         SchemaFactory schemaFactory = new SchemaFactory("test");
         AkibanInformationSchema ais = schemaFactory.aisWithRowDefs(DDL);
         UserTable t1 = ais.getUserTable("test", "t1");
-        MysqlDumpRowReader reader = new MysqlDumpRowReader(t1, t1.getColumns(), "UTF-8",
+        InputStream istr = new FileInputStream(DUMP_FILE);
+        MysqlDumpRowReader reader = new MysqlDumpRowReader(t1, t1.getColumns(), 
+                                                           istr, "UTF-8",
                                                            null);
         List<NewRow> rows = new ArrayList<NewRow>();
-        InputStream istr = new FileInputStream(DUMP_FILE);
         NewRow row;
-        while ((row = reader.nextRow(istr)) != null)
+        while ((row = reader.nextRow()) != null)
             rows.add(row);
         istr.close();
         assertEquals("number of rows", ROWS.length, rows.size());

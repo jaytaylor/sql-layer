@@ -59,9 +59,11 @@ public class MysqlDumpRowReader extends RowReader
     
     private static final Logger logger = LoggerFactory.getLogger(MysqlDumpRowReader.class);
 
-    public MysqlDumpRowReader(UserTable table, List<Column> columns, String encoding,
+    public MysqlDumpRowReader(UserTable table, List<Column> columns,
+                              InputStream inputStream, String encoding,
                               QueryContext queryContext) {
-        super(table, columns, encoding, getBytes("NULL", encoding), queryContext);
+        super(table, columns, inputStream, encoding, getBytes("NULL", encoding), 
+              queryContext);
         this.insert = getBytes("INSERT", encoding);
         this.into = getBytes("INTO", encoding);
         this.values = getBytes("VALUES", encoding);
@@ -82,12 +84,12 @@ public class MysqlDumpRowReader extends RowReader
     }
 
     @Override
-    public NewRow nextRow(InputStream inputStream) throws IOException {
+    public NewRow nextRow() throws IOException {
         int lb = -1;
         while (true) {
             int b = lb;
             if (b < 0) {
-                b = inputStream.read();
+                b = read();
             }
             else {
                 lb = -1;
@@ -98,29 +100,27 @@ public class MysqlDumpRowReader extends RowReader
                     return null;
                 }
                 else if (b == '-') {
-                    b = inputStream.read();
+                    b = read();
                     if (b == '-') {
                         state = State.SINGLE_LINE_COMMENT;
                     }
                     else {
                         throw new ExternalRowReaderException("Unexpected token " +
-                                                             new String(new byte[] { 
-                                                                            (byte)'-', (byte)b 
-                                                                        },
-                                                                        encoding));
+                                                             decode(new byte[] { 
+                                                                        (byte)'-', (byte)b 
+                                                                    }));
                     }
                 }
                 else if (b == '/') {
-                    b = inputStream.read();
+                    b = read();
                     if (b == '*') {
                         state = State.DELIMITED_COMMENT;
                     }
                     else {
                         throw new ExternalRowReaderException("Unexpected token " +
-                                                             new String(new byte[] { 
-                                                                            (byte)'/', (byte)b 
-                                                                        },
-                                                                        encoding));
+                                                             decode(new byte[] { 
+                                                                        (byte)'/', (byte)b 
+                                                                    }));
                     }
                 }
                 else if ((b >= 'A') && (b <= 'Z')) {
@@ -146,9 +146,9 @@ public class MysqlDumpRowReader extends RowReader
                     throw new ExternalRowReaderException("EOF in the middle of a comment");
                 }
                 else if (b == '*') {
-                    lb = inputStream.read();
+                    lb = read();
                     if (lb == '/') {
-                        lb = inputStream.read();
+                        lb = read();
                         if (lb == ';') 
                             lb = -1; // Allow stray ; after comment.
                         state = State.STATEMENT_START;
@@ -216,7 +216,7 @@ public class MysqlDumpRowReader extends RowReader
                     state = State.IGNORED_STATEMENT;
                 }
                 else if (b == '\\') {
-                    b = inputStream.read();
+                    b = read();
                 }
                 break;
             case INSERT_TABLE:
@@ -245,7 +245,7 @@ public class MysqlDumpRowReader extends RowReader
                     }
                     else if (!fieldMatches(tableName)) {
                         throw new ExternalRowReaderException("INSERT INTO changed from " + 
-                                                             new String(tableName, encoding) +
+                                                             decode(tableName) +
                                                              " to " + decodeField() +
                                                              ". Does file contain multiple tables?");
                     }
@@ -263,7 +263,7 @@ public class MysqlDumpRowReader extends RowReader
                 }
                 else if (b == '\\') {
                     addToField(b);
-                    b = inputStream.read();
+                    b = read();
                     if (b >= 0)
                         addToField(b);
                 }
@@ -303,7 +303,7 @@ public class MysqlDumpRowReader extends RowReader
                 }
                 else if (b == ')') {
                     state = State.AFTER_ROW_CTOR;
-                    return row;
+                    return row();
                 }
                 else if (b == '\'') {
                     state = State.QUOTED_FIELD;
@@ -329,7 +329,7 @@ public class MysqlDumpRowReader extends RowReader
                 else if (b == ')') {
                     addField(false);
                     state = State.AFTER_ROW_CTOR;
-                    return row;
+                    return row();
                 }
                 else if (b == '\'') {
                     throw new ExternalRowReaderException("Quote in the middle of a value");
@@ -346,7 +346,7 @@ public class MysqlDumpRowReader extends RowReader
                     state = State.AFTER_QUOTED_FIELD;
                 }
                 else if (b == '\\') {
-                    b = inputStream.read();
+                    b = read();
                     switch (b) {
                     case -1:
                         throw new ExternalRowReaderException("EOF in the middle of a quote");
@@ -377,7 +377,7 @@ public class MysqlDumpRowReader extends RowReader
                 else if (b == ')') {
                     addField(true);
                     state = State.AFTER_ROW_CTOR;
-                    return row;
+                    return row();
                 }
                 else {
                     throw new ExternalRowReaderException("unexpected after quoted field: " + (char)b);

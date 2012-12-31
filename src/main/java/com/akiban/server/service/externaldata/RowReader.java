@@ -56,27 +56,30 @@ import java.util.List;
 /** Read rows from an external source. */
 public abstract class RowReader
 {
-    protected final RowDef rowDef;
-    protected final int[] fieldMap;
-    protected final boolean[] nullable;
-    protected final byte[] nullBytes;
-    protected final int tableId;
-    protected final boolean usePValues;
-    protected final PValue pstring;
-    protected final PValue[] pvalues;
-    protected final PValueRowDataCreator pvalueCreator;
-    protected final TExecutionContext[] executionContexts;
-    protected final FromObjectValueSource fromObject;
-    protected final ValueHolder holder;
-    protected final ToObjectValueTarget toObject;
-    protected AkType[] aktypes;
-    protected NewRow row;
-    protected byte[] buffer = new byte[128];
-    protected int fieldIndex, fieldLength;
-    protected final String encoding;
+    private final RowDef rowDef;
+    private final int[] fieldMap;
+    private final boolean[] nullable;
+    private final byte[] nullBytes;
+    private final int tableId;
+    private final boolean usePValues;
+    private final PValue pstring;
+    private final PValue[] pvalues;
+    private final PValueRowDataCreator pvalueCreator;
+    private final TExecutionContext[] executionContexts;
+    private final FromObjectValueSource fromObject;
+    private final ValueHolder holder;
+    private final ToObjectValueTarget toObject;
+    private AkType[] aktypes;
+    private NewRow row;
+    private byte[] fieldBuffer = new byte[128];
+    private int fieldIndex, fieldLength;
+    private final String encoding;
+    private final InputStream inputStream;
+    private final byte[] fileBuffer = new byte[1024];
+    private int fileIndex, fileAvail;
 
     protected RowReader(UserTable table, List<Column> columns, 
-                        String encoding, byte[] nullBytes,
+                        InputStream inputStream, String encoding, byte[] nullBytes,
                         QueryContext queryContext) {
         this.tableId = table.getTableId();
         this.rowDef = table.rowDef();
@@ -124,8 +127,13 @@ public abstract class RowReader
             pvalueCreator = null;
             executionContexts = null;
         }
+        this.inputStream = inputStream;
         this.encoding = encoding;
         this.nullBytes = nullBytes;
+    }
+
+    protected NewRow row() {
+        return row;
     }
 
     protected NewRow newRow() {
@@ -134,13 +142,29 @@ public abstract class RowReader
         return row;
     }
 
-    public abstract NewRow nextRow(InputStream inputStream) throws IOException;
+    public abstract NewRow nextRow() throws IOException;
 
-    protected void addToField(int b) {
-        if (fieldLength + 1 > buffer.length) {
-            buffer = Arrays.copyOf(buffer, (buffer.length * 3) / 2);
+    protected int read() throws IOException {
+        while (true) {
+            if (fileAvail > 0) {
+                fileAvail--;
+                return fileBuffer[fileIndex++];
+            }
+            else if (fileAvail < 0) {
+                return -1;
+            }
+            else {
+                fileAvail = inputStream.read(fileBuffer);
+                fileIndex = 0;
+            }
         }
-        buffer[fieldLength++] = (byte)b;
+    }
+    
+    protected void addToField(int b) {
+        if (fieldLength + 1 > fieldBuffer.length) {
+            fieldBuffer = Arrays.copyOf(fieldBuffer, (fieldBuffer.length * 3) / 2);
+        }
+        fieldBuffer[fieldLength++] = (byte)b;
     }
 
     protected void addField(boolean quoted) {
@@ -179,20 +203,31 @@ public abstract class RowReader
         if (fieldLength != key.length)
             return false;
         for (int i = 0; i < fieldLength; i++) {
-            if (buffer[i] != key[i]) {
+            if (fieldBuffer[i] != key[i]) {
                 return false;
             }
         }
         return true;
     }
 
-    public byte[] copyField() {
-        return Arrays.copyOf(buffer, fieldLength);
+    protected byte[] copyField() {
+        return Arrays.copyOf(fieldBuffer, fieldLength);
     }
 
-    public String decodeField() {
+    protected String decodeField() {
         try {
-            return new String(buffer, 0, fieldLength, encoding);
+            return new String(fieldBuffer, 0, fieldLength, encoding);
+        }
+        catch (UnsupportedEncodingException ex) {
+            UnsupportedCharsetException nex = new UnsupportedCharsetException(encoding);
+            nex.initCause(ex);
+            throw nex;
+        }
+    }
+
+    protected String decode(byte[] bytes) {
+        try {
+            return new String(bytes, encoding);
         }
         catch (UnsupportedEncodingException ex) {
             UnsupportedCharsetException nex = new UnsupportedCharsetException(encoding);

@@ -149,17 +149,22 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                                  UserTable toTable, List<Column> toColumns,
                                  long commitFrequency, QueryContext context) 
             throws IOException {
-        CsvRowReader reader = new CsvRowReader(toTable, toColumns, format, context);
+        CsvRowReader reader = new CsvRowReader(toTable, toColumns, inputStream, format,
+                                               context);
         if (skipRows > 0)
-            reader.skipRows(inputStream, skipRows);
+            reader.skipRows(skipRows);
         return loadTableFromRowReader(session, inputStream, reader, commitFrequency);
     }
 
     @Override
-    public long loadTableFromMysqlDump(Session session, InputStream inputStream, String encoding,
+    public long loadTableFromMysqlDump(Session session, InputStream inputStream, 
+                                       String encoding,
                                        UserTable toTable, List<Column> toColumns,
-                                       long commitFrequency, QueryContext context) throws IOException {
-        MysqlDumpRowReader reader = new MysqlDumpRowReader(toTable, toColumns, encoding, context);
+                                       long commitFrequency, QueryContext context) 
+            throws IOException {
+        MysqlDumpRowReader reader = new MysqlDumpRowReader(toTable, toColumns,
+                                                           inputStream, encoding, 
+                                                           context);
         return loadTableFromRowReader(session, inputStream, reader, commitFrequency);
     }
 
@@ -172,7 +177,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
         try {
             NewRow row;
             do {
-                row = reader.nextRow(inputStream);
+                row = reader.nextRow();
                 if (row != null) {
                     logger.trace("Read row: {}", row);
                     if (!transaction) {
