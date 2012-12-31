@@ -69,16 +69,15 @@ public class CsvRowReader extends RowReader
 
     @Override
     public NewRow nextRow() throws IOException {
-        int lb = read();
-        if (lb < 0) return null;
+        {
+            int b = read();
+            if (b < 0) return null;
+            unread(b);
+        }
         newRow();
         state = State.ROW_START;
         while (true) {
-            int b = lb;
-            if (b < 0) 
-                b = read();
-            else
-                lb = -1;
+            int b = read();
             switch (state) {
             case ROW_START:
                 if (b < 0) {
@@ -137,11 +136,13 @@ public class CsvRowReader extends RowReader
                 else if (b == quote) {
                     if (escape == quote) {
                         // Must be doubled; peek next character.
-                        lb = read();
-                        if (lb == quote) {
+                        b = read();
+                        if (b == quote) {
                             addToField(b);
-                            lb = -1;
                             continue;
+                        }
+                        else {
+                            unread(b);
                         }
                     }
                     state = State.AFTER_QUOTE;

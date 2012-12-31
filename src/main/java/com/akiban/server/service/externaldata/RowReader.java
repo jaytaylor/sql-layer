@@ -148,7 +148,7 @@ public abstract class RowReader
         while (true) {
             if (fileAvail > 0) {
                 fileAvail--;
-                return fileBuffer[fileIndex++];
+                return fileBuffer[fileIndex++] & 0xFF;
             }
             else if (fileAvail < 0) {
                 return -1;
@@ -160,6 +160,12 @@ public abstract class RowReader
         }
     }
     
+    protected void unread(int b) {
+        assert ((fileIndex > 0) && (b == (fileBuffer[fileIndex-1] & 0xFF)));
+        fileAvail++;
+        fileIndex--;
+    }
+
     protected void addToField(int b) {
         if (fieldLength + 1 > fieldBuffer.length) {
             fieldBuffer = Arrays.copyOf(fieldBuffer, (fieldBuffer.length * 3) / 2);
@@ -210,13 +216,24 @@ public abstract class RowReader
         return true;
     }
 
-    public byte[] copyField() {
+    protected byte[] copyField() {
         return Arrays.copyOf(fieldBuffer, fieldLength);
     }
 
-    public String decodeField() {
+    protected String decodeField() {
         try {
             return new String(fieldBuffer, 0, fieldLength, encoding);
+        }
+        catch (UnsupportedEncodingException ex) {
+            UnsupportedCharsetException nex = new UnsupportedCharsetException(encoding);
+            nex.initCause(ex);
+            throw nex;
+        }
+    }
+
+    protected String decode(byte[] bytes) {
+        try {
+            return new String(bytes, encoding);
         }
         catch (UnsupportedEncodingException ex) {
             UnsupportedCharsetException nex = new UnsupportedCharsetException(encoding);
