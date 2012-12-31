@@ -85,15 +85,8 @@ public class MysqlDumpRowReader extends RowReader
 
     @Override
     public NewRow nextRow() throws IOException {
-        int lb = -1;
         while (true) {
-            int b = lb;
-            if (b < 0) {
-                b = read();
-            }
-            else {
-                lb = -1;
-            }
+            int b = read();
             switch (state) {
             case STATEMENT_START:
                 if (b < 0) {
@@ -146,12 +139,15 @@ public class MysqlDumpRowReader extends RowReader
                     throw new ExternalRowReaderException("EOF in the middle of a comment");
                 }
                 else if (b == '*') {
-                    lb = read();
-                    if (lb == '/') {
-                        lb = read();
-                        if (lb == ';') 
-                            lb = -1; // Allow stray ; after comment.
+                    b = read();
+                    if (b == '/') {
+                        b = read();
+                        if (b != ';')
+                            unread(b); // Allow stray ; after comment.
                         state = State.STATEMENT_START;
+                    }
+                    else {
+                        unread(b);
                     }
                 }
                 break;
@@ -165,7 +161,7 @@ public class MysqlDumpRowReader extends RowReader
                     addToField(b);
                 }
                 else {
-                    if (b != ' ') lb = b;
+                    if (b != ' ') unread(b);
                     if (state == State.INSERT) {
                         if (fieldMatches(into)) {
                             clearField();
@@ -236,7 +232,7 @@ public class MysqlDumpRowReader extends RowReader
                     addToField(b);
                 }
                 else {
-                    if (b != ' ') lb = b;
+                    if (b != ' ') unread(b);
                     if (tableName == null) {
                         tableName = copyField();
                         if (logger.isTraceEnabled()) {
