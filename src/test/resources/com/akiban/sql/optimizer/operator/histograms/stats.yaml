@@ -1,0 +1,85 @@
+Index: idx_txy
+RowCount: 1000000
+SampledCount: 1000000
+Statistics:
+- Columns: 1
+  FirstColumn: 0
+  Histogram:
+  - distinct: 0
+    eq: 1000000
+    key: [0]
+    lt: 0
+- Columns: 2
+  FirstColumn: 0
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [0, 0]
+    lt: 0
+  - distinct: 0
+    eq: 999999
+    key: [0, 1]
+    lt: 0
+- Columns: 1
+  FirstColumn: 1
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [0]
+    lt: 0
+  - distinct: 0
+    eq: 999999
+    key: [1]
+    lt: 0
+Table: t
+Timestamp: 2012-01-18T00:24:08.679Z
+---
+Index: idx_tz
+RowCount: 1000000
+SampledCount: 1000000
+Statistics:
+- Columns: 1
+  FirstColumn: 0
+  Histogram:
+  - distinct: 0
+    eq: 100000
+    key: [0]
+    lt: 0
+  - distinct: 0
+    eq: 100000
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 100000
+    key: [2]
+    lt: 0
+  - distinct: 0
+    eq: 100000
+    key: [3]
+    lt: 0
+  - distinct: 0
+    eq: 100000
+    key: [4]
+    lt: 0
+  - distinct: 0
+    eq: 100000
+    key: [5]
+    lt: 0
+  - distinct: 0
+    eq: 100000
+    key: [6]
+    lt: 0
+  - distinct: 0
+    eq: 100000
+    key: [7]
+    lt: 0
+  - distinct: 0
+    eq: 100000
+    key: [8]
+    lt: 0
+  - distinct: 0
+    eq: 100000
+    key: [9]
+    lt: 0
+Table: t
+Timestamp: 2012-01-18T00:24:08.679Z
