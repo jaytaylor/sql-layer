@@ -279,9 +279,6 @@ public class MysqlDumpRowReader extends RowReader
                     newRow();
                     state = State.NEXT_FIELD;
                 }
-                else if (b == ';') {
-                    state = State.STATEMENT_START;
-                }
                 else {
                     throw new ExternalRowReaderException("Unexpected token " + (char)b);
                 }
