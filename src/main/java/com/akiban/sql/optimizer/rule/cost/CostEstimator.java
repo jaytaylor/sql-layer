@@ -895,7 +895,7 @@ public abstract class CostEstimator implements TableRowCounts
                 nconds++;
         }
         return new CostEstimate(Math.max(1, round(size * selectivity)),
-                                model.select((int)size) * conditions.size());
+                                model.select((int)size) * nconds);
     }
 
     public CostEstimate costSelect(Collection<ConditionExpression> conditions,
