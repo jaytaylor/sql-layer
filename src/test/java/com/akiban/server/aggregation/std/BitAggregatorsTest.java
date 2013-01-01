@@ -241,14 +241,16 @@ public class BitAggregatorsTest
     private static final BigInteger N64 = new BigInteger("FFFFFFFFFFFFFFFF", 16);
     private static boolean alreadyExc = false;
 
+    private final Aggregator aggregator1, aggregator2;
     private Aggregator aggregator;
-    private BigInteger expected1;
-    private BigInteger expected2;
-    private Types type;
+    private final BigInteger expected1, expected2;
+    private BigInteger expected;
+    private final Types type;
 
     public BitAggregatorsTest (Aggregator aggregator, BigInteger expected1, BigInteger expected2, Types type)
     {
-        this.aggregator = aggregator;
+        this.aggregator1 = aggregator;
+        this.aggregator2 = aggregator;
         this.expected1 = expected1;
         this.expected2 = expected2;
         this.type = type;
@@ -278,13 +280,17 @@ public class BitAggregatorsTest
     @Test
     public void testColumnOfDifferentValues ()
     {
-        assertEquals(expected1, type.aggregate_test1(aggregator, holder));
+        aggregator = aggregator1;
+        expected = expected1;
+        assertEquals(expected, type.aggregate_test1(aggregator, holder));
     }
 
     @Test
     public void testColumnOfSameValues ()
     {
-        assertEquals(expected2, type.aggregate_test2(aggregator, holder));
+        aggregator = aggregator2;
+        expected = expected2;
+        assertEquals(expected, type.aggregate_test2(aggregator, holder));
     }
 
     @OnlyIfNot("alreadyExc()")
@@ -292,7 +298,7 @@ public class BitAggregatorsTest
     public void testNullAnd ()
     {
         aggregator = Aggregators.bit_and("bit_and", AkType.U_BIGINT).get();
-        expected1 = N64;
+        expected = N64;
         testNull();
     }
 
@@ -302,17 +308,17 @@ public class BitAggregatorsTest
     {
         // test and
         aggregator = Aggregators.bit_and("bit_and", AkType.U_BIGINT).get();
-        expected1 = BigInteger.valueOf(1);
+        expected = BigInteger.valueOf(1);
         testNonParam();
         
         // test or
         aggregator = Aggregators.bit_or("bit_or", AkType.U_BIGINT).get();
-        expected1 = BigInteger.valueOf(3);
+        expected = BigInteger.valueOf(3);
         testNonParam();
         
         // test xor
         aggregator = Aggregators.bit_xor("bit_xor", AkType.U_BIGINT).get();
-        expected1 = BigInteger.valueOf(2);
+        expected = BigInteger.valueOf(2);
         testNonParam();
     }
     
@@ -330,7 +336,7 @@ public class BitAggregatorsTest
         holder.putUBigInt(N64);
         aggregator.output(holder);
         
-        assertEquals(expected1, holder.getUBigInt());
+        assertEquals(expected, holder.getUBigInt());
     }
     
     @OnlyIfNot("alreadyExc()")
@@ -338,7 +344,7 @@ public class BitAggregatorsTest
     public void testNullOr ()
     {
         aggregator = Aggregators.bit_or("bit_or", AkType.U_BIGINT).get();
-        expected1 = BigInteger.ZERO;
+        expected = BigInteger.ZERO;
         testNull();
     }
 
@@ -347,7 +353,7 @@ public class BitAggregatorsTest
     public void testNullXOr ()
     {
         aggregator = Aggregators.bit_xor("bit_xor", AkType.U_BIGINT).get();
-        expected1 = BigInteger.ZERO;
+        expected = BigInteger.ZERO;
         testNull();
         alreadyExc = true;
     }
@@ -364,6 +370,6 @@ public class BitAggregatorsTest
         holder.expectType(AkType.U_BIGINT);
         aggregator.output(holder);
 
-        assertEquals(expected1, holder.getUBigInt());
+        assertEquals(expected, holder.getUBigInt());
     }
 }
