@@ -64,7 +64,7 @@ public final class TInExpression {
             TInstance lhsInstance = lhs.resultType();
             boolean reverse;
             TClass leftIn = lhsInstance.typeClass();
-            TClass rightIn = lhsInstance.typeClass();
+            TClass rightIn = rhsInstance.typeClass();
             TClass leftCmp = comparable.getLeftTClass();
             TClass rightCmp = comparable.getRightTClass();
             if (leftIn == leftCmp && rightIn == rightCmp) {
