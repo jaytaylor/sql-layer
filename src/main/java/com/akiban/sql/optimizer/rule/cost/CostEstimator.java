@@ -911,7 +911,7 @@ public abstract class CostEstimator implements TableRowCounts
             Column column = entry.getKey().getColumn();
             // Find a TableIndex whose first column is leadingColumn
             for (TableIndex tableIndex : column.getTable().getIndexes()) {
-                if (tableIndex.getKeyColumns().get(0).getColumn() == column) {
+                if (!tableIndex.isSpatial() && tableIndex.getKeyColumns().get(0).getColumn() == column) {
                     indexStatistics = getIndexStatistics(tableIndex);
                     if (indexStatistics != null) {
                         index = tableIndex;
@@ -923,7 +923,7 @@ public abstract class CostEstimator implements TableRowCounts
             if (indexStatistics == null) {
                 groupLoop: for (Group group : schema.ais().getGroups().values()) {
                     for (GroupIndex groupIndex : group.getIndexes()) {
-                        if (groupIndex.getKeyColumns().get(0).getColumn() == column) {
+                        if (!groupIndex.isSpatial() && groupIndex.getKeyColumns().get(0).getColumn() == column) {
                             indexStatistics = getIndexStatistics(groupIndex);
                             if (indexStatistics != null) {
                                 index = groupIndex;
