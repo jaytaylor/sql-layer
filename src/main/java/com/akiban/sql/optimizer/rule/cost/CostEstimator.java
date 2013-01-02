@@ -923,7 +923,7 @@ public abstract class CostEstimator implements TableRowCounts
             if (indexStatistics == null) {
                 groupLoop: for (Group group : schema.ais().getGroups().values()) {
                     for (GroupIndex groupIndex : group.getIndexes()) {
-                        if (groupIndex.getKeyColumns().get(0).getColumn() == column) {
+                        if (!groupIndex.isSpatial() && groupIndex.getKeyColumns().get(0).getColumn() == column) {
                             indexStatistics = getIndexStatistics(groupIndex);
                             if (indexStatistics != null) {
                                 index = groupIndex;
