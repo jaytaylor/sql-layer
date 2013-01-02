@@ -214,13 +214,14 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         if (values.nFields() != 1) 
             return null;
         ColumnExpression column = null;
+        ComparisonCondition ccond = null;
         if (joins.size() == 1) {
             JoinOperator join = joins.iterator().next();
             if ((join.getJoinConditions() != null) &&
                 (join.getJoinConditions().size() == 1)) {
                 ConditionExpression joinCondition = join.getJoinConditions().get(0);
                 if (joinCondition instanceof ComparisonCondition) {
-                    ComparisonCondition ccond = (ComparisonCondition)joinCondition;
+                    ccond = (ComparisonCondition)joinCondition;
                     if ((ccond.getOperation() == Comparison.EQ) &&
                         (ccond.getLeft() instanceof ColumnExpression) &&
                         (ccond.getRight() instanceof ColumnExpression)) {
@@ -247,6 +248,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         InListCondition cond = new InListCondition(column, expressions,
                                                    new DataTypeDescriptor(TypeId.BOOLEAN_ID, true),
                                                    null);
+        cond.setComparison(ccond);
         if (Types3Switch.ON) {
             cond.setPreptimeValue(new TPreptimeValue(AkBool.INSTANCE.instance(true)));
         }

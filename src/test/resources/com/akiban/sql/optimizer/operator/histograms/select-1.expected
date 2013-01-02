@@ -1,0 +1,5 @@
+PhysicalSelect[id:int[INT], x:int[INT], y:int[INT], z:int[INT]]
+  Project_Default(t.id, t.x, t.y, t.z)
+    Sort_Tree(t.z ASC)
+      AncestorLookup_Default(Index(t.idx_txy) -> t)
+        IndexScan_Default(Index(t.idx_txy), x = 0, y = 0, id)
