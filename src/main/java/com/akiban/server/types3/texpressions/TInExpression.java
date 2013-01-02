@@ -28,8 +28,10 @@ package com.akiban.server.types3.texpressions;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TComparison;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TKeyComparable;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -42,6 +44,12 @@ public final class TInExpression {
 
     public static TPreparedExpression prepare(TPreparedExpression lhs, List<? extends TPreparedExpression> rhs,
                                               QueryContext queryContext) {
+        return prepare(lhs, rhs, null, null, queryContext);
+    }
+
+    public static TPreparedExpression prepare(TPreparedExpression lhs, List<? extends TPreparedExpression> rhs,
+                                              TInstance rhsInstance, TKeyComparable comparable,
+                                              QueryContext queryContext) {
         List<TPreparedExpression> all = new ArrayList<TPreparedExpression>(rhs.size() + 1);
         boolean nullable = lhs.resultType().nullability();
         all.add(lhs);
@@ -49,7 +57,30 @@ public final class TInExpression {
             all.add(r);
             nullable |= r.resultType().nullability();
         }
-        return new TPreparedFunction(noKey, AkBool.INSTANCE.instance(nullable), all, queryContext);
+        TValidatedScalar overload;        
+        if (comparable == null)
+            overload = noKey;
+        else {
+            TInstance lhsInstance = lhs.resultType();
+            boolean reverse;
+            TClass leftIn = lhsInstance.typeClass();
+            TClass rightIn = lhsInstance.typeClass();
+            TClass leftCmp = comparable.getLeftTClass();
+            TClass rightCmp = comparable.getRightTClass();
+            if (leftIn == leftCmp && rightIn == rightCmp) {
+                reverse = false;
+            }
+            else if (rightIn == leftCmp && leftIn == rightCmp) {
+                reverse = true;
+            }
+            else {
+                throw new IllegalArgumentException("invalid comparisons: " + lhsInstance + " and " + rhsInstance + " against " + comparable);
+            }
+            overload = new TValidatedScalar(reverse ?
+                                            new InKeyReversedScalar(comparable.getComparison()) :
+                                            new InKeyScalar(comparable.getComparison()));
+        }
+        return new TPreparedFunction(overload, AkBool.INSTANCE.instance(nullable), all, queryContext);
     }
     
     static abstract class InScalarBase extends TScalarBase {
@@ -94,4 +125,30 @@ public final class TInExpression {
             return TClass.compare(lhsInstance, lhsSource, rhsInstance, rhsSource);
         }
     });
+
+    static class InKeyScalar extends InScalarBase {
+        protected final TComparison comparison;
+
+        InKeyScalar(TComparison comparison) {
+            this.comparison = comparison;
+        }
+        
+        @Override
+        protected int doCompare(TInstance lhsInstance, PValueSource lhsSource,
+                                TInstance rhsInstance, PValueSource rhsSource) {
+            return comparison.compare(lhsInstance, lhsSource, rhsInstance, rhsSource);
+        }
+    }
+
+    static class InKeyReversedScalar extends InKeyScalar {
+        InKeyReversedScalar(TComparison comparison) {
+            super(comparison);
+        }
+        
+        @Override
+        protected int doCompare(TInstance lhsInstance, PValueSource lhsSource,
+                                TInstance rhsInstance, PValueSource rhsSource) {
+            return comparison.compare(rhsInstance, rhsSource, lhsInstance, lhsSource);
+        }
+    }
 }
