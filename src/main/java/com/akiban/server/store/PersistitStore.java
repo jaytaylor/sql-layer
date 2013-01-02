@@ -351,9 +351,7 @@ public class PersistitStore implements Store, Service {
             LOG.warn("RowData size {} is larger than current limit of {} bytes" + rowData.getRowSize(), MAX_ROW_SIZE);
         }
 
-        final RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
-        checkNoGroupIndexes(rowDef.table());
-        lockAndCheckVersion(session, rowDef);
+        final RowDef rowDef = writeCheck(session, rowData);
 
         Exchange hEx;
         hEx = getExchange(session, rowDef);
@@ -434,6 +432,13 @@ public class PersistitStore implements Store, Service {
         }
     }
 
+    private RowDef writeCheck(Session session, RowData rowData) {
+        final RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
+        checkNoGroupIndexes(rowDef.table());
+        lockAndCheckVersion(session, rowDef);
+        return rowDef;
+    }
+
     @Override
     public void deleteRow(Session session, RowData rowData)
         throws PersistitException
@@ -453,9 +458,7 @@ public class PersistitStore implements Store, Service {
                            BitSet tablesRequiringHKeyMaintenance, boolean propagateHKeyChanges)
         throws PersistitException
     {
-        RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
-        checkNoGroupIndexes(rowDef.table());
-        lockAndCheckVersion(session, rowDef);
+        RowDef rowDef = writeCheck(session, rowData);
 
         Exchange hEx = null;
         DELETE_ROW_TAP.in();
@@ -523,10 +526,8 @@ public class PersistitStore implements Store, Service {
 
         // RowDefs may be different (e.g. during an ALTER)
         // Only non-pk or grouping columns could have change in this scenario
-        RowDef rowDef = rowDefFromExplicitOrId(session, oldRowData);
-        RowDef newRowDef = rowDefFromExplicitOrId(session, newRowData);
-        checkNoGroupIndexes(rowDef.table());
-        lockAndCheckVersion(session, rowDef);
+        RowDef rowDef = writeCheck(session, oldRowData);
+        RowDef newRowDef = writeCheck(session, newRowData);
 
         Exchange hEx = null;
         UPDATE_ROW_TAP.in();
