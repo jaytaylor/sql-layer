@@ -911,7 +911,7 @@ public abstract class CostEstimator implements TableRowCounts
             Column column = entry.getKey().getColumn();
             // Find a TableIndex whose first column is leadingColumn
             for (TableIndex tableIndex : column.getTable().getIndexes()) {
-                if (tableIndex.getKeyColumns().get(0).getColumn() == column) {
+                if (!tableIndex.isSpatial() && tableIndex.getKeyColumns().get(0).getColumn() == column) {
                     indexStatistics = getIndexStatistics(tableIndex);
                     if (indexStatistics != null) {
                         index = tableIndex;
