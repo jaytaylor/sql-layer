@@ -98,6 +98,7 @@ public class IndexStatistics
             assert (singleColumnHistograms[histogram.getFirstColumn()] == null);
             singleColumnHistograms[histogram.getFirstColumn()] = histogram;
         }
+        histogram.setIndexStatistics(this);
     }
 
     @Override
