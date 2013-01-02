@@ -360,7 +360,7 @@ public class PersistitStore implements Store, Service {
         throws PersistitException
     {
         if (isBulkload(session))
-            writeRow(session, rowData);
+            writeRowBulk(session, rowData);
         else
             writeRowStandard(session, rowData, null, true);
     }
@@ -491,12 +491,14 @@ public class PersistitStore implements Store, Service {
         }
     }
 
+    @Override
     public void startBulkLoad(Session session) {
         if (isBulkload(session))
             throw new BulkloadException("another bulkload is already in progress");
         session.put(BULKLOAD, new Bulkload(getDb()));
     }
 
+    @Override
     public void finishBulkLoad(Session session) {
         Bulkload bulkload = session.remove(BULKLOAD);
         if (bulkload == null)

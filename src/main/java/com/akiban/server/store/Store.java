@@ -175,4 +175,8 @@ public interface Store {
     public PersistitStore getPersistitStore();
 
     void truncateIndexes(Session session, Collection<? extends Index> indexes);
+
+    void startBulkLoad(Session session);
+
+    void finishBulkLoad(Session session);
 }
