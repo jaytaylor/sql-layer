@@ -49,10 +49,13 @@ public final class TInExpression {
             all.add(r);
             nullable |= r.resultType().nullability();
         }
-        return new TPreparedFunction(overload, AkBool.INSTANCE.instance(nullable), all, queryContext);
+        return new TPreparedFunction(noKey, AkBool.INSTANCE.instance(nullable), all, queryContext);
     }
     
-    private static TValidatedScalar overload = new TValidatedScalar(new TScalarBase() {
+    static abstract class InScalarBase extends TScalarBase {
+        protected abstract int doCompare(TInstance lhsInstance, PValueSource lhsSource,
+                                         TInstance rhsInstance, PValueSource rhsSource);
+
         @Override
         protected void buildInputSets(TInputSetBuilder builder) {
             builder.vararg(null, 0, 1);
@@ -65,7 +68,7 @@ public final class TInExpression {
             for (int i=1, nInputs = inputs.size(); i < nInputs; ++i) {
                 TInstance rhsInstance = context.inputTInstanceAt(i);
                 PValueSource rhsSource = inputs.get(i);
-                if (0 == TClass.compare(lhsInstance, lhsSource, rhsInstance, rhsSource)) {
+                if (0 == doCompare(lhsInstance, lhsSource, rhsInstance, rhsSource)) {
                     output.putBool(true);
                     return;
                 }
@@ -81,6 +84,14 @@ public final class TInExpression {
         @Override
         public TOverloadResult resultType() {
             return TOverloadResult.fixed(AkBool.INSTANCE);
+        }
+    }
+
+    private static final TValidatedScalar noKey = new TValidatedScalar(new InScalarBase() {
+        @Override
+        protected int doCompare(TInstance lhsInstance, PValueSource lhsSource,
+                                TInstance rhsInstance, PValueSource rhsSource) {
+            return TClass.compare(lhsInstance, lhsSource, rhsInstance, rhsSource);
         }
     });
 }
