@@ -305,7 +305,6 @@ public class BasicInfoSchemaTablesServiceImpl
                 String sequenceSchema = null;
                 String sequenceName = null;
                 String identityGeneration = null;
-                String defaultValue = null;
                 if (column.getIdentityGenerator() != null) {
                     sequenceSchema = column.getIdentityGenerator().getSequenceName().getSchemaName();
                     sequenceName   = column.getIdentityGenerator().getSequenceName().getTableName();
