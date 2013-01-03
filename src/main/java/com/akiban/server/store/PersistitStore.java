@@ -67,11 +67,12 @@ import org.slf4j.LoggerFactory;
 
 import java.rmi.RemoteException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class PersistitStore implements Store, Service {
 
     private static final Session.MapKey<Integer, List<RowCollector>> COLLECTORS = Session.MapKey.mapNamed("collectors");
-    private static final Session.Key<Bulkload> BULKLOAD = Session.Key.named("bulkload");
+    private static final AtomicReference<Bulkload> activeBulkload = new AtomicReference<Bulkload>();
 
     private static final Logger LOG = LoggerFactory
             .getLogger(PersistitStore.class.getName());
@@ -359,8 +360,9 @@ public class PersistitStore implements Store, Service {
     public void writeRow(Session session, RowData rowData)
         throws PersistitException
     {
-        if (isBulkload(session))
-            writeRowBulk(session, rowData);
+        Bulkload bulkload = activeBulkload.get();
+        if (bulkload != null)
+            writeRowBulk(session, rowData, bulkload);
         else
             writeRowStandard(session, rowData, null, true);
     }
@@ -451,9 +453,8 @@ public class PersistitStore implements Store, Service {
         }
     }
 
-    private void writeRowBulk(Session session, RowData rowData) throws PersistitException {
+    private void writeRowBulk(Session session, RowData rowData, Bulkload bulkload) throws PersistitException {
         final RowDef rowDef = writeRowCheck(session, rowData, true);
-        Bulkload bulkload = session.get(BULKLOAD);
         if (bulkload.currentRowDef != rowDef) {
             RowDef rowDataParent = rowDef.getParentRowDef();
             if (rowDataParent != null && (!bulkload.finishedTables.contains(rowDataParent)))
@@ -494,14 +495,13 @@ public class PersistitStore implements Store, Service {
 
     @Override
     public void startBulkLoad(Session session) {
-        if (isBulkload(session))
+        if (!activeBulkload.compareAndSet(null, new Bulkload(getDb())))
             throw new BulkloadException("another bulkload is already in progress");
-        session.put(BULKLOAD, new Bulkload(getDb()));
     }
 
     @Override
     public void finishBulkLoad(Session session) {
-        Bulkload bulkload = session.remove(BULKLOAD);
+        Bulkload bulkload = activeBulkload.get();
         if (bulkload == null)
             throw new BulkloadException(NO_BULKLOAD_IN_PROGRESS);
         try {
@@ -536,7 +536,7 @@ public class PersistitStore implements Store, Service {
 
     @Override
     public boolean isBulkload(Session session) {
-        return session.get(BULKLOAD) != null;
+        return activeBulkload.get() != null;
     }
 
     @Override
