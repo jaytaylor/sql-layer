@@ -494,13 +494,13 @@ public class PersistitStore implements Store, Service {
     }
 
     @Override
-    public void startBulkLoad(Session session) {
+    public void startBulkLoad() {
         if (!activeBulkload.compareAndSet(null, new Bulkload(getDb())))
             throw new BulkloadException("another bulkload is already in progress");
     }
 
     @Override
-    public void finishBulkLoad(Session session) {
+    public void finishBulkLoad() {
         Bulkload bulkload = activeBulkload.get();
         if (bulkload == null)
             throw new BulkloadException(NO_BULKLOAD_IN_PROGRESS);
@@ -522,7 +522,7 @@ public class PersistitStore implements Store, Service {
     }
 
     private RowDef writeCheck(Session session, RowData rowData, boolean bulkloadExpected) {
-        if (bulkloadExpected != isBulkload(session)) {
+        if (bulkloadExpected != isBulkload()) {
             String msg = bulkloadExpected
                     ? NO_BULKLOAD_IN_PROGRESS
                     : "can't perform non-bulkload operation while bulkload is in progress";
@@ -535,7 +535,7 @@ public class PersistitStore implements Store, Service {
     }
 
     @Override
-    public boolean isBulkload(Session session) {
+    public boolean isBulkload() {
         return activeBulkload.get() != null;
     }
 

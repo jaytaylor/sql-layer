@@ -91,6 +91,10 @@ public abstract class StoreAdapter
         return session;
     }
 
+    public boolean isBulkloading() {
+        return getUnderlyingStore().isBulkload();
+    }
+
     public enum AdapterType {
         PERSISTIT_ADAPTER,
         MEMORY_ADAPTER;
@@ -101,12 +105,12 @@ public abstract class StoreAdapter
     }
 
     public void setBulkload(boolean bulkload) {
-        if (bulkload == getUnderlyingStore().isBulkload(session))
+        if (bulkload == isBulkloading())
             return;
         if (bulkload)
-            getUnderlyingStore().startBulkLoad(session);
+            getUnderlyingStore().startBulkLoad();
         else
-            getUnderlyingStore().finishBulkLoad(session);
+            getUnderlyingStore().finishBulkLoad();
     }
 
     protected abstract Store getUnderlyingStore();

@@ -76,18 +76,18 @@ public abstract class DelegatingStore<S extends Store & Service> implements Stor
     }
 
     @Override
-    public void startBulkLoad(Session session) {
-        delegate.startBulkLoad(session);
+    public void startBulkLoad() {
+        delegate.startBulkLoad();
     }
 
     @Override
-    public boolean isBulkload(Session session) {
-        return delegate.isBulkload(session);
+    public boolean isBulkload() {
+        return delegate.isBulkload();
     }
 
     @Override
-    public void finishBulkLoad(Session session) {
-        delegate.finishBulkLoad(session);
+    public void finishBulkLoad() {
+        delegate.finishBulkLoad();
     }
 
     public void writeRow(Session session, RowData rowData) throws PersistitException {
