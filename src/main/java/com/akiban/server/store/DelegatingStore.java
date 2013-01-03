@@ -81,6 +81,11 @@ public abstract class DelegatingStore<S extends Store & Service> implements Stor
     }
 
     @Override
+    public boolean isBulkload(Session session) {
+        return delegate.isBulkload(session);
+    }
+
+    @Override
     public void finishBulkLoad(Session session) {
         delegate.finishBulkLoad(session);
     }

@@ -473,7 +473,8 @@ public class PersistitStore implements Store, Service {
         }
 
         // Group table
-        constructHKey(session, bulkload.groupTableKey, rowDef, rowData, true);
+        constructHKey(session, bulkload.groupTableKey, rowDef, rowData, true); // will invoke key.clear()
+        bulkload.groupTableValue.clear();
         packRowData(bulkload.groupTableValue, rowDef, rowData);
         try {
             Tree tree = rowDef.getGroup().getTreeCache().getTree();
@@ -533,7 +534,8 @@ public class PersistitStore implements Store, Service {
         return rowDef;
     }
 
-    private boolean isBulkload(Session session) {
+    @Override
+    public boolean isBulkload(Session session) {
         return session.get(BULKLOAD) != null;
     }
 

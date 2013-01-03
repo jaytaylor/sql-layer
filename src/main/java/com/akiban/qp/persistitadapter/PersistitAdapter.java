@@ -100,11 +100,6 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public Store getUnderlyingStore() {
-        return store;
-    }
-
-    @Override
     public Cursor sort(QueryContext context,
                        Cursor input,
                        RowType rowType,
@@ -421,6 +416,13 @@ public class PersistitAdapter extends StoreAdapter
         this.treeService = treeService;
         this.withStepChanging = withStepChanging;
         session.put(STORE_ADAPTER_KEY, this);
+    }
+
+    // For use within hierarchy
+
+    @Override
+    protected Store getUnderlyingStore() {
+        return store;
     }
 
     // For use by this class

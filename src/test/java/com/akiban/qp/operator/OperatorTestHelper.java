@@ -205,11 +205,6 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public Store getUnderlyingStore() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public void updateRow(Row oldRow, Row newRow, boolean usePValues)
         {
             throw new UnsupportedOperationException();
@@ -274,6 +269,11 @@ public final class OperatorTestHelper {
 
         @Override
         public long sequenceCurrentValue(TableName sequenceName) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected Store getUnderlyingStore() {
             throw new UnsupportedOperationException();
         }
     }

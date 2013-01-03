@@ -1291,6 +1291,10 @@ public class PostgresServerConnection extends ServerSessionBase
         if ("zeroDateTimeBehavior".equals(key)) {
             valueEncoder = null; // Also depends on this.
         }
+        if ("bulkload".equals(key)) {
+            getStore().setBulkload(Boolean.parseBoolean(value));
+            return true;
+        }
         return super.propertySet(key, value);
     }
     

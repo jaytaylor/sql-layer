@@ -59,8 +59,6 @@ public abstract class StoreAdapter
         return schema;
     }
 
-    public abstract Store getUnderlyingStore();
-
     public abstract void updateRow(Row oldRow, Row newRow, boolean usePValues);
     
     public abstract void writeRow (Row newRow, boolean usePValues);
@@ -101,6 +99,17 @@ public abstract class StoreAdapter
     public final ConfigurationService getConfig() {
         return config;
     }
+
+    public void setBulkload(boolean bulkload) {
+        if (bulkload == getUnderlyingStore().isBulkload(session))
+            return;
+        if (bulkload)
+            getUnderlyingStore().startBulkLoad(session);
+        else
+            getUnderlyingStore().finishBulkLoad(session);
+    }
+
+    protected abstract Store getUnderlyingStore();
 
     protected StoreAdapter(Schema schema,
             Session session,
