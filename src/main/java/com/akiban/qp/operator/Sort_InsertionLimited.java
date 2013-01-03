@@ -42,6 +42,8 @@ import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.WrappingByteSource;
 import com.akiban.util.tap.InOutTap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -156,7 +158,8 @@ class Sort_InsertionLimited extends Operator
     
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_InsertionLimited open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_InsertionLimited next");
-    
+    private static final Logger LOG = LoggerFactory.getLogger(Sort_InsertionLimited.class);
+
     // Object state
     private final API.SortOption sortOption;
     private final Operator inputOperator;
@@ -206,9 +209,9 @@ class Sort_InsertionLimited extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            // TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 switch (state) {
                 case FILLING:
@@ -260,24 +263,31 @@ class Sort_InsertionLimited extends Operator
                     }
                     /* falls through */
                 case EMPTYING:
+                    Row output;
                     if (iterator.hasNext()) {
                         Holder holder = iterator.next();
-                        return holder.empty();
+                        output = holder.empty();
                     }
                     else {
                         close();
-                        return null;
+                        output = null;
                     }
-                case CLOSED:
-                    return null;
+                    if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                        LOG.debug("Sort_InsertionLimited: yield {}", output);
+                    }
+                    return output;
                 case DESTROYED:
                     assert false;
-                    return null;
+                    // Fall through
+                case CLOSED:
                 default:
+                    if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                        LOG.debug("Sort_InsertionLimited: yield null");
+                    }
                     return null;
                 }
             } finally {
-                TAP_NEXT.out();
+                // TAP_NEXT.out();
             }
         }
 

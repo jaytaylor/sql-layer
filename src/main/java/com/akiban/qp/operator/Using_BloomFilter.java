@@ -37,6 +37,9 @@ import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.BloomFilter;
 import com.akiban.util.tap.InOutTap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -156,6 +159,7 @@ class Using_BloomFilter extends Operator
 
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Using_BloomFilter open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Using_BloomFilter next");
+    private static final Logger LOG = LoggerFactory.getLogger(Using_BloomFilter.class);
     private static final double ERROR_RATE = 0.0001; // Bloom filter will use 19.17 bits per key
 
     // Object state
@@ -200,11 +204,15 @@ class Using_BloomFilter extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            // TAP_NEXT.in();
             try {
-                return input.next();
+                Row output = input.next();
+                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                    LOG.debug("Using_BloomFilter: yield {}", output);
+                }
+                return output;
             } finally {
-                TAP_NEXT.out();
+                // TAP_NEXT.out();
             }
         }
 

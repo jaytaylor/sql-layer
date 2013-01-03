@@ -283,9 +283,9 @@ class Intersect_Ordered extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            // TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 Row next = null;
                 while (!closed && next == null) {
                     assert !(leftRow.isEmpty() && rightRow.isEmpty());
@@ -332,12 +332,12 @@ class Intersect_Ordered extends Operator
                         close();
                     }
                 }
-                if (LOG.isDebugEnabled()) {
+                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
                     LOG.debug("Intersect_Ordered: yield {}", next);
                 }
                 return next;
             } finally {
-                TAP_NEXT.out();
+                // TAP_NEXT.out();
             }
         }
 
@@ -416,7 +416,7 @@ class Intersect_Ordered extends Operator
         {
             Row row = leftInput.next();
             leftRow.hold(row);
-            if (LOG.isDebugEnabled()) {
+            if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
                 LOG.debug("Intersect_Ordered: left {}", row);
             }
         }
@@ -425,7 +425,7 @@ class Intersect_Ordered extends Operator
         {
             Row row = rightInput.next();
             rightRow.hold(row);
-            if (LOG.isDebugEnabled()) {
+            if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
                 LOG.debug("Intersect_Ordered: right {}", row);
             }
         }

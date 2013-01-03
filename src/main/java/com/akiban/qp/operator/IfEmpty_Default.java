@@ -246,9 +246,9 @@ class IfEmpty_Default extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            // TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 Row row = null;
                 checkQueryCancelation();
                 switch (inputState) {
@@ -274,12 +274,12 @@ class IfEmpty_Default extends Operator
                 if (row == null) {
                     close();
                 }
-                if (LOG.isDebugEnabled()) {
+                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
                     LOG.debug("IfEmpty_Default: yield {}", row);
                 }
                 return row;
             } finally {
-                TAP_NEXT.out();
+                // TAP_NEXT.out();
             }
         }
 

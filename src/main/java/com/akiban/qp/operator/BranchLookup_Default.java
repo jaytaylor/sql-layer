@@ -332,9 +332,9 @@ public class BranchLookup_Default extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            // TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row nextRow = null;
                 while (nextRow == null && inputRow.isHolding()) {
@@ -359,15 +359,15 @@ public class BranchLookup_Default extends Operator
                             break;
                     }
                 }
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("BranchLookup_Default: {}", lookupRow.get());
+                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                    LOG.debug("BranchLookup_Default: {}", nextRow);
                 }
                 if (nextRow == null) {
                     close();
                 }
                 return nextRow;
             } finally {
-                TAP_NEXT.out();
+                // TAP_NEXT.out();
             }
         }
 

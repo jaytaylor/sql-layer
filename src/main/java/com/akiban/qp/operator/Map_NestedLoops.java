@@ -181,9 +181,9 @@ class Map_NestedLoops extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            // TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row outputRow = null;
                 while (!closed && outputRow == null) {
@@ -194,19 +194,19 @@ class Map_NestedLoops extends Operator
                             close();
                         } else {
                             outerRow.hold(row);
-                            if (LOG.isDebugEnabled()) {
+                            if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
                                 LOG.debug("Map_NestedLoops: restart inner loop using current branch row");
                             }
                             startNewInnerLoop(row);
                         }
                     }
                 }
-                if(LOG.isDebugEnabled()) {
+                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
                     LOG.debug("Map_NestedLoops: yield {}", outputRow);
                 }
                 return outputRow;
             } finally {
-                TAP_NEXT.out();
+                // TAP_NEXT.out();
             }
         }
 

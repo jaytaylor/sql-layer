@@ -39,6 +39,8 @@ import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -159,7 +161,8 @@ class Select_HKeyOrdered extends Operator
     
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Select_HKeyOrdered open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Select_HKeyOrdered next");
-    
+    private static final Logger LOG = LoggerFactory.getLogger(Select_HKeyOrdered.class);
+
     // Object state
 
     private final Operator inputOperator;
@@ -207,9 +210,9 @@ class Select_HKeyOrdered extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            // TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row row = null;
                 Row inputRow = input.next();
@@ -251,9 +254,12 @@ class Select_HKeyOrdered extends Operator
                     }
                 }
                 idle = row == null;
+                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                    LOG.debug("Select_HKeyOrdered: yield {}", row);
+                }
                 return row;
             } finally {
-                TAP_NEXT.out();
+                // TAP_NEXT.out();
             }
         }
 

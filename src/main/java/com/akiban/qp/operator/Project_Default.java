@@ -37,6 +37,8 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -177,7 +179,8 @@ class Project_Default extends Operator
     
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Project_Default open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Project_Default next");
-    
+    private static final Logger LOG = LoggerFactory.getLogger(Project_Default.class);
+
     // Object state
 
     protected final Operator inputOperator;
@@ -227,9 +230,9 @@ class Project_Default extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            // TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row projectedRow = null;
                 Row inputRow;
@@ -242,9 +245,12 @@ class Project_Default extends Operator
                 if (projectedRow == null) {
                     close();
                 }
+                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                    LOG.debug("Project_Default: yield {}", projectedRow);
+                }
                 return projectedRow;
             } finally {
-                TAP_NEXT.out();
+                // TAP_NEXT.out();
             }
         }
 

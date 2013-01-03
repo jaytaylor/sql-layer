@@ -1211,7 +1211,8 @@ public class PersistitStore implements Store, Service {
             LOG.error("Corrupt RowData at key {}: {}", exchange.getKey(), e.getMessage());
             throw new RowDataCorruptionException(exchange.getKey());
         }
-        rowData.prepareRow(0);
+        // UNNECESSARY: Already done by value.directGet(...)
+        // rowData.prepareRow(0);
         int rowDefId = treeService.storeToAis(exchange.getVolume(), rowData.getRowDefId());
         /*
          * Overwrite the rowDefId field within the RowData instance with the

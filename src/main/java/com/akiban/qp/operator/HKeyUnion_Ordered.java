@@ -40,6 +40,8 @@ import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -172,6 +174,7 @@ class HKeyUnion_Ordered extends Operator
 
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: HKeyUnion_Ordered open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: HKeyUnion_Ordered next");
+    private static final Logger LOG = LoggerFactory.getLogger(HKeyUnion_Ordered.class);
 
     // Object state
 
@@ -224,9 +227,9 @@ class HKeyUnion_Ordered extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            // TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 Row nextRow = null;
                 while (!closed && nextRow == null) {
                     assert !(leftRow.isEmpty() && rightRow.isEmpty());
@@ -259,9 +262,12 @@ class HKeyUnion_Ordered extends Operator
                         nextRow = null;
                     }
                 }
+                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                    LOG.debug("HKeyUnion_Ordered: yield {}", nextRow);
+                }
                 return nextRow;
             } finally {
-                TAP_NEXT.out();
+                // TAP_NEXT.out();
             }
         }
         

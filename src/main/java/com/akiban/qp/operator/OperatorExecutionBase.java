@@ -26,7 +26,6 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.Row;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.error.QueryCanceledException;

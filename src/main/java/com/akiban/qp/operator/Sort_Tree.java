@@ -35,6 +35,8 @@ import com.akiban.server.explain.PrimitiveExplainer;
 import com.akiban.server.explain.std.SortOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -152,6 +154,7 @@ class Sort_Tree extends Operator
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_Tree open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_Tree next");
     private static final InOutTap TAP_LOAD = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_Tree load");
+    private static final Logger LOG = LoggerFactory.getLogger(Sort_Tree.class);
 
     // Object state
 
@@ -191,9 +194,9 @@ class Sort_Tree extends Operator
         public Row next()
         {
             Row row = null;
-            TAP_NEXT.in();
+            // TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 if (!input.isActive()) {
                     row = output.next();
@@ -202,7 +205,10 @@ class Sort_Tree extends Operator
                     }
                 }
             } finally {
-                TAP_NEXT.out();
+                // TAP_NEXT.out();
+            }
+            if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                LOG.debug("Sort_Tree: yield {}", row);
             }
             return row;
         }

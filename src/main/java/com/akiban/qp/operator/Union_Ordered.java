@@ -231,9 +231,9 @@ class Union_Ordered extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            // TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 Row next = null;
                 if (isActive()) {
                     assert !(leftRow.isEmpty() && rightRow.isEmpty());
@@ -254,13 +254,13 @@ class Union_Ordered extends Operator
                     if (leftRow.isEmpty() && rightRow.isEmpty()) {
                         close();
                     }
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Union_Ordered: yield {}", next);
-                    }
+                }
+                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                    LOG.debug("Union_Ordered: yield {}", next);
                 }
                 return next;
             } finally {
-                TAP_NEXT.out();
+                // TAP_NEXT.out();
             }
         }
 
@@ -329,7 +329,7 @@ class Union_Ordered extends Operator
         {
             Row row = leftInput.next();
             leftRow.hold(row);
-            if (LOG.isDebugEnabled()) {
+            if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
                 LOG.debug("Union_Ordered: left {}", row);
             }
         }
@@ -338,7 +338,7 @@ class Union_Ordered extends Operator
         {
             Row row = rightInput.next();
             rightRow.hold(row);
-            if (LOG.isDebugEnabled()) {
+            if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
                 LOG.debug("Union_Ordered: right {}", row);
             }
         }

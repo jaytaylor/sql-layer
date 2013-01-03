@@ -282,20 +282,20 @@ class AncestorLookup_Default extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            // TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 while (pending.isEmpty() && inputRow.isHolding()) {
                     advance();
                 }
                 Row row = pending.take();
-                if (LOG.isDebugEnabled()) {
+                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
                     LOG.debug("AncestorLookup: {}", row == null ? null : row);
                 }
                 return row;
             } finally {
-                TAP_NEXT.out();
+                // TAP_NEXT.out();
             }
         }
 

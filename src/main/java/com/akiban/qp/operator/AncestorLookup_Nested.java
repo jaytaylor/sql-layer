@@ -256,10 +256,9 @@ class AncestorLookup_Nested extends Operator
             try {
                 CursorLifecycle.checkIdle(this);
                 Row rowFromBindings = context.getRow(inputBindingPosition);
-                if (LOG.isDebugEnabled()) {
+                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
                     LOG.debug("AncestorLookup_Nested: open using {}", rowFromBindings);
                 }
-                assert rowFromBindings.rowType() == rowType : rowFromBindings;
                 findAncestors(rowFromBindings);
                 closed = false;
             } finally {
@@ -270,12 +269,12 @@ class AncestorLookup_Nested extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            // TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row row = pending.take();
-                if (LOG.isDebugEnabled()) {
+                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
                     LOG.debug("AncestorLookup: {}", row == null ? null : row);
                 }
                 if (row == null) {
@@ -283,7 +282,7 @@ class AncestorLookup_Nested extends Operator
                 }
                 return row;
             } finally {
-                TAP_NEXT.out();
+                // TAP_NEXT.out();
             }
         }
 

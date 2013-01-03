@@ -32,6 +32,8 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.*;
 import com.akiban.util.tap.InOutTap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -105,7 +107,8 @@ public class ValuesScan_Default extends Operator
     
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: ValuesScan_Default open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: ValuesScan_Default next");
-    
+    private static final Logger LOG = LoggerFactory.getLogger(ValuesScan_Default.class);
+
     // Object state
     
     private final Collection<? extends BindableRow> rows;
@@ -144,17 +147,22 @@ public class ValuesScan_Default extends Operator
 
         @Override
         public Row next() {
-            TAP_NEXT.in();
+            // TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
+                Row output;
                 if (iter != null && iter.hasNext()) {
-                    return iter.next().bind(context);
+                    output = iter.next().bind(context);
                 } else {
                     close();
-                    return null;
+                    output = null;
                 }
+                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                    LOG.debug("ValuesScan_Default: yield {}", output);
+                }
+                return output;
             } finally {
-                TAP_NEXT.out();
+                // TAP_NEXT.out();
             }
         }
 

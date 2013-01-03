@@ -35,6 +35,9 @@ import com.akiban.qp.row.Row;
 import com.akiban.server.explain.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Map;
 
 /**
@@ -114,6 +117,7 @@ class GroupScan_Default extends Operator
 
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: GroupScan_Default open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: GroupScan_Default next");
+    private static final Logger LOG = LoggerFactory.getLogger(GroupScan_Default.class);
 
     // Object state
 
@@ -153,7 +157,7 @@ class GroupScan_Default extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            // TAP_NEXT.in();
             try {
                 checkQueryCancelation();
                 Row row;
@@ -161,9 +165,12 @@ class GroupScan_Default extends Operator
                     close();
                     row = null;
                 }
+                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                    LOG.debug("GroupScan_Default: yield {}", row);
+                }
                 return row;
             } finally {
-                TAP_NEXT.out();
+                // TAP_NEXT.out();
             }
         }
 

@@ -229,9 +229,9 @@ class Product_NestedLoops extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            // TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row outputRow = null;
                 while (!closed && outputRow == null) {
@@ -246,14 +246,14 @@ class Product_NestedLoops extends Operator
                                 Row branchRow = row.subRow(branchType);
                                 assert branchRow != null : row;
                                 if (outerBranchRow.isEmpty() || !branchRow.hKey().equals(outerBranchRow.get().hKey())) {
-                                    if (LOG.isDebugEnabled()) {
+                                    if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
                                         LOG.debug("Product_NestedLoops: branch row {}", row);
                                     }
                                     outerBranchRow.hold(branchRow);
                                     innerRows.newBranchRow(branchRow);
                                 }
                                 outerRow.hold(row);
-                                if (LOG.isDebugEnabled()) {
+                                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
                                     LOG.debug("Product_NestedLoops: restart inner loop using current branch row");
                                 }
                                 innerRows.resetForCurrentBranchRow();
@@ -261,12 +261,12 @@ class Product_NestedLoops extends Operator
                         }
                     }
                 }
-                if(LOG.isDebugEnabled()) {
+                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
                     LOG.debug("Product_NestedLoops: yield {}", outputRow);
                 }
                 return outputRow;
             } finally {
-                TAP_NEXT.out();
+                // TAP_NEXT.out();
             }
         }
 

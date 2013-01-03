@@ -34,6 +34,8 @@ import com.akiban.server.explain.CompoundExplainer;
 import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.std.DUIOperatorExplainer;
 import com.akiban.util.tap.InOutTap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
 
@@ -124,7 +126,8 @@ public class Insert_Returning extends Operator {
     
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: InsertReturning open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: InsertReturning next");
-    
+    private static final Logger LOG = LoggerFactory.getLogger(Insert_Returning.class);
+
     // Object state
 
     protected final Operator inputOperator;
@@ -152,9 +155,9 @@ public class Insert_Returning extends Operator {
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            // TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 
                 Row inputRow;
@@ -164,10 +167,13 @@ public class Insert_Returning extends Operator {
                     context.checkConstraints(inputRow, usePValues);
                     // Do the real work of inserting the row
                     adapter().writeRow(inputRow, usePValues);
+                    if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                        LOG.debug("Insert_Returning: inserting {}", inputRow);
+                    }
                 }
                 return inputRow; 
             } finally {
-                TAP_NEXT.out();
+                // TAP_NEXT.out();
             }
         }
     

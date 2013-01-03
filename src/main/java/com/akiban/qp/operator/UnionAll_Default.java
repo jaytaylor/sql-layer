@@ -44,6 +44,9 @@ import com.akiban.util.Strings;
 import com.akiban.util.tap.InOutTap;
 
 import com.google.common.base.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -186,8 +189,9 @@ final class UnionAll_Default extends Operator {
     // Class state
     
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: UnionAll_Default open"); 
-    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: UnionAll_Default next"); 
-    
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: UnionAll_Default next");
+    private static final Logger LOG = LoggerFactory.getLogger(UnionAll_Default.class);
+
     // Object state
 
     private final List<? extends Operator> inputs;
@@ -227,9 +231,9 @@ final class UnionAll_Default extends Operator {
 
         @Override
         public Row next() {
-            TAP_NEXT.in();
+            // TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 Row outputRow;
                 if (currentCursor == null) {
                     outputRow = nextCursorFirstRow();
@@ -244,11 +248,16 @@ final class UnionAll_Default extends Operator {
                 if (outputRow == null) {
                     close();
                     idle = true;
-                    return null;
                 }
-                return wrapped(outputRow);
+                else {
+                    outputRow = wrapped(outputRow);
+                }
+                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                    LOG.debug("UnionAll_Default: yield {}", outputRow);
+                }
+                return outputRow;
             } finally {
-                TAP_NEXT.out();
+                // TAP_NEXT.out();
             }
         }
 

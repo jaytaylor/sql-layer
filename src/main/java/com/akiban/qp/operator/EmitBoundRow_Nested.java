@@ -198,12 +198,12 @@ class EmitBoundRow_Nested extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            // TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row row = input.next();
-                if (LOG.isDebugEnabled()) {
+                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
                     LOG.debug("EmitBoundRow: {}", row == null ? null : row);
                 }
                 if (row == null) {
@@ -221,9 +221,12 @@ class EmitBoundRow_Nested extends Operator
                         assert (row != null) : rowFromBindings;
                     }
                 }
+                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                    LOG.debug("EmitBoundRow_Nested: yield {}", row);
+                }
                 return row;
             } finally {
-                TAP_NEXT.out();
+                // TAP_NEXT.out();
             }
         }
 

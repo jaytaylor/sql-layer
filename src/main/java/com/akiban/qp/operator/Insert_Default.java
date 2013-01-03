@@ -147,7 +147,7 @@ class Insert_Default implements UpdatePlannable {
         public UpdateResult run()
         {
             int seen = 0, modified = 0;
-            INSERT_TAP.in();
+            // INSERT_TAP.in();
             try {
                 input.open();
                 Row row;
@@ -158,15 +158,15 @@ class Insert_Default implements UpdatePlannable {
                     context.checkConstraints(row, usePValues);
                     adapter().writeRow(row, usePValues);
                     ++modified;
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Insert: row {}", row);
+                    if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                        LOG.debug("Insert_Default: inserting {}", row);
                     }
                 }
             } finally {
                 if (input != null) {
                     input.close();
                 }
-                INSERT_TAP.out();
+                // INSERT_TAP.out();
             }
             return new StandardUpdateResult(seen, modified);
         }

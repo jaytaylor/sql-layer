@@ -186,8 +186,7 @@ public class RowData {
         if (offset < 0 || offset + MINIMUM_RECORD_LENGTH > bufferEnd) {
             throw new CorruptRowDataException("Invalid offset: " + offset);
         } else {
-            final int recordLength = AkServerUtil.getInt(bytes, O_LENGTH_A
-                    + offset);
+            final int recordLength = AkServerUtil.getInt(bytes, O_LENGTH_A + offset);
             if (recordLength < 0 || recordLength + offset > bufferEnd) {
                 throw new CorruptRowDataException("Invalid record length: "
                         + recordLength + " at offset: " + offset);
@@ -196,15 +195,13 @@ public class RowData {
                 throw new CorruptRowDataException(
                         "Invalid signature at offset: " + offset);
             }
-            final int trailingLength = AkServerUtil.getInt(bytes, offset
-                    + recordLength + O_LENGTH_B);
+            final int trailingLength = AkServerUtil.getInt(bytes, offset + recordLength + O_LENGTH_B);
             if (trailingLength != recordLength) {
                 throw new CorruptRowDataException(
                         "Invalid trailing record length " + trailingLength
                                 + " in record at offset: " + offset);
             }
-            if (AkServerUtil.getUShort(bytes, offset + recordLength
-                    + O_SIGNATURE_B) != SIGNATURE_B) {
+            if (AkServerUtil.getUShort(bytes, offset + recordLength + O_SIGNATURE_B) != SIGNATURE_B) {
                 throw new CorruptRowDataException(
                         "Invalid signature at offset: " + offset);
             }

@@ -35,6 +35,8 @@ import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -150,6 +152,7 @@ class Update_Default implements UpdatePlannable {
     private final Operator inputOperator;
     private final UpdateFunction updateFunction;
     private static final InOutTap UPDATE_TAP = Tap.createTimer("operator: Update_Default");
+    private static final Logger LOG = LoggerFactory.getLogger(Update_Default.class);
 
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
@@ -170,7 +173,7 @@ class Update_Default implements UpdatePlannable {
         {
             boolean usePValues = updateFunction.usePValues();
             int seen = 0, modified = 0;
-            UPDATE_TAP.in();
+            // UPDATE_TAP.in();
             try {
                 input.open();
                 Row oldRow;
@@ -181,6 +184,9 @@ class Update_Default implements UpdatePlannable {
                         Row newRow = updateFunction.evaluate(oldRow, context);
                         context.checkConstraints(newRow, usePValues);
                         adapter().updateRow(oldRow, newRow, usePValues);
+                        if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                            LOG.debug("Update_Default: update {} to {}", oldRow, newRow);
+                        }
                         ++modified;
                     }
                 }
@@ -188,7 +194,7 @@ class Update_Default implements UpdatePlannable {
                 if (input != null) {
                     input.close();
                 }
-                UPDATE_TAP.out();
+                // UPDATE_TAP.out();
             }
             return new StandardUpdateResult(seen, modified);
         }

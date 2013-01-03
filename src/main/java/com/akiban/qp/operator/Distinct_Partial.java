@@ -43,6 +43,8 @@ import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -148,7 +150,8 @@ class Distinct_Partial extends Operator
     
     private final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Distinct_Partial open");
     private final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Distinct_Partial next");
-    
+    private static final Logger LOG = LoggerFactory.getLogger(Distinct_Partial.class);
+
     // Object state
 
     private final Operator inputOperator;
@@ -184,7 +187,7 @@ class Distinct_Partial extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            // TAP_NEXT.in();
             try {
                 checkQueryCancelation();
                 Row row;
@@ -197,9 +200,12 @@ class Distinct_Partial extends Operator
                 if (row == null) {
                     close();
                 }
+                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                    LOG.debug("Distinct_Partial: yield {}", row);
+                }
                 return row;
             } finally {
-                TAP_NEXT.out();
+                // TAP_NEXT.out();
             }
         }
 

@@ -304,19 +304,19 @@ class IndexScan_Default extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            // TAP_NEXT.in();
             try {
                 checkQueryCancelation();
                 Row row = cursor.next();
                 if (row == null) {
                     close();
                 }
-                if (LOG.isDebugEnabled()) {
+                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
                     LOG.debug("IndexScan: yield {}", row);
                 }
                 return row;
             } finally {
-                TAP_NEXT.out();
+                // TAP_NEXT.out();
             }
         }
 

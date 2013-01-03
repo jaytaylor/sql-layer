@@ -38,6 +38,8 @@ import com.akiban.server.rowdata.RowDef;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -254,6 +256,7 @@ class Flatten_HKeyOrdered extends Operator
     private static final int MAX_PENDING = 2;
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Flatten_HKeyOrdered open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Flatten_HKeyOrdered next");
+    private static final Logger LOG = LoggerFactory.getLogger(Flatten_HKeyOrdered.class);
 
     // Object state
 
@@ -320,9 +323,9 @@ class Flatten_HKeyOrdered extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            // TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row outputRow = pending.take();
                 Row inputRow;
@@ -367,9 +370,12 @@ class Flatten_HKeyOrdered extends Operator
                     outputRow = pending.take();
                 }
                 idle = outputRow == null;
+                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                    LOG.debug("Flatten_HKeyOrdered: yield {}", outputRow);
+                }
                 return outputRow;
             } finally {
-                TAP_NEXT.out();
+                // TAP_NEXT.out();
             }
         }
 
