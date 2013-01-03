@@ -329,7 +329,7 @@ public abstract class CostEstimator implements TableRowCounts
             return missingStatsSelectivity();
         } else {
             long indexStatsSampledCount = histogram.getIndexStatistics().getSampledCount();
-            if ((histogram == null) || histogram.getEntries().isEmpty()) {
+            if (histogram.getEntries().isEmpty()) {
                 missingStats(column, index);
                 return missingStatsSelectivity();
             } else {
@@ -1079,7 +1079,7 @@ public abstract class CostEstimator implements TableRowCounts
     protected void missingStats(Column column, Index index) {
         if (warningsEnabled) {
             if (index == null) {
-                logger.warn("No single column index for {}.{}; cost estimates will not be accurate", column.getTable().getName(), column.getName());
+                logger.warn("No statistics for {}.{}; cost estimates will not be accurate", column.getTable().getName(), column.getName());
             }
             else if (index.isTableIndex()) {
                 Table table = ((TableIndex)index).getTable();
