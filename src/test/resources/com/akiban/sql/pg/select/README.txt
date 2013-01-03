@@ -90,6 +90,8 @@ select-26: index range
 
 select-27: side branch with outer join
 
+select-28: IN with key comparison
+
 types: select all typed fields
 
 types_a_date: match literal
