@@ -176,7 +176,7 @@ public interface Store {
 
     void truncateIndexes(Session session, Collection<? extends Index> indexes);
 
-    void startBulkLoad();
+    void startBulkLoad(Session session);
 
     void finishBulkLoad();
 

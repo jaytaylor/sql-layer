@@ -104,11 +104,11 @@ public abstract class StoreAdapter
         return config;
     }
 
-    public void setBulkload(boolean bulkload) {
+    public void setBulkload(Session session, boolean bulkload) {
         if (bulkload == isBulkloading())
             return;
         if (bulkload)
-            getUnderlyingStore().startBulkLoad();
+            getUnderlyingStore().startBulkLoad(session);
         else
             getUnderlyingStore().finishBulkLoad();
     }

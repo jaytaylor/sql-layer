@@ -76,8 +76,8 @@ public abstract class DelegatingStore<S extends Store & Service> implements Stor
     }
 
     @Override
-    public void startBulkLoad() {
-        delegate.startBulkLoad();
+    public void startBulkLoad(Session session) {
+        delegate.startBulkLoad(session);
     }
 
     @Override

@@ -49,6 +49,7 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.statistics.Histogram;
@@ -114,6 +115,8 @@ public class PersistitStore implements Store, Service {
 
     private final LockService lockService;
 
+    private final TransactionService transactionService;
+
     private TableStatusCache tableStatusCache;
 
     private DisplayFilter originalDisplayFilter;
@@ -134,12 +137,13 @@ public class PersistitStore implements Store, Service {
     };
     
     public PersistitStore(boolean updateGroupIndexes, TreeService treeService, ConfigurationService config,
-                          SchemaManager schemaManager, LockService lockService) {
+                          SchemaManager schemaManager, LockService lockService, TransactionService transactionService) {
         this.updateGroupIndexes = updateGroupIndexes;
         this.treeService = treeService;
         this.config = config;
         this.schemaManager = schemaManager;
         this.lockService = lockService;
+        this.transactionService = transactionService;
     }
 
     @Override
@@ -336,6 +340,9 @@ public class PersistitStore implements Store, Service {
     // --------------------- Implement Store interface --------------------
 
     public AkibanInformationSchema getAIS(Session session) {
+        Bulkload bulkload = activeBulkload.get();
+        if (bulkload != null)
+            return bulkload.ais;
         return schemaManager.getAis(session);
     }
 
@@ -456,6 +463,7 @@ public class PersistitStore implements Store, Service {
     private void writeRowBulk(Session session, RowData rowData, Bulkload bulkload) throws PersistitException {
         final RowDef rowDef = writeRowCheck(session, rowData, true);
         if (bulkload.currentRowDef != rowDef) {
+            // TODO check no GIs in this group!
             RowDef rowDataParent = rowDef.getParentRowDef();
             if (rowDataParent != null && (!bulkload.finishedTables.contains(rowDataParent)))
                 throw new BulkloadException( "can't load " + rowDef.userTable() + " because parent "
@@ -480,7 +488,6 @@ public class PersistitStore implements Store, Service {
         try {
             Tree tree = rowDef.getGroup().getTreeCache().getTree();
             bulkload.groupBuilder.store(tree, bulkload.groupTableKey, bulkload.groupTableValue);
-            rowDef.getTableStatus().rowWritten();
         } catch (Exception e) {
             LOG.error("while merging PKs", e);
             throw new BulkloadException("unknown exception (see log): " + e.getMessage());
@@ -494,23 +501,36 @@ public class PersistitStore implements Store, Service {
     }
 
     @Override
-    public void startBulkLoad() {
-        if (!activeBulkload.compareAndSet(null, new Bulkload(getDb())))
+    public void startBulkLoad(Session session) {
+        boolean needTransaction = ! transactionService.isTransactionActive(session);
+        if (needTransaction)
+            transactionService.beginTransaction(session);
+        Bulkload newBulkload;
+        try {
+            newBulkload = new Bulkload(getDb(), schemaManager.getAis(session));
+        } finally {
+            if (needTransaction) {
+                transactionService.commitTransaction(session);
+            }
+        }
+        
+        if (!activeBulkload.compareAndSet(null, newBulkload))
             throw new BulkloadException("another bulkload is already in progress");
     }
 
     @Override
     public void finishBulkLoad() {
-        Bulkload bulkload = activeBulkload.get();
+        Bulkload bulkload = activeBulkload.getAndSet(null);
         if (bulkload == null)
             throw new BulkloadException(NO_BULKLOAD_IN_PROGRESS);
         try {
             bulkload.pkStorage.treeBuilder.merge();
             bulkload.secondaryIndexStorage.treeBuilder.merge();
             bulkload.groupBuilder.merge();
+            // TODO need to update accumulators
         } catch (Exception e) {
             LOG.error("while merging TreeBuilders", e);
-            throw new BulkloadException("while finishign bulkloading: " + e);
+            throw new BulkloadException("while finishing bulkloading: " + e);
         }
     }
 
@@ -530,7 +550,8 @@ public class PersistitStore implements Store, Service {
         }
         final RowDef rowDef = rowDefFromExplicitOrId(session, rowData);
         checkNoGroupIndexes(rowDef.table());
-        lockAndCheckVersion(session, rowDef);
+        if (!bulkloadExpected)
+            lockAndCheckVersion(session, rowDef);
         return rowDef;
     }
 
@@ -1588,14 +1609,16 @@ public class PersistitStore implements Store, Service {
 
     private static class Bulkload {
 
-        Bulkload(Persistit persistit) {
+        Bulkload(Persistit persistit, AkibanInformationSchema ais) {
             groupTableKey = new Key(persistit);
             groupTableValue = new Value(persistit);
             pkStorage = new TreeBuilderStorage(persistit);
             secondaryIndexStorage = new TreeBuilderStorage(persistit);
             groupBuilder = new TreeBuilder(persistit);
             finishedTables = new HashSet<RowDef>();
+            this.ais = ais;
         }
+
 
         private final TreeBuilderStorage pkStorage;
         private final TreeBuilderStorage secondaryIndexStorage;
@@ -1603,6 +1626,7 @@ public class PersistitStore implements Store, Service {
         private final Key groupTableKey;
         private final Value groupTableValue;
         private final Set<RowDef> finishedTables;
+        private final AkibanInformationSchema ais;
         private RowDef currentRowDef;
     }
 

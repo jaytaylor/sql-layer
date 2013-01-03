@@ -915,6 +915,9 @@ public class PostgresServerConnection extends ServerSessionBase
     // When the AIS changes, throw everything away, since it might
     // point to obsolete objects.
     protected void updateAIS(PostgresQueryContext context) {
+        StoreAdapter store = getStore();
+        if (store != null && store.isBulkloading())
+            return;
         boolean locked = false;
         try {
             if (context != null) {
@@ -1292,7 +1295,7 @@ public class PostgresServerConnection extends ServerSessionBase
             valueEncoder = null; // Also depends on this.
         }
         if ("bulkload".equals(key)) {
-            getStore().setBulkload(Boolean.parseBoolean(value));
+            getStore().setBulkload(session, Boolean.parseBoolean(value));
             return true;
         }
         return super.propertySet(key, value);
