@@ -488,7 +488,7 @@ public class PersistitStore implements Store, Service {
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
         for (Index index : rowDef.getIndexes()) {
             StorageAction action = index.isPrimaryKey() ? bulkload.pkStorage : bulkload.secondaryIndexStorage;
-            insertIntoIndex(session, index, rowData, bulkload.groupTableKey, indexRow, deferIndexes);
+            insertIntoIndex(session, index, rowData, bulkload.groupTableKey, indexRow, deferIndexes, action);
         }
     }
 
