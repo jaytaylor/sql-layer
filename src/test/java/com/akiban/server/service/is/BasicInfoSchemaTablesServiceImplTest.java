@@ -224,6 +224,17 @@ public class BasicInfoSchemaTablesServiceImplTest {
         builder.createGroup(table, schema);
         builder.addTableToGroup(table, schema, table);
         }
+        
+        {
+        String schema = "test";
+        String table = "defaults";
+        builder.userTable(schema, table);
+        builder.column(schema, table, "col1", 0, "VARCHAR", 10L, null, false, false, null, null, "fred");
+        builder.column(schema, table, "col2", 1, "VARCHAR", 10L, null, false, false, null, null, "");
+        builder.column(schema, table, "col3", 2, "BIGINT", null, null, false, false, null, null, "0");
+        builder.createGroup(table, schema);
+        builder.addTableToGroup(table, schema, table);
+        }
 
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
@@ -395,6 +406,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { "gco", "x", "TABLE", LONG, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
                 { "test", "bar", "TABLE", LONG, "bar_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
                 { "test", "bar2", "TABLE", LONG, "bar_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "defaults", "TABLE", LONG, "defaults_tree", I_S, VARCHAR, I_S, VARCHAR, LONG},
                 { "test", "foo", "TABLE", LONG, "foo_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
                 { "test", "seq-table", "TABLE", LONG, "seq-table_tree", I_S, VARCHAR, I_S, VARCHAR, LONG}, 
                 { "zap", "pow", "TABLE", LONG, "pow_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
@@ -410,35 +422,38 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void columnsScan() {
         final Object[][] expected = {
-                { "gco", "a", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
-                { "gco", "a", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
-                { "gco", "b", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
-                { "gco", "b", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
-                { "gco", "m", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
-                { "gco", "m", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
-                { "gco", "r", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
-                { "gco", "w", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
-                { "gco", "w", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
-                { "gco", "x", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
-                { "gco", "x", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
-                { "test", "bar", "col", 0L, "bigint", false, 8L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
-                { "test", "bar", "name", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
-                { "test", "bar2", "foo", 0L, "int", true, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
-                { "test", "bar2", "pid", 1L, "int", true, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
-                { "test", "foo", "c1", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
-                { "test", "foo", "c2", 1L, "double", true, 8L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
-                { "test", "seq-table", "col", 0L, "bigint", false, 8L, null, null, 0L, null, null, null, null, null, "test", "_col_sequence", "BY DEFAULT", LONG}, 
-                { "zap", "pow", "name", 0L, "varchar", true, 32L, null, null, 1L, null, I_S, VARCHAR, I_S, VARCHAR, null, null, null, LONG },
-                { "zap", "pow", "value", 1L, "decimal", true, 5L, 10L, 2L, 0L, null, null, null, null, null, null, null, null, LONG },
-                { "zzz", "zzz1", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
-                { "zzz", "zzz2", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
-                { "zzz", "zzz2", "one_id", 1L, "int", true, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
-                { "test", "voo", "c1", 0L, "double", true, 8L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
-                { "test", "voo", "c2", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, LONG },
+                { "gco", "a", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, null, LONG},
+                { "gco", "a", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, null, LONG},
+                { "gco", "b", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, null,LONG},
+                { "gco", "b", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, null,LONG},
+                { "gco", "m", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, null,LONG},
+                { "gco", "m", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, null,LONG},
+                { "gco", "r", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, null,LONG},
+                { "gco", "w", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, null,LONG},
+                { "gco", "w", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, null,LONG},
+                { "gco", "x", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, null,LONG},
+                { "gco", "x", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, null, LONG},
+                { "test", "bar", "col", 0L, "bigint", false, 8L, null, null, 0L, null, null, null, null, null, null, null, null, null, LONG},
+                { "test", "bar", "name", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, null,LONG},
+                { "test", "bar2", "foo", 0L, "int", true, 4L, null, null, 0L, null, null, null, null, null, null, null, null, null,LONG},
+                { "test", "bar2", "pid", 1L, "int", true, 4L, null, null, 0L, null, null, null, null, null, null, null, null, null,LONG},
+                { "test", "defaults", "col1", 0L, "varchar", false, 10L, null, null, 1L, null, I_S, VARCHAR, I_S, VARCHAR, null, null, null, "fred", LONG},
+                { "test", "defaults", "col2", 1L, "varchar", false, 10L, null, null, 1L, null, I_S, VARCHAR, I_S, VARCHAR, null, null, null, "", LONG},
+                { "test", "defaults", "col3", 2L, "bigint", false, 8L, null, null, 0L, null, null, null, null, null, null, null, null, "0", LONG},
+                { "test", "foo", "c1", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, null,LONG},
+                { "test", "foo", "c2", 1L, "double", true, 8L, null, null, 0L, null, null, null, null, null, null, null, null, null,LONG},
+                { "test", "seq-table", "col", 0L, "bigint", false, 8L, null, null, 0L, null, null, null, null, null, "test", "_col_sequence", "BY DEFAULT", null, LONG}, 
+                { "zap", "pow", "name", 0L, "varchar", true, 32L, null, null, 1L, null, I_S, VARCHAR, I_S, VARCHAR, null, null, null, null,LONG},
+                { "zap", "pow", "value", 1L, "decimal", true, 5L, 10L, 2L, 0L, null, null, null, null, null, null, null, null, null,LONG},
+                { "zzz", "zzz1", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, null,LONG},
+                { "zzz", "zzz2", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, null,LONG},
+                { "zzz", "zzz2", "one_id", 1L, "int", true, 4L, null, null, 0L, null, null, null, null, null, null, null, null, null,LONG},
+                { "test", "voo", "c1", 0L, "double", true, 8L, null, null, 0L, null, null, null, null, null, null, null, null, null,LONG},
+                { "test", "voo", "c2", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, null, null, null, null,LONG},
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S columns", 127, skipped);
+        assertEquals("Skipped I_S columns", 128, skipped);
     }
 
     @Test
@@ -486,6 +501,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { "gco", "r", "gco", "w", "gco.r/gco.a/gco.w", 2L, "w/a", "gco", "a", "PRIMARY", LONG },
                 { "test", "bar", "test", "bar", "test.bar", 0L, null, null, null, null, LONG },
                 { "test", "bar", "test", "bar2", "test.bar/test.bar2", 1L, "bar2/bar", "test", "bar", "PRIMARY", LONG },
+                { "test", "defaults", "test", "defaults", "test.defaults", 0L, null, null, null, null, LONG},
                 { "test", "foo", "test", "foo", "test.foo", 0L, null, null, null, null, LONG },
                 { "test", "seq-table", "test", "seq-table", "test.seq-table", 0L, null, null, null, null, LONG},
                 { "zap", "pow", "zap", "pow", "zap.pow", 0L, null, null, null, null, LONG },
