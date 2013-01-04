@@ -2,5 +2,5 @@ SelectQuery@71f08ac1
   ResultSet@6725bf57[aid, cid, state, city]
     Project@5f351da8[addresses.aid, addresses.cid, addresses.state, addresses.city]
       Select@182e316d[]
-        TableGroupJoinTree@aef782(TableGroup@5efb7827(customers), addresses - SingleIndexScan@4f8d7928(Index(test.addresses.state[IndexColumn(state)]), NONE, =null, rows = 11, cost = 87.9080))
+        TableGroupJoinTree@aef782(TableGroup@5efb7827(customers), addresses - SingleIndexScan@4f8d7928(Index(test.addresses.state[IndexColumn(state)]), NONE, =NULL, rows = 13, cost = 102.920))
           TableSource@3b47f816(addresses - TableGroup@5efb7827(customers))

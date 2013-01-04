@@ -522,7 +522,7 @@ public abstract class CostEstimator implements TableRowCounts
     
     protected boolean isConstant(ExpressionNode node)
     {
-        return node instanceof ConstantExpression;
+        return node.isConstant();
     }
 
     protected boolean encodeKeyValue(ExpressionNode node, Index index, int column) {
@@ -536,6 +536,10 @@ public abstract class CostEstimator implements TableRowCounts
                     }
                     pvalue = node.getPreptimeValue().value();
                 }
+            }
+            else if (node instanceof IsNullIndexKey) {
+                keyPTarget.putNull();
+                return true;
             }
             if (pvalue == null)
                 return false;
@@ -565,6 +569,10 @@ public abstract class CostEstimator implements TableRowCounts
                 else
                     expr = Expressions.literal(((ConstantExpression)node).getValue(),
                                                node.getAkType());
+            }
+            else if (node instanceof IsNullIndexKey) {
+                keyTarget.putNull();
+                return true;
             }
             if (expr == null)
                 return false;
