@@ -151,8 +151,8 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public void rowWritten() {
-            rowCount.updateAndGet(1);
+        public void rowsWritten(long count) {
+            rowCount.updateAndGet(count);
         }
 
         public void setOrdinal(int ordinal) throws PersistitInterruptedException {
@@ -249,7 +249,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public void rowWritten() {
+        public void rowsWritten(long count) {
             throw new UnsupportedOperationException();
         }
 

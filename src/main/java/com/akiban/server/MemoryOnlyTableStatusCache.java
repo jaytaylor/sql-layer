@@ -129,8 +129,8 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public synchronized void rowWritten() {
-            ++rowCount;
+        public synchronized void rowsWritten(long count) {
+            rowCount += count;
         }
 
         @Override

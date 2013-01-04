@@ -409,7 +409,7 @@ public class PersistitStore implements Store, Service {
                     rowDef.getTableStatus().setAutoIncrement(autoIncrementValue);
                 }
             }
-            rowDef.getTableStatus().rowWritten();
+            rowDef.getTableStatus().rowsWritten(1);
             PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
             for (Index index : rowDef.getIndexes()) {
                 insertIntoIndex(session, index, rowData, hEx.getKey(), indexRow, deferIndexes);
@@ -552,8 +552,7 @@ public class PersistitStore implements Store, Service {
             bulkload.groupBuilder.merge();
             for (Map.Entry<RowDef, MutableLong> rowCountEntry : bulkload.rowsByRowDef.entrySet()) {
                 RowDef rowDef = rowCountEntry.getKey();
-                for (long i = 0, rows = rowCountEntry.getValue().value; i < rows; ++i)
-                    rowDef.getTableStatus().rowWritten();
+                rowDef.getTableStatus().rowsWritten(rowCountEntry.getValue().value);
             }
         } catch (Exception e) {
             LOG.error("while merging TreeBuilders", e);
