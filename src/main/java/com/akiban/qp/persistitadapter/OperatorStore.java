@@ -174,7 +174,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         INSERT_MAINTENANCE.in();
         try {
             super.writeRow(session, rowData);
-            if (!isBulkload()) {
+            if (!isBulkloading()) {
                 AkibanInformationSchema ais = schemaManager.getAis(session);
                 PersistitAdapter adapter = createAdapter(ais, session);
                 UserTable uTable = ais.getUserTable(rowData.getRowDefId());

@@ -180,5 +180,5 @@ public interface Store {
 
     void finishBulkLoad(Session session);
 
-    boolean isBulkload();
+    boolean isBulkloading();
 }

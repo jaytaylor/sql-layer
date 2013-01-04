@@ -81,8 +81,8 @@ public abstract class DelegatingStore<S extends Store & Service> implements Stor
     }
 
     @Override
-    public boolean isBulkload() {
-        return delegate.isBulkload();
+    public boolean isBulkloading() {
+        return delegate.isBulkloading();
     }
 
     @Override

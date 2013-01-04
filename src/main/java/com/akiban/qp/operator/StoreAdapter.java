@@ -92,7 +92,7 @@ public abstract class StoreAdapter
     }
 
     public boolean isBulkloading() {
-        return getUnderlyingStore().isBulkload();
+        return getUnderlyingStore().isBulkloading();
     }
 
     public enum AdapterType {
