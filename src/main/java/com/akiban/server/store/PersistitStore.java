@@ -56,6 +56,7 @@ import com.akiban.server.store.statistics.Histogram;
 import com.akiban.server.store.statistics.HistogramEntry;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsService;
+import com.akiban.util.MutableLong;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
@@ -478,6 +479,9 @@ public class PersistitStore implements Store, Service {
                 LOG.error("while merging PKs", e);
                 throw new BulkloadException("unknown exception (see log): " + e.getMessage());
             }
+            bulkload.currentMutableLong = new MutableLong();
+            MutableLong old = bulkload.rowsByRowDef.put(rowDef, bulkload.currentMutableLong);
+            assert old == null : old;
             bulkload.currentRowDef = rowDef;
         }
 
@@ -498,6 +502,8 @@ public class PersistitStore implements Store, Service {
             StorageAction action = index.isPrimaryKey() ? bulkload.pkStorage : bulkload.secondaryIndexStorage;
             insertIntoIndex(session, index, rowData, bulkload.groupTableKey, indexRow, deferIndexes, action);
         }
+
+        bulkload.currentMutableLong.value++;
     }
 
     @Override
@@ -527,7 +533,11 @@ public class PersistitStore implements Store, Service {
             bulkload.pkStorage.treeBuilder.merge();
             bulkload.secondaryIndexStorage.treeBuilder.merge();
             bulkload.groupBuilder.merge();
-            // TODO need to update accumulators
+            for (Map.Entry<RowDef, MutableLong> rowCountEntry : bulkload.rowsByRowDef.entrySet()) {
+                RowDef rowDef = rowCountEntry.getKey();
+                for (long i = 0, rows = rowCountEntry.getValue().value; i < rows; ++i)
+                    rowDef.getTableStatus().rowWritten();
+            }
         } catch (Exception e) {
             LOG.error("while merging TreeBuilders", e);
             throw new BulkloadException("while finishing bulkloading: " + e);
@@ -1619,7 +1629,6 @@ public class PersistitStore implements Store, Service {
             this.ais = ais;
         }
 
-
         private final TreeBuilderStorage pkStorage;
         private final TreeBuilderStorage secondaryIndexStorage;
         private final TreeBuilder groupBuilder;
@@ -1627,7 +1636,9 @@ public class PersistitStore implements Store, Service {
         private final Value groupTableValue;
         private final Set<RowDef> finishedTables;
         private final AkibanInformationSchema ais;
+        private final Map<RowDef, MutableLong> rowsByRowDef = new HashMap<RowDef, MutableLong>();
         private RowDef currentRowDef;
+        private MutableLong currentMutableLong;
     }
 
     private abstract static class StorageAction {
