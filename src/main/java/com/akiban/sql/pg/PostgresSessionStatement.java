@@ -72,6 +72,10 @@ public class PostgresSessionStatement implements PostgresStatement
         this.statement = statement;
     }
 
+    public StatementNode getStatement() {
+        return statement;
+    }
+
     @Override
     public PostgresType[] getParameterTypes() {
         return null;

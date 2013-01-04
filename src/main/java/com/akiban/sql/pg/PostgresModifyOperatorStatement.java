@@ -94,6 +94,10 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
         this.putInCache = putInCache;
     }
 
+    public boolean isInsert() {
+        return "INSERT".equals(statementType);
+    }
+
     @Override
     public TransactionMode getTransactionMode() {
         if (requireStepIsolation)
@@ -129,6 +133,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
         return cursor;
     }
 
+    @Override
     public void closeCursor(Cursor cursor) {
         if (cursor != null) {
             cursor.destroy();

@@ -27,6 +27,7 @@
 package com.akiban.sql.pg;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.sql.parser.SetConfigurationNode;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerSessionBase;
 import com.akiban.sql.server.ServerSessionMonitor;
@@ -625,6 +626,7 @@ public class PostgresServerConnection extends ServerSessionBase
         }
         int rowsProcessed = 0;
         if (pstmt != null) {
+            checkStatementIsAllowed(pstmt);
             pstmt.sendDescription(context, false);
             rowsProcessed = executeStatementWithAutoTxn(pstmt, context, -1);
         }
@@ -657,6 +659,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 boolean success = false;
                 try {
                     pstmt = finishGenerating(context, pstmt, stmtSQL, stmt, null, null);
+                    checkStatementIsAllowed(pstmt);
                     if ((statementCache != null) && singleStmt && pstmt.putInCache())
                         statementCache.put(stmtSQL, pstmt);
                     pstmt.sendDescription(context, false);
@@ -673,6 +676,27 @@ public class PostgresServerConnection extends ServerSessionBase
         if (reqs.monitor().isQueryLogEnabled()) {
             reqs.monitor().logQuery(sessionMonitor);
         }
+    }
+
+    private void checkStatementIsAllowed(PostgresStatement pstmt) {
+        if (!getStore().isBulkloading())
+            return;
+
+        if (pstmt instanceof PostgresModifyOperatorStatement) {
+            PostgresModifyOperatorStatement modifyStatement = (PostgresModifyOperatorStatement) pstmt;
+            if (modifyStatement.isInsert())
+                return;
+        }
+        else if (pstmt instanceof PostgresSessionStatement) {
+            PostgresSessionStatement sessionStatement = (PostgresSessionStatement) pstmt;
+            StatementNode node = sessionStatement.getStatement();
+            if (node instanceof SetConfigurationNode) {
+                SetConfigurationNode setNode = (SetConfigurationNode) node;
+                if ("bulkload".equals(setNode.getVariable()))
+                    return;
+            }
+        }
+        throw new BulkloadException("operation is not permitted while bulkloading");
     }
 
     protected void processParse() throws IOException {
