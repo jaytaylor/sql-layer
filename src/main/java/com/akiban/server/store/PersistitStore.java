@@ -465,12 +465,7 @@ public class PersistitStore implements Store, Service {
         final RowDef rowDef = writeRowCheck(session, rowData, true);
         if (bulkload.currentRowDef != rowDef) {
             // TODO check no GIs in this group!
-            RowDef rowDataParent = rowDef.getParentRowDef();
-            if (rowDataParent != null && (!bulkload.finishedTables.contains(rowDataParent)))
-                throw new BulkloadException( "can't load " + rowDef.userTable() + " because parent "
-                        + rowDef.userTable() + " hasn't been loaded yet");
-            if (!bulkload.finishedTables.add(rowDef))
-                throw new BulkloadException("table " + rowDef.userTable() + " has already finished bulkloading");
+            validateRowDefForBulk(bulkload, rowDef);
             try {
                 bulkload.pkStorage.treeBuilder.merge();
             } catch (com.persistit.exception.DuplicateKeyException e) {
@@ -504,6 +499,28 @@ public class PersistitStore implements Store, Service {
         }
 
         bulkload.currentMutableLong.value++;
+    }
+
+    private void validateRowDefForBulk(Bulkload bulkload, RowDef rowDef) {
+        RowDef rowDataParent = rowDef.getParentRowDef();
+        if (rowDataParent == null)
+            // This is the root, so check that the group has no GIs
+            checkNoGIs(rowDef);
+        else if (!bulkload.seenTables.contains(rowDataParent))
+            // This is not the root, so check that its parent has been loaded
+            throw new BulkloadException( "can't load " + rowDef.userTable() + " because parent "
+                    + rowDef.userTable() + " hasn't been loaded yet");
+        if (!bulkload.seenTables.add(rowDef))
+            throw new BulkloadException("table " + rowDef.userTable() + " has already finished bulkloading");
+    }
+
+    private void checkNoGIs(RowDef rowDef) {
+        GroupIndex[] gis = rowDef.getGroupIndexes();
+        if (gis.length > 0)
+            throw new BulkloadException("can't bulk load with group indexes: " + Arrays.toString(gis));
+        UserTable userTable = rowDef.userTable();
+        for (Join childJoin : userTable.getChildJoins())
+            checkNoGIs(childJoin.getChild().rowDef());
     }
 
     @Override
@@ -1625,7 +1642,6 @@ public class PersistitStore implements Store, Service {
             pkStorage = new TreeBuilderStorage(persistit);
             secondaryIndexStorage = new TreeBuilderStorage(persistit);
             groupBuilder = new TreeBuilder(persistit);
-            finishedTables = new HashSet<RowDef>();
             this.ais = ais;
         }
 
@@ -1634,8 +1650,8 @@ public class PersistitStore implements Store, Service {
         private final TreeBuilder groupBuilder;
         private final Key groupTableKey;
         private final Value groupTableValue;
-        private final Set<RowDef> finishedTables;
         private final AkibanInformationSchema ais;
+        private final Set<RowDef> seenTables = new HashSet<RowDef>();
         private final Map<RowDef, MutableLong> rowsByRowDef = new HashMap<RowDef, MutableLong>();
         private RowDef currentRowDef;
         private MutableLong currentMutableLong;
