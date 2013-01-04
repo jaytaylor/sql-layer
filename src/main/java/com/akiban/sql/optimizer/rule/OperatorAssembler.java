@@ -1862,7 +1862,7 @@ public class OperatorAssembler extends BaseRule
             int kidx = 0;
             if (equalityComparands != null) {
                 for (ExpressionNode comp : equalityComparands) {
-                    if (comp != null) {
+                    if (!(comp instanceof IsNullIndexKey)) { // Java null means IS NULL; Null expression wouldn't match.
                         newPartialAssembler.assembleExpressionInto(comp, fieldOffsets, pkeys, kidx);
                         oldPartialAssembler.assembleExpressionInto(comp, fieldOffsets, keys, kidx);
                     }
