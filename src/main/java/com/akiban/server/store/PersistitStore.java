@@ -464,10 +464,14 @@ public class PersistitStore implements Store, Service {
     private void writeRowBulk(Session session, RowData rowData, Bulkload bulkload) throws PersistitException {
         final RowDef rowDef = writeRowCheck(session, rowData, true);
         if (bulkload.currentRowDef != rowDef) {
-            // TODO check no GIs in this group!
             validateRowDefForBulk(bulkload, rowDef);
             try {
-                bulkload.pkStorage.treeBuilder.merge();
+                RowDef parentRowDef = rowDef.getParentRowDef();
+                if (parentRowDef != null) {
+                    TreeBuilderStorage storage = bulkload.pkStorageByRowDef.remove(parentRowDef);
+                    if (storage != null) // null means a sibling of this rowDef already prompted the merge
+                        storage.treeBuilder.merge();
+                }
             } catch (com.persistit.exception.DuplicateKeyException e) {
                 throw new DuplicateKeyException("PK", null);
             } catch (Exception e) {
@@ -475,7 +479,10 @@ public class PersistitStore implements Store, Service {
                 throw new BulkloadException("unknown exception (see log): " + e.getMessage());
             }
             bulkload.currentMutableLong = new MutableLong();
-            MutableLong old = bulkload.rowsByRowDef.put(rowDef, bulkload.currentMutableLong);
+            bulkload.currentPkBuilder = new TreeBuilderStorage(bulkload.persistit);
+            Object old = bulkload.pkStorageByRowDef.put(rowDef, bulkload.currentPkBuilder);
+            assert old == null : old;
+            old = bulkload.rowsByRowDef.put(rowDef, bulkload.currentMutableLong);
             assert old == null : old;
             bulkload.currentRowDef = rowDef;
         }
@@ -494,7 +501,7 @@ public class PersistitStore implements Store, Service {
 
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
         for (Index index : rowDef.getIndexes()) {
-            StorageAction action = index.isPrimaryKey() ? bulkload.pkStorage : bulkload.secondaryIndexStorage;
+            StorageAction action = index.isPrimaryKey() ? bulkload.currentPkBuilder : bulkload.secondaryIndexStorage;
             insertIntoIndex(session, index, rowData, bulkload.groupTableKey, indexRow, deferIndexes, action);
         }
 
@@ -547,7 +554,8 @@ public class PersistitStore implements Store, Service {
         if (bulkload == null)
             throw new BulkloadException(NO_BULKLOAD_IN_PROGRESS);
         try {
-            bulkload.pkStorage.treeBuilder.merge();
+            for (TreeBuilderStorage pkStorage : bulkload.pkStorageByRowDef.values())
+                pkStorage.treeBuilder.merge();
             bulkload.secondaryIndexStorage.treeBuilder.merge();
             bulkload.groupBuilder.merge();
             transactionService.beginTransaction(session);
@@ -1642,24 +1650,27 @@ public class PersistitStore implements Store, Service {
     private static class Bulkload {
 
         Bulkload(Persistit persistit, AkibanInformationSchema ais) {
+            this.persistit = persistit;
             groupTableKey = new Key(persistit);
             groupTableValue = new Value(persistit);
-            pkStorage = new TreeBuilderStorage(persistit);
+            pkStorageByRowDef = new HashMap<RowDef, TreeBuilderStorage>();
             secondaryIndexStorage = new TreeBuilderStorage(persistit);
             groupBuilder = new TreeBuilder(persistit);
             this.ais = ais;
         }
 
-        private final TreeBuilderStorage pkStorage;
-        private final TreeBuilderStorage secondaryIndexStorage;
-        private final TreeBuilder groupBuilder;
-        private final Key groupTableKey;
-        private final Value groupTableValue;
-        private final AkibanInformationSchema ais;
-        private final Set<RowDef> seenTables = new HashSet<RowDef>();
-        private final Map<RowDef, MutableLong> rowsByRowDef = new HashMap<RowDef, MutableLong>();
-        private RowDef currentRowDef;
-        private MutableLong currentMutableLong;
+        public final Persistit persistit;
+        public final Map<RowDef, TreeBuilderStorage> pkStorageByRowDef;
+        public final TreeBuilderStorage secondaryIndexStorage;
+        public final TreeBuilder groupBuilder;
+        public final Key groupTableKey;
+        public final Value groupTableValue;
+        public final AkibanInformationSchema ais;
+        public final Set<RowDef> seenTables = new HashSet<RowDef>();
+        public final Map<RowDef, MutableLong> rowsByRowDef = new HashMap<RowDef, MutableLong>();
+        public TreeBuilderStorage currentPkBuilder;
+        public RowDef currentRowDef;
+        public MutableLong currentMutableLong;
     }
 
     private abstract static class StorageAction {
