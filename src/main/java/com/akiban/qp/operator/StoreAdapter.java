@@ -110,7 +110,7 @@ public abstract class StoreAdapter
         if (bulkload)
             getUnderlyingStore().startBulkLoad(session);
         else
-            getUnderlyingStore().finishBulkLoad();
+            getUnderlyingStore().finishBulkLoad(session);
     }
 
     protected abstract Store getUnderlyingStore();

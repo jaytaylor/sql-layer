@@ -542,7 +542,7 @@ public class PersistitStore implements Store, Service {
     }
 
     @Override
-    public void finishBulkLoad() {
+    public void finishBulkLoad(Session session) {
         Bulkload bulkload = activeBulkload.getAndSet(null);
         if (bulkload == null)
             throw new BulkloadException(NO_BULKLOAD_IN_PROGRESS);
@@ -550,9 +550,15 @@ public class PersistitStore implements Store, Service {
             bulkload.pkStorage.treeBuilder.merge();
             bulkload.secondaryIndexStorage.treeBuilder.merge();
             bulkload.groupBuilder.merge();
-            for (Map.Entry<RowDef, MutableLong> rowCountEntry : bulkload.rowsByRowDef.entrySet()) {
-                RowDef rowDef = rowCountEntry.getKey();
-                rowDef.getTableStatus().rowsWritten(rowCountEntry.getValue().value);
+            transactionService.beginTransaction(session);
+            try {
+                for (Map.Entry<RowDef, MutableLong> rowCountEntry : bulkload.rowsByRowDef.entrySet()) {
+                    RowDef rowDef = rowCountEntry.getKey();
+                    rowDef.getTableStatus().rowsWritten(rowCountEntry.getValue().value);
+                }
+            }
+            finally {
+                transactionService.commitTransaction(session);
             }
         } catch (Exception e) {
             LOG.error("while merging TreeBuilders", e);
