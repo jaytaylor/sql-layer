@@ -2263,10 +2263,12 @@ public class OperatorAssembler extends BaseRule
 
         @Override
         public int getIndex(ColumnExpression column) {
-            if (column.getTable() != source) 
-                return -1;
-            else
+            if (column.getTable() == source) 
                 return column.getPosition();
+            else if (source instanceof Project)
+                return ((Project)source).getFields().indexOf(column);
+            else
+                return -1;
         }
 
         @Override
