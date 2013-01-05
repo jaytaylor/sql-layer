@@ -50,9 +50,10 @@ public class MapFolder extends BaseRule
     }
 
     static class MapJoinsFinder implements PlanVisitor, ExpressionVisitor {
-        List<MapJoin> result = new ArrayList<MapJoin>();
+        List<MapJoin> result;
 
         public List<MapJoin> find(PlanNode root) {
+            result = new ArrayList<MapJoin>();
             root.accept(this);
             return result;
         }
@@ -91,10 +92,42 @@ public class MapFolder extends BaseRule
         }
     }
 
+    static class ColumnSourceFinder implements PlanVisitor { // Not down to expressions.
+        Set<ColumnSource> result;
+
+        public Set<ColumnSource> find(PlanNode root) {
+            result = new HashSet<ColumnSource>();
+            root.accept(this);
+            return result;
+        }
+
+        @Override
+        public boolean visitEnter(PlanNode n) {
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(PlanNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visit(PlanNode n) {
+            if (n instanceof ColumnSource) {
+                result.add((ColumnSource)n);
+            }
+            else if (n instanceof IndexScan) {
+                result.addAll(((IndexScan)n).getTables());
+            }
+            return true;
+        }
+    }
+
     @Override
     public void apply(PlanContext planContext) {
         BaseQuery query = (BaseQuery)planContext.getPlan();
         List<MapJoin> maps = new MapJoinsFinder().find(query);
+        List<MapJoinProject> mapJoinProjects = new ArrayList<MapJoinProject>(0);
         if (maps.isEmpty()) return;
         if (query instanceof DMLStatement) {
             DMLStatement update = (DMLStatement)query;
@@ -110,7 +143,9 @@ public class MapFolder extends BaseRule
         for (MapJoin map : maps)
             foldOuterMap(map);
         for (MapJoin map : maps)
-            fold(map);
+            fold(map, mapJoinProjects);
+        for (MapJoinProject project : mapJoinProjects)
+            fillProject(project);
     }
 
     // First pass: account for the join type by adding something at
@@ -163,8 +198,8 @@ public class MapFolder extends BaseRule
         }
     }    
 
-    // Final pass: move things upstream of the map down into the inner (fast) side.
-    protected void fold(MapJoin map) {
+    // Third pass: move things upstream of the map down into the inner (fast) side.
+    protected void fold(MapJoin map, List<MapJoinProject> mapJoinProjects) {
         PlanWithInput parent = map;
         PlanNode child;
         do {
@@ -180,10 +215,106 @@ public class MapFolder extends BaseRule
                    (child instanceof Project) ||
                    (child instanceof UpdateInput)));
         if (child != map) {
-            map.getOutput().replaceInput(map, map.getInner());
+            PlanNode inner = map.getInner();
+            if ((parent instanceof MapJoin) && 
+                (child == ((MapJoin)parent).getOuter())) {
+                ColumnSourceFinder finder = new ColumnSourceFinder();
+                Set<ColumnSource> outerSources = finder.find(map.getOuter());
+                Set<ColumnSource> innerSources = finder.find(map.getInner());
+                outerSources.addAll(innerSources);
+                Project project = new Project(inner, new ArrayList<ExpressionNode>());
+                mapJoinProjects.add(new MapJoinProject((MapJoin)parent, project,
+                                                       outerSources, innerSources));
+                inner = project;
+            }
+            map.getOutput().replaceInput(map, inner);
             parent.replaceInput(child, map);
             map.setInner(child);
         }
+    }
+
+    static class MapJoinProject implements PlanVisitor, ExpressionVisitor {
+        MapJoin map;
+        Project project;
+        Set<ColumnSource> allSources, innerSources;
+        List<ColumnExpression> columns;
+        boolean foundOuter;
+
+        public MapJoinProject(MapJoin map, Project project,
+                              Set<ColumnSource> allSources, 
+                              Set<ColumnSource> innerSources) {
+            this.map = map;
+            this.project = project;
+            this.allSources = allSources;
+            this.innerSources = innerSources;
+        }
+        
+        public boolean find() {
+            columns = new ArrayList<ColumnExpression>();
+            map.getInner().accept(this);
+            return foundOuter;
+        }
+
+        public void install() {
+            Set<ColumnExpression> seen = new HashSet<ColumnExpression>();
+            for (ColumnExpression column : columns) {
+                if (seen.add(column)) {
+                    project.getFields().add(column);
+                }
+            }
+        }
+
+        public void remove() {
+            project.getOutput().replaceInput(project, project.getInput());
+        }
+
+        @Override
+        public boolean visitEnter(PlanNode n) {
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(PlanNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visit(PlanNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visitEnter(ExpressionNode n) {
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(ExpressionNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visit(ExpressionNode n) {
+            if (n instanceof ColumnExpression) {
+                ColumnExpression column = (ColumnExpression)n;
+                if (allSources.contains(column.getTable())) {
+                    columns.add(column);
+                    if (!innerSources.contains(column.getTable())) {
+                        foundOuter = true;
+                    }
+                }
+            }
+            return true;
+        }
+     }
+
+    // Fourth pass: materialize join with a Project when there is no
+    // other alternative.
+    protected void fillProject(MapJoinProject project) {
+        if (project.find())
+            project.install();
+        else
+            project.remove();   // Everything came from inner table(s) after all.
     }
 
     protected void addUpdateInput(DMLStatement update) {
