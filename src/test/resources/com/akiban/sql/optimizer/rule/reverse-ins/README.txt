@@ -27,3 +27,5 @@ not-in: NOT IN to anti-join.
 not-in-inner: NOT IN with join inside.
 
 update-semi: UPDATE with semi-join.
+
+map-join-project: Need both sides of outer loop.
