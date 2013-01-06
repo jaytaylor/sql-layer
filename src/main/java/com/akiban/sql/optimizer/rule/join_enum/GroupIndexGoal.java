@@ -270,8 +270,13 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                         (fcond.getOperands().size() == 1) &&
                         indexExpressionMatches(indexExpression, 
                                                fcond.getOperands().get(0))) {
+                        ExpressionNode foperand = fcond.getOperands().get(0);
                         equalityCondition = condition;
-                        otherComparand = null; // TODO: Or constant NULL, depending on API.
+                        otherComparand = new IsNullIndexKey(foperand.getSQLtype(),
+                                                            fcond.getSQLsource());
+                        if (foperand.getPreptimeValue() != null) {
+                            otherComparand.setPreptimeValue(new TPreptimeValue(foperand.getPreptimeValue().instance()));
+                        }
                         break;
                     }
                 }
