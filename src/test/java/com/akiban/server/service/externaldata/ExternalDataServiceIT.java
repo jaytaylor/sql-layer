@@ -93,15 +93,15 @@ public class ExternalDataServiceIT extends ITBase
         "]";
 
     @Test
-    public void writeJsonC13() throws IOException {
+    public void dumpJsonC13() throws IOException {
         ExternalDataService external = 
             serviceManager().getServiceByClass(ExternalDataService.class);
         StringWriter str = new StringWriter();
         PrintWriter pw = new PrintWriter(str);
-        external.writeBranchAsJson(session(), pw, SCHEMA, "c", 
-                                   Arrays.asList(Collections.singletonList("1"),
-                                                 Collections.singletonList("3")),
-                                   -1);
+        external.dumpBranchAsJson(session(), pw, SCHEMA, "c", 
+                                  Arrays.asList(Collections.singletonList("1"),
+                                                Collections.singletonList("3")),
+                                  -1);
         assertEquals(C13, str.toString());
     }
 
@@ -110,14 +110,14 @@ public class ExternalDataServiceIT extends ITBase
         "]";
 
     @Test
-    public void writeJsonO101() throws IOException {
+    public void dumpJsonO101() throws IOException {
         ExternalDataService external = 
             serviceManager().getServiceByClass(ExternalDataService.class);
         StringWriter str = new StringWriter();
         PrintWriter pw = new PrintWriter(str);
-        external.writeBranchAsJson(session(), pw, SCHEMA, "o", 
-                                   Collections.singletonList(Collections.singletonList("101")),
-                                   -1);
+        external.dumpBranchAsJson(session(), pw, SCHEMA, "o", 
+                                  Collections.singletonList(Collections.singletonList("101")),
+                                  -1);
         assertEquals(O101, str.toString());
     }
 
@@ -126,26 +126,26 @@ public class ExternalDataServiceIT extends ITBase
         "]";
 
     @Test
-    public void writeJsonDepth() throws IOException {
+    public void dumpJsonDepth() throws IOException {
         ExternalDataService external = 
             serviceManager().getServiceByClass(ExternalDataService.class);
         StringWriter str = new StringWriter();
         PrintWriter pw = new PrintWriter(str);
-        external.writeBranchAsJson(session(), pw, SCHEMA, "c", 
-                                   Collections.singletonList(Collections.singletonList("1")),
-                                   1);
+        external.dumpBranchAsJson(session(), pw, SCHEMA, "c", 
+                                  Collections.singletonList(Collections.singletonList("1")),
+                                  1);
         assertEquals(C1d1, str.toString());
     }
 
     @Test
-    public void writeJsonEmpty() throws IOException {
+    public void dumpJsonEmpty() throws IOException {
         ExternalDataService external = 
             serviceManager().getServiceByClass(ExternalDataService.class);
         StringWriter str = new StringWriter();
         PrintWriter pw = new PrintWriter(str);
-        external.writeBranchAsJson(session(), pw, SCHEMA, "c", 
-                                   Collections.singletonList(Collections.singletonList("666")),
-                                   -1);
+        external.dumpBranchAsJson(session(), pw, SCHEMA, "c", 
+                                  Collections.singletonList(Collections.singletonList("666")),
+                                  -1);
         assertEquals("[]", str.toString());
     }
 

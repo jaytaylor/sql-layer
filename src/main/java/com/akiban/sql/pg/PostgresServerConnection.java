@@ -313,6 +313,9 @@ public class PostgresServerConnection extends ServerSessionBase
                     logError(ErrorLogLevel.WARN, "Unexpected error in query {}", ex);
                     String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
                     sendErrorResponse(type, ex, ErrorCode.UNEXPECTED_EXCEPTION, message);
+                } catch (AssertionError ex) {
+                    logError(ErrorLogLevel.WARN, "Assertion in query {}", ex);
+                    throw ex;
                 }
                 finally {
                     long stopNsec = System.nanoTime();
@@ -335,7 +338,7 @@ public class PostgresServerConnection extends ServerSessionBase
 
     private enum ErrorLogLevel { WARN, INFO, DEBUG };
 
-    private void logError(ErrorLogLevel level, String msg, Exception ex) {
+    private void logError(ErrorLogLevel level, String msg, Throwable ex) {
         String sql = null;
         if (sessionMonitor.getCurrentStatementEndTimeMillis() < 0) {
             // Current statement did not complete, include in error message.

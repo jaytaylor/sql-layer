@@ -85,9 +85,9 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     /* ExternalDataService */
 
     @Override
-    public void writeBranchAsJson(Session session, PrintWriter writer,
-                                  String schemaName, String tableName, 
-                                  List<List<String>> keys, int depth) 
+    public void dumpBranchAsJson(Session session, PrintWriter writer,
+                                 String schemaName, String tableName, 
+                                 List<List<String>> keys, int depth) 
             throws IOException {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
         UserTable table = ais.getUserTable(schemaName, tableName);

@@ -24,25 +24,51 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service.externaldata;
+package com.akiban.sql.optimizer.plan;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.service.session.Session;
+import com.akiban.server.types.AkType;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.parser.ValueNode;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.util.List;
+/** An indicator that an index equality operand is actually IS NULL. 
+ * <code>null</code> could be confused with the absence of an operand.
+ * <code>ConstantExpression</code> could be confused with a literal
+ * NULL, which is never equal.
+ */
+public class IsNullIndexKey extends BaseExpression 
+{
+    public IsNullIndexKey(DataTypeDescriptor sqlType, ValueNode sqlSource) {
+        super(sqlType, AkType.NULL, sqlSource);
+    }
 
-public interface ExternalDataService {
-    void dumpBranchAsJson(Session session, PrintWriter writer,
-                          String schemaName, String tableName, 
-                          List<List<String>> keys, int depth) throws IOException;
+    @Override
+    public boolean isConstant() {
+        return true;
+    }
 
-    long loadTableFromCsv(Session session, InputStream inputStream, 
-                          CsvFormat format, long skipRows,
-                          UserTable toTable, List<Column> toColumns,
-                          long commitFrequency, QueryContext context) throws IOException;
+    @Override
+    public boolean equals(Object obj) {
+        return (obj instanceof IsNullIndexKey);
+    }
+
+    @Override
+    public int hashCode() {
+        return 0;
+    }
+
+    @Override
+    public String toString() {
+        return "NULL";
+    }
+
+    @Override
+    public boolean accept(ExpressionVisitor v) {
+        return v.visit(this);
+    }
+
+    @Override
+    public ExpressionNode accept(ExpressionRewriteVisitor v) {
+        return v.visit(this);
+    }
+
 }

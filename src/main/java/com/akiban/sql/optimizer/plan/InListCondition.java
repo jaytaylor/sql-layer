@@ -38,6 +38,7 @@ public class InListCondition extends BaseExpression implements ConditionExpressi
 {
     private ExpressionNode operand;
     private List<ExpressionNode> expressions;
+    private ComparisonCondition comparison;
 
     public InListCondition(ExpressionNode operand, List<ExpressionNode> expressions,
                            DataTypeDescriptor sqlType, ValueNode sqlSource) {
@@ -58,6 +59,13 @@ public class InListCondition extends BaseExpression implements ConditionExpressi
     }
     public void setExpressions(List<ExpressionNode> expressions) {
         this.expressions = expressions;
+    }
+
+    public ComparisonCondition getComparison() {
+        return comparison;
+    }
+    public void setComparison(ComparisonCondition comparison) {
+        this.comparison = comparison;
     }
 
     @Override
