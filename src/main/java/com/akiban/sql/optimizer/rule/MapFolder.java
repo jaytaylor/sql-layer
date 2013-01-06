@@ -182,7 +182,7 @@ public class MapFolder extends BaseRule
 
     // Second pass: if one map has another on the outer (slow) side,
     // turn them inside out. Nesting must all be on the inner side to
-    // be like regular loops. Conceptually, the two trace places, but
+    // be like regular loops. Conceptually, the two trade places, but
     // actually doing that would mess up the depth nesting for the
     // next pass.
     protected void foldOuterMap(MapJoin map) {
@@ -199,6 +199,8 @@ public class MapFolder extends BaseRule
     }    
 
     // Third pass: move things upstream of the map down into the inner (fast) side.
+    // Also add Project where the nesting still needs an actual join
+    // on the outer side.
     protected void fold(MapJoin map, List<MapJoinProject> mapJoinProjects) {
         PlanWithInput parent = map;
         PlanNode child;
@@ -216,16 +218,22 @@ public class MapFolder extends BaseRule
                    (child instanceof UpdateInput)));
         if (child != map) {
             PlanNode inner = map.getInner();
-            if ((parent instanceof MapJoin) && 
-                (child == ((MapJoin)parent).getOuter())) {
-                ColumnSourceFinder finder = new ColumnSourceFinder();
-                Set<ColumnSource> outerSources = finder.find(map.getOuter());
-                Set<ColumnSource> innerSources = finder.find(map.getInner());
-                outerSources.addAll(innerSources);
-                Project project = new Project(inner, new ArrayList<ExpressionNode>());
-                mapJoinProjects.add(new MapJoinProject((MapJoin)parent, project,
-                                                       outerSources, innerSources));
-                inner = project;
+            if (parent instanceof MapJoin) {
+                MapJoinProject nested = findAddedProject((MapJoin)parent, 
+                                                         mapJoinProjects);
+                if ((nested != null) ||
+                    (child == ((MapJoin)parent).getOuter())) {
+                    inner = addProject((MapJoin)parent, map, inner,
+                                       nested, mapJoinProjects);
+                }
+            }
+            else if (child instanceof Project) {
+                MapJoinProject nested = findAddedProject((Project)child,
+                                                         mapJoinProjects);
+                if (nested != null) {
+                    inner = addProject(null, map, inner,
+                                       nested, mapJoinProjects);
+                }
             }
             map.getOutput().replaceInput(map, inner);
             parent.replaceInput(child, map);
@@ -234,7 +242,8 @@ public class MapFolder extends BaseRule
     }
 
     static class MapJoinProject implements PlanVisitor, ExpressionVisitor {
-        MapJoin map;
+        MapJoin parentMap, childMap;
+        MapJoinProject nested;
         Project project;
         Set<ColumnSource> allSources, innerSources;
         List<ColumnExpression> columns;
@@ -243,7 +252,7 @@ public class MapFolder extends BaseRule
         @Override
         public String toString() {
             StringBuilder str = new StringBuilder(getClass().getSimpleName());
-            str.append("(").append(map.summaryString());
+            str.append("(").append(childMap.summaryString());
             for (ColumnSource source : allSources) {
                 str.append(",");
                 if (innerSources.contains(source))
@@ -257,10 +266,13 @@ public class MapFolder extends BaseRule
             return str.toString();
         }
 
-        public MapJoinProject(MapJoin map, Project project,
+        public MapJoinProject(MapJoin parentMap, MapJoin childMap, 
+                              MapJoinProject nested, Project project,
                               Set<ColumnSource> allSources, 
                               Set<ColumnSource> innerSources) {
-            this.map = map;
+            this.parentMap = parentMap;
+            this.childMap = childMap;
+            this.nested = nested;
             this.project = project;
             this.allSources = allSources;
             this.innerSources = innerSources;
@@ -268,7 +280,12 @@ public class MapFolder extends BaseRule
         
         public boolean find() {
             columns = new ArrayList<ColumnExpression>();
-            map.getInner().accept(this);
+            for (MapJoinProject loop = this; loop != null; loop = loop.nested) {
+                if (loop.parentMap != null) {
+                    // Check context within the bindings of any nested loops.
+                    loop.parentMap.getInner().accept(this);
+                }
+            }
             return foundOuter;
         }
 
@@ -326,14 +343,48 @@ public class MapFolder extends BaseRule
         }
      }
 
+    protected Project addProject(MapJoin parentMap, MapJoin childMap, PlanNode inner, 
+                                 MapJoinProject nested, List<MapJoinProject> into) {
+        ColumnSourceFinder finder = new ColumnSourceFinder();
+        Set<ColumnSource> outerSources = finder.find(childMap.getOuter());
+        Set<ColumnSource> innerSources = finder.find(childMap.getInner());
+        outerSources.addAll(innerSources);
+        Project project = new Project(inner, new ArrayList<ExpressionNode>());
+        into.add(new MapJoinProject(parentMap, childMap, 
+                                    nested, project,
+                                    outerSources, innerSources));
+        return project;
+    }
+
+    protected MapJoinProject findAddedProject(MapJoin childMap, List<MapJoinProject> in) {
+        for (MapJoinProject mapJoinProject : in) {
+            if (mapJoinProject.childMap == childMap) {
+                return mapJoinProject;
+            }
+        }
+        return null;
+    }
+    
+    protected MapJoinProject findAddedProject(Project project, List<MapJoinProject> in) {
+        for (MapJoinProject mapJoinProject : in) {
+            if (mapJoinProject.project == project) {
+                return mapJoinProject;
+            }
+        }
+        return null;
+    }
+    
     // Fourth pass: materialize join with a Project when there is no
     // other alternative.
     protected void fillProject(MapJoinProject project) {
-        if (project.find())
+        if (project.find()) {
             project.install();
-        else
+            logger.debug("Added {}", project);
+        }
+        else {
             project.remove();   // Everything came from inner table(s) after all.
-        logger.debug("Joined {}", project);
+            logger.debug("Skipped {}", project);
+        }
     }
 
     protected void addUpdateInput(DMLStatement update) {
