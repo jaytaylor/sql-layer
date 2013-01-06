@@ -240,6 +240,23 @@ public class MapFolder extends BaseRule
         List<ColumnExpression> columns;
         boolean foundOuter;
 
+        @Override
+        public String toString() {
+            StringBuilder str = new StringBuilder(getClass().getSimpleName());
+            str.append("(").append(map.summaryString());
+            for (ColumnSource source : allSources) {
+                str.append(",");
+                if (innerSources.contains(source))
+                    str.append("*");
+                str.append(source.getName());
+            }
+            if (project != null) {
+                str.append(",").append(project.getFields());
+            }
+            str.append(")");
+            return str.toString();
+        }
+
         public MapJoinProject(MapJoin map, Project project,
                               Set<ColumnSource> allSources, 
                               Set<ColumnSource> innerSources) {
@@ -266,6 +283,7 @@ public class MapFolder extends BaseRule
 
         public void remove() {
             project.getOutput().replaceInput(project, project.getInput());
+            project = null;
         }
 
         @Override
@@ -315,6 +333,7 @@ public class MapFolder extends BaseRule
             project.install();
         else
             project.remove();   // Everything came from inner table(s) after all.
+        logger.debug("Joined {}", project);
     }
 
     protected void addUpdateInput(DMLStatement update) {
