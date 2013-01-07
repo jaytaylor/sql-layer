@@ -281,7 +281,7 @@ public class DefaultFormatter
             atts.containsKey(Label.COST)) {
             sb.append(" (");
             sb.append((String)atts.getValue(Label.COST));
-            sb.append(" )");
+            sb.append(")");
         }
         if (atts.containsKey(Label.INPUT_OPERATOR)) {
             for (Explainer input : atts.get(Label.INPUT_OPERATOR)) {
