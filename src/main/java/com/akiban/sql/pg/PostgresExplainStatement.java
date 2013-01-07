@@ -158,7 +158,8 @@ public class PostgresExplainStatement implements PostgresStatement
     public PostgresStatement finishGenerating(PostgresServerSession server, String sql, StatementNode stmt,
                                               List<ParameterNode> params, int[] paramTypes) {
         ExplainPlanContext context = new ExplainPlanContext(compiler);
-        StatementNode innerStmt = ((ExplainStatementNode)stmt).getStatement();
+        ExplainStatementNode explainStmt = (ExplainStatementNode)stmt;
+        StatementNode innerStmt = explainStmt.getStatement();
         Explainable explainable;
         if (innerStmt instanceof CallStatementNode) {
             explainable = PostgresCallStatementGenerator.explainable(server, (CallStatementNode)innerStmt, params, paramTypes);
@@ -173,7 +174,20 @@ public class PostgresExplainStatement implements PostgresStatement
             explain = Collections.singletonList(f.format(explainable.getExplainer(context.getExplainContext())));
         }
         else {
-            DefaultFormatter f = new DefaultFormatter(server.getDefaultSchemaName(), true);
+            DefaultFormatter.LevelOfDetail detail;
+            switch (explainStmt.getDetail()) {
+            case BRIEF:
+                detail = DefaultFormatter.LevelOfDetail.BRIEF;
+                break;
+            default:
+            case NORMAL:
+                detail = DefaultFormatter.LevelOfDetail.NORMAL;
+                break;
+            case VERBOSE:
+                detail = DefaultFormatter.LevelOfDetail.VERBOSE;
+                break;
+            }
+            DefaultFormatter f = new DefaultFormatter(server.getDefaultSchemaName(), detail);
             explain = f.format(explainable.getExplainer(context.getExplainContext()));
         }
         init(explain, compiler.usesPValues());

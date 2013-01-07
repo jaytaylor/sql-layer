@@ -36,16 +36,24 @@ import java.util.List;
 
 public class DefaultFormatter
 {
+    public static enum LevelOfDetail {
+        BRIEF, NORMAL, VERBOSE
+    };
+
     private String defaultSchemaName;
-    private boolean verbose;
+    private LevelOfDetail levelOfDetail;
     private int numSubqueries = 0;
     private List<CompoundExplainer> subqueries = new ArrayList<CompoundExplainer>();
     private StringBuilder sb = new StringBuilder();
     private List<String> rows = new ArrayList<String>();
     
-    public DefaultFormatter(String defaultSchemaName, boolean verbose) {
+    public DefaultFormatter(String defaultSchemaName) {
+        this(defaultSchemaName, LevelOfDetail.NORMAL);
+    }
+
+    public DefaultFormatter(String defaultSchemaName, LevelOfDetail levelOfDetail) {
         this.defaultSchemaName = defaultSchemaName;
-        this.verbose = verbose;
+        this.levelOfDetail = levelOfDetail;
     }
 
     public List<String> format(Explainer explainer) {
@@ -211,7 +219,7 @@ public class DefaultFormatter
     protected void appendOperator(CompoundExplainer explainer, int depth) {
         Attributes atts = explainer.get();
         String name = (String)atts.getValue(Label.NAME);
-        sb.append(verbose ? name : name.substring(0, name.indexOf('_'))).append('(');
+        sb.append((levelOfDetail != LevelOfDetail.BRIEF) ? name : name.substring(0, name.indexOf('_'))).append('(');
         switch (explainer.getType()) {
         case SELECT_HKEY:
             appendSelectOperator(name, atts);
@@ -281,13 +289,13 @@ public class DefaultFormatter
     }            
         
     protected void appendSelectOperator(String name, Attributes atts) {
-        if (verbose) {
+        if (levelOfDetail != LevelOfDetail.BRIEF) {
             append(atts.getAttribute(Label.PREDICATE));
         }
     }
 
     protected void appendProjectOperator(String name, Attributes atts) {
-        if (verbose) {
+        if (levelOfDetail != LevelOfDetail.BRIEF) {
             for (Explainer projection : atts.get(Label.PROJECTION)) {
                 append(projection);
                 sb.append(", ");
@@ -301,7 +309,7 @@ public class DefaultFormatter
             appendIndexScanOperator(atts);
         }
         if (name.equals("ValuesScan_Default")) {
-            if (verbose) {
+            if (levelOfDetail != LevelOfDetail.BRIEF) {
                 if (atts.containsKey(Label.EXPRESSIONS)) {
                     for (Explainer row : atts.get(Label.EXPRESSIONS)) {
                         append(row);
@@ -312,7 +320,7 @@ public class DefaultFormatter
             }
         }
         else if (name.equals("GroupScan_Default")) {
-            if (verbose) {
+            if (levelOfDetail != LevelOfDetail.BRIEF) {
                 String opt = (String)atts.getValue(Label.SCAN_OPTION);
                 if (!opt.equals("full scan"))
                     sb.append(opt).append(" on ");
@@ -323,7 +331,7 @@ public class DefaultFormatter
 
     protected void appendIndexScanOperator(Attributes atts) {
         append(atts.getAttribute(Label.INDEX));
-        if (verbose) {
+        if (levelOfDetail != LevelOfDetail.BRIEF) {
             boolean isSpatial = false;
             boolean isGroup = false;
             if (atts.containsKey(Label.INDEX_KIND)) {
@@ -461,7 +469,7 @@ public class DefaultFormatter
     }
 
     protected void appendLookupOperator(String name, Attributes atts) {
-        if (verbose) {
+        if (levelOfDetail != LevelOfDetail.BRIEF) {
             append(atts.getAttribute(Label.INPUT_TYPE));
             sb.append(" -> ");
         }
@@ -470,7 +478,8 @@ public class DefaultFormatter
             sb.append(", ");
         }
         sb.setLength(sb.length() - 2);
-        if (verbose && atts.containsKey(Label.ANCESTOR_TYPE)) {
+        if ((levelOfDetail != LevelOfDetail.BRIEF) && 
+            atts.containsKey(Label.ANCESTOR_TYPE)) {
             sb.append(" (via ");
             append(atts.getAttribute(Label.ANCESTOR_TYPE));
             sb.append(')');
@@ -479,14 +488,15 @@ public class DefaultFormatter
 
     protected void appendCountOperator(String name, Attributes atts) {
         sb.append("*");
-        if (verbose && name.equals("Count_TableStatus")) {
+        if ((levelOfDetail != LevelOfDetail.BRIEF) && 
+            name.equals("Count_TableStatus")) {
             sb.append(" FROM ");
             append(atts.getAttribute(Label.INPUT_TYPE));
         }
     }
 
     protected void appendFilterOperator(String name, Attributes atts) {
-        if (verbose) {
+        if (levelOfDetail != LevelOfDetail.BRIEF) {
             for (Explainer table : atts.get(Label.KEEP_TYPE)) {
                 append(table);
                 sb.append(", ");
@@ -496,7 +506,7 @@ public class DefaultFormatter
     }
 
     protected void appendFlattenOperator(String name, Attributes atts) {
-        if (verbose) {
+        if (levelOfDetail != LevelOfDetail.BRIEF) {
             append(atts.getAttribute(Label.PARENT_TYPE));
             sb.append(' ').append(atts.getValue(Label.JOIN_OPTION)).append(' ');
             append(atts.getAttribute(Label.CHILD_TYPE));
@@ -504,7 +514,7 @@ public class DefaultFormatter
     }
 
     protected void appendOrderedOperator(String name, Attributes atts) {
-        if (verbose) {
+        if (levelOfDetail != LevelOfDetail.BRIEF) {
             if (atts.containsKey(Label.UNION_OPTION) &&
                 "ALL".equals(atts.getValue(Label.UNION_OPTION))) {
                 sb.append("all, ");
@@ -533,7 +543,7 @@ public class DefaultFormatter
     }
 
     protected void appendIfEmptyOperator(String name, Attributes atts) {
-        if (verbose) {
+        if (levelOfDetail != LevelOfDetail.BRIEF) {
             for (Explainer expression : atts.get(Label.OPERAND)) {
                 append(expression);
                 sb.append(", ");
@@ -549,13 +559,13 @@ public class DefaultFormatter
     }
 
     protected void appendLimitOperator(String name, Attributes atts) {
-        if (verbose) {
+        if (levelOfDetail != LevelOfDetail.BRIEF) {
             append(atts.getAttribute(Label.LIMIT));
         }
     }
 
     protected void appendNestedLoopsOperator(String name, Attributes atts) {
-        if (verbose) {
+        if (levelOfDetail != LevelOfDetail.BRIEF) {
             if (name.equals("Map_NestedLoops")) {
                 // Label the loop?
             }
@@ -568,7 +578,7 @@ public class DefaultFormatter
     }
 
     protected void appendSortOperator(String name, Attributes atts) {
-        if (verbose) {
+        if (levelOfDetail != LevelOfDetail.BRIEF) {
             int i = 0;
             for (Explainer ex : atts.get(Label.EXPRESSIONS)) {
                 append(ex);
@@ -607,7 +617,7 @@ public class DefaultFormatter
                 sb.append("INTO ");
                 append(atts.getAttribute(Label.TABLE_TYPE));
             }
-            if (verbose) {
+            if (levelOfDetail != LevelOfDetail.BRIEF) {
                 if (atts.containsKey(Label.COLUMN_NAME)) {
                     sb.append('(');
                     for (Explainer ex : atts.get(Label.COLUMN_NAME))
@@ -625,7 +635,7 @@ public class DefaultFormatter
             else if (atts.containsKey(Label.TABLE_TYPE)) {
                 append(atts.getAttribute(Label.TABLE_TYPE));
             }
-            if (verbose) {
+            if (levelOfDetail != LevelOfDetail.BRIEF) {
                 if (atts.containsKey(Label.COLUMN_NAME)) {
                     sb.append(" SET ");
                     int ncols = Math.min(atts.get(Label.COLUMN_NAME).size(), 
@@ -645,7 +655,7 @@ public class DefaultFormatter
     protected void appendAggregateOperator(String name, Attributes atts) {
         int nkeys = ((Number)atts.getValue(Label.GROUPING_OPTION)).intValue();
         List<Explainer> aggrs = atts.get(Label.AGGREGATORS);
-        if (!verbose) {
+        if (levelOfDetail == LevelOfDetail.BRIEF) {
             if (nkeys > 0) {
                 sb.append("group by ").append(nkeys);
                 if (aggrs != null) sb.append(", ");
@@ -675,7 +685,7 @@ public class DefaultFormatter
     }
 
     protected void appendBloomFilterOperator(String name, Attributes atts) {
-        if (verbose) {
+        if (levelOfDetail != LevelOfDetail.BRIEF) {
             if (name.equals("Using_BloomFilter")) {
                 appendProjectColumns(atts, -1);
             }            

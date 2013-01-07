@@ -101,7 +101,7 @@ public abstract class BasePlannable extends BasePlanNode
     protected String withIndentedExplain(StringBuilder str, ExplainContext context, String defaultSchemaName) {
         if (context == null)
             context = new ExplainContext(); // Empty
-        DefaultFormatter f = new DefaultFormatter(defaultSchemaName, true);
+        DefaultFormatter f = new DefaultFormatter(defaultSchemaName);
         for (String operator : f.format(plannable.getExplainer(context))) {
             str.append("\n  ");
             str.append(operator);

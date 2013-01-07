@@ -110,7 +110,7 @@ public class BranchPlanGenerator
                                         
         if (logger.isDebugEnabled()) {
             logger.debug("Plan for {}:\n{}", table, 
-                         com.akiban.util.Strings.join(new com.akiban.server.explain.format.DefaultFormatter(table.getName().getSchemaName(), true).format(plan.getExplainer(new com.akiban.server.explain.ExplainContext()))));
+                         com.akiban.util.Strings.join(new com.akiban.server.explain.format.DefaultFormatter(table.getName().getSchemaName()).format(plan.getExplainer(new com.akiban.server.explain.ExplainContext()))));
         }
 
         plans.put(table, plan);
