@@ -28,8 +28,6 @@ package com.akiban.sql.optimizer.plan;
 
 /** The basic unit of costing. Keep tracks of a number of rows that
  * result and the total cost to get them there. */
-// TODO: Should this go in a qp package and also be attached to
-// operators after we're done?
 public class CostEstimate implements Comparable<CostEstimate>
 {
     private final long rowCount;

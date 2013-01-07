@@ -44,7 +44,7 @@ public class PostgresQueryContext extends ServerQueryContext<PostgresServerSessi
         return generator.openCursor(this);
     }
 
-    public <T extends CursorBase> boolean finishCursor(PostgresCursorGenerator<T> generator, T cursor, boolean suspended) {
+    public <T extends CursorBase> boolean finishCursor(PostgresCursorGenerator<T> generator, T cursor, int nrows, boolean suspended) {
         generator.closeCursor(cursor);
         return false;
     }

@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.optimizer.plan.CostEstimate;
 import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
 import com.akiban.sql.parser.ParameterNode;
@@ -88,4 +89,10 @@ public abstract class PostgresBaseStatement implements PostgresStatement
     public boolean putInCache() {
         return true;
     }
+
+    @Override
+    public CostEstimate getCostEstimate() {
+        return null;
+    }
+
 }

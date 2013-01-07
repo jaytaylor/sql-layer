@@ -28,6 +28,7 @@ package com.akiban.sql.pg;
 
 import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.plan.BasePlannable;
+import com.akiban.sql.optimizer.plan.CostEstimate;
 import com.akiban.sql.optimizer.rule.ExplainPlanContext;
 import com.akiban.sql.parser.CallStatementNode;
 import com.akiban.sql.parser.DMLStatementNode;
@@ -198,6 +199,11 @@ public class PostgresExplainStatement implements PostgresStatement
     @Override
     public boolean putInCache() {
         return false;
+    }
+
+    @Override
+    public CostEstimate getCostEstimate() {
+        return null;
     }
 
 }

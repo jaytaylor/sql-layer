@@ -158,6 +158,7 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
                     select.getResultRowType(),
                     resultColumns,
                     parameterTypes,
+                    select.getCostEstimate(),
                     usesPValues());
         return pjstmt;
     }
@@ -187,6 +188,7 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
                          update.getResultRowType(),
                          resultColumns,
                          parameterTypes,
+                         update.getCostEstimate(),
                          usesPValues(),
                          update.isRequireStepIsolation(),
                          update.putInCache());
