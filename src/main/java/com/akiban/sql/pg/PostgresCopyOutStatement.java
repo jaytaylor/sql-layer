@@ -34,6 +34,7 @@ import com.akiban.sql.parser.StatementNode;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
 import com.akiban.server.error.SQLParserInternalException;
+import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.externaldata.CsvFormat;
 
 import static com.akiban.sql.pg.PostgresCopyInStatement.csvFormat;
@@ -68,9 +69,18 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
         assert (pstmt == this);
         if (copyStmt.getFilename() != null)
             toFile = new File(copyStmt.getFilename());
-        csvFormat = csvFormat(copyStmt, server);
-        if (copyStmt.isHeader()) {
-            csvFormat.setHeadings(getColumnNames());
+        CopyStatementNode.Format format = copyStmt.getFormat();
+        if (format == null)
+            format = CopyStatementNode.Format.CSV;
+        switch (format) {
+        case CSV:
+            csvFormat = csvFormat(copyStmt, server);
+            if (copyStmt.isHeader()) {
+                csvFormat.setHeadings(getColumnNames());
+            }
+            break;
+        default:
+            throw new UnsupportedSQLException("COPY FORMAT " + format);
         }
         return this;
     }

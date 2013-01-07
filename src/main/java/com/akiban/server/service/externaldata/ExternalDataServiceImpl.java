@@ -148,11 +148,29 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                                  UserTable toTable, List<Column> toColumns,
                                  long commitFrequency, QueryContext context) 
             throws IOException {
-        DMLFunctions dml = dxlService.dmlFunctions();
         CsvRowReader reader = new CsvRowReader(toTable, toColumns, inputStream, format,
                                                context);
         if (skipRows > 0)
             reader.skipRows(skipRows);
+        return loadTableFromRowReader(session, inputStream, reader, commitFrequency);
+    }
+
+    @Override
+    public long loadTableFromMysqlDump(Session session, InputStream inputStream, 
+                                       String encoding,
+                                       UserTable toTable, List<Column> toColumns,
+                                       long commitFrequency, QueryContext context) 
+            throws IOException {
+        MysqlDumpRowReader reader = new MysqlDumpRowReader(toTable, toColumns,
+                                                           inputStream, encoding, 
+                                                           context);
+        return loadTableFromRowReader(session, inputStream, reader, commitFrequency);
+    }
+
+    protected long loadTableFromRowReader(Session session, InputStream inputStream, 
+                                          RowReader reader, long commitFrequency)
+            throws IOException {
+        DMLFunctions dml = dxlService.dmlFunctions();
         long pending = 0, total = 0;
         boolean transaction = false;
         try {
