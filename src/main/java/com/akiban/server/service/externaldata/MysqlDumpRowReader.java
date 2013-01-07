@@ -98,10 +98,7 @@ public class MysqlDumpRowReader extends RowReader
                         state = State.SINGLE_LINE_COMMENT;
                     }
                     else {
-                        throw new ExternalRowReaderException("Unexpected token " +
-                                                             decode(new byte[] { 
-                                                                        (byte)'-', (byte)b 
-                                                                    }));
+                        throw unexpectedToken('-', b);
                     }
                 }
                 else if (b == '/') {
@@ -110,10 +107,7 @@ public class MysqlDumpRowReader extends RowReader
                         state = State.DELIMITED_COMMENT;
                     }
                     else {
-                        throw new ExternalRowReaderException("Unexpected token " +
-                                                             decode(new byte[] { 
-                                                                        (byte)'/', (byte)b 
-                                                                    }));
+                        throw unexpectedToken('/', b);
                     }
                 }
                 else if ((b >= 'A') && (b <= 'Z')) {
@@ -123,7 +117,7 @@ public class MysqlDumpRowReader extends RowReader
                 else if ((b == ' ') || (b == '\r') || (b == '\n')) {
                 }
                 else {
-                    throw new ExternalRowReaderException("Unexpected token " + (char)b);
+                    throw unexpectedToken(b);
                 }
                 break;
             case SINGLE_LINE_COMMENT:
@@ -136,7 +130,7 @@ public class MysqlDumpRowReader extends RowReader
                 break;
             case DELIMITED_COMMENT:
                 if (b < 0) {
-                    throw new ExternalRowReaderException("EOF in the middle of a comment");
+                    throw eofInTheMiddleOf("a comment");
                 }
                 else if (b == '*') {
                     b = read();
@@ -155,7 +149,7 @@ public class MysqlDumpRowReader extends RowReader
             case INSERT:
             case INSERT_VALUES:
                 if (b < 0) {
-                    throw new ExternalRowReaderException("EOF in the middle of a statement");
+                    throw eofInTheMiddleOf("a statement");
                 }
                 else if ((b >= 'A') && (b <= 'Z')) {
                     addToField(b);
@@ -195,7 +189,7 @@ public class MysqlDumpRowReader extends RowReader
                 break;
             case IGNORED_STATEMENT:
                 if (b < 0) {
-                    throw new ExternalRowReaderException("EOF in the middle of a statement");
+                    throw eofInTheMiddleOf("a statement");
                 }
                 else if (b == ';') {
                     state = State.STATEMENT_START;
@@ -206,7 +200,7 @@ public class MysqlDumpRowReader extends RowReader
                 break;
             case IGNORED_BACKQUOTE:
                 if (b < 0) {
-                    throw new ExternalRowReaderException("EOF in the middle of a statement");
+                    throw eofInTheMiddleOf("a statement");
                 }
                 else if (b == '`') {
                     state = State.IGNORED_STATEMENT;
@@ -217,7 +211,7 @@ public class MysqlDumpRowReader extends RowReader
                 break;
             case INSERT_TABLE:
                 if (b < 0) {
-                    throw new ExternalRowReaderException("EOF in the middle of a statement");
+                    throw eofInTheMiddleOf("a statement");
                 }
                 else if (b == '`') {
                     addToField(b);
@@ -251,7 +245,7 @@ public class MysqlDumpRowReader extends RowReader
                 break;
             case TABLE_BACKQUOTE:
                 if (b < 0) {
-                    throw new ExternalRowReaderException("EOF in the middle of table name");
+                    throw eofInTheMiddleOf("table name");
                 }
                 else if (b == '`') {
                     addToField(b);
@@ -269,19 +263,19 @@ public class MysqlDumpRowReader extends RowReader
                 break;
             case NEXT_ROW_CTOR:
                 if (b < 0) {
-                    throw new ExternalRowReaderException("EOF in the middle of a statement");
+                    throw eofInTheMiddleOf("a statement");
                 }
                 else if (b == '(') {
                     newRow();
                     state = State.NEXT_FIELD;
                 }
                 else {
-                    throw new ExternalRowReaderException("Unexpected token " + (char)b);
+                    throw unexpectedToken(b);
                 }
                 break;
             case AFTER_ROW_CTOR:
                 if (b < 0) {
-                    throw new ExternalRowReaderException("EOF in the middle of a statement");
+                    throw eofInTheMiddleOf("a statement");
                 }
                 else if (b == ';') {
                     state = State.STATEMENT_START;
@@ -290,12 +284,12 @@ public class MysqlDumpRowReader extends RowReader
                     state = State.NEXT_ROW_CTOR;
                 }
                 else {
-                    throw new ExternalRowReaderException("Unexpected token " + (char)b);
+                    throw unexpectedToken(b);
                 }
                 break;
             case NEXT_FIELD:
                 if (b < 0) {
-                    throw new ExternalRowReaderException("EOF in the middle of a statement");
+                    throw eofInTheMiddleOf("a statement");
                 }
                 else if (b == ')') {
                     state = State.AFTER_ROW_CTOR;
@@ -316,7 +310,7 @@ public class MysqlDumpRowReader extends RowReader
                 break;
             case UNQUOTED_FIELD:
                 if (b < 0) {
-                    throw new ExternalRowReaderException("EOF in the middle of a statement");
+                    throw eofInTheMiddleOf("a statement");
                 }
                 else if (b == ',') {
                     addField(false);
@@ -336,7 +330,7 @@ public class MysqlDumpRowReader extends RowReader
                 break;
             case QUOTED_FIELD:
                 if (b < 0) {
-                    throw new ExternalRowReaderException("EOF in the middle of a quote");
+                    throw eofInTheMiddleOf("quoted string");
                 }
                 else if (b == '\'') {
                     state = State.AFTER_QUOTED_FIELD;
@@ -345,7 +339,7 @@ public class MysqlDumpRowReader extends RowReader
                     b = read();
                     switch (b) {
                     case -1:
-                        throw new ExternalRowReaderException("EOF in the middle of a quote");
+                        throw eofInTheMiddleOf("quoted string");
                     case 'n':
                         b = '\n';
                         break;
@@ -364,7 +358,7 @@ public class MysqlDumpRowReader extends RowReader
                 break;
             case AFTER_QUOTED_FIELD:
                 if (b < 0) {
-                    throw new ExternalRowReaderException("EOF in the middle of a statement");
+                    throw eofInTheMiddleOf("a statement");
                 }
                 else if (b == ',') {
                     addField(true);
@@ -376,11 +370,23 @@ public class MysqlDumpRowReader extends RowReader
                     return row();
                 }
                 else {
-                    throw new ExternalRowReaderException("unexpected after quoted field: " + (char)b);
+                    throw unexpectedToken(b);
                 }
                 break;
             }
         }
+    }
+
+    protected ExternalRowReaderException unexpectedToken(int... bytes) {
+        byte[] ba = new byte[bytes.length];
+        for (int i = 0; i < ba.length; i++) {
+            ba[i] = (byte)bytes[i];
+        }
+        return new ExternalRowReaderException("Unexpected token " + decode(ba));
+    }
+
+    protected ExternalRowReaderException eofInTheMiddleOf(String what) {
+        return new ExternalRowReaderException("EOF in the middle of " + what);
     }
 
 }
