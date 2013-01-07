@@ -43,16 +43,18 @@ public abstract class BasePlannable extends BasePlanNode
     private DataTypeDescriptor[] parameterTypes;
     private List<PhysicalResultColumn> resultColumns;
     private RowType rowType;
+    private CostEstimate costEstimate;
 
-    
     protected BasePlannable(Plannable plannable,
                             DataTypeDescriptor[] parameterTypes,
                             RowType rowType,
-                            List<PhysicalResultColumn> resultColumns) {
+                            List<PhysicalResultColumn> resultColumns,
+                            CostEstimate costEstimate) {
         this.plannable = plannable;
         this.parameterTypes = parameterTypes;
         this.rowType = rowType;
         this.resultColumns = resultColumns;
+        this.costEstimate = costEstimate;
     }
 
     public Plannable getPlannable() {
@@ -68,6 +70,10 @@ public abstract class BasePlannable extends BasePlanNode
 
     public List<PhysicalResultColumn> getResultColumns() {
         return resultColumns;
+    }
+
+    public CostEstimate getCostEstimate() {
+        return costEstimate;
     }
 
     public abstract boolean isUpdate();

@@ -715,8 +715,17 @@ public class OperatorAssembler extends BaseRule
                 // VALUES results in column1, column2, ...
                 resultColumns = getResultColumns(stream.rowType.nFields());
             }
+            if (explainContext != null)
+                explainSelectQuery(stream.operator, selectQuery);
             return new PhysicalSelect(stream.operator, stream.rowType, resultColumns, 
-                                      getParameterTypes());
+                                      getParameterTypes(), 
+                                      selectQuery.getCostEstimate());
+        }
+
+        protected void explainSelectQuery(Operator plan, SelectQuery selectQuery) {
+            Attributes atts = new Attributes();
+            explainCostEstimate(atts, selectQuery.getCostEstimate());
+            explainContext.putExtraInfo(plan, new CompoundExplainer(Type.EXTRA_INFO, atts));
         }
 
         protected PhysicalUpdate dmlStatement (DMLStatement statement) {
@@ -738,7 +747,8 @@ public class OperatorAssembler extends BaseRule
                                       resultColumns,
                                       returning,
                                       statement.isRequireStepIsolation(),
-                                      returning || !isBulkInsert(planQuery));
+                                      returning || !isBulkInsert(planQuery),
+                                      statement.getCostEstimate());
         }
 
         protected RowStream assembleInsertStatement (InsertStatement insert) {
@@ -1199,7 +1209,13 @@ public class OperatorAssembler extends BaseRule
             Attributes atts = new Attributes();
             atts.put(Label.ORDER_EFFECTIVENESS, PrimitiveExplainer.getInstance(indexScan.getOrderEffectiveness().name()));
             atts.put(Label.USED_COLUMNS, PrimitiveExplainer.getInstance(indexScan.usesAllColumns() ? indexScan.getColumns().size() : indexScan.getNKeyColumns()));
+            explainCostEstimate(atts, indexScan.getScanCostEstimate());
             explainContext.putExtraInfo(operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
+        }
+
+        protected void explainCostEstimate(Attributes atts, CostEstimate costEstimate) {
+            if (costEstimate != null)
+                atts.put(Label.COST, PrimitiveExplainer.getInstance(costEstimate.toString()));
         }
 
         /**
