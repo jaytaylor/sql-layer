@@ -24,25 +24,37 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service.externaldata;
+package com.akiban.sql.pg;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.service.session.Session;
+import com.akiban.sql.parser.CopyStatementNode;
+import com.akiban.sql.parser.NodeTypes;
+import com.akiban.sql.parser.ParameterNode;
+import com.akiban.sql.parser.StatementNode;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
 import java.util.List;
 
-public interface ExternalDataService {
-    void dumpBranchAsJson(Session session, PrintWriter writer,
-                          String schemaName, String tableName, 
-                          List<List<String>> keys, int depth) throws IOException;
+/** COPY statement. */
+public class PostgresCopyStatementGenerator extends PostgresBaseStatementGenerator
+{
+    private PostgresOperatorCompiler compiler;
 
-    long loadTableFromCsv(Session session, InputStream inputStream, 
-                          CsvFormat format, long skipRows,
-                          UserTable toTable, List<Column> toColumns,
-                          long commitFrequency, QueryContext context) throws IOException;
+    public PostgresCopyStatementGenerator(PostgresServerSession server) {
+        compiler = (PostgresOperatorCompiler)server.getAttribute("compiler");
+    }
+
+    @Override
+    public PostgresStatement generateStub(PostgresServerSession server,
+                                          String sql, StatementNode stmt,
+                                          List<ParameterNode> params, int[] paramTypes)  {
+        if (stmt.getNodeType() == NodeTypes.COPY_STATEMENT_NODE) {
+            switch (((CopyStatementNode)stmt).getMode()) {
+            case FROM_TABLE:
+            case FROM_SUBQUERY:
+                return new PostgresCopyOutStatement(compiler);
+            case TO_TABLE:
+                return new PostgresCopyInStatement();
+            }
+        }
+        return null;
+    }
 }
