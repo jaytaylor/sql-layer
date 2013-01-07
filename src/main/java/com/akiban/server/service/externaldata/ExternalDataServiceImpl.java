@@ -37,7 +37,6 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.row.Row;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.error.NoSuchTableException;
