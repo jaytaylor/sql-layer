@@ -19,3 +19,6 @@ left-3n: null tolerant predicate prevents reordering
 left-inner: left then inner
 
 left-inner-x: left then inner with condition to common parent
+
+semi-1: semi-join
+

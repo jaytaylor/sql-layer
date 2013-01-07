@@ -37,7 +37,6 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.row.Row;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.error.NoSuchTableException;
@@ -85,9 +84,9 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     /* ExternalDataService */
 
     @Override
-    public void writeBranchAsJson(Session session, PrintWriter writer,
-                                  String schemaName, String tableName, 
-                                  List<List<String>> keys, int depth) 
+    public void dumpBranchAsJson(Session session, PrintWriter writer,
+                                 String schemaName, String tableName, 
+                                 List<List<String>> keys, int depth) 
             throws IOException {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
         UserTable table = ais.getUserTable(schemaName, tableName);

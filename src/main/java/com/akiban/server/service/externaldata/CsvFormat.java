@@ -80,27 +80,18 @@ public class CsvFormat
     }
 
     public void setDelimiter(String delimiter) {
-        byte[] bytes = getBytes(delimiter);
-        if (bytes.length != 1)
-            throw new IllegalArgumentException("Must encode as a single byte.");
         this.delimiter = delimiter;
-        this.delimiterByte = bytes[0] & 0xFF;
+        this.delimiterByte = getSingleByte(delimiter);
     }
 
     public void setQuote(String quote) {
-        byte[] bytes = getBytes(quote);
-        if (bytes.length != 1)
-            throw new IllegalArgumentException("Must encode as a single byte.");
         this.escape = this.quote = quote;
-        this.escapeByte = this.quoteByte = bytes[0] & 0xFF;;
+        this.escapeByte = this.quoteByte = getSingleByte(quote);
     }
 
     public void setEscape(String escape) {
-        byte[] bytes = getBytes(escape);
-        if (bytes.length != 1)
-            throw new IllegalArgumentException("Must encode as a single byte.");
         this.escape = escape;
-        this.escapeByte = bytes[0] & 0xFF;;
+        this.escapeByte = getSingleByte(escape);
     }
 
     public void setNullString(String nullString) {
@@ -121,16 +112,11 @@ public class CsvFormat
     }
 
     public int getNewline() {
-        if (recordEndBytes.length != 1)
-            throw new IllegalArgumentException("Must encode as a single byte.");
-        return recordEndBytes[0] & 0xFF;
+        return getSingleByte(recordEndBytes);
     }
 
     public int getReturn() {
-        byte[] bytes = getBytes("\r");
-        if (bytes.length != 1)
-            throw new IllegalArgumentException("Must encode as a single byte.");
-        return bytes[0] & 0xFF;
+        return getSingleByte("\r");
     }
 
     public byte[] getRequiresQuoting() {
@@ -157,4 +143,14 @@ public class CsvFormat
         }
     }
     
+    private int getSingleByte(String str) {
+        return getSingleByte(getBytes(str));
+    }
+
+    private int getSingleByte(byte[] bytes) {
+        if (bytes.length != 1)
+            throw new IllegalArgumentException("Must encode as a single byte.");
+        return bytes[0] & 0xFF;
+    }
+
 }

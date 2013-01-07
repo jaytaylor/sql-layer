@@ -39,7 +39,6 @@ import java.util.List;
 /** Read from a flat file into <code>NewRow</code> rows suitable for inserting. */
 public class CsvRowReader extends RowReader
 {
-    private final CsvFormat format;
     private final int delim, quote, escape, nl, cr;
     private enum State { ROW_START, FIELD_START, IN_FIELD, IN_QUOTE, AFTER_QUOTE };
     private State state;
@@ -48,7 +47,6 @@ public class CsvRowReader extends RowReader
                         CsvFormat format, QueryContext queryContext) {
         super(table, columns, inputStream, format.getEncoding(), format.getNullBytes(), 
               queryContext);
-        this.format = format;
         this.delim = format.getDelimiterByte();
         this.quote = format.getQuoteByte();
         this.escape = format.getEscapeByte();
