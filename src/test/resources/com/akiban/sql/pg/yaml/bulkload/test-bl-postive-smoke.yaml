@@ -1,0 +1,115 @@
+---
+- Include: caoi.yaml
+---
+- Statement: create index index_idx on c (name);
+---
+- Statement: create index sku_idx on i (sku);
+---
+- Statement: insert into c values (1, 'one', '1999-01-01');
+---
+- Statement: insert into c values (2, 'two', '1999-01-02'), (3, 'three', '1999-01-03');
+---
+- Statement: insert into a values (11, 1, 'One Oneness St.');
+---
+- Statement: insert into a values (31, 3, 'Three Trinity Ave.');
+---
+- Statement: insert into o values (11, 1, '2001-01-01'), (21, 2, '2002-02-21'), (22, 2, '2002-02-22');
+---
+# order orphan
+- Statement: insert into o values (41, 4, '2004-01-01');
+---
+- Statement: insert into i values (211, 21, 567, 88), (212, 21, 123, 77), (221, 22, 484, 66);
+---
+# item orphan
+- Statement: insert into i values (511, 51, 666, 55);
+---
+- Statement: SET bulkload='false';
+---
+# Check customers: PK (covering)
+- Statement: SELECT cid FROM c;
+- output: [[1], [2], [3]]
+---
+# Check customers: group
+- Statement: SELECT * FROM c;
+- output: [[1, 'one', '1999-01-01'], [2, 'two', '1999-01-02'], [3, 'three', '1999-01-03']]
+---
+# Check customers: name (not covering)
+- Statement: SELECT * FROM c ORDER BY name;
+- output: [[1, 'one', '1999-01-01'], [3, 'three', '1999-01-03'], [2, 'two', '1999-01-02']]
+---
+# Check customers: name (covering)
+- Statement: SELECT name FROM c ORDER BY name;
+- output: [['one'], ['three'], ['two']]
+---
+# Check customers: count(*) with accumulator
+- Statement: SELECT count(*) FROM c;
+- output: [[3]]
+---
+
+# Check addresses: PK (covering)
+- Statement:  SELECT aid FROM a;
+- output: [[11], [31]]
+---
+# Check addresses: group
+- Statement: SELECT * FROM a
+- output: [[11, 1, 'One Oneness St.'], [31, 3, 'Three Trinity Ave.']]
+---
+# Check addresses: count(*) with accumulator
+- Statement: select count(*) from a
+- output: [[2]]
+---
+
+# Check orders: PK (covering)
+- Statement: SELECT oid FROM o;
+- output: [[11], [21], [22], [41]]
+---
+# Check orders: group
+- Statement: SELECT * FROM o
+- output: [[11, 1, '2001-01-01'], [21, 2, '2002-02-21'], [22, 2, '2002-02-22'], [41, 4, '2004-01-01']]
+---
+# Check orders: count(*) with accumulator
+- Statement: select count(*) from o
+- output: [[4]]
+---
+# Check C-O joins
+- Statement: SELECT * FROM c LEFT JOIN o USING (cid)
+- output: [[1, 'one', '1999-01-01', 11, 1, '2001-01-01'],
+           [2, 'two', '1999-01-02', 21, 2, '2002-02-21'],
+           [2, 'two', '1999-01-02', 22, 2, '2002-02-22'],
+           [3, 'three', '1999-01-03', null, null, null]]
+---
+- Statement: SELECT * FROM c RIGHT JOIN o USING (cid)
+- output: [[1, 'one', '1999-01-01', 11, 1, '2001-01-01'],
+           [2, 'two', '1999-01-02', 21, 2, '2002-02-21'],
+           [2, 'two', '1999-01-02', 22, 2, '2002-02-22'],
+           [null, null, null, 41, 4, '2004-01-01']]
+---
+
+# Check items: PK (covering)
+- Statement: SELECT iid FROM i;
+- output: [[211], [212], [221], [511]]
+---
+# Check items: group
+- Statement: SELECT * FROM i
+- output: [[511, 51, 666, 55], [211, 21, 567, 88], [212, 21, 123, 77], [221, 22, 484, 66]]
+---
+# Check items: sku (not covering)
+- Statement: SELECT * FROM i ORDER BY sku
+- output: [[212, 21, 123, 77], [221, 22, 484, 66], [211, 21, 567, 88], [511, 51, 666, 55]]
+---
+# Check items: sku (covering)
+- Statement: SELECT sku FROM i
+- output: [[123], [484], [567], [666]]
+---
+# Check items: count(*) with accumulator
+- Statement: SELECT count(*) FROM i
+- output: [[4]]
+---
+# Check C-O-I left joins
+- Statement: SELECT * FROM c LEFT JOIN o USING (cid) LEFT JOIN i USING (oid)
+- output: [[1, 'one', '1999-01-01', 11, 1, '2001-01-01', null, null, null, null],
+           [2, 'two', '1999-01-02', 21, 2, '2002-02-21', 211, 21, 567, 88],
+           [2, 'two', '1999-01-02', 21, 2, '2002-02-21', 212, 21, 123, 77],
+           [2, 'two', '1999-01-02', 22, 2, '2002-02-22', 221, 22, 484, 66],
+           [3, 'three', '1999-01-03', null, null, null, null, null, null, null]]
+...

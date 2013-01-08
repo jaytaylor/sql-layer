@@ -1,0 +1,6 @@
+---
+- Include: caoi.yaml
+---
+- Statement: insert into o values (11, 1, '2001-01-01')
+- error: [57007]
+...
