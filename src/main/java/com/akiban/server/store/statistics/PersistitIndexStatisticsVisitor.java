@@ -60,19 +60,19 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
         }
     }
 
-    public void init()
+    public void init(int bucketCount)
     {
-        multiColumnVisitor.init(indexRowCount);
+        multiColumnVisitor.init(bucketCount, indexRowCount);
         for (int c = 0; c < nIndexColumns; c++) {
-            singleColumnVisitors.get(c).init(-1L); // Value computed by the single-column visitor
+            singleColumnVisitors.get(c).init(bucketCount, -1L); // Row count computed by the single-column visitor
         }
     }
 
-    public void finish()
+    public void finish(int bucketCount)
     {
-        multiColumnVisitor.finish();
+        multiColumnVisitor.finish(bucketCount);
         for (int c = 0; c < nIndexColumns; c++) {
-            singleColumnVisitors.get(c).finish();
+            singleColumnVisitors.get(c).finish(bucketCount);
         }
     }
 
@@ -98,8 +98,6 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
         }
         return indexStatistics;
     }
-
-    public static final int BUCKETS_COUNT = 32;
 
     private final Index index;
     private final long indexRowCount;

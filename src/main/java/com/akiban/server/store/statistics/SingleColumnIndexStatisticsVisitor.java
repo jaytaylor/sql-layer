@@ -41,14 +41,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class SingleColumnIndexStatisticsVisitor extends IndexStatisticsGenerator
 {
-    public void init(long distinctCount)
+    @Override
+    public void init(int bucketCount, long distinctCount)
     {
         exchange = TempVolume.takeExchange(store, session, treeName);
     }
 
-    public void finish()
+    @Override
+    public void finish(int bucketCount)
     {
-        super.init(rowCount);
+        super.init(bucketCount, rowCount);
         exchange.clear();
         try {
             while (exchange.next()) {
@@ -60,11 +62,12 @@ public class SingleColumnIndexStatisticsVisitor extends IndexStatisticsGenerator
         } catch (PersistitException e) {
             PersistitAdapter.handlePersistitException(session, e);
         } finally {
-            super.finish();
+            super.finish(bucketCount);
             TempVolume.returnExchange(session, exchange);
         }
     }
 
+    @Override
     public void visit(Key key, Value value)
     {
         key.indexTo(field);
