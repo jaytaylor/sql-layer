@@ -181,6 +181,7 @@ public class JoinAndIndexPicker extends BaseRule
             groupGoal.updateRequiredColumns(empty, empty);
             BaseScan scan = groupGoal.pickBestScan();
             groupGoal.install(scan, null, true, false);
+            query.setCostEstimate(scan.getCostEstimate());
         }
 
         // General joins: run enumerator.
@@ -192,6 +193,7 @@ public class JoinAndIndexPicker extends BaseRule
         // Put the chosen plan in place.
         public void installPlan(Plan rootPlan, boolean copy) {
             joinable.getOutput().replaceInput(joinable, rootPlan.install(copy));
+            query.setCostEstimate(rootPlan.costEstimate);
         }
 
         // Get the handler for the given subquery so that it can be done in context.

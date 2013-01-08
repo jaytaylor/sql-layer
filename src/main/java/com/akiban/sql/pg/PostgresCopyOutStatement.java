@@ -116,7 +116,7 @@ public class PostgresCopyOutStatement extends PostgresOperatorStatement
         finally {
             if (outputStream != null)
                 outputStream.close();
-            context.finishCursor(this, cursor, false);
+            context.finishCursor(this, cursor, nrows, false);
             unlock(context, DXLFunction.UNSPECIFIED_DML_READ, lockSuccess);
         }
         {        

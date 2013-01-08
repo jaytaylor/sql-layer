@@ -42,6 +42,7 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
     private CursorBase<?> cursor;
     private String portalName;
     private long creationTime;
+    private volatile int nrows;
     
     public PostgresBoundQueryContext(PostgresServerSession server,
                                      PostgresPreparedStatement statement,
@@ -87,7 +88,8 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
     }
 
     @Override
-    public <T extends CursorBase> boolean finishCursor(PostgresCursorGenerator<T> generator, T cursor, boolean suspended) {
+    public <T extends CursorBase> boolean finishCursor(PostgresCursorGenerator<T> generator, T cursor, int nrows, boolean suspended) {
+        this.nrows += nrows;
         if (suspended && (state != State.NORMAL)) {
             this.state = State.SUSPENDED;
             this.cursor = cursor;
@@ -95,7 +97,7 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
         }
         this.state = State.EXHAUSTED;
         this.cursor = null;
-        return super.finishCursor(generator, cursor, suspended);
+        return super.finishCursor(generator, cursor, nrows, suspended);
     }
 
     protected void close() {
@@ -131,6 +133,11 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
     @Override
     public long getCreationTimeMillis() {
         return creationTime;
+    }
+
+    @Override
+    public int getRowCount() {
+        return nrows;
     }
 
 }

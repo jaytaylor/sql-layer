@@ -57,8 +57,9 @@ public class PhysicalSelect extends BasePlannable
 
     public PhysicalSelect(Operator resultOperator, RowType rowType,
                           List<PhysicalResultColumn> resultColumns,
-                          DataTypeDescriptor[] parameterTypes) {
-        super(resultOperator, parameterTypes, rowType, resultColumns);
+                          DataTypeDescriptor[] parameterTypes,
+                          CostEstimate costEstimate) {
+        super(resultOperator, parameterTypes, rowType, resultColumns, costEstimate);
     }
 
     public Operator getResultOperator() {
