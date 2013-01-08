@@ -44,15 +44,6 @@ CREATE TABLE addresses
 CREATE INDEX "__akiban_fk_2" ON addresses(cid);
 CREATE INDEX state ON addresses(state);
 
-CREATE TABLE books
-(
-  bid int NOT NULL, 
-  name VARCHAR(50) NOT NULL, 
-  copyright YEAR, 
-  author VARCHAR(50) NOT NULL
-);
-CREATE INDEX copyright ON books(copyright,author,name);
-
 CREATE TABLE categories
 (
    cat int NOT NULL,
