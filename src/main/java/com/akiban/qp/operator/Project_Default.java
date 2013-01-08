@@ -202,6 +202,8 @@ class Project_Default extends Operator
         else
             for (TPreparedExpression ex : pExpressions)
                 att.put(Label.PROJECTION, ex.getExplainer(context));
+        if (context.hasExtraInfo(this))
+            att.putAll(context.getExtraInfo(this).get());
         return new CompoundExplainer(Type.PROJECT, att);
     }
 

@@ -71,6 +71,7 @@ public class PostgresCloseCursorStatement extends PostgresBaseCursorStatement
         return 0;
     }
     
+    @Override
     public boolean putInCache() {
         return true;
     }

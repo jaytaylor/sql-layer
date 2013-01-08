@@ -238,6 +238,7 @@ public class ServerSchemaTablesServiceImpl
                                               session.getStatementCount(),
                                               session.getCurrentStatement(),
                                               null, null,
+                                              session.getRowsProcessed() < 0 ? null : session.getRowsProcessed(),
                                               session.getCurrentStatementPreparedName(),
                                               ++rowCounter);
                 ((FromObjectValueSource)row.eval(2)).setExplicitly(session.getStartTimeMillis()/1000, AkType.TIMESTAMP);
@@ -489,6 +490,7 @@ public class ServerSchemaTablesServiceImpl
                                               preparedStatement.getName(),
                                               preparedStatement.getSQL(),
                                               null, // see below
+                                              preparedStatement.getEstimatedRowCount() < 0 ? null : preparedStatement.getEstimatedRowCount(),
                                               ++rowCounter);
                 ((FromObjectValueSource)row.eval(3)).setExplicitly(preparedStatement.getPrepareTimeMillis()/1000, AkType.TIMESTAMP);
                 return row;
@@ -539,6 +541,7 @@ public class ServerSchemaTablesServiceImpl
                                               cursor.getSQL(),
                                               cursor.getPreparedStatementName(),
                                               null, // see below
+                                              cursor.getRowCount(),
                                               ++rowCounter);
                 ((FromObjectValueSource)row.eval(4)).setExplicitly(cursor.getCreationTimeMillis()/1000, AkType.TIMESTAMP);
                 return row;
@@ -570,6 +573,7 @@ public class ServerSchemaTablesServiceImpl
             .colString("last_query_executed", PATH_MAX, true)
             .colTimestamp("query_start_time", true)
             .colTimestamp("query_end_time", true)
+            .colBigInt("query_row_count", true)
             .colString("prepared_name", IDENT_MAX, true);
         
         builder.userTable(ERROR_CODES)
@@ -604,14 +608,16 @@ public class ServerSchemaTablesServiceImpl
             .colBigInt("session_id", false)
             .colString("prepared_name", IDENT_MAX, true)
             .colString("statement", PATH_MAX, true)
-            .colTimestamp("prepare_time", true);
+            .colTimestamp("prepare_time", true)
+            .colBigInt("estimated_row_count", true);
 
         builder.userTable(SERVER_CURSORS)
             .colBigInt("session_id", false)
             .colString("cursor_name", IDENT_MAX, true)
             .colString("statement", PATH_MAX, true)
             .colString("prepared_name", IDENT_MAX, true)
-            .colTimestamp("creation_time", true);
+            .colTimestamp("creation_time", true)
+            .colBigInt("row_count", true);
 
         return builder.ais(false);
     }

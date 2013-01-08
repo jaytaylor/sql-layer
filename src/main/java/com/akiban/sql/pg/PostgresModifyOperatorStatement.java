@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.optimizer.plan.CostEstimate;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
@@ -54,6 +55,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
     private boolean requireStepIsolation = true;
     private boolean outputResult;
     private boolean putInCache = true;
+    private CostEstimate costEstimate;
 
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresBaseStatement: execute exclusive");
     private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresBaseStatement: acquire exclusive lock");
@@ -66,12 +68,14 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
     public void init(String statementType,
                      Operator resultsOperator,
                      PostgresType[] parameterTypes,
+                     CostEstimate costEstimate,
                      boolean usesPValues,
                      boolean requireStepIsolation,
                      boolean putInCache) {
         super.init(parameterTypes, usesPValues);
         this.statementType = statementType;
         this.resultOperator = resultsOperator;
+        this.costEstimate = costEstimate;
         this.requireStepIsolation = requireStepIsolation;
         outputResult = false;
         this.putInCache = putInCache;
@@ -83,12 +87,14 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
                      List<String> columnNames,
                      List<PostgresType> columnTypes,
                      PostgresType[] parameterTypes,
+                     CostEstimate costEstimate,
                      boolean usesPValues,
                      boolean requireStepIsolation,
                      boolean putInCache) {
         super.init(resultRowType, columnNames, columnTypes, parameterTypes, usesPValues);
         this.statementType = statementType;
         this.resultOperator = resultOperator;
+        this.costEstimate = costEstimate;
         this.requireStepIsolation = requireStepIsolation;
         outputResult = true;
         this.putInCache = putInCache;
@@ -212,4 +218,10 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
     {
         return ACQUIRE_LOCK_TAP;
     }
+
+    @Override
+    public CostEstimate getCostEstimate() {
+        return costEstimate;
+    }
+
 }
