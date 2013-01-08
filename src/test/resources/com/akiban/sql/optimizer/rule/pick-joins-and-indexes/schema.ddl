@@ -56,7 +56,7 @@ CREATE TABLE sources
    country CHAR(3) NOT NULL,
    sku varchar(32) NOT NULL
 );
-CREATE UNIQUE INDEX source_country ON sources(country);
+CREATE INDEX source_country ON sources(country);
 
 CREATE INDEX cname_and_sku ON customers(customers.name, items.sku) USING LEFT JOIN;
 CREATE INDEX sku_and_date ON customers(items.sku, orders.order_date) USING LEFT JOIN;

@@ -332,6 +332,21 @@ public abstract class CostEstimator implements TableRowCounts
             if (histogram.getEntries().isEmpty()) {
                 missingStats(column, index);
                 return missingStatsSelectivity();
+            } else if ((expr instanceof ColumnExpression) &&
+                       (((ColumnExpression)expr).getTable() instanceof ExpressionsSource)) {
+                // Can do better than unknown if we know some actual values.
+                // Compute the average selectivity among them.
+                ColumnExpression toColumn = (ColumnExpression)expr;
+                ExpressionsSource values = (ExpressionsSource)toColumn.getTable();
+                int position = toColumn.getPosition();
+                double sum = 0.0;
+                int count = 0;
+                for (List<ExpressionNode> row : values.getExpressions()) {
+                    sum += fractionEqual(column, index, histogram, row.get(position));
+                    count++;
+                }
+                if (count > 0) sum /= count;
+                return sum;
             } else {
                 key.clear();
                 if (usePValues())
