@@ -86,4 +86,8 @@ public interface TableStatus {
     int getTableID();
 
     void setRowCount(long rowCount);
+
+    long getApproximateUniqueID();
+
+    void setUniqueId(long value);
 }

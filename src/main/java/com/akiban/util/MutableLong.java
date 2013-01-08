@@ -47,5 +47,13 @@ public final class MutableLong {
         return Long.toString(value);
     }
 
+    public MutableLong(long value) {
+        this.value = value;
+    }
+
+    public MutableLong() {
+        this(0);
+    }
+
     public long value;
 }

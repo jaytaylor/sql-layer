@@ -27,6 +27,7 @@
 package com.akiban.server;
 
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowDef;
@@ -141,6 +142,20 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
+        public long getApproximateUniqueID() {
+            return uniqueID.getLiveValue();
+        }
+
+        @Override
+        public void setUniqueId(long value) {
+            try {
+                this.uniqueID.set(value);
+            } catch (PersistitInterruptedException e) {
+                throw new AkibanInternalException("while setting uniqueID accumulator to " + value);
+            }
+        }
+
+        @Override
         public int getTableID() {
             return expectedID;
         }
@@ -230,6 +245,16 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
 
         @Override
         public long getUniqueID() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setUniqueId(long value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public long getApproximateUniqueID() {
             throw new UnsupportedOperationException();
         }
 

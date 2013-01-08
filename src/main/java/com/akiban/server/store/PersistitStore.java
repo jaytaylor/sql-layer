@@ -239,7 +239,7 @@ public class PersistitStore implements Store, Service {
                               RowData rowData,
                               boolean insertingRow) throws PersistitException
     {
-        return constructHKey(session, hEx.getKey(), rowDef, rowData, insertingRow);
+        return constructHKey(session, hEx.getKey(), rowDef, rowData, insertingRow, null);
     }
 
     // Given a RowData for a table, construct an hkey for a row in the table.
@@ -249,7 +249,8 @@ public class PersistitStore implements Store, Service {
                               Key hKey,
                               RowDef rowDef,
                               RowData rowData,
-                              boolean insertingRow) throws PersistitException
+                              boolean insertingRow,
+                              MutableLong hiddenPk) throws PersistitException
     {
         PersistitAdapter adapter = adapter(session);
         // Initialize the hkey being constructed
@@ -310,7 +311,10 @@ public class PersistitStore implements Store, Service {
                     FieldDef fieldDef = fieldDefs[column.getPosition()];
                     if (insertingRow && column.isAkibanPKColumn()) {
                         // Must be a PK-less table. Use unique id from TableStatus.
-                        uniqueId = segmentRowDef.getTableStatus().createNewUniqueID();
+                        if (hiddenPk == null)
+                            uniqueId = segmentRowDef.getTableStatus().createNewUniqueID();
+                        else
+                            uniqueId = (++hiddenPk.value);
                         hKeyAppender.append(uniqueId);
                         // Write rowId into the value part of the row also.
                         rowData.updateNonNullLong(fieldDef, uniqueId);
@@ -506,10 +510,17 @@ public class PersistitStore implements Store, Service {
             old = bulkload.rowsByRowDef.put(rowDef, bulkload.currentMutableLong);
             assert old == null : old;
             bulkload.currentRowDef = rowDef;
+            if (rowDef.userTable().getPrimaryKey() == null) {
+                bulkload.activePk = new MutableLong(rowDef.getTableStatus().getApproximateUniqueID());
+                bulkload.hiddenPks.put(rowDef, bulkload.activePk);
+            }
+            else {
+                bulkload.activePk = null;
+            }
         }
 
         // Group table
-        constructHKey(session, bulkload.groupTableKey, rowDef, rowData, true); // will invoke key.clear()
+        constructHKey(session, bulkload.groupTableKey, rowDef, rowData, true, bulkload.activePk); // invokes key.clear()
         bulkload.groupTableValue.clear();
         packRowData(bulkload.groupTableValue, rowDef, rowData);
         try {
@@ -584,6 +595,10 @@ public class PersistitStore implements Store, Service {
                 for (Map.Entry<RowDef, MutableLong> rowCountEntry : bulkload.rowsByRowDef.entrySet()) {
                     RowDef rowDef = rowCountEntry.getKey();
                     rowDef.getTableStatus().rowsWritten(rowCountEntry.getValue().value);
+                }
+                for (Map.Entry<RowDef, MutableLong> hiddenPkEntry : bulkload.hiddenPks.entrySet()) {
+                    RowDef rowDef = hiddenPkEntry.getKey();
+                    rowDef.getTableStatus().setUniqueId(hiddenPkEntry.getValue().value);
                 }
             }
             finally {
@@ -1701,9 +1716,11 @@ public class PersistitStore implements Store, Service {
         public final AkibanInformationSchema ais;
         public final Set<RowDef> seenTables = new HashSet<RowDef>();
         public final Map<RowDef, MutableLong> rowsByRowDef = new HashMap<RowDef, MutableLong>();
+        public final Map<RowDef, MutableLong> hiddenPks = new HashMap<RowDef, MutableLong>();
         public TreeBuilderStorage currentPkBuilder;
         public RowDef currentRowDef;
         public MutableLong currentMutableLong;
+        public MutableLong activePk;
     }
 
     private abstract static class StorageAction {
