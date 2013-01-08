@@ -28,6 +28,7 @@ package com.akiban.server.service.externaldata;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CacheValueGenerator;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
@@ -36,7 +37,8 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.row.Row;
+import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
@@ -54,6 +56,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.List;
 
@@ -81,9 +84,9 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     /* ExternalDataService */
 
     @Override
-    public void writeBranchAsJson(Session session, PrintWriter writer,
-                                  String schemaName, String tableName, 
-                                  List<List<String>> keys, int depth) 
+    public void dumpBranchAsJson(Session session, PrintWriter writer,
+                                 String schemaName, String tableName, 
+                                 List<List<String>> keys, int depth) 
             throws IOException {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
         UserTable table = ais.getUserTable(schemaName, tableName);
@@ -137,6 +140,66 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
             if (transaction)
                 transactionService.rollbackTransaction(session);
         }
+    }
+
+    @Override
+    public long loadTableFromCsv(Session session, InputStream inputStream, 
+                                 CsvFormat format, long skipRows,
+                                 UserTable toTable, List<Column> toColumns,
+                                 long commitFrequency, QueryContext context) 
+            throws IOException {
+        CsvRowReader reader = new CsvRowReader(toTable, toColumns, inputStream, format,
+                                               context);
+        if (skipRows > 0)
+            reader.skipRows(skipRows);
+        return loadTableFromRowReader(session, inputStream, reader, commitFrequency);
+    }
+
+    @Override
+    public long loadTableFromMysqlDump(Session session, InputStream inputStream, 
+                                       String encoding,
+                                       UserTable toTable, List<Column> toColumns,
+                                       long commitFrequency, QueryContext context) 
+            throws IOException {
+        MysqlDumpRowReader reader = new MysqlDumpRowReader(toTable, toColumns,
+                                                           inputStream, encoding, 
+                                                           context);
+        return loadTableFromRowReader(session, inputStream, reader, commitFrequency);
+    }
+
+    protected long loadTableFromRowReader(Session session, InputStream inputStream, 
+                                          RowReader reader, long commitFrequency)
+            throws IOException {
+        DMLFunctions dml = dxlService.dmlFunctions();
+        long pending = 0, total = 0;
+        boolean transaction = false;
+        try {
+            NewRow row;
+            do {
+                row = reader.nextRow();
+                if (row != null) {
+                    logger.trace("Read row: {}", row);
+                    if (!transaction) {
+                        transactionService.beginTransaction(session);
+                        transaction = true;
+                    }
+                    dml.writeRow(session, row);
+                    total++;
+                    pending++;
+                }
+                if ((row == null) ? transaction : (pending >= commitFrequency)) {
+                    logger.debug("Committing {} rows", pending);
+                    transactionService.commitTransaction(session);
+                    transaction = false;
+                    pending = 0;
+                }
+            } while (row != null);
+        }
+        finally {
+            if (transaction)
+                transactionService.rollbackTransaction(session);
+        }
+        return total;
     }
 
     /* Service */

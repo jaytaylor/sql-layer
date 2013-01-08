@@ -33,6 +33,7 @@ import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.service.Service;
+import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
@@ -69,10 +70,11 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
                                    IndexStatisticsService indexStatisticsService,
                                    T3RegistryService overloadResolutionService,
                                    RoutineLoader routineLoader,
-                                   TransactionService txnService) {
+                                   TransactionService txnService,
+                                   ServiceManager serviceManager) {
         reqs = new ServerServiceRequirements(akServer, dxlService, monitor, 
                 sessionService, store, treeService, functionsRegistry, 
-                config, indexStatisticsService, overloadResolutionService, routineLoader, txnService);
+                config, indexStatisticsService, overloadResolutionService, routineLoader, txnService, serviceManager);
     }
 
     @Override
