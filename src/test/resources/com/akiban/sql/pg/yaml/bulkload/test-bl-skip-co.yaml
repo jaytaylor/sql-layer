@@ -5,4 +5,6 @@
 ---
 - Statement: insert into i values (511, 51, 666, 55);
 - error: [57007]
+---
+- Statement: SET bulkload='false';
 ...
