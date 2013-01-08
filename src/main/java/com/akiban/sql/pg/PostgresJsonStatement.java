@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.optimizer.plan.CostEstimate;
 import static com.akiban.sql.pg.PostgresJsonCompiler.JsonResultColumn;
 
 import com.akiban.qp.operator.Operator;
@@ -47,11 +48,12 @@ public class PostgresJsonStatement extends PostgresOperatorStatement
     public void init(Operator resultOperator, RowType resultRowType,
                      List<JsonResultColumn> resultColumns,
                      PostgresType[] parameterTypes,
+                     CostEstimate costEstimate,
                      boolean usePValues) {
         super.init(resultOperator, resultRowType,
                    // Looks like just one unlimited VARCHAR to the client.
                    jsonColumnNames(), jsonColumnTypes(),
-                   parameterTypes, usePValues);
+                   parameterTypes, costEstimate, usePValues);
         this.resultColumns = resultColumns;
     }
 

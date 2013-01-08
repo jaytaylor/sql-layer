@@ -26,6 +26,8 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.optimizer.plan.CostEstimate;
+
 import java.io.IOException;
 
 /**
@@ -76,6 +78,11 @@ public abstract class PostgresBaseCursorStatement implements PostgresStatement
     @Override
     public long getAISGeneration() {
         return 0;
+    }
+
+    @Override
+    public CostEstimate getCostEstimate() {
+        return null;
     }
 
 }

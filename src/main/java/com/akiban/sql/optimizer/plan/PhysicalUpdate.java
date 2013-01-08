@@ -50,8 +50,9 @@ public class PhysicalUpdate extends BasePlannable
                           List<PhysicalResultColumn> resultColumns,
                           boolean returning, 
                           boolean requireStepIsolation,
-                          boolean putInCache) {
-        super (resultsOperator, paramterTypes, rowType, resultColumns);
+                          boolean putInCache,
+                          CostEstimate costEstimate) {
+        super (resultsOperator, paramterTypes, rowType, resultColumns, costEstimate);
         this.requireStepIsolation = requireStepIsolation;
         this.returning = returning;
         this.putInCache = putInCache;

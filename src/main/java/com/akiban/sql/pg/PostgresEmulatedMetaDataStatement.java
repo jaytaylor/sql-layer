@@ -31,6 +31,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.sql.optimizer.plan.CostEstimate;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.server.ServerValueEncoder;
@@ -456,6 +457,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     @Override
     public boolean putInCache() {
         return false;
+    }
+
+    @Override
+    public CostEstimate getCostEstimate() {
+        return null;
     }
 
     private int odbcLoTypeQuery(PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows) {
