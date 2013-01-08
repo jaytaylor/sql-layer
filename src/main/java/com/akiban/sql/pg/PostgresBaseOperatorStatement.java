@@ -56,37 +56,8 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
         DMLStatementNode dmlStmt = (DMLStatementNode)stmt;
         PlanContext planContext = new ServerPlanContext(compiler, new PostgresQueryContext(server));
         BasePlannable result = compiler.compile(dmlStmt, params, planContext);
-
-        PostgresType[] parameterTypes = null;
-        if (result.getParameterTypes() != null) {
-            DataTypeDescriptor[] sqlTypes = result.getParameterTypes();
-            int nparams = sqlTypes.length;
-            parameterTypes = new PostgresType[nparams];
-            for (int i = 0; i < nparams; i++) {
-                PostgresType pgType = null;
-                DataTypeDescriptor sqlType = sqlTypes[i];
-                if (sqlType != null) {
-                    AkType akType = TypesTranslation.sqlTypeToAkType(sqlType);
-                    TInstance tInstance = TypesTranslation.toTInstance(sqlType);
-                    pgType = PostgresType.fromDerby(sqlType, akType, tInstance);
-                }
-                if ((paramTypes != null) && (i < paramTypes.length)) {
-                    // Make a type that has the target that the query wants, with the
-                    // OID that the client proposed to send so that we
-                    // decode it properly.
-                    PostgresType.TypeOid oid = PostgresType.TypeOid.fromOid(paramTypes[i]);
-                    if (oid != null) {
-                        if (pgType == null)
-                            pgType = new PostgresType(oid, (short)-1, -1, null, null);
-                        else
-                            pgType = new PostgresType(oid,  (short)-1, -1,
-                                                      pgType.getAkType(),
-                                                      pgType.getInstance());
-                    }
-                }
-                parameterTypes[i] = pgType;
-            }
-        }
+        PostgresType[] parameterTypes = getParameterTypes(result.getParameterTypes(),
+                                                          paramTypes);
 
         final PostgresBaseOperatorStatement pbos;
         if (result.isUpdate())
@@ -100,4 +71,38 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
         pbos.compiler = null;
         return pbos;
     }
+
+    protected PostgresType[] getParameterTypes(DataTypeDescriptor[] sqlTypes,
+                                               int[] paramTypes) {
+        if (sqlTypes == null) 
+            return null;
+        int nparams = sqlTypes.length;
+        PostgresType[] parameterTypes = new PostgresType[nparams];
+        for (int i = 0; i < nparams; i++) {
+            DataTypeDescriptor sqlType = sqlTypes[i];
+            PostgresType pgType = null;
+            if (sqlType != null) {
+                AkType akType = TypesTranslation.sqlTypeToAkType(sqlType);
+                TInstance tInstance = TypesTranslation.toTInstance(sqlType);
+                pgType = PostgresType.fromDerby(sqlType, akType, tInstance);
+            }
+            if ((paramTypes != null) && (i < paramTypes.length)) {
+                // Make a type that has the target that the query wants, with the
+                // OID that the client proposed to send so that we
+                // decode it properly.
+                PostgresType.TypeOid oid = PostgresType.TypeOid.fromOid(paramTypes[i]);
+                if (oid != null) {
+                    if (pgType == null)
+                        pgType = new PostgresType(oid, (short)-1, -1, null, null);
+                    else
+                        pgType = new PostgresType(oid,  (short)-1, -1,
+                                                  pgType.getAkType(),
+                                                  pgType.getInstance());
+                }
+            }
+            parameterTypes[i] = pgType;
+        }
+        return parameterTypes;
+    }
+
 }

@@ -39,6 +39,7 @@ import com.akiban.server.error.TransactionAbortedException;
 import com.akiban.server.error.TransactionInProgressException;
 import com.akiban.server.error.TransactionReadOnlyException;
 import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.externaldata.ExternalDataService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.monitor.SessionMonitor;
 import com.akiban.server.service.routines.RoutineLoader;
@@ -272,6 +273,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     @Override
     public RoutineLoader getRoutineLoader() {
         return reqs.routineLoader();
+    }
+
+    @Override
+    public ExternalDataService getExternalDataService() {
+        return reqs.externalData();
     }
 
     @Override

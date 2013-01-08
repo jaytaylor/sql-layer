@@ -122,3 +122,4 @@ geospatial-3: covering spatial index
 
 geospatial-4: two spatial indexes considered for intersection
 
+index-is-null: IS NULL condition
