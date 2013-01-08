@@ -1,7 +1,8 @@
 ---
 - CreateTable: c(cid int not null primary key, name varchar(32), dob DATE);
 ---
-- CreateTable: a(aid int not null primary key, cid int, address varchar(64),
+# Note: no PK on a
+- CreateTable: a(aid int, cid int, address varchar(64),
              grouping foreign key (cid) references c(cid));
 ---
 - CreateTable: o(oid int not null primary key, cid int, when DATE,
@@ -9,6 +10,4 @@
 ---
 - CreateTable: i(iid int not null primary key, oid int, sku int, quant int,
              grouping foreign key (oid) references o(oid));
----
-- Statement: SET bulkload='true';
 ...

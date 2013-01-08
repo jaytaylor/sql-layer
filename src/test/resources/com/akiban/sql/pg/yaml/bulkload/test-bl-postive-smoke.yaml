@@ -5,6 +5,8 @@
 ---
 - Statement: create index sku_idx on i (sku);
 ---
+- Statement: SET bulkload='true';
+---
 - Statement: insert into c values (1, 'one', '1999-01-01');
 ---
 - Statement: insert into c values (2, 'two', '1999-01-02'), (3, 'three', '1999-01-03');

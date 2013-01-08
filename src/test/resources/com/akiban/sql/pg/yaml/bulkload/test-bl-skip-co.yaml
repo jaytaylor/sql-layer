@@ -1,6 +1,8 @@
 ---
 - Include: caoi.yaml
 ---
+- Statement: SET bulkload='true';
+---
 - Statement: insert into i values (511, 51, 666, 55);
 - error: [57007]
 ...
