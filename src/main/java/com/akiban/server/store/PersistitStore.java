@@ -60,6 +60,9 @@ import com.akiban.util.MutableLong;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.persistit.*;
 import com.persistit.Management.DisplayFilter;
 import com.persistit.encoding.CoderManager;
@@ -67,6 +70,8 @@ import com.persistit.exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -136,6 +141,8 @@ public class PersistitStore implements Store, Service {
             exchange.store();
         }
     };
+
+    private volatile List<File> treeBuilderDirs;
     
     public PersistitStore(boolean updateGroupIndexes, TreeService treeService, ConfigurationService config,
                           SchemaManager schemaManager, LockService lockService, TransactionService transactionService) {
@@ -160,6 +167,20 @@ public class PersistitStore implements Store, Service {
         } catch (RemoteException e) {
             throw new DisplayFilterSetException (e.getMessage());
         }
+        String tbConfigString = config.getProperty("akserver.bulkload.tmpdirs").trim();
+        if (!tbConfigString.isEmpty())
+            treeBuilderDirs = ImmutableList.copyOf(Lists.transform(
+                    Arrays.asList(tbConfigString.split(File.pathSeparator)),
+                    new Function<String, File>() {
+                        @Override
+                        public File apply(String input) {
+                            File file = new File(input);
+                            if (!file.isDirectory() && file.canWrite())
+                                throw new AkibanInternalException(file + " is not a directory with write access");
+                            return file;
+                        }
+                    }
+            ));
     }
 
     @Override
@@ -1647,7 +1668,19 @@ public class PersistitStore implements Store, Service {
         return !table.getCandidateChildJoins().isEmpty();
     }
 
-    private static class Bulkload {
+    private TreeBuilder createTreeBuilder() {
+        TreeBuilder tb = new TreeBuilder(getDb());
+        if (treeBuilderDirs != null) {
+            try {
+                tb.setSortTreeDirectories(treeBuilderDirs);
+            } catch (IOException e) {
+                throw new AkibanInternalException("while creating TreeBuilder", e);
+            }
+        }
+        return tb;
+    }
+
+    private class Bulkload {
 
         Bulkload(Persistit persistit, AkibanInformationSchema ais) {
             this.persistit = persistit;
@@ -1655,7 +1688,7 @@ public class PersistitStore implements Store, Service {
             groupTableValue = new Value(persistit);
             pkStorageByRowDef = new HashMap<RowDef, TreeBuilderStorage>();
             secondaryIndexStorage = new TreeBuilderStorage(persistit);
-            groupBuilder = new TreeBuilder(persistit);
+            groupBuilder = createTreeBuilder();
             this.ais = ais;
         }
 
@@ -1691,14 +1724,14 @@ public class PersistitStore implements Store, Service {
         protected abstract void doStore(Exchange exchange) throws Exception;
     }
 
-    private static class TreeBuilderStorage extends StorageAction {
+    private class TreeBuilderStorage extends StorageAction {
         @Override
         public void doStore(Exchange exchange) throws Exception {
             treeBuilder.store(exchange);
         }
 
         private TreeBuilderStorage(Persistit persistit) {
-            this.treeBuilder = new TreeBuilder(persistit);
+            this.treeBuilder = createTreeBuilder();
         }
 
         private final TreeBuilder treeBuilder;
