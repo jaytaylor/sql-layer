@@ -215,26 +215,20 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             return null;
         ColumnExpression column = null;
         ComparisonCondition ccond = null;
-        if (joins.size() == 1) {
-            JoinOperator join = joins.iterator().next();
-            if ((join.getJoinConditions() != null) &&
-                (join.getJoinConditions().size() == 1)) {
-                ConditionExpression joinCondition = join.getJoinConditions().get(0);
-                if (joinCondition instanceof ComparisonCondition) {
-                    ccond = (ComparisonCondition)joinCondition;
-                    if ((ccond.getOperation() == Comparison.EQ) &&
-                        (ccond.getLeft() instanceof ColumnExpression) &&
-                        (ccond.getRight() instanceof ColumnExpression)) {
-                        ColumnExpression lcol = (ColumnExpression)ccond.getLeft();
-                        ColumnExpression rcol = (ColumnExpression)ccond.getRight();
-                        if ((rcol.getTable() == values) &&
-                            (rcol.getPosition() == 0)) {
-                            for (TableGroupJoinNode table : tables) {
-                                if (table.getTable() == lcol.getTable()) {
-                                    column = lcol;
-                                    break;
-                                }
-                            }
+        ConditionExpression joinCondition = onlyJoinCondition(joins);
+        if (joinCondition instanceof ComparisonCondition) {
+            ccond = (ComparisonCondition)joinCondition;
+            if ((ccond.getOperation() == Comparison.EQ) &&
+                (ccond.getLeft() instanceof ColumnExpression) &&
+                (ccond.getRight() instanceof ColumnExpression)) {
+                ColumnExpression lcol = (ColumnExpression)ccond.getLeft();
+                ColumnExpression rcol = (ColumnExpression)ccond.getRight();
+                if ((rcol.getTable() == values) &&
+                    (rcol.getPosition() == 0)) {
+                    for (TableGroupJoinNode table : tables) {
+                        if (table.getTable() == lcol.getTable()) {
+                            column = lcol;
+                            break;
                         }
                     }
                 }
@@ -253,6 +247,21 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             cond.setPreptimeValue(new TPreptimeValue(AkBool.INSTANCE.instance(true)));
         }
         return cond;
+    }
+
+    protected ConditionExpression onlyJoinCondition(Collection<JoinOperator> joins) {
+        ConditionExpression result = null;
+        for (JoinOperator join : joins) {
+            if (join.getJoinConditions() != null) {
+                for (ConditionExpression cond : join.getJoinConditions()) {
+                    if (result == null)
+                        result = cond;
+                    else 
+                        return null;
+                }
+            }
+        }
+        return result;
     }
 
     /** Populate given index usage according to goal.
