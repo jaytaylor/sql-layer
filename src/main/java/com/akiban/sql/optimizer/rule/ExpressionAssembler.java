@@ -92,7 +92,7 @@ abstract class ExpressionAssembler<T extends Explainable> {
     protected abstract T compare(T left, ComparisonCondition comparison, T right);
     protected abstract T collate(T left, Comparison comparison, T right, AkCollator collator);
     protected abstract AkCollator collator(ComparisonCondition cond, T left, T right);
-    protected abstract T in(T lhs, List<T> rhs);
+    protected abstract T in(T lhs, List<T> rhs, InListCondition inList);
     protected abstract T assembleFieldExpression(RowType rowType, int fieldIndex);
     protected abstract T assembleBoundFieldExpression(RowType rowType, int rowIndex, int fieldIndex);
     protected abstract T assembleRoutine(ExpressionNode routineNode, 
@@ -155,7 +155,7 @@ abstract class ExpressionAssembler<T extends Explainable> {
                     columnContext, subqueryAssembler);
             List<T> rhs = assembleExpressions(inList.getExpressions(),
                     columnContext, subqueryAssembler);
-            return in(lhs, rhs);
+            return in(lhs, rhs, inList);
         }
         else if (node instanceof RoutineExpression) {
             RoutineExpression routineNode = (RoutineExpression)node;

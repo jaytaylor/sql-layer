@@ -1,0 +1,18 @@
+SelectQuery@2acd15f4
+  ResultSet@7e5c5c1f[cid]
+    MapJoin@6dca323d()
+      SingleIndexScan@75a87b1a(Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740)
+      MapJoin@82a244f()
+        MapJoin@6b5c2b9()
+          Select@7030320[c3.name == c2.name]
+            SingleIndexScan@56c22d78(Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740)
+          NullIfEmpty@66374dc7
+            Select@4663a6c1[]
+              MapJoin@38d3783e()
+                SingleIndexScan@437b4b97(Index(test.customers.name[IndexColumn(name)]), covering/NONE, =c2.name, rows = 1, cost = 6.04220)
+                Project@539fc91d[c5.name, c1.cid]
+                  SingleIndexScan@1f4cb9cf(Index(test.customers.name[IndexColumn(name)]), covering/NONE, =c2.name, rows = 1, cost = 6.04220)
+        Project@61a43808[c1.cid]
+          Select@645ac74c[]
+            Limit@663ad516(LIMIT 1)
+              SingleIndexScan@207bcbc9(Index(test.customers.name[IndexColumn(name)]), covering/NONE, =c5.name, rows = 1, cost = 6.04220)

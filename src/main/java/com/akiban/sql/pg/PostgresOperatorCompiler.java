@@ -171,6 +171,7 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
                         update.getResultRowType(),
                         columnNames, columnTypes,
                         parameterTypes,
+                        update.getCostEstimate(),
                         usesPValues(),
                         update.isRequireStepIsolation(),
                         update.putInCache());
@@ -178,6 +179,7 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
             pmstmt.init(statementType,
                         (Operator)update.getPlannable(),
                         parameterTypes,
+                        update.getCostEstimate(),
                         usesPValues(),
                         update.isRequireStepIsolation(),
                         update.putInCache());
@@ -206,6 +208,7 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
                     select.getResultRowType(),
                     columnNames, columnTypes,
                     parameterTypes,
+                    select.getCostEstimate(),
                     usesPValues());
         return postmt;
     }

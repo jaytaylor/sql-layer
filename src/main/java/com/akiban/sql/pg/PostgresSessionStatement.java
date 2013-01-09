@@ -30,6 +30,7 @@ import com.akiban.server.error.NoSuchSchemaException;
 import com.akiban.server.error.UnsupportedConfigurationException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.aisddl.SchemaDDL;
+import com.akiban.sql.optimizer.plan.CostEstimate;
 import com.akiban.sql.parser.AccessMode;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.SetConfigurationNode;
@@ -152,6 +153,11 @@ public class PostgresSessionStatement implements PostgresStatement
     @Override
     public boolean putInCache() {
         return false;
+    }
+
+    @Override
+    public CostEstimate getCostEstimate() {
+        return null;
     }
 
     protected void doOperation(PostgresServerSession server) {

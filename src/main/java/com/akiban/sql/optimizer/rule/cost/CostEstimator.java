@@ -329,7 +329,7 @@ public abstract class CostEstimator implements TableRowCounts
             return missingStatsSelectivity();
         } else {
             long indexStatsSampledCount = histogram.getIndexStatistics().getSampledCount();
-            if ((histogram == null) || histogram.getEntries().isEmpty()) {
+            if (histogram.getEntries().isEmpty()) {
                 missingStats(column, index);
                 return missingStatsSelectivity();
             } else {
@@ -522,7 +522,7 @@ public abstract class CostEstimator implements TableRowCounts
     
     protected boolean isConstant(ExpressionNode node)
     {
-        return node instanceof ConstantExpression;
+        return node.isConstant();
     }
 
     protected boolean encodeKeyValue(ExpressionNode node, Index index, int column) {
@@ -536,6 +536,10 @@ public abstract class CostEstimator implements TableRowCounts
                     }
                     pvalue = node.getPreptimeValue().value();
                 }
+            }
+            else if (node instanceof IsNullIndexKey) {
+                keyPTarget.putNull();
+                return true;
             }
             if (pvalue == null)
                 return false;
@@ -565,6 +569,10 @@ public abstract class CostEstimator implements TableRowCounts
                 else
                     expr = Expressions.literal(((ConstantExpression)node).getValue(),
                                                node.getAkType());
+            }
+            else if (node instanceof IsNullIndexKey) {
+                keyTarget.putNull();
+                return true;
             }
             if (expr == null)
                 return false;
@@ -911,7 +919,7 @@ public abstract class CostEstimator implements TableRowCounts
             Column column = entry.getKey().getColumn();
             // Find a TableIndex whose first column is leadingColumn
             for (TableIndex tableIndex : column.getTable().getIndexes()) {
-                if (tableIndex.getKeyColumns().get(0).getColumn() == column) {
+                if (!tableIndex.isSpatial() && tableIndex.getKeyColumns().get(0).getColumn() == column) {
                     indexStatistics = getIndexStatistics(tableIndex);
                     if (indexStatistics != null) {
                         index = tableIndex;
@@ -923,7 +931,7 @@ public abstract class CostEstimator implements TableRowCounts
             if (indexStatistics == null) {
                 groupLoop: for (Group group : schema.ais().getGroups().values()) {
                     for (GroupIndex groupIndex : group.getIndexes()) {
-                        if (groupIndex.getKeyColumns().get(0).getColumn() == column) {
+                        if (!groupIndex.isSpatial() && groupIndex.getKeyColumns().get(0).getColumn() == column) {
                             indexStatistics = getIndexStatistics(groupIndex);
                             if (indexStatistics != null) {
                                 index = groupIndex;
@@ -1079,7 +1087,7 @@ public abstract class CostEstimator implements TableRowCounts
     protected void missingStats(Column column, Index index) {
         if (warningsEnabled) {
             if (index == null) {
-                logger.warn("No single column index for {}.{}; cost estimates will not be accurate", column.getTable().getName(), column.getName());
+                logger.warn("No statistics for {}.{}; cost estimates will not be accurate", column.getTable().getName(), column.getName());
             }
             else if (index.isTableIndex()) {
                 Table table = ((TableIndex)index).getTable();

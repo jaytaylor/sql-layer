@@ -50,7 +50,7 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
                                        boolean usesPValues)
     {
         super(null);
-        super.init(loadableOperator.plan(), null, columnNames, columnTypes, parameterTypes, usesPValues);
+        super.init(loadableOperator.plan(), null, columnNames, columnTypes, parameterTypes, null, usesPValues);
         this.invocation = invocation;
     }
     
