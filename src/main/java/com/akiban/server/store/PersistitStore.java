@@ -526,6 +526,8 @@ public class PersistitStore implements Store, Service {
         try {
             Tree tree = rowDef.getGroup().getTreeCache().getTree();
             bulkload.groupBuilder.store(tree, bulkload.groupTableKey, bulkload.groupTableValue);
+        } catch (InvalidOperationException e) {
+            throw e;
         } catch (Exception e) {
             LOG.error("while merging PKs", e);
             throw new BulkloadException("unknown exception (see log): " + e.getMessage());
@@ -604,6 +606,8 @@ public class PersistitStore implements Store, Service {
             finally {
                 transactionService.commitTransaction(session);
             }
+        } catch (InvalidOperationException e) {
+            throw e;
         } catch (Exception e) {
             LOG.error("while merging TreeBuilders", e);
             throw new BulkloadException("while finishing bulkloading: " + e);
@@ -1684,7 +1688,14 @@ public class PersistitStore implements Store, Service {
     }
 
     private TreeBuilder createTreeBuilder() {
-        TreeBuilder tb = new TreeBuilder(getDb());
+        TreeBuilder tb = new TreeBuilder(getDb())
+//        // TODO: throw an Akiban dup-key exception once we can handle them
+        {
+            @Override
+            protected boolean duplicateKeyDetected(Tree tree, Key key, Value v1, Value v2) throws Exception {
+                throw new DuplicateKeyException("unknown index with tree<" + tree.getName() + ">", key);
+            }
+        };
         if (treeBuilderDirs != null) {
             try {
                 tb.setSortTreeDirectories(treeBuilderDirs);
@@ -1728,6 +1739,9 @@ public class PersistitStore implements Store, Service {
         public void store(Exchange exchange) {
             try {
                 doStore(exchange);
+            }
+            catch (InvalidOperationException e) {
+                throw e;
             }
             catch (PersistitException e) {
                 throw new PersistitAdapterException(e);

@@ -3,7 +3,7 @@
 ---
 - Statement: create index index_idx on c (name);
 ---
-- Statement: create index sku_idx on i (sku);
+- Statement: create unique index sku_idx on i (sku);
 ---
 - Statement: SET bulkload='true';
 ---
@@ -24,6 +24,16 @@
 ---
 # item orphan
 - Statement: insert into i values (511, 51, 666, 55);
+---
+# Duplicate key on insert (shouldn't affect anything else)
+- Message: skipping duplicate key exceptions on BL (for unique index)
+#- Statement: insert into i values (611, 61, 666, 77)
+#- error: [23501]
+---
+# Duplicate PK on insert (shouldn't affect anything else)
+- Message: skipping duplicate key exceptions on BL (for pk)
+#- Statement: insert into i values (211, 21, 987, 99)
+#- error: [23501]
 ---
 - Statement: SET bulkload='false';
 ---
