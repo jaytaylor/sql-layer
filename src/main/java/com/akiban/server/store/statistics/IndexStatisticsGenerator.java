@@ -33,6 +33,7 @@ import com.akiban.server.store.statistics.histograms.Sampler;
 import com.akiban.server.store.statistics.histograms.Splitter;
 import com.akiban.util.Flywheel;
 import com.persistit.Key;
+import com.persistit.Value;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -99,16 +100,18 @@ abstract class IndexStatisticsGenerator
         private Flywheel<Key> keysFlywheel;
     }
     
-    public void init(long distinctCount) {
+    public void init(int bucketCount, long distinctCount) {
         this.keySampler =
             new Sampler<Key>(new KeySplitter(columnCount, keysFlywheel),
-                             PersistitIndexStatisticsVisitor.BUCKETS_COUNT,
+                             bucketCount,
                              distinctCount,
                              keysFlywheel);
         keySampler.init();
     }
 
-    public void finish() {
+    public abstract void visit(Key key, Value value);
+
+    public void finish(int bucketCount) {
         keySampler.finish();
     }
 

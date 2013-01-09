@@ -262,7 +262,7 @@ public final class IndexHistogramsIT extends ITBase {
     public void edgeAnalysis() {
         int cTable = getUserTable(SCHEMA, "customers").getTableId();
         int oTable = getUserTable(SCHEMA, "orders").getTableId();
-        int maxCid = PersistitIndexStatisticsVisitor.BUCKETS_COUNT * Sampler.OVERSAMPLE_FACTOR;
+        int maxCid = bucketCount() * Sampler.OVERSAMPLE_FACTOR;
         insertRows(cTable, oTable, CUSTOMERS_COUNT, maxCid);
         validateHistogram("customers", PK, 1, 
                           entry("{\"0000\"}", 1, 0, 0),
@@ -303,7 +303,7 @@ public final class IndexHistogramsIT extends ITBase {
     public void largeAnalysis() {
         int cTable = getUserTable(SCHEMA, "customers").getTableId();
         int oTable = getUserTable(SCHEMA, "orders").getTableId();
-        int maxCid = PersistitIndexStatisticsVisitor.BUCKETS_COUNT * Sampler.OVERSAMPLE_FACTOR+1;
+        int maxCid = bucketCount() * Sampler.OVERSAMPLE_FACTOR+1;
         insertRows(cTable, oTable, CUSTOMERS_COUNT, maxCid);
         validateHistogram("customers", PK, 1,
                           entry("{\"0000\"}", 1, 0, 0),
@@ -345,7 +345,7 @@ public final class IndexHistogramsIT extends ITBase {
         int cTable = getUserTable(SCHEMA, "customers").getTableId();
         int oTable = getUserTable(SCHEMA, "orders").getTableId();
         double interval = 2.02;
-        double oversamples = PersistitIndexStatisticsVisitor.BUCKETS_COUNT * Sampler.OVERSAMPLE_FACTOR;
+        double oversamples = bucketCount() * Sampler.OVERSAMPLE_FACTOR;
         int maxCid = (int) Math.round(interval * oversamples);
         insertRows(cTable, oTable, CUSTOMERS_COUNT, maxCid);
 
@@ -473,6 +473,10 @@ public final class IndexHistogramsIT extends ITBase {
     private HistogramEntryDescription entry(String keyString, long equalCount, long lessCount,
                                                             long distinctCount) {
         return new HistogramEntryDescription(keyString, equalCount, lessCount, distinctCount);
+    }
+
+    private int bucketCount() {
+        return PersistitStoreIndexStatistics.bucketCount(configService());
     }
 
     private GroupIndex namePlacedGi;
