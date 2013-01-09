@@ -171,6 +171,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                                           RowReader reader, long commitFrequency)
             throws IOException {
         DMLFunctions dml = dxlService.dmlFunctions();
+        boolean bulkload = store.isBulkloading();
         long pending = 0, total = 0;
         boolean transaction = false;
         try {
@@ -179,7 +180,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                 row = reader.nextRow();
                 if (row != null) {
                     logger.trace("Read row: {}", row);
-                    if (!transaction) {
+                    if (!transaction && !bulkload) {
                         transactionService.beginTransaction(session);
                         transaction = true;
                     }

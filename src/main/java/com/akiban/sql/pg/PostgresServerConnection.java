@@ -696,6 +696,9 @@ public class PostgresServerConnection extends ServerSessionBase
                     return;
             }
         }
+        else if (pstmt instanceof PostgresCopyInStatement) {
+            return;
+        }
         throw new BulkloadException("operation is not permitted while bulkloading");
     }
 
