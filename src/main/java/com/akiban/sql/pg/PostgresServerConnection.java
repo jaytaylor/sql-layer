@@ -873,6 +873,7 @@ public class PostgresServerConnection extends ServerSessionBase
         if (context == null)
             throw new NoSuchCursorException(portalName);
         PostgresPreparedStatement pstmt = context.getStatement();
+        checkStatementIsAllowed(pstmt.getStatement());
         sessionMonitor.startStatement(pstmt.getSQL(), pstmt.getName(), startTime);
         int rowsProcessed = executeStatementWithAutoTxn(pstmt.getStatement(), context, maxrows);
         sessionMonitor.endStatement(rowsProcessed);
