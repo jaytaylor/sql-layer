@@ -1,0 +1,29 @@
+---
+- CreateTable: t(id int)
+---
+- Statement: SET bulkload='TrUE';
+---
+
+# DML
+- Statement: SELECT * FROM t
+- error: [57007]
+---
+- Statement: SELECT * FROM information_schema.tables
+- error: [57007]
+---
+- Statement: update t set id = 0
+- error: [57007]
+---
+- Statement: delete from t
+- error: [57007]
+---
+
+# DDL
+- Statement: create index idx_foo on t(id)
+- error: [57007]
+---
+- Statement: drop table t
+- error: [57007]
+---
+- Statement: SET bulkload='false'
+...

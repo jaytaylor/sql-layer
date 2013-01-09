@@ -733,6 +733,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 sessionMonitor.leaveStage();
             }
             pstmt = generateStatementStub(sql, stmt, params, paramTypes);
+            checkStatementIsAllowed(pstmt);
             ServerTransaction local = beforeExecute(pstmt);
             boolean success = false;
             try {
