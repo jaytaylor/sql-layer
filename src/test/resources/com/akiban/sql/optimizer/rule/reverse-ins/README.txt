@@ -18,6 +18,8 @@ two-groups: Product join with IN.
 
 use-index: IN uses group index.
 
+use-index-no-union: IN uses group index without union.
+
 use-index-row: row value IN uses group index.
 
 not-exists: NOT EXISTS to anti-join.

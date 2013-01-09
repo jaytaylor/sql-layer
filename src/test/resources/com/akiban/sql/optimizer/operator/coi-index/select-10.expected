@@ -1,8 +1,5 @@
 PhysicalSelect[oid:int[INT], sku:varchar(32)[VARCHAR], quan:int[INT]]
-  Map_NestedLoops()
-    AncestorLookup_Default(Index(items.sku) -> items)
-      IndexScan_Default(Index(items.sku), sku ASC, orders.cid, oid, iid)
-    Project_Default(items.oid, items.sku, items.quan)
-      Limit_Default(1)
-        Select_HKeyOrdered(items.quan == Field(0))
-          ValuesScan_Default([100], [200], [300])
+  Project_Default(items.oid, items.sku, items.quan)
+    Select_HKeyOrdered(in(items.quan, 100, 200, 300))
+      AncestorLookup_Default(Index(items.sku) -> items)
+        IndexScan_Default(Index(items.sku), sku ASC, orders.cid, oid, iid)

@@ -116,6 +116,11 @@ public final class TInExpression {
         public TOverloadResult resultType() {
             return TOverloadResult.fixed(AkBool.INSTANCE);
         }
+
+        @Override
+        protected boolean nullContaminates(int inputIndex) {
+            return (inputIndex == 0);
+        }
     }
 
     private static final TValidatedScalar noKey = new TValidatedScalar(new InScalarBase() {
