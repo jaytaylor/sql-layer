@@ -25,5 +25,12 @@
 - Statement: drop table t
 - error: [57007]
 ---
+
+# Other
+- Statement: SET newtypes='false'
+- error: [57007]
+---
+
+# Done!
 - Statement: SET bulkload='false'
 ...
