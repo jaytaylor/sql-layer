@@ -546,7 +546,7 @@ public class PersistitStore implements Store, Service {
         RowDef rowDataParent = rowDef.getParentRowDef();
         if (rowDataParent == null)
             // This is the root, so check that the group has no GIs
-            checkNoGIs(rowDef);
+            checkNoGIsInGroup(rowDef);
         else if (!bulkload.seenTables.contains(rowDataParent))
             // This is not the root, so check that its parent has been loaded
             throw new BulkloadException( "can't load " + rowDef.userTable() + " because parent "
@@ -555,13 +555,13 @@ public class PersistitStore implements Store, Service {
             throw new BulkloadException("table " + rowDef.userTable() + " has already finished bulkloading");
     }
 
-    private void checkNoGIs(RowDef rowDef) {
+    private void checkNoGIsInGroup(RowDef rowDef) {
         GroupIndex[] gis = rowDef.getGroupIndexes();
         if (gis.length > 0)
             throw new BulkloadException("can't bulk load with group indexes: " + Arrays.toString(gis));
         UserTable userTable = rowDef.userTable();
         for (Join childJoin : userTable.getChildJoins())
-            checkNoGIs(childJoin.getChild().rowDef());
+            checkNoGIsInGroup(childJoin.getChild().rowDef());
     }
 
     @Override
