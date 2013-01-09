@@ -70,6 +70,11 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
+    protected Store getUnderlyingStore() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Cursor newIndexCursor(QueryContext context, Index index,
             IndexKeyRange keyRange, Ordering ordering,
             IndexScanSelector scanSelector, boolean usePValues) {
@@ -133,10 +138,5 @@ public class MemoryAdapter extends StoreAdapter {
             collator == null
             ? valueSource.getString().hashCode()
             : collator.hashCode(valueSource.getString());
-    }
-
-    @Override
-    protected Store getUnderlyingStore() {
-        throw new UnsupportedOperationException();
     }
 }
