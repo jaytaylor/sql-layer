@@ -197,7 +197,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
         
         messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
         //TODO: Find a way to extract InsertNode#statementToString() or equivalent
-        if (statementType.equals("INSERT")) {
+        if (isInsert()) {
             messenger.writeString(statementType + " 0 " + rowsModified);
         } else {
             messenger.writeString(statementType + " " + rowsModified);

@@ -151,7 +151,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             try {
                 this.uniqueID.set(value);
             } catch (PersistitInterruptedException e) {
-                throw new AkibanInternalException("while setting uniqueID accumulator to " + value);
+                throw new PersistitAdapterException(e);
             }
         }
 
