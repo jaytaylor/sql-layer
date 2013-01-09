@@ -56,7 +56,6 @@ import com.akiban.server.store.statistics.Histogram;
 import com.akiban.server.store.statistics.HistogramEntry;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsService;
-import com.akiban.util.MutableLong;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
@@ -74,6 +73,7 @@ import java.io.File;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class PersistitStore implements Store, Service {
@@ -250,7 +250,7 @@ public class PersistitStore implements Store, Service {
                               RowDef rowDef,
                               RowData rowData,
                               boolean insertingRow,
-                              MutableLong hiddenPk) throws PersistitException
+                              AtomicLong hiddenPk) throws PersistitException
     {
         PersistitAdapter adapter = adapter(session);
         // Initialize the hkey being constructed
@@ -314,7 +314,7 @@ public class PersistitStore implements Store, Service {
                         if (hiddenPk == null)
                             uniqueId = segmentRowDef.getTableStatus().createNewUniqueID();
                         else
-                            uniqueId = (++hiddenPk.value);
+                            uniqueId = hiddenPk.incrementAndGet();
                         hKeyAppender.append(uniqueId);
                         // Write rowId into the value part of the row also.
                         rowData.updateNonNullLong(fieldDef, uniqueId);
@@ -503,7 +503,7 @@ public class PersistitStore implements Store, Service {
                 LOG.error("while merging PKs", e);
                 throw new BulkloadException("unknown exception (see log): " + e.getMessage());
             }
-            bulkload.currentMutableLong = new MutableLong();
+            bulkload.currentMutableLong = new AtomicLong();
             bulkload.currentPkBuilder = new TreeBuilderStorage(bulkload.persistit);
             Object old = bulkload.pkStorageByRowDef.put(rowDef, bulkload.currentPkBuilder);
             assert old == null : old;
@@ -511,7 +511,7 @@ public class PersistitStore implements Store, Service {
             assert old == null : old;
             bulkload.currentRowDef = rowDef;
             if (rowDef.userTable().getPrimaryKey() == null) {
-                bulkload.activePk = new MutableLong(rowDef.getTableStatus().getApproximateUniqueID());
+                bulkload.activePk = new AtomicLong(rowDef.getTableStatus().getApproximateUniqueID());
                 bulkload.hiddenPks.put(rowDef, bulkload.activePk);
             }
             else {
@@ -539,7 +539,7 @@ public class PersistitStore implements Store, Service {
             insertIntoIndex(session, index, rowData, bulkload.groupTableKey, indexRow, deferIndexes, action);
         }
 
-        bulkload.currentMutableLong.value++;
+        bulkload.currentMutableLong.incrementAndGet();
     }
 
     private void validateRowDefForBulk(Bulkload bulkload, RowDef rowDef) {
@@ -594,13 +594,13 @@ public class PersistitStore implements Store, Service {
             bulkload.groupBuilder.merge();
             transactionService.beginTransaction(session);
             try {
-                for (Map.Entry<RowDef, MutableLong> rowCountEntry : bulkload.rowsByRowDef.entrySet()) {
+                for (Map.Entry<RowDef, AtomicLong> rowCountEntry : bulkload.rowsByRowDef.entrySet()) {
                     RowDef rowDef = rowCountEntry.getKey();
-                    rowDef.getTableStatus().rowsWritten(rowCountEntry.getValue().value);
+                    rowDef.getTableStatus().rowsWritten(rowCountEntry.getValue().get());
                 }
-                for (Map.Entry<RowDef, MutableLong> hiddenPkEntry : bulkload.hiddenPks.entrySet()) {
+                for (Map.Entry<RowDef, AtomicLong> hiddenPkEntry : bulkload.hiddenPks.entrySet()) {
                     RowDef rowDef = hiddenPkEntry.getKey();
-                    rowDef.getTableStatus().setUniqueId(hiddenPkEntry.getValue().value);
+                    rowDef.getTableStatus().setUniqueId(hiddenPkEntry.getValue().get());
                 }
             }
             finally {
@@ -1712,7 +1712,7 @@ public class PersistitStore implements Store, Service {
             this.persistit = persistit;
             groupTableKey = new Key(persistit);
             groupTableValue = new Value(persistit);
-            pkStorageByRowDef = new HashMap<RowDef, TreeBuilderStorage>();
+            pkStorageByRowDef = Collections.synchronizedMap(new HashMap<RowDef, TreeBuilderStorage>());
             secondaryIndexStorage = new TreeBuilderStorage(persistit);
             groupBuilder = createTreeBuilder();
             this.ais = ais;
@@ -1726,12 +1726,14 @@ public class PersistitStore implements Store, Service {
         public final Value groupTableValue;
         public final AkibanInformationSchema ais;
         public final Set<RowDef> seenTables = new HashSet<RowDef>();
-        public final Map<RowDef, MutableLong> rowsByRowDef = new HashMap<RowDef, MutableLong>();
-        public final Map<RowDef, MutableLong> hiddenPks = new HashMap<RowDef, MutableLong>();
-        public TreeBuilderStorage currentPkBuilder;
-        public RowDef currentRowDef;
-        public MutableLong currentMutableLong;
-        public MutableLong activePk;
+        public final Map<RowDef, AtomicLong> rowsByRowDef =
+                Collections.synchronizedMap(new HashMap<RowDef, AtomicLong>());
+        public final Map<RowDef, AtomicLong> hiddenPks =
+                Collections.synchronizedMap(new HashMap<RowDef, AtomicLong>());
+        public volatile TreeBuilderStorage currentPkBuilder;
+        public volatile RowDef currentRowDef;
+        public volatile AtomicLong currentMutableLong;
+        public volatile AtomicLong activePk;
     }
 
     private abstract static class StorageAction {
