@@ -173,17 +173,19 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         INSERT_TOTAL.in();
         INSERT_MAINTENANCE.in();
         try {
-            super.writeRow(session, rowData);
             if (!isBulkloading()) {
                 AkibanInformationSchema ais = schemaManager.getAis(session);
                 PersistitAdapter adapter = createAdapter(ais, session);
                 UserTable uTable = ais.getUserTable(rowData.getRowDefId());
+                super.writeRow(session, rowData);
                 maintainGroupIndexes(session,
                                      ais,
                                      adapter,
                                      rowData, null,
                                      OperatorStoreGIHandler.forTable(adapter, uTable),
                                      OperatorStoreGIHandler.Action.STORE);
+            } else {
+                super.writeRow(session, rowData);
             }
         } finally {
             INSERT_MAINTENANCE.out();
