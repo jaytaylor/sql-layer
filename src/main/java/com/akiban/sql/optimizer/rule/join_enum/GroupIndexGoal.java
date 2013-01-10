@@ -213,43 +213,32 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                                             Collection<JoinOperator> joins) {
         if (values.nFields() != 1) 
             return null;
-        ColumnExpression column = null;
         ComparisonCondition ccond = null;
+        boolean found = false;
         ConditionExpression joinCondition = onlyJoinCondition(joins);
         if (joinCondition instanceof ComparisonCondition) {
             ccond = (ComparisonCondition)joinCondition;
             if ((ccond.getOperation() == Comparison.EQ) &&
-                (ccond.getLeft() instanceof ColumnExpression) &&
                 (ccond.getRight() instanceof ColumnExpression)) {
-                ColumnExpression lcol = (ColumnExpression)ccond.getLeft();
                 ColumnExpression rcol = (ColumnExpression)ccond.getRight();
                 if ((rcol.getTable() == values) &&
-                    (rcol.getPosition() == 0)) {
+                    (rcol.getPosition() == 0) &&
+                    (ccond.getLeft() instanceof ColumnExpression)) {
+                    ColumnExpression lcol = (ColumnExpression)ccond.getLeft();
                     for (TableGroupJoinNode table : tables) {
                         if (table.getTable() == lcol.getTable()) {
-                            column = lcol;
+                            found = true;
                             break;
                         }
                     }
                 }
             }
         }
-        if (column == null) return null;
-        List<ExpressionNode> expressions = new ArrayList<ExpressionNode>(values.getExpressions().size());
-        for (List<ExpressionNode> row : values.getExpressions()) {
-            expressions.add(row.get(0));
-        }
-        InListCondition cond = new InListCondition(column, expressions,
-                                                   new DataTypeDescriptor(TypeId.BOOLEAN_ID, true),
-                                                   null);
-        cond.setComparison(ccond);
-        if (Types3Switch.ON) {
-            cond.setPreptimeValue(new TPreptimeValue(AkBool.INSTANCE.instance(true)));
-        }
-        return cond;
+        if (!found) return null;
+        return semiJoinToInList(values, ccond);
     }
 
-    protected ConditionExpression onlyJoinCondition(Collection<JoinOperator> joins) {
+    protected static ConditionExpression onlyJoinCondition(Collection<JoinOperator> joins) {
         ConditionExpression result = null;
         for (JoinOperator join : joins) {
             if (join.getJoinConditions() != null) {
@@ -262,6 +251,22 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             }
         }
         return result;
+    }
+
+    public static InListCondition semiJoinToInList(ExpressionsSource values,
+                                                   ComparisonCondition ccond) {
+        List<ExpressionNode> expressions = new ArrayList<ExpressionNode>(values.getExpressions().size());
+        for (List<ExpressionNode> row : values.getExpressions()) {
+            expressions.add(row.get(0));
+        }
+        InListCondition cond = new InListCondition(ccond.getLeft(), expressions,
+                                                   new DataTypeDescriptor(TypeId.BOOLEAN_ID, true),
+                                                   null);
+        cond.setComparison(ccond);
+        if (Types3Switch.ON) {
+            cond.setPreptimeValue(new TPreptimeValue(AkBool.INSTANCE.instance(true)));
+        }
+        return cond;
     }
 
     /** Populate given index usage according to goal.
