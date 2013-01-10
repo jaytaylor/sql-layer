@@ -189,8 +189,49 @@ public class JoinAndIndexPicker extends BaseRule
 
         // Put the chosen plan in place.
         public void installPlan(Plan rootPlan, boolean copy) {
-            joinable.getOutput().replaceInput(joinable, rootPlan.install(copy));
+            joinable.getOutput().replaceInput(joinable, 
+                                              moveInSemiJoins(rootPlan.install(copy)));
             query.setCostEstimate(rootPlan.costEstimate);
+        }
+
+        // If any semi-joins to VALUES are left over at the top, they
+        // can be put into the Select and then possibly moved earlier.
+        protected Joinable moveInSemiJoins(Joinable joined) {
+            if (queryGoal.getWhereConditions() != null) {
+                while (joined instanceof JoinNode) {
+                    JoinNode join = (JoinNode)joined;
+                    if (join.getJoinType() != JoinType.SEMI) 
+                        break;
+                    Joinable right = join.getRight();
+                    if (!(right instanceof ExpressionsSource))
+                        break;
+                    // Cf. GroupIndexGoal.semiJoinToInList.
+                    ExpressionsSource values = (ExpressionsSource)right;
+                    ComparisonCondition ccond = null;
+                    boolean found = false;
+                    if ((join.getJoinConditions() != null) &&
+                        (join.getJoinConditions().size() == 1)) {
+                        ConditionExpression joinCondition = join.getJoinConditions().get(0);
+                        if (joinCondition instanceof ComparisonCondition) {
+                            ccond = (ComparisonCondition)joinCondition;
+                            if ((ccond.getOperation() == Comparison.EQ) &&
+                                (ccond.getRight() instanceof ColumnExpression)) {
+                                ColumnExpression rcol = (ColumnExpression)ccond.getRight();
+                                if ((rcol.getTable() == values) &&
+                                    (rcol.getPosition() == 0)) {
+                                    found = true;
+                                }
+                            }
+                        }
+                    }
+                    if (!found) break;
+                    // Replace semi-join with In Select condition.
+                    queryGoal.getWhereConditions()
+                        .add(GroupIndexGoal.semiJoinToInList(values, ccond));
+                    joined = join.getLeft();
+                }
+            }
+            return joined;
         }
 
         // Get the handler for the given subquery so that it can be done in context.
