@@ -26,9 +26,11 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.error.OutOfRangeException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.*;
+import com.akiban.server.expression.ExpressionComposer.NullTreating;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
@@ -90,14 +92,11 @@ public class DistanceLatLonExpression extends AbstractCompositeExpression {
                 if (child.eval().isNull())
                     return NullValueSource.only();
             }
-
-            // 450: 90 + 360
-            // 540: 180 + 360
-            // See bug 1097924
-            double y1 = inRange(children().get(0).eval().getDecimal().doubleValue(), -450, 450);
-            double x1 = inRange(children().get(1).eval().getDecimal().doubleValue(), -540, 540);
-            double y2 = inRange(children().get(2).eval().getDecimal().doubleValue(), -450, 450);
-            double x2 = inRange(children().get(3).eval().getDecimal().doubleValue(), -540, 540);
+            
+            double y1 = inRange(children().get(0).eval().getDecimal().doubleValue(), -90, 90);
+            double x1 = inRange(children().get(1).eval().getDecimal().doubleValue(), -180, 180);
+            double y2 = inRange(children().get(2).eval().getDecimal().doubleValue(), -90, 90);
+            double x2 = inRange(children().get(3).eval().getDecimal().doubleValue(), -180, 180);
             
             x1 = getShift(x1);
             x2 = getShift(x2);

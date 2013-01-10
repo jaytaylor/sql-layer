@@ -89,36 +89,31 @@ public class DistanceLatLonExpressionTest {
         List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(0), getDecimal(-179), getDecimal(0), getDecimal(180)));
         test(1.0, lst);
     }
-
-    /*
-     * Latitude can range from -450 to +450: A query can specify a distance of up to 360, and the maximum absolute
-     * latitude is 90. Similarly, longitude goes from -540 to 540.
-     */
     
     @Test (expected=OutOfRangeException.class) 
     public void testRangeTooLargeY() {
-        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(451), getDecimal(0), getDecimal(0), getDecimal(180)));
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(91), getDecimal(0), getDecimal(0), getDecimal(180)));
         Expression exp = new DistanceLatLonExpression(lst);
         ValueSource result = exp.evaluation().eval();
     }
     
     @Test (expected=OutOfRangeException.class) 
     public void testRangeTooSmallY() {
-        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(-451), getDecimal(0), getDecimal(0), getDecimal(180)));
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(-91), getDecimal(0), getDecimal(0), getDecimal(180)));
         Expression exp = new DistanceLatLonExpression(lst);
         ValueSource result = exp.evaluation().eval();
     }
     
     @Test (expected=OutOfRangeException.class) 
     public void testRangeTooLargeX() {
-        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(0), getDecimal(541), getDecimal(0), getDecimal(180)));
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(0), getDecimal(181), getDecimal(0), getDecimal(180)));
         Expression exp = new DistanceLatLonExpression(lst);
         ValueSource result = exp.evaluation().eval();
     }
     
     @Test (expected=OutOfRangeException.class) 
     public void testRangeTooSmallX() {
-        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(0), getDecimal(-541), getDecimal(0), getDecimal(180)));
+        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(getDecimal(0), getDecimal(-181), getDecimal(0), getDecimal(180)));
         Expression exp = new DistanceLatLonExpression(lst);
         ValueSource result = exp.evaluation().eval();
     }
