@@ -61,7 +61,7 @@ public class PostgresSessionStatement implements PostgresStatement
       "client_encoding", "DateStyle", "geqo", "ksqo",
       "queryTimeoutSec", "zeroDateTimeBehavior", "maxNotificationLevel", "OutputFormat",
       "parserInfixBit", "parserInfixLogical", "parserDoubleQuoted",
-      "newtypes"
+      "newtypes", "bulkload"
     };
 
     private Operation operation;
@@ -71,6 +71,10 @@ public class PostgresSessionStatement implements PostgresStatement
     protected PostgresSessionStatement(Operation operation, StatementNode statement) {
         this.operation = operation;
         this.statement = statement;
+    }
+
+    public StatementNode getStatement() {
+        return statement;
     }
 
     @Override

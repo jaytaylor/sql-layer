@@ -341,6 +341,8 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             case WRITE:
             case NEW_WRITE:
             case WRITE_STEP_ISOLATED:
+                if (getStore().isBulkloading())
+                    break;
                 if (transactionDefaultReadOnly)
                     throw new TransactionReadOnlyException();
                 localTransaction = new ServerTransaction(this, false);
@@ -381,7 +383,10 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             case REQUIRED_WRITE:
             case WRITE:
             case WRITE_STEP_ISOLATED:
-                transaction.afterUpdate(transactionMode == ServerStatement.TransactionMode.WRITE_STEP_ISOLATED);
+                if (transaction != null)
+                    transaction.afterUpdate(transactionMode == ServerStatement.TransactionMode.WRITE_STEP_ISOLATED);
+                else
+                    assert getStore() != null && getStore().isBulkloading() : "no transaction, but not bulk loading";
                 break;
             }
         }

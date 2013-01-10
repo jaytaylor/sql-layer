@@ -29,6 +29,7 @@ package com.akiban.server.test;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
@@ -88,8 +89,9 @@ public final class FailureOnStartupIT extends ApiTestBase {
     public static class BadStore extends OperatorStore {
 
         @Inject
-        public BadStore(TreeService treeService, SchemaManager schemaManager, LockService lockService) {
-            super(treeService, null, schemaManager, lockService);
+        public BadStore(TreeService treeService, SchemaManager schemaManager, LockService lockService,
+                        TransactionService transactionService) {
+            super(treeService, null, schemaManager, lockService, transactionService);
         }
 
         @Override

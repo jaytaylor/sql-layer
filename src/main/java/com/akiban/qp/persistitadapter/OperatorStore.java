@@ -48,6 +48,7 @@ import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
@@ -172,16 +173,20 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         INSERT_TOTAL.in();
         INSERT_MAINTENANCE.in();
         try {
-            AkibanInformationSchema ais = schemaManager.getAis(session);
-            PersistitAdapter adapter = createAdapter(ais, session);
-            UserTable uTable = ais.getUserTable(rowData.getRowDefId());
-            super.writeRow(session, rowData);
-            maintainGroupIndexes(session,
-                                 ais,
-                                 adapter,
-                                 rowData, null,
-                                 OperatorStoreGIHandler.forTable(adapter, uTable),
-                                 OperatorStoreGIHandler.Action.STORE);
+            if (!isBulkloading()) {
+                AkibanInformationSchema ais = schemaManager.getAis(session);
+                PersistitAdapter adapter = createAdapter(ais, session);
+                UserTable uTable = ais.getUserTable(rowData.getRowDefId());
+                super.writeRow(session, rowData);
+                maintainGroupIndexes(session,
+                                     ais,
+                                     adapter,
+                                     rowData, null,
+                                     OperatorStoreGIHandler.forTable(adapter, uTable),
+                                     OperatorStoreGIHandler.Action.STORE);
+            } else {
+                super.writeRow(session, rowData);
+            }
         } finally {
             INSERT_MAINTENANCE.out();
             INSERT_TOTAL.out();
@@ -250,8 +255,9 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     // OperatorStore interface
 
     @Inject
-    public OperatorStore(TreeService treeService, ConfigurationService config, SchemaManager schemaManager, LockService lockService) {
-        super(new PersistitStore(false, treeService, config, schemaManager, lockService));
+    public OperatorStore(TreeService treeService, ConfigurationService config, SchemaManager schemaManager,
+                         LockService lockService, TransactionService transactionService) {
+        super(new PersistitStore(false, treeService, config, schemaManager, lockService, transactionService));
         this.treeService = treeService;
         this.config = config;
         this.schemaManager = schemaManager;

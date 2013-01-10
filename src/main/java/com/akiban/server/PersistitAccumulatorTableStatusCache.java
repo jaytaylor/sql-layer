@@ -27,6 +27,7 @@
 package com.akiban.server;
 
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowDef;
@@ -141,6 +142,20 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
+        public long getApproximateUniqueID() {
+            return uniqueID.getLiveValue();
+        }
+
+        @Override
+        public void setUniqueId(long value) {
+            try {
+                this.uniqueID.set(value);
+            } catch (PersistitInterruptedException e) {
+                throw new PersistitAdapterException(e);
+            }
+        }
+
+        @Override
         public int getTableID() {
             return expectedID;
         }
@@ -151,8 +166,8 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public void rowWritten() {
-            rowCount.updateAndGet(1);
+        public void rowsWritten(long count) {
+            rowCount.updateAndGet(count);
         }
 
         public void setOrdinal(int ordinal) throws PersistitInterruptedException {
@@ -234,6 +249,16 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
+        public void setUniqueId(long value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public long getApproximateUniqueID() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public int getTableID() {
             return expectedID;
         }
@@ -249,7 +274,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public void rowWritten() {
+        public void rowsWritten(long count) {
             throw new UnsupportedOperationException();
         }
 
