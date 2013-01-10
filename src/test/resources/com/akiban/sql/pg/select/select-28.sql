@@ -1,0 +1,1 @@
+SELECT name FROM customers WHERE cid IN (1,2,3) OR cid > 1000

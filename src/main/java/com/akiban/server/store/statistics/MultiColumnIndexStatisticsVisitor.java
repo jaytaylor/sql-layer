@@ -33,6 +33,7 @@ import com.persistit.Value;
 
 class MultiColumnIndexStatisticsVisitor extends IndexStatisticsGenerator
 {
+    @Override
     public void visit(Key key, Value value)
     {
         loadKey(key);

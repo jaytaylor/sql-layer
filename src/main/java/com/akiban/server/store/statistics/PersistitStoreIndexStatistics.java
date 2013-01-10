@@ -32,6 +32,7 @@ import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.IndexVisitor;
@@ -72,15 +73,18 @@ public class PersistitStoreIndexStatistics
 
     private final PersistitStore store;
     private final TreeService treeService;
+    private final ConfigurationService configurationService;
     private final IndexStatisticsService indexStatsService;
 
     /** Initialize index statistics manager for the given store. */
     public PersistitStoreIndexStatistics(PersistitStore store,
                                          TreeService treeService,
+                                         ConfigurationService configurationService,
                                          IndexStatisticsService indexStatsService)
     {
         this.store = store;
         this.treeService = treeService;
+        this.configurationService = configurationService;
         this.indexStatsService = indexStatsService;
     }
 
@@ -340,9 +344,10 @@ public class PersistitStoreIndexStatistics
         long indexRowCount = indexStatsService.countEntries(session, index);
         PersistitIndexStatisticsVisitor visitor = 
             new PersistitIndexStatisticsVisitor(store, session, index, indexRowCount, treeService);
-        visitor.init();
+        int bucketCount = bucketCount(configurationService);
+        visitor.init(bucketCount);
         store.traverse(session, index, visitor);
-        visitor.finish();
+        visitor.finish(bucketCount);
         IndexStatistics indexStatistics = visitor.getIndexStatistics();
         if (logger.isDebugEnabled()) {
             logger.debug("Analyzed: " + indexStatistics.toString(index));
@@ -350,6 +355,12 @@ public class PersistitStoreIndexStatistics
         return indexStatistics;
     }
     
+    public static final String BUCKET_COUNT_PROPERTY = "akserver.index_statistics.bucket_count";
+
+    public static int bucketCount(ConfigurationService configurationService) {
+        return Integer.parseInt(configurationService.getProperty(BUCKET_COUNT_PROPERTY));
+    }
+
     // TODO: Is this the right API?
     public void analyzeIndexes(Session session, Collection<? extends Index> indexes) {
         for (Index index : indexes) {

@@ -63,6 +63,7 @@ public class PostgresPrepareStatement extends PostgresBaseCursorStatement
         return 0;
     }
     
+    @Override
     public boolean putInCache() {
         return false;
     }

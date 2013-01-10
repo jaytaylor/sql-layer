@@ -68,6 +68,7 @@ public class PostgresFetchStatement extends PostgresBaseCursorStatement
         return server.fetchStatement(name, count);
     }
     
+    @Override
     public boolean putInCache() {
         return true;
     }

@@ -235,8 +235,10 @@ public class ExpressionCompactor extends BaseRule
         if (expressions.isEmpty()) 
             return any;
         ExpressionNode operand = comp.getLeft();
-        return new InListCondition(operand, expressions,
-                                   any.getSQLtype(), any.getSQLsource());
+        InListCondition inList = new InListCondition(operand, expressions,
+                                                     any.getSQLtype(), any.getSQLsource());
+        inList.setComparison(comp);
+        return inList;
     }
 
 }

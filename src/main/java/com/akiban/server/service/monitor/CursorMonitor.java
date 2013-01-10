@@ -42,4 +42,7 @@ public interface CursorMonitor {
     /** The time at which the cursor was opened. */
     long getCreationTimeMillis();
 
+    /** The number of rows returned so far. */
+    int getRowCount();
+
 }

@@ -197,7 +197,7 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
     }
 
     @Override
-    protected Expression in(Expression lhs, List<Expression> rhs) {
+    protected Expression in(Expression lhs, List<Expression> rhs, InListCondition inList) {
         return new InExpression(lhs, rhs);
     }
 
