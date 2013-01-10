@@ -556,12 +556,9 @@ public class PersistitStore implements Store, Service {
     }
 
     private void checkNoGIsInGroup(RowDef rowDef) {
-        GroupIndex[] gis = rowDef.getGroupIndexes();
-        if (gis.length > 0)
-            throw new BulkloadException("can't bulk load with group indexes: " + Arrays.toString(gis));
-        UserTable userTable = rowDef.userTable();
-        for (Join childJoin : userTable.getChildJoins())
-            checkNoGIsInGroup(childJoin.getChild().rowDef());
+        Collection<GroupIndex> gis = rowDef.table().getGroup().getRoot().getGroupIndexes();
+        if (!gis.isEmpty())
+            throw new BulkloadException("can't bulk load with group indexes: " + gis.toString());
     }
 
     @Override
