@@ -556,26 +556,21 @@ public class PersistitStore implements Store, Service {
     }
 
     private void checkNoGIsInGroup(RowDef rowDef) {
-        GroupIndex[] gis = rowDef.getGroupIndexes();
-        if (gis.length > 0)
-            throw new BulkloadException("can't bulk load with group indexes: " + Arrays.toString(gis));
-        UserTable userTable = rowDef.userTable();
-        for (Join childJoin : userTable.getChildJoins())
-            checkNoGIsInGroup(childJoin.getChild().rowDef());
+        Collection<GroupIndex> gis = rowDef.table().getGroup().getRoot().getGroupIndexes();
+        if (!gis.isEmpty())
+            throw new BulkloadException("can't bulk load with group indexes: " + gis.toString());
     }
 
     @Override
     public void startBulkLoad(Session session) {
-        boolean needTransaction = ! transactionService.isTransactionActive(session);
-        if (needTransaction)
-            transactionService.beginTransaction(session);
+        if (transactionService.isTransactionActive(session))
+            throw new BulkloadException("can't start bulk load when transaction is active");
+        transactionService.beginTransaction(session);
         Bulkload newBulkload;
         try {
             newBulkload = new Bulkload(getDb(), schemaManager.getAis(session));
         } finally {
-            if (needTransaction) {
-                transactionService.commitTransaction(session);
-            }
+            transactionService.commitTransaction(session);
         }
         
         if (!activeBulkload.compareAndSet(null, newBulkload))
@@ -1699,7 +1694,7 @@ public class PersistitStore implements Store, Service {
         if (treeBuilderDirs != null) {
             try {
                 tb.setSortTreeDirectories(treeBuilderDirs);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 throw new AkibanInternalException("while creating TreeBuilder", e);
             }
         }
