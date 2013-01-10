@@ -1699,7 +1699,7 @@ public class PersistitStore implements Store, Service {
         if (treeBuilderDirs != null) {
             try {
                 tb.setSortTreeDirectories(treeBuilderDirs);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 throw new AkibanInternalException("while creating TreeBuilder", e);
             }
         }
