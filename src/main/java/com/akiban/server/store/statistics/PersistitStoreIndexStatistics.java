@@ -232,24 +232,26 @@ public class PersistitStoreIndexStatistics
             // Multi-column
             for (int prefixColumns = 1; prefixColumns <= index.getKeyColumns().size(); prefixColumns++) {
                 Histogram histogram = indexStatistics.getHistogram(0, prefixColumns);
-                storeIndexStatisticsEntry(session,
-                                          index,
-                                          tableId,
-                                          histogram.getColumnCount(),
-                                          indexStatisticsEntryRowDef,
-                                          rowData,
-                                          histogram);
+                if (histogram != null)
+                    storeIndexStatisticsEntry(session,
+                                              index,
+                                              tableId,
+                                              histogram.getColumnCount(),
+                                              indexStatisticsEntryRowDef,
+                                              rowData,
+                                              histogram);
             }
             // Single-column
             for (int columnPosition = 1; columnPosition < index.getKeyColumns().size(); columnPosition++) {
                 Histogram histogram = indexStatistics.getHistogram(columnPosition, 1);
-                storeIndexStatisticsEntry(session,
-                                          index,
-                                          tableId,
-                                          -histogram.getFirstColumn() - 1,
-                                          indexStatisticsEntryRowDef,
-                                          rowData,
-                                          histogram);
+                if (histogram != null)
+                    storeIndexStatisticsEntry(session,
+                                              index,
+                                              tableId,
+                                              -histogram.getFirstColumn() - 1,
+                                              indexStatisticsEntryRowDef,
+                                              rowData,
+                                              histogram);
             }
             transaction.commit();
         }
