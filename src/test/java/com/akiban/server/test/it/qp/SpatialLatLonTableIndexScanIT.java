@@ -39,6 +39,8 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.error.OutOfRangeException;
+import com.akiban.server.geophile.BoxLatLon;
 import com.akiban.server.geophile.Space;
 import com.akiban.server.geophile.SpaceLatLon;
 import org.junit.Before;
@@ -370,7 +372,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
     public void testSpatialQueryWithWraparound()
     {
         loadDB();
-        final int N = 1; // 100;
+        final int N = 100;
         BigDecimal latLo;
         BigDecimal latHi;
         BigDecimal lonLo;
@@ -595,6 +597,180 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
         }
     }
 
+    @Test
+    public void testLongitudeBounds()
+    {
+        goodBox(0, 0, 0, 179);
+        goodBox(0, 0, 0, 180);
+        goodBox(0, 0, 0, 181);
+        goodBox(0, 0, 0, 359);
+        goodBox(0, 0, 0, 360);
+        goodBox(0, 0, 0, 361);
+        goodBox(0, 0, 0, 539);
+        goodBox(0, 0, 0, 540);
+        badBox(0, 0, 0, 541);
+
+        goodBox(0, 0, 179, 0);
+        goodBox(0, 0, 180, 0);
+        goodBox(0, 0, 181, 0);
+        goodBox(0, 0, 359, 0);
+        goodBox(0, 0, 360, 0);
+        goodBox(0, 0, 361, 0);
+        goodBox(0, 0, 539, 0);
+        goodBox(0, 0, 540, 0);
+        badBox(0, 0, 541, 0);
+
+        goodBox(0, 0, 0, -179);
+        goodBox(0, 0, 0, -180);
+        goodBox(0, 0, 0, -181);
+        goodBox(0, 0, 0, -359);
+        goodBox(0, 0, 0, -360);
+        goodBox(0, 0, 0, -361);
+        goodBox(0, 0, 0, -539);
+        goodBox(0, 0, 0, -540);
+        badBox(0, 0, 0, -541);
+
+        goodBox(0, 0, -179, 0);
+        goodBox(0, 0, -180, 0);
+        goodBox(0, 0, -181, 0);
+        goodBox(0, 0, -359, 0);
+        goodBox(0, 0, -360, 0);
+        goodBox(0, 0, -361, 0);
+        goodBox(0, 0, -539, 0);
+        goodBox(0, 0, -540, 0);
+        badBox(0, 0, -541, 0);
+    }
+
+    @Test
+    public void testLatitudeBounds()
+    {
+        goodBox(0, 89, 0, 0);
+        goodBox(0, 90, 0, 0);
+        goodBox(0, 91, 0, 0);
+        goodBox(0, 181, 0, 0);
+        goodBox(0, 361, 0, 0);
+        goodBox(0, 449, 0, 0);
+        goodBox(0, 450, 0, 0);
+        badBox(0, 451, 0, 0);
+
+        goodBox(89, 0, 0, 0);
+        goodBox(90, 0, 0, 0);
+        goodBox(91, 0, 0, 0);
+        goodBox(181, 0, 0, 0);
+        goodBox(361, 0, 0, 0);
+        goodBox(449, 0, 0, 0);
+        goodBox(450, 0, 0, 0);
+        badBox(451, 0, 0, 0);
+
+        goodBox(0, -89, 0, 0);
+        goodBox(0, -90, 0, 0);
+        goodBox(0, -91, 0, 0);
+        goodBox(0, -181, 0, 0);
+        goodBox(0, -361, 0, 0);
+        goodBox(0, -449, 0, 0);
+        goodBox(0, -450, 0, 0);
+        badBox(0, -451, 0, 0);
+
+        goodBox(-89, 0, 0, 0);
+        goodBox(-90, 0, 0, 0);
+        goodBox(-91, 0, 0, 0);
+        goodBox(-181, 0, 0, 0);
+        goodBox(-361, 0, 0, 0);
+        goodBox(-449, 0, 0, 0);
+        goodBox(-450, 0, 0, 0);
+        badBox(-451, 0, 0, 0);
+    }
+
+    @Test
+    public void testExceedingMaxLatitude()
+    {
+        loadDB();
+        BigDecimal latLo = new BigDecimal(70);
+        BigDecimal latHi = new BigDecimal(120);
+        BigDecimal lonLo = new BigDecimal(40);
+        BigDecimal lonHi = new BigDecimal(90);
+        // Get the right answer
+        Set<Integer> expected = new HashSet<Integer>();
+        for (int id = 0; id < lats.size(); id++) {
+            BigDecimal lat = lats.get(id);
+            BigDecimal lon = lons.get(id);
+            if (latLo.compareTo(lat) <= 0 &&
+                lat.compareTo(latHi) <= 0 &&
+                lonLo.compareTo(lon) <= 0 &&
+                lon.compareTo(lonHi) <= 0) {
+                expected.add(id);
+            }
+        }
+        // Get the query result
+        Set<Integer> actual = new HashSet<Integer>();
+        IndexBound lowerLeft = new IndexBound(row(latLonIndexRowType, latLo, lonLo),
+                                              new SetColumnSelector(0, 1));
+        IndexBound upperRight = new IndexBound(row(latLonIndexRowType, latHi, lonHi),
+                                               new SetColumnSelector(0, 1));
+        IndexKeyRange box = IndexKeyRange.spatial(latLonIndexRowType, lowerLeft, upperRight);
+        Operator plan = indexScan_Default(latLonIndexRowType, false, box);
+        Cursor cursor = API.cursor(plan, queryContext);
+        cursor.open();
+        Row row;
+        while ((row = cursor.next()) != null) {
+            assertSame(latLonIndexRowType.physicalRowType(), row.rowType());
+            long z = getLong(row, 0);
+            Integer expectedId = zToId.get(z);
+            assertNotNull(expectedId);
+            int id = getLong(row, 1).intValue();
+            assertEquals(expectedId.intValue(), id);
+            assertEquals(expectedHKey(id), row.hKey().toString());
+            actual.add(id);
+        }
+        // There should be no false negatives
+        assertTrue(actual.containsAll(expected));
+    }
+
+    @Test
+    public void testExceedingMaxLongitude()
+    {
+        loadDB();
+        BigDecimal latLo = new BigDecimal(-15);
+        BigDecimal latHi = new BigDecimal(15);
+        BigDecimal lonLo = new BigDecimal(160);
+        BigDecimal lonHi = new BigDecimal(190);
+        // Get the right answer
+        Set<Integer> expected = new HashSet<Integer>();
+        for (int id = 0; id < lats.size(); id++) {
+            BigDecimal lat = lats.get(id);
+            BigDecimal lon = lons.get(id);
+            if (latLo.compareTo(lat) <= 0 &&
+                lat.compareTo(latHi) <= 0 &&
+                lonLo.compareTo(lon) <= 0 &&
+                lon.compareTo(lonHi) <= 0) {
+                expected.add(id);
+            }
+        }
+        // Get the query result
+        Set<Integer> actual = new HashSet<Integer>();
+        IndexBound lowerLeft = new IndexBound(row(latLonIndexRowType, latLo, lonLo),
+                                              new SetColumnSelector(0, 1));
+        IndexBound upperRight = new IndexBound(row(latLonIndexRowType, latHi, lonHi),
+                                               new SetColumnSelector(0, 1));
+        IndexKeyRange box = IndexKeyRange.spatial(latLonIndexRowType, lowerLeft, upperRight);
+        Operator plan = indexScan_Default(latLonIndexRowType, false, box);
+        Cursor cursor = API.cursor(plan, queryContext);
+        cursor.open();
+        Row row;
+        while ((row = cursor.next()) != null) {
+            assertSame(latLonIndexRowType.physicalRowType(), row.rowType());
+            long z = getLong(row, 0);
+            Integer expectedId = zToId.get(z);
+            assertNotNull(expectedId);
+            int id = getLong(row, 1).intValue();
+            assertEquals(expectedId.intValue(), id);
+            assertEquals(expectedHKey(id), row.hKey().toString());
+            actual.add(id);
+        }
+        // There should be no false negatives
+        assertTrue(actual.containsAll(expected));
+    }
+
     private void loadDB()
     {
         int id = 0;
@@ -672,6 +848,25 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                         }
                     });
         return a;
+    }
+
+    private void goodBox(int latLo, int latHi, int lonLo, int lonHi)
+    {
+        BoxLatLon.newBox(decimal(latLo), decimal(latHi), decimal(lonLo), decimal(lonHi));
+    }
+
+    private void badBox(int latLo, int latHi, int lonLo, int lonHi)
+    {
+        try {
+            goodBox(latLo, latHi, lonLo, lonHi);
+            fail();
+        } catch (OutOfRangeException e) {
+        }
+    }
+
+    private BigDecimal decimal(int x)
+    {
+        return new BigDecimal(x);
     }
 
     private static final int LAT_LO = -90;
