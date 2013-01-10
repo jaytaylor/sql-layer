@@ -40,9 +40,11 @@ select-12: various multi-column index uses
 
 select-13: IN using index union
 
-select-14: IN using index
+select-14: IN using index (union disallowed)
 
 select-14p: IN using index with parameters
+
+select-14u: IN using index intersection (union allowed)
 
 select-15: IN SELECT using group index in inner loop
 
@@ -58,14 +60,18 @@ select-16g: DISTINCT with ORDER BY using group index
 
 select-17a: side branch with sort
 
-select-17b: side branch with sort and IN
+select-17b: side branch with sort and IN (union disallowed)
+
+select-17bu: side branch with sort and IN (union allowed)
 
 select-18: range inequalities
 
 select-18n: range inequalities and IS NULL
 
-select-19i: aggregation and IN
+select-19i: aggregation and IN (union disallowed, need Sort)
 
-select-19x: aggregation from MAX
+select-19iu: aggregation and IN (union allowed, no Sort)
+
+select-19x: aggregation from MAX (single comparison)
 
 select-20: subquery with cross-group join

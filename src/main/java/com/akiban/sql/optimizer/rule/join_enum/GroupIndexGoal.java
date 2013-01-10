@@ -27,6 +27,7 @@
 package com.akiban.sql.optimizer.rule.join_enum;
 
 import com.akiban.sql.optimizer.rule.EquivalenceFinder;
+import com.akiban.sql.optimizer.rule.cost.CostEstimator.SelectivityConditions;
 import com.akiban.sql.optimizer.rule.cost.PlanCostEstimator;
 import com.akiban.sql.optimizer.rule.join_enum.DPhyp.JoinOperator;
 import com.akiban.sql.optimizer.rule.range.ColumnRanges;
@@ -48,6 +49,7 @@ import com.akiban.server.geophile.Space;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
@@ -129,10 +131,11 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                                              Collection<JoinOperator> queryJoins,
                                              Collection<JoinOperator> joins,
                                              Collection<JoinOperator> outsideJoins,
-                                             boolean sortAllowed) {
+                                             boolean sortAllowed,
+                                             ConditionList extraConditions) {
         setBoundTables(boundTables);
         this.sortAllowed = sortAllowed;
-        setJoinConditions(queryJoins, joins);
+        setJoinConditions(queryJoins, joins, extraConditions);
         updateRequiredColumns(joins, outsideJoins);
         return conditionSources;
     }
@@ -153,7 +156,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         return false;
     }
     
-    public void setJoinConditions(Collection<JoinOperator> queryJoins, Collection<JoinOperator> joins) {
+    public void setJoinConditions(Collection<JoinOperator> queryJoins, Collection<JoinOperator> joins, ConditionList extraConditions) {
         conditionSources = new ArrayList<ConditionList>();
         if ((queryGoal.getWhereConditions() != null) && !hasOuterJoin(queryJoins)) {
             conditionSources.add(queryGoal.getWhereConditions());
@@ -162,6 +165,9 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             ConditionList joinConditions = join.getJoinConditions();
             if (joinConditions != null)
                 conditionSources.add(joinConditions);
+        }
+        if (extraConditions != null) {
+            conditionSources.add(extraConditions);
         }
         switch (conditionSources.size()) {
         case 0:
@@ -197,6 +203,65 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 }
             }
         }        
+    }
+
+    /** Given a semi-join to a VALUES, see whether it can be turned
+     * into a predicate on some column in this group, in which case it
+     * can possibly be indexed.
+     */
+    public InListCondition semiJoinToInList(ExpressionsSource values,
+                                            Collection<JoinOperator> joins) {
+        if (values.nFields() != 1) 
+            return null;
+        ColumnExpression column = null;
+        ComparisonCondition ccond = null;
+        ConditionExpression joinCondition = onlyJoinCondition(joins);
+        if (joinCondition instanceof ComparisonCondition) {
+            ccond = (ComparisonCondition)joinCondition;
+            if ((ccond.getOperation() == Comparison.EQ) &&
+                (ccond.getLeft() instanceof ColumnExpression) &&
+                (ccond.getRight() instanceof ColumnExpression)) {
+                ColumnExpression lcol = (ColumnExpression)ccond.getLeft();
+                ColumnExpression rcol = (ColumnExpression)ccond.getRight();
+                if ((rcol.getTable() == values) &&
+                    (rcol.getPosition() == 0)) {
+                    for (TableGroupJoinNode table : tables) {
+                        if (table.getTable() == lcol.getTable()) {
+                            column = lcol;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        if (column == null) return null;
+        List<ExpressionNode> expressions = new ArrayList<ExpressionNode>(values.getExpressions().size());
+        for (List<ExpressionNode> row : values.getExpressions()) {
+            expressions.add(row.get(0));
+        }
+        InListCondition cond = new InListCondition(column, expressions,
+                                                   new DataTypeDescriptor(TypeId.BOOLEAN_ID, true),
+                                                   null);
+        cond.setComparison(ccond);
+        if (Types3Switch.ON) {
+            cond.setPreptimeValue(new TPreptimeValue(AkBool.INSTANCE.instance(true)));
+        }
+        return cond;
+    }
+
+    protected ConditionExpression onlyJoinCondition(Collection<JoinOperator> joins) {
+        ConditionExpression result = null;
+        for (JoinOperator join : joins) {
+            if (join.getJoinConditions() != null) {
+                for (ConditionExpression cond : join.getJoinConditions()) {
+                    if (result == null)
+                        result = cond;
+                    else 
+                        return null;
+                }
+            }
+        }
+        return result;
     }
 
     /** Populate given index usage according to goal.
@@ -1168,9 +1233,8 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
 
     // Conditions that might have a recognizable selectivity.
-    protected Map<ColumnExpression,Collection<ComparisonCondition>> selectivityConditions(Collection<ConditionExpression> conditions, Collection<TableSource> requiredTables) {
-        Map<ColumnExpression,Collection<ComparisonCondition>> result = new
-            HashMap<ColumnExpression,Collection<ComparisonCondition>>();
+    protected SelectivityConditions selectivityConditions(Collection<ConditionExpression> conditions, Collection<TableSource> requiredTables) {
+        SelectivityConditions result = new SelectivityConditions();
         for (ConditionExpression condition : conditions) {
             if (condition instanceof ComparisonCondition) {
                 ComparisonCondition ccond = (ComparisonCondition)condition;
@@ -1179,12 +1243,26 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                     if ((column.getColumn() != null) &&
                         requiredTables.contains(column.getTable()) &&
                         constantOrBound(ccond.getRight())) {
-                        Collection<ComparisonCondition> entry = result.get(column);
-                        if (entry == null) {
-                            entry = new ArrayList<ComparisonCondition>();
-                            result.put(column, entry);
+                        result.addCondition(column, condition);
+                    }
+                }
+            }
+            else if (condition instanceof InListCondition) {
+                InListCondition incond = (InListCondition)condition;
+                if (incond.getOperand() instanceof ColumnExpression) {
+                    ColumnExpression column = (ColumnExpression)incond.getOperand();
+                    if ((column.getColumn() != null) &&
+                        requiredTables.contains(column.getTable())) {
+                        boolean allConstant = true;
+                        for (ExpressionNode expr : incond.getExpressions()) {
+                            if (!constantOrBound(expr)) {
+                                allConstant = false;
+                                break;
+                            }
                         }
-                        entry.add(ccond);
+                        if (allConstant) {
+                            result.addCondition(column, condition);
+                        }
                     }
                 }
             }
