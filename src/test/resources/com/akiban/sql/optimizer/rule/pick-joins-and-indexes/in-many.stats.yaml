@@ -1,0 +1,455 @@
+Index: PRIMARY
+RowCount: 1000
+SampledCount: 1000
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 10
+    eq: 10
+    key: [20]
+    lt: 10
+  - distinct: 20
+    eq: 10
+    key: [50]
+    lt: 20
+  - distinct: 0
+    eq: 10
+    key: [60]
+    lt: 0
+  - distinct: 0
+    eq: 10
+    key: [70]
+    lt: 0
+  - distinct: 20
+    eq: 10
+    key: [100]
+    lt: 20
+  - distinct: 20
+    eq: 10
+    key: [130]
+    lt: 20
+  - distinct: 60
+    eq: 10
+    key: [200]
+    lt: 60
+  - distinct: 0
+    eq: 10
+    key: [210]
+    lt: 0
+  - distinct: 50
+    eq: 10
+    key: [270]
+    lt: 50
+  - distinct: 50
+    eq: 10
+    key: [330]
+    lt: 50
+  - distinct: 20
+    eq: 10
+    key: [360]
+    lt: 20
+  - distinct: 10
+    eq: 10
+    key: [380]
+    lt: 10
+  - distinct: 20
+    eq: 10
+    key: [410]
+    lt: 20
+  - distinct: 50
+    eq: 10
+    key: [470]
+    lt: 50
+  - distinct: 0
+    eq: 10
+    key: [480]
+    lt: 0
+  - distinct: 120
+    eq: 10
+    key: [610]
+    lt: 120
+  - distinct: 10
+    eq: 10
+    key: [630]
+    lt: 10
+  - distinct: 30
+    eq: 10
+    key: [670]
+    lt: 30
+  - distinct: 0
+    eq: 10
+    key: [680]
+    lt: 0
+  - distinct: 0
+    eq: 10
+    key: [690]
+    lt: 0
+  - distinct: 30
+    eq: 10
+    key: [730]
+    lt: 30
+  - distinct: 20
+    eq: 10
+    key: [760]
+    lt: 20
+  - distinct: 0
+    eq: 10
+    key: [770]
+    lt: 0
+  - distinct: 0
+    eq: 10
+    key: [780]
+    lt: 0
+  - distinct: 0
+    eq: 10
+    key: [790]
+    lt: 0
+  - distinct: 50
+    eq: 10
+    key: [850]
+    lt: 50
+  - distinct: 40
+    eq: 10
+    key: [900]
+    lt: 40
+  - distinct: 30
+    eq: 10
+    key: [940]
+    lt: 30
+  - distinct: 20
+    eq: 10
+    key: [970]
+    lt: 20
+  - distinct: 0
+    eq: 10
+    key: [980]
+    lt: 0
+  - distinct: 0
+    eq: 10
+    key: [990]
+    lt: 0
+  - distinct: 0
+    eq: 10
+    key: [1000]
+    lt: 0
+Table: addresses
+Timestamp: 2012-01-18T00:23:59.528Z
+---
+Index: __akiban_fk_2
+RowCount: 1000
+SampledCount: 1000
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 20
+    key: [5]
+    lt: 0
+  - distinct: 4
+    eq: 20
+    key: [13]
+    lt: 40
+  - distinct: 7
+    eq: 30
+    key: [22]
+    lt: 70
+  - distinct: 0
+    eq: 20
+    key: [24]
+    lt: 0
+  - distinct: 0
+    eq: 10
+    key: [25]
+    lt: 0
+  - distinct: 3
+    eq: 30
+    key: [36]
+    lt: 30
+  - distinct: 0
+    eq: 10
+    key: [37]
+    lt: 0
+  - distinct: 2
+    eq: 20
+    key: [41]
+    lt: 20
+  - distinct: 0
+    eq: 10
+    key: [44]
+    lt: 0
+  - distinct: 1
+    eq: 30
+    key: [49]
+    lt: 10
+  - distinct: 0
+    eq: 20
+    key: [50]
+    lt: 0
+  - distinct: 0
+    eq: 20
+    key: [51]
+    lt: 0
+  - distinct: 0
+    eq: 30
+    key: [52]
+    lt: 0
+  - distinct: 0
+    eq: 20
+    key: [54]
+    lt: 0
+  - distinct: 0
+    eq: 20
+    key: [56]
+    lt: 0
+  - distinct: 0
+    eq: 10
+    key: [57]
+    lt: 0
+  - distinct: 0
+    eq: 30
+    key: [61]
+    lt: 0
+  - distinct: 0
+    eq: 30
+    key: [62]
+    lt: 0
+  - distinct: 1
+    eq: 10
+    key: [67]
+    lt: 10
+  - distinct: 0
+    eq: 10
+    key: [70]
+    lt: 0
+  - distinct: 3
+    eq: 20
+    key: [76]
+    lt: 30
+  - distinct: 3
+    eq: 10
+    key: [81]
+    lt: 30
+  - distinct: 0
+    eq: 40
+    key: [82]
+    lt: 0
+  - distinct: 2
+    eq: 30
+    key: [85]
+    lt: 20
+  - distinct: 0
+    eq: 20
+    key: [86]
+    lt: 0
+  - distinct: 0
+    eq: 20
+    key: [88]
+    lt: 0
+  - distinct: 1
+    eq: 40
+    key: [91]
+    lt: 10
+  - distinct: 0
+    eq: 30
+    key: [93]
+    lt: 0
+  - distinct: 1
+    eq: 30
+    key: [95]
+    lt: 10
+  - distinct: 0
+    eq: 30
+    key: [97]
+    lt: 0
+  - distinct: 1
+    eq: 20
+    key: [99]
+    lt: 10
+  - distinct: 0
+    eq: 20
+    key: [100]
+    lt: 0
+Table: addresses
+Timestamp: 2012-01-18T00:23:59.509Z
+---
+Index: state
+RowCount: 1000
+SampledCount: 1000
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 130
+    key: [null]
+    lt: 0
+  - distinct: 25
+    eq: 25
+    key: [CA]
+    lt: 25
+  - distinct: 40
+    eq: 40
+    key: [CT]
+    lt: 40
+  - distinct: 50
+    eq: 50
+    key: [IL]
+    lt: 50
+  - distinct: 50
+    eq: 75
+    key: [MA]
+    lt: 75
+  - distinct: 50
+    eq: 70
+    key: [ME]
+    lt: 70
+  - distinct: 50
+    eq: 50
+    key: [MO]
+    lt: 50
+  - distinct: 50
+    eq: 75
+    key: [NH]
+    lt: 75
+  - distinct: 50
+    eq: 50
+    key: [NY]
+    lt: 50
+Table: addresses
+Timestamp: 2012-01-18T00:23:59.547Z
+---
+Index: PRIMARY
+RowCount: 100
+SampledCount: 100
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 1
+    eq: 1
+    key: [2]
+    lt: 1
+  - distinct: 10
+    eq: 1
+    key: [13]
+    lt: 10
+  - distinct: 0
+    eq: 1
+    key: [14]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [15]
+    lt: 0
+  - distinct: 1
+    eq: 1
+    key: [17]
+    lt: 1
+  - distinct: 0
+    eq: 1
+    key: [18]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [19]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [20]
+    lt: 0
+  - distinct: 6
+    eq: 1
+    key: [27]
+    lt: 6
+  - distinct: 1
+    eq: 1
+    key: [29]
+    lt: 1
+  - distinct: 0
+    eq: 1
+    key: [30]
+    lt: 0
+  - distinct: 3
+    eq: 1
+    key: [34]
+    lt: 3
+  - distinct: 3
+    eq: 1
+    key: [38]
+    lt: 3
+  - distinct: 3
+    eq: 1
+    key: [42]
+    lt: 3
+  - distinct: 0
+    eq: 1
+    key: [43]
+    lt: 0
+  - distinct: 2
+    eq: 1
+    key: [46]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [49]
+    lt: 2
+  - distinct: 1
+    eq: 1
+    key: [51]
+    lt: 1
+  - distinct: 0
+    eq: 1
+    key: [52]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [53]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [54]
+    lt: 0
+  - distinct: 10
+    eq: 1
+    key: [65]
+    lt: 10
+  - distinct: 7
+    eq: 1
+    key: [73]
+    lt: 7
+  - distinct: 0
+    eq: 1
+    key: [74]
+    lt: 0
+  - distinct: 2
+    eq: 1
+    key: [77]
+    lt: 2
+  - distinct: 0
+    eq: 1
+    key: [78]
+    lt: 0
+  - distinct: 1
+    eq: 1
+    key: [80]
+    lt: 1
+  - distinct: 4
+    eq: 1
+    key: [85]
+    lt: 4
+  - distinct: 1
+    eq: 1
+    key: [87]
+    lt: 1
+  - distinct: 7
+    eq: 1
+    key: [95]
+    lt: 7
+  - distinct: 3
+    eq: 1
+    key: [99]
+    lt: 3
+  - distinct: 0
+    eq: 1
+    key: [100]
+    lt: 0
+Table: customers
+Timestamp: 2012-01-18T00:23:14.602Z

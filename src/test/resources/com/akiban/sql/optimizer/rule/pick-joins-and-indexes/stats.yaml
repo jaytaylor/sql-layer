@@ -1977,3 +1977,52 @@ Statistics:
     lt: 0
 Table: categories
 Timestamp: 2012-06-07T00:00:00.000Z
+---
+Index: source_country
+RowCount: 10000
+SampledCount: 10000
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: ['BRA']
+    lt: 0
+  - distinct: 0
+    eq: 9900
+    key: ['CHN']
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: ['DEU']
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: ['ESP']
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: ['FRA']
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: ['GBR']
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: ['IRL']
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: ['ITA']
+    lt: 0
+  - distinct: 0
+    eq: 90
+    key: ['MEX']
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: ['USA']
+    lt: 0
+Table: sources
+Timestamp: 2013-01-08T00:00:00.000Z

@@ -32,6 +32,8 @@ in-sorted-no-union: IN that needs sorting
 
 in-many: IN with lots of values
 
+in-popular: IN with just popular values
+
 equals-sorted: Same with = for comparison.
 
 equivalence-1: Equivalence column used in index.

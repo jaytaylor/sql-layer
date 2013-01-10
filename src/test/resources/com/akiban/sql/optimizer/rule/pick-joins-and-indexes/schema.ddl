@@ -44,21 +44,19 @@ CREATE TABLE addresses
 CREATE INDEX "__akiban_fk_2" ON addresses(cid);
 CREATE INDEX state ON addresses(state);
 
-CREATE TABLE books
-(
-  bid int NOT NULL, 
-  name VARCHAR(50) NOT NULL, 
-  copyright YEAR, 
-  author VARCHAR(50) NOT NULL
-);
-CREATE INDEX copyright ON books(copyright,author,name);
-
 CREATE TABLE categories
 (
    cat int NOT NULL,
    sku varchar(32) NOT NULL
 );
 CREATE UNIQUE INDEX cat_sku ON categories(cat,sku);
+
+CREATE TABLE sources
+(
+   country CHAR(3) NOT NULL,
+   sku varchar(32) NOT NULL
+);
+CREATE INDEX source_country ON sources(country);
 
 CREATE INDEX cname_and_sku ON customers(customers.name, items.sku) USING LEFT JOIN;
 CREATE INDEX sku_and_date ON customers(items.sku, orders.order_date) USING LEFT JOIN;
