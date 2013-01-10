@@ -24,7 +24,11 @@ group-equals: two equals on group index
 
 in-index: IN that can use index
 
+in-index-no-union: IN that can use index
+
 in-sorted: IN that needs sorting
+
+in-sorted-no-union: IN that needs sorting
 
 in-many: IN with lots of values
 
