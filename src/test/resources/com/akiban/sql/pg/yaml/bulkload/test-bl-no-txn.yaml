@@ -1,0 +1,8 @@
+---
+- Statement: BEGIN
+---
+- Statement: SET bulkload='true';
+- error: [57007]
+---
+- Statement: COMMIT
+...

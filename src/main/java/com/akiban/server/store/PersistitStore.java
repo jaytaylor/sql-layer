@@ -566,16 +566,14 @@ public class PersistitStore implements Store, Service {
 
     @Override
     public void startBulkLoad(Session session) {
-        boolean needTransaction = ! transactionService.isTransactionActive(session);
-        if (needTransaction)
-            transactionService.beginTransaction(session);
+        if (transactionService.isTransactionActive(session))
+            throw new BulkloadException("can't start bulk load when transaction is active");
+        transactionService.beginTransaction(session);
         Bulkload newBulkload;
         try {
             newBulkload = new Bulkload(getDb(), schemaManager.getAis(session));
         } finally {
-            if (needTransaction) {
-                transactionService.commitTransaction(session);
-            }
+            transactionService.commitTransaction(session);
         }
         
         if (!activeBulkload.compareAndSet(null, newBulkload))
