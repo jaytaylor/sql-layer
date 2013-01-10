@@ -45,17 +45,12 @@ public class MDistanceLatLon extends TScalarBase
     public static final TScalar INSTANCE = new MDistanceLatLon();
 
     private MDistanceLatLon(){}
-
-    // 450: 90 + 360
-    // 540: 180 + 360
-    // See bug 1097924
+    
     static final double MAX_LAT = 90;
+    static final double MIN_LAT = -90;
     static final double MAX_LON = 180;
-    static final double MAX_DISTANCE = 360;
-    static final double MAX_LAT_IN_QUERY = MAX_LAT + MAX_DISTANCE;
-    static final double MIN_LAT_IN_QUERY = -MAX_LAT_IN_QUERY;
-    static final double MAX_LON_IN_QUERY = MAX_LON + MAX_DISTANCE;
-    static final double MIN_LON_IN_QUERY = -MAX_LON_IN_QUERY;
+    static final double MIN_LON = -180;
+    
     static final double MAX_LON_DIS = MAX_LON * 2;
     
     @Override
@@ -67,10 +62,10 @@ public class MDistanceLatLon extends TScalarBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        double y1 = doubleInRange(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)), MIN_LAT_IN_QUERY, MAX_LAT_IN_QUERY);
-        double x1 = doubleInRange(MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1)), MIN_LON_IN_QUERY, MAX_LON_IN_QUERY);
-        double y2 = doubleInRange(MBigDecimal.getWrapper(inputs.get(2), context.inputTInstanceAt(2)), MIN_LAT_IN_QUERY, MAX_LAT_IN_QUERY);
-        double x2 = doubleInRange(MBigDecimal.getWrapper(inputs.get(3), context.inputTInstanceAt(3)), MIN_LON_IN_QUERY, MAX_LON_IN_QUERY);
+        double y1 = doubleInRange(MBigDecimal.getWrapper(inputs.get(0), context.inputTInstanceAt(0)), MIN_LAT, MAX_LAT);
+        double x1 = doubleInRange(MBigDecimal.getWrapper(inputs.get(1), context.inputTInstanceAt(1)), MIN_LON, MAX_LON);
+        double y2 = doubleInRange(MBigDecimal.getWrapper(inputs.get(2), context.inputTInstanceAt(2)), MIN_LAT, MAX_LAT);
+        double x2 = doubleInRange(MBigDecimal.getWrapper(inputs.get(3), context.inputTInstanceAt(3)), MIN_LON, MAX_LON);
         
         double dx = Math.abs(x1 - x2);
         // we want the shorter distance of the two
