@@ -34,6 +34,7 @@ import com.akiban.qp.persistitadapter.PersistitHKey;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.*;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
@@ -100,6 +101,7 @@ public class PersistitStore implements Store, Service {
     private static final PointTap PROPAGATE_HKEY_CHANGE_ROW_REPLACE_TAP = Tap.createCount("write: propagate_hkey_change_row_replace");
 
     private static final String NO_BULKLOAD_IN_PROGRESS = "no bulkload in progress";
+    private static final String BULKLOAD_TMPDIRS_CONFIG = "akserver.bulkload.tmpdirs";
 
     private final static int MAX_ROW_SIZE = 5000000;
 
@@ -167,7 +169,9 @@ public class PersistitStore implements Store, Service {
         } catch (RemoteException e) {
             throw new DisplayFilterSetException (e.getMessage());
         }
-        String tbConfigString = config.getProperty("akserver.bulkload.tmpdirs").trim();
+        String tbConfigString = "";
+        if (config != null)
+            tbConfigString = config.getProperty(BULKLOAD_TMPDIRS_CONFIG).trim();
         if (!tbConfigString.isEmpty())
             treeBuilderDirs = ImmutableList.copyOf(Lists.transform(
                     Arrays.asList(tbConfigString.split(File.pathSeparator)),
@@ -488,6 +492,10 @@ public class PersistitStore implements Store, Service {
 
     private void writeRowBulk(Session session, RowData rowData, Bulkload bulkload) throws PersistitException {
         final RowDef rowDef = writeRowCheck(session, rowData, true);
+        if(session.get(StoreAdapter.STORE_ADAPTER_KEY) == null) {
+            // Attaches itself to the session
+            new PersistitAdapter(SchemaCache.globalSchema(bulkload.ais), this, treeService, session, config, false);
+        }
         if (bulkload.currentRowDef != rowDef) {
             validateRowDefForBulk(bulkload, rowDef);
             try {
@@ -575,6 +583,8 @@ public class PersistitStore implements Store, Service {
         
         if (!activeBulkload.compareAndSet(null, newBulkload))
             throw new BulkloadException("another bulkload is already in progress");
+        // writeRowBulk ensures this is set, clear out any potentially incompatible
+        session.remove(StoreAdapter.STORE_ADAPTER_KEY);
     }
 
     @Override
