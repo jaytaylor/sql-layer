@@ -5,9 +5,8 @@
          http://docs.oracle.com/javase/7/docs/technotes/guides/jweb/packagingAppsForMac.html
          http://java.net/downloads/appbundler/appbundler.html
     -->
-
     <macrodef name="bundle_macro">
-        <element name="some-tasks" optional="yes" />
+        <element name="extra-tasks" optional="true" />
         <sequential>
             <taskdef name="bundleapp"
                      classname="com.oracle.appbundler.AppBundlerTask"
@@ -27,9 +26,8 @@
                        copyright="© 2009-2013 Akiban Technologies, Inc."
                        applicationCategory="public.app-category.developer-tools"
                        mainclassname="com.akiban.server.service.ui.AkServerWithSwingConsole">
-
-                <!-- Include the compile time JRE in the bundle. Adds ~135M. -->
-                <some-tasks />
+                
+                <extra-tasks />
 
                 <!-- Files are copied into bundle and set as classpath -->
                 <classpath dir="target/">
@@ -69,18 +67,19 @@
     </macrodef>
 
     <target name="usage">
-        <fail message="Call with target bundle_no_jre or bundle_with_jre" />
+        <fail message="Call with target bundle_app or bundle_app_jre" />
     </target>
     
     <target name="bundle_app">
         <bundle_macro />
     </target>
 
-    <target name="bundle_app_embed_jre">
+    <target name="bundle_app_jre">
         <bundle_macro>
-            <some-tasks>
+            <extra-tasks>
+                <!-- Include the compile time JRE in the bundle. Adds ~135M. -->
                 <runtime dir="${jdk.home}" />
-            </some-tasks>
+            </extra-tasks>
         </bundle_macro>
     </target>
 

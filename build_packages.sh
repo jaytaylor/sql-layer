@@ -35,6 +35,7 @@ fi
 
 platform=$1
 bzr_revno=`bzr revno`
+server_version=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep -o '^[0-9.]\+')
 
 # Handle file preparation for release target
 if [ -z "${AKIBAN_DE_FLAG}" ]; then
@@ -66,7 +67,8 @@ if [ ! -d ${common_dir} ]; then
     exit 1
 fi
 echo "-- packages-common directory: ${common_dir} (Linux only)"
-cp ${license} packages-common/LICENSE.txt # All licenses become LICENSE.txt
+# All licenses become LICENSE.txt
+cp ${license} packages-common/LICENSE.txt
 cp ${common_dir}/* packages-common/
 
 #
@@ -187,7 +189,6 @@ elif [ ${platform} == "macosx" ]; then
     akdump_bin=packages-common/akdump
     plugins_dir=packages-common/plugins
     mac_app='target/Akiban Server.app'
-    mac_dmg='target/Akiban Server.dmg'
     inst_temp=/tmp/inst_temp
 
     # copy icon data from a "prototype" file
@@ -197,50 +198,58 @@ elif [ ${platform} == "macosx" ]; then
     rm prototype.txt
     
     # build jar
-    #mvn -DskipTests=true -DBZR_REVISION=${bzr_revno} clean install 
-    #rm -f ./target/*-tests.jar ./target/*-sources.jar
+    mvn -DskipTests=true -DBZR_REVISION=${bzr_revno} clean install 
+    rm -f ./target/*-tests.jar ./target/*-sources.jar
 
-    # build app bundle
-    curl -Ls -o target/appbundler-1.0.jar http://java.net/projects/appbundler/downloads/download/appbundler-1.0.jar
-    ant -f macosx/appbundler.xml bundle_app -Djdk.home=$(/usr/libexec/java_home) -Dakserver.version=1.4.5
+    build_dmg() {
+        ant_target="$1"
+        mac_dmg="target/$2"
 
-    # add config files to bundle
-    mkdir "${mac_app}/Contents/Resources/config/"
-    cp macosx/${target}/* "${mac_app}/Contents/Resources/config/"
+        # build app bundle
+        curl -Ls -o target/appbundler-1.0.jar http://java.net/projects/appbundler/downloads/download/appbundler-1.0.jar
+        ant -f macosx/appbundler.xml ${ant_target} -Djdk.home=$(/usr/libexec/java_home) -Dakserver.version="${server_version}-r${bzr_revno}"
 
-    # add client dependencies and binaries to bundle
-    mkdir -p "$mac_app/Contents/Resources/tools/lib/client"
-    cp $client_jar "$mac_app/Contents/Resources/tools/lib/"
-    cp $client_deps/* "$mac_app/Contents/Resources/tools/lib/client/"
-    mkdir -p "$mac_app/Contents/Resources/tools/bin"
-    cp $akdump_bin "$mac_app/Contents/Resources/tools/bin/"
-    cp -R $plugins_dir "$mac_app/Contents/Resources/plugins"
+        # add config files to bundle
+        mkdir "${mac_app}/Contents/Resources/config/"
+        cp macosx/${target}/* "${mac_app}/Contents/Resources/config/"
 
-    # build disk image template
-    rm -rf $inst_temp
-    rm -f $inst_temp.dmg
-    mkdir $inst_temp
-    mkdir "$inst_temp/Akiban Server.app"
-    ln -s /Applications $inst_temp
-    mkdir $inst_temp/.background
-    cp macosx/dmg_background.png $inst_temp/.background
-    hdiutil create -fs HFSX -layout SPUD -size 200m $inst_temp.dmg -format UDRW -volname 'Akiban Server' -srcfolder $inst_temp
-    rm -rf $inst_temp
+        # add client dependencies and binaries to bundle
+        mkdir -p "$mac_app/Contents/Resources/tools/lib/client"
+        cp $client_jar "$mac_app/Contents/Resources/tools/lib/"
+        cp $client_deps/* "$mac_app/Contents/Resources/tools/lib/client/"
+        mkdir -p "$mac_app/Contents/Resources/tools/bin"
+        cp $akdump_bin "$mac_app/Contents/Resources/tools/bin/"
+        cp -R $plugins_dir "$mac_app/Contents/Resources/plugins"
 
-    # update disk image
-    mkdir $inst_temp
-    hdiutil attach $inst_temp.dmg -noautoopen -mountpoint $inst_temp
-    ditto "$mac_app" "$inst_temp/Akiban Server.app"
-    ${mac_ce_cmd}
+        # build disk image template
+        rm -rf $inst_temp
+        rm -f $inst_temp.dmg
+        mkdir $inst_temp
+        mkdir "$inst_temp/Akiban Server.app"
+        ln -s /Applications $inst_temp
+        mkdir $inst_temp/.background
+        cp macosx/dmg_background.png $inst_temp/.background
+        hdiutil create -fs HFSX -layout SPUD -size 200m $inst_temp.dmg -format UDRW -volname 'Akiban Server' -srcfolder $inst_temp
+        rm -rf $inst_temp
+
+        # update disk image
+        mkdir $inst_temp
+        hdiutil attach $inst_temp.dmg -noautoopen -mountpoint $inst_temp
+        ditto "$mac_app" "$inst_temp/Akiban Server.app"
+        
+        # == add non-app files here ==
+        cp macosx/dmg.DS_Store $inst_temp/.DS_Store
+        cp macosx/dmg_VolumeIcon.icns $inst_temp/.VolumeIcon.icns
+        cp ${license} $inst_temp/LICENSE.txt
+        SetFile -a C $inst_temp
+        hdiutil detach `hdiutil info | grep $inst_temp | grep '^/dev' | cut -f1`
+        hdiutil convert $inst_temp.dmg -format UDZO -imagekey zlib-level=9 -o "$mac_dmg"
+        rm $inst_temp.dmg
+    }
     
-    # == add non-app files here ==
-    cp macosx/dmg.DS_Store $inst_temp/.DS_Store
-    cp macosx/dmg_VolumeIcon.icns $inst_temp/.VolumeIcon.icns
-    cp ${license} $inst_temp/LICENSE.txt
-    SetFile -a C $inst_temp
-    hdiutil detach `hdiutil info | grep $inst_temp | grep '^/dev' | cut -f1`
-    hdiutil convert $inst_temp.dmg -format UDZO -imagekey zlib-level=9 -o "$mac_dmg"
-    rm $inst_temp.dmg
+    dmg_basename="Akiban_Server_${server_version}"
+    build_dmg "bundle_app" "${dmg_basename}.dmg"
+    build_dmg "bundle_app_jre" "${dmg_basename}_JRE.dmg"
 else
     echo "Invalid Argument: ${platform}"
     echo "${usage}"
