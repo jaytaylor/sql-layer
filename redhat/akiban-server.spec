@@ -7,7 +7,7 @@
 Name:           akiban-server
 Version:        1.4.5
 Release:        REVISION%{?dist}
-Epoch:		EPOCH
+Epoch:          EPOCH
 Summary:        Akiban Server is the main server for the Akiban Orthogonal Architecture.
 
 Group:          Applications/Databases
@@ -17,7 +17,7 @@ URL:            http://akiban.com/
 Source0:       akserver.tar.gz
 BuildRoot:     %{_tmppath}/%{name}-%{version}-%{release}-root
 
-Requires:      jre >= 1.6.0
+Requires:      jre >= 1.7.0
 Requires(pre): user(akiban)
 Requires(pre): group(akiban)
 Requires(pre): shadow-utils
