@@ -25,6 +25,7 @@ Provides:      user(akiban)
 Provides:      group(akiban)
 
 BuildArch:      noarch
+BuildRequires:  jdk >= 1.7.0
 
 %description
 Akiban Server is the main server for the Akiban Orthogonal Architecture.
