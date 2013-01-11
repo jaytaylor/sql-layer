@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="Akiban Server App Builder" default="usage" basedir="..">
     <!--
-         Orace and appbundler docs:
+         Oracle and appbundler docs:
          http://docs.oracle.com/javase/7/docs/technotes/guides/jweb/packagingAppsForMac.html
          http://java.net/downloads/appbundler/appbundler.html
     -->
