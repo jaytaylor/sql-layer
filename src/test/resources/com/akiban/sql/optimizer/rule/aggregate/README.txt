@@ -24,6 +24,8 @@ order-by-2: ORDER BY accumulated result
 
 order-by-alias: Using aggregate alias in ORDER BY
 
+order-by-distinct: ORDER BY expression also DISTINCT
+
 sum-all: aggregate without GROUP BY
 
 update: UPDATE to aggregate subexpression
