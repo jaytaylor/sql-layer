@@ -98,7 +98,7 @@ cd target
 rm -rf akiban-server-plugins-master
 rm -f akiban-server-plugins.zip
 curl -kLs -o akiban-server-plugins.zip ${PLUGINS_BRANCH}
-unzip akiban-server-plugins.zip
+unzip -q akiban-server-plugins.zip
 cd akiban-server-plugins-master
 mvn -DskipTests=true install
 cd http-conductor
@@ -116,7 +116,7 @@ cd target
 rm -rf akiban-rest-*
 rm -f rest.zip
 curl -kLs -o rest.zip ${REST_BRANCH}
-unzip rest.zip
+unzip -q rest.zip
 cd akiban-rest-*
 mvn -DskipTests=true package
 cp target/*with-dependencies.jar ../../packages-common/plugins
@@ -190,8 +190,6 @@ elif [ ${platform} == "macosx" ]; then
     mac_dmg='target/Akiban Server.dmg'
     inst_temp=/tmp/inst_temp
 
-    export JAVA_HOME=$(/usr/libexec/java_home)
-
     # copy icon data from a "prototype" file
     tar xzf macosx/license-icon.tar.gz
     xattr -wx com.apple.FinderInfo "`xattr -px com.apple.FinderInfo prototype.txt`" ${license}
@@ -199,12 +197,12 @@ elif [ ${platform} == "macosx" ]; then
     rm prototype.txt
     
     # build jar
-    mvn -DskipTests=true -DBZR_REVISION=${bzr_revno} clean install 
-    rm -f ./target/*-tests.jar ./target/*-sources.jar
+    #mvn -DskipTests=true -DBZR_REVISION=${bzr_revno} clean install 
+    #rm -f ./target/*-tests.jar ./target/*-sources.jar
 
     # build app bundle
     curl -Ls -o target/appbundler-1.0.jar http://java.net/projects/appbundler/downloads/download/appbundler-1.0.jar
-    ant -f macosx/bundle.xml
+    ant -f macosx/appbundler.xml bundle_app -Djdk.home=$(/usr/libexec/java_home) -Dakserver.version=1.4.5
 
     # add config files to bundle
     mkdir "${mac_app}/Contents/Resources/config/"
@@ -219,12 +217,14 @@ elif [ ${platform} == "macosx" ]; then
     cp -R $plugins_dir "$mac_app/Contents/Resources/plugins"
 
     # build disk image template
-    rm -rf $inst_temp; mkdir $inst_temp; mkdir "$inst_temp/Akiban Server.app"
+    rm -rf $inst_temp
+    rm -f $inst_temp.dmg
+    mkdir $inst_temp
+    mkdir "$inst_temp/Akiban Server.app"
     ln -s /Applications $inst_temp
     mkdir $inst_temp/.background
     cp macosx/dmg_background.png $inst_temp/.background
-    rm -f $inst_temp.dmg
-    hdiutil create -fs HFSX -layout SPUD -size 40m $inst_temp.dmg -format UDRW -volname 'Akiban Server' -srcfolder $inst_temp
+    hdiutil create -fs HFSX -layout SPUD -size 200m $inst_temp.dmg -format UDRW -volname 'Akiban Server' -srcfolder $inst_temp
     rm -rf $inst_temp
 
     # update disk image
