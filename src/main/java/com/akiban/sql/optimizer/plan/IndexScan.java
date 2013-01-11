@@ -157,6 +157,8 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
     public abstract boolean isAscendingAt(int index);
     public abstract boolean isRecoverableAt(int index);
     
+    public static boolean INCLUDE_SCAN_COST_IN_SUMMARY = false;
+
     @Override
     public String summaryString() {
         return summaryString(-1);
@@ -220,6 +222,10 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
         describeConditionRange(str);
         if (full && getCostEstimate() != null) {
             str.append(", ");
+            if (INCLUDE_SCAN_COST_IN_SUMMARY) {
+                str.append(scanCostEstimate);
+                str.append(" -> ");
+            }
             str.append(getCostEstimate());
         }
         str.append(")");

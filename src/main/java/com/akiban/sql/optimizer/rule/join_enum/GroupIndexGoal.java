@@ -719,6 +719,8 @@ public class GroupIndexGoal implements Comparator<BaseScan>
 
     /** Find the best index among the branches. */
     public BaseScan pickBestScan() {
+        logger.debug("Picking for {}", this);
+
         Set<TableSource> required = tables.getRequired();
         BaseScan bestScan = null;
 
@@ -1365,6 +1367,25 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 }
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder str = new StringBuilder();
+        str.append(tables.summaryString());
+        str.append("\n");
+        str.append(conditions);
+        str.append("\n[");
+        boolean first = true;
+        for (ColumnSource bound : boundTables) {
+            if (first)
+                first = false;
+            else
+                str.append(", ");
+            str.append(bound.getName());
+        }
+        str.append("]");
+        return str.toString();
     }
 
     // Too-many-way UNION can consume too many resources (and overflow
