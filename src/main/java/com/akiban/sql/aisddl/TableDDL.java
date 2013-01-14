@@ -472,6 +472,7 @@ public class TableDDL
         types.put(TypeId.TINYINT_ID, Types.TINYINT);
         types.put(TypeId.SMALLINT_ID, Types.SMALLINT);
         types.put(TypeId.INTEGER_ID, Types.INT);
+        types.put(TypeId.MEDIUMINT_ID, Types.MEDIUMINT);
         types.put(TypeId.BIGINT_ID, Types.BIGINT);
         
         types.put(TypeId.TINYINT_UNSIGNED_ID, Types.U_TINYINT);
