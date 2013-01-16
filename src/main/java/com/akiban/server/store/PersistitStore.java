@@ -71,7 +71,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -496,44 +495,51 @@ public class PersistitStore implements Store, Service {
             // Attaches itself to the session
             new PersistitAdapter(SchemaCache.globalSchema(bulkload.ais), this, treeService, session, config, false);
         }
-        if (bulkload.currentRowDef != rowDef) {
-            validateRowDefForBulk(bulkload, rowDef);
-            try {
-                RowDef parentRowDef = rowDef.getParentRowDef();
-                if (parentRowDef != null) {
-                    TreeBuilderStorage storage = bulkload.pkStorageByRowDef.remove(parentRowDef);
-                    if (storage != null) // null means a sibling of this rowDef already prompted the merge
-                        storage.treeBuilder.merge();
+        TreeBuilderStorage activePkBuilder;
+        AtomicLong activePk;
+        synchronized (bulkload) {
+            if (bulkload.currentRowDef != rowDef) {
+                validateRowDefForBulk(bulkload, rowDef);
+                try {
+                    RowDef parentRowDef = rowDef.getParentRowDef();
+                    if (parentRowDef != null) {
+                        TreeBuilderStorage storage = bulkload.pkStorageByRowDef.remove(parentRowDef);
+                        if (storage != null) // null means a sibling of this rowDef already prompted the merge
+                            storage.treeBuilder.merge();
+                    }
+                } catch (com.persistit.exception.DuplicateKeyException e) {
+                    throw new DuplicateKeyException("PK", null);
+                } catch (Exception e) {
+                    LOG.error("while merging PKs", e);
+                    throw new BulkloadException("unknown exception (see log): " + e.getMessage());
                 }
-            } catch (com.persistit.exception.DuplicateKeyException e) {
-                throw new DuplicateKeyException("PK", null);
-            } catch (Exception e) {
-                LOG.error("while merging PKs", e);
-                throw new BulkloadException("unknown exception (see log): " + e.getMessage());
+                bulkload.currentPkBuilder = new TreeBuilderStorage(bulkload.persistit);
+                Object old = bulkload.pkStorageByRowDef.put(rowDef, bulkload.currentPkBuilder);
+                assert old == null : old;
+                old = bulkload.rowsByRowDef.put(rowDef, new AtomicLong());
+                assert old == null : old;
+                bulkload.currentRowDef = rowDef;
+                if (rowDef.userTable().getPrimaryKey() == null) {
+                    bulkload.activePk = new AtomicLong(rowDef.getTableStatus().getApproximateUniqueID());
+                    bulkload.hiddenPks.put(rowDef, bulkload.activePk);
+                }
+                else {
+                    bulkload.activePk = null;
+                }
             }
-            bulkload.currentMutableLong = new AtomicLong();
-            bulkload.currentPkBuilder = new TreeBuilderStorage(bulkload.persistit);
-            Object old = bulkload.pkStorageByRowDef.put(rowDef, bulkload.currentPkBuilder);
-            assert old == null : old;
-            old = bulkload.rowsByRowDef.put(rowDef, bulkload.currentMutableLong);
-            assert old == null : old;
-            bulkload.currentRowDef = rowDef;
-            if (rowDef.userTable().getPrimaryKey() == null) {
-                bulkload.activePk = new AtomicLong(rowDef.getTableStatus().getApproximateUniqueID());
-                bulkload.hiddenPks.put(rowDef, bulkload.activePk);
-            }
-            else {
-                bulkload.activePk = null;
-            }
+            activePk = bulkload.activePk;
+            activePkBuilder = bulkload.currentPkBuilder;
         }
 
         // Group table
-        constructHKey(session, bulkload.groupTableKey, rowDef, rowData, true, bulkload.activePk); // invokes key.clear()
-        bulkload.groupTableValue.clear();
-        packRowData(bulkload.groupTableValue, rowDef, rowData);
+        Key groupTableKey = bulkload.groupTableKey.get();
+        Value groupTableValue = bulkload.groupTableValue.get();
+        constructHKey(session, groupTableKey, rowDef, rowData, true, activePk); // invokes key.clear()
+        groupTableValue.clear();
+        packRowData(groupTableValue, rowDef, rowData);
         try {
             Tree tree = rowDef.getGroup().getTreeCache().getTree();
-            bulkload.groupBuilder.store(tree, bulkload.groupTableKey, bulkload.groupTableValue);
+            bulkload.groupBuilder.store(tree, groupTableKey, groupTableValue);
         } catch (InvalidOperationException e) {
             throw e;
         } catch (Exception e) {
@@ -543,11 +549,9 @@ public class PersistitStore implements Store, Service {
 
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
         for (Index index : rowDef.getIndexes()) {
-            StorageAction action = index.isPrimaryKey() ? bulkload.currentPkBuilder : bulkload.secondaryIndexStorage;
-            insertIntoIndex(session, index, rowData, bulkload.groupTableKey, indexRow, deferIndexes, action);
+            StorageAction action = index.isPrimaryKey() ? activePkBuilder : bulkload.secondaryIndexStorage;
+            insertIntoIndex(session, index, rowData, groupTableKey, indexRow, deferIndexes, action);
         }
-
-        bulkload.currentMutableLong.incrementAndGet();
     }
 
     private void validateRowDefForBulk(Bulkload bulkload, RowDef rowDef) {
@@ -1713,10 +1717,21 @@ public class PersistitStore implements Store, Service {
 
     private class Bulkload {
 
-        Bulkload(Persistit persistit, AkibanInformationSchema ais) {
+        Bulkload(final Persistit persistit, AkibanInformationSchema ais) {
             this.persistit = persistit;
-            groupTableKey = new Key(persistit);
-            groupTableValue = new Value(persistit);
+            groupTableKey = new ThreadLocal<Key>() {
+                @Override
+                protected Key initialValue() {
+                    return new Key(persistit);
+                }
+            };
+
+            groupTableValue = new ThreadLocal<Value>() {
+                @Override
+                protected Value initialValue() {
+                    return new Value(persistit);
+                }
+            };
             pkStorageByRowDef = Collections.synchronizedMap(new HashMap<RowDef, TreeBuilderStorage>());
             secondaryIndexStorage = new TreeBuilderStorage(persistit);
             groupBuilder = createTreeBuilder();
@@ -1727,18 +1742,17 @@ public class PersistitStore implements Store, Service {
         public final Map<RowDef, TreeBuilderStorage> pkStorageByRowDef;
         public final TreeBuilderStorage secondaryIndexStorage;
         public final TreeBuilder groupBuilder;
-        public final Key groupTableKey;
-        public final Value groupTableValue;
         public final AkibanInformationSchema ais;
+        public final ThreadLocal<Key> groupTableKey;
+        public final ThreadLocal<Value> groupTableValue;
         public final Set<RowDef> seenTables = new HashSet<RowDef>();
         public final Map<RowDef, AtomicLong> rowsByRowDef =
                 Collections.synchronizedMap(new HashMap<RowDef, AtomicLong>());
         public final Map<RowDef, AtomicLong> hiddenPks =
                 Collections.synchronizedMap(new HashMap<RowDef, AtomicLong>());
-        public volatile TreeBuilderStorage currentPkBuilder;
-        public volatile RowDef currentRowDef;
-        public volatile AtomicLong currentMutableLong;
-        public volatile AtomicLong activePk;
+        public TreeBuilderStorage currentPkBuilder; // guarded by "this"
+        public RowDef currentRowDef; // guarded by "this"
+        public AtomicLong activePk; // guarded by "this"
     }
 
     private abstract static class StorageAction {

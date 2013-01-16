@@ -166,7 +166,7 @@ public class PostgresServerITBase extends ITBase
                 forgetConnection();
             }
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("while executing SQL: " + sql, e);
         }
     }
 
