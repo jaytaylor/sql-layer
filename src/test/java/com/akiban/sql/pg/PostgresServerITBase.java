@@ -102,7 +102,7 @@ public class PostgresServerITBase extends ITBase
         };
 
     // One element connection pool.
-    private static ThreadLocal<Connection> connectionRef = new ThreadLocal<>();
+    private static final ThreadLocal<Connection> connectionRef = new ThreadLocal<>();
 
     protected Connection getConnection() throws Exception {
         Connection connection = connectionRef.get();
