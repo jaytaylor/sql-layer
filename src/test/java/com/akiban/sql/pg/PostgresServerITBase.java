@@ -82,7 +82,8 @@ public class PostgresServerITBase extends ITBase
     }
 
     protected static void closeConnection(Connection connection) throws Exception {
-        connection.close();
+        if (!connection.isClosed())
+            connection.close();
     }
 
     protected PostgresService getPostgresService() {
