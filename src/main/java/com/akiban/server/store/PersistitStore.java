@@ -532,7 +532,7 @@ public class PersistitStore implements Store, Service {
         packRowData(groupTableValue, rowDef, rowData);
         try {
             Tree tree = rowDef.getGroup().getTreeCache().getTree();
-            bulkload.groupBuilder.store(tree, groupTableKey, groupTableValue);
+            bulkload.groupBuilder.treeBuilder.store(tree, groupTableKey, groupTableValue);
         } catch (InvalidOperationException e) {
             throw e;
         } catch (Exception e) {
@@ -542,7 +542,7 @@ public class PersistitStore implements Store, Service {
 
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
         for (Index index : rowDef.getIndexes()) {
-            StorageAction action = index.isPrimaryKey() ? bulkload.pkStorage : bulkload.secondaryIndexStorage;
+            StorageAction action = index.isPrimaryKey() ? bulkload.pkStorage : bulkload.groupBuilder;
             insertIntoIndex(session, index, rowData, groupTableKey, indexRow, deferIndexes, action);
         }
 
@@ -593,8 +593,7 @@ public class PersistitStore implements Store, Service {
             throw new BulkloadException(NO_BULKLOAD_IN_PROGRESS);
         try {
             bulkload.pkStorage.treeBuilder.merge();
-            bulkload.secondaryIndexStorage.treeBuilder.merge();
-            bulkload.groupBuilder.merge();
+            bulkload.groupBuilder.treeBuilder.merge();
             transactionService.beginTransaction(session);
             try {
                 for (Map.Entry<RowDef, AtomicLong> rowCountEntry : bulkload.rowsByRowDef.entrySet()) {
@@ -1727,15 +1726,13 @@ public class PersistitStore implements Store, Service {
                 }
             };
             this.pkStorage = new TreeBuilderStorage(persistit);
-            secondaryIndexStorage = new TreeBuilderStorage(persistit);
-            groupBuilder = createTreeBuilder();
+            groupBuilder = new TreeBuilderStorage(persistit);
             this.ais = ais;
         }
 
         public final Persistit persistit;
         public final TreeBuilderStorage pkStorage;
-        public final TreeBuilderStorage secondaryIndexStorage;
-        public final TreeBuilder groupBuilder;
+        public final TreeBuilderStorage groupBuilder;
         public final AkibanInformationSchema ais;
         public final ThreadLocal<Key> groupTableKey;
         public final ThreadLocal<Value> groupTableValue;
