@@ -79,7 +79,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class PersistitStore implements Store, Service {
 
     private static final Session.MapKey<Integer, List<RowCollector>> COLLECTORS = Session.MapKey.mapNamed("collectors");
-    private static final AtomicReference<Bulkload> activeBulkload = new AtomicReference<Bulkload>();
+    private static final AtomicReference<Bulkload> activeBulkload = new AtomicReference<>();
 
     private static final Logger LOG = LoggerFactory
             .getLogger(PersistitStore.class.getName());
@@ -495,30 +495,21 @@ public class PersistitStore implements Store, Service {
             // Attaches itself to the session
             new PersistitAdapter(SchemaCache.globalSchema(bulkload.ais), this, treeService, session, config, false);
         }
-        TreeBuilderStorage pkTreeBuilder;
         AtomicLong hiddenPk;
         AtomicLong insertedRowsCount;
         synchronized (bulkload) {
             if (bulkload.activeRowDef != rowDef) {
                 validateRowDefForBulk(bulkload, rowDef);
                 try {
-                    RowDef parentRowDef = rowDef.getParentRowDef();
-                    if (parentRowDef != null) {
-                        TreeBuilderStorage storage = bulkload.pkStorageByRowDef.remove(parentRowDef);
-                        if (storage != null) // null means a sibling of this rowDef already prompted the merge
-                            storage.treeBuilder.merge();
-                    }
+                    bulkload.pkStorage.treeBuilder.merge();
                 } catch (com.persistit.exception.DuplicateKeyException e) {
                     throw new DuplicateKeyException("PK", null);
                 } catch (Exception e) {
                     LOG.error("while merging PKs", e);
                     throw new BulkloadException("unknown exception (see log): " + e.getMessage());
                 }
-                bulkload.activePkBuilder = new TreeBuilderStorage(bulkload.persistit);
-                Object old = bulkload.pkStorageByRowDef.put(rowDef, bulkload.activePkBuilder);
-                assert old == null : old;
                 bulkload.activeRowsInserted = new AtomicLong();
-                old = bulkload.rowsByRowDef.put(rowDef, bulkload.activeRowsInserted);
+                Object old = bulkload.rowsByRowDef.put(rowDef, bulkload.activeRowsInserted);
                 assert old == null : old;
                 bulkload.activeRowDef = rowDef;
                 if (rowDef.userTable().getPrimaryKey() == null) {
@@ -530,7 +521,6 @@ public class PersistitStore implements Store, Service {
                 }
             }
             hiddenPk = bulkload.activeHiddenPk;
-            pkTreeBuilder = bulkload.activePkBuilder;
             insertedRowsCount = bulkload.activeRowsInserted;
         }
 
@@ -552,7 +542,7 @@ public class PersistitStore implements Store, Service {
 
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
         for (Index index : rowDef.getIndexes()) {
-            StorageAction action = index.isPrimaryKey() ? pkTreeBuilder : bulkload.secondaryIndexStorage;
+            StorageAction action = index.isPrimaryKey() ? bulkload.pkStorage : bulkload.secondaryIndexStorage;
             insertIntoIndex(session, index, rowData, groupTableKey, indexRow, deferIndexes, action);
         }
 
@@ -602,8 +592,7 @@ public class PersistitStore implements Store, Service {
         if (bulkload == null)
             throw new BulkloadException(NO_BULKLOAD_IN_PROGRESS);
         try {
-            for (TreeBuilderStorage pkStorage : bulkload.pkStorageByRowDef.values())
-                pkStorage.treeBuilder.merge();
+            bulkload.pkStorage.treeBuilder.merge();
             bulkload.secondaryIndexStorage.treeBuilder.merge();
             bulkload.groupBuilder.merge();
             transactionService.beginTransaction(session);
@@ -1737,14 +1726,14 @@ public class PersistitStore implements Store, Service {
                     return new Value(persistit);
                 }
             };
-            pkStorageByRowDef = Collections.synchronizedMap(new HashMap<RowDef, TreeBuilderStorage>());
+            this.pkStorage = new TreeBuilderStorage(persistit);
             secondaryIndexStorage = new TreeBuilderStorage(persistit);
             groupBuilder = createTreeBuilder();
             this.ais = ais;
         }
 
         public final Persistit persistit;
-        public final Map<RowDef, TreeBuilderStorage> pkStorageByRowDef;
+        public final TreeBuilderStorage pkStorage;
         public final TreeBuilderStorage secondaryIndexStorage;
         public final TreeBuilder groupBuilder;
         public final AkibanInformationSchema ais;
@@ -1755,7 +1744,6 @@ public class PersistitStore implements Store, Service {
                 Collections.synchronizedMap(new HashMap<RowDef, AtomicLong>());
         public final Map<RowDef, AtomicLong> hiddenPks =
                 Collections.synchronizedMap(new HashMap<RowDef, AtomicLong>());
-        public TreeBuilderStorage activePkBuilder; // guarded by "this"
         public RowDef activeRowDef; // guarded by "this"
         public AtomicLong activeHiddenPk; // guarded by "this"
         public AtomicLong activeRowsInserted; // guarded by "this"
