@@ -101,6 +101,8 @@ public class PersistitStore implements Store, Service {
 
     private static final String NO_BULKLOAD_IN_PROGRESS = "no bulkload in progress";
     private static final String BULKLOAD_TMPDIRS_CONFIG = "akserver.bulkload.tmpdirs";
+    private static final String BULKLOAD_PK_BUFFER_ALLOC = "akserver.bulkload.bufferalloc.pk";
+    private static final String BULKLOAD_GROUP_BUFFER_ALLOC = "akserver.bulkload.bufferalloc.group";
 
     private final static int MAX_ROW_SIZE = 5000000;
 
@@ -144,7 +146,9 @@ public class PersistitStore implements Store, Service {
     };
 
     private volatile List<File> treeBuilderDirs;
-    
+    private volatile float pkBlBufferAllocation;
+    private volatile float groupBlBufferAllocation;
+
     public PersistitStore(boolean updateGroupIndexes, TreeService treeService, ConfigurationService config,
                           SchemaManager schemaManager, LockService lockService, TransactionService transactionService) {
         this.updateGroupIndexes = updateGroupIndexes;
@@ -168,9 +172,7 @@ public class PersistitStore implements Store, Service {
         } catch (RemoteException e) {
             throw new DisplayFilterSetException (e.getMessage());
         }
-        String tbConfigString = "";
-        if (config != null)
-            tbConfigString = config.getProperty(BULKLOAD_TMPDIRS_CONFIG).trim();
+        String tbConfigString = config.getProperty(BULKLOAD_TMPDIRS_CONFIG).trim();
         if (!tbConfigString.isEmpty())
             treeBuilderDirs = ImmutableList.copyOf(Lists.transform(
                     Arrays.asList(tbConfigString.split(File.pathSeparator)),
@@ -184,6 +186,8 @@ public class PersistitStore implements Store, Service {
                         }
                     }
             ));
+        pkBlBufferAllocation = Float.parseFloat(config.getProperty(BULKLOAD_PK_BUFFER_ALLOC));
+        groupBlBufferAllocation = Float.parseFloat(config.getProperty(BULKLOAD_GROUP_BUFFER_ALLOC));
     }
 
     @Override
@@ -1689,8 +1693,8 @@ public class PersistitStore implements Store, Service {
         return !table.getCandidateChildJoins().isEmpty();
     }
 
-    private TreeBuilder createTreeBuilder() {
-        TreeBuilder tb = new TreeBuilder(getDb())
+    private TreeBuilder createTreeBuilder(String name, float bufferBoolFraction) {
+        TreeBuilder tb = new TreeBuilder(getDb(), name, -1, bufferBoolFraction)
 //        // TODO: throw an Akiban dup-key exception once we can handle them
         {
             @Override
@@ -1725,8 +1729,8 @@ public class PersistitStore implements Store, Service {
                     return new Value(persistit);
                 }
             };
-            this.pkStorage = new TreeBuilderStorage(persistit);
-            groupBuilder = new TreeBuilderStorage(persistit);
+            pkStorage = new TreeBuilderStorage("pk_TreeBuilder", pkBlBufferAllocation);
+            groupBuilder = new TreeBuilderStorage("group_TreeBuilder", groupBlBufferAllocation);
             this.ais = ais;
         }
 
@@ -1773,8 +1777,8 @@ public class PersistitStore implements Store, Service {
             treeBuilder.store(exchange);
         }
 
-        private TreeBuilderStorage(Persistit persistit) {
-            this.treeBuilder = createTreeBuilder();
+        private TreeBuilderStorage(String name, float allocation) {
+            this.treeBuilder = createTreeBuilder(name, allocation);
         }
 
         private final TreeBuilder treeBuilder;
