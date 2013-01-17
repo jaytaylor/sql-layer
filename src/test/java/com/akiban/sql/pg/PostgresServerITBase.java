@@ -106,7 +106,7 @@ public class PostgresServerITBase extends ITBase
 
     protected Connection getConnection() throws Exception {
         Connection connection = connectionRef.get();
-        if (connection == null) {
+        if (connection == null || connection.isClosed()) {
             beforeStopServices.add(forgetOnStopServices);
             for (int i = 0; i < 6; i++) {
                 if (server().isListening())
