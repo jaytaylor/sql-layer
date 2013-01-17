@@ -495,10 +495,11 @@ public class PersistitStore implements Store, Service {
             // Attaches itself to the session
             new PersistitAdapter(SchemaCache.globalSchema(bulkload.ais), this, treeService, session, config, false);
         }
-        TreeBuilderStorage activePkBuilder;
-        AtomicLong activePk;
+        TreeBuilderStorage pkTreeBuilder;
+        AtomicLong hiddenPk;
+        AtomicLong insertedRowsCount;
         synchronized (bulkload) {
-            if (bulkload.currentRowDef != rowDef) {
+            if (bulkload.activeRowDef != rowDef) {
                 validateRowDefForBulk(bulkload, rowDef);
                 try {
                     RowDef parentRowDef = rowDef.getParentRowDef();
@@ -513,28 +514,30 @@ public class PersistitStore implements Store, Service {
                     LOG.error("while merging PKs", e);
                     throw new BulkloadException("unknown exception (see log): " + e.getMessage());
                 }
-                bulkload.currentPkBuilder = new TreeBuilderStorage(bulkload.persistit);
-                Object old = bulkload.pkStorageByRowDef.put(rowDef, bulkload.currentPkBuilder);
+                bulkload.activePkBuilder = new TreeBuilderStorage(bulkload.persistit);
+                Object old = bulkload.pkStorageByRowDef.put(rowDef, bulkload.activePkBuilder);
                 assert old == null : old;
-                old = bulkload.rowsByRowDef.put(rowDef, new AtomicLong());
+                bulkload.activeRowsInserted = new AtomicLong();
+                old = bulkload.rowsByRowDef.put(rowDef, bulkload.activeRowsInserted);
                 assert old == null : old;
-                bulkload.currentRowDef = rowDef;
+                bulkload.activeRowDef = rowDef;
                 if (rowDef.userTable().getPrimaryKey() == null) {
-                    bulkload.activePk = new AtomicLong(rowDef.getTableStatus().getApproximateUniqueID());
-                    bulkload.hiddenPks.put(rowDef, bulkload.activePk);
+                    bulkload.activeHiddenPk = new AtomicLong(rowDef.getTableStatus().getApproximateUniqueID());
+                    bulkload.hiddenPks.put(rowDef, bulkload.activeHiddenPk);
                 }
                 else {
-                    bulkload.activePk = null;
+                    bulkload.activeHiddenPk = null;
                 }
             }
-            activePk = bulkload.activePk;
-            activePkBuilder = bulkload.currentPkBuilder;
+            hiddenPk = bulkload.activeHiddenPk;
+            pkTreeBuilder = bulkload.activePkBuilder;
+            insertedRowsCount = bulkload.activeRowsInserted;
         }
 
         // Group table
         Key groupTableKey = bulkload.groupTableKey.get();
         Value groupTableValue = bulkload.groupTableValue.get();
-        constructHKey(session, groupTableKey, rowDef, rowData, true, activePk); // invokes key.clear()
+        constructHKey(session, groupTableKey, rowDef, rowData, true, hiddenPk); // invokes key.clear()
         groupTableValue.clear();
         packRowData(groupTableValue, rowDef, rowData);
         try {
@@ -549,9 +552,11 @@ public class PersistitStore implements Store, Service {
 
         PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
         for (Index index : rowDef.getIndexes()) {
-            StorageAction action = index.isPrimaryKey() ? activePkBuilder : bulkload.secondaryIndexStorage;
+            StorageAction action = index.isPrimaryKey() ? pkTreeBuilder : bulkload.secondaryIndexStorage;
             insertIntoIndex(session, index, rowData, groupTableKey, indexRow, deferIndexes, action);
         }
+
+        insertedRowsCount.incrementAndGet();
     }
 
     private void validateRowDefForBulk(Bulkload bulkload, RowDef rowDef) {
@@ -1750,9 +1755,10 @@ public class PersistitStore implements Store, Service {
                 Collections.synchronizedMap(new HashMap<RowDef, AtomicLong>());
         public final Map<RowDef, AtomicLong> hiddenPks =
                 Collections.synchronizedMap(new HashMap<RowDef, AtomicLong>());
-        public TreeBuilderStorage currentPkBuilder; // guarded by "this"
-        public RowDef currentRowDef; // guarded by "this"
-        public AtomicLong activePk; // guarded by "this"
+        public TreeBuilderStorage activePkBuilder; // guarded by "this"
+        public RowDef activeRowDef; // guarded by "this"
+        public AtomicLong activeHiddenPk; // guarded by "this"
+        public AtomicLong activeRowsInserted; // guarded by "this"
     }
 
     private abstract static class StorageAction {
