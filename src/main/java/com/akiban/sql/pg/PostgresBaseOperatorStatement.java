@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 import com.akiban.sql.optimizer.TypesTranslation;
@@ -40,10 +41,12 @@ import com.akiban.sql.server.ServerPlanContext;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import java.util.List;
+import java.util.Set;
 
 public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
 {
     private PostgresOperatorCompiler compiler;
+    private Set<UserTable> affectedTables;
 
     protected PostgresBaseOperatorStatement(PostgresOperatorCompiler compiler) {
         this.compiler = compiler;
@@ -69,6 +72,7 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
                                            (PhysicalSelect)result,
                                            parameterTypes);
         pbos.compiler = null;
+        pbos.setAffectedTables(result.getAffectedTables());
         return pbos;
     }
 
@@ -105,4 +109,11 @@ public abstract class PostgresBaseOperatorStatement extends PostgresDMLStatement
         return parameterTypes;
     }
 
+    public Set<UserTable> getAffectedTables() {
+        return affectedTables;
+    }
+
+    public void setAffectedTables(Set<UserTable> affectedTables) {
+        this.affectedTables = affectedTables;
+    }
 }

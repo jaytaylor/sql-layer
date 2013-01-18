@@ -29,6 +29,9 @@ package com.akiban.sql.pg;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.NamedParameterizedRunner.TestParameters;
 import com.akiban.junit.Parameterization;
+import com.akiban.server.service.is.BasicInfoSchemaTablesService;
+import com.akiban.server.service.is.BasicInfoSchemaTablesServiceImpl;
+import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.sql.NamedParamsTestBase;
 
 import java.io.File;
@@ -74,6 +77,12 @@ public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase {
 
     public PostgresServerMiscYamlIT(String caseName, File file) {
 	this.file = file;
+    }
+
+    @Override
+    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
+        return super.serviceBindingsProvider()
+                .bindAndRequire(BasicInfoSchemaTablesService.class, BasicInfoSchemaTablesServiceImpl.class);
     }
 
     @Test
