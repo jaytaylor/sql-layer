@@ -38,6 +38,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.junit.Test;
@@ -83,6 +84,11 @@ public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase {
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
                 .bindAndRequire(BasicInfoSchemaTablesService.class, BasicInfoSchemaTablesServiceImpl.class);
+    }
+
+    @Override
+    protected Map<String, String> startupConfigProperties() {
+        return uniqueStartupConfigProperties(getClass());
     }
 
     @Test
