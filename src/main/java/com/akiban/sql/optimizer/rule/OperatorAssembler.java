@@ -28,6 +28,7 @@ package com.akiban.sql.optimizer.rule;
 
 import static com.akiban.sql.optimizer.rule.OldExpressionAssembler.*;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.t3expressions.T3RegistryService;
@@ -668,11 +669,13 @@ public class OperatorAssembler extends BaseRule
         private final PartialAssembler<Expression> oldPartialAssembler;
         private final PartialAssembler<TPreparedExpression> newPartialAssembler;
         private final PartialAssembler<?> partialAssembler;
+        private final Set<UserTable> affectedTables;
 
         public Assembler(PlanContext planContext, boolean usePValues) {
             this.usePValues = usePValues;
             this.planContext = planContext;
             rulesContext = (SchemaRulesContext)planContext.getRulesContext();
+            affectedTables = new HashSet<>();
             if (planContext instanceof ExplainPlanContext)
                 explainContext = ((ExplainPlanContext)planContext).getExplainContext();
             schema = rulesContext.getSchema();
@@ -719,7 +722,8 @@ public class OperatorAssembler extends BaseRule
                 explainSelectQuery(stream.operator, selectQuery);
             return new PhysicalSelect(stream.operator, stream.rowType, resultColumns, 
                                       getParameterTypes(), 
-                                      selectQuery.getCostEstimate());
+                                      selectQuery.getCostEstimate(),
+                                      affectedTables);
         }
 
         protected void explainSelectQuery(Operator plan, SelectQuery selectQuery) {
@@ -748,7 +752,8 @@ public class OperatorAssembler extends BaseRule
                                       returning,
                                       statement.isRequireStepIsolation(),
                                       returning || !isBulkInsert(planQuery),
-                                      statement.getCostEstimate());
+                                      statement.getCostEstimate(),
+                                      affectedTables);
         }
 
         protected RowStream assembleInsertStatement (InsertStatement insert) {
@@ -778,7 +783,7 @@ public class OperatorAssembler extends BaseRule
 
             UserTableRowType targetRowType = 
                     tableRowType(insert.getTargetTable());
-            UserTable table = insert.getTargetTable().getTable();            
+            UserTable table = insert.getTargetTable().getTable();
 
             List<Expression> inserts = null;
             List<TPreparedExpression> insertsP = null;
@@ -1959,7 +1964,9 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected UserTableRowType tableRowType(TableNode table) {
-            return schema.userTableRowType(table.getTable());
+            UserTable userTable = table.getTable();
+            affectedTables.add(userTable);
+            return schema.userTableRowType(userTable);
         }
 
         protected ValuesRowType valuesRowType(AkType[] fields) {
@@ -1967,7 +1974,12 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected IndexRowType getIndexRowType(SingleIndexScan index) {
-            return schema.indexRowType(index.getIndex());
+            Index aisIndex = index.getIndex();
+            AkibanInformationSchema ais = schema.ais();
+            for (int i : aisIndex.getAllTableIDs()) {
+                affectedTables.add(ais.getUserTable(i));
+            }
+            return schema.indexRowType(aisIndex);
         }
 
         /** Return an index bound for the given index and expressions.

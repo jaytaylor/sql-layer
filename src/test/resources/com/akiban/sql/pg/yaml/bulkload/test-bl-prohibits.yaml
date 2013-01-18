@@ -1,6 +1,8 @@
 ---
 - CreateTable: t(id int)
 ---
+- CreateTable: customers(fid int not null primary key, name varchar(32))
+---
 - Statement: SET bulkload='TrUE';
 ---
 
@@ -8,7 +10,16 @@
 - Statement: SELECT * FROM t
 - error: [57007]
 ---
-- Statement: SELECT * FROM information_schema.index_statistics
+# prohibit non-i_s table where we'll see the user table row type
+- Statement: SELECT * FROM customers
+- error: [57007]
+---
+# prohibit non-i_s table where we'll see the index row type
+- Statement: SELECT fid FROM customers ORDER BY fid
+- error: [57007]
+---
+# prohibit non-i_s table where we'll see the count(*) only
+- Statement: SELECT count(*) FROM customers
 - error: [57007]
 ---
 - Statement: update t set id = 0
@@ -16,6 +27,9 @@
 ---
 - Statement: delete from t
 - error: [57007]
+---
+- Statement: SELECT table_name FROM information_schema.tables WHERE table_name='customers'
+- output: [["customers"]]
 ---
 
 # DDL

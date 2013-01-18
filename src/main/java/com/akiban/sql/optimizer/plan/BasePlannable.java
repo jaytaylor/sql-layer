@@ -26,6 +26,7 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.types.DataTypeDescriptor;
 
@@ -44,17 +45,20 @@ public abstract class BasePlannable extends BasePlanNode
     private List<PhysicalResultColumn> resultColumns;
     private RowType rowType;
     private CostEstimate costEstimate;
+    private Set<UserTable> affectedTables;
 
     protected BasePlannable(Plannable plannable,
                             DataTypeDescriptor[] parameterTypes,
                             RowType rowType,
                             List<PhysicalResultColumn> resultColumns,
-                            CostEstimate costEstimate) {
+                            CostEstimate costEstimate,
+                            Set<UserTable> affectedTables) {
         this.plannable = plannable;
         this.parameterTypes = parameterTypes;
         this.rowType = rowType;
         this.resultColumns = resultColumns;
         this.costEstimate = costEstimate;
+        this.affectedTables = affectedTables;
     }
 
     public Plannable getPlannable() {
@@ -74,6 +78,10 @@ public abstract class BasePlannable extends BasePlanNode
 
     public CostEstimate getCostEstimate() {
         return costEstimate;
+    }
+
+    public Set<UserTable> getAffectedTables() {
+        return affectedTables;
     }
 
     public abstract boolean isUpdate();
