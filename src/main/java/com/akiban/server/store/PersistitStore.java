@@ -172,7 +172,16 @@ public class PersistitStore implements Store, Service {
         } catch (RemoteException e) {
             throw new DisplayFilterSetException (e.getMessage());
         }
-        String tbConfigString = config.getProperty(BULKLOAD_TMPDIRS_CONFIG).trim();
+        String tbConfigString = "";
+        if (config != null) {
+            config.getProperty(BULKLOAD_TMPDIRS_CONFIG).trim();
+            pkBlBufferAllocation = Float.parseFloat(config.getProperty(BULKLOAD_PK_BUFFER_ALLOC));
+            groupBlBufferAllocation = Float.parseFloat(config.getProperty(BULKLOAD_GROUP_BUFFER_ALLOC));
+        }
+        else {
+            pkBlBufferAllocation = .5f;
+            groupBlBufferAllocation = .5f;
+        }
         if (!tbConfigString.isEmpty())
             treeBuilderDirs = ImmutableList.copyOf(Lists.transform(
                     Arrays.asList(tbConfigString.split(File.pathSeparator)),
@@ -186,8 +195,6 @@ public class PersistitStore implements Store, Service {
                         }
                     }
             ));
-        pkBlBufferAllocation = Float.parseFloat(config.getProperty(BULKLOAD_PK_BUFFER_ALLOC));
-        groupBlBufferAllocation = Float.parseFloat(config.getProperty(BULKLOAD_GROUP_BUFFER_ALLOC));
     }
 
     @Override
