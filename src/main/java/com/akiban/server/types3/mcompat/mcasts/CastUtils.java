@@ -312,7 +312,6 @@ public final class CastUtils
 
     public static String truncateNonDigitPlainString(String st, TExecutionContext context)
     {
-        System.out.println("st = " + st);
         final int max = st.length();
         if (max == 0)
             return "0";
