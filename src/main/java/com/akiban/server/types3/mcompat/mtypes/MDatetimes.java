@@ -285,7 +285,7 @@ public class MDatetimes
             {
                 year = Integer.parseInt(tks[0]);
                 month = Integer.parseInt(tks[1]);
-                day = Integer.parseInt(CastUtils.truncateNonDigits(tks[2], context));
+                day = (int) CastUtils.parseInRange(tks[2], Long.MAX_VALUE, Long.MIN_VALUE, context);
             }
             else if (tks.length == 1)
             {
