@@ -32,7 +32,11 @@ import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal.Attrs;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.google.common.primitives.UnsignedLongs;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -154,45 +158,120 @@ public final class CastUtils
      */
     public static double parseDoubleString(String st, TExecutionContext context)
     {
+        double ret = 0;
         Matcher m = DOUBLE_PATTERN.matcher(st);
 
-        m.lookingAt();
-        String truncated = st.substring(0, m.end());
-
-        if (!truncated.equals(st))
+        if (m.lookingAt())
         {
-            context.reportTruncate(st, truncated);
-        }
+            String truncated = st.substring(0, m.end());
 
-        double ret = 0;
-        try
-        {
-            ret = Double.parseDouble(truncated);
-        }
-        catch (NumberFormatException e)
-        {
-            context.reportBadValue(e.getMessage());
-        }
+            if (!truncated.equals(st))
+            {
+                context.reportTruncate(st, truncated);
+            }
 
-       return ret;
+            try
+            {
+                ret = Double.parseDouble(truncated);
+            }
+            catch (NumberFormatException e)
+            {
+                context.reportBadValue(e.getMessage());
+            }
+        }
+        else
+            context.reportBadValue(st);
+
+        return ret;
     }
 
     public static long parseInRange(String st, long max, long min, TExecutionContext context)
     {
-        String truncated;
+        Object truncated;
 
         // first attempt
         try
         {
             return CastUtils.getInRange(max, min, Long.parseLong(st), context);
         }
-        catch (NumberFormatException e)
+        catch (NumberFormatException e) // This could be an overflow, but there is no way to know
         {
             truncated = CastUtils.truncateNonDigits(st, context);
         }
 
-        // second attempt
-        return CastUtils.getInRange(max, min, Long.parseLong(truncated), context);
+        // second attemp
+        if (truncated instanceof String)
+        {
+            String truncatedStr = (String)truncated;
+            try
+            {
+                return CastUtils.getInRange(max, min, Long.parseLong(truncatedStr), context);
+            }
+            catch (NumberFormatException e) // overflow
+            {
+                context.reportOverflow(e.getMessage());
+                
+                // check wether the number is too big or too small
+                char first = truncatedStr.charAt(0);
+                if (first == '-')
+                    return getInRange(max, min, Long.MIN_VALUE, context);
+                else
+                    return getInRange(max, min, Long.MAX_VALUE, context);
+            }
+        }
+        else // must be a BigDecimal object
+        {
+            BigDecimal num = (BigDecimal)truncated;
+            
+            // check overflow
+            if (num.compareTo(MAX_LONG) > 0)
+            {
+                context.reportTruncate(st, Long.toString(max));
+                return max;
+            }
+            else if (num.compareTo(MIN_LONG) < 0)
+            {
+                context.reportTruncate(st, Long.toString(min));
+                return min;
+            }
+
+            try
+            {
+                return getInRange(max, min, num.longValueExact(), context);
+            }
+            catch (ArithmeticException e) // has non-zero fractional parts
+            {
+                long ret = num.setScale(0, RoundingMode.HALF_UP).longValue();
+                context.reportTruncate(st, Long.toString(ret));
+                return getInRange(max, min, ret, context);
+            }
+        }
+    }
+    
+    public static long parseUnsignedLong(String st, TExecutionContext context)
+    {
+        Object truncated = CastUtils.truncateNonDigits(st, context);
+
+        if (truncated instanceof String)
+            st = (String)truncated;
+        else
+            st = CastUtils.truncateNonDigitPlainString(((BigDecimal)truncated).toPlainString(),
+                                                       context);
+
+        long value;
+        try 
+        {
+            value = UnsignedLongs.parseUnsignedLong(st);
+        } catch (NumberFormatException e) { // overflow error
+            context.reportOverflow(e.getMessage());
+
+            // check wether the value is too big or too small
+            if (st.charAt(0) == '-')
+                value = 0;
+            else
+                value = UnsignedLongs.MAX_VALUE;
+        }
+        return value;
     }
     
     /**
@@ -202,38 +281,76 @@ public final class CastUtils
      * @param st the string to parse
      * @return a non-empty, non-null string which contains all digits, with a possible leading '-'
      */
-    public static String truncateNonDigits(String st, TExecutionContext context)
+    public static Object truncateNonDigits(String st, TExecutionContext context)
     {
+        if (st.isEmpty())
+            return "0";
+
+        Matcher m = DOUBLE_PATTERN.matcher(st);
+        String truncated;
+        int last;
+        if (m.lookingAt() && !(truncated = st.substring(0, last = m.end())).isEmpty())
+        {
+            --last; // m.end() returns an offset from the beginning, not an index
+            if (truncated.charAt(last) != st.charAt(last))
+                context.reportTruncate(st, truncated);
+            
+            // If the exponent exists, use BigDecimal
+            if ( m.group(EXP_PART) != null)
+                return new BigDecimal(st);
+
+            // otherwise, truncate  non-digit chars
+            return truncateNonDigitPlainString(truncated, context);
+        }
+        else // not a valid numeric string
+        {
+            context.reportBadValue(st);
+            return "0";
+        }
+        
+    }
+
+    public static String truncateNonDigitPlainString(String st, TExecutionContext context)
+    {
+        System.out.println("st = " + st);
         final int max = st.length();
         if (max == 0)
             return "0";
-        final int firstChar = (st.charAt(0) == '-') ? 1 : 0;
+        final boolean neg;
+        final int firstIndex = ((neg = st.charAt(0) == '-') || st.charAt(0) == '+') ? 1 : 0;
         boolean needsRoundingUp = false; // whether the number ends in "\.[5-9]"
         int truncatedLength;
-        for(truncatedLength = firstChar; truncatedLength < max; ++truncatedLength) {
+        for (truncatedLength = firstIndex; truncatedLength < max; ++truncatedLength)
+        {
             char c = st.charAt(truncatedLength);
-            if (!Character.isDigit(c)) {
+            if (!Character.isDigit(c))
+            {
                 needsRoundingUp = (c == '.') && isFiveOrHigher(st, truncatedLength + 1);
                 break;
             }
         }
-        if (truncatedLength == firstChar)
+
+        if (truncatedLength == firstIndex && !needsRoundingUp)
             return "0"; // no digits
 
         String ret;
-        if (needsRoundingUp) {
-            StringBuilder sb = new StringBuilder(truncatedLength+2); // 1 for '-', 1 for the carry digit
+        if (needsRoundingUp)
+        {
+            StringBuilder sb = new StringBuilder(truncatedLength + 2); // 1 for '-', 1 for the carry digit
             // Go right to left on the string, not counting the leading '-'. Assume every char is a digit. If you see
             // a '9', set it to 0 and continue the loop. Otherwise, set needsRoundingUp to false and break.
             // Once the loop is done, if needsRoundingUp is still true, append a 1. Finally, append the '-' if we need
             // it, reverse the string, and return it.
-            for (int i = truncatedLength-1; i >= firstChar; --i) {
+            for (int i = truncatedLength - 1; i >= firstIndex; --i)
+            {
                 char c = st.charAt(i);
                 assert (c >= '0') && (c <= '9') : c + " at index " + i + " of: " + st;
-                if (needsRoundingUp && c == '9') {
+                if (needsRoundingUp && c == '9')
+                {
                     sb.append('0');
                 }
-                else {
+                else
+                {
                     if (needsRoundingUp)
                         ++c;
                     sb.append(c);
@@ -242,18 +359,18 @@ public final class CastUtils
             }
             if (needsRoundingUp)
                 sb.append('1');
-            if (firstChar == 1)
+            if (neg)
                 sb.append('-');
             sb.reverse();
             ret = sb.toString();
         }
-        else {
+        else
+        {
             ret = st.substring(0, truncatedLength);
         }
 
         return ret;
     }
-
     private static boolean isFiveOrHigher(String string, int index) {
         if (index >= string.length())
             return false;
@@ -283,4 +400,30 @@ public final class CastUtils
             return (byte)(raw - 1900);
     }
     private static final Pattern DOUBLE_PATTERN = Pattern.compile("([-+]?\\d*)(\\.?\\d+)?([eE][-+]?\\d+)?");
+
+    private static int WHOLE_PART = 1;
+    private static int FLOAT_PART = 2;
+    private static int EXP_PART = 3;
+   
+    public static final long MAX_TINYINT = 127;
+    public static final long MAX_UNSIGNED_TINYINT = 255;
+    public static final long MIN_TINYINT = -128;
+    
+    public static final long MAX_SMALLINT = 32767;
+    public static final long MAX_UNSIGNED_SMALLINT = 65535;
+    public static final long MIN_SMALLINT = -32768;
+    
+    public static final long MAX_MEDINT = 8388607;
+    public static final long MAX_UNSIGNED_MEDINT = 16777215;
+    public static final long MIN_MEDINT = -8388608;
+    
+    public static final long MAX_INT = 2147483647;
+    public static final long MAX_UNSIGNED_INT = 4294967295L;
+    public static final long MIN_INT = -2147483648;
+    
+    public static final long MAX_BIGINT = 9223372036854775807L;
+    public static final long MIN_BIGINT = -9223372036854775808L;
+
+    private static final BigDecimal MAX_LONG = BigDecimal.valueOf(Long.MAX_VALUE);
+    private static final BigDecimal MIN_LONG = BigDecimal.valueOf(Long.MIN_VALUE);
 }
