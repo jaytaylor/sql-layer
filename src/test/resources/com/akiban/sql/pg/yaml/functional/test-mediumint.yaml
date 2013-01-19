@@ -11,8 +11,8 @@
 - output: [['5']]
 #- output_types: [MEDIUMINT] the type-id returnt by ResultSet object in YamlTester.java says this is a 
 ---                         # SMALLINT (id =7), but manual testing through psql shows it really is MEDIUMINT
-- Statement: INSERT INTO t VALUES ('500'), ('8388607') , ('-8388607')
+- Statement: INSERT INTO t VALUES ('500'), ('8388607') , ('-8388607'), ('-8388608'), ('-8388610')
 ---
 - Statement: SELECT * FROM t;
-- output: [['5'], ['500'], ['8388607'], ['-8388607']]
+- output: [['5'], ['500'], ['8388607'], ['-8388607'], ['-8388608'], ['-8388608']]
 ...
