@@ -2,17 +2,10 @@
 ---
 - CreateTable: t (c mediumint);
 ---
-- Statement: INSERT INTO t VALUES (5);
-#--- this would result in '3.6 == 4', but because of an unrelated bug in DOUBLE => INT casting
-# which is being addressed in a different branch, this isn't a good test right now
-#- Statement: INSERT INTO t VALUES (pow(2, 55));
+- Statement: INSERT INTO t VALUES ('5'), ('500'), ('8388610'), ('8388607'), ('-8388607'), ('-8388608'), ('-8388610')
 ---
 - Statement: SELECT * FROM t;
-- output: [['5']]
+- output: [['5'], ['500'], ['8388607'], ['8388607'], ['-8388607'], ['-8388608'], ['-8388608']]
 #- output_types: [MEDIUMINT] the type-id returnt by ResultSet object in YamlTester.java says this is a 
----                         # SMALLINT (id =7), but manual testing through psql shows it really is MEDIUMINT
-- Statement: INSERT INTO t VALUES ('500'), ('8388607') , ('-8388607'), ('-8388608'), ('-8388610')
----
-- Statement: SELECT * FROM t;
-- output: [['5'], ['500'], ['8388607'], ['-8388607'], ['-8388608'], ['-8388608']]
+# SMALLINT (id =7), but manual testing through psql shows it really is MEDIUMINT
 ...
