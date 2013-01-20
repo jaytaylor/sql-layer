@@ -63,6 +63,7 @@ public final class TypesTranslation {
         case TypeId.FormatIds.CHAR_TYPE_ID:
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
             return AkType.VARCHAR;
+        case TypeId.FormatIds.MEDIUMINT_ID:
         case TypeId.FormatIds.INT_TYPE_ID:
         case TypeId.FormatIds.SMALLINT_TYPE_ID:
         case TypeId.FormatIds.TINYINT_TYPE_ID:
