@@ -46,4 +46,12 @@ public class Indexer
         this.writer = new IndexWriter(index.open(), iwc);
     }
 
+    public FullTextIndex getIndex() {
+        return index;
+    }
+
+    public IndexWriter getWriter() {
+        return writer;
+    }
+
 }

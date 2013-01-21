@@ -119,6 +119,22 @@ public class FullTextIndexAIS
         }
     }
 
+    public UserTableRowType getIndexedRowType() {
+        return indexedRowType;
+    }
+
+    public List<IndexedField> getKeyFields() {
+        return keyFields;
+    }
+
+    public Map<Column,IndexedField> getFieldsByColumn() {
+        return fieldsByColumn;
+    }
+
+    public Map<RowType,List<IndexedField>> getFieldsByRowType() {
+        return fieldsByRowType;
+    }
+
     public List<String> getKeyColumns() {
         List<String> result = new ArrayList<>(keyFields.size());
         for (IndexedField field : keyFields) {
