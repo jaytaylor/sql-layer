@@ -26,5 +26,16 @@
 
 package com.akiban.server.service.text;
 
+import com.akiban.server.service.session.Session;
+
+import java.util.List;
+
 public interface FullTextIndexService {
+    public void createIndex(Session session, String name, 
+                            String schemaName, String tableName,
+                            List<String> indexedColumns, boolean populate);
+    public void dropIndex(Session session, String name);
+    public void populateIndex(Session session, String name);
+    public List<List<String>> searchIndex(Session session, String name, 
+                                          String query, int size);
 }

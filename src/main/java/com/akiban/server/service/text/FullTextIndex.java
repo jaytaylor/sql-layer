@@ -41,8 +41,11 @@ public class FullTextIndex implements CacheValueGenerator<FullTextIndexAIS>
     private final File path;
     private final String schemaName, tableName;
     private final List<String> indexedColumns;
+    private String defaultFieldName;
     private List<String> keyColumns;
     private Directory directory;
+    private Indexer indexer;
+    private Searcher searcher;
 
     public FullTextIndex(String name, File basepath,
                          String schemaName, String tableName,
@@ -56,6 +59,10 @@ public class FullTextIndex implements CacheValueGenerator<FullTextIndexAIS>
 
     public String getName() {
         return name;
+    }
+
+    public File getPath() {
+        return path;
     }
 
     public String getSchemaName() {
@@ -72,6 +79,10 @@ public class FullTextIndex implements CacheValueGenerator<FullTextIndexAIS>
 
     public List<String> getKeyColumns() {
         return keyColumns;
+    }
+
+    public String getDefaultFieldName() {
+        return defaultFieldName;
     }
 
     public synchronized Directory open() throws IOException {
@@ -98,6 +109,25 @@ public class FullTextIndex implements CacheValueGenerator<FullTextIndexAIS>
         result.init();
         if (keyColumns == null)
             keyColumns = result.getKeyColumns();
+        if (defaultFieldName == null)
+            defaultFieldName = result.getDefaultFieldName();
         return result;
     }
+
+    public Indexer getIndexer() {
+        return indexer;
+    }
+
+    public void setIndexer(Indexer indexer) {
+        this.indexer = indexer;
+    }
+
+    public Searcher getSearcher() {
+        return searcher;
+    }
+
+    public void setSearcher(Searcher searcher) {
+        this.searcher = searcher;
+    }
+
 }

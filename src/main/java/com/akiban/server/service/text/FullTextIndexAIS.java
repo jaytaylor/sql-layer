@@ -29,6 +29,8 @@ package com.akiban.server.service.text;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
@@ -43,10 +45,12 @@ public class FullTextIndexAIS
 {
     private final FullTextIndex index;
     private final AkibanInformationSchema ais;
+    private Schema schema;
     private UserTableRowType indexedRowType;
     private List<IndexedField> keyFields;
     private Map<Column,IndexedField> fieldsByColumn;
     private Map<RowType,List<IndexedField>> fieldsByRowType;
+    private String defaultFieldName;
 
     public FullTextIndexAIS(FullTextIndex index, AkibanInformationSchema ais) {
         this.index = index;
@@ -54,7 +58,7 @@ public class FullTextIndexAIS
     }
 
     public void init() {
-        Schema schema = SchemaCache.globalSchema(ais);
+        schema = SchemaCache.globalSchema(ais);
         UserTable table = ais.getUserTable(index.getSchemaName(), index.getTableName());
         if (table == null) {
             throw new NoSuchTableException(index.getSchemaName(), index.getTableName());
@@ -104,7 +108,10 @@ public class FullTextIndexAIS
                 }
             }
             if (!fieldsByColumn.containsKey(col)) {
-                fieldsByColumn.put(col, new IndexedField(col, false));
+                IndexedField indexedField = new IndexedField(col, false);
+                fieldsByColumn.put(col, indexedField);
+                if (defaultFieldName == null)
+                    defaultFieldName = indexedField.getName();
             }
         }
         fieldsByRowType = new HashMap<>();
@@ -117,6 +124,14 @@ public class FullTextIndexAIS
             }
             fields.add(entry.getValue());
         }
+    }
+
+    public Schema getSchema() {
+        return schema;
+    }
+
+    public FullTextIndex getIndex() {
+        return index;
     }
 
     public UserTableRowType getIndexedRowType() {
@@ -142,4 +157,16 @@ public class FullTextIndexAIS
         }
         return result;
     }
+
+    public String getDefaultFieldName() {
+        return defaultFieldName;
+    }
+
+    public Operator fullScan() {
+        Operator plan = API.groupScan_Default(indexedRowType.userTable().getGroup());
+        Set<RowType> rowTypes = new HashSet<>(fieldsByRowType.keySet());
+        plan = API.filter_Default(plan, rowTypes);
+        return plan;
+    }
+
 }

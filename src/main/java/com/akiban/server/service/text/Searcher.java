@@ -40,11 +40,12 @@ import org.apache.lucene.search.SearcherFactory;
 import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.search.TopDocs;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Searcher
+public class Searcher implements Closeable
 {
     private final FullTextIndex index;
     private final StandardQueryParser parser;
@@ -60,7 +61,7 @@ public class Searcher
         List<String> keyColumns = index.getKeyColumns();
         Query query;
         try {
-            query = parser.parse(input, null);
+            query = parser.parse(input, index.getDefaultFieldName());
         }
         catch (QueryNodeException ex) {
             throw new AkibanInternalException("Parse error", ex);
@@ -83,6 +84,11 @@ public class Searcher
         finally {
             searcherManager.release(searcher);
         }
+    }
+
+    @Override
+    public void close() throws IOException {
+        searcherManager.close();
     }
 
 }

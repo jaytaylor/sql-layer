@@ -27,6 +27,7 @@
 package com.akiban.server.service.text;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
@@ -52,11 +53,11 @@ public class RowIndexer implements Closeable
     private Map<RowType,List<IndexedField>> fieldsByRowType;
     private IndexWriter writer;
     private Document currentDocument;
+    private boolean rollback;
     
     private static final Logger logger = LoggerFactory.getLogger(RowIndexer.class);
 
-    public RowIndexer(Indexer indexer, AkibanInformationSchema ais) {
-        FullTextIndexAIS indexAIS = indexer.getIndex().forAIS(ais);
+    public RowIndexer(FullTextIndexAIS indexAIS, IndexWriter writer) {
         UserTableRowType indexedRowType = indexAIS.getIndexedRowType();
         int depth = indexedRowType.userTable().getDepth();
         ancestorRowTypes = new HashMap<>(depth+1);
@@ -78,11 +79,11 @@ public class RowIndexer implements Closeable
                 assert false : "Not ancestor nor descendant " + rowType;
             }
         }
-        writer = indexer.getWriter();
+        this.writer = writer;
         currentDocument = null;
     }
 
-    public void index(Row row) throws IOException {
+    public void indexRow(Row row) throws IOException {
         if (row == null) {
             addDocument();
             return;
@@ -120,6 +121,16 @@ public class RowIndexer implements Closeable
             }
         }
     }
+    
+    public void indexRows(Cursor cursor) throws IOException {
+        cursor.open();
+        Row row;
+        do {
+            row = cursor.next();
+            indexRow(row);
+        } while (row != null);
+        cursor.close();
+    }
 
     protected void addDocument() throws IOException {
         if (currentDocument != null) {
@@ -137,6 +148,10 @@ public class RowIndexer implements Closeable
         }
     }
 
+    public void setRollback() {
+        this.rollback = true;
+    }
+
     @Override
     public void close() throws IOException {
         for (ShareHolder<Row> holder : ancestors) {
@@ -144,7 +159,12 @@ public class RowIndexer implements Closeable
                 holder.release();
             }
         }
-        writer.commit();
+        if (rollback) {
+            writer.rollback();
+        }
+        else {
+            writer.commit();
+        }
     }
 
 }

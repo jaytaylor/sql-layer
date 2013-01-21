@@ -33,9 +33,10 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.util.Version;
 
+import java.io.Closeable;
 import java.io.IOException;
 
-public class Indexer
+public class Indexer implements Closeable
 {
     private final FullTextIndex index;
     private final IndexWriter writer;
@@ -52,6 +53,11 @@ public class Indexer
 
     public IndexWriter getWriter() {
         return writer;
+    }
+
+    @Override
+    public void close() throws IOException {
+        writer.close();
     }
 
 }
