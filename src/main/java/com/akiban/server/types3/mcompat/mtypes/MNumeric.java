@@ -27,11 +27,6 @@
 package com.akiban.server.types3.mcompat.mtypes;
 
 import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TParser;
-import com.akiban.server.types3.TParsers;
-import com.akiban.server.types3.TypeDeclarationException;
 import com.akiban.server.types3.*;
 import com.akiban.server.types3.aksql.AkCategory;
 import com.akiban.server.types3.common.types.NumericAttribute;

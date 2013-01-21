@@ -27,6 +27,8 @@
 package com.akiban.sql.pg;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.sql.parser.SetConfigurationNode;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerSessionBase;
@@ -685,6 +687,19 @@ public class PostgresServerConnection extends ServerSessionBase
         if (pstmt instanceof PostgresModifyOperatorStatement) {
             PostgresModifyOperatorStatement modifyStatement = (PostgresModifyOperatorStatement) pstmt;
             if (modifyStatement.isInsert())
+                return;
+        }
+        else if (pstmt instanceof PostgresBaseOperatorStatement) {
+            PostgresBaseOperatorStatement operatorStatement = (PostgresBaseOperatorStatement) pstmt;
+            Set<UserTable> affectedTables = operatorStatement.getAffectedTables();
+            boolean allTablesAllowed = true;
+            for (UserTable affectedTable : affectedTables) {
+                if (!TableName.INFORMATION_SCHEMA.equals(affectedTable.getName().getSchemaName())) {
+                    allTablesAllowed = false;
+                    break;
+                }
+            }
+            if (allTablesAllowed)
                 return;
         }
         else if (pstmt instanceof PostgresSessionStatement) {

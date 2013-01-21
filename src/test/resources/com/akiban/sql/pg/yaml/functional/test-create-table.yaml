@@ -25,9 +25,8 @@
 # - CreateTable: table_bit (bit_field bit)
 # - error: [50008]
 #---
-# mediumint is not supported
+# mediumint is now supported
 - CreateTable: table_mediumint (mediumint_field mediumint)
-- error: [50008]
 ---
 # enum is not supported
 - CreateTable: table_enum (enum_field enum)
