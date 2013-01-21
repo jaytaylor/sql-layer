@@ -47,6 +47,7 @@ import com.akiban.server.store.Store;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.util.Version;
 
 import com.google.inject.Inject;
@@ -199,6 +200,7 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
     protected synchronized File getIndexPath() {
         if (indexPath == null) {
             indexPath = new File(configService.getProperty(INDEX_PATH_PROPERTY));
+            indexPath.mkdirs();
         }
         return indexPath;
     }
@@ -228,11 +230,13 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
                                            store, treeService, 
                                            session, configService);
         QueryContext queryContext = new SimpleQueryContext(adapter);
-        RowIndexer rowIndexer = new RowIndexer(indexAIS, indexer.getWriter());
+        IndexWriter writer = indexer.getWriter();
+        RowIndexer rowIndexer = new RowIndexer(indexAIS, writer);
         boolean transaction = false;
         Cursor cursor = null;
         boolean success = false;
         try {
+            writer.deleteAll();
             transactionService.beginTransaction(session);
             transaction = true;
             cursor = API.cursor(plan, queryContext);
