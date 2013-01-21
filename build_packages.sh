@@ -61,6 +61,7 @@ esac
 
 mkdir -p target
 mkdir -p packages-common/client
+mkdir -p packages-common/plugins
 common_dir="config-files/${target}" # require config-files/dir to be the same as the ${target} variable
 if [ ! -d ${common_dir} ]; then
     echo "fatal: Couldn't find configuration files in: ${common_dir}"
