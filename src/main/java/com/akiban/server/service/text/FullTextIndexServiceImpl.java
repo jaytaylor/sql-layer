@@ -250,11 +250,14 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
                 cursor.destroy();
             if (transaction)
                 transactionService.rollbackTransaction(session);
-            if (!success) {
-                rowIndexer.setRollback();
-            }
             try {
                 rowIndexer.close();
+                if (success) {
+                    writer.commit();
+                }
+                else {
+                    writer.rollback();
+                }
             }
             catch (IOException ex) {
                 throw new AkibanInternalException("Error closing indexer", ex);

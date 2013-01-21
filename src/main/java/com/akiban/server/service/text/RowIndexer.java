@@ -53,7 +53,6 @@ public class RowIndexer implements Closeable
     private Map<RowType,List<IndexedField>> fieldsByRowType;
     private IndexWriter writer;
     private Document currentDocument;
-    private boolean rollback;
     
     private static final Logger logger = LoggerFactory.getLogger(RowIndexer.class);
 
@@ -148,22 +147,12 @@ public class RowIndexer implements Closeable
         }
     }
 
-    public void setRollback() {
-        this.rollback = true;
-    }
-
     @Override
-    public void close() throws IOException {
+    public void close() {
         for (ShareHolder<Row> holder : ancestors) {
             if (holder != null) {
                 holder.release();
             }
-        }
-        if (rollback) {
-            writer.rollback();
-        }
-        else {
-            writer.commit();
         }
     }
 
