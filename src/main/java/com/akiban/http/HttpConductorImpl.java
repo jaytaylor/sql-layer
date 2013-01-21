@@ -43,6 +43,7 @@ import java.util.Set;
 
 public final class HttpConductorImpl implements HttpConductor, Service {
     private static final Logger logger = LoggerFactory.getLogger(HttpConductorImpl.class);
+    private static final String PORT_PROPERTY = "akserver.http.port";
 
     private final ConfigurationService configurationService;
 
@@ -109,7 +110,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
 
     @Override
     public void start() {
-        String portProperty = configurationService.getProperty("plugins.http-conductor.port");
+        String portProperty = configurationService.getProperty(PORT_PROPERTY);
         int portLocal;
         try {
             portLocal = Integer.parseInt(portProperty);

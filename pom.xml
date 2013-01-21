@@ -191,6 +191,7 @@
                                 <portName>akserver.port</portName>
                                 <portName>debug.port</portName>
                                 <portName>akserver.postgres.port</portName>
+                                <portName>akserver.http.port</portName>
                             </portNames>
                         </configuration>
                     </execution>
