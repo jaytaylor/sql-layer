@@ -133,6 +133,10 @@ public class RowIndexer implements Closeable
 
     protected void addDocument() throws IOException {
         if (currentDocument != null) {
+            // TODO: To call updateDocument(), we need a Term for the
+            // key, which won't work if there is more than one pkey
+            // field. Maybe it should be a byte array of all of them
+            // in Key format.
             writer.addDocument(currentDocument);
             logger.debug("Added {}", currentDocument);
             currentDocument = null;

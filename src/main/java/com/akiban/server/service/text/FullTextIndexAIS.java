@@ -179,4 +179,6 @@ public class FullTextIndexAIS
         return plan;
     }
 
+    // TODO: _Lookup plan to get rows just from a row being updated.
+
 }
