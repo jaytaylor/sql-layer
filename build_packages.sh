@@ -74,7 +74,7 @@ cp ${common_dir}/* packages-common/
 #
 # Add akiban-client tools
 #
-: ${TOOLS_BRANCH:="lp:akiban-client-tools"}
+: ${TOOLS_BRANCH:="lp:~akiban-technologies/akiban-client-tools/1.3.4"}
 echo "Using akiban-client-tools bazaar branch: ${TOOLS_BRANCH}"
 pushd .
 cd target
