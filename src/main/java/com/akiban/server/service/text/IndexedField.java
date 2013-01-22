@@ -29,6 +29,7 @@ package com.akiban.server.service.text;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.Types;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.AkibanAppender;
@@ -49,8 +50,6 @@ public class IndexedField
     public static enum FieldType {
         INT, LONG, FLOAT, DOUBLE, STRING, TEXT
     }
-    
-    public static int VARCHAR_AS_TEXT_MIN_LENGTH = 32;
 
     private final Column column;
     private final boolean inKey;
@@ -79,7 +78,8 @@ public class IndexedField
             fieldType = FieldType.DOUBLE;
         }
         else if (columnType.equals(Types.VARCHAR) || columnType.equals(Types.CHAR)) {
-            if (column.getTypeParameter1() < VARCHAR_AS_TEXT_MIN_LENGTH) {
+            AkCollator collator = column.getCollator();
+            if ((collator == null) || collator.isCaseSensitive()) {
                 fieldType = FieldType.STRING;
             }
             else {

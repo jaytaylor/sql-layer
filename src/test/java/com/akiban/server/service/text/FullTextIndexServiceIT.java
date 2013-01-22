@@ -56,7 +56,7 @@ public class FullTextIndexServiceIT extends ITBase
     public void createData() {
         int c = createTable(SCHEMA, "c",
                             "cid INT PRIMARY KEY NOT NULL",
-                            "name VARCHAR(128)");
+                            "name VARCHAR(128) COLLATE en_us_ci");
         int o = createTable(SCHEMA, "o",
                             "oid INT PRIMARY KEY NOT NULL",
                             "cid INT NOT NULL",
