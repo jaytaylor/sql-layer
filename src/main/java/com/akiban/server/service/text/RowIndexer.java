@@ -103,7 +103,7 @@ public class RowIndexer implements Closeable
                             // We may have remembered an ancestor with no
                             // children and then this row is an orphan.
                             if (ancestor.ancestorOf(row)) {
-                                addFields(row, fieldsByRowType.get(ancestor.rowType()));
+                                addFields(ancestor, fieldsByRowType.get(ancestor.rowType()));
                             }
                             else {
                                 holder.release();

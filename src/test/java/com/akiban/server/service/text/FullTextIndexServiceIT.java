@@ -111,4 +111,21 @@ public class FullTextIndexServiceIT extends ITBase
                      results);
     }
 
+    @Test
+    public void oUpDown() {
+        FullTextIndexService fullText = 
+            serviceManager().getServiceByClass(FullTextIndexService.class);
+
+        fullText.createIndex(session(), "o", SCHEMA, "o",
+                             Arrays.asList("c.name", "i.sku"),
+                             true);
+
+        List<List<String>> results;
+        results = fullText.searchIndex(session(), "o",
+                                       "name:Flintstone AND sku:1234",
+                                       10);
+        assertEquals(Arrays.asList(Collections.singletonList("101")),
+                     results);
+    }
+
 }

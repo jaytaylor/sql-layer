@@ -156,4 +156,9 @@ public class IndexedField
         }
     }
 
+    @Override
+    public String toString() {
+        return name;
+    }
+
 }
