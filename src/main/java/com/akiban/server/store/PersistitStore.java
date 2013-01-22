@@ -113,36 +113,6 @@ public class PersistitStore implements Store, Service {
 
     private final static byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
-    private final static TreeLink LOCK_TREE_LINK =
-        new TreeLink()
-        {
-            @Override
-            public String getSchemaName()
-            {
-                return "LOCK";
-            }
-
-            @Override
-            public String getTreeName()
-            {
-                return "LOCK";
-            }
-
-            @Override
-            public void setTreeCache(TreeCache cache)
-            {
-                this.cache = cache;
-            }
-
-            @Override
-            public TreeCache getTreeCache()
-            {
-                return cache;
-            }
-
-            private TreeCache cache;
-        };
-
     private boolean updateGroupIndexes;
 
     private boolean deferIndexes = false;
