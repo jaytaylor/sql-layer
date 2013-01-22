@@ -46,9 +46,7 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.util.Version;
 
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -68,7 +66,6 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
 
     private File indexPath;
     private Map<String,FullTextIndex> indexes = new HashMap<>();
-    private Analyzer analyzer;
     
     private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceImpl.class);
 
@@ -172,7 +169,6 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
 
     @Override
     public void stop() {
-        analyzer = null;
         try {
             for (FullTextIndex index : indexes.values()) {
                 Indexer indexer = index.getIndexer();
@@ -205,13 +201,6 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
         return indexPath;
     }
 
-    protected synchronized Analyzer getAnalyzer() {
-        if (analyzer == null) {
-            analyzer = analyzer = new StandardAnalyzer(Version.LUCENE_40);
-        }
-        return analyzer;
-    }
-
     protected void populateIndex(Session session, FullTextIndexAIS indexAIS) 
             throws IOException {
         FullTextIndex index = indexAIS.getIndex();
@@ -219,7 +208,7 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
         synchronized (index) {
             indexer = index.getIndexer();
             if (indexer == null) {
-                indexer = new Indexer(index, getAnalyzer());
+                indexer = new Indexer(index, getAnalyzer(index));
             }
             index.setIndexer(indexer);
         }
@@ -271,11 +260,22 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
         synchronized (index) {
             searcher = index.getSearcher();
             if (searcher == null) {
-                searcher = new Searcher(index, getAnalyzer());
+                searcher = new Searcher(index, getAnalyzer(index));
             }
             index.setSearcher(searcher);
         }
         return searcher.search(query, size);
+    }
+
+    protected Analyzer getAnalyzer(FullTextIndex index) {
+        Analyzer analyzer;
+        synchronized (index) {
+            analyzer = index.getAnalyzer();
+            if (analyzer == null) {
+                analyzer = new SelectiveCaseAnalyzer(index.getCasePreservingFieldNames());
+            }
+        }
+        return analyzer;
     }
 
 }

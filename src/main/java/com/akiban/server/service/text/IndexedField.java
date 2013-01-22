@@ -111,6 +111,10 @@ public class IndexedField
         return name;
     }
 
+    public boolean isCasePreserving() {
+        return (fieldType != FieldType.TEXT);
+    }
+
     public Field getField(PValueSource value) {
         if (value.isNull()) 
             return null;

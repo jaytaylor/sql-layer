@@ -29,11 +29,13 @@ package com.akiban.server.service.text;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CacheValueGenerator;
 
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
 import java.io.*;
 import java.util.List;
+import java.util.Set;
 
 public class FullTextIndex implements CacheValueGenerator<FullTextIndexAIS>
 {
@@ -43,7 +45,9 @@ public class FullTextIndex implements CacheValueGenerator<FullTextIndexAIS>
     private final List<String> indexedColumns;
     private String defaultFieldName;
     private List<String> keyColumns;
+    private Set<String> casePreservingFieldNames;
     private Directory directory;
+    private Analyzer analyzer;
     private Indexer indexer;
     private Searcher searcher;
 
@@ -81,6 +85,10 @@ public class FullTextIndex implements CacheValueGenerator<FullTextIndexAIS>
         return keyColumns;
     }
 
+    public Set<String> getCasePreservingFieldNames() {
+        return casePreservingFieldNames;
+    }
+
     public String getDefaultFieldName() {
         return defaultFieldName;
     }
@@ -109,9 +117,19 @@ public class FullTextIndex implements CacheValueGenerator<FullTextIndexAIS>
         result.init();
         if (keyColumns == null)
             keyColumns = result.getKeyColumns();
+        if (casePreservingFieldNames == null)
+            casePreservingFieldNames = result.getCasePreservingFieldNames();
         if (defaultFieldName == null)
             defaultFieldName = result.getDefaultFieldName();
         return result;
+    }
+
+    public Analyzer getAnalyzer() {
+        return analyzer;
+    }
+
+    public void setAnalyzer(Analyzer analyzer) {
+        this.analyzer = analyzer;
     }
 
     public Indexer getIndexer() {

@@ -158,6 +158,16 @@ public class FullTextIndexAIS
         return result;
     }
 
+    public Set<String> getCasePreservingFieldNames() {
+        Set<String> result = new HashSet<>();
+        for (IndexedField field : fieldsByColumn.values()) {
+            if (field.isCasePreserving()) {
+                result.add(field.getName());
+            }
+        }
+        return result;
+    }
+
     public String getDefaultFieldName() {
         return defaultFieldName;
     }
