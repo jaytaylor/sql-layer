@@ -102,6 +102,13 @@ public class FullTextIndexServiceIT extends ITBase
         assertEquals(Arrays.asList(Collections.singletonList("1"),
                                    Collections.singletonList("3")),
                      results);
+
+        results = fullText.searchIndex(session(), "c",
+                                       "state:MA",
+                                       10);
+        assertEquals(Arrays.asList(Collections.singletonList("1"),
+                                   Collections.singletonList("3")),
+                     results);
     }
 
 }
