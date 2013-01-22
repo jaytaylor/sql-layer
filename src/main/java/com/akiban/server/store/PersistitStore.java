@@ -1790,7 +1790,7 @@ public class PersistitStore implements Store, Service {
             lockKeyAppender.append(fieldDefs[f], rowData);
         }
         // TODO: Persistit should have some way of allowing an indefinite wait
-        exchange.lock(lockKeyAppender.key(), 60000L); // Long.MAX_VALUE);
+        exchange.lock(lockKeyAppender.key(), 0 /* no timeout */);
         lockKeyAppender.clear();
     }
 

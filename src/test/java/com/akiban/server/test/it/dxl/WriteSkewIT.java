@@ -148,12 +148,7 @@ public class WriteSkewIT extends ITBase
             return session;
         }
 
-        protected Action()
-        {
-            this.session = serviceManager().getSessionService().createSession();
-        }
-
-        protected final Session session;
+        protected Session session;
     }
 
     private class TestThread extends Thread
@@ -201,7 +196,8 @@ public class WriteSkewIT extends ITBase
         public TestThread(Action action)
         {
             this.action = action;
-            this.session = action.session();
+            this.session = serviceManager().getSessionService().createSession();
+            action.session = session;
         }
 
         public synchronized void proceed() throws InterruptedException
