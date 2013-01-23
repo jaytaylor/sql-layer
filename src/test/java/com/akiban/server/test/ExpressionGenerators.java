@@ -267,6 +267,7 @@ public final class ExpressionGenerators {
             public TPreparedExpression getTPreparedExpression() {
                 final TPreparedExpression expr = input.getTPreparedExpression();
                 return new TPreparedExpression() {
+                    
                     @Override
                     public TPreptimeValue evaluateConstant(QueryContext queryContext) {
                         throw new UnsupportedOperationException();

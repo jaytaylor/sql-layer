@@ -40,6 +40,10 @@ public final class ImmutableRow extends AbstractValuesHolderRow
         this(rowType, initialValues, null);
     }
 
+    public ImmutableRow(ProjectedRow row)
+    {
+        this(row.rowType(), row.getValueSources(), row.getPValueSources());
+    }
     public ImmutableRow(RowType rowType, Iterator<? extends ValueSource> initialValues, Iterator<? extends PValueSource> initialPValues)
     {
         super(rowType, false, initialValues, initialPValues);
