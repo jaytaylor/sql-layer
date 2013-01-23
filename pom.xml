@@ -71,12 +71,12 @@
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-persistit</artifactId>
-            <version>3.2.4-SNAPSHOT</version>
+            <version>3.2.5-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-sql-parser</artifactId>
-            <version>1.0.13</version>
+            <version>1.0.14-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -98,7 +98,7 @@
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-sql-parser</artifactId>
-            <version>1.0.13</version>
+            <version>1.0.14-SNAPSHOT</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
