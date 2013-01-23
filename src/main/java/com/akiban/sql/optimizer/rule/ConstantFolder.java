@@ -33,9 +33,17 @@ import com.akiban.sql.optimizer.rule.OverloadAndTInstanceResolver.ResolvingVisit
 import com.akiban.server.expression.std.Comparison;
 
 import com.akiban.ais.model.Routine;
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.server.t3expressions.TCastResolver;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 
 import org.slf4j.Logger;
@@ -76,7 +84,7 @@ public class ConstantFolder extends BaseRule
     }
 
     private static abstract class Folder implements PlanVisitor, ExpressionRewriteVisitor {
-        private final PlanContext planContext;
+        protected final PlanContext planContext;
         protected final ExpressionAssembler<?> expressionAssembler;
         private Set<ColumnSource> eliminatedSources = new HashSet<ColumnSource>();
         private Set<AggregateSource> changedAggregates = null;
@@ -690,7 +698,8 @@ public class ConstantFolder extends BaseRule
                 // is returned.
                 return inner;
             }
-            InCondition in = InCondition.of(cond);
+
+            InCondition in = InCondition.of(cond, planContext);
             if (in != null) {
                 in.dedup(isTopLevelCondition(cond), (state == State.FOLDING));
                 switch (in.compareConstants(this)) {
@@ -985,15 +994,21 @@ public class ConstantFolder extends BaseRule
         private ExpressionsSource expressions;
         private List<ComparisonCondition> comparisons;
         private Project project;
-
+        private final T3RegistryService t3Service;
+        private final QueryContext qc;
+        
         private InCondition(AnyCondition any,
                             ExpressionsSource expressions,
                             List<ComparisonCondition> comparisons,
-                            Project project) {
+                            Project project,
+                            PlanContext planContext)
+        {
             this.any = any;
             this.expressions = expressions;
             this.comparisons = comparisons;
             this.project = project;
+            t3Service = ((SchemaRulesContext)planContext.getRulesContext()).getT3Registry();
+            qc = planContext.getQueryContext();
         }
 
         public boolean isEmpty() {
@@ -1013,7 +1028,7 @@ public class ConstantFolder extends BaseRule
         }
 
         // Recognize the form of IN we support improving.
-        public static InCondition of(AnyCondition any) {
+        public static InCondition of(AnyCondition any, PlanContext planContext) {
             Subquery subquery = any.getSubquery();
             PlanNode input = subquery.getInput();
             if (!(input instanceof Project))
@@ -1035,7 +1050,7 @@ public class ConstantFolder extends BaseRule
             if (!(rows.isEmpty() ||
                   (rows.get(0).size() == comps.size())))
                 return null;
-            return new InCondition(any, expressions, comps, project);
+            return new InCondition(any, expressions, comps, project, planContext);
         }
 
         private static boolean getAnyConditions(List<ComparisonCondition> comps,
@@ -1145,6 +1160,46 @@ public class ConstantFolder extends BaseRule
         }
 
         public enum CompareConstants { NORMAL, COMPARE_NULL, ROW_EQUALS };
+        
+        static boolean comparePrepValues(ExpressionNode leftNode,
+                                         ExpressionNode rightNode,
+                                         T3RegistryService registry,
+                                         QueryContext qc)
+        {
+            // if either is not constant, preptime values aren't available
+            if (!leftNode.isConstant() || !rightNode.isConstant())
+                return false;
+            
+            
+            PValueSource leftSource = leftNode.getPreptimeValue().value();
+            PValueSource rightSource = rightNode.getPreptimeValue().value();
+
+            TInstance lTIns = leftSource.tInstance();
+            TInstance rTIns = rightSource.tInstance();
+            
+            if (TClass.comparisonNeedsCasting(lTIns, rTIns))
+            {
+                boolean needCasts = true;
+                boolean nullable = leftSource.isNull() || rightSource.isNull();
+                TCastResolver casts = registry.getCastsResolver();
+                TInstance common = OverloadAndTInstanceResolver.commonInstance(casts, lTIns, rTIns);
+                if (common == null)
+                    common = MString.VARCHAR.instance(nullable);
+                
+                PValue leftCasted = new PValue(common);
+                PValue rightCasted = new PValue(common);
+
+                TExecutionContext execContext = new TExecutionContext(Arrays.asList(lTIns, rTIns), common, qc);
+                casts.cast(lTIns, common).evaluate(execContext, leftSource, leftCasted);
+                casts.cast(rTIns, common).evaluate(execContext, rightSource, rightCasted);
+                
+                return TClass.compare(leftCasted.tInstance(), leftCasted, 
+                                      rightCasted.tInstance(),rightCasted)
+                        == 0;
+            }
+            else
+                return TClass.compare(rTIns, leftSource, rTIns, leftSource) == 0;
+        }
 
         // If some of the values in the LHS row and RHS rows are constants, 
         // can compare them now, and either eliminate a LHS value that always matches
@@ -1170,12 +1225,13 @@ public class ConstantFolder extends BaseRule
                             if (row == null) continue;
                             ExpressionNode right = row.get(i);
                             if (folder.isConstant(right) == Folder.Constantness.CONSTANT) {
-                                if (!left.equals(right)) {
+                                if (!comparePrepValues(left, right, t3Service, qc)) {
                                     // Definitely not equal, can remove row.
                                     rows.set(j, null);
                                     removedRow = true;
                                     matching.clear(j);
                                 }
+
                                 continue; // Definitely equal.
                             }
                             // Neither this row nor this column known compare equal.

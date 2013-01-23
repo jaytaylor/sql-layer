@@ -51,6 +51,8 @@ public abstract class TClass {
     public abstract TCast castToVarchar();
     public abstract TCast castFromVarchar();
 
+    public abstract TClass widestComparable();
+
     public void selfCast(TExecutionContext context,
                          TInstance sourceInstance, PValueSource source, TInstance targetInstance, PValueTarget target) {
         PValueTargets.copyFrom(source, target);

@@ -30,6 +30,7 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.IllegalNameException;
 import com.akiban.server.types3.TBundleID;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TClassBase;
 import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TExecutionContext;
@@ -56,6 +57,11 @@ import java.util.regex.Pattern;
 
 public class AkInterval extends TClassBase {
 
+    public TClass widestComparable()
+    {
+        return this;
+    }
+    
     private static TClassFormatter monthsFormatter = new TClassFormatter() {
         @Override
         public void format(TInstance instance, PValueSource source, AkibanAppender out) {
