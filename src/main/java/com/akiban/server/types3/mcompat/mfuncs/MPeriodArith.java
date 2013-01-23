@@ -45,14 +45,14 @@ public abstract class MPeriodArith extends TScalarBase {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                int period = inputs.get(0).getInt32();
-                int offsetMonths = inputs.get(1).getInt32();
+                long period = inputs.get(0).getInt64();
+                long offsetMonths = inputs.get(1).getInt64();
 
                 // COMPATIBILITY: MySQL currently has undefined behavior for negative numbers
                 // Our behavior follows our B.C. year numbering (-199402 + 1 = -199401)
                 // Java's mod returns negative numbers: -1994 % 100 = -94
-                int periodInMonths = fromPeriod(period);
-                int totalMonths = periodInMonths + offsetMonths;
+                long periodInMonths = fromPeriod(period);
+                long totalMonths = periodInMonths + offsetMonths;
 
                 // Handle the case where the period changes sign (e.g. -YYMM to YYMM)
                 // as a result of adding. Since 0000 months is not really a date,
@@ -61,8 +61,8 @@ public abstract class MPeriodArith extends TScalarBase {
                     totalMonths -= Long.signum(totalMonths) * 2;
                 }
 
-                int result = toPeriod(totalMonths);
-                output.putInt32(result);
+                long result = toPeriod(totalMonths);
+                output.putInt64(result);
             }
         },
         new MPeriodArith("PERIOD_DIFF") {
@@ -71,11 +71,11 @@ public abstract class MPeriodArith extends TScalarBase {
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
                 // COMPATIBILITY: MySQL currently has undefined behavior for negative numbers
                 // Our behavior follows our B.C. year numbering (-199402 + 1 = -199401)
-                int periodLeft = inputs.get(0).getInt32();
-                int periodRight = inputs.get(1).getInt32();
+                long periodLeft = inputs.get(0).getInt64();
+                long periodRight = inputs.get(1).getInt64();
 
-                int result = fromPeriod(periodLeft) - fromPeriod(periodRight);
-                output.putInt32(result);
+                long result = fromPeriod(periodLeft) - fromPeriod(periodRight);
+                output.putInt64(result);
             }
         }
     };
@@ -86,7 +86,7 @@ public abstract class MPeriodArith extends TScalarBase {
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MNumeric.INT, 0, 1);
+        builder.covers(MNumeric.BIGINT, 0, 1);
     }
 
     @Override
@@ -96,19 +96,19 @@ public abstract class MPeriodArith extends TScalarBase {
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(MNumeric.INT);
+        return TOverloadResult.fixed(MNumeric.BIGINT);
     }
 
     // Helper functions
     // Takes a period and returns the number of months from year 0
-    protected static int fromPeriod(int period)
+    protected static long fromPeriod(long period)
     {
         int periodSign = Long.signum(period);
         
-        int rawMonth = period % 100;
-        int rawYear = period / 100;
+        long rawMonth = period % 100;
+        long rawYear = period / 100;
 
-        int absValYear = Math.abs(rawYear);
+        long absValYear = Math.abs(rawYear);
         if (absValYear < 70)
             rawYear += periodSign * 2000;
         else if (absValYear < 100)
@@ -118,9 +118,10 @@ public abstract class MPeriodArith extends TScalarBase {
     }
     
     // Create a YYYYMM format from a number of months
-    protected static int toPeriod(int monthCount) {
-        int year = monthCount / 12;
-        int month = (monthCount % 12) + 1 * Long.signum(monthCount);
+    protected static long toPeriod(long monthCount)
+    {
+        long year = monthCount / 12;
+        long month = (monthCount % 12) + 1 * Long.signum(monthCount);
         return (year * 100) + month;
     }
     

@@ -890,13 +890,10 @@ public class MDatetimes
                                       ).getMillis();
             return (int)CastUtils.getInRange(TIMESTAMP_MAX, TIMESTAMP_MIN, millis / 1000L, TS_ERROR_VALUE, context);
         }
-        catch (IllegalFieldValueException e)
+        catch (IllegalFieldValueException | NumberFormatException e)
         {
+            context.warnClient(new InvalidDateFormatException("timestamp", ts));
             return 0; // e.g. SELECT UNIX_TIMESTAMP('1920-21-01 00:00:00') -> 0
-        }
-        catch (NumberFormatException ex)
-        {
-            throw new InvalidDateFormatException("datetime", ts);
         }
     }
 
