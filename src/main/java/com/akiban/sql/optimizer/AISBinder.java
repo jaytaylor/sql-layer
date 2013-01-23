@@ -452,6 +452,9 @@ public class AISBinder implements Visitor
                     throw new ViewHasBadSubqueryException(origName.toString(),
                                                           ex.getMessage());
                 }
+                if (fromBaseTable.getCorrelationName() != null)
+                    tableName = fromBaseTable.getCorrelationName();
+                viewSubquery.setCorrelationName(tableName);
                 return fromTable(viewSubquery, false);
             }
             else {
