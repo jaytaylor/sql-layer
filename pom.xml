@@ -354,6 +354,7 @@
                         <exclude>.bzrignore</exclude>
                         <!-- No extension. Manually add header and ignore -->
                         <exclude>bin/*</exclude>
+                        <exclude>src/test/bin/*</exclude>
                         <exclude>conf/config/jvm.options</exclude>
                         <exclude>**/jvm.options</exclude>
                         <exclude>conf/config/jvm-options.cmd</exclude>
