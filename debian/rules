@@ -26,9 +26,9 @@ install: build
 		usr/share/akiban/akiban-server.jar
 
 	# Dump tools
-	dh_install packages-common/akiban-client-tools-1.3.4-SNAPSHOT.jar \
+	dh_install packages-common/akiban-client-tools-1.3.5-SNAPSHOT.jar \
 		usr/share/akiban
-	dh_link usr/share/akiban/akiban-client-tools-1.3.4-SNAPSHOT.jar \
+	dh_link usr/share/akiban/akiban-client-tools-1.3.5-SNAPSHOT.jar \
 		usr/share/akiban/akiban-client-tools.jar
 
 # Build architecture-independent files here.

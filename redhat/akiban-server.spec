@@ -62,8 +62,8 @@ cp -p redhat/*.tag ${RPM_BUILD_ROOT}/usr/share/%{username}
 cp -p target/akiban-server-1.5.1-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
 ln -s /usr/share/%{username}/akiban-server-1.5.1-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-server.jar
 cp -p target/dependency/* ${RPM_BUILD_ROOT}/usr/share/%{username}/server
-cp -p redhat/akiban-client-tools-1.3.4-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
-ln -s /usr/share/%{username}/akiban-client-tools-1.3.4-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-client-tools.jar
+cp -p redhat/akiban-client-tools-1.3.5-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
+ln -s /usr/share/%{username}/akiban-client-tools-1.3.5-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-client-tools.jar
 cp -p redhat/client/* ${RPM_BUILD_ROOT}/usr/share/%{username}/client
 cp -p redhat/plugins/* ${RPM_BUILD_ROOT}/usr/share/%{username}/plugins
 
