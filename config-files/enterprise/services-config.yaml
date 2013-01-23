@@ -1,7 +1,8 @@
 # copies in:
 #  conf/config/
-#  config-fils/{developer,enterprise}
+#  config-files/{developer,enterprise}
 #  macosx/{developer,enterprise}
+#  windows/{developer,enterprise}
 - require:
     - com.akiban.server.AkServerInterface               # Loads the AKSERVER JMX bean
     - com.akiban.server.service.dxl.DXLService          # Loads the DDL/DML JMX bean
@@ -15,4 +16,7 @@
     - com.akiban.server.service.is.BasicInfoSchemaTablesService
     - com.akiban.server.service.is.StorageSchemaTablesService
     - com.akiban.server.service.is.ServerSchemaTablesService
+    - com.akiban.rest.RestService
 #   - com.akiban.server.service.ui.SwingConsoleService  # Presents a simple UI
+- bind-modules:
+    - com.akiban.rest.RestServiceModule
