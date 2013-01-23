@@ -931,12 +931,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public List<String> getDDLs(final Session session) {
-        logger.trace("getting DDLs");
-        return schemaManager().schemaStrings(session, false);
-    }
-
-    @Override
     public int getGenerationAsInt(Session session) {
         long full = getGeneration(session);
         return (int)full ^ (int)(full >>> 32);
