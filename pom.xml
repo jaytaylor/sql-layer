@@ -128,6 +128,17 @@
             <artifactId>commons-codec</artifactId>
             <version>1.7</version>
         </dependency>
+        <!-- HttpConductor -->
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
+            <version>8.1.3.v20120416</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlet</artifactId>
+            <version>8.1.3.v20120416</version>
+        </dependency>
     </dependencies>
     <build>
         <resources>
@@ -180,6 +191,7 @@
                                 <portName>akserver.port</portName>
                                 <portName>debug.port</portName>
                                 <portName>akserver.postgres.port</portName>
+                                <portName>akserver.http.port</portName>
                             </portNames>
                         </configuration>
                     </execution>
