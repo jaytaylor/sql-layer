@@ -101,8 +101,7 @@ if [ ${platform} == "debian" ]; then
     mvn -Dmaven.test.skip.exec clean install -DBZR_REVISION=${bzr_revno}
     mkdir -p ${platform}/server/
     cp ./target/dependency/* ${platform}/server/
-    mkdir -p ${platform}/plugins/
-    cp packages-common/plugins/* ${platform}/plugins
+    cp -R packages-common/plugins/ ${platform}/
     debuild
 elif [ ${platform} == "redhat" ]; then
     mkdir -p ${PWD}/redhat/rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
@@ -184,7 +183,7 @@ elif [ ${platform} == "macosx" ]; then
         cp $client_deps/* "$mac_app/Contents/Resources/tools/lib/client/"
         mkdir -p "$mac_app/Contents/Resources/tools/bin"
         cp $akdump_bin "$mac_app/Contents/Resources/tools/bin/"
-        cp -R $plugins_dir "$mac_app/Contents/Resources/plugins"
+        cp -R "$plugins_dir" "$mac_app/Contents/Resources/"
 
         # build disk image template
         rm -rf $inst_temp
