@@ -337,8 +337,8 @@
                         <exclude>**/jvm.options</exclude>
                         <exclude>conf/config/jvm-options.cmd</exclude>
                         <!-- Files requiring a specific format (packaging control, test output, etc) -->
-                        <exclude>debian/*</exclude>
-                        <exclude>redhat/*</exclude>
+                        <exclude>debian/**</exclude>
+                        <exclude>redhat/**</exclude>
                         <exclude>macosx/**</exclude>
                         <exclude>windows/**</exclude>
                         <exclude>build_installer.cmd</exclude>
