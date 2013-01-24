@@ -1,15 +1,15 @@
 # test bugs in RANDOM
 ---
-- CreateTable: t (c int);
+- CreateTable: t (c int)
 ---
-- Statement: INSERT INTO t VALUES (1), (2), (3);
+- Statement: INSERT INTO t VALUES (1), (2), (3)
 --- # context MUST be shared amongst different rows in the SAME columns 
 - Statement: SELECT rand(3), c from t;
 - output: [['0.731057369148862', '1'],
            ['0.07099203475193139', '2'],
            ['0.06712000939049956', '3']]
 --- # context should not be shared amongst different columns
-- Statement: SELECT RAND(3), RAND(3), RAND(3);
+- Statement: SELECT RAND(3), RAND(3), RAND(3)
 - output: [['0.731057369148862', '0.731057369148862', '0.731057369148862']]
 ---
 - DropTable: t
@@ -31,11 +31,11 @@
 ---
 - Statement: INSERT INTO t VALUES (1, 1), (2, 2)
 ---
-- Statement: SELECT rand(3) from t a, t b;
+- Statement: SELECT rand(3) from t a, t b
 - output: [['0.731057369148862'],
            ['0.07099203475193139'],
            ['0.06712000939049956'],
            ['0.768156984078079']]
 ---
-- DropTable: t;
+- DropTable: t
 ...
