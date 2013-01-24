@@ -1160,8 +1160,20 @@ public class ConstantFolder extends BaseRule
         }
 
         public enum CompareConstants { NORMAL, COMPARE_NULL, ROW_EQUALS };
-        
-        static boolean comparePrepValues(ExpressionNode leftNode,
+
+        /**
+         * 
+         * For types3 ONLY!
+         * 
+         * Compare PValueSources of two constant expression node
+         * @param leftNode
+         * @param rightNode
+         * @param registry
+         * @param qc
+         * @return  true if the two ExpressionNodes' PValueSource are equal.
+         *          false otherwise
+         */
+        public static boolean comparePrepValues(ExpressionNode leftNode,
                                          ExpressionNode rightNode,
                                          T3RegistryService registry,
                                          QueryContext qc)
@@ -1170,13 +1182,13 @@ public class ConstantFolder extends BaseRule
             if (!leftNode.isConstant() || !rightNode.isConstant())
                 return false;
             
-            
             PValueSource leftSource = leftNode.getPreptimeValue().value();
             PValueSource rightSource = rightNode.getPreptimeValue().value();
 
             TInstance lTIns = leftSource.tInstance();
             TInstance rTIns = rightSource.tInstance();
             
+            boolean ret;
             if (TClass.comparisonNeedsCasting(lTIns, rTIns))
             {
                 boolean needCasts = true;
@@ -1195,10 +1207,10 @@ public class ConstantFolder extends BaseRule
                 
                 return TClass.compare(leftCasted.tInstance(), leftCasted, 
                                       rightCasted.tInstance(),rightCasted)
-                        == 0;
+                       == 0;
             }
             else
-                return TClass.compare(rTIns, leftSource, rTIns, leftSource) == 0;
+                return TClass.compare(lTIns, leftSource, rTIns, rightSource) == 0;
         }
 
         // If some of the values in the LHS row and RHS rows are constants, 
