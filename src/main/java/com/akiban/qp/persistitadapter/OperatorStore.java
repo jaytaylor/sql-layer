@@ -100,22 +100,23 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         try {
             AkibanInformationSchema ais = schemaManager.getAis(session);
             RowDef rowDef = ais.getUserTable(oldRowData.getRowDefId()).rowDef();
-            if ((columnSelector != null) && !rowDef.table().getGroupIndexes().isEmpty()) {
+            UserTable userTable = rowDef.userTable();
+            PersistitAdapter adapter = createAdapter(ais, session);
+
+            if(canSkipMaintenance(userTable)) {
+                super.updateRow(session, oldRowData, newRowData, columnSelector, indexes);
+                return;
+            } else if (columnSelector != null) {
                 throw new RuntimeException("group index maintenance won't work with partial rows");
             }
+
             BitSet changedColumnPositions = changedColumnPositions(rowDef, oldRowData, newRowData);
-
-            PersistitAdapter adapter = createAdapter(ais, session);
-            Schema schema = adapter.schema();
-
             UpdateFunction updateFunction = new InternalUpdateFunction(adapter, rowDef, newRowData, columnSelector);
 
-            UserTable userTable = ais.getUserTable(oldRowData.getRowDefId());
             Group group = userTable.getGroup();
-
             final TableIndex index = userTable.getPrimaryKeyIncludingInternal().getIndex();
             assert index != null : userTable;
-            UserTableRowType tableType = schema.userTableRowType(userTable);
+            UserTableRowType tableType = adapter.schema().userTableRowType(userTable);
             IndexRowType indexType = tableType.indexRowType(index);
             ColumnSelector indexColumnSelector =
                 new ColumnSelector()
