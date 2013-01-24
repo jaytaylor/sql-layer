@@ -38,6 +38,7 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.NoRowsUpdatedException;
@@ -104,8 +105,12 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             PersistitAdapter adapter = createAdapter(ais, session);
 
             if(canSkipMaintenance(userTable)) {
-                super.updateRow(session, oldRowData, newRowData, columnSelector, indexes);
-                return;
+                // PersistitStore needs full rows and OperatorStore will look them up (unspecified behavior),
+                // so keep that behavior for the places that use it (tests only?)
+                if(columnSelector == null || columnSelector == ConstantColumnSelector.ALL_ON) {
+                    super.updateRow(session, oldRowData, newRowData, columnSelector, indexes);
+                    return;
+                }
             } else if (columnSelector != null) {
                 throw new RuntimeException("group index maintenance won't work with partial rows");
             }
