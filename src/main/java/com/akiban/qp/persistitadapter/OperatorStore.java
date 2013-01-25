@@ -38,6 +38,7 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.NoRowsUpdatedException;
@@ -100,22 +101,27 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         try {
             AkibanInformationSchema ais = schemaManager.getAis(session);
             RowDef rowDef = ais.getUserTable(oldRowData.getRowDefId()).rowDef();
-            if ((columnSelector != null) && !rowDef.table().getGroupIndexes().isEmpty()) {
+            UserTable userTable = rowDef.userTable();
+            PersistitAdapter adapter = createAdapter(ais, session);
+
+            if(canSkipMaintenance(userTable)) {
+                // PersistitStore needs full rows and OperatorStore will look them up (unspecified behavior),
+                // so keep that behavior for the places that use it (tests only?)
+                if(columnSelector == null || columnSelector == ConstantColumnSelector.ALL_ON) {
+                    super.updateRow(session, oldRowData, newRowData, columnSelector, indexes);
+                    return;
+                }
+            } else if (columnSelector != null) {
                 throw new RuntimeException("group index maintenance won't work with partial rows");
             }
+
             BitSet changedColumnPositions = changedColumnPositions(rowDef, oldRowData, newRowData);
-
-            PersistitAdapter adapter = createAdapter(ais, session);
-            Schema schema = adapter.schema();
-
             UpdateFunction updateFunction = new InternalUpdateFunction(adapter, rowDef, newRowData, columnSelector);
 
-            UserTable userTable = ais.getUserTable(oldRowData.getRowDefId());
             Group group = userTable.getGroup();
-
             final TableIndex index = userTable.getPrimaryKeyIncludingInternal().getIndex();
             assert index != null : userTable;
-            UserTableRowType tableType = schema.userTableRowType(userTable);
+            UserTableRowType tableType = adapter.schema().userTableRowType(userTable);
             IndexRowType indexType = tableType.indexRowType(index);
             ColumnSelector indexColumnSelector =
                 new ColumnSelector()
