@@ -73,19 +73,7 @@ public class JsonFormatter
     }
 
     protected void generatePrimitive(JsonGenerator generator, PrimitiveExplainer explainer) throws IOException {
-        switch (explainer.getType()) {
-        case STRING:
-            generator.writeString((String)explainer.get());
-            break;
-        case EXACT_NUMERIC:
-            generator.writeNumber((Long)explainer.get());
-            break;
-        case FLOATING_POINT:
-            generator.writeNumber((Double)explainer.get());
-            break;
-        default:
-            generator.writeString(explainer.get().toString());
-        }
+        generator.writeObject(explainer.get());
     }
 
     protected void generateCompound(JsonGenerator generator, CompoundExplainer explainer) throws IOException {
