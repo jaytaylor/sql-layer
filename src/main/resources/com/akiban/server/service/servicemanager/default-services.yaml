@@ -27,3 +27,4 @@
     com.akiban.server.service.externaldata.ExternalDataService : com.akiban.server.service.externaldata.ExternalDataServiceImpl
     com.akiban.http.HttpConductor : com.akiban.http.HttpConductorImpl
     com.akiban.rest.RestService : com.akiban.rest.RestServiceImpl
+    com.akiban.server.service.restdml.RestDMLService: com.akiban.server.service.restdml.RestDMLServiceImpl
