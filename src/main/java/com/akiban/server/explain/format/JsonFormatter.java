@@ -33,7 +33,8 @@ import com.akiban.server.explain.Label;
 
 import com.akiban.server.error.AkibanInternalException;
 
-import com.google.gson.stream.JsonWriter;
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonGenerator;
 
 import java.util.List;
 import java.util.Map;
@@ -42,14 +43,17 @@ import java.io.StringWriter;
 
 public class JsonFormatter
 {
+    private final JsonFactory factory = new JsonFactory();
+
     public String format(Explainer explainer) {
         StringWriter str = new StringWriter();
-        JsonWriter writer = new JsonWriter(str);
-        if (true) {
-            writer.setIndent("  "); // Pretty print
-        }
         try {
-            write(writer, explainer);
+            JsonGenerator generator = factory.createJsonGenerator(str);
+            if (true) {
+                generator.useDefaultPrettyPrinter();
+            }
+            generate(generator, explainer);
+            generator.flush();
         }
         catch (IOException ex) {
             throw new AkibanInternalException("Error writing to string", ex);
@@ -57,43 +61,44 @@ public class JsonFormatter
         return str.toString();
     }
 
-    public void write(JsonWriter writer, Explainer explainer) throws IOException {
+    public void generate(JsonGenerator generator, Explainer explainer) throws IOException {
         switch (explainer.getType().generalType()) {
         case SCALAR_VALUE:
-            writePrimitive(writer, (PrimitiveExplainer)explainer);
+            generatePrimitive(generator, (PrimitiveExplainer)explainer);
             break;
         default:
-            writeCompound(writer, (CompoundExplainer)explainer);
+            generateCompound(generator, (CompoundExplainer)explainer);
             break;
         }
     }
 
-    protected void writePrimitive(JsonWriter writer, PrimitiveExplainer explainer) throws IOException {
+    protected void generatePrimitive(JsonGenerator generator, PrimitiveExplainer explainer) throws IOException {
         switch (explainer.getType()) {
         case STRING:
-            writer.value((String)explainer.get());
+            generator.writeString((String)explainer.get());
             break;
         case EXACT_NUMERIC:
+            generator.writeNumber((Long)explainer.get());
+            break;
         case FLOATING_POINT:
-            writer.value((Number)explainer.get());
+            generator.writeNumber((Double)explainer.get());
             break;
         default:
-            writer.value(explainer.get().toString());
+            generator.writeString(explainer.get().toString());
         }
     }
 
-    protected void writeCompound(JsonWriter writer, CompoundExplainer explainer) throws IOException {
-        writer.beginObject();
-        writer.name("type");
-        writer.value(explainer.getType().name().toLowerCase());
+    protected void generateCompound(JsonGenerator generator, CompoundExplainer explainer) throws IOException {
+        generator.writeStartObject();
+        generator.writeObjectField("type", explainer.getType().name().toLowerCase());
         for (Map.Entry<Label, List<Explainer>> entry : explainer.get().entrySet()) {
-            writer.name(entry.getKey().name().toLowerCase());
-            writer.beginArray();
+            generator.writeFieldName(entry.getKey().name().toLowerCase());
+            generator.writeStartArray();
             for (Explainer child : entry.getValue()) {
-                write(writer, child);
+                generate(generator, child);
             }
-            writer.endArray();
+            generator.writeEndArray();
         }
-        writer.endObject();
+        generator.writeEndObject();
     }
 }
