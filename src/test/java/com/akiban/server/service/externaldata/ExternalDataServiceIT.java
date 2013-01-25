@@ -121,12 +121,28 @@ public class ExternalDataServiceIT extends ITBase
         assertEquals(O101, str.toString());
     }
 
+    static final String C1d0 = "[\n" +
+            "{\"cid\":1,\"name\":\"Smith\"}\n" +
+            "]";
+
+    @Test
+    public void dumpJsonDepth0() throws IOException {
+        ExternalDataService external =
+                serviceManager().getServiceByClass(ExternalDataService.class);
+        StringWriter str = new StringWriter();
+        PrintWriter pw = new PrintWriter(str);
+        external.dumpBranchAsJson(session(), pw, SCHEMA, "c",
+                                  Collections.singletonList(Collections.singletonList("1")),
+                                  0);
+        assertEquals(C1d0, str.toString());
+    }
+
     static final String C1d1 = "[\n" +
         "{\"cid\":1,\"name\":\"Smith\",\"test.o\":[{\"oid\":101,\"cid\":1,\"order_date\":\"2012-12-12\"},{\"oid\":102,\"cid\":1,\"order_date\":\"2013-01-01\"}],\"test.a\":[{\"aid\":101,\"cid\":1,\"state\":\"MA\"}]}\n" +
         "]";
 
     @Test
-    public void dumpJsonDepth() throws IOException {
+    public void dumpJsonDepth1() throws IOException {
         ExternalDataService external = 
             serviceManager().getServiceByClass(ExternalDataService.class);
         StringWriter str = new StringWriter();
