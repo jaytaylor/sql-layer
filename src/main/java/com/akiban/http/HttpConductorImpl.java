@@ -32,7 +32,7 @@ import com.google.inject.Inject;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
-import org.eclipse.jetty.security.HashLoginService;
+import org.eclipse.jetty.security.JDBCLoginService;
 import org.eclipse.jetty.security.SecurityHandler;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.server.Connector;
@@ -61,7 +61,8 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     private volatile int port = -1;
 
     @Inject
-    public HttpConductorImpl(ConfigurationService configurationService) {
+    public HttpConductorImpl(ConfigurationService configurationService,
+                             com.akiban.sql.embedded.EmbeddedJDBCService jdbcService) {
         this.configurationService = configurationService;
         java.util.logging.Logger jerseyLogging = java.util.logging.Logger.getLogger("com.sun.jersey");
         jerseyLogging.setLevel(java.util.logging.Level.OFF); 
@@ -153,7 +154,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                 sh.setAuthenticator(new BasicAuthenticator());
                 sh.setConstraintMappings(Collections.singletonList(cm));
 
-                HashLoginService loginService = new HashLoginService("AkServer", "/tmp/hashRealm.properties");
+                JDBCLoginService loginService = new JDBCLoginService("AkServer", "/tmp/jdbcRealm.properties");
                 sh.setLoginService(loginService);
 
                 sh.setHandler(localHandlerCollection);
