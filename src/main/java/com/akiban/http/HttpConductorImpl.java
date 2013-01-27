@@ -40,6 +40,8 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
+import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,7 +132,17 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         logger.info("Starting HTTP service on port {}", portProperty);
 
         Server localServer = new Server();
-        SelectChannelConnector connector = new SelectChannelConnector();
+        SelectChannelConnector connector;
+        if (false) {
+            connector = new SelectChannelConnector();
+        }
+        else {
+            // Share keystore configuration with PSQL.
+            SslContextFactory ssl = new SslContextFactory();
+            ssl.setKeyStorePath(System.getProperty("javax.net.ssl.keyStore"));
+            ssl.setKeyStorePassword(System.getProperty("javax.net.ssl.keyStorePassword"));
+            connector = new SslSelectChannelConnector(ssl);
+        }
         connector.setPort(portLocal);
         connector.setThreadPool(new QueuedThreadPool(200));
         connector.setAcceptors(4);
@@ -142,7 +154,10 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         HandlerCollection localHandlerCollection = new HandlerCollection(true);
 
         try {
-            if (true) {
+            if (false) {
+                localServer.setHandler(localHandlerCollection);
+            }
+            else {
                 Constraint constraint = new Constraint(Constraint.__BASIC_AUTH, "rest-user");
                 constraint.setAuthenticate(true);
 
@@ -160,10 +175,6 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                 sh.setHandler(localHandlerCollection);
                 localServer.setHandler(sh);
             }
-            else {
-                localServer.setHandler(localHandlerCollection);
-            }
-
             localServer.start();
         }
         catch (Exception e) {
