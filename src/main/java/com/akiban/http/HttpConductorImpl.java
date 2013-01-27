@@ -29,6 +29,12 @@ package com.akiban.http;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.google.inject.Inject;
+import org.eclipse.jetty.util.security.Constraint;
+import org.eclipse.jetty.security.ConstraintMapping;
+import org.eclipse.jetty.security.ConstraintSecurityHandler;
+import org.eclipse.jetty.security.HashLoginService;
+import org.eclipse.jetty.security.SecurityHandler;
+import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandler;
@@ -38,6 +44,7 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -132,9 +139,30 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         localServer.setConnectors(new Connector[]{connector});
 
         HandlerCollection localHandlerCollection = new HandlerCollection(true);
-        localServer.setHandler(localHandlerCollection);
 
         try {
+            if (true) {
+                Constraint constraint = new Constraint(Constraint.__BASIC_AUTH, "rest-user");
+                constraint.setAuthenticate(true);
+
+                ConstraintMapping cm = new ConstraintMapping();
+                cm.setPathSpec("/*");
+                cm.setConstraint(constraint);
+
+                ConstraintSecurityHandler sh = new ConstraintSecurityHandler();
+                sh.setAuthenticator(new BasicAuthenticator());
+                sh.setConstraintMappings(Collections.singletonList(cm));
+
+                HashLoginService loginService = new HashLoginService("AkServer", "/tmp/hashRealm.properties");
+                sh.setLoginService(loginService);
+
+                sh.setHandler(localHandlerCollection);
+                localServer.setHandler(sh);
+            }
+            else {
+                localServer.setHandler(localHandlerCollection);
+            }
+
             localServer.start();
         }
         catch (Exception e) {
