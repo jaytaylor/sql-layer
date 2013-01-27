@@ -53,6 +53,11 @@ import java.util.Set;
 public final class HttpConductorImpl implements HttpConductor, Service {
     private static final Logger logger = LoggerFactory.getLogger(HttpConductorImpl.class);
     private static final String PORT_PROPERTY = "akserver.http.port";
+    private static final String SSL_PROPERTY = "akserver.http.ssl";
+    private static final String LOGIN_PROPERTY = "akserver.http.login";
+
+    private static final String REST_ROLE = "rest-user";
+    private static final String LOGIN_REALM = "AkServer";
 
     private final ConfigurationService configurationService;
 
@@ -121,7 +126,10 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     @Override
     public void start() {
         String portProperty = configurationService.getProperty(PORT_PROPERTY);
+        String sslProperty = configurationService.getProperty(SSL_PROPERTY);
+        String loginProperty = configurationService.getProperty(LOGIN_PROPERTY);
         int portLocal;
+        boolean ssl, login;
         try {
             portLocal = Integer.parseInt(portProperty);
         }
@@ -129,19 +137,22 @@ public final class HttpConductorImpl implements HttpConductor, Service {
             logger.error("bad port descriptor: " + portProperty);
             throw e;
         }
-        logger.info("Starting HTTP service on port {}", portProperty);
+        ssl = Boolean.parseBoolean(sslProperty);
+        login = Boolean.parseBoolean(loginProperty);
+        logger.info("Starting {} service on port {}", 
+                    ssl ? "HTTPS" : "HTTP", portProperty);
 
         Server localServer = new Server();
         SelectChannelConnector connector;
-        if (false) {
+        if (!ssl) {
             connector = new SelectChannelConnector();
         }
         else {
             // Share keystore configuration with PSQL.
-            SslContextFactory ssl = new SslContextFactory();
-            ssl.setKeyStorePath(System.getProperty("javax.net.ssl.keyStore"));
-            ssl.setKeyStorePassword(System.getProperty("javax.net.ssl.keyStorePassword"));
-            connector = new SslSelectChannelConnector(ssl);
+            SslContextFactory sslFactory = new SslContextFactory();
+            sslFactory.setKeyStorePath(System.getProperty("javax.net.ssl.keyStore"));
+            sslFactory.setKeyStorePassword(System.getProperty("javax.net.ssl.keyStorePassword"));
+            connector = new SslSelectChannelConnector(sslFactory);
         }
         connector.setPort(portLocal);
         connector.setThreadPool(new QueuedThreadPool(200));
@@ -154,11 +165,11 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         HandlerCollection localHandlerCollection = new HandlerCollection(true);
 
         try {
-            if (false) {
+            if (!login) {
                 localServer.setHandler(localHandlerCollection);
             }
             else {
-                Constraint constraint = new Constraint(Constraint.__BASIC_AUTH, "rest-user");
+                Constraint constraint = new Constraint(Constraint.__BASIC_AUTH, REST_ROLE);
                 constraint.setAuthenticate(true);
 
                 ConstraintMapping cm = new ConstraintMapping();
@@ -169,7 +180,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                 sh.setAuthenticator(new BasicAuthenticator());
                 sh.setConstraintMappings(Collections.singletonList(cm));
 
-                JDBCLoginService loginService = new JDBCLoginService("AkServer", "/tmp/jdbcRealm.properties");
+                JDBCLoginService loginService = new JDBCLoginService(LOGIN_REALM, "/tmp/jdbcRealm.properties");
                 sh.setLoginService(loginService);
 
                 sh.setHandler(localHandlerCollection);
