@@ -27,6 +27,8 @@
 package com.akiban.rest.resources;
 
 import com.akiban.rest.ResponseHelper;
+import com.akiban.server.service.restdml.RestDMLService;
+import com.google.inject.Inject;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -48,6 +50,10 @@ import javax.ws.rs.core.UriInfo;
  */
 @Path("/{schema}.{table}")
 public class DataAccessOperationsResource {
+    
+    @Inject
+    RestDMLService dmlService;
+    
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response retrieveEntity(@QueryParam("format") String format,
