@@ -30,7 +30,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-public final class Session
+public final class Session implements AutoCloseable
 {
     private final static long UNSET_NANOS = -1;
 
@@ -122,6 +122,7 @@ public final class Session
         return (T) o;
     }
 
+    @Override
     public void close()
     {
         if (listener != null) {
