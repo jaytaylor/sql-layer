@@ -87,7 +87,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
 
         @Override
         public void open() {
-            String currentSchema = context.getCurrentUser();
+            String currentSchema = context.getCurrentSchema();
             String schemaName, tableName;
             if (Types3Switch.ON) {
                 if (context.getPValue(0).isNull())

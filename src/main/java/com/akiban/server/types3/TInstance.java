@@ -27,13 +27,29 @@
 package com.akiban.server.types3;
 
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.util.AkibanAppender;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public final class TInstance {
+
+    // static helpers
+
+    public static TClass tClass(TInstance tInstance) {
+        return tInstance == null ? null : tInstance.typeClass();
+    }
+
+    public static PUnderlying pUnderlying(TInstance tInstance) {
+        TClass tClass = tClass(tInstance);
+        return tClass == null ? null : tClass.underlyingType();
+    }
 
     // TInstance interface
 
@@ -131,6 +147,19 @@ public final class TInstance {
         }
         sb.append(')');
         return sb.toString();
+    }
+
+    public static List<? extends TInstance> createTInstances(List<? extends TPreparedExpression> pExpressions)
+    {
+        if (pExpressions == null) {
+            return null;
+        }
+        int n = pExpressions.size();
+        List<TInstance> tInstances = new ArrayList<TInstance>(n);
+        for (int i = 0; i < n; i++) {
+            tInstances.add(pExpressions.get(i).resultType());
+        }
+        return tInstances;
     }
 
     // object interface

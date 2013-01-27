@@ -44,6 +44,13 @@ import java.util.Arrays;
 
 public class MString extends TString
 {
+
+    public static TInstance varcharFor(String string) {
+        return string == null
+                ? MString.VARCHAR.instance(0, true)
+                : MString.VARCHAR.instance(string.length(), false);
+    }
+
     public static final MString CHAR = new MString(TypeId.CHAR_ID, "char");
     public static final MString VARCHAR = new MString(TypeId.VARCHAR_ID, "varchar");
     public static final MString TINYTEXT = new MString(TypeId.LONGVARCHAR_ID, "tinytext", 256);
@@ -54,6 +61,19 @@ public class MString extends TString
     @Override
     protected PValueIO getPValueIO() {
         return pvalueIO;
+    }
+
+    @Override
+    public void selfCast(TExecutionContext context, TInstance sourceInstance, PValueSource source,
+                         TInstance targetInstance, PValueTarget target) {
+        int maxTargetLen = targetInstance.attribute(StringAttribute.LENGTH);
+        String sourceString = source.getString();
+        if (sourceString.length() > maxTargetLen) {
+            String truncated = sourceString.substring(0, maxTargetLen);
+            context.reportTruncate(sourceString, truncated);
+            sourceString = truncated;
+        }
+        target.putString(sourceString, null);
     }
 
     private MString(TypeId typeId, String name, int fixedSize) {
@@ -83,7 +103,7 @@ public class MString extends TString
         int charsetId = context.outputTInstance().attribute(StringAttribute.CHARSET);
         int collatorId = context.outputTInstance().attribute(StringAttribute.COLLATION);
 
-        switch (in.getUnderlyingType())
+        switch (TInstance.pUnderlying(in.tInstance()))
         {
             case STRING:
                 String inStr = in.getString();
@@ -123,7 +143,7 @@ public class MString extends TString
                 }
                 break;
             default:
-                throw new IllegalArgumentException("Unexpected UnderlyingType: " + in.getUnderlyingType());
+                throw new IllegalArgumentException("Unexpected UnderlyingType: " + in.tInstance());
         }
     }
 
@@ -141,7 +161,7 @@ public class MString extends TString
 
         @Override
         public void readCollating(PValueSource in, TInstance typeInstance, PValueTarget out) {
-            if (in.hasRawValue())
+            if (in.canGetRawValue())
                 out.putString(in.getString(), null);
             else if (in.hasCacheValue())
                 out.putObject(in.getObject());

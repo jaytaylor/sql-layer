@@ -144,6 +144,16 @@ public final class TExecutionContext {
         return queryContext.getSystemUser();
     }
     
+    public String getCurrentSchema()
+    {
+        return queryContext.getCurrentSchema();
+    }
+    
+    public int getSessionId()
+    {
+        return queryContext.getSessionId();
+    }
+    
     public long sequenceNextValue (TableName sequenceName) 
     {
         return queryContext.sequenceNextValue(sequenceName);

@@ -26,6 +26,8 @@
 
 package com.akiban.server.geophile;
 
+import com.akiban.server.error.OutOfRangeException;
+
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
@@ -39,8 +41,8 @@ public abstract class BoxLatLon implements SpatialObject
                                    BigDecimal lonLoDecimal,
                                    BigDecimal lonHiDecimal)
     {
-        long latLo = scaleLat(latLoDecimal);
-        long latHi = scaleLat(latHiDecimal.round(ROUND_UP));
+        long latLo = fixLat(scaleLat(latLoDecimal));
+        long latHi = fixLat(scaleLat(latHiDecimal.round(ROUND_UP)));
         long lonLo = fixLon(scaleLon(lonLoDecimal));
         long lonHi = fixLon(scaleLon(lonHiDecimal.round(ROUND_UP)));
         return
@@ -57,13 +59,29 @@ public abstract class BoxLatLon implements SpatialObject
     // later checking will detect the problem.
     private static long fixLon(long lon)
     {
-        // Allows for query boxes
+        if (lon > MAX_LON_SCALED + CIRCLE || lon < MIN_LON_SCALED - CIRCLE) {
+            throw new OutOfRangeException(String.format("longitude %s", lon));
+        }
         if (lon < MIN_LON_SCALED) {
             lon += CIRCLE;
         } else if (lon > MAX_LON_SCALED) {
             lon -= CIRCLE;
         }
         return lon;
+    }
+
+    // Fix lat by truncating at +/-90
+    private static long fixLat(long lat)
+    {
+        if (lat > MAX_LAT_SCALED + CIRCLE || lat < MIN_LAT_SCALED - CIRCLE) {
+            throw new OutOfRangeException(String.format("latitude %s", lat));
+        }
+        if (lat > MAX_LAT_SCALED) {
+            lat = MAX_LAT_SCALED;
+        } else if (lat < MIN_LAT_SCALED) {
+            lat = MIN_LAT_SCALED;
+        }
+        return lat;
     }
 
     // Class state

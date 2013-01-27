@@ -1,4 +1,4 @@
-PhysicalUpdate
+PhysicalUpdate/NO_CACHE
   Insert_Returning(INTO orders(customer_id))
     Project_Default(NEXTVAL('test', '_sequence--1005213833'), Field(0), 0, 0.000000e+00, 0.0)
       ValuesScan_Default([4], [6], [21])

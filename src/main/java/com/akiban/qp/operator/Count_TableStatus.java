@@ -26,7 +26,6 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.PValuesRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesRow;
@@ -39,10 +38,8 @@ import com.akiban.server.explain.std.CountOperatorExplainer;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
-import java.util.Map;
 
 import java.util.Set;
 
@@ -173,7 +170,7 @@ class Count_TableStatus extends Operator
                     long rowCount = adapter().rowCount(tableType);
                     close();
                     return usePValues
-                            ? new PValuesRow(resultType, new PValue(rowCount))
+                            ? new PValuesRow(resultType, new PValue(MNumeric.BIGINT.instance(false), rowCount))
                             : new ValuesRow(resultType, new Object[] { rowCount });
                 }
                 else {

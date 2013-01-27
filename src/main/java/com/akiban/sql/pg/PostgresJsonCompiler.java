@@ -158,6 +158,7 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
                     select.getResultRowType(),
                     resultColumns,
                     parameterTypes,
+                    select.getCostEstimate(),
                     usesPValues());
         return pjstmt;
     }
@@ -183,12 +184,14 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
             }
             PostgresJsonModifyStatement pjmstmt = new PostgresJsonModifyStatement(this);
             pjmstmt.init(statementType,
-                        (Operator)update.getPlannable(),
-                        update.getResultRowType(),
-                        resultColumns,
-                        parameterTypes,
-                        usesPValues(),
-                        update.isRequireStepIsolation());
+                         (Operator)update.getPlannable(),
+                         update.getResultRowType(),
+                         resultColumns,
+                         parameterTypes,
+                         update.getCostEstimate(),
+                         usesPValues(),
+                         update.isRequireStepIsolation(),
+                         update.putInCache());
             return pjmstmt;
         }
     }

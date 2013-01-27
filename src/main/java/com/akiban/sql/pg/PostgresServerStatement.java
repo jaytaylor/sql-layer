@@ -34,6 +34,7 @@ import java.util.List;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
+import com.akiban.sql.optimizer.plan.CostEstimate;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.StatementNode;
 import org.slf4j.Logger;
@@ -124,6 +125,16 @@ public class PostgresServerStatement implements PostgresStatement {
                                               String sql, StatementNode stmt,
                                               List<ParameterNode> params, int[] paramTypes) {
         return this;
+    }
+
+    @Override
+    public boolean putInCache() {
+        return false;
+    }
+
+    @Override
+    public CostEstimate getCostEstimate() {
+        return null;
     }
 
     protected void doOperation (PostgresServerSession session) throws Exception {

@@ -289,7 +289,7 @@ public class MonitorServiceImpl implements Service, MonitorService, MonitorMXBea
         }
         try {
             if (queryLogFile.createNewFile()) {
-                logger.info("Query log file already existed. Appending to existing file.");
+                logger.debug("Query log file already existed. Appending to existing file.");
             }
         } 
         catch (IOException ex) {
@@ -305,7 +305,7 @@ public class MonitorServiceImpl implements Service, MonitorService, MonitorMXBea
             return false;
         }
         queryOut = new BufferedWriter(fstream);
-        logger.info("Query log file ready for writing.");
+        logger.debug("Query log file ready for writing.");
         return true;
     }
 

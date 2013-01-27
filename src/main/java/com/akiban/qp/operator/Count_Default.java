@@ -188,7 +188,7 @@ class Count_Default extends Operator
                     if (row == null) {
                         close();
                         row = usePValues
-                                ? new PValuesRow(resultType, new PValue(count))
+                                ? new PValuesRow(resultType, new PValue(MNumeric.BIGINT.instance(false), count))
                                 : new ValuesRow(resultType, new Object[] { count });
                     } else if (row.rowType() == countType) {
                         row = null;

@@ -63,7 +63,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     private final PluginsFinder pluginsFinder;
     private final Set<String> requiredKeys = new HashSet<String>();
 
-    private volatile long queryTimeoutSec = -1L; // No timeout
+    private volatile long queryTimeoutMilli = -1L; // No timeout
 
     @Inject
     public ConfigurationServiceImpl(PluginsFinder pluginsFinder) {
@@ -71,15 +71,15 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     }
 
     @Override
-    public long queryTimeoutSec()
+    public long queryTimeoutMilli()
     {
-        return queryTimeoutSec;
+        return queryTimeoutMilli;
     }
 
     @Override
-    public void queryTimeoutSec(long queryTimeoutSec)
+    public void queryTimeoutMilli(long queryTimeoutMilli)
     {
-        this.queryTimeoutSec = queryTimeoutSec;
+        this.queryTimeoutMilli = queryTimeoutMilli;
     }
 
     @Override
@@ -114,15 +114,15 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     }
 
     @Override
-    public long getQueryTimeoutSec()
+    public long getQueryTimeoutMilli()
     {
-        return queryTimeoutSec();
+        return queryTimeoutMilli();
     }
 
     @Override
-    public void setQueryTimeoutSec(long queryTimeoutSec)
+    public void setQueryTimeoutMilli(long queryTimeoutMilli)
     {
-        queryTimeoutSec(queryTimeoutSec);
+        queryTimeoutMilli(queryTimeoutMilli);
     }
 
     @Override

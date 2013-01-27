@@ -31,7 +31,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.*;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueTarget;
 
 public class ExistsSubqueryTExpression extends SubqueryTExpression
@@ -42,7 +41,7 @@ public class ExistsSubqueryTExpression extends SubqueryTExpression
                         RowType outerRowType, RowType innerRowType,
                         int bindingPosition)
         {
-            super(subquery, outerRowType, innerRowType, bindingPosition, PUnderlying.BOOL);
+            super(subquery, outerRowType, innerRowType, bindingPosition, AkBool.INSTANCE.instance(true));
         }
 
         @Override

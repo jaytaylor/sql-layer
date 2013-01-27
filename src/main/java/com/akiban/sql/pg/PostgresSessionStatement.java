@@ -30,6 +30,7 @@ import com.akiban.server.error.NoSuchSchemaException;
 import com.akiban.server.error.UnsupportedConfigurationException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.aisddl.SchemaDDL;
+import com.akiban.sql.optimizer.plan.CostEstimate;
 import com.akiban.sql.parser.AccessMode;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.SetConfigurationNode;
@@ -60,7 +61,7 @@ public class PostgresSessionStatement implements PostgresStatement
       "client_encoding", "DateStyle", "geqo", "ksqo",
       "queryTimeoutSec", "zeroDateTimeBehavior", "maxNotificationLevel", "OutputFormat",
       "parserInfixBit", "parserInfixLogical", "parserDoubleQuoted",
-      "cbo", "newtypes"
+      "newtypes", "bulkload"
     };
 
     private Operation operation;
@@ -70,6 +71,10 @@ public class PostgresSessionStatement implements PostgresStatement
     protected PostgresSessionStatement(Operation operation, StatementNode statement) {
         this.operation = operation;
         this.statement = statement;
+    }
+
+    public StatementNode getStatement() {
+        return statement;
     }
 
     @Override
@@ -143,6 +148,16 @@ public class PostgresSessionStatement implements PostgresStatement
                                               String sql, StatementNode stmt,
                                               List<ParameterNode> params, int[] paramTypes) {
         return this;
+    }
+
+    @Override
+    public boolean putInCache() {
+        return false;
+    }
+
+    @Override
+    public CostEstimate getCostEstimate() {
+        return null;
     }
 
     protected void doOperation(PostgresServerSession server) {

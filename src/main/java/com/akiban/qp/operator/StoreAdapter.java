@@ -59,8 +59,6 @@ public abstract class StoreAdapter
         return schema;
     }
 
-    public abstract Store getUnderlyingStore();
-
     public abstract void updateRow(Row oldRow, Row newRow, boolean usePValues);
     
     public abstract void writeRow (Row newRow, boolean usePValues);
@@ -77,8 +75,8 @@ public abstract class StoreAdapter
                                 InOutTap loadTap,
                                 boolean usePValues);
 
-    public long getQueryTimeoutSec() {
-        return config.queryTimeoutSec();
+    public long getQueryTimeoutMilli() {
+        return config.queryTimeoutMilli();
     }
 
     public abstract long rowCount(RowType tableType);
@@ -93,6 +91,10 @@ public abstract class StoreAdapter
         return session;
     }
 
+    public boolean isBulkloading() {
+        return getUnderlyingStore().isBulkloading();
+    }
+
     public enum AdapterType {
         PERSISTIT_ADAPTER,
         MEMORY_ADAPTER;
@@ -101,6 +103,17 @@ public abstract class StoreAdapter
     public final ConfigurationService getConfig() {
         return config;
     }
+
+    public void setBulkload(Session session, boolean bulkload) {
+        if (bulkload == isBulkloading())
+            return;
+        if (bulkload)
+            getUnderlyingStore().startBulkLoad(session);
+        else
+            getUnderlyingStore().finishBulkLoad(session);
+    }
+
+    protected abstract Store getUnderlyingStore();
 
     protected StoreAdapter(Schema schema,
             Session session,

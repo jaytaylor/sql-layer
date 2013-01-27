@@ -174,7 +174,7 @@ public class ExpressionsSource extends BaseJoinable implements ColumnSource, Typ
 
     @Override
     public int nFields() {
-        return tInstances.length;
+        return expressions.get(0).size();
     }
 
     @Override

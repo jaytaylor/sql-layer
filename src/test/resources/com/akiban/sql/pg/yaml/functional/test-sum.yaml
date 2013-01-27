@@ -25,7 +25,6 @@
 ---
 - Statement: SELECT sum(blob_field) FROM all_types
 - output: [[NULL]]
-
 ---
 - Newtypes: false
 ---
@@ -54,8 +53,8 @@
 - error: [22503]
 ---
 - Newtypes: null
-# Test sum with inserted rows
 
+# Test sum with inserted rows
 ---
 - Statement: INSERT INTO all_types
     (bigint_field, bigint_unsigned_field, decimal_field, double_field,
@@ -132,7 +131,64 @@
 ---
 - Statement: DELETE from all_types
 
-# Test integer overflow and underflow
+
+## Test integer overflow and underflow
+# smallint, bug 890227
+---
+- Statement: INSERT INTO all_types (smallint_field) VALUES (32767)
+---
+- Statement: SELECT sum(smallint_field) FROM all_types
+- output: [[32767]]
+---
+- Statement: INSERT INTO all_types (smallint_field) VALUES (1)
+---
+- Statement: SELECT sum(smallint_field) FROM all_types
+- output: [[32768]]
+---
+- Statement: INSERT INTO all_types (smallint_field) VALUES (-1)
+---
+- Statement: SELECT sum(smallint_field) FROM all_types
+- output: [[32767]]
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (smallint_field) VALUES (2147483647)
+---
+- Statement: SELECT sum(smallint_field) FROM all_types
+- output: !select-engine { sys-mysql: [[32767]], newtypes: [[32767]], all: [[-1]] }
+---
+- Statement: INSERT INTO all_types (smallint_field) VALUES (1)
+---
+- Statement: SELECT sum(smallint_field) FROM all_types
+- output: !select-engine { sys-mysql: [[32768]], newtypes: [[32768]], all: [[0]] }
+---
+- Statement: INSERT INTO all_types (smallint_field) VALUES (-1)
+---
+- Statement: SELECT sum(smallint_field) FROM all_types
+- output: !select-engine { sys-mysql: [[32767]], newtypes: [[32767]], all: [[-1]] }
+---
+- Statement: DELETE FROM all_types
+
+# int
+---
+- Statement: INSERT INTO all_types (integer_field) VALUES (2147483647)
+---
+- Statement: SELECT sum(integer_field) FROM all_types
+- output: [[2147483647]]
+---
+- Statement: INSERT INTO all_types (integer_field) VALUES (1)
+---
+- Statement: SELECT bigint(sum(integer_field)) FROM all_types
+- output: [[2147483648]]
+---
+- Statement: INSERT INTO all_types (integer_field) VALUES (-1)
+---
+- Statement: SELECT sum(integer_field) FROM all_types
+- output: [[2147483647]]
+---
+- Statement: DELETE FROM all_types
+
+# bigint
 ---
 - Statement: INSERT INTO all_types (bigint_field) VALUES (9223372036854775807)
 ---
@@ -157,14 +213,11 @@
 - error: [55004]
 
 # Test unsigned integer overflow
-# Overflow not working properly
-# ---
-# - Statement: INSERT INTO all_types (bigint_unsigned_field)
-#     VALUES (9223372036854775807), (1)
-# ---
-# - Statement: SELECT sum(bigint_unsigned_field) FROM all_types
-# - error: [55004]
-
+---
+- Statement: INSERT INTO all_types (bigint_unsigned_field) VALUES (9223372036854775807), (1)
+---
+- Statement: SELECT sum(bigint_unsigned_field) FROM all_types
+- output: [[9223372036854775808]]
 ---
 - Statement: DELETE FROM all_types
 
@@ -228,7 +281,6 @@
 - Statement: INSERT INTO all_types (float_field) VALUES (3.4028234663852886E38)
 ---
 - Statement: SELECT sum(float_field) FROM all_types
-#- output: [[Infinity]]
 - output: [[6.805646932770577E38]]
 ---
 - Statement: DELETE FROM all_types
@@ -269,8 +321,6 @@
 
 ---
 - Statement: DELETE FROM all_types
-
-# Not clear yet how real overflow should behave
 
 # Test NaN
 ---

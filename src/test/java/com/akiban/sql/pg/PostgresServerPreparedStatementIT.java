@@ -41,11 +41,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class PostgresServerPreparedStatementIT extends PostgresServerITBase {
     private static final String SCHEMA = "test";
     private static final String TABLE = "t";
     private static final TableName TABLE_NAME = new TableName(SCHEMA, TABLE);
-    private static final int ROW_COUNT = 1;
+    private static final int ROW_COUNT = 5;
 
     @Before
     public void createAndInsert() {
@@ -92,6 +95,19 @@ public class PostgresServerPreparedStatementIT extends PostgresServerITBase {
         }
         rs.close();
         return count;
+    }
+
+    private static List<List<Object>> listRows(ResultSet rs, int ncols) throws SQLException {
+        List<List<Object>> rows = new ArrayList<List<Object>>();
+        while (rs.next()) {
+            List<Object> row = new ArrayList<Object>(ncols);
+            for (int i = 0; i < ncols; i++) {
+                row.add(rs.getObject(i+1));
+            }
+            rows.add(row);
+        }
+        rs.close();
+        return rows;
     }
 
     private static void expectStale(PreparedStatement p) {
@@ -174,5 +190,18 @@ public class PostgresServerPreparedStatementIT extends PostgresServerITBase {
         expectStale(pScan);
         pScan.close();
         pCreate.close();
+    }
+
+    @Test
+    public void fetchSize() throws Exception {
+        boolean ac = getConnection().getAutoCommit();
+        getConnection().setAutoCommit(false);
+        PreparedStatement p = newScan();
+        ResultSet rs = p.executeQuery();
+        List<List<Object>> rows = listRows(rs, 2);
+        p.setFetchSize(2);
+        rs = p.executeQuery();
+        assertEquals("Rows with fetch size 2", rows, listRows(rs, 2));
+        getConnection().setAutoCommit(ac);
     }
 }

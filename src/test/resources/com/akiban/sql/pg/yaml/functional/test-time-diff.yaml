@@ -1,10 +1,4 @@
-# Test the TIMEDIFF() function 
-# bug 921095 negative time value not supported
-# status: new
-#
-# bug: DECIMAL (floating point) not convertible to time)
-#
-# bug: 921124 (not valid / opinion)
+# Test the TIMEDIFF() function
 ---
 - Statement: SET newtypes to 'true';
 ---
@@ -58,22 +52,14 @@
 ---
 - Statement: select TIMEDIFF('12:34:55', '00:00:01') from all_types;
 - output: [['12:34:54']]
-#--- #bug 921095
-#- Statement: select TIMEDIFF('00:00:01', '12:34:55') from all_types;
-#- output: [['-12:34:54']]
 ---
 - Statement: select TIMEDIFF('12:34:55', '07:00:00') from all_types;
 - output: [['05:34:55']]
 ---
 - Statement: select TIMEDIFF('12:34:55', '00:04:00') from all_types;
 - output: [['12:30:55']]
-#--- #bug 921095
-#- Statement: select TIMEDIFF('12:34:55', '23:59:59') from all_types;
-#- output: [['-11:25:04']]
-#--- # bug 921117
-#- Statement: select TIMEDIFF('12:34:55', '2012-04-05 01:59:59') from all_types;
-#- output: [['null']]
---- # bug 921117
+# bug 921117
+---
 - Statement: select TIMEDIFF('2012-04-05 13:59:59', '03:34:55') from all_types;
 - output: [[null]]
 ---
@@ -91,21 +77,17 @@
 ---
 - Statement: select TIMEDIFF(5, 2) from all_types;
 - output: [['00:00:03']]
---- # the following tests ONLY work in test3
-- Statement: SET newtypes to 'true';
+
+# the following tests ONLY work in test3
+---
+- Newtypes: true
 ---
 - Statement: select TIMEDIFF('12:34:55', 17) from all_types;
 - output: [['12:34:38']]
---- #921127
+# bug 921127
+---
 - Statement: select TIMEDIFF('12:34:55', -17) from all_types;
 - output: [['12:35:12']]
 ---
-- Statement: SET newtypes to DEFAULT
-#--- # Bug : DECIMAL (DOUBLE/FLOAT) not convertible to TIME
-#- Statement: select TIMEDIFF('12:34:55', 17.495) from all_types;
-#- output: [['12:34:37.505000']] #fractional seconds -> not supported yet
-#- output: [['12:34:37']]
-#--- # bug 921124 -> invalid.
-#- Statement: select TIMEDIFF('12:34:55', 'TIME TO GO') from all_types;
-#- output: [['12:34:55']]
+- Newtypes: null
 ...

@@ -71,6 +71,16 @@ public class SimpleQueryContext extends QueryContextBase
     }
 
     @Override
+    public String getCurrentSchema() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int getSessionId() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void notifyClient(NotificationLevel level, ErrorCode errorCode, String message) {
         switch (level) {
         case WARNING:

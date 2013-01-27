@@ -40,6 +40,7 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.externaldata.ExternalDataService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.monitor.SessionMonitor;
 import com.akiban.server.service.routines.RoutineLoader;
@@ -146,8 +147,8 @@ public interface ServerSession
     /** Get the server's idea of the current time. */
     public Date currentTime();
 
-    /** Get query timeout in seconds or <code>null</code> if it has not been set. */
-    public long getQueryTimeoutSec();
+    /** Get query timeout in milliseconds or <code>null</code> if it has not been set. */
+    public long getQueryTimeoutMilli();
 
     /** Get compatibility mode for MySQL zero dates. */
     public ServerValueEncoder.ZeroDateTimeBehavior getZeroDateTimeBehavior();
@@ -163,4 +164,7 @@ public interface ServerSession
 
     /** Get the stored procedure cache */
     public RoutineLoader getRoutineLoader();
+
+    /** Get the external data loader / dumper */
+    public ExternalDataService getExternalDataService();
 }

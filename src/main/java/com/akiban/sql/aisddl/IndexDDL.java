@@ -172,10 +172,10 @@ public class IndexDDL
         final TableName tableName = TableName.create(schemaName, index.getIndexTableName().getTableName());
         
         if (checkIndexType (index, tableName) == Index.IndexType.TABLE) {
-            logger.info ("Building Table index on table {}", tableName);
+            logger.debug ("Building Table index on table {}", tableName) ;
             return buildTableIndex (ais, tableName, index);
         } else {
-            logger.info ("Building Group index on table {}", tableName);
+            logger.debug ("Building Group index on table {}", tableName);
             return buildGroupIndex (ais, tableName, index);
         }
     }

@@ -27,6 +27,7 @@
 package com.akiban.sql.optimizer.rule.join_enum;
 
 import com.akiban.sql.optimizer.rule.EquivalenceFinder;
+import com.akiban.sql.optimizer.rule.cost.CostEstimator.SelectivityConditions;
 import com.akiban.sql.optimizer.rule.cost.PlanCostEstimator;
 import com.akiban.sql.optimizer.rule.join_enum.DPhyp.JoinOperator;
 import com.akiban.sql.optimizer.rule.range.ColumnRanges;
@@ -48,6 +49,7 @@ import com.akiban.server.geophile.Space;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
@@ -129,10 +131,11 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                                              Collection<JoinOperator> queryJoins,
                                              Collection<JoinOperator> joins,
                                              Collection<JoinOperator> outsideJoins,
-                                             boolean sortAllowed) {
+                                             boolean sortAllowed,
+                                             ConditionList extraConditions) {
         setBoundTables(boundTables);
         this.sortAllowed = sortAllowed;
-        setJoinConditions(queryJoins, joins);
+        setJoinConditions(queryJoins, joins, extraConditions);
         updateRequiredColumns(joins, outsideJoins);
         return conditionSources;
     }
@@ -153,7 +156,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         return false;
     }
     
-    public void setJoinConditions(Collection<JoinOperator> queryJoins, Collection<JoinOperator> joins) {
+    public void setJoinConditions(Collection<JoinOperator> queryJoins, Collection<JoinOperator> joins, ConditionList extraConditions) {
         conditionSources = new ArrayList<ConditionList>();
         if ((queryGoal.getWhereConditions() != null) && !hasOuterJoin(queryJoins)) {
             conditionSources.add(queryGoal.getWhereConditions());
@@ -162,6 +165,9 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             ConditionList joinConditions = join.getJoinConditions();
             if (joinConditions != null)
                 conditionSources.add(joinConditions);
+        }
+        if (extraConditions != null) {
+            conditionSources.add(extraConditions);
         }
         switch (conditionSources.size()) {
         case 0:
@@ -176,6 +182,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 conditions.addAll(conditionSource);
             }
         }
+        columnsToRanges = null;
     }
 
     public void updateRequiredColumns(Collection<JoinOperator> joins,
@@ -196,6 +203,70 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 }
             }
         }        
+    }
+
+    /** Given a semi-join to a VALUES, see whether it can be turned
+     * into a predicate on some column in this group, in which case it
+     * can possibly be indexed.
+     */
+    public InListCondition semiJoinToInList(ExpressionsSource values,
+                                            Collection<JoinOperator> joins) {
+        if (values.nFields() != 1) 
+            return null;
+        ComparisonCondition ccond = null;
+        boolean found = false;
+        ConditionExpression joinCondition = onlyJoinCondition(joins);
+        if (joinCondition instanceof ComparisonCondition) {
+            ccond = (ComparisonCondition)joinCondition;
+            if ((ccond.getOperation() == Comparison.EQ) &&
+                (ccond.getRight() instanceof ColumnExpression)) {
+                ColumnExpression rcol = (ColumnExpression)ccond.getRight();
+                if ((rcol.getTable() == values) &&
+                    (rcol.getPosition() == 0) &&
+                    (ccond.getLeft() instanceof ColumnExpression)) {
+                    ColumnExpression lcol = (ColumnExpression)ccond.getLeft();
+                    for (TableGroupJoinNode table : tables) {
+                        if (table.getTable() == lcol.getTable()) {
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        if (!found) return null;
+        return semiJoinToInList(values, ccond);
+    }
+
+    protected static ConditionExpression onlyJoinCondition(Collection<JoinOperator> joins) {
+        ConditionExpression result = null;
+        for (JoinOperator join : joins) {
+            if (join.getJoinConditions() != null) {
+                for (ConditionExpression cond : join.getJoinConditions()) {
+                    if (result == null)
+                        result = cond;
+                    else 
+                        return null;
+                }
+            }
+        }
+        return result;
+    }
+
+    public static InListCondition semiJoinToInList(ExpressionsSource values,
+                                                   ComparisonCondition ccond) {
+        List<ExpressionNode> expressions = new ArrayList<ExpressionNode>(values.getExpressions().size());
+        for (List<ExpressionNode> row : values.getExpressions()) {
+            expressions.add(row.get(0));
+        }
+        InListCondition cond = new InListCondition(ccond.getLeft(), expressions,
+                                                   new DataTypeDescriptor(TypeId.BOOLEAN_ID, true),
+                                                   null);
+        cond.setComparison(ccond);
+        if (Types3Switch.ON) {
+            cond.setPreptimeValue(new TPreptimeValue(AkBool.INSTANCE.instance(true)));
+        }
+        return cond;
     }
 
     /** Populate given index usage according to goal.
@@ -269,8 +340,13 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                         (fcond.getOperands().size() == 1) &&
                         indexExpressionMatches(indexExpression, 
                                                fcond.getOperands().get(0))) {
+                        ExpressionNode foperand = fcond.getOperands().get(0);
                         equalityCondition = condition;
-                        otherComparand = null; // TODO: Or constant NULL, depending on API.
+                        otherComparand = new IsNullIndexKey(foperand.getSQLtype(),
+                                                            fcond.getSQLsource());
+                        if (foperand.getPreptimeValue() != null) {
+                            otherComparand.setPreptimeValue(new TPreptimeValue(foperand.getPreptimeValue().instance()));
+                        }
                         break;
                     }
                 }
@@ -643,6 +719,8 @@ public class GroupIndexGoal implements Comparator<BaseScan>
 
     /** Find the best index among the branches. */
     public BaseScan pickBestScan() {
+        logger.debug("Picking for {}", this);
+
         Set<TableSource> required = tables.getRequired();
         BaseScan bestScan = null;
 
@@ -1162,9 +1240,8 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
 
     // Conditions that might have a recognizable selectivity.
-    protected Map<ColumnExpression,Collection<ComparisonCondition>> selectivityConditions(Collection<ConditionExpression> conditions, Collection<TableSource> requiredTables) {
-        Map<ColumnExpression,Collection<ComparisonCondition>> result = new
-            HashMap<ColumnExpression,Collection<ComparisonCondition>>();
+    protected SelectivityConditions selectivityConditions(Collection<ConditionExpression> conditions, Collection<TableSource> requiredTables) {
+        SelectivityConditions result = new SelectivityConditions();
         for (ConditionExpression condition : conditions) {
             if (condition instanceof ComparisonCondition) {
                 ComparisonCondition ccond = (ComparisonCondition)condition;
@@ -1173,12 +1250,26 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                     if ((column.getColumn() != null) &&
                         requiredTables.contains(column.getTable()) &&
                         constantOrBound(ccond.getRight())) {
-                        Collection<ComparisonCondition> entry = result.get(column);
-                        if (entry == null) {
-                            entry = new ArrayList<ComparisonCondition>();
-                            result.put(column, entry);
+                        result.addCondition(column, condition);
+                    }
+                }
+            }
+            else if (condition instanceof InListCondition) {
+                InListCondition incond = (InListCondition)condition;
+                if (incond.getOperand() instanceof ColumnExpression) {
+                    ColumnExpression column = (ColumnExpression)incond.getOperand();
+                    if ((column.getColumn() != null) &&
+                        requiredTables.contains(column.getTable())) {
+                        boolean allConstant = true;
+                        for (ExpressionNode expr : incond.getExpressions()) {
+                            if (!constantOrBound(expr)) {
+                                allConstant = false;
+                                break;
+                            }
                         }
-                        entry.add(ccond);
+                        if (allConstant) {
+                            result.addCondition(column, condition);
+                        }
                     }
                 }
             }
@@ -1278,6 +1369,29 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         }
     }
 
+    @Override
+    public String toString() {
+        StringBuilder str = new StringBuilder();
+        str.append(tables.summaryString());
+        str.append("\n");
+        str.append(conditions);
+        str.append("\n[");
+        boolean first = true;
+        for (ColumnSource bound : boundTables) {
+            if (first)
+                first = false;
+            else
+                str.append(", ");
+            str.append(bound.getName());
+        }
+        str.append("]");
+        return str.toString();
+    }
+
+    // Too-many-way UNION can consume too many resources (and overflow
+    // the stack explaining).
+    protected static int COLUMN_RANGE_MAX_SEGMENTS_DEFAULT = 16;
+
     // Get Range-expressible conditions for given column.
     protected ColumnRanges rangeForIndex(ExpressionNode expressionNode) {
         if (expressionNode instanceof ColumnExpression) {
@@ -1291,6 +1405,20 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                         if (oldRange != null)
                             range = ColumnRanges.andRanges(range, oldRange);
                         columnsToRanges.put(rangeColumn, range);
+                    }
+                }
+                if (!columnsToRanges.isEmpty()) {
+                    int maxSegments;
+                    String prop = queryGoal.getRulesContext().getProperty("columnRangeMaxSegments");
+                    if (prop != null)
+                        maxSegments = Integer.parseInt(prop);
+                    else
+                        maxSegments = COLUMN_RANGE_MAX_SEGMENTS_DEFAULT;
+                    Iterator<ColumnRanges> iter = columnsToRanges.values().iterator();
+                    while (iter.hasNext()) {
+                        if (iter.next().getSegments().size() > maxSegments) {
+                            iter.remove();
+                        }
                     }
                 }
             }

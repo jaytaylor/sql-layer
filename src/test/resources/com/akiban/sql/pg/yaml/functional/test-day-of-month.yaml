@@ -1,6 +1,4 @@
 # Test the DAYOFMONTH() function
-# Related bug(s): 913792
-# Status: fix committed
 ---
 - Include: all-types-schema.yaml
 ---
@@ -11,7 +9,8 @@
 ---
 - Statement: select DAYOFMONTH('2007-02-03') from all_types; 
 - output: [[3]]
---- # bug 913792
+# bug 913792
+---
 - Statement: select dayofmonth(?) from all_types;
 - params: [['2007-02-03']] 
 - output: [[3]]

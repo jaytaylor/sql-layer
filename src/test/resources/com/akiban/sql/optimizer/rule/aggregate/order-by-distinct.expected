@@ -1,0 +1,9 @@
+SelectQuery@27e5f3a4
+  ResultSet@69dea872[name]
+    Distinct@19050aab
+      Sort@19ff6d62[PROJECT[0]]
+        Project@50664a43[GROUP[0]]
+          Select@6b959df1[]
+            AggregateSource@2bb47065([customers.name],[])
+              Select@533f0d4d[]
+                TableSource@508264ed(customers)

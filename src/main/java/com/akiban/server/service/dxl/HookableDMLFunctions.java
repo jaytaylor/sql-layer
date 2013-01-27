@@ -277,11 +277,11 @@ public final class HookableDMLFunctions implements DMLFunctions {
     }
 
     @Override
-    public Long writeRow(Session session, NewRow row) {
+    public void writeRow(Session session, NewRow row) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.WRITE_ROW);
-            return delegate.writeRow(session, row);
+            delegate.writeRow(session, row);
         } catch (RuntimeException t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.WRITE_ROW, t);
@@ -292,6 +292,25 @@ public final class HookableDMLFunctions implements DMLFunctions {
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.WRITE_ROW, thrown);
+        }
+    }
+
+    @Override
+    public void writeRows(Session session, List<RowData> rows) {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.WRITE_ROWS);
+            delegate.writeRows(session, rows);
+        } catch (RuntimeException t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.WRITE_ROWS, t);
+            throw t;
+        } catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.WRITE_ROWS, t);
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.WRITE_ROWS, thrown);
         }
     }
 

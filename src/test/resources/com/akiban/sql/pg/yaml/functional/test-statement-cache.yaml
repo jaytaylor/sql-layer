@@ -3,8 +3,8 @@
 - Properties: sys-mysql
 - suppressed: true
 ---
-# Set the CBO to the setting this test requires. 
-- Statement: SET cbo TO 'false'
+# A setting that affects cache selection.
+- Statement: SET newtypes TO 'false'
 ---
 - JMX: com.akiban:type=PostgresServer
 - set: StatementCacheCapacity
@@ -35,18 +35,32 @@
            ['    Select_HKeyOrdered(t.s == $1)'],
            ['      GroupScan_Default(t)']]
 ---
-- Statement: EXPLAIN SELECT id FROM t WHERE s = ?
+- Statement: SELECT id FROM t WHERE s = 1
 ---
-- Statement: EXPLAIN SELECT id FROM t WHERE s = ?
+- Statement: SELECT id FROM t WHERE s = 1
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheMisses
-# INSERT, EXPLAIN
-- output: [['2']]
+# INSERT, EXPLAIN, SELECT
+- output: [['3']]
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheHits
-# EXPLAIN x 2
+# SELECT
+- output: [['1']]
+---
+- Statement: INSERT INTO t VALUES(1, CURRENT_DATE)
+---
+- Statement: INSERT INTO t VALUES(1, CURRENT_DATE)
+---
+- JMX: com.akiban:type=PostgresServer
+- get: StatementCacheMisses
+# INSERT
+- output: [['4']]
+---
+- JMX: com.akiban:type=PostgresServer
+- get: StatementCacheHits
+# INSERT
 - output: [['2']]
 ---
 # AIS change
@@ -60,28 +74,33 @@
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheMisses
 # CREATE, EXPLAIN
-- output: [['4']]
+- output: [['6']]
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheHits
 - output: [['2']]
 ---
 # Different compiler mode
-- Statement: SET cbo TO 'true'
+- Statement: SET newtypes TO 'true'
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
 - output: [['Project_Default(t.id)'],
            ['  AncestorLookup_Default(Index(t.t_s) -> t)'],
            ['    IndexScan_Default(Index(t.t_s), s = $1)']]
 ---
+- Statement: SELECT id FROM t WHERE s = 1
+---
+- Statement: SELECT id FROM t WHERE s = 1
+---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheMisses
-# SET, EXPLAIN
-- output: [['6']]
+# SET, EXPLAIN, SELECT
+- output: [['9']]
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheHits
-- output: [['2']]
+# SELECT
+- output: [['3']]
 ---
 - Statement: DROP INDEX t_s
 ---
@@ -91,7 +110,7 @@
            ['    Select_HKeyOrdered(t.s == $1)'],
            ['      GroupScan_Default(t)']]
 ---
-- Statement: SET cbo TO 'false'
+- Statement: SET newtypes TO 'false'
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
 - output: [['Project_Default(t.id)'],
@@ -122,6 +141,6 @@
 - set: StatementCacheCapacity
 - params: ['0']
 ---
-# Return the CBO setting to the server standard
-- Statement: SET cbo TO DEFAULT
+# Return the setting to the server standard
+- Statement: SET newtypes TO DEFAULT
 ...

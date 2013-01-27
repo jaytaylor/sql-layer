@@ -408,7 +408,7 @@ public final class NamedParameterizedRunner extends Suite
                 msg += " regex";
             }
             msg += ":" + override;
-            logger.info(msg);
+            logger.debug(msg);
         }
         for (Parameterization param : parameterizations)
         {
@@ -429,7 +429,7 @@ public final class NamedParameterizedRunner extends Suite
             {
                 if (override != null)
                 {
-                    logger.info("Adding parameterization: " + param.getName());
+                    logger.debug("Adding parameterization: " + param.getName());
                 }
                 localRunners.add(new ReifiedParamRunner(getTestClass().getJavaClass(), param, override != null));
             }

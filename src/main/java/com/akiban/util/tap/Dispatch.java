@@ -26,6 +26,9 @@
 
 package com.akiban.util.tap;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * A {@link com.akiban.util.tap.Tap} Implementation that simply dispatches to another Tap
  * instance. Used to hold the "switch" that determines whether a Null,
@@ -94,6 +97,19 @@ class Dispatch extends Tap
             enabledTap.disable();
             currentTap = new Null(name);
         }
+        for (Dispatch subsidiaryDispatch : subsidiaryDispatches) {
+            subsidiaryDispatch.setEnabled(on);
+        }
+    }
+
+    public void addSubsidiaryDispatch(Dispatch subsidiaryDispatch)
+    {
+        subsidiaryDispatches.add(subsidiaryDispatch);
+    }
+
+    public boolean isSubsidiary()
+    {
+        return enabledTap.isSubsidiary();
     }
 
     public Dispatch(String name, Tap tap)
@@ -107,4 +123,6 @@ class Dispatch extends Tap
 
     private Tap currentTap;
     private Tap enabledTap;
+    // For recursive taps
+    private List<Dispatch> subsidiaryDispatches = new ArrayList<Dispatch>();
 }

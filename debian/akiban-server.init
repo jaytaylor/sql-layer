@@ -14,6 +14,7 @@
 export JAR_FILE=/usr/share/akiban/akiban-server.jar
 export DEP_DIR=/usr/share/akiban/server
 export AKIBAN_CONF=/etc/akiban
+export AKIBAN_HOME=/usr/share/akiban
 export AKIBAN_OWNR=akiban
 SELF=$(cd $(dirname $0); pwd -P)/$(basename $0)
 NAME="akiban"

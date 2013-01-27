@@ -1,4 +1,4 @@
-PhysicalUpdate
+PhysicalUpdate/NO_CACHE
   Insert_Returning(INTO customers(customer_id, customer_name, customer_title, primary_payment_code, payment_status, comment))
     Project_Default(COALESCE(CAST(Field(0) AS INT), CAST(NEXTVAL('test', '_sequence-1615118567') AS INT)), Field(1), Field(2), Field(3), Field(4), Field(5))
       ValuesScan_Default([1, 'YLKDZIWHQHCHLMUZEVIWGCKBQKRUFBITCI', 'QUPGQ', 'CHRG', 'C', 'Lorem ipsum dolor'])

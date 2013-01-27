@@ -230,18 +230,16 @@ public interface DMLFunctions {
     List<NewRow> convertRowDatas(Session session, List<RowData> rowDatas);
 
     /**
-     * Writes a row to the specified table. If the table contains an autoincrement column, and a value for that
-     * column is not specified, the generated value will be returned.
-     *
-     * <p><strong>Note:</strong> The chunkserver doesn't yet support autoincrement, so for now, this method
-     * will always return <tt>null</tt>. This is expected to change in the nearish future.</p>
+     * Writes a row to the specified table.
      * @param row the row to write
-     * @return the generated autoincrement value, or <tt>null</tt> if none was generated
-     * @throws PersistitException 
-     * @throws Exception 
-     * @throws NullPointerException if the given tableId or row are null
      */
-    Long writeRow(Session session, NewRow row);
+    void writeRow(Session session, NewRow row);
+
+    /**
+     * Write multiple rows to their associated tables.
+     * @param rows the rows to write
+     */
+    void writeRows(Session session, List<RowData> rows);
 
     /**
      * <p>Deletes a row, possibly cascading the deletion to its children rows.</p>

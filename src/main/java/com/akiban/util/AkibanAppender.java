@@ -35,6 +35,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 
 public abstract class AkibanAppender {
     public abstract void append(Object o);
@@ -48,8 +49,16 @@ public abstract class AkibanAppender {
         return false;
     }
 
+    public Charset appendBytesAs() {
+        throw new UnsupportedOperationException();
+    }
+
     public void appendBytes(byte[] bytes, int offset, int length) {
         throw new UnsupportedOperationException();
+    }
+
+    public void appendBytes(ByteSource byteSource) {
+        appendBytes(byteSource.byteArray(), byteSource.byteArrayOffset(), byteSource.byteArrayLength());
     }
 
     public static AkibanAppender of(StringBuilder stringBuilder) {
@@ -60,8 +69,8 @@ public abstract class AkibanAppender {
         return new AkibanAppenderPW(printWriter);
     }
 
-    public static AkibanAppender of(OutputStream outputStream, PrintWriter printWriter) {
-        return new AkibanAppenderOS(outputStream, printWriter);
+    public static AkibanAppender of(OutputStream outputStream, PrintWriter printWriter, String charset) {
+        return new AkibanAppenderOS(outputStream, printWriter, charset);
     }
 
     private static class AkibanAppenderPW extends AbstractAkibanAppender
@@ -104,10 +113,12 @@ public abstract class AkibanAppender {
 
     private static class AkibanAppenderOS extends AkibanAppenderPW {
         private final OutputStream os;
+        private final Charset charset;
 
-        private AkibanAppenderOS(OutputStream os, PrintWriter printWriter) {
+        private AkibanAppenderOS(OutputStream os, PrintWriter printWriter, String charset) {
             super(printWriter);
             this.os = os;
+            this.charset = Charset.forName(charset);
         }
 
         @Override
@@ -123,6 +134,11 @@ public abstract class AkibanAppender {
         @Override
         public boolean canAppendBytes() {
             return true;
+        }
+
+        @Override
+        public Charset appendBytesAs() {
+            return charset;
         }
     }
 

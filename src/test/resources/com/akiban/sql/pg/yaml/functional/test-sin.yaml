@@ -59,4 +59,13 @@
 - params: [[0.0], [1.0]]
 - output: [[0.0], [0.8414709848078965]]
 
+# varchar, bug893181
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (varchar_field) VALUES ('abc')
+---
+- Statement: SELECT SIN(varchar_field) FROM all_types
+- output: [[0.0]]
+
 ...

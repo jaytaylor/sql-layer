@@ -33,6 +33,8 @@ import com.akiban.qp.rowtype.ProjectedUserTableRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.*;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
@@ -139,11 +141,12 @@ class Project_Default extends Operator
         this.inputOperator = inputOperator;
         this.rowType = rowType;
         this.pExpressions = pExpressions;
+        this.tInstances = TInstance.createTInstances(pExpressions);
         this.projections = projections;
-        projectType = rowType.schema().newProjectType(this.projections, pExpressions);
+        this.projectType = rowType.schema().newProjectType(this.projections, pExpressions);
     }
 
-    // Project_Default constructor, returns ProjectedUserTableRowType rows 
+    // Project_Default constructor, returns ProjectedUserTableRowType rows
     public Project_Default(Operator inputOperator, RowType inputRowType,
             RowType projectTableRowType, List<? extends Expression> projections, List<? extends TPreparedExpression> pExpressions)
     {
@@ -167,6 +170,7 @@ class Project_Default extends Operator
                                                     projections,
                                                     pExpressions);
         this.pExpressions = pExpressions; // TODO defensively copy once the old expressions are gone (until then, this may NPE)
+        this.tInstances = TInstance.createTInstances(pExpressions);
     }
 
 
@@ -181,6 +185,7 @@ class Project_Default extends Operator
     protected final RowType rowType;
     protected final List<? extends Expression> projections;
     private final List<? extends TPreparedExpression> pExpressions;
+    private final List<? extends TInstance> tInstances;
     protected ProjectedRowType projectType;
 
     @Override
@@ -198,6 +203,8 @@ class Project_Default extends Operator
         else
             for (TPreparedExpression ex : pExpressions)
                 att.put(Label.PROJECTION, ex.getExplainer(context));
+        if (context.hasExtraInfo(this))
+            att.putAll(context.getExtraInfo(this).get());
         return new CompoundExplainer(Type.PROJECT, att);
     }
 
@@ -206,7 +213,7 @@ class Project_Default extends Operator
     private class Execution extends OperatorExecutionBase implements Cursor
     {
         // Cursor interface
-
+        
         @Override
         public void open()
         {
@@ -215,6 +222,7 @@ class Project_Default extends Operator
                 CursorLifecycle.checkIdle(this);
                 input.open();
                 idle = false;
+
             } finally {
                 TAP_OPEN.out();
             }
@@ -232,7 +240,7 @@ class Project_Default extends Operator
                 if ((inputRow = input.next()) != null) {
                     projectedRow =
                         inputRow.rowType() == rowType
-                        ? new ProjectedRow(projectType, inputRow, context, projections, pExpressions)
+                        ? new ProjectedRow(projectType, inputRow, context, projections, pEvalExpr, tInstances)
                         : inputRow;
                 }
                 if (projectedRow == null) {
@@ -261,6 +269,7 @@ class Project_Default extends Operator
                 close();
                 input.destroy();
                 input = null;
+                pEvalExpr = null;
             }
         }
 
@@ -288,11 +297,16 @@ class Project_Default extends Operator
         {
             super(context);
             this.input = input;
+            // one list of evaluatables per execution    
+            if (pExpressions != null)
+                    pEvalExpr = ProjectedRow.createTEvaluatableExpressions(pExpressions);
+            else
+                pEvalExpr = null;
         }
 
         // Object state
-
         private Cursor input; // input = null indicates destroyed.
         private boolean idle = true;
+        private List<TEvaluatableExpression> pEvalExpr = null;
     }
 }

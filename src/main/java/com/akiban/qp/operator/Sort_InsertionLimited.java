@@ -27,6 +27,7 @@
 package com.akiban.qp.operator;
 
 import com.akiban.qp.exec.Plannable;
+import com.akiban.qp.row.ImmutableRow;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
@@ -429,7 +430,10 @@ class Sort_InsertionLimited extends Operator
         public void freeze() {
             Row arow = row.get();
             if (arow instanceof ProjectedRow)
-                ((ProjectedRow)arow).freeze();
+            {
+                Row copied = new ImmutableRow((ProjectedRow)arow);
+                row.hold(copied);
+            }
         }
 
         public int compareTo(Holder other) {
@@ -480,7 +484,7 @@ class Sort_InsertionLimited extends Operator
         private Comparable toObject(PValueSource valueSource) {
             if (valueSource.isNull())
                 return null;
-            switch (valueSource.getUnderlyingType()) {
+            switch (PValueSources.pUnderlying(valueSource)) {
             case BOOL:
                 return valueSource.getBoolean();
             case INT_8:
@@ -502,7 +506,7 @@ class Sort_InsertionLimited extends Operator
             case STRING:
                 return valueSource.getString();
             default:
-                throw new AssertionError(valueSource.getUnderlyingType());
+                throw new AssertionError(valueSource.tInstance());
             }
         }
     }

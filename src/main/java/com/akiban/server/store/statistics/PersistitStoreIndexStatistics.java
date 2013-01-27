@@ -32,6 +32,7 @@ import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.IndexVisitor;
@@ -46,13 +47,25 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
-import static com.akiban.server.store.statistics.IndexStatistics.Histogram;
-import static com.akiban.server.store.statistics.IndexStatistics.HistogramEntry;
 import static com.akiban.server.store.statistics.IndexStatisticsService.INDEX_STATISTICS_ENTRY_TABLE_NAME;
 import static com.akiban.server.store.statistics.IndexStatisticsService.INDEX_STATISTICS_TABLE_NAME;
 
 /** Manage index statistics for / stored in Persistit
+ *
+ * About index_statistics_entry, single-column and multi-column histograms:
+ * - Multi-column histograms were invented first. index_statistics_entry.column_count indicates
+ *   the number of columns represented by the entry, e.g. 1 for (a) and 2 for (a, b).
+ * - Single-column histograms were added later. The single-column histogram for the leading column
+ *   of an index is identical to the multi-column histogram with column_count 1. column_count -2 is
+ *   for the second column.
+ * So for an index (a, b, c), there are the following column_counts:
+ * 1: (a)
+ * 2: (a, b)
+ * 3: (a, b, c)
+ * -2: (b)
+ * -3: (c)
  */
 public class PersistitStoreIndexStatistics
 {
@@ -60,14 +73,18 @@ public class PersistitStoreIndexStatistics
 
     private final PersistitStore store;
     private final TreeService treeService;
+    private final ConfigurationService configurationService;
     private final IndexStatisticsService indexStatsService;
 
     /** Initialize index statistics manager for the given store. */
-    public PersistitStoreIndexStatistics(PersistitStore store, TreeService treeService,
+    public PersistitStoreIndexStatistics(PersistitStore store,
+                                         TreeService treeService,
+                                         ConfigurationService configurationService,
                                          IndexStatisticsService indexStatsService)
     {
         this.store = store;
         this.treeService = treeService;
+        this.configurationService = configurationService;
         this.indexStatsService = indexStatsService;
     }
 
@@ -101,8 +118,6 @@ public class PersistitStoreIndexStatistics
     /* Storage formats.
      * Keep in sync with IndexStatisticsServiceImpl
      */
-    private static final int TABLE_ID_FIELD_INDEX = 0;
-    private static final int INDEX_ID_FIELD_INDEX = 1;
     private static final int ANALYSIS_TIMESTAMP_FIELD_INDEX = 2;
     private static final int ROW_COUNT_FIELD_INDEX = 3;
     private static final int SAMPLED_COUNT_FIELD_INDEX = 4;
@@ -178,13 +193,17 @@ public class PersistitStoreIndexStatistics
             indexStatisticsEntryRowDef.fieldLocation(rowData, DISTINCT_COUNT_FIELD_INDEX);
         long distinctCount = rowData.getIntegerValue((int)distinctCountLocation,
                                                      (int)(distinctCountLocation >>> 32));
-        Histogram histogram = indexStatistics.getHistogram(columnCount);
+        int firstColumn = 0; // Correct for multi-column
+        if (columnCount < 0) {
+            firstColumn = -columnCount - 1;
+            columnCount = 1;
+        }
+        Histogram histogram = indexStatistics.getHistogram(firstColumn, columnCount);
         if (histogram == null) {
-            histogram = new Histogram(columnCount, new ArrayList<HistogramEntry>());
+            histogram = new Histogram(firstColumn, columnCount, new ArrayList<HistogramEntry>());
             indexStatistics.addHistogram(histogram);
         }
-        histogram.getEntries().add(new HistogramEntry(keyString, keyBytes,
-                                                      eqCount, ltCount, distinctCount));
+        histogram.getEntries().add(new HistogramEntry(keyString, keyBytes, eqCount, ltCount, distinctCount));
     }
 
     /** Store statistics into database. */
@@ -210,32 +229,61 @@ public class PersistitStoreIndexStatistics
                 indexStatistics.getSampledCount()
             });
             store.writeRow(session, rowData);
-
-            for (int i = 0; i < index.getKeyColumns().size(); i++) {
-                Histogram histogram = indexStatistics.getHistogram(i + 1);
-                if (histogram == null) {
-                    continue;
-                }
-                int itemNumber = 0;
-                for (HistogramEntry entry : histogram.getEntries()) {
-                    rowData.createRow(indexStatisticsEntryRowDef, new Object[] {
-                        tableId,
-                        index.getIndexId(),
-                        histogram.getColumnCount(),
-                        ++itemNumber,
-                        entry.getKeyString(),
-                        entry.getKeyBytes(),
-                        entry.getEqualCount(),
-                        entry.getLessCount(),
-                        entry.getDistinctCount()
-                    });
-                    store.writeRow(session, rowData);
-                }
+            // Multi-column
+            for (int prefixColumns = 1; prefixColumns <= index.getKeyColumns().size(); prefixColumns++) {
+                Histogram histogram = indexStatistics.getHistogram(0, prefixColumns);
+                if (histogram != null)
+                    storeIndexStatisticsEntry(session,
+                                              index,
+                                              tableId,
+                                              histogram.getColumnCount(),
+                                              indexStatisticsEntryRowDef,
+                                              rowData,
+                                              histogram);
+            }
+            // Single-column
+            for (int columnPosition = 1; columnPosition < index.getKeyColumns().size(); columnPosition++) {
+                Histogram histogram = indexStatistics.getHistogram(columnPosition, 1);
+                if (histogram != null)
+                    storeIndexStatisticsEntry(session,
+                                              index,
+                                              tableId,
+                                              -histogram.getFirstColumn() - 1,
+                                              indexStatisticsEntryRowDef,
+                                              rowData,
+                                              histogram);
             }
             transaction.commit();
         }
         finally {
             transaction.end();
+        }
+    }
+
+    private void storeIndexStatisticsEntry(Session session,
+                                           Index index,
+                                           int tableId,
+                                           int columnCount,
+                                           RowDef indexStatisticsEntryRowDef,
+                                           RowData rowData,
+                                           Histogram histogram) throws PersistitException
+    {
+        if (histogram != null) {
+            int itemNumber = 0;
+            for (HistogramEntry entry : histogram.getEntries()) {
+                rowData.createRow(indexStatisticsEntryRowDef, new Object[] {
+                    tableId,
+                    index.getIndexId(),
+                    columnCount,
+                    ++itemNumber,
+                    entry.getKeyString(),
+                    entry.getKeyBytes(),
+                    entry.getEqualCount(),
+                    entry.getLessCount(),
+                    entry.getDistinctCount()
+                });
+                store.writeRow(session, rowData);
+            }
         }
     }
 
@@ -297,17 +345,24 @@ public class PersistitStoreIndexStatistics
             throws PersistitException {
         long indexRowCount = indexStatsService.countEntries(session, index);
         PersistitIndexStatisticsVisitor visitor = 
-            new PersistitIndexStatisticsVisitor(index, indexRowCount, treeService);
-        visitor.init();
+            new PersistitIndexStatisticsVisitor(store, session, index, indexRowCount, treeService);
+        int bucketCount = bucketCount(configurationService);
+        visitor.init(bucketCount);
         store.traverse(session, index, visitor);
-        visitor.finish();
-        IndexStatistics result = visitor.getIndexStatistics();
+        visitor.finish(bucketCount);
+        IndexStatistics indexStatistics = visitor.getIndexStatistics();
         if (logger.isDebugEnabled()) {
-            logger.debug("Analyzed: " + result.toString(index));
+            logger.debug("Analyzed: " + indexStatistics.toString(index));
         }
-        return result;
+        return indexStatistics;
     }
     
+    public static final String BUCKET_COUNT_PROPERTY = "akserver.index_statistics.bucket_count";
+
+    public static int bucketCount(ConfigurationService configurationService) {
+        return Integer.parseInt(configurationService.getProperty(BUCKET_COUNT_PROPERTY));
+    }
+
     // TODO: Is this the right API?
     public void analyzeIndexes(Session session, Collection<? extends Index> indexes) {
         for (Index index : indexes) {

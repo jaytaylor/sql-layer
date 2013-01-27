@@ -186,6 +186,7 @@ public enum ErrorCode {
     NEGATIVE_LIMIT          ("22", "502", Importance.DEBUG, NegativeLimitException.class),
     INVALID_ARGUMENT_TYPE   ("22", "503", Importance.DEBUG, InvalidArgumentTypeException.class),
     ZERO_DATE_TIME          ("22", "504", Importance.DEBUG, ZeroDateTimeException.class),
+    EXTERNAL_ROW_READER_EXCEPTION ("22", "505", Importance.DEBUG, ExternalRowReaderException.class),
 
     // Class 23 - integrity constraint violation
     DUPLICATE_KEY           ("23", "501", Importance.DEBUG, DuplicateKeyException.class),
@@ -275,6 +276,8 @@ public enum ErrorCode {
     NO_SUCH_ROUTINE         ("42", "519", Importance.DEBUG, NoSuchRoutineException.class),
     NO_SUCH_CAST            ("42", "51A", Importance.DEBUG, NoSuchCastException.class),
     PROCEDURE_CALLED_AS_FUNCTION ("42", "51B", Importance.DEBUG, ProcedureCalledAsFunctionException.class),
+    NO_SUCH_CURSOR          ("42", "51C", Importance.DEBUG, NoSuchCursorException.class),
+    NO_SUCH_PREPARED_STATEMENT ("42", "51D", Importance.DEBUG, NoSuchPreparedStatementException.class),
 
 
     // Class 44 - with check option violation
@@ -425,6 +428,7 @@ public enum ErrorCode {
     TOO_MANY_ROWS_UPDATED   ("57", "004", Importance.DEBUG, TooManyRowsUpdatedException.class),  
     INSERT_NULL_CHECK       ("57", "005", Importance.DEBUG, InsertNullCheckFailedException.class),
     TABLE_CHANGED_BY_DDL    ("57", "006", Importance.DEBUG, TableChangedByDDLException.class),
+    BULKLOAD                ("57", "007", Importance.DEBUG, BulkloadException.class),
 
     // Class 58 - Query canceled by user
     QUERY_CANCELED          ("58", "000", Importance.ERROR, QueryCanceledException.class),    

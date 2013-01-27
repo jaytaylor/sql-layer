@@ -26,8 +26,8 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.*;
 import com.akiban.server.expression.Expression;
@@ -40,7 +40,9 @@ import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
  <h1>Overview</h1>
@@ -148,6 +150,7 @@ class Select_HKeyOrdered extends Operator
         ArgumentValidation.notNull("predicateRowType", predicateRowType);
         this.inputOperator = inputOperator;
         this.predicateRowType = predicateRowType;
+        this.groupScanInput = !(predicateRowType instanceof IndexRowType);
         this.predicate = predicate;
         this.pPredicate = pPredicate;
     }
@@ -161,6 +164,7 @@ class Select_HKeyOrdered extends Operator
 
     private final Operator inputOperator;
     private final RowType predicateRowType;
+    private final boolean groupScanInput;
     private final Expression predicate;
     private final TPreparedExpression pPredicate;
 
@@ -216,7 +220,9 @@ class Select_HKeyOrdered extends Operator
                             pEvaluation.evaluate();
                             if (pEvaluation.resultValue().getBoolean(false)) {
                                 // New row of predicateRowType
-                                selectedRow.hold(inputRow);
+                                if (groupScanInput) {
+                                    selectedRow.hold(inputRow);
+                                }
                                 row = inputRow;
                             }
                         }
@@ -224,7 +230,9 @@ class Select_HKeyOrdered extends Operator
                             evaluation.of(inputRow);
                             if (Extractors.getBooleanExtractor().getBoolean(evaluation.eval(), false)) {
                                 // New row of predicateRowType
-                                selectedRow.hold(inputRow);
+                                if (groupScanInput) {
+                                    selectedRow.hold(inputRow);
+                                }
                                 row = inputRow;
                             }
                         }

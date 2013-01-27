@@ -52,7 +52,7 @@ public class AISValidationResults {
     public void throwIfNecessary() {
         if (!failureList.isEmpty()) {
             for (AISValidationFailure fail : failureList) {
-                LOG.info(String.format("Validation failure %s : %s", fail.errorCode(), fail.message()));
+                LOG.debug(String.format("Validation failure %s : %s", fail.errorCode(), fail.message()));
             }
             AISValidationFailure fail = failureList.iterator().next();
             fail.generateException();

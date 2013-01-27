@@ -28,7 +28,6 @@ package com.akiban.server.types3;
 
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueCacher;
-import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -41,7 +40,6 @@ import com.google.common.primitives.Floats;
 import com.google.common.primitives.Longs;
 import com.google.common.primitives.UnsignedBytes;
 
-import java.nio.ByteBuffer;
 import java.util.regex.Pattern;
 
 public abstract class TClass {
@@ -110,9 +108,7 @@ public abstract class TClass {
                 return comparableA.compareTo(sourceB.getObject());
             }
         }
-        PValueSources.ensureRawValue(sourceA, instanceA);
-        PValueSources.ensureRawValue(sourceB, instanceB);
-        switch (sourceA.getUnderlyingType()) {
+        switch (TInstance.pUnderlying(sourceA.tInstance())) {
         case BOOL:
             return Booleans.compare(sourceA.getBoolean(), sourceB.getBoolean());
         case INT_8:
@@ -134,7 +130,7 @@ public abstract class TClass {
         case STRING:
             return sourceA.getString().compareTo(sourceB.getString());
         default:
-            throw new AssertionError(sourceA.getUnderlyingType());
+            throw new AssertionError(sourceA.tInstance());
         }
     }
 
@@ -271,6 +267,10 @@ public abstract class TClass {
             out.append("null");
         else
             formatter.formatAsJson(instance, source, out);
+    }
+
+    public Object formatCachedForNiceRow(PValueSource source) {
+        return source.getObject();
     }
 
     // for use by subclasses

@@ -1,0 +1,9 @@
+# test bugs in period-[add | diff]
+--- #period_diff(field_bigint_unsigned, field_bigint)
+- CreateTable: t (bigint_field bigint, ubigint_field bigint unsigned)
+---
+- Statement: INSERT INTO t values (20080103112233, 20080104);
+---
+- Statement: SELECT period_diff(ubigint_field, bigint_field) from t;
+- output: [[-2409609963881]]
+...

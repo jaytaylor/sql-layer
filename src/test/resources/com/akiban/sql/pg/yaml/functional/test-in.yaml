@@ -523,4 +523,17 @@
 
 ---
 - Statement: DELETE FROM all_types
+
+# bug891359
+# Only fixed in newtypes
+---
+- Newtypes: true
+---
+- Statement: INSERT INTO all_types (double_field, varchar_field) VALUES (1.0, '1.0'), (2.0, 'harvey')
+---
+- Statement: SELECT double_field FROM all_types WHERE double_field IN (varchar_field)
+- output: [['1.0']]
+---
+- Newtypes: null
+
 ...

@@ -49,7 +49,7 @@ public class PersistitKeyPValueSource implements PValueSource {
     
     public PersistitKeyPValueSource(TInstance tInstance) {
         this.tInstance = tInstance;
-        this.output = new PValue(tInstance.typeClass().underlyingType());
+        this.output = new PValue(tInstance);
     }
     
     public void attach(Key key, IndexColumn indexColumn) {
@@ -69,8 +69,8 @@ public class PersistitKeyPValueSource implements PValueSource {
     }
 
     @Override
-    public PUnderlying getUnderlyingType() {
-        return tInstance.typeClass().underlyingType();
+    public TInstance tInstance() {
+        return tInstance;
     }
 
     @Override
@@ -86,6 +86,11 @@ public class PersistitKeyPValueSource implements PValueSource {
     @Override
     public boolean hasCacheValue() {
         return decode().hasCacheValue();
+    }
+
+    @Override
+    public boolean canGetRawValue() {
+        return decode().canGetRawValue();
     }
 
     @Override
@@ -191,7 +196,7 @@ public class PersistitKeyPValueSource implements PValueSource {
             }
             else
             {
-                PUnderlying pUnderlying = getUnderlyingType();
+                PUnderlying pUnderlying = TInstance.pUnderlying(tInstance());
                 Class<?> expected = pUnderlyingExpectedClasses.get(pUnderlying);
                 if (key.decodeType() == expected) {
                     switch (pUnderlying) {

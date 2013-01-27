@@ -24,7 +24,17 @@ group-equals: two equals on group index
 
 in-index: IN that can use index
 
+in-index-no-union: IN that can use index
+
 in-sorted: IN that needs sorting
+
+in-sorted-no-union: IN that needs sorting
+
+in-leftover: IN condition after more important joins
+
+in-many: IN with lots of values
+
+in-popular: IN with just popular values
 
 equals-sorted: Same with = for comparison.
 
@@ -35,6 +45,8 @@ equivalence-2: Equivalence column used in GROUP BY.
 in-subquery: IN SELECT to semi-join (not indexable).
 
 in-subquery-indexed: IN that is indexed.
+
+in-subquery-distinct: IN with cross-group subquery with DISTINCT
 
 join-across-subquery: group join in subquery expression
 
@@ -114,3 +126,4 @@ geospatial-3: covering spatial index
 
 geospatial-4: two spatial indexes considered for intersection
 
+index-is-null: IS NULL condition

@@ -1,0 +1,12 @@
+---
+- Include: caoi.yaml
+---
+- Statement: create index gi_foo on i (i.sku, o.when) using left join
+---
+- Statement: SET bulkload='true';
+---
+- Statement: insert into c values (1, 'one', '1981-01-01')
+- error: [57007]
+---
+- Statement: SET bulkload='false'
+...

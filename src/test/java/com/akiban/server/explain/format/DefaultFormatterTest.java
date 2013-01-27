@@ -113,11 +113,11 @@ public class DefaultFormatterTest
 
         Explainer explainer = substr.getExplainer(context);
         String expResult = "SUBSTRING(FROM_UNIXTIME((123456 * 7) + 8, \'%Y-%m-%d\'), 9 + 10, 11)";
-        DefaultFormatter f1 = new DefaultFormatter(null, true);
+        DefaultFormatter f1 = new DefaultFormatter(null);
         String result = f1.format(explainer).get(0);
         assertEquals(expResult, result);
         
-        DefaultFormatter f2 = new DefaultFormatter(null, true);
+        DefaultFormatter f2 = new DefaultFormatter(null);
         explainer = substr_.getExplainer(context);
         expResult = "SUBSTRING(FROM_UNIXTIME(123456 * 7 * 8, \'%Y-%m-%d\'), 9 + 10, 11)";
         result = f2.format(explainer).get(0);

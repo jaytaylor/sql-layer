@@ -30,7 +30,8 @@ import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.NamedParameterizedRunner.TestParameters;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import org.junit.Test;
@@ -82,8 +83,8 @@ public final class BooleanParserTest {
 
     @Test
     public void checkParse() {
-        PValueSource source = new PValue(string);
-        PValue target = new PValue(PUnderlying.BOOL);
+        PValueSource source = new PValue(MString.varcharFor(string), string);
+        PValue target = new PValue(AkBool.INSTANCE.instance(true));
         TParsers.BOOLEAN.parse(null, source, target);
         Boolean actual = target.isNull() ? null : target.getBoolean();
         assertEquals(string, Boolean.valueOf(expected), actual);

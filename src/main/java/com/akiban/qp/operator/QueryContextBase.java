@@ -68,11 +68,11 @@ public abstract class QueryContextBase implements QueryContext
         PValue holder = null;
         if (bindings.isDefined(index)) {
             holder = (PValue)bindings.get(index);
-            if (holder.getUnderlyingType() != value.getUnderlyingType())
+            if (holder.tInstance() != value.tInstance())
                 holder = null;
         }
         if (holder == null) {
-            holder = new PValue(value.getUnderlyingType());
+            holder = new PValue(value.tInstance());
             bindings.set(index, holder);
         }
         PValueTargets.copyFrom(value, holder);
@@ -206,8 +206,8 @@ public abstract class QueryContextBase implements QueryContext
     }
 
     @Override
-    public long getQueryTimeoutSec() {
-        return getStore().getQueryTimeoutSec();
+    public long getQueryTimeoutMilli() {
+        return getStore().getQueryTimeoutMilli();
     }
 
     @Override
@@ -215,10 +215,10 @@ public abstract class QueryContextBase implements QueryContext
         if (getSession().isCurrentQueryCanceled()) {
             throw new QueryCanceledException(getSession());
         }
-        long queryTimeoutSec = getQueryTimeoutSec();
-        if (queryTimeoutSec >= 0) {
+        long queryTimeoutMilli = getQueryTimeoutMilli();
+        if (queryTimeoutMilli >= 0) {
             long runningTimeMsec = System.currentTimeMillis() - getStartTime();
-            if (runningTimeMsec > queryTimeoutSec * 1000) {
+            if (runningTimeMsec > queryTimeoutMilli) {
                 throw new QueryTimedOutException(runningTimeMsec);
             }
         }

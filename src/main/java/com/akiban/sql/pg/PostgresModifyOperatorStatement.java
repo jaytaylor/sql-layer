@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.optimizer.plan.CostEstimate;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
@@ -46,12 +47,15 @@ import org.slf4j.LoggerFactory;
  * @see PostgresOperatorCompiler
  */
 public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStatement
+                                             implements PostgresCursorGenerator<Cursor>
 {
     private String statementType;
     private Operator resultOperator;
     // Until fully initialized, play it safe by claiming to need isolation
     private boolean requireStepIsolation = true;
     private boolean outputResult;
+    private boolean putInCache = true;
+    private CostEstimate costEstimate;
 
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresBaseStatement: execute exclusive");
     private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresBaseStatement: acquire exclusive lock");
@@ -64,14 +68,17 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
     public void init(String statementType,
                      Operator resultsOperator,
                      PostgresType[] parameterTypes,
+                     CostEstimate costEstimate,
                      boolean usesPValues,
-                     boolean requireStepIsolation) {
+                     boolean requireStepIsolation,
+                     boolean putInCache) {
         super.init(parameterTypes, usesPValues);
         this.statementType = statementType;
         this.resultOperator = resultsOperator;
+        this.costEstimate = costEstimate;
         this.requireStepIsolation = requireStepIsolation;
         outputResult = false;
-                
+        this.putInCache = putInCache;
     }
     
     public void init(String statementType,
@@ -80,14 +87,23 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
                      List<String> columnNames,
                      List<PostgresType> columnTypes,
                      PostgresType[] parameterTypes,
+                     CostEstimate costEstimate,
                      boolean usesPValues,
-                     boolean requireStepIsolation) {
+                     boolean requireStepIsolation,
+                     boolean putInCache) {
         super.init(resultRowType, columnNames, columnTypes, parameterTypes, usesPValues);
         this.statementType = statementType;
         this.resultOperator = resultOperator;
+        this.costEstimate = costEstimate;
         this.requireStepIsolation = requireStepIsolation;
         outputResult = true;
+        this.putInCache = putInCache;
     }
+
+    public boolean isInsert() {
+        return "INSERT".equals(statementType);
+    }
+
     @Override
     public TransactionMode getTransactionMode() {
         if (requireStepIsolation)
@@ -106,6 +122,31 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
         return AISGenerationMode.NOT_ALLOWED;
     }
 
+    @Override
+    public boolean putInCache() {
+        return putInCache;
+    }
+
+    @Override
+    public boolean canSuspend(PostgresServerSession server) {
+        return false;           // See below.
+    }
+
+    @Override
+    public Cursor openCursor(PostgresQueryContext context) {
+        Cursor cursor = API.cursor(resultOperator, context);
+        cursor.open();
+        return cursor;
+    }
+
+    @Override
+    public void closeCursor(Cursor cursor) {
+        if (cursor != null) {
+            cursor.destroy();
+        }
+    }
+    
+    @Override
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
@@ -117,8 +158,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
             try {
                 lock(context, DXLFunction.UNSPECIFIED_DML_WRITE);
                 lockSuccess = true;
-                cursor = API.cursor(resultOperator, context);
-                cursor.open();
+                cursor = openCursor(context);
                 PostgresOutputter<Row> outputter = null;
                 if (outputResult) {
                     outputter = getRowOutputter(context);
@@ -131,6 +171,9 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
                     }
                     rowsModified++;
                     if ((maxrows > 0) && (rowsModified >= maxrows))
+                        // Note: do not allow suspending, since the
+                        // actual modifying and not just the generated
+                        // key output would be incomplete.
                         outputResult = false;
                 }
             }
@@ -140,9 +183,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
             finally {
                 RuntimeException exceptionDuringCleanup = null;
                 try {
-                    if (cursor != null) {
-                        cursor.destroy();
-                    }
+                    closeCursor(cursor);
                 }
                 catch (RuntimeException e) {
                     exceptionDuringCleanup = e;
@@ -162,7 +203,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
         
         messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
         //TODO: Find a way to extract InsertNode#statementToString() or equivalent
-        if (statementType.equals("INSERT")) {
+        if (isInsert()) {
             messenger.writeString(statementType + " 0 " + rowsModified);
         } else {
             messenger.writeString(statementType + " " + rowsModified);
@@ -182,4 +223,10 @@ public class PostgresModifyOperatorStatement extends PostgresBaseOperatorStateme
     {
         return ACQUIRE_LOCK_TAP;
     }
+
+    @Override
+    public CostEstimate getCostEstimate() {
+        return costEstimate;
+    }
+
 }

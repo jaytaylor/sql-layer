@@ -39,6 +39,7 @@ import com.akiban.server.error.TransactionAbortedException;
 import com.akiban.server.error.TransactionInProgressException;
 import com.akiban.server.error.TransactionReadOnlyException;
 import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.externaldata.ExternalDataService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.monitor.SessionMonitor;
 import com.akiban.server.service.routines.RoutineLoader;
@@ -67,7 +68,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     protected boolean transactionDefaultReadOnly = false;
     protected ServerSessionMonitor sessionMonitor;
 
-    protected Long queryTimeoutSec = null;
+    protected Long queryTimeoutMilli = null;
     protected ServerValueEncoder.ZeroDateTimeBehavior zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.NONE;
     protected QueryContext.NotificationLevel maxNotificationLevel = QueryContext.NotificationLevel.INFO;
 
@@ -123,7 +124,10 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             return true;
         }
         if ("queryTimeoutSec".equals(key)) {
-            queryTimeoutSec = (value == null) ? null : Long.valueOf(value);
+            if (value == null)
+                queryTimeoutMilli = null;
+            else
+                queryTimeoutMilli = (long)(Double.parseDouble(value) * 1000);
             return true;
         }
         return false;
@@ -272,16 +276,21 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     @Override
+    public ExternalDataService getExternalDataService() {
+        return reqs.externalData();
+    }
+
+    @Override
     public Date currentTime() {
         return new Date();
     }
 
     @Override
-    public long getQueryTimeoutSec() {
-        if (queryTimeoutSec != null)
-            return queryTimeoutSec;
+    public long getQueryTimeoutMilli() {
+        if (queryTimeoutMilli != null)
+            return queryTimeoutMilli;
         else
-            return reqs.config().queryTimeoutSec();
+            return reqs.config().queryTimeoutMilli();
     }
 
     @Override
@@ -332,6 +341,8 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             case WRITE:
             case NEW_WRITE:
             case WRITE_STEP_ISOLATED:
+                if (getStore().isBulkloading())
+                    break;
                 if (transactionDefaultReadOnly)
                     throw new TransactionReadOnlyException();
                 localTransaction = new ServerTransaction(this, false);
@@ -372,7 +383,10 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             case REQUIRED_WRITE:
             case WRITE:
             case WRITE_STEP_ISOLATED:
-                transaction.afterUpdate(transactionMode == ServerStatement.TransactionMode.WRITE_STEP_ISOLATED);
+                if (transaction != null)
+                    transaction.afterUpdate(transactionMode == ServerStatement.TransactionMode.WRITE_STEP_ISOLATED);
+                else
+                    assert getStore() != null && getStore().isBulkloading() : "no transaction, but not bulk loading";
                 break;
             }
         }

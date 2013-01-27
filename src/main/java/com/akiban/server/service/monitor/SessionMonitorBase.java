@@ -26,6 +26,9 @@
 
 package com.akiban.server.service.monitor;
 
+import java.util.Collections;
+import java.util.List;
+
 public abstract class SessionMonitorBase implements SessionMonitor {
     private final int sessionID;
     private final long startTimeMillis;
@@ -33,7 +36,7 @@ public abstract class SessionMonitorBase implements SessionMonitor {
     private long currentStageStartNanos;
     private long[] lastNanos = new long[MonitorStage.values().length];
     private long[] totalNanos = new long[MonitorStage.values().length];
-    private String currentStatement;
+    private String currentStatement, currentStatementPreparedName;
     private long currentStatementStartTime = -1;
     private long currentStatementEndTime = -1;
     private int rowsProcessed = 0;
@@ -52,10 +55,17 @@ public abstract class SessionMonitorBase implements SessionMonitor {
     }
 
     public void startStatement(String statement, long startTime) {
-        if (statement != null) {  // TODO: Remove when always passed by PG server.
-            statementCount++;
-            currentStatement = statement;
-        }
+        startStatement(statement, null, startTime);
+    }
+
+    public void startStatement(String statement, String preparedName) {
+        startStatement(statement, preparedName, System.currentTimeMillis());
+    }
+
+    public void startStatement(String statement, String preparedName, long startTime) {
+        statementCount++;
+        currentStatement = statement;
+        currentStatementPreparedName = preparedName;
         currentStatementStartTime = startTime;
         currentStatementEndTime = -1;
         rowsProcessed = -1;
@@ -108,6 +118,11 @@ public abstract class SessionMonitorBase implements SessionMonitor {
     }
 
     @Override
+    public String getCurrentStatementPreparedName() {
+        return currentStatementPreparedName;
+    }
+
+    @Override
     public long getCurrentStatementStartTimeMillis() {
         return currentStatementStartTime;
     }
@@ -153,4 +168,13 @@ public abstract class SessionMonitorBase implements SessionMonitor {
         }
         return total;
     }
+
+    public List<CursorMonitor> getCursors() {
+        return Collections.emptyList();
+    }
+
+    public List<PreparedStatementMonitor> getPreparedStatements() {
+        return Collections.emptyList();
+    }
+
 }

@@ -81,6 +81,20 @@ public abstract class CurrentUserExpression extends AbstractNoArgExpression
             }
         };
      
+    @Scalar("current_schema")
+    public static final ExpressionComposer CURRENT_SCHEMA = 
+        new UserComposer() {
+            @Override
+            protected Expression compose() {
+                return new CurrentUserExpression("CURRENT_SCHEMA") {
+                        @Override
+                        public String environmentValue(QueryContext context) {
+                            return context.getCurrentSchema();
+                        }
+                    };
+            }
+        };
+ 
     public abstract String environmentValue(QueryContext context);
 
     public CurrentUserExpression(String name)

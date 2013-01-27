@@ -32,7 +32,6 @@ import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.google.common.primitives.UnsignedLongs;
 
 import java.math.BigDecimal;
 
@@ -79,7 +78,8 @@ public class TParsers
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt8((byte) CastUtils.parseInRange(source.getString(),
-                                                         Byte.MAX_VALUE, Byte.MIN_VALUE,
+                                                         CastUtils.MAX_TINYINT, 
+                                                         CastUtils.MIN_TINYINT,
                                                          context));
         }
     };
@@ -91,7 +91,8 @@ public class TParsers
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt16((short)CastUtils.parseInRange(source.getString(),
-                                            Short.MAX_VALUE, Short.MIN_VALUE,
+                                            CastUtils.MAX_UNSIGNED_TINYINT,
+                                            0,
                                             context));
         }
     };
@@ -103,8 +104,8 @@ public class TParsers
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt16((short)CastUtils.parseInRange(source.getString(),
-                                             Short.MAX_VALUE,
-                                             Short.MIN_VALUE,
+                                             CastUtils.MAX_SMALLINT, 
+                                             CastUtils.MIN_SMALLINT,
                                              context));
         }
     };
@@ -115,7 +116,8 @@ public class TParsers
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32((int)CastUtils.parseInRange(source.getString(),
-                                          Integer.MAX_VALUE, Integer.MIN_VALUE,
+                                          CastUtils.MAX_UNSIGNED_SMALLINT, 
+                                          0,
                                           context));
         }
     };
@@ -126,7 +128,8 @@ public class TParsers
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32((int)CastUtils.parseInRange(source.getString(),
-                                             Integer.MAX_VALUE, Integer.MIN_VALUE,
+                                             CastUtils.MAX_MEDINT, 
+                                             CastUtils.MIN_MEDINT,
                                              context));
         }
     };
@@ -137,7 +140,8 @@ public class TParsers
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt64(CastUtils.parseInRange(source.getString(),
-                                     Long.MAX_VALUE, Long.MIN_VALUE,
+                                     CastUtils.MAX_UNSIGNED_MEDINT, 
+                                     0,
                                      context));
         }
     };
@@ -148,8 +152,8 @@ public class TParsers
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32((int)CastUtils.parseInRange(source.getString(),
-                                           Integer.MAX_VALUE,
-                                           Integer.MIN_VALUE,
+                                           CastUtils.MAX_INT, 
+                                           CastUtils.MIN_INT,
                                            context));
         }
     };
@@ -160,8 +164,9 @@ public class TParsers
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt64(CastUtils.parseInRange(source.getString(),
-                                     Long.MAX_VALUE, Long.MIN_VALUE,
-                                     context));
+                                                   CastUtils.MAX_UNSIGNED_INT,
+                                                   0,
+                                                   context));
         }
     };
 
@@ -170,33 +175,17 @@ public class TParsers
         @Override
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            String st = CastUtils.truncateNonDigits(source.getString(), context);
-
-            try
-            {
-                target.putInt64(Long.parseLong(st));
-            }
-            catch (NumberFormatException e) // overflow error
-            {
-                context.reportOverflow(e.getMessage());
-                target.putInt64(Long.MAX_VALUE);
-            }
+            target.putInt64(CastUtils.parseInRange(source.getString(),
+                                                   CastUtils.MAX_BIGINT, 
+                                                   CastUtils.MIN_BIGINT,
+                                                   context));
         }
     };
 
     public static final TParser UNSIGNED_BIGINT = new TParser() {
         @Override
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target) {
-            String st = CastUtils.truncateNonDigits(source.getString(), context);
-
-            long value;
-            try {
-                value = UnsignedLongs.parseUnsignedLong(st);
-            } catch (NumberFormatException e) { // overflow error
-                context.reportOverflow(e.getMessage());
-                value = UnsignedLongs.MAX_VALUE;
-            }
-            target.putInt64(value);
+            target.putInt64(CastUtils.parseUnsignedLong(source.getString(), context));
         }
     };
     
@@ -303,15 +292,9 @@ public class TParsers
         @Override
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            try
-            {
-                target.putInt32(MDatetimes.parseTimestamp(source.getString(), context.getCurrentTimezone(), context));
-            }
-             catch (InvalidDateFormatException e)
-            {
-                context.warnClient(e);
-                target.putNull();
-            }
+            target.putInt32(MDatetimes.parseTimestamp(source.getString(),
+                                                      context.getCurrentTimezone(),
+                                                      context));
         }
     };
     

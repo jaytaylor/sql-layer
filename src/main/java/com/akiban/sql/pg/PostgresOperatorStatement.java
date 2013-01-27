@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.optimizer.plan.CostEstimate;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
@@ -43,9 +44,11 @@ import java.io.IOException;
  * An SQL SELECT transformed into an operator tree
  * @see PostgresOperatorCompiler
  */
-public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
+public class PostgresOperatorStatement extends PostgresBaseOperatorStatement 
+                                       implements PostgresCursorGenerator<Cursor>
 {
     private Operator resultOperator;
+    private CostEstimate costEstimate;
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorStatement.class);
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresOperatorStatement: execute shared");
@@ -56,13 +59,15 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
     }
 
     public void init(Operator resultOperator,
-                                     RowType resultRowType,
-                                     List<String> columnNames,
-                                     List<PostgresType> columnTypes,
-                                     PostgresType[] parameterTypes,
-                                     boolean usesPValues) {
+                     RowType resultRowType,
+                     List<String> columnNames,
+                     List<PostgresType> columnTypes,
+                     PostgresType[] parameterTypes,
+                     CostEstimate costEstimate,
+                     boolean usesPValues) {
         super.init(resultRowType, columnNames, columnTypes, parameterTypes, usesPValues);
         this.resultOperator = resultOperator;
+        this.costEstimate = costEstimate;
     }
     
     @Override
@@ -81,26 +86,49 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
     }
 
     @Override
+    public boolean canSuspend(PostgresServerSession server) {
+        return server.isTransactionActive();
+    }
+
+    @Override
+    public Cursor openCursor(PostgresQueryContext context) {
+        Cursor cursor = API.cursor(resultOperator, context);
+        cursor.open();
+        return cursor;
+    }
+
+    public void closeCursor(Cursor cursor) {
+        if (cursor != null) {
+            cursor.destroy();
+        }
+    }
+    
+    @Override
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresServerSession server = context.getServer();
+        PostgresMessenger messenger = server.getMessenger();
         int nrows = 0;
         Cursor cursor = null;
         IOException exceptionDuringExecution = null;
         boolean lockSuccess = false;
+        boolean suspended = false;
         try {
             lock(context, DXLFunction.UNSPECIFIED_DML_READ);
             lockSuccess = true;
-            cursor = API.cursor(resultOperator, context);
-            cursor.open();
+            cursor = context.startCursor(this);
             PostgresOutputter<Row> outputter = getRowOutputter(context);
             outputter.beforeData();
-            Row row;
-            while ((row = cursor.next()) != null) {
-                assert getResultRowType() == null || (row.rowType() == getResultRowType()) : row;
-                outputter.output(row, usesPValues());
-                nrows++;
-                if ((maxrows > 0) && (nrows >= maxrows))
-                    break;
+            if (cursor != null) {
+                Row row;
+                while ((row = cursor.next()) != null) {
+                    assert (getResultRowType() == null) || (row.rowType() == getResultRowType()) : row;
+                    outputter.output(row, usesPValues());
+                    nrows++;
+                    if ((maxrows > 0) && (nrows >= maxrows)) {
+                        suspended = true;
+                        break;
+                    }
+                }
             }
             outputter.afterData();
         }
@@ -110,14 +138,11 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
         finally {
             RuntimeException exceptionDuringCleanup = null;
             try {
-                if (cursor != null) {
-                    cursor.destroy();
-                }
+                suspended = context.finishCursor(this, cursor, nrows, suspended);
             }
             catch (RuntimeException e) {
                 exceptionDuringCleanup = e;
-                logger.error("Caught exception while cleaning up cursor for {0}", resultOperator.describePlan());
-                logger.error("Exception stack", e);
+                logger.error("Caught exception while cleaning up cursor for {0}", resultOperator.describePlan(), e);
             }
             finally {
                 unlock(context, DXLFunction.UNSPECIFIED_DML_READ, lockSuccess);
@@ -128,8 +153,11 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
                 throw exceptionDuringCleanup;
             }
         }
-        {
-            PostgresMessenger messenger = server.getMessenger();
+        if (suspended) {
+            messenger.beginMessage(PostgresMessages.PORTAL_SUSPENDED_TYPE.code());
+            messenger.sendMessage();
+        }
+        else {
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
             messenger.writeString("SELECT " + nrows);
             messenger.sendMessage();
@@ -147,6 +175,11 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
     protected InOutTap acquireLockTap()
     {
         return ACQUIRE_LOCK_TAP;
+    }
+
+    @Override
+    public CostEstimate getCostEstimate() {
+        return costEstimate;
     }
 
 }

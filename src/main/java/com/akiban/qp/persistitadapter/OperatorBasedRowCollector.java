@@ -316,7 +316,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             plan = filter_Default(plan, removeDescendentTypes(cutType, plan));
         }
         if (LOG.isInfoEnabled()) {
-            LOG.info("Execution plan:\n{}", plan.describePlan());
+            LOG.debug("Execution plan:\n{}", plan.describePlan());
         }
         this.operator = plan;
     }

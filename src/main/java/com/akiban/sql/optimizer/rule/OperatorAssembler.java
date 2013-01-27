@@ -28,6 +28,7 @@ package com.akiban.sql.optimizer.rule;
 
 import static com.akiban.sql.optimizer.rule.OldExpressionAssembler.*;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.t3expressions.T3RegistryService;
@@ -668,11 +669,13 @@ public class OperatorAssembler extends BaseRule
         private final PartialAssembler<Expression> oldPartialAssembler;
         private final PartialAssembler<TPreparedExpression> newPartialAssembler;
         private final PartialAssembler<?> partialAssembler;
+        private final Set<UserTable> affectedTables;
 
         public Assembler(PlanContext planContext, boolean usePValues) {
             this.usePValues = usePValues;
             this.planContext = planContext;
             rulesContext = (SchemaRulesContext)planContext.getRulesContext();
+            affectedTables = new HashSet<>();
             if (planContext instanceof ExplainPlanContext)
                 explainContext = ((ExplainPlanContext)planContext).getExplainContext();
             schema = rulesContext.getSchema();
@@ -715,8 +718,18 @@ public class OperatorAssembler extends BaseRule
                 // VALUES results in column1, column2, ...
                 resultColumns = getResultColumns(stream.rowType.nFields());
             }
+            if (explainContext != null)
+                explainSelectQuery(stream.operator, selectQuery);
             return new PhysicalSelect(stream.operator, stream.rowType, resultColumns, 
-                                      getParameterTypes());
+                                      getParameterTypes(), 
+                                      selectQuery.getCostEstimate(),
+                                      affectedTables);
+        }
+
+        protected void explainSelectQuery(Operator plan, SelectQuery selectQuery) {
+            Attributes atts = new Attributes();
+            explainCostEstimate(atts, selectQuery.getCostEstimate());
+            explainContext.putExtraInfo(plan, new CompoundExplainer(Type.EXTRA_INFO, atts));
         }
 
         protected PhysicalUpdate dmlStatement (DMLStatement statement) {
@@ -734,10 +747,13 @@ public class OperatorAssembler extends BaseRule
             // which need to be passed to the user. 
             boolean returning = (statement.getReturningTable() != null);
             return new PhysicalUpdate(stream.operator, getParameterTypes(),
-                    stream.rowType,
-                    resultColumns,
-                    returning,
-                    statement.isRequireStepIsolation());
+                                      stream.rowType,
+                                      resultColumns,
+                                      returning,
+                                      statement.isRequireStepIsolation(),
+                                      returning || !isBulkInsert(planQuery),
+                                      statement.getCostEstimate(),
+                                      affectedTables);
         }
 
         protected RowStream assembleInsertStatement (InsertStatement insert) {
@@ -767,7 +783,7 @@ public class OperatorAssembler extends BaseRule
 
             UserTableRowType targetRowType = 
                     tableRowType(insert.getTargetTable());
-            UserTable table = insert.getTargetTable().getTable();            
+            UserTable table = insert.getTargetTable().getTable();
 
             List<Expression> inserts = null;
             List<TPreparedExpression> insertsP = null;
@@ -850,19 +866,21 @@ public class OperatorAssembler extends BaseRule
                         final String defaultValue = column.getDefaultValue();
                         final PValue defaultValueSource;
                         if(defaultValue == null) {
-                            defaultValueSource = new PValue(tinst.typeClass().underlyingType());
+                            defaultValueSource = new PValue(tinst);
                             defaultValueSource.putNull();
                         } else {
                             TCast cast = tinst.typeClass().castFromVarchar();
                             if (cast != null) {
-                                defaultValueSource = new PValue(tinst.typeClass().underlyingType());
+                                defaultValueSource = new PValue(tinst);
                                 TInstance valInst = MString.VARCHAR.instance(defaultValue.length(), false);
                                 TExecutionContext executionContext = new TExecutionContext(
                                         Collections.singletonList(valInst),
                                         tinst, planContext.getQueryContext());
-                                cast.evaluate(executionContext, new PValue(defaultValue), defaultValueSource);
+                                cast.evaluate(executionContext,
+                                              new PValue(MString.varcharFor(defaultValue), defaultValue),
+                                              defaultValueSource);
                             } else {
-                                defaultValueSource = new PValue (defaultValue);
+                                defaultValueSource = new PValue (tinst, defaultValue);
                             }
                         }
                         row[i] = new TPreparedLiteral(tinst, defaultValueSource);
@@ -888,7 +906,24 @@ public class OperatorAssembler extends BaseRule
             }
             explainContext.putExtraInfo(plan, new CompoundExplainer(Type.EXTRA_INFO, atts));
         }
-        
+
+        protected boolean isBulkInsert(PlanNode planQuery) {
+            if (!(planQuery instanceof InsertStatement))
+                return false;
+            PlanNode insertSource = ((InsertStatement)planQuery).getInput();
+            if (!(insertSource instanceof ExpressionsSource))
+                return false;
+            for (List<ExpressionNode> exprs : ((ExpressionsSource)insertSource).getExpressions()) {
+                if (exprs.isEmpty()) return false; // Must want just generated columns.
+                for (ExpressionNode expr : exprs) {
+                    if (!(expr instanceof ConstantExpression)) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
         protected RowStream assembleUpdateStatement (UpdateStatement updateStatement) {
             UPDATE_COUNT.hit();
             RowStream stream = assembleQuery (updateStatement.getInput());
@@ -1179,7 +1214,13 @@ public class OperatorAssembler extends BaseRule
             Attributes atts = new Attributes();
             atts.put(Label.ORDER_EFFECTIVENESS, PrimitiveExplainer.getInstance(indexScan.getOrderEffectiveness().name()));
             atts.put(Label.USED_COLUMNS, PrimitiveExplainer.getInstance(indexScan.usesAllColumns() ? indexScan.getColumns().size() : indexScan.getNKeyColumns()));
+            explainCostEstimate(atts, indexScan.getScanCostEstimate());
             explainContext.putExtraInfo(operator, new CompoundExplainer(Type.EXTRA_INFO, atts));
+        }
+
+        protected void explainCostEstimate(Attributes atts, CostEstimate costEstimate) {
+            if (costEstimate != null)
+                atts.put(Label.COST, PrimitiveExplainer.getInstance(costEstimate.toString()));
         }
 
         /**
@@ -1842,7 +1883,7 @@ public class OperatorAssembler extends BaseRule
             int kidx = 0;
             if (equalityComparands != null) {
                 for (ExpressionNode comp : equalityComparands) {
-                    if (comp != null) {
+                    if (!(comp instanceof IsNullIndexKey)) { // Java null means IS NULL; Null expression wouldn't match.
                         newPartialAssembler.assembleExpressionInto(comp, fieldOffsets, pkeys, kidx);
                         oldPartialAssembler.assembleExpressionInto(comp, fieldOffsets, keys, kidx);
                     }
@@ -1923,7 +1964,9 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected UserTableRowType tableRowType(TableNode table) {
-            return schema.userTableRowType(table.getTable());
+            UserTable userTable = table.getTable();
+            affectedTables.add(userTable);
+            return schema.userTableRowType(userTable);
         }
 
         protected ValuesRowType valuesRowType(AkType[] fields) {
@@ -1931,7 +1974,12 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected IndexRowType getIndexRowType(SingleIndexScan index) {
-            return schema.indexRowType(index.getIndex());
+            Index aisIndex = index.getIndex();
+            AkibanInformationSchema ais = schema.ais();
+            for (int i : aisIndex.getAllTableIDs()) {
+                affectedTables.add(ais.getUserTable(i));
+            }
+            return schema.indexRowType(aisIndex);
         }
 
         /** Return an index bound for the given index and expressions.
@@ -2243,10 +2291,12 @@ public class OperatorAssembler extends BaseRule
 
         @Override
         public int getIndex(ColumnExpression column) {
-            if (column.getTable() != source) 
-                return -1;
-            else
+            if (column.getTable() == source) 
                 return column.getPosition();
+            else if (source instanceof Project)
+                return ((Project)source).getFields().indexOf(column);
+            else
+                return -1;
         }
 
         @Override

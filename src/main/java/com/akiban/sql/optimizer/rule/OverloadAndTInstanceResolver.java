@@ -609,6 +609,10 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     // So, try to cast the const to the column's type. To do this, CAST(Const -> Column) must be
                     // indexFriendly, *and* casting this result back to the original Const type must equal the same
                     // const.
+                    if (rightTInst == null) {
+                        // literal null, so a comparison always returns UNKNOWN
+                        return new BooleanConstantExpression(null);
+                    }
                     if (casts.isIndexFriendly(tclass(leftTInst), tclass(rightTInst))) {
                         TInstance columnType = tinst(left);
                         TInstance constType = tinst(right);
@@ -792,7 +796,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 ErrorHandlingMode.ERROR,
                 ErrorHandlingMode.ERROR
         );
-        PValue result = new PValue(targetInstance.typeClass().underlyingType());
+        PValue result = new PValue(targetInstance);
         try {
             cast.evaluate(context, source.value(), result);
         } catch (Exception e) {
@@ -959,7 +963,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             return castExpression;
         }
         if (expression instanceof NullSource) {
-            PValueSource nullSource = PValueSources.getNullSource(targetInstance.typeClass().underlyingType());
+            PValueSource nullSource = PValueSources.getNullSource(targetInstance);
             expression.setPreptimeValue(new TPreptimeValue(targetInstance, nullSource));
             return expression;
         }

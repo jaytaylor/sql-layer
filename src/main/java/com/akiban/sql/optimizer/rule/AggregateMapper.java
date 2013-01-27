@@ -104,6 +104,7 @@ public class AggregateMapper extends BaseRule
     static class Mapper implements ExpressionRewriteVisitor {
         private RulesContext rulesContext;
         private AggregateSource source;
+        private Set<ColumnSource> aggregated = new HashSet<ColumnSource>();
         private Map<ExpressionNode,ExpressionNode> map = 
             new HashMap<ExpressionNode,ExpressionNode>();
         private enum ImplicitAggregateSetting {
@@ -130,6 +131,7 @@ public class AggregateMapper extends BaseRule
         public Mapper(RulesContext rulesContext, AggregateSource source) {
             this.rulesContext = rulesContext;
             this.source = source;
+            aggregated.add(source);
             // Map all the group by expressions at the start.
             // This means that if you GROUP BY x+1, you can ORDER BY
             // x+1, or x+1+1, but not x+2. Postgres is like that, too.
@@ -152,7 +154,9 @@ public class AggregateMapper extends BaseRule
                     remapA(((Sort)n).getOrderBy());
                 }
                 else if (n instanceof Project) {
-                    remap(((Project)n).getFields());
+                    Project p = (Project)n;
+                    remap(p.getFields());
+                    aggregated.add(p);
                 }
                 else if (n instanceof Limit) {
                     // Understood not but mapped.
@@ -189,7 +193,7 @@ public class AggregateMapper extends BaseRule
             }
             if (expr instanceof ColumnExpression) {
                 ColumnExpression column = (ColumnExpression)expr;
-                if (column.getTable() != source) {
+                if (!aggregated.contains(column.getTable())) {
                     return nonAggregate(column);
                 }
             }

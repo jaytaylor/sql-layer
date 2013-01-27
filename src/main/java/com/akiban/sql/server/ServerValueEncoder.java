@@ -79,9 +79,9 @@ public class ServerValueEncoder
     public static final String ROUND_ZERO_DATETIME = "0001-01-01 00:00:00";
     public static final String ROUND_ZERO_DATE = "0001-01-01";
     public static final PValueSource ROUND_ZERO_DATETIME_SOURCE
-            = new PValue(MDatetimes.parseDatetime(ROUND_ZERO_DATETIME));
+            = new PValue(MDatetimes.DATETIME.instance(false), MDatetimes.parseDatetime(ROUND_ZERO_DATETIME));
     public static final PValueSource ROUND_ZERO_DATE_SOURCE
-            = new PValue(MDatetimes.parseDate(ROUND_ZERO_DATE, null));
+            = new PValue(MDatetimes.DATE.instance(false), MDatetimes.parseDate(ROUND_ZERO_DATE, null));
     
     private String encoding;
     private ZeroDateTimeBehavior zeroDateTimeBehavior;
@@ -93,9 +93,17 @@ public class ServerValueEncoder
     private DataOutputStream dataStream;
 
     public ServerValueEncoder(String encoding) {
-        this.encoding = encoding;
+        this(encoding, new ByteArrayOutputStream());
+    }
 
-        byteStream = new ByteArrayOutputStream();
+    public ServerValueEncoder(String encoding, ZeroDateTimeBehavior zeroDateTimeBehavior) {
+        this(encoding);
+        this.zeroDateTimeBehavior = zeroDateTimeBehavior;
+    }
+
+    public ServerValueEncoder(String encoding, ByteArrayOutputStream byteStream) {
+        this.encoding = encoding;
+        this.byteStream = byteStream;
         try {
             printWriter = new PrintWriter(new OutputStreamWriter(byteStream, encoding));
         }
@@ -105,14 +113,13 @@ public class ServerValueEncoder
         // If the target encoding is UTF-8, we can support
         // canAppendBytes() for properly encoded source strings.
         if ("UTF-8".equals(encoding))
-            appender = AkibanAppender.of(byteStream, printWriter);
+            appender = AkibanAppender.of(byteStream, printWriter, "UTF-8");
         else
             appender = AkibanAppender.of(printWriter);
     }
 
-    public ServerValueEncoder(String encoding, ZeroDateTimeBehavior zeroDateTimeBehavior) {
-        this(encoding);
-        this.zeroDateTimeBehavior = zeroDateTimeBehavior;
+    public String getEncoding() {
+        return encoding;
     }
 
     public ByteArrayOutputStream getByteStream() {

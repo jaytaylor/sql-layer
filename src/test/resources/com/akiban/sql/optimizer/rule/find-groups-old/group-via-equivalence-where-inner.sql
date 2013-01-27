@@ -1,1 +1,0 @@
-SELECT * from orders, items WHERE orders.oid = items.quan AND items.quan = items.oid

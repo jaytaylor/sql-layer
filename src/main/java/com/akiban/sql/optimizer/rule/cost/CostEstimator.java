@@ -26,6 +26,8 @@
 
 package com.akiban.sql.optimizer.rule.cost;
 
+import com.akiban.server.store.statistics.Histogram;
+import com.akiban.server.store.statistics.HistogramEntry;
 import com.akiban.sql.optimizer.rule.SchemaRulesContext;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
@@ -39,17 +41,14 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.store.statistics.IndexStatistics;
-import static com.akiban.server.store.statistics.IndexStatistics.*;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.persistit.Key;
-import com.persistit.Persistit;
 
 import com.google.common.primitives.UnsignedBytes;
 
@@ -118,52 +117,58 @@ public abstract class CostEstimator implements TableRowCounts
 
     public abstract IndexStatistics getIndexStatistics(Index index);
 
-    public void getIndexColumnStatistics(Index index, Index[] indexColumnsIndexes, IndexStatistics[] indexColumnsStats) {
+    public void getIndexColumnStatistics(Index index, Index[] indexColumnsIndexes, Histogram[] histograms) {
         List<IndexColumn> allIndexColumns = index.getAllColumns();
-        int i = 0;
-        // For the first column, the index supplied by the optimizer is likely to be a better choice than an arbitrary
-        // index with the right leading column.
-        indexColumnsIndexes[i] = index;
         IndexStatistics statsForRequestedIndex = getIndexStatistics(index);
-        if (statsForRequestedIndex != null) {
-            indexColumnsStats[i++] = statsForRequestedIndex;
-        }
-        while (i < allIndexColumns.size()) {
-            Index indexColumnsIndex = (i == 0) ? index : null;
-            IndexStatistics indexStatistics = null;
-            Column leadingColumn = allIndexColumns.get(i).getColumn();
-            // Find a TableIndex whose first column is leadingColumn
-            for (TableIndex tableIndex : leadingColumn.getTable().getIndexes()) {
-                if (tableIndex.getKeyColumns().get(0).getColumn() == leadingColumn) {
-                    indexStatistics = getIndexStatistics(tableIndex);
-                    if (indexStatistics != null) {
-                        indexColumnsIndex = tableIndex;
-                        break;
-                    }
-                    else if (indexColumnsIndex == null) {
-                        indexColumnsIndex = tableIndex;
+        int nIndexColumns = allIndexColumns.size();
+        int nKeyColumns = index.getKeyColumns().size();
+        for (int i = 0; i < nIndexColumns; i++) {
+            Histogram histogram = null;
+            Index indexColumnsIndex = null;
+            // Use a histogram of the index itself, if possible.
+            if (i < nKeyColumns && statsForRequestedIndex != null) {
+                indexColumnsIndex = index;
+                histogram = statsForRequestedIndex.getHistogram(i, 1);
+            }
+            if (histogram == null) {
+                indexColumnsIndex = (i == 0) ? index : null;
+                // If none, find a TableIndex whose first column is leadingColumn
+                IndexStatistics indexStatistics = null;
+                Column leadingColumn = allIndexColumns.get(i).getColumn();
+                for (TableIndex tableIndex : leadingColumn.getTable().getIndexes()) {
+                    if (tableIndex.getKeyColumns().get(0).getColumn() == leadingColumn) {
+                        indexStatistics = getIndexStatistics(tableIndex);
+                        if (indexStatistics != null) {
+                            indexColumnsIndex = tableIndex;
+                            histogram = indexStatistics.getHistogram(0, 1);
+                            break;
+                        }
+                        else if (indexColumnsIndex == null) {
+                            indexColumnsIndex = tableIndex;
+                        }
                     }
                 }
-            }
-            // If none, find a GroupIndex whose first column is leadingColumn
-            if (indexStatistics == null) {
-                groupLoop: for (Group group : schema.ais().getGroups().values()) {
-                    for (GroupIndex groupIndex : group.getIndexes()) {
-                        if (groupIndex.getKeyColumns().get(0).getColumn() == leadingColumn) {
-                            indexStatistics = getIndexStatistics(groupIndex);
-                            if (indexStatistics != null) {
-                                indexColumnsIndex = groupIndex;
-                                break groupLoop;
-                            }
-                            else if (indexColumnsIndex == null) {
-                                indexColumnsIndex = groupIndex;
+                // If none, find a GroupIndex whose first column is leadingColumn
+                if (indexStatistics == null) {
+                    groupLoop: for (Group group : schema.ais().getGroups().values()) {
+                        for (GroupIndex groupIndex : group.getIndexes()) {
+                            if (groupIndex.getKeyColumns().get(0).getColumn() == leadingColumn) {
+                                indexStatistics = getIndexStatistics(groupIndex);
+                                if (indexStatistics != null) {
+                                    indexColumnsIndex = groupIndex;
+                                    histogram = indexStatistics.getHistogram(0, 1);
+                                    break groupLoop;
+                                }
+                                else if (indexColumnsIndex == null) {
+                                    indexColumnsIndex = groupIndex;
+                                }
                             }
                         }
                     }
                 }
             }
             indexColumnsIndexes[i] = indexColumnsIndex;
-            indexColumnsStats[i++] = indexStatistics;
+            histograms[i] = histogram;
         }
     }
 
@@ -214,14 +219,15 @@ public abstract class CostEstimator implements TableRowCounts
         }
         UserTable indexedTable = (UserTable) index.leafMostTable();
         long rowCount = getTableRowCount(indexedTable);
+        // TODO: FIX THIS COMMENT. Should it refer to getSingleColumnHistogram?
         // Get IndexStatistics for each column. If the ith element is non-null, then it definitely has
         // a leading-column histogram (obtained by IndexStats.getHistogram(1)).
         // else: There are no index stats for the first column of the index. Either there is no such index,
         // or there is, but it doesn't have stats.
         int nidxcols = index.getAllColumns().size();
         Index[] indexColumnsIndexes = new Index[nidxcols];
-        IndexStatistics[] indexColumnsStats = new IndexStatistics[nidxcols];
-        getIndexColumnStatistics(index, indexColumnsIndexes, indexColumnsStats);
+        Histogram[] histograms = new Histogram[nidxcols];
+        getIndexColumnStatistics(index, indexColumnsIndexes, histograms);
         int columnCount = 0;
         if (equalityComparands != null)
             columnCount = equalityComparands.size();
@@ -235,22 +241,23 @@ public abstract class CostEstimator implements TableRowCounts
         double selectivity = 1.0;
         if (equalityComparands != null && !equalityComparands.isEmpty()) {
             selectivity = fractionEqual(index,
-                                        indexColumnsIndexes, indexColumnsStats,
+                                        indexColumnsIndexes,
+                                        histograms,
                                         equalityComparands);
         }
         if (lowComparand != null || highComparand != null) {
             selectivity *= fractionBetween(index.getAllColumns().get(columnCount - 1).getColumn(),
                                            indexColumnsIndexes[columnCount - 1],
-                                           indexColumnsStats[columnCount - 1],
+                                           histograms[columnCount - 1],
                                            lowComparand, lowInclusive,
                                            highComparand, highInclusive);
         }
-        if (mostlyDistinct(indexColumnsIndexes, indexColumnsStats)) scaleCount = false;
+        if (mostlyDistinct(histograms)) scaleCount = false;
         // statsCount: Number of rows in the table based on an index of the table, according to index
         //    statistics, which may be stale.
         // rowCount: Approximate number of rows in the table, reasonably up to date.
         long statsCount;
-        IndexStatistics stats = tableIndexStatistics(indexedTable, indexColumnsIndexes, indexColumnsStats);
+        IndexStatistics stats = tableIndexStatistics(indexedTable, indexColumnsIndexes, histograms);
         if (stats != null) {
             statsCount = stats.getSampledCount();
         }
@@ -267,14 +274,16 @@ public abstract class CostEstimator implements TableRowCounts
         return nrows;
     }
 
-    private IndexStatistics tableIndexStatistics(UserTable indexedTable, Index[] indexColumnsIndexes, IndexStatistics[] indexColumnsStats) {
+    private IndexStatistics tableIndexStatistics(UserTable indexedTable,
+                                                 Index[] indexColumnsIndexes,
+                                                 Histogram[] histograms) {
         // At least one of the index columns must be from the indexed table
         for (int i = 0; i < indexColumnsIndexes.length; i++) {
             Index index = indexColumnsIndexes[i];
             if (index != null) {
                 Column leadingColumn = index.getKeyColumns().get(0).getColumn();
-                if (leadingColumn.getTable() == indexedTable) {
-                    return indexColumnsStats[i];
+                if (leadingColumn.getTable() == indexedTable && histograms[i] != null) {
+                    return histograms[i].getIndexStatistics();
                 }
             }
         }
@@ -292,7 +301,8 @@ public abstract class CostEstimator implements TableRowCounts
     }
 
     protected double fractionEqual(Index index, 
-                                   Index[] indexColumnsIndexes, IndexStatistics[] indexColumnsStats,
+                                   Index[] indexColumnsIndexes,
+                                   Histogram[] histograms,
                                    List<ExpressionNode> eqExpressions) {
         double selectivity = 1.0;
         if (usePValues())
@@ -301,24 +311,42 @@ public abstract class CostEstimator implements TableRowCounts
             keyTarget.attach(key);
         for (int column = 0; column < eqExpressions.size(); column++) {
             ExpressionNode node = eqExpressions.get(column);
+            Histogram histogram = histograms[column];
             selectivity *= fractionEqual(index.getAllColumns().get(column).getColumn(),
-                                         indexColumnsIndexes[column], indexColumnsStats[column],
+                                         indexColumnsIndexes[column],
+                                         histogram,
                                          node);
         }
         return selectivity;
     }
 
     protected double fractionEqual(Column column, 
-                                   Index index, IndexStatistics indexStats,
+                                   Index index,
+                                   Histogram histogram,
                                    ExpressionNode expr) {
-        if (indexStats == null) {
+        if (histogram == null) {
             missingStats(column, index);
             return missingStatsSelectivity();
         } else {
-            Histogram histogram = indexStats.getHistogram(1);
-            if ((histogram == null) || histogram.getEntries().isEmpty()) {
+            long indexStatsSampledCount = histogram.getIndexStatistics().getSampledCount();
+            if (histogram.getEntries().isEmpty()) {
                 missingStats(column, index);
                 return missingStatsSelectivity();
+            } else if ((expr instanceof ColumnExpression) &&
+                       (((ColumnExpression)expr).getTable() instanceof ExpressionsSource)) {
+                // Can do better than unknown if we know some actual values.
+                // Compute the average selectivity among them.
+                ColumnExpression toColumn = (ColumnExpression)expr;
+                ExpressionsSource values = (ExpressionsSource)toColumn.getTable();
+                int position = toColumn.getPosition();
+                double sum = 0.0;
+                int count = 0;
+                for (List<ExpressionNode> row : values.getExpressions()) {
+                    sum += fractionEqual(column, index, histogram, row.get(position));
+                    count++;
+                }
+                if (count > 0) sum /= count;
+                return sum;
             } else {
                 key.clear();
                 if (usePValues())
@@ -326,12 +354,12 @@ public abstract class CostEstimator implements TableRowCounts
                 else
                     keyTarget.attach(key);
                 // encodeKeyValue evaluates non-null iff node is a constant expression. key is initialized as a side-effect.
-                byte[] columnValue = encodeKeyValue(expr, index, 0) ? keyCopy() : null;
+                byte[] columnValue = encodeKeyValue(expr, index, histogram.getFirstColumn()) ? keyCopy() : null;
                 if (columnValue == null) {
                     // Variable expression. Use average selectivity for histogram.
                     return
-                        mostlyDistinct(indexStats)
-                        ? 1.0 / indexStats.getSampledCount()
+                        mostlyDistinct(histogram)
+                        ? 1.0 / indexStatsSampledCount
                         : 1.0 / histogram.totalDistinctCount();
                 } else {
                     // TODO: Could use Collections.binarySearch if we had something that looked like a HistogramEntry.
@@ -340,10 +368,10 @@ public abstract class CostEstimator implements TableRowCounts
                         // Constant expression
                         int compare = bytesComparator.compare(columnValue, entry.getKeyBytes());
                         if (compare == 0) {
-                            return ((double) entry.getEqualCount()) / indexStats.getSampledCount();
+                            return ((double) entry.getEqualCount()) / indexStatsSampledCount;
                         } else if (compare < 0) {
                             long d = entry.getDistinctCount();
-                            return d == 0 ? 0.0 : ((double) entry.getLessCount()) / (d * indexStats.getSampledCount());
+                            return d == 0 ? 0.0 : ((double) entry.getLessCount()) / (d * indexStatsSampledCount);
                         }
                     }
                     HistogramEntry lastEntry = entries.get(entries.size() - 1);
@@ -358,11 +386,12 @@ public abstract class CostEstimator implements TableRowCounts
     }
 
     protected double fractionBetween(Column column,
-                                     Index index, IndexStatistics indexStats,
+                                     Index index,
+                                     Histogram histogram,
                                      ExpressionNode lo, boolean lowInclusive,
                                      ExpressionNode hi, boolean highInclusive)
     {
-        if (indexStats == null) {
+        if (histogram == null || histogram.getEntries().isEmpty()) {
             missingStats(column, index);
             return missingStatsSelectivity();
         }
@@ -371,21 +400,15 @@ public abstract class CostEstimator implements TableRowCounts
         else
             keyTarget.attach(key);
         key.clear();
-        byte[] loBytes = encodeKeyValue(lo, index, 0) ? keyCopy() : null;
+        byte[] loBytes = encodeKeyValue(lo, index, histogram.getFirstColumn()) ? keyCopy() : null;
         key.clear();
-        byte[] hiBytes = encodeKeyValue(hi, index, 0) ? keyCopy() : null;
+        byte[] hiBytes = encodeKeyValue(hi, index, histogram.getFirstColumn()) ? keyCopy() : null;
         if (loBytes == null && hiBytes == null) {
-            return missingStatsSelectivity();
-        }
-        Histogram histogram = indexStats.getHistogram(1);
-        if ((histogram == null) || histogram.getEntries().isEmpty()) {
-            missingStats(column, index);
             return missingStatsSelectivity();
         }
         boolean before = (loBytes != null);
         long rowCount = 0;
         byte[] entryStartBytes, entryEndBytes = null;
-        HistogramEntry firstEntry = histogram.getEntries().get(0);
         for (HistogramEntry entry : histogram.getEntries()) {
             entryStartBytes = entryEndBytes;
             entryEndBytes = entry.getKeyBytes();
@@ -427,19 +450,18 @@ public abstract class CostEstimator implements TableRowCounts
             }
             rowCount += entry.getLessCount() + entry.getEqualCount() - portionStart;
         }
-        return ((double) Math.max(rowCount, 1)) / indexStats.getSampledCount();
+        return ((double) Math.max(rowCount, 1)) / histogram.getIndexStatistics().getSampledCount();
     }
 
 
     // Must be provably mostly distinct: Every histogram is available and mostly distinct.
-    private boolean mostlyDistinct(Index[] indexColumnsIndexes,
-                                   IndexStatistics[] indexColumnsStats)
+    private boolean mostlyDistinct(Histogram[] histograms)
     {
-        for (IndexStatistics indexStats : indexColumnsStats) {
-            if (indexStats == null) {
+        for (Histogram histogram : histograms) {
+            if (histogram == null) {
                 return false;
             } else {
-                if (!mostlyDistinct(indexStats)) {
+                if (!mostlyDistinct(histogram)) {
                     // < 90% distinct
                     return false;
                 }
@@ -448,11 +470,11 @@ public abstract class CostEstimator implements TableRowCounts
         return true;
     }
 
-    private boolean mostlyDistinct(IndexStatistics indexStats)
+    private boolean mostlyDistinct(Histogram histogram)
     {
-        Histogram histogram = indexStats.getHistogram(1);
-        if (histogram == null) return false;
-        return histogram.totalDistinctCount() * 10 > indexStats.getSampledCount() * 9;
+        return
+            histogram != null &&
+            histogram.totalDistinctCount() * 10 > histogram.getIndexStatistics().getSampledCount() * 9;
     }
 
     /** Assuming that byte strings are uniformly distributed, what
@@ -515,7 +537,7 @@ public abstract class CostEstimator implements TableRowCounts
     
     protected boolean isConstant(ExpressionNode node)
     {
-        return node instanceof ConstantExpression;
+        return node.isConstant();
     }
 
     protected boolean encodeKeyValue(ExpressionNode node, Index index, int column) {
@@ -529,6 +551,10 @@ public abstract class CostEstimator implements TableRowCounts
                     }
                     pvalue = node.getPreptimeValue().value();
                 }
+            }
+            else if (node instanceof IsNullIndexKey) {
+                keyPTarget.putNull();
+                return true;
             }
             if (pvalue == null)
                 return false;
@@ -558,6 +584,10 @@ public abstract class CostEstimator implements TableRowCounts
                 else
                     expr = Expressions.literal(((ConstantExpression)node).getValue(),
                                                node.getAkType());
+            }
+            else if (node instanceof IsNullIndexKey) {
+                keyTarget.putNull();
+                return true;
             }
             if (expr == null)
                 return false;
@@ -886,25 +916,55 @@ public abstract class CostEstimator implements TableRowCounts
     public CostEstimate costSelect(Collection<ConditionExpression> conditions,
                                    double selectivity,
                                    long size) {
+        int nconds = 0;         // Approximate number of predicate tests.
+        for (ConditionExpression cond : conditions) {
+            if (cond instanceof InListCondition)
+                nconds += ((InListCondition)cond).getExpressions().size();
+            // TODO: Maybe various kinds of subquery predicate get high count?
+            else
+                nconds++;
+        }
         return new CostEstimate(Math.max(1, round(size * selectivity)),
-                                model.select((int)size) * conditions.size());
+                                model.select((int)size) * nconds);
     }
 
     public CostEstimate costSelect(Collection<ConditionExpression> conditions,
-                                   Map<ColumnExpression,Collection<ComparisonCondition>> selectivityConditions,
+                                   SelectivityConditions selectivityConditions,
                                    long size) {
         return costSelect(conditions, conditionsSelectivity(selectivityConditions), size);
     }
 
-    public double conditionsSelectivity(Map<ColumnExpression,Collection<ComparisonCondition>> conditions) {
+    public static class SelectivityConditions {
+        private Map<ColumnExpression,Collection<ConditionExpression>> map =
+            new HashMap<ColumnExpression,Collection<ConditionExpression>>();
+        
+        public void addCondition(ColumnExpression column, ConditionExpression condition) {
+            Collection<ConditionExpression> entry = map.get(column);
+            if (entry == null) {
+                entry = new ArrayList<ConditionExpression>();
+                map.put(column, entry);
+            }
+            entry.add(condition);
+        }
+
+        public Iterable<ColumnExpression> getColumns() {
+            return map.keySet();
+        }
+
+        public Collection<ConditionExpression> getConditions(ColumnExpression column) {
+            return map.get(column);
+        }
+    }
+
+    public double conditionsSelectivity(SelectivityConditions conditions) {
         double selectivity = 1.0;
-        for (Map.Entry<ColumnExpression,Collection<ComparisonCondition>> entry : conditions.entrySet()) {
+        for (ColumnExpression entry : conditions.getColumns()) {
             Index index = null;
             IndexStatistics indexStatistics = null;
-            Column column = entry.getKey().getColumn();
+            Column column = entry.getColumn();
             // Find a TableIndex whose first column is leadingColumn
             for (TableIndex tableIndex : column.getTable().getIndexes()) {
-                if (tableIndex.getKeyColumns().get(0).getColumn() == column) {
+                if (!tableIndex.isSpatial() && tableIndex.getKeyColumns().get(0).getColumn() == column) {
                     indexStatistics = getIndexStatistics(tableIndex);
                     if (indexStatistics != null) {
                         index = tableIndex;
@@ -916,7 +976,7 @@ public abstract class CostEstimator implements TableRowCounts
             if (indexStatistics == null) {
                 groupLoop: for (Group group : schema.ais().getGroups().values()) {
                     for (GroupIndex groupIndex : group.getIndexes()) {
-                        if (groupIndex.getKeyColumns().get(0).getColumn() == column) {
+                        if (!groupIndex.isSpatial() && groupIndex.getKeyColumns().get(0).getColumn() == column) {
                             indexStatistics = getIndexStatistics(groupIndex);
                             if (indexStatistics != null) {
                                 index = groupIndex;
@@ -929,38 +989,55 @@ public abstract class CostEstimator implements TableRowCounts
             if (indexStatistics == null) continue;
             ExpressionNode eq = null, ne = null, lo = null, hi = null;
             boolean loInc = false, hiInc = false;
-            for (ComparisonCondition cond : entry.getValue()) {
-                switch (cond.getOperation()) {
-                case EQ:
-                    eq = cond.getRight();
-                    break;
-                case NE:
-                    ne = cond.getRight();
-                    break;
-                case LT:
-                    hi = cond.getRight();
-                    hiInc = false;
-                    break;
-                case LE:
-                    hi = cond.getRight();
-                    hiInc = true;
-                    break;
-                case GT:
-                    lo = cond.getRight();
-                    loInc = false;
-                    break;
-                case GE:
-                    lo = cond.getRight();
-                    loInc = true;
-                    break;
+            List<ExpressionNode> in = null;
+            for (ConditionExpression cond : conditions.getConditions(entry)) {
+                if (cond instanceof ComparisonCondition) {
+                    ComparisonCondition ccond = (ComparisonCondition)cond;
+                    switch (ccond.getOperation()) {
+                    case EQ:
+                        eq = ccond.getRight();
+                        break;
+                    case NE:
+                        ne = ccond.getRight();
+                        break;
+                    case LT:
+                        hi = ccond.getRight();
+                        hiInc = false;
+                        break;
+                    case LE:
+                        hi = ccond.getRight();
+                        hiInc = true;
+                        break;
+                    case GT:
+                        lo = ccond.getRight();
+                        loInc = false;
+                        break;
+                    case GE:
+                        lo = ccond.getRight();
+                        loInc = true;
+                        break;
+                    }
+                }
+                else if (cond instanceof InListCondition) {
+                    in = ((InListCondition)cond).getExpressions();
                 }
             }
-            if (eq != null)
-                selectivity *= fractionEqual(column, index, indexStatistics, eq);
+            Histogram histogram = indexStatistics.getHistogram(0, 1);
+            if (eq != null) {
+                selectivity *= fractionEqual(column, index, histogram, eq);
+            }
             else if (ne != null) 
-                selectivity *= (1.0 - fractionEqual(column, index, indexStatistics, eq));
+                selectivity *= (1.0 - fractionEqual(column, index, histogram, eq));
             else if ((lo != null) || (hi != null))
-                selectivity *= fractionBetween(column, index, indexStatistics, lo, loInc, hi, hiInc);
+                selectivity *= fractionBetween(column, index, histogram, lo, loInc, hi, hiInc);
+            else if (in != null) {
+                double fraction = 0.0;
+                for (ExpressionNode expr : in) {
+                    fraction += fractionEqual(column, index, histogram, expr);
+                }
+                if (fraction > 1.0) fraction = 1.0;
+                selectivity *= fraction;
+            }
         }
         return selectivity;
     }
@@ -990,6 +1067,15 @@ public abstract class CostEstimator implements TableRowCounts
             }
         }
         return new CostEstimate(nrows, model.fullGroupScan(schema.userTableRowType(root)));
+    }
+
+    public CostEstimate costValues(ExpressionsSource values, boolean selectToo) {
+        int nfields = values.nFields();
+        int nrows = values.getExpressions().size();
+        double cost = model.project(nfields, nrows);
+        if (selectToo)
+            cost += model.select(nrows);
+        return new CostEstimate(nrows, cost);
     }
 
     public CostEstimate costBloomFilter(CostEstimate loaderCost,
@@ -1061,7 +1147,7 @@ public abstract class CostEstimator implements TableRowCounts
     protected void missingStats(Column column, Index index) {
         if (warningsEnabled) {
             if (index == null) {
-                logger.warn("No single column index for {}.{}; cost estimates will not be accurate", column.getTable().getName(), column.getName());
+                logger.warn("No statistics for {}.{}; cost estimates will not be accurate", column.getTable().getName(), column.getName());
             }
             else if (index.isTableIndex()) {
                 Table table = ((TableIndex)index).getTable();

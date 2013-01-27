@@ -38,6 +38,11 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 
 import java.io.File;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -77,7 +82,8 @@ public class PostgresServerITBase extends ITBase
     }
 
     protected static void closeConnection(Connection connection) throws Exception {
-        connection.close();
+        if (!connection.isClosed())
+            connection.close();
     }
 
     protected PostgresService getPostgresService() {
@@ -97,10 +103,11 @@ public class PostgresServerITBase extends ITBase
         };
 
     // One element connection pool.
-    private static Connection connection = null;
+    private static final ThreadLocal<Connection> connectionRef = new ThreadLocal<>();
 
     protected Connection getConnection() throws Exception {
-        if (connection == null) {
+        Connection connection = connectionRef.get();
+        if (connection == null || connection.isClosed()) {
             beforeStopServices.add(forgetOnStopServices);
             for (int i = 0; i < 6; i++) {
                 if (server().isListening())
@@ -118,19 +125,50 @@ public class PostgresServerITBase extends ITBase
                 }
             }
             connection = openConnection();
+            connectionRef.set(connection);
         }
         return connection;
     }
 
     public static void forgetConnection() throws Exception {
+        Connection connection = connectionRef.get();
         if (connection != null) {
             closeConnection(connection);
-            connection = null;
+            connectionRef.remove();
             beforeStopServices.remove(forgetOnStopServices);
         }
     }
 
     protected PostgresServerITBase() {
+    }
+
+    protected List<List<?>> sql(String sql) {
+        try {
+            Connection conn = getConnection();
+            try {
+                try (Statement statement = conn.createStatement()) {
+                    if (!statement.execute(sql))
+                        return null;
+                    List<List<?>> results = new ArrayList<>();
+                    try (ResultSet rs = statement.getResultSet()) {
+                        int ncols = rs.getMetaData().getColumnCount();
+                        while (rs.next()) {
+                            List<Object> row = new ArrayList<>(ncols);
+                            for (int i = 0; i < ncols; ++i)
+                                row.add(rs.getObject(i+1));
+                        }
+                    }
+                    if (statement.getMoreResults())
+                        throw new RuntimeException("multiple ResultSets for SQL: " + sql);
+                    return results;
+                }
+            }
+            finally {
+                forgetConnection();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("while executing SQL: " + sql, e);
+        }
     }
 
 }

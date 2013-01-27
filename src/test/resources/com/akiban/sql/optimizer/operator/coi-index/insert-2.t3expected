@@ -1,4 +1,4 @@
-PhysicalUpdate
+PhysicalUpdate/NO_CACHE
   Insert_Returning(INTO customers(cid, name))
     Project_Default(Field(0), Field(1))
       ValuesScan_Default([1, 'Smith'], [2, 'Jones'], [3, 'Brown'])

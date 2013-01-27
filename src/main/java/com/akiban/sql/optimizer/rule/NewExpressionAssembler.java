@@ -73,6 +73,7 @@ import com.akiban.sql.optimizer.plan.ConstantExpression;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
+import com.akiban.sql.optimizer.plan.InListCondition;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
 import com.akiban.sql.optimizer.plan.ResolvableExpression;
 import com.akiban.sql.script.ScriptBindingsRoutineTExpression;
@@ -216,8 +217,15 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     }
 
     @Override
-    protected TPreparedExpression in(TPreparedExpression lhs, List<TPreparedExpression> rhs) {
-        return TInExpression.prepare(lhs, rhs, queryContext);
+    protected TPreparedExpression in(TPreparedExpression lhs, List<TPreparedExpression> rhs, InListCondition inList) {
+        ComparisonCondition comparison = inList.getComparison();
+        if (comparison == null)
+            return TInExpression.prepare(lhs, rhs, queryContext);
+        else
+            return TInExpression.prepare(lhs, rhs, 
+                                         comparison.getRight().getPreptimeValue().instance(), 
+                                         comparison.getKeyComparable(), 
+                                         queryContext);
     }
 
     @Override

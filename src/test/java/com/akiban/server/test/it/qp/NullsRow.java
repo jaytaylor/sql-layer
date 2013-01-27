@@ -52,7 +52,7 @@ public final class NullsRow extends AbstractRow {
 
     @Override
     public PValueSource pvalue(int index) {
-        return PValueSources.getNullSource(rowType.typeInstanceAt(index).typeClass().underlyingType());
+        return PValueSources.getNullSource(rowType.typeInstanceAt(index));
     }
 
     public NullsRow(RowType rowType) {

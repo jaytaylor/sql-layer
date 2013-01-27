@@ -29,10 +29,7 @@ package com.akiban.server.test.it.store;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
-import com.akiban.server.store.statistics.IndexStatistics;
-import com.akiban.server.store.statistics.IndexStatisticsService;
-import com.akiban.server.store.statistics.IndexStatistics.HistogramEntryDescription;
-import com.akiban.server.store.statistics.PersistitIndexStatisticsVisitor;
+import com.akiban.server.store.statistics.*;
 import com.akiban.server.store.statistics.histograms.Sampler;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.util.AssertUtils;
@@ -46,7 +43,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public final class IndexHistogramsIT extends ITBase {
     
@@ -265,7 +262,7 @@ public final class IndexHistogramsIT extends ITBase {
     public void edgeAnalysis() {
         int cTable = getUserTable(SCHEMA, "customers").getTableId();
         int oTable = getUserTable(SCHEMA, "orders").getTableId();
-        int maxCid = PersistitIndexStatisticsVisitor.BUCKETS_COUNT * Sampler.OVERSAMPLE_FACTOR;
+        int maxCid = bucketCount() * Sampler.OVERSAMPLE_FACTOR;
         insertRows(cTable, oTable, CUSTOMERS_COUNT, maxCid);
         validateHistogram("customers", PK, 1, 
                           entry("{\"0000\"}", 1, 0, 0),
@@ -306,7 +303,7 @@ public final class IndexHistogramsIT extends ITBase {
     public void largeAnalysis() {
         int cTable = getUserTable(SCHEMA, "customers").getTableId();
         int oTable = getUserTable(SCHEMA, "orders").getTableId();
-        int maxCid = PersistitIndexStatisticsVisitor.BUCKETS_COUNT * Sampler.OVERSAMPLE_FACTOR+1;
+        int maxCid = bucketCount() * Sampler.OVERSAMPLE_FACTOR+1;
         insertRows(cTable, oTable, CUSTOMERS_COUNT, maxCid);
         validateHistogram("customers", PK, 1,
                           entry("{\"0000\"}", 1, 0, 0),
@@ -348,7 +345,7 @@ public final class IndexHistogramsIT extends ITBase {
         int cTable = getUserTable(SCHEMA, "customers").getTableId();
         int oTable = getUserTable(SCHEMA, "orders").getTableId();
         double interval = 2.02;
-        double oversamples = PersistitIndexStatisticsVisitor.BUCKETS_COUNT * Sampler.OVERSAMPLE_FACTOR;
+        double oversamples = bucketCount() * Sampler.OVERSAMPLE_FACTOR;
         int maxCid = (int) Math.round(interval * oversamples);
         insertRows(cTable, oTable, CUSTOMERS_COUNT, maxCid);
 
@@ -464,10 +461,10 @@ public final class IndexHistogramsIT extends ITBase {
 
         if (entries != null) {
             IndexStatistics stats = statsService.getIndexStatistics(session(), index);
-            IndexStatistics.Histogram histogram = stats.getHistogram(expectedColumns);
+            Histogram histogram = stats.getHistogram(0, expectedColumns);
 
             assertEquals("histogram column count", expectedColumns, histogram.getColumnCount());
-            List<IndexStatistics.HistogramEntry> actualEntries = histogram.getEntries();
+            List<HistogramEntry> actualEntries = histogram.getEntries();
             List<HistogramEntryDescription> expectedList = Arrays.asList(entries);
             AssertUtils.assertCollectionEquals("entries", expectedList, actualEntries);
         }
@@ -476,6 +473,10 @@ public final class IndexHistogramsIT extends ITBase {
     private HistogramEntryDescription entry(String keyString, long equalCount, long lessCount,
                                                             long distinctCount) {
         return new HistogramEntryDescription(keyString, equalCount, lessCount, distinctCount);
+    }
+
+    private int bucketCount() {
+        return PersistitStoreIndexStatistics.bucketCount(configService());
     }
 
     private GroupIndex namePlacedGi;
