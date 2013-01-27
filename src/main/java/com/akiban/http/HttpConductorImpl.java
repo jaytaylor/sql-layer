@@ -58,6 +58,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
 
     private static final String REST_ROLE = "rest-user";
     private static final String LOGIN_REALM = "AkServer";
+    private static final String JDBC_REALM_RESOURCE = "jdbcRealm.properties";
 
     private final ConfigurationService configurationService;
 
@@ -180,7 +181,9 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                 sh.setAuthenticator(new BasicAuthenticator());
                 sh.setConstraintMappings(Collections.singletonList(cm));
 
-                JDBCLoginService loginService = new JDBCLoginService(LOGIN_REALM, "/tmp/jdbcRealm.properties");
+                JDBCLoginService loginService =
+                    new JDBCLoginService(LOGIN_REALM, 
+                                         HttpConductorImpl.class.getResource(JDBC_REALM_RESOURCE).toString());
                 sh.setLoginService(loginService);
 
                 sh.setHandler(localHandlerCollection);
