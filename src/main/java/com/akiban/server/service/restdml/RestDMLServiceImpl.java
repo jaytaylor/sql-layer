@@ -77,8 +77,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         this.extDataService = extDataService;
         this.sessionService = sessionService;
     }
-    
-    
+
     @Override
     public void start() {
         // None
@@ -100,7 +99,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         return Response.status(Response.Status.OK)
                 .entity(new StreamingOutput() {
                     @Override
-                    public void write(OutputStream output) {
+                    public void write(OutputStream output) throws IOException {
                         try (Session session = sessionService.createSession()) {
                             // Do not auto-close writer as that prevents an exception from propagating to the client
                             PrintWriter writer = new PrintWriter(output);
@@ -108,19 +107,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                             writer.write('\n');
                             writer.close();
                         } catch(InvalidOperationException e) {
-                            StringBuilder err = new StringBuilder(100);
-                            err.append("[{\"errors\":[{\"code\":\"");
-                            err.append(e.getCode().getFormattedValue());
-                            err.append("\",\"message\":\"");
-                            err.append(e.getMessage());
-                            err.append("\"}]}]\n");
-                            throw new WebApplicationException(
-                                    Response.status(Response.Status.NOT_FOUND)
-                                            .entity(err.toString())
-                                            .build()
-                            );
-                        } catch(IOException e) {
-                            throw new WebApplicationException(e);
+                            throwToClient(e);
                         }
                     }
                 })
@@ -128,14 +115,13 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
-    public Response getEntities(final String schema, final String table, Integer depth, final String identifiers) {
+    public Response getEntities(final String schema, final String table, Integer inDepth, final String identifiers) {
         final TableName tableName = new TableName(schema, table);
-        final int realDepth = (depth != null) ? Math.max(depth, 0) : -1;
-
+        final int depth = (inDepth != null) ? Math.max(inDepth, 0) : -1;
         return Response.status(Response.Status.OK)
                 .entity(new StreamingOutput() {
                     @Override
-                    public void write(OutputStream output) {
+                    public void write(OutputStream output) throws IOException {
                         try (Session session = sessionService.createSession();
                              CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
                             // Do not auto-close writer as that prevents an exception from propagating to the client
@@ -143,27 +129,29 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                             UserTable uTable = dxlService.ddlFunctions().getUserTable(session, tableName);
                             Index pkIndex = uTable.getPrimaryKeyIncludingInternal().getIndex();
                             List<List<String>> pks = PrimaryKeyParser.parsePrimaryKeys(identifiers, pkIndex);
-                            extDataService.dumpBranchAsJson(session, writer, schema, table, pks, realDepth, false);
+                            extDataService.dumpBranchAsJson(session, writer, schema, table, pks, depth, false);
                             writer.write('\n');
                             txn.commit();
                             writer.close();
                         } catch(InvalidOperationException e) {
-                            StringBuilder err = new StringBuilder(100);
-                            err.append("[{\"errors\":[{\"code\":\"");
-                            err.append(e.getCode().getFormattedValue());
-                            err.append("\",\"message\":\"");
-                            err.append(e.getMessage());
-                            err.append("\"}]}]\n");
-                            throw new WebApplicationException(
-                                    Response.status(Response.Status.NOT_FOUND)
-                                            .entity(err.toString())
-                                            .build()
-                            );
-                        } catch(IOException e) {
-                            throw new WebApplicationException(e);
+                            throwToClient(e);
                         }
                     }
                 })
                 .build();
+    }
+
+    private void throwToClient(InvalidOperationException e) {
+        StringBuilder err = new StringBuilder(100);
+        err.append("[{\"code\":\"");
+        err.append(e.getCode().getFormattedValue());
+        err.append("\",\"message\":\"");
+        err.append(e.getMessage());
+        err.append("\"}]\n");
+        throw new WebApplicationException(
+                Response.status(Response.Status.NOT_FOUND)
+                        .entity(err.toString())
+                        .build()
+        );
     }
 }
