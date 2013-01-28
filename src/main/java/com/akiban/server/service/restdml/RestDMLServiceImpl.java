@@ -95,7 +95,40 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
-    public Response getEntities(final String schema, final String table, final Integer depth, final String identifiers) {
+    public Response getEntities(final String schema, final String table, Integer depth) {
+        final int realDepth = (depth != null) ? Math.max(depth, 0) : -1;
+        return Response.status(Response.Status.OK)
+                .entity(new StreamingOutput() {
+                    @Override
+                    public void write(OutputStream output) {
+                        try (Session session = sessionService.createSession()) {
+                            // Do not auto-close writer as that prevents an exception from propagating to the client
+                            PrintWriter writer = new PrintWriter(output);
+                            extDataService.dumpBranchesAsJson(session, writer, schema, table, realDepth, true);
+                            writer.write('\n');
+                            writer.close();
+                        } catch(InvalidOperationException e) {
+                            StringBuilder err = new StringBuilder(100);
+                            err.append("[{\"errors\":[{\"code\":\"");
+                            err.append(e.getCode().getFormattedValue());
+                            err.append("\",\"message\":\"");
+                            err.append(e.getMessage());
+                            err.append("\"}]}]\n");
+                            throw new WebApplicationException(
+                                    Response.status(Response.Status.NOT_FOUND)
+                                            .entity(err.toString())
+                                            .build()
+                            );
+                        } catch(IOException e) {
+                            throw new WebApplicationException(e);
+                        }
+                    }
+                })
+                .build();
+    }
+
+    @Override
+    public Response getEntities(final String schema, final String table, Integer depth, final String identifiers) {
         final TableName tableName = new TableName(schema, table);
         final int realDepth = (depth != null) ? Math.max(depth, 0) : -1;
 
@@ -105,7 +138,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                     public void write(OutputStream output) {
                         try (Session session = sessionService.createSession();
                              CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
-                            // Do not writer auto-closed as that prevents an exception from propagating to the client
+                            // Do not auto-close writer as that prevents an exception from propagating to the client
                             PrintWriter writer = new PrintWriter(output);
                             UserTable uTable = dxlService.ddlFunctions().getUserTable(session, tableName);
                             Index pkIndex = uTable.getPrimaryKeyIncludingInternal().getIndex();
