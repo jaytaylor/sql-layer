@@ -43,6 +43,7 @@ import java.util.Map;
 public class ExternalDataServiceIT extends ITBase
 {
     public static final String SCHEMA = "test";
+    public static final boolean WITH_TXN = true;
 
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
@@ -101,7 +102,8 @@ public class ExternalDataServiceIT extends ITBase
         external.dumpBranchAsJson(session(), pw, SCHEMA, "c", 
                                   Arrays.asList(Collections.singletonList("1"),
                                                 Collections.singletonList("3")),
-                                  -1);
+                                  -1,
+                                  WITH_TXN);
         assertEquals(C13, str.toString());
     }
 
@@ -117,7 +119,8 @@ public class ExternalDataServiceIT extends ITBase
         PrintWriter pw = new PrintWriter(str);
         external.dumpBranchAsJson(session(), pw, SCHEMA, "o", 
                                   Collections.singletonList(Collections.singletonList("101")),
-                                  -1);
+                                  -1,
+                                  WITH_TXN);
         assertEquals(O101, str.toString());
     }
 
@@ -133,7 +136,8 @@ public class ExternalDataServiceIT extends ITBase
         PrintWriter pw = new PrintWriter(str);
         external.dumpBranchAsJson(session(), pw, SCHEMA, "c",
                                   Collections.singletonList(Collections.singletonList("1")),
-                                  0);
+                                  0,
+                                  WITH_TXN);
         assertEquals(C1d0, str.toString());
     }
 
@@ -149,7 +153,8 @@ public class ExternalDataServiceIT extends ITBase
         PrintWriter pw = new PrintWriter(str);
         external.dumpBranchAsJson(session(), pw, SCHEMA, "c", 
                                   Collections.singletonList(Collections.singletonList("1")),
-                                  1);
+                                  1,
+                                  WITH_TXN);
         assertEquals(C1d1, str.toString());
     }
 
@@ -161,7 +166,8 @@ public class ExternalDataServiceIT extends ITBase
         PrintWriter pw = new PrintWriter(str);
         external.dumpBranchAsJson(session(), pw, SCHEMA, "c", 
                                   Collections.singletonList(Collections.singletonList("666")),
-                                  -1);
+                                  -1,
+                                  WITH_TXN);
         assertEquals("[]", str.toString());
     }
 

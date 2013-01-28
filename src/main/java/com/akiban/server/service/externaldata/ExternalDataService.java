@@ -39,7 +39,8 @@ import java.util.List;
 public interface ExternalDataService {
     void dumpBranchAsJson(Session session, PrintWriter writer,
                           String schemaName, String tableName, 
-                          List<List<String>> keys, int depth) throws IOException;
+                          List<List<String>> keys, int depth,
+                          boolean withTransaction) throws IOException;
 
     long loadTableFromCsv(Session session, InputStream inputStream, 
                           CsvFormat format, long skipRows,

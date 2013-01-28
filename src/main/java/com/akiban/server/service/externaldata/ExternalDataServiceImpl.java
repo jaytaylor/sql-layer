@@ -86,7 +86,8 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     @Override
     public void dumpBranchAsJson(Session session, PrintWriter writer,
                                  String schemaName, String tableName, 
-                                 List<List<String>> keys, int depth) 
+                                 List<List<String>> keys, int depth,
+                                 boolean withTransaction)
             throws IOException {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
         UserTable table = ais.getUserTable(schemaName, tableName);
@@ -115,8 +116,10 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
         boolean transaction = false;
         Cursor cursor = null;
         try {
-            transactionService.beginTransaction(session);
-            transaction = true;
+            if (withTransaction) {
+                transactionService.beginTransaction(session);
+                transaction = true;
+            }
             cursor = API.cursor(plan, queryContext);
             appender.append("[");
             boolean begun = false;
@@ -131,8 +134,10 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                     begun = true;
             }
             appender.append(begun ? "\n]" : "]");
-            transactionService.commitTransaction(session);
-            transaction = false;
+            if (withTransaction) {
+                transactionService.commitTransaction(session);
+                transaction = false;
+            }
         }
         finally {
             if (cursor != null)
