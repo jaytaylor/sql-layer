@@ -26,50 +26,82 @@
 
 package com.akiban.server.service.restdml;
 
+import org.codehaus.jackson.JsonParser;
+
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
+import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.sql.optimizer.plan.PhysicalUpdate;
 import com.google.inject.Inject;
 
 public class RestDMLServiceImpl implements Service, RestDMLService {
 
     private ConfigurationService configService;
+    private SchemaManager schemaManager;
+    private SessionService sessionService;
+    
     private DXLService dxlService;
     private Store store;
     private TransactionService transactionService;
     private TreeService treeService;
+    private T3RegistryService t3RegistryService;
+    private OperatorCache operatorCache;
     
     @Inject
     public RestDMLServiceImpl (ConfigurationService configService,
+            SessionService sessionService,
+            SchemaManager schemaService,
+            T3RegistryService registryService,
+            
             DXLService dxlService, Store store,
             TransactionService transactionService,
             TreeService treeService) {
         this.configService = configService;
+        this.schemaManager = schemaService;
+        this.sessionService = sessionService;
+        this.t3RegistryService = registryService;
+        
         this.dxlService = dxlService;
         this.store = store;
         this.transactionService = transactionService;
         this.treeService = treeService;
+        this.operatorCache = new OperatorCache (schemaManager, t3RegistryService);
+        
     }
     
-    
+    /* service */
     @Override
     public void start() {
-        // TODO Auto-generated method stub
-
+        //None
     }
 
     @Override
     public void stop() {
-        // TODO Auto-generated method stub
-
+        //None
     }
 
     @Override
     public void crash() {
-        // TODO Auto-generated method stub
-
+        //None
+    }
+    
+    /* RestDML Service Impl */
+    public void insert(final String schemaName, final String tableName, JsonParser jp)  {
+        Session session = sessionService.createSession();
+        
+        TableName rootTable = new TableName (schemaName, tableName);
+        
+        PhysicalUpdate update = operatorCache.getInsertOperator(session, rootTable);
+        
     }
 }
