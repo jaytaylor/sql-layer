@@ -37,14 +37,27 @@ import java.io.PrintWriter;
 import java.util.List;
 
 public interface ExternalDataService {
+    /**
+     * Dump entire group, starting at the given table's depth, in JSON format.
+     *
+     * @param depth How far down the branch to dump: -1 = all, 0 = just tableName, 1 = children, 2 = grand-children, ...
+     * @param withTransaction If <code>true</code>, start a transaction before scanning.
+     */
+    void dumpAllAsJson(Session session, PrintWriter writer,
+                       String schemaName, String tableName,
+                       int depth, boolean withTransaction) throws IOException;
+
+    /**
+     * Dump selected branches, identified by a list of PRIMARY KEY files, in JSON format.
+     *
+     * @param keys PRIMARY KEY values, which each may be multiple columns, to dump.
+     * @param depth How far down the branch to dump: -1 = all, 0 = just tableName, 1 = children, 2 = grand-children, ...
+     * @param withTransaction If <code>true</code>, start a transaction before scanning.
+     */
     void dumpBranchAsJson(Session session, PrintWriter writer,
                           String schemaName, String tableName, 
                           List<List<String>> keys, int depth,
                           boolean withTransaction) throws IOException;
-
-    void dumpAllAsJson(Session session, PrintWriter writer,
-                       String schemaName, String tableName,
-                       int depth, boolean withTransaction) throws IOException;
 
     long loadTableFromCsv(Session session, InputStream inputStream, 
                           CsvFormat format, long skipRows,
