@@ -42,9 +42,9 @@ public interface ExternalDataService {
                           List<List<String>> keys, int depth,
                           boolean withTransaction) throws IOException;
 
-    void dumpBranchesAsJson(Session session, PrintWriter writer,
-                            String schemaName, String tableName,
-                            int depth, boolean withTransaction) throws IOException;
+    void dumpAllAsJson(Session session, PrintWriter writer,
+                       String schemaName, String tableName,
+                       int depth, boolean withTransaction) throws IOException;
 
     long loadTableFromCsv(Session session, InputStream inputStream, 
                           CsvFormat format, long skipRows,

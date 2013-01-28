@@ -104,7 +104,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                         try (Session session = sessionService.createSession()) {
                             // Do not auto-close writer as that prevents an exception from propagating to the client
                             PrintWriter writer = new PrintWriter(output);
-                            extDataService.dumpBranchesAsJson(session, writer, schema, table, realDepth, true);
+                            extDataService.dumpAllAsJson(session, writer, schema, table, realDepth, true);
                             writer.write('\n');
                             writer.close();
                         } catch(InvalidOperationException e) {
