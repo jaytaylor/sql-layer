@@ -97,6 +97,7 @@ public class OperatorCache {
             insert = insertGenerator.create(session, table);
             insertCache.put(table, insert);
         }
+        
         return insert;
     }
     
@@ -116,28 +117,40 @@ public class OperatorCache {
             table = schemaManager.getAis(session).getUserTable(tableName);
 
             RowStream stream = assembleValueScan (table);
-            stream = assembleProjectTable (stream);
+            stream = assembleProjectTable (stream, table);
             stream.operator = API.insert_Returning(stream.operator, true);
 
+            List<TPreparedExpression> pExpressions = null;
+            //Expressions = newPartialAssembler.assembleExpressions(project.getFields(), stream.fieldOffsets);
+            
             List<PhysicalResultColumn> resultsColumns = null;
-            if (!table.getPrimaryKey().isAkibanPK()) {
+            if (table.getPrimaryKey() != null) {
                 PrimaryKey key = table.getPrimaryKey();
-                key.getIndex().getKeyColumns().size();
-                resultsColumns = new ArrayList<PhysicalResultColumn>(16);
+                int size  = key.getIndex().getKeyColumns().size();
+                resultsColumns = new ArrayList<PhysicalResultColumn>(size);
+                pExpressions = new ArrayList<TPreparedExpression>(size);
                 for (IndexColumn column : key.getIndex().getKeyColumns()) {
                     resultsColumns.add(new PhysicalResultColumn(column.getColumn().getName()));
+                    int fieldIndex = column.getColumn().getPosition();
+                    pExpressions.add (new TPreparedField(stream.rowType.typeInstanceAt(fieldIndex), fieldIndex));
                 }
+                stream.operator = API.project_Default(stream.operator,
+                        stream.rowType,
+                        null,
+                        pExpressions);
             }
             
+
             ArrayList<DataTypeDescriptor> parameterTypes = new ArrayList<DataTypeDescriptor>();
             for (int i = 0; i < table.getColumns().size(); i++) {
                 parameterTypes.add(new DataTypeDescriptor (TypeId.VARCHAR_ID, false));
             }
             Set<UserTable> affectedTables = new HashSet<UserTable>();
             affectedTables.add(table);
+
             
             return new PhysicalUpdate(stream.operator, 
-                    (DataTypeDescriptor[]) parameterTypes.toArray(),
+                    parameterTypes.toArray(new DataTypeDescriptor[parameterTypes.size()]),
                     stream.rowType,
                     resultsColumns,
                     true, false, false,
@@ -149,37 +162,39 @@ public class OperatorCache {
             RowStream stream = new RowStream();
             List<BindableRow> bindableRows = new ArrayList<BindableRow>();
             
-            
-            stream.rowType = schema.userTableRowType(table);
-      
+            int nfields = table.getColumns().size();
+            TInstance[] types = new TInstance[nfields];
             int index = 0;
             List<TPreparedExpression> tExprs = new ArrayList<TPreparedExpression>();
             for (Column column : table.getColumns()) {
                 tExprs.add(index, new TPreparedParameter(index, column.tInstance()));
+                types[index] = column.tInstance();
                 index++;
             }
-            
+            stream.rowType =  schema.newValuesType(types);
             bindableRows.add(BindableRow.of(stream.rowType, null, tExprs, queryContext));
             stream.operator = API.valuesScan_Default(bindableRows, stream.rowType);
+            //stream.rowType = schema.userTableRowType(table);
             return stream;
         }
         
-        protected RowStream assembleProjectTable (RowStream input) {
+        protected RowStream assembleProjectTable (RowStream input, UserTable table) {
+            
             int nfields = input.rowType.nFields();
             List<TPreparedExpression> insertsP = null;
-            UserTableRowType targetRowType = (UserTableRowType)input.rowType;
-            insertsP = new ArrayList<TPreparedExpression>(nfields);
+            UserTableRowType targetRowType = schema.userTableRowType(table);
+            insertsP = new ArrayList<TPreparedExpression>(targetRowType.nFields());
             
             for (int i = 0; i < nfields; ++i) {
                 insertsP.add(new TPreparedField(input.rowType.typeInstanceAt(i), i));
             }
 
-            TPreparedExpression[] row = new TPreparedExpression[nfields];
-            for (int i = 0; i < table.getColumns().size(); i++) {
+            TPreparedExpression[] row = new TPreparedExpression[targetRowType.nFields()];
+            for (int i = 0; i < nfields; i++) {
                 row[i] = new TPreparedField (input.rowType.typeInstanceAt(i), i);
             }
             // Insert the sequence generator and column default values
-            for (int i = 0, len = nfields; i < len; ++i) {
+            for (int i = 0, len = targetRowType.nFields(); i < len; ++i) {
                 Column column = table.getColumnsIncludingInternal().get(i);
                 if (column.getIdentityGenerator() != null) {
                     Sequence sequence = table.getColumn(i).getIdentityGenerator();
@@ -202,14 +217,18 @@ public class OperatorCache {
                         defaultValueSource = new PValue (tinst, defaultValue);
                     }
                     row[i] = generateIfNull (insertsP.get(i), new TPreparedLiteral(tinst, defaultValueSource));
+                } else if (row[i] == null) {
+                    TInstance tinst = targetRowType.typeInstanceAt(i);
+                    final PValue defaultValueSource = new PValue(tinst);
+                    defaultValueSource.putNull();
+                    row[i] = new TPreparedLiteral(tinst, defaultValueSource);
                 }
-                insertsP = Arrays.asList(row);
             }
+            insertsP = Arrays.asList(row);
             
+            input.rowType = targetRowType;
             input.operator = API.project_Table(input.operator, input.rowType,
                     targetRowType, null, insertsP);
-            input.rowType = input.operator.rowType();
-            //input.fieldOffsets = new ColumnSourceFieldOffsets(insert.getTable(), targetRowType);
             return input;
         }
 
