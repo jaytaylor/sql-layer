@@ -48,27 +48,27 @@ public class WriteSkewIT extends ITBase
     public void testHKeyMaintenance() throws InterruptedException
     {
         createDatabase();
-        dml().writeRow(session(), createNewRow(parent, parentRowDef, 1, 100));
-        dml().writeRow(session(), createNewRow(parent, parentRowDef, 2, 200));
-        dml().writeRow(session(), createNewRow(child, childRowDef, 1, 1, 1100));
-        dml().writeRow(session(), createNewRow(grandchild, grandchildRowDef, 1, 1, 11100));
-        Action actionA = new Action()
+        dml().writeRow(session(), ITBase.createNewRow(parentRowDef, 1, 100));
+        dml().writeRow(session(), ITBase.createNewRow(parentRowDef, 2, 200));
+        dml().writeRow(session(), ITBase.createNewRow(childRowDef, 1, 1, 1100));
+        dml().writeRow(session(), ITBase.createNewRow(grandchildRowDef, 1, 1, 11100));
+        TestThread threadA = new TestThread()
         {
             @Override
-            public void run()
+            public void doAction()
             {
-                dml().writeRow(session, createNewRow(child, childRowDef, 2, 2, 2200));
+                dml().writeRow(threadPrivateSession, ITBase.createNewRow(childRowDef, 2, 2, 2200));
             }
         };
-        Action actionB = new Action()
+        TestThread threadB = new TestThread()
         {
             @Override
-            public void run()
+            public void doAction()
             {
-                dml().writeRow(session, createNewRow(grandchild, grandchildRowDef, 2, 2, 22200));
+                dml().writeRow(threadPrivateSession, ITBase.createNewRow(grandchildRowDef, 2, 2, 22200));
             }
         };
-        runTest(actionA, actionB);
+        runTest(threadA, threadB);
     }
 
     // Test case from description of bug 1078331
@@ -76,31 +76,30 @@ public class WriteSkewIT extends ITBase
     public void testGroupIndexMaintenance() throws InterruptedException
     {
         createDatabase();
-        dml().writeRow(session(), createNewRow(parent, parentRowDef, 1, 100));
-        dml().writeRow(session(), createNewRow(child, childRowDef, 11, 1, 1100));
-        Action actionA = new Action()
+        dml().writeRow(session(), ITBase.createNewRow(parentRowDef, 1, 100));
+        dml().writeRow(session(), ITBase.createNewRow(childRowDef, 11, 1, 1100));
+        TestThread threadA = new TestThread()
         {
             @Override
-            public void run()
+            public void doAction()
             {
-                dml().writeRow(session, createNewRow(parent, parentRowDef, 2, 2200));
+                dml().writeRow(threadPrivateSession, ITBase.createNewRow(parentRowDef, 2, 2200));
             }
         };
-        Action actionB = new Action()
+        TestThread threadB = new TestThread()
         {
             @Override
-            public void run()
+            public void doAction()
             {
-                dml().updateRow(session, createNewRow(child, childRowDef, 11, 1, 1100), createNewRow(child, childRowDef, 11, 2, 1100), null);
+                dml().updateRow(threadPrivateSession, ITBase.createNewRow(childRowDef, 11, 1, 1100), 
+                        ITBase.createNewRow(childRowDef, 11, 2, 1100), null);
             }
         };
-        runTest(actionA, actionB);
+        runTest(threadA, threadB);
     }
 
-    private void runTest(Action actionA, Action actionB) throws InterruptedException
+    private void runTest(TestThread sessionA, TestThread sessionB) throws InterruptedException
     {
-        TestThread sessionA = new TestThread(actionA);
-        TestThread sessionB = new TestThread(actionB);
         sessionA.start();
         sessionB.start();
         sessionA.proceed();
@@ -147,65 +146,32 @@ public class WriteSkewIT extends ITBase
     
     private final AtomicBoolean exceptionInAnyThread = new AtomicBoolean(false);
 
-    private abstract class Action
-    {
-        public abstract void run();
 
-        public final Session session()
-        {
-            return session;
-        }
-
-        protected Session session;
-    }
-
-    private class TestThread extends Thread
+    abstract private class TestThread extends Thread
     {
         @Override
         public void run()
         {
-            txnService().beginTransaction(session);
+            txnService().beginTransaction(threadPrivateSession);
             try {
                 waitForPermissionToProceed();
-                // System.out.println(String.format("%s: Before run", session));
-                action.run();
-                // System.out.println(String.format("%s: After run", session));
+                doAction();
                 waitForPermissionToProceed();
-                // System.out.println(String.format("%s: Before commit", session));
-                txnService().commitTransaction(session);
-                // System.out.println(String.format("%s: After commit", session));
+                txnService().commitTransaction(threadPrivateSession);
             } catch (OtherThreadTerminatedException e) {
-/*
-                System.out.println("Caught OtherThreadTerminatedException");
-*/
             } catch (RollbackException e) {
-/*
-                System.out.println(String.format("%s: Rollback due to %s: %s",
-                                                 session, e.getClass(), e.getMessage()));
-                e.printStackTrace();
-*/
                 termination = e;
                 exceptionInAnyThread.set(true);
-                txnService().rollbackTransaction(session);
+                txnService().rollbackTransaction(threadPrivateSession);
             } catch (Exception e) {
-/*
-                System.out.println(String.format("%s: Unexpected exception: %s: %s",
-                                                 session, e.getClass(), e.getMessage()));
-                e.printStackTrace();
-*/
             }
         }
+        
+        abstract protected void doAction();
 
         public Exception termination()
         {
             return termination;
-        }
-
-        public TestThread(Action action)
-        {
-            this.action = action;
-            this.session = serviceManager().getSessionService().createSession();
-            action.session = session;
         }
 
         public synchronized void proceed() throws InterruptedException
@@ -229,12 +195,12 @@ public class WriteSkewIT extends ITBase
             notifyAll();
         }
 
-        private final Session session;
-        private final Action action;
+        protected final Session threadPrivateSession = serviceManager().getSessionService().createSession();
         private volatile boolean okToProceed = true;
         private Exception termination;
     }
 
+    @SuppressWarnings("serial")
     private static class OtherThreadTerminatedException extends Exception
     {}
 }
