@@ -28,6 +28,7 @@ package com.akiban.server.test.it.dxl;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.test.it.ITBase;
 import com.persistit.exception.RollbackException;
@@ -47,16 +48,16 @@ public class WriteSkewIT extends ITBase
     public void testHKeyMaintenance() throws InterruptedException
     {
         createDatabase();
-        dml().writeRow(session(), createNewRow(parent, 1, 100));
-        dml().writeRow(session(), createNewRow(parent, 2, 200));
-        dml().writeRow(session(), createNewRow(child, 1, 1, 1100));
-        dml().writeRow(session(), createNewRow(grandchild, 1, 1, 11100));
+        dml().writeRow(session(), createNewRow(parent, parentRowDef, 1, 100));
+        dml().writeRow(session(), createNewRow(parent, parentRowDef, 2, 200));
+        dml().writeRow(session(), createNewRow(child, childRowDef, 1, 1, 1100));
+        dml().writeRow(session(), createNewRow(grandchild, grandchildRowDef, 1, 1, 11100));
         Action actionA = new Action()
         {
             @Override
             public void run()
             {
-                dml().writeRow(session, createNewRow(child, 2, 2, 2200));
+                dml().writeRow(session, createNewRow(child, childRowDef, 2, 2, 2200));
             }
         };
         Action actionB = new Action()
@@ -64,7 +65,7 @@ public class WriteSkewIT extends ITBase
             @Override
             public void run()
             {
-                dml().writeRow(session, createNewRow(grandchild, 2, 2, 22200));
+                dml().writeRow(session, createNewRow(grandchild, grandchildRowDef, 2, 2, 22200));
             }
         };
         runTest(actionA, actionB);
@@ -75,14 +76,14 @@ public class WriteSkewIT extends ITBase
     public void testGroupIndexMaintenance() throws InterruptedException
     {
         createDatabase();
-        dml().writeRow(session(), createNewRow(parent, 1, 100));
-        dml().writeRow(session(), createNewRow(child, 11, 1, 1100));
+        dml().writeRow(session(), createNewRow(parent, parentRowDef, 1, 100));
+        dml().writeRow(session(), createNewRow(child, childRowDef, 11, 1, 1100));
         Action actionA = new Action()
         {
             @Override
             public void run()
             {
-                dml().writeRow(session, createNewRow(parent, 2, 2200));
+                dml().writeRow(session, createNewRow(parent, parentRowDef, 2, 2200));
             }
         };
         Action actionB = new Action()
@@ -90,7 +91,7 @@ public class WriteSkewIT extends ITBase
             @Override
             public void run()
             {
-                dml().updateRow(session, createNewRow(child, 11, 1, 1100), createNewRow(child, 11, 2, 1100), null);
+                dml().updateRow(session, createNewRow(child, childRowDef, 11, 1, 1100), createNewRow(child, childRowDef, 11, 2, 1100), null);
             }
         };
         runTest(actionA, actionB);
@@ -131,12 +132,19 @@ public class WriteSkewIT extends ITBase
                                  "z int",
                                  "primary key(gid)",
                                  "grouping foreign key(cid) references child(cid)");
+        parentRowDef = getRowDef(parent);
+        childRowDef = getRowDef(child);
+        grandchildRowDef = getRowDef(grandchild);
         createGroupIndex(TableName.create(SCHEMA, "parent"), "idx_pxcy", "parent.x, child.y");
     }
 
     private int parent;
     private int child;
     private int grandchild;
+    private RowDef parentRowDef;
+    private RowDef childRowDef;
+    private RowDef grandchildRowDef;
+    
     private final AtomicBoolean exceptionInAnyThread = new AtomicBoolean(false);
 
     private abstract class Action
