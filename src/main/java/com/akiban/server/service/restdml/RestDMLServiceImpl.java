@@ -26,11 +26,13 @@
 
 package com.akiban.server.service.restdml;
 
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+
 import org.codehaus.jackson.JsonParser;
 
-import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
@@ -96,12 +98,33 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
     
     /* RestDML Service Impl */
-    public void insert(final String schemaName, final String tableName, JsonParser jp)  {
-        Session session = sessionService.createSession();
-        
+    public Response insert(final String schemaName, final String tableName, JsonParser jp)  {
         TableName rootTable = new TableName (schemaName, tableName);
-        
-        PhysicalUpdate update = operatorCache.getInsertOperator(session, rootTable);
-        
+        try {
+            Session session = sessionService.createSession();
+            PhysicalUpdate update = operatorCache.getInsertOperator(session, rootTable);
+            
+            String pk = "";
+            
+            return Response.status(Response.Status.OK)
+                .entity(pk).build();
+        } catch (InvalidOperationException e) {
+            throwToClient(e);
+        }
     }
+
+    private void throwToClient(InvalidOperationException e) {
+        StringBuilder err = new StringBuilder(100);
+        err.append("[{\"code\":\"");
+        err.append(e.getCode().getFormattedValue());
+        err.append("\",\"message\":\"");
+        err.append(e.getMessage());
+        err.append("\"}]\n");
+        throw new WebApplicationException(
+                Response.status(Response.Status.NOT_FOUND)
+                        .entity(err.toString())
+                        .build()
+        );
+    }
+
 }

@@ -26,10 +26,12 @@
 
 package com.akiban.server.service.restdml;
 
+import javax.ws.rs.core.Response;
+
 import org.codehaus.jackson.JsonParser;
 
 public interface RestDMLService {
 
-    public void insert(String schema, String table, JsonParser jp);
+    public Response insert(String schema, String table, JsonParser jp);
 
 }

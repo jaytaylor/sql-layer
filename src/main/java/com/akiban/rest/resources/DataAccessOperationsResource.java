@@ -26,6 +26,7 @@
 
 package com.akiban.rest.resources;
 
+
 import com.akiban.rest.ResponseHelper;
 import com.akiban.server.service.restdml.RestDMLService;
 import com.google.inject.Inject;
@@ -44,6 +45,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonParser;
+
 /**
  * Implementation of REST-oriented Get, Multi-Get, Create, Update, Delete and
  * Multi-Delete.
@@ -53,6 +57,8 @@ public class DataAccessOperationsResource {
     
     @Inject
     RestDMLService dmlService;
+    
+    JsonFactory jsonFactory = new JsonFactory();
     
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -84,7 +90,8 @@ public class DataAccessOperationsResource {
     public Response createEntity(@PathParam("schema") final String schema,
                                  @PathParam("table") final String table,
                                  final byte[] entityBytes) throws Exception {
-        return ResponseHelper.buildNotYetImplemented();
+        JsonParser jp = jsonFactory.createJsonParser(entityBytes);
+        return dmlService.insert(schema, table, jp);
     }
 
     @PUT
