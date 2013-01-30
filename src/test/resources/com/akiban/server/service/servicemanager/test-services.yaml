@@ -1,2 +1,4 @@
 - bind:
     com.akiban.server.service.config.ConfigurationService : com.akiban.server.service.config.TestConfigService
+- bind-modules:
+    com.akiban.rest.RestServiceModule
