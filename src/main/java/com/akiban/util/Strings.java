@@ -34,13 +34,14 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -336,7 +337,7 @@ public abstract class Strings {
     }
 
     public static void readStreamTo(InputStream is, Appendable out) throws IOException {
-        readerTo(new BufferedReader(new InputStreamReader(is)), out);
+        readerTo(bufferedReader(is), out);
     }
 
     private static void readerTo(BufferedReader reader, Appendable out) throws IOException {
@@ -390,13 +391,13 @@ public abstract class Strings {
 
     public static List<String> dumpFile(File file) throws IOException {
         List<String> results = new ArrayList<>();
-        readerTo(new BufferedReader(new FileReader(file)), new ListAppendable(results));
+        readerTo(bufferedReader(new FileInputStream(file)), new ListAppendable(results));
         return results;
     }
 
     public static String dumpFileToString(File file) throws IOException {
         StringBuilder builder = new StringBuilder();
-        readerTo(new BufferedReader(new FileReader(file)), builder);
+        readerTo(bufferedReader(new FileInputStream(file)), builder);
         return builder.toString();
     }
     
@@ -410,5 +411,13 @@ public abstract class Strings {
 
     public static boolean equalCharsets(Charset one, String two) {
         return one.name().equals(two) || one.equals(Charset.forName(two));
+    }
+
+    private static BufferedReader bufferedReader(InputStream is) {
+        try {
+            return new BufferedReader(new InputStreamReader(is, "UTF-8"));
+        } catch(UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

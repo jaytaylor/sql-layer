@@ -63,7 +63,7 @@ public class DataAccessOperationsResource {
                                    @QueryParam("depth") Integer depth,
                                    @QueryParam("offset") Integer offset,
                                    @QueryParam("limit") Integer limit) throws Exception {
-        return dmlService.getEntities(schema, table, depth);
+        return dmlService.getAllEntities(schema, table, depth);
     }
 
     @GET

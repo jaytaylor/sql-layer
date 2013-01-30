@@ -53,6 +53,6 @@ public class VersionResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getVersion(@QueryParam("format") String format,
                                @QueryParam("jsoncallback") String jsonp) throws Exception {
-        return restDMLService.getEntities(SCHEMA_NAME, TABLE_NAME, DEPTH);
+        return restDMLService.getAllEntities(SCHEMA_NAME, TABLE_NAME, DEPTH);
     }
 }

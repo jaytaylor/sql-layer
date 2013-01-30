@@ -30,6 +30,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
@@ -94,7 +95,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
-    public Response getEntities(final String schema, final String table, Integer depth) {
+    public Response getAllEntities(final String schema, final String table, Integer depth) {
         final int realDepth = (depth != null) ? Math.max(depth, 0) : -1;
         return Response.status(Response.Status.OK)
                 .entity(new StreamingOutput() {
@@ -148,8 +149,15 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         err.append("\",\"message\":\"");
         err.append(e.getMessage());
         err.append("\"}]\n");
+        // TODO: Map various IOEs to other codes?
+        final Response.Status status;
+        if(e instanceof NoSuchTableException) {
+            status = Response.Status.NOT_FOUND;
+        } else {
+            status = Response.Status.INTERNAL_SERVER_ERROR;
+        }
         throw new WebApplicationException(
-                Response.status(Response.Status.NOT_FOUND)
+                Response.status(status)
                         .entity(err.toString())
                         .build()
         );
