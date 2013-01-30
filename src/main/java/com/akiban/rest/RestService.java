@@ -26,8 +26,6 @@
 
 package com.akiban.rest;
 
-/**
- * Marker interface for RestService plugin
- */
 public interface RestService {
+    String getContextPath();
 }

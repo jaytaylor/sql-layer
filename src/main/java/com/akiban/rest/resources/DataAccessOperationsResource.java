@@ -63,7 +63,7 @@ public class DataAccessOperationsResource {
                                    @QueryParam("depth") Integer depth,
                                    @QueryParam("offset") Integer offset,
                                    @QueryParam("limit") Integer limit) throws Exception {
-        return ResponseHelper.buildNotYetImplemented();
+        return dmlService.getAllEntities(schema, table, depth);
     }
 
     @GET
@@ -75,7 +75,9 @@ public class DataAccessOperationsResource {
                                    @PathParam("table") String table,
                                    @QueryParam("depth") Integer depth,
                                    @Context UriInfo uri) throws Exception {
-        return ResponseHelper.buildNotYetImplemented();
+        String[] pks = uri.getPath(false).split("/");
+        assert pks.length > 0 : uri;
+        return dmlService.getEntities(schema, table, depth, pks[pks.length-1]);
     }
 
     @POST

@@ -57,7 +57,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     public HttpConductorImpl(ConfigurationService configurationService) {
         this.configurationService = configurationService;
         java.util.logging.Logger jerseyLogging = java.util.logging.Logger.getLogger("com.sun.jersey");
-        jerseyLogging.setLevel(java.util.logging.Level.OFF); 
+        jerseyLogging.setLevel(java.util.logging.Level.OFF);
     }
 
     @Override
@@ -80,6 +80,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         }
     }
 
+    @Override
     public int getPort() {
         return port;
     }

@@ -88,9 +88,9 @@ public class JsonRowWriter
                     depth--;
                 } while (depth >= rowDepth);
             }
-            assert (rowDepth == depth+1);
-            if (rowDepth > maxDepth) 
+            if (rowDepth > maxDepth)
                 continue;
+            assert (rowDepth == depth+1);
             depth = rowDepth;
             openTypes[depth] = rowType;
             if (begun) {

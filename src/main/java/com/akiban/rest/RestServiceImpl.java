@@ -47,6 +47,11 @@ public class RestServiceImpl implements RestService, Service {
 		this.http = http;
 	}
 
+    @Override
+    public String getContextPath() {
+        return configService.getProperty("akserver.rest.context_path");
+    }
+
 	@Override
 	public void start() {
 		registerConnector(http);
@@ -65,8 +70,8 @@ public class RestServiceImpl implements RestService, Service {
 
 	private void registerConnector(HttpConductor http) {
         ServletContextHandler context = new ServletContextHandler();
-        context.setContextPath(configService.getProperty("akserver.rest.context_path"));
-        context.addFilter(GuiceFilter.class, "/*", EnumSet.<DispatcherType> of(DispatcherType.REQUEST));
+        context.setContextPath(getContextPath());
+        context.addFilter(GuiceFilter.class, "/*", EnumSet.<DispatcherType>of(DispatcherType.REQUEST));
         context.addServlet(EmptyServlet.class, "/*");
 
         this.handler = context;
