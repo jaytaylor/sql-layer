@@ -85,6 +85,27 @@ public class PersistitTransactionService implements TransactionService {
     }
 
     @Override
+    public CloseableTransaction beginCloseableTransaction(final Session session) {
+        beginTransaction(session);
+        return new CloseableTransaction() {
+            @Override
+            public void commit() {
+                commitTransaction(session);
+            }
+
+            @Override
+            public void rollback() {
+                rollbackTransaction(session);
+            }
+
+            @Override
+            public void close() {
+                rollbackTransactionIfOpen(session);
+            }
+        };
+    }
+
+    @Override
     public void commitTransaction(Session session) {
         Transaction txn = getTransaction(session);
         requireActive(txn);

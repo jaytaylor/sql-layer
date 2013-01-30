@@ -50,9 +50,11 @@ public class JDBCException extends SQLException
     }
     
     public JDBCException(Throwable cause) {
+        super(cause);
     }
 
     public JDBCException(String reason, Throwable cause) {
+        super(reason, cause);
     }
 
     // Allow outer layer to throw SQLException throw inner layer that does not.

@@ -34,6 +34,14 @@ public interface TransactionService extends Service {
         void run(Session session, long timestamp);
     }
 
+    interface CloseableTransaction extends AutoCloseable {
+        void commit();
+        void rollback();
+
+        @Override
+        void close();
+    }
+
     enum CallbackType {
         /** Invoked prior to calling commit. */
         PRE_COMMIT,
@@ -57,6 +65,9 @@ public interface TransactionService extends Service {
 
     /** Begin a new transaction. */
     void beginTransaction(Session session);
+
+    /** Begin a new transaction that will rollback upon close if not committed. */
+    CloseableTransaction beginCloseableTransaction(Session session);
 
     /** Commit the open transaction. */
     void commitTransaction(Session session);

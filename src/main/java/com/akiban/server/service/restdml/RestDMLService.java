@@ -31,7 +31,7 @@ import javax.ws.rs.core.Response;
 import org.codehaus.jackson.JsonParser;
 
 public interface RestDMLService {
-
     public Response insert(String schema, String table, JsonParser jp);
-
+    public Response getAllEntities(String schema, String table, Integer depth);
+    public Response getEntities(String schema, String table, Integer depth, String pks);
 }

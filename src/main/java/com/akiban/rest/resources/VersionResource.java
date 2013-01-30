@@ -26,7 +26,8 @@
 
 package com.akiban.rest.resources;
 
-import com.akiban.server.AkServerInterface;
+import com.akiban.ais.model.TableName;
+import com.akiban.server.service.restdml.RestDMLService;
 import com.google.inject.Inject;
 
 import javax.ws.rs.GET;
@@ -41,23 +42,17 @@ import javax.ws.rs.core.Response;
  */
 @Path("/version")
 public class VersionResource {
+    private static final String SCHEMA_NAME = TableName.INFORMATION_SCHEMA;
+    private static final String TABLE_NAME = "server_instance_summary";
+    private static final int DEPTH = 0;
+
     @Inject
-    private AkServerInterface akServer;
+    private RestDMLService restDMLService;
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getVersion(@QueryParam("format") String format,
                                @QueryParam("jsoncallback") String jsonp) throws Exception {
-        StringBuilder builder = new StringBuilder();
-        builder.append("[\n{");
-        builder.append("\"server_name\":\"");
-        builder.append(akServer.getServerName());
-        builder.append("\",\"server_version\":\"");
-        builder.append(akServer.getServerVersion());
-        builder.append("\"}\n]");
-        return Response
-                .status(Response.Status.OK)
-                .entity(builder.toString())
-                .build();
+        return restDMLService.getAllEntities(SCHEMA_NAME, TABLE_NAME, DEPTH);
     }
 }

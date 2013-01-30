@@ -30,12 +30,15 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
 import org.codehaus.jackson.JsonParser;
-
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.externaldata.ExternalDataService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
@@ -46,28 +49,40 @@ import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.optimizer.plan.PhysicalUpdate;
 import com.google.inject.Inject;
 
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.util.List;
+
+import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
+
 public class RestDMLServiceImpl implements Service, RestDMLService {
 
-    private ConfigurationService configService;
-    private SchemaManager schemaManager;
-    private SessionService sessionService;
+    private final ConfigurationService configService;
+    private final SchemaManager schemaManager;
+    private final SessionService sessionService;
     
-    private DXLService dxlService;
-    private Store store;
-    private TransactionService transactionService;
-    private TreeService treeService;
-    private T3RegistryService t3RegistryService;
+    private final DXLService dxlService;
+    private final Store store;
+    private final TransactionService transactionService;
+    private final TreeService treeService;
+    private final T3RegistryService t3RegistryService;
+    private final ExternalDataService extDataService;
     private OperatorCache operatorCache;
     
     @Inject
-    public RestDMLServiceImpl (ConfigurationService configService,
-            SessionService sessionService,
-            SchemaManager schemaService,
-            T3RegistryService registryService,
-            
-            DXLService dxlService, Store store,
-            TransactionService transactionService,
-            TreeService treeService) {
+    public RestDMLServiceImpl(ConfigurationService configService,
+                              DXLService dxlService,
+                              Store store,
+                              TransactionService transactionService,
+                              T3RegistryService registryService,
+                              SchemaManager schemaService,
+                              TreeService treeService,
+                              ExternalDataService extDataService,
+                              SessionService sessionService) {
         this.configService = configService;
         this.schemaManager = schemaService;
         this.sessionService = sessionService;
@@ -79,18 +94,19 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         this.treeService = treeService;
         this.operatorCache = new OperatorCache (schemaManager, t3RegistryService);
         
+        this.extDataService = extDataService;
     }
     
     /* service */
     @Override
     public void start() {
-        //None
+        // None
     }
 
     @Override
     public void stop() {
-        //None
-    }
+        // None
+   }
 
     @Override
     public void crash() {
@@ -111,6 +127,55 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         } catch (InvalidOperationException e) {
             throwToClient(e);
         }
+        return null;
+    }
+
+    @Override
+    public Response getAllEntities(final String schema, final String table, Integer depth) {
+        final int realDepth = (depth != null) ? Math.max(depth, 0) : -1;
+        return Response.status(Response.Status.OK)
+                .entity(new StreamingOutput() {
+                    @Override
+                    public void write(OutputStream output) throws IOException {
+                        try (Session session = sessionService.createSession()) {
+                            // Do not auto-close writer as that prevents an exception from propagating to the client
+                            PrintWriter writer = new PrintWriter(output);
+                            extDataService.dumpAllAsJson(session, writer, schema, table, realDepth, true);
+                            writer.write('\n');
+                            writer.close();
+                        } catch(InvalidOperationException e) {
+                            throwToClient(e);
+                        }
+                    }
+                })
+                .build();
+    }
+
+    @Override
+    public Response getEntities(final String schema, final String table, Integer inDepth, final String identifiers) {
+        final TableName tableName = new TableName(schema, table);
+        final int depth = (inDepth != null) ? Math.max(inDepth, 0) : -1;
+        return Response.status(Response.Status.OK)
+                .entity(new StreamingOutput() {
+                    @Override
+                    public void write(OutputStream output) throws IOException {
+                        try (Session session = sessionService.createSession();
+                             CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+                            // Do not auto-close writer as that prevents an exception from propagating to the client
+                            PrintWriter writer = new PrintWriter(output);
+                            UserTable uTable = dxlService.ddlFunctions().getUserTable(session, tableName);
+                            Index pkIndex = uTable.getPrimaryKeyIncludingInternal().getIndex();
+                            List<List<String>> pks = PrimaryKeyParser.parsePrimaryKeys(identifiers, pkIndex);
+                            extDataService.dumpBranchAsJson(session, writer, schema, table, pks, depth, false);
+                            writer.write('\n');
+                            txn.commit();
+                            writer.close();
+                        } catch(InvalidOperationException e) {
+                            throwToClient(e);
+                        }
+                    }
+                })
+                .build();
     }
 
     private void throwToClient(InvalidOperationException e) {
@@ -120,11 +185,17 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         err.append("\",\"message\":\"");
         err.append(e.getMessage());
         err.append("\"}]\n");
+        // TODO: Map various IOEs to other codes?
+        final Response.Status status;
+        if(e instanceof NoSuchTableException) {
+            status = Response.Status.NOT_FOUND;
+        } else {
+            status = Response.Status.INTERNAL_SERVER_ERROR;
+        }
         throw new WebApplicationException(
-                Response.status(Response.Status.NOT_FOUND)
+                Response.status(status)
                         .entity(err.toString())
                         .build()
         );
     }
-
 }
