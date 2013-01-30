@@ -207,7 +207,7 @@ public class RestServiceFilesIT extends ITBase {
                 is = httpConn.getErrorStream();
             }
             StringBuilder builder = new StringBuilder();
-            Strings.readStreamTo(is, builder);
+            Strings.readStreamTo(is, builder, true);
 
             ObjectMapper mapper = new ObjectMapper();
             JsonNode expectedNode = mapper.readTree(caseParams.expectedResponse);

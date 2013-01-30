@@ -225,7 +225,7 @@ public abstract class Strings {
             }
             if (readAsStream) {
                 InputStream is = next.openStream();
-                readStreamTo(is, new ListAppendable(result));
+                readStreamTo(is, new ListAppendable(result), false);
             }
         }
         return result;
@@ -332,19 +332,21 @@ public abstract class Strings {
 
     public static List<String> readStream(InputStream is) throws IOException {
         List<String> result = new ArrayList<String>();
-        readStreamTo(is, new ListAppendable(result));
+        readStreamTo(is, new ListAppendable(result), false);
         return result;
     }
 
-    public static void readStreamTo(InputStream is, Appendable out) throws IOException {
-        readerTo(bufferedReader(is), out);
+    public static void readStreamTo(InputStream is, Appendable out, boolean keepNL) throws IOException {
+        readerTo(bufferedReader(is), out, keepNL);
     }
 
-    private static void readerTo(BufferedReader reader, Appendable out) throws IOException {
+    private static void readerTo(BufferedReader reader, Appendable out, boolean keepNL) throws IOException {
         try {
             String line;
             while ((line=reader.readLine()) != null) {
                 out.append(line);
+                if (keepNL)
+                    out.append(NL);
             }
         } finally {
             reader.close();
@@ -391,13 +393,13 @@ public abstract class Strings {
 
     public static List<String> dumpFile(File file) throws IOException {
         List<String> results = new ArrayList<>();
-        readerTo(bufferedReader(new FileInputStream(file)), new ListAppendable(results));
+        readerTo(bufferedReader(new FileInputStream(file)), new ListAppendable(results), false);
         return results;
     }
 
     public static String dumpFileToString(File file) throws IOException {
         StringBuilder builder = new StringBuilder();
-        readerTo(bufferedReader(new FileInputStream(file)), builder);
+        readerTo(bufferedReader(new FileInputStream(file)), builder, true);
         return builder.toString();
     }
     
