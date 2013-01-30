@@ -33,6 +33,8 @@ import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.sql.RegexFilenameFilter;
 import com.akiban.util.Strings;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -202,9 +204,11 @@ public class RestServiceFilesIT extends ITBase {
             StringBuilder builder = new StringBuilder();
             Strings.readStreamTo(is, builder);
 
-            assertEquals(caseParams.requestMethod + " response",
-                         caseParams.expectedResponse,
-                         builder.toString());
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode expectedNode = mapper.readTree(caseParams.expectedResponse);
+            JsonNode actualNode = mapper.readTree(builder.toString());
+
+            assertEquals(caseParams.requestMethod + " response", expectedNode, actualNode);
         } finally {
             httpConn.disconnect();
         }
