@@ -63,7 +63,32 @@ public abstract class Strings {
        for (char ch = '0'; ch <= '9'; ++ch)
            LEGAL_HEX.add(ch); 
     }
-    
+
+    private static class ListAppendable implements Appendable {
+        private final List<String> list;
+
+        public ListAppendable(List<String> list) {
+            this.list = list;
+        }
+
+        @Override
+        public Appendable append(CharSequence csq) throws IOException {
+            list.add(csq.toString());
+            return this;
+        }
+
+        @Override
+        public Appendable append(CharSequence csq, int start, int end) throws IOException {
+            return append(csq.subSequence(start, end).toString());
+        }
+
+        @Override
+        public Appendable append(char c) throws IOException {
+            return append(String.valueOf(c));
+        }
+    }
+
+
     /**
      * Gets the system <tt>line.separator</tt> newline.
      * @return <tt>System.getProperty("line.separator")</tt>
@@ -199,7 +224,7 @@ public abstract class Strings {
             }
             if (readAsStream) {
                 InputStream is = next.openStream();
-                readStreamTo(is, result);
+                readStreamTo(is, new ListAppendable(result));
             }
         }
         return result;
@@ -253,16 +278,9 @@ public abstract class Strings {
     
     
     /**
-     *
-     * @param highChar
-     * @param lowChar
      * @return a character whose (ASCII) code is equal to the hexadecimal value
      *         of <highChar><lowChar>
-     * @throws InvalidParameterValue if either of the two char is not a legal
-     *         hex digit
-     *
-     * Eg., parseByte('2', '0') should return ' ' (space character)
-     *
+     *         Eg., parseByte('2', '0') should return ' ' (space character)
      */
     private static byte getByte (char highChar, char lowChar)
     {
@@ -311,21 +329,24 @@ public abstract class Strings {
         return new WrappingByteSource().wrap(ret, 0, resultIndex);
     }
 
-    private static List<String> readStream(InputStream is) throws IOException {
+    public static List<String> readStream(InputStream is) throws IOException {
         List<String> result = new ArrayList<String>();
-        readStreamTo(is, result);
+        readStreamTo(is, new ListAppendable(result));
         return result;
     }
 
-    private static void readStreamTo(InputStream is, List<String> outList) throws IOException {
+    public static void readStreamTo(InputStream is, Appendable out) throws IOException {
+        readerTo(new BufferedReader(new InputStreamReader(is)), out);
+    }
+
+    private static void readerTo(BufferedReader reader, Appendable out) throws IOException {
         try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
             String line;
             while ((line=reader.readLine()) != null) {
-                outList.add(line);
+                out.append(line);
             }
         } finally {
-            is.close();
+            reader.close();
         }
     }
 
@@ -368,17 +389,15 @@ public abstract class Strings {
     private static final Logger LOG = LoggerFactory.getLogger(Strings.class);
 
     public static List<String> dumpFile(File file) throws IOException {
-        List<String> results = new ArrayList<String>();
-        FileReader reader = new FileReader(file);
-        try {
-            BufferedReader buffered = new BufferedReader(reader);
-            for (String line; (line=buffered.readLine()) != null; ) {
-                results.add(line);
-            }
-        } finally {
-            reader.close();
-        }
+        List<String> results = new ArrayList<>();
+        readerTo(new BufferedReader(new FileReader(file)), new ListAppendable(results));
         return results;
+    }
+
+    public static String dumpFileToString(File file) throws IOException {
+        StringBuilder builder = new StringBuilder();
+        readerTo(new BufferedReader(new FileReader(file)), builder);
+        return builder.toString();
     }
     
     public static List<String> mapToString(Collection<?> collection) {
