@@ -145,7 +145,7 @@ public class RestServiceFilesIT extends ITBase {
 
                 String basePath = requestFile.getParent() + File.separator + caseName;
                 String method = inputName.substring(dotIndex + 1).toUpperCase();
-                String uri = Strings.dumpFileToString(requestFile);
+                String uri = Strings.dumpFileToString(requestFile).trim();
                 String body = dumpFileIfExists(new File(basePath + ".body"));
                 String header = dumpFileIfExists(new File(basePath + ".expected_header"));
                 String expected = dumpFileIfExists(new File(basePath + ".expected"));
