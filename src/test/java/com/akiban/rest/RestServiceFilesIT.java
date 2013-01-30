@@ -200,7 +200,12 @@ public class RestServiceFilesIT extends ITBase {
             // TODO: write to getOutputStream for PUT and POST
 
             // Response
-            InputStream is = httpConn.getInputStream();
+            InputStream is;
+            try {
+                is = httpConn.getInputStream();
+            } catch(Exception e) {
+                is = httpConn.getErrorStream();
+            }
             StringBuilder builder = new StringBuilder();
             Strings.readStreamTo(is, builder);
 
