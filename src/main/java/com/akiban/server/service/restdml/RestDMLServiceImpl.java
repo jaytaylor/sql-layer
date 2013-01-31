@@ -29,7 +29,10 @@ package com.akiban.server.service.restdml;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
+import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.JsonParser;
+
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -71,7 +74,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     private final TreeService treeService;
     private final T3RegistryService t3RegistryService;
     private final ExternalDataService extDataService;
-    private OperatorCache operatorCache;
+    private InsertProcessor insertProcessor;
     
     @Inject
     public RestDMLServiceImpl(ConfigurationService configService,
@@ -92,7 +95,9 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         this.store = store;
         this.transactionService = transactionService;
         this.treeService = treeService;
-        this.operatorCache = new OperatorCache (schemaManager, t3RegistryService);
+
+        this.insertProcessor = new InsertProcessor (configService, treeService, store, t3RegistryService);
+        
         
         this.extDataService = extDataService;
     }
@@ -114,19 +119,30 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
     
     /* RestDML Service Impl */
+    @Override
     public Response insert(final String schemaName, final String tableName, JsonParser jp)  {
         TableName rootTable = new TableName (schemaName, tableName);
         try {
             Session session = sessionService.createSession();
-            PhysicalUpdate update = operatorCache.getInsertOperator(session, rootTable);
-            
-            String pk = "";
+            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+            String pk = insertProcessor.processInsert(session, ais, rootTable, jp);
             
             return Response.status(Response.Status.OK)
                 .entity(pk).build();
+        } catch (JsonParseException ex) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.BAD_REQUEST)
+                            .entity(ex.toString())
+                            .build());
+        } catch (IOException e) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity(e.toString())
+                        .build());
         } catch (InvalidOperationException e) {
             throwToClient(e);
         }
+        assert false : "No value returned from insert";
         return null;
     }
 
@@ -189,7 +205,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         final Response.Status status;
         if(e instanceof NoSuchTableException) {
             status = Response.Status.NOT_FOUND;
-        } else {
+         } else {
             status = Response.Status.INTERNAL_SERVER_ERROR;
         }
         throw new WebApplicationException(
