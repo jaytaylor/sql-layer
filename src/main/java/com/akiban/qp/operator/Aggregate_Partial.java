@@ -398,7 +398,9 @@ final class Aggregate_Partial extends Operator
 
         @Override
         public Row next() {
-            // TAP_NEXT.in();
+            if (OPERATOR_NEXT_TAPS_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
                 // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
@@ -452,7 +454,9 @@ final class Aggregate_Partial extends Operator
                     aggregate(input);
                 }
             } finally {
-                // TAP_NEXT.out();
+                if (OPERATOR_NEXT_TAPS_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
 

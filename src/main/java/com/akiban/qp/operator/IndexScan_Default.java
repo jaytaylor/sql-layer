@@ -304,7 +304,9 @@ class IndexScan_Default extends Operator
         @Override
         public Row next()
         {
-            // TAP_NEXT.in();
+            if (OPERATOR_NEXT_TAPS_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
                 checkQueryCancelation();
                 Row row = cursor.next();
@@ -316,7 +318,9 @@ class IndexScan_Default extends Operator
                 }
                 return row;
             } finally {
-                // TAP_NEXT.out();
+                if (OPERATOR_NEXT_TAPS_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
 

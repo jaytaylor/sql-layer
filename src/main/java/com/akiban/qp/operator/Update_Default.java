@@ -173,7 +173,9 @@ class Update_Default implements UpdatePlannable {
         {
             boolean usePValues = updateFunction.usePValues();
             int seen = 0, modified = 0;
-            // UPDATE_TAP.in();
+            if (OPERATOR_NEXT_TAPS_ENABLED) {
+                UPDATE_TAP.in();
+            }
             try {
                 input.open();
                 Row oldRow;
@@ -194,7 +196,9 @@ class Update_Default implements UpdatePlannable {
                 if (input != null) {
                     input.close();
                 }
-                // UPDATE_TAP.out();
+                if (OPERATOR_NEXT_TAPS_ENABLED) {
+                    UPDATE_TAP.out();
+                }
             }
             return new StandardUpdateResult(seen, modified);
         }

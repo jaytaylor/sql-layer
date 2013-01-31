@@ -160,7 +160,9 @@ class Delete_Default implements UpdatePlannable {
         public UpdateResult run()
         {
             int seen = 0, modified = 0;
-            // DELETE_TAP.in();
+            if (OPERATOR_NEXT_TAPS_ENABLED) {
+                DELETE_TAP.in();
+            }
             try {
                 input.open();
                 Row oldRow;
@@ -177,7 +179,9 @@ class Delete_Default implements UpdatePlannable {
                 if (input != null) {
                     input.close();
                 }
-                // DELETE_TAP.out();
+                if (OPERATOR_NEXT_TAPS_ENABLED) {
+                    DELETE_TAP.out();
+                }
             }
             return new StandardUpdateResult(seen, modified);
         }

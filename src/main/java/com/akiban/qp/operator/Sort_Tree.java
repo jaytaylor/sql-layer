@@ -194,7 +194,9 @@ class Sort_Tree extends Operator
         public Row next()
         {
             Row row = null;
-            // TAP_NEXT.in();
+            if (OPERATOR_NEXT_TAPS_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
                 // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
@@ -205,7 +207,9 @@ class Sort_Tree extends Operator
                     }
                 }
             } finally {
-                // TAP_NEXT.out();
+                if (OPERATOR_NEXT_TAPS_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
             if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
                 LOG.debug("Sort_Tree: yield {}", row);

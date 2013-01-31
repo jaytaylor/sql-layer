@@ -147,7 +147,9 @@ class Insert_Default implements UpdatePlannable {
         public UpdateResult run()
         {
             int seen = 0, modified = 0;
-            // INSERT_TAP.in();
+            if (OPERATOR_NEXT_TAPS_ENABLED) {
+                INSERT_TAP.in();
+            }
             try {
                 input.open();
                 Row row;
@@ -166,7 +168,9 @@ class Insert_Default implements UpdatePlannable {
                 if (input != null) {
                     input.close();
                 }
-                // INSERT_TAP.out();
+                if (OPERATOR_NEXT_TAPS_ENABLED) {
+                    INSERT_TAP.out();
+                }
             }
             return new StandardUpdateResult(seen, modified);
         }

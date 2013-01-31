@@ -323,7 +323,9 @@ class Flatten_HKeyOrdered extends Operator
         @Override
         public Row next()
         {
-            // TAP_NEXT.in();
+            if (OPERATOR_NEXT_TAPS_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
                 // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
@@ -375,7 +377,9 @@ class Flatten_HKeyOrdered extends Operator
                 }
                 return outputRow;
             } finally {
-                // TAP_NEXT.out();
+                if (OPERATOR_NEXT_TAPS_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
 

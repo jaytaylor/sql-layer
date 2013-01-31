@@ -283,7 +283,9 @@ class Intersect_Ordered extends Operator
         @Override
         public Row next()
         {
-            // TAP_NEXT.in();
+            if (OPERATOR_NEXT_TAPS_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
                 // CursorLifecycle.checkIdleOrActive(this);
                 Row next = null;
@@ -337,7 +339,9 @@ class Intersect_Ordered extends Operator
                 }
                 return next;
             } finally {
-                // TAP_NEXT.out();
+                if (OPERATOR_NEXT_TAPS_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
 
