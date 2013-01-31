@@ -255,7 +255,7 @@ class AncestorLookup_Nested extends Operator
             try {
                 CursorLifecycle.checkIdle(this);
                 Row rowFromBindings = context.getRow(inputBindingPosition);
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("AncestorLookup_Nested: open using {}", rowFromBindings);
                 }
                 findAncestors(rowFromBindings);
@@ -277,7 +277,7 @@ class AncestorLookup_Nested extends Operator
                 }
                 checkQueryCancelation();
                 Row row = pending.take();
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("AncestorLookup: {}", row == null ? null : row);
                 }
                 if (row == null) {

@@ -249,7 +249,7 @@ class Project_Default extends Operator
                 if (projectedRow == null) {
                     close();
                 }
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("Project_Default: yield {}", projectedRow);
                 }
                 return projectedRow;

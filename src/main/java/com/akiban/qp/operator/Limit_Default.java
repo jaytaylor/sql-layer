@@ -271,7 +271,7 @@ final class Limit_Default extends Operator
                         skipLeft = 0;
                         limitLeft = -1;
                         close();
-                        if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                        if (LOG_EXECUTION) {
                             LOG.debug("Limit_Default: yield null");
                         }
                         return null;
@@ -280,14 +280,14 @@ final class Limit_Default extends Operator
                 }
                 if (limitLeft < 0) {
                     close();
-                    if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                    if (LOG_EXECUTION) {
                         LOG.debug("Limit_Default: yield null");
                     }
                     return null;
                 }
                 if (limitLeft == 0) {
                     close();
-                    if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                    if (LOG_EXECUTION) {
                         LOG.debug("Limit_Default: yield null");
                     }
                     return null;
@@ -295,13 +295,13 @@ final class Limit_Default extends Operator
                 if ((row = input.next()) == null) {
                     limitLeft = -1;
                     close();
-                    if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                    if (LOG_EXECUTION) {
                         LOG.debug("Limit_Default: yield null");
                     }
                     return null;
                 }
                 --limitLeft;
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("Limit_Default: yield {}", row);
                 }
                 return row;

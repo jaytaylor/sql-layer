@@ -208,7 +208,7 @@ class Using_BloomFilter extends Operator
             }
             try {
                 Row output = input.next();
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("Using_BloomFilter: yield {}", output);
                 }
                 return output;

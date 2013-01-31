@@ -196,14 +196,14 @@ class Map_NestedLoops extends Operator
                             close();
                         } else {
                             outerRow.hold(row);
-                            if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                            if (LOG_EXECUTION) {
                                 LOG.debug("Map_NestedLoops: restart inner loop using current branch row");
                             }
                             startNewInnerLoop(row);
                         }
                     }
                 }
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("Map_NestedLoops: yield {}", outputRow);
                 }
                 return outputRow;

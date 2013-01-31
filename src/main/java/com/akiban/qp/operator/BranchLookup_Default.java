@@ -361,7 +361,7 @@ public class BranchLookup_Default extends Operator
                             break;
                     }
                 }
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("BranchLookup_Default: {}", nextRow);
                 }
                 if (nextRow == null) {

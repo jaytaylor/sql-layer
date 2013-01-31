@@ -293,7 +293,7 @@ class AncestorLookup_Default extends Operator
                     advance();
                 }
                 Row row = pending.take();
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("AncestorLookup: {}", row == null ? null : row);
                 }
                 return row;

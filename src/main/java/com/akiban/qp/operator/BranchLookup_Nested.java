@@ -305,7 +305,7 @@ public class BranchLookup_Nested extends Operator
             try {
                 CursorLifecycle.checkIdle(this);
                 Row rowFromBindings = context.getRow(inputBindingPosition);
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("BranchLookup_Nested: open using {}", rowFromBindings);
                 }
                 assert rowFromBindings.rowType() == inputRowType : rowFromBindings;
@@ -345,7 +345,7 @@ public class BranchLookup_Nested extends Operator
                         close();
                     }
                 }
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("BranchLookup_Nested: yield {}", row);
                 }
                 idle = row == null;

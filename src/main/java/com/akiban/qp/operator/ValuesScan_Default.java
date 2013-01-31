@@ -159,7 +159,7 @@ public class ValuesScan_Default extends Operator
                     close();
                     output = null;
                 }
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("ValuesScan_Default: yield {}", output);
                 }
                 return output;

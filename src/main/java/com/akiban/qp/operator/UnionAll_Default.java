@@ -254,7 +254,7 @@ final class UnionAll_Default extends Operator {
                 else {
                     outputRow = wrapped(outputRow);
                 }
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("UnionAll_Default: yield {}", outputRow);
                 }
                 return outputRow;

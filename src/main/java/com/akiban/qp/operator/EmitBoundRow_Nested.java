@@ -200,7 +200,7 @@ class EmitBoundRow_Nested extends Operator
                 }
                 checkQueryCancelation();
                 Row row = input.next();
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("EmitBoundRow: {}", row == null ? null : row);
                 }
                 if (row == null) {
@@ -218,7 +218,7 @@ class EmitBoundRow_Nested extends Operator
                         assert (row != null) : rowFromBindings;
                     }
                 }
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("EmitBoundRow_Nested: yield {}", row);
                 }
                 return row;

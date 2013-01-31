@@ -248,14 +248,14 @@ class Product_NestedLoops extends Operator
                                 Row branchRow = row.subRow(branchType);
                                 assert branchRow != null : row;
                                 if (outerBranchRow.isEmpty() || !branchRow.hKey().equals(outerBranchRow.get().hKey())) {
-                                    if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                                    if (LOG_EXECUTION) {
                                         LOG.debug("Product_NestedLoops: branch row {}", row);
                                     }
                                     outerBranchRow.hold(branchRow);
                                     innerRows.newBranchRow(branchRow);
                                 }
                                 outerRow.hold(row);
-                                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                                if (LOG_EXECUTION) {
                                     LOG.debug("Product_NestedLoops: restart inner loop using current branch row");
                                 }
                                 innerRows.resetForCurrentBranchRow();
@@ -263,7 +263,7 @@ class Product_NestedLoops extends Operator
                         }
                     }
                 }
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("Product_NestedLoops: yield {}", outputRow);
                 }
                 return outputRow;

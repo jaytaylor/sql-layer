@@ -266,7 +266,7 @@ class HKeyUnion_Ordered extends Operator
                         nextRow = null;
                     }
                 }
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("HKeyUnion_Ordered: yield {}", nextRow);
                 }
                 return nextRow;

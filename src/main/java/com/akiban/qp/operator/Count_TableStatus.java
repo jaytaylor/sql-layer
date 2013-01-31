@@ -184,7 +184,7 @@ class Count_TableStatus extends Operator
                 else {
                     output = null;
                 }
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("Count_TableStatus: yield {}", output);
                 }
                 return output;

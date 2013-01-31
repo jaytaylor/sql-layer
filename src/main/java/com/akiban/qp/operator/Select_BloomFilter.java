@@ -280,7 +280,7 @@ class Select_BloomFilter extends Operator
                         row = null;
                     }
                 } while (!idle && row == null);
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("Select_BloomFilter: yield {}", row);
                 }
                 return row;

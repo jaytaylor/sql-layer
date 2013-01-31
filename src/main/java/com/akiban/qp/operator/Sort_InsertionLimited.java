@@ -276,7 +276,7 @@ class Sort_InsertionLimited extends Operator
                         close();
                         output = null;
                     }
-                    if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                    if (LOG_EXECUTION) {
                         LOG.debug("Sort_InsertionLimited: yield {}", output);
                     }
                     return output;
@@ -285,7 +285,7 @@ class Sort_InsertionLimited extends Operator
                     // Fall through
                 case CLOSED:
                 default:
-                    if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                    if (LOG_EXECUTION) {
                         LOG.debug("Sort_InsertionLimited: yield null");
                     }
                     return null;

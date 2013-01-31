@@ -171,7 +171,7 @@ public class Insert_Returning extends Operator {
                     context.checkConstraints(inputRow, usePValues);
                     // Do the real work of inserting the row
                     adapter().writeRow(inputRow, usePValues);
-                    if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                    if (LOG_EXECUTION) {
                         LOG.debug("Insert_Returning: inserting {}", inputRow);
                     }
                 }

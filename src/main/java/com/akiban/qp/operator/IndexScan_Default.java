@@ -313,7 +313,7 @@ class IndexScan_Default extends Operator
                 if (row == null) {
                     close();
                 }
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("IndexScan: yield {}", row);
                 }
                 return row;

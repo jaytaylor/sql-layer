@@ -257,7 +257,7 @@ class Union_Ordered extends Operator
                         close();
                     }
                 }
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("Union_Ordered: yield {}", next);
                 }
                 return next;
@@ -333,7 +333,7 @@ class Union_Ordered extends Operator
         {
             Row row = leftInput.next();
             leftRow.hold(row);
-            if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+            if (LOG_EXECUTION) {
                 LOG.debug("Union_Ordered: left {}", row);
             }
         }
@@ -342,7 +342,7 @@ class Union_Ordered extends Operator
         {
             Row row = rightInput.next();
             rightRow.hold(row);
-            if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+            if (LOG_EXECUTION) {
                 LOG.debug("Union_Ordered: right {}", row);
             }
         }

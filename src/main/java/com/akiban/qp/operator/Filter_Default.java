@@ -178,7 +178,7 @@ class Filter_Default extends Operator
                         row = null;
                     }
                 } while (row == null && !closed);
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("Filter_Default: yield {}", row);
                 }
                 return row;

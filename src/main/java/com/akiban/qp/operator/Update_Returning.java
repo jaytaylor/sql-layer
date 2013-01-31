@@ -166,7 +166,7 @@ public class Update_Returning extends Operator {
                     context.checkConstraints(newRow, usePValues);
                     adapter().updateRow(inputRow, newRow, usePValues);
                 }
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("Update_Returning: updating {} to {}", inputRow, newRow);
                 }
                 return newRow; 

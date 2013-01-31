@@ -210,7 +210,7 @@ class Sort_Tree extends Operator
                     TAP_NEXT.out();
                 }
             }
-            if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+            if (LOG_EXECUTION) {
                 LOG.debug("Sort_Tree: yield {}", row);
             }
             return row;

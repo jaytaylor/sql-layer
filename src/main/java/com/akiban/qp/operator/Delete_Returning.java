@@ -164,7 +164,7 @@ public class Delete_Returning extends Operator {
                 Row inputRow;
                 if ((inputRow = input.next()) != null) {
                     adapter().deleteRow(inputRow, usePValues);
-                    if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                    if (LOG_EXECUTION) {
                         LOG.debug("Delete_Returning: deleting {}", inputRow);
                     }
                 }

@@ -335,7 +335,7 @@ class Intersect_Ordered extends Operator
                         close();
                     }
                 }
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("Intersect_Ordered: yield {}", next);
                 }
                 return next;
@@ -421,7 +421,7 @@ class Intersect_Ordered extends Operator
         {
             Row row = leftInput.next();
             leftRow.hold(row);
-            if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+            if (LOG_EXECUTION) {
                 LOG.debug("Intersect_Ordered: left {}", row);
             }
         }
@@ -430,7 +430,7 @@ class Intersect_Ordered extends Operator
         {
             Row row = rightInput.next();
             rightRow.hold(row);
-            if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+            if (LOG_EXECUTION) {
                 LOG.debug("Intersect_Ordered: right {}", row);
             }
         }

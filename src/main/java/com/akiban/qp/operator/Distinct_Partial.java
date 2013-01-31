@@ -202,7 +202,7 @@ class Distinct_Partial extends Operator
                 if (row == null) {
                     close();
                 }
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("Distinct_Partial: yield {}", row);
                 }
                 return row;

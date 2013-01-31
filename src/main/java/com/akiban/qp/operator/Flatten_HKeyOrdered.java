@@ -372,7 +372,7 @@ class Flatten_HKeyOrdered extends Operator
                     outputRow = pending.take();
                 }
                 idle = outputRow == null;
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("Flatten_HKeyOrdered: yield {}", outputRow);
                 }
                 return outputRow;

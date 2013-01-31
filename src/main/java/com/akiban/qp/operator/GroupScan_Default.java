@@ -164,7 +164,7 @@ class GroupScan_Default extends Operator
                     close();
                     row = null;
                 }
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("GroupScan_Default: yield {}", row);
                 }
                 return row;

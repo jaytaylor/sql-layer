@@ -202,7 +202,7 @@ class Count_Default extends Operator
                         count++;
                     }
                 }
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("Count_Default: yield {}", row);
                 }
                 return row;

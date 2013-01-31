@@ -258,7 +258,7 @@ class Select_HKeyOrdered extends Operator
                     }
                 }
                 idle = row == null;
-                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("Select_HKeyOrdered: yield {}", row);
                 }
                 return row;
