@@ -408,7 +408,7 @@ final class Aggregate_Partial extends Operator
                     throw new IllegalStateException("cursor not open");
                 if (cursorState == CursorState.CLOSING) {
                     close();
-                    if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                    if (LOG_EXECUTION) {
                         LOG.debug("Aggregate_Partial null");
                     }
                     return null;
@@ -431,13 +431,13 @@ final class Aggregate_Partial extends Operator
                             close();
                             output = null;
                         }
-                        if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                        if (LOG_EXECUTION) {
                             LOG.debug("Aggregate_Partial: yield {}", output);
                         }
                         return output;
                     }
                     if (!input.rowType().equals(inputRowType)) {
-                        if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                        if (LOG_EXECUTION) {
                             LOG.debug("Aggregate_Partial: yield {}", input);
                         }
                         return input; // pass through
@@ -446,7 +446,7 @@ final class Aggregate_Partial extends Operator
                     if (outputNeeded(input)) {
                         saveInput(input); // save this input for the next time this method is invoked
                         output = createOutput();
-                        if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                        if (LOG_EXECUTION) {
                             LOG.debug("Aggregate_Partial: yield {}", output);
                         }
                         return output;
