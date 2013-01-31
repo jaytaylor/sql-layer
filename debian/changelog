@@ -1,3 +1,9 @@
+akiban-server (1.5.2) oneiric; urgency=low
+
+  * Development Release.
+
+ -- Akiban Build User <build@akiban.com>  Wed, 30 Jan 2013 17:11:49 -0500
+
 akiban-server (1.5.1) lucid; urgency=low
 
   * Development Release.
