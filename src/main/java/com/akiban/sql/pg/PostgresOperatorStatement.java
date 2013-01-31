@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.optimizer.plan.CostEstimate;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
@@ -47,6 +48,7 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
                                        implements PostgresCursorGenerator<Cursor>
 {
     private Operator resultOperator;
+    private CostEstimate costEstimate;
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorStatement.class);
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresOperatorStatement: execute shared");
@@ -61,9 +63,11 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
                      List<String> columnNames,
                      List<PostgresType> columnTypes,
                      PostgresType[] parameterTypes,
+                     CostEstimate costEstimate,
                      boolean usesPValues) {
         super.init(resultRowType, columnNames, columnTypes, parameterTypes, usesPValues);
         this.resultOperator = resultOperator;
+        this.costEstimate = costEstimate;
     }
     
     @Override
@@ -134,7 +138,7 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
         finally {
             RuntimeException exceptionDuringCleanup = null;
             try {
-                suspended = context.finishCursor(this, cursor, suspended);
+                suspended = context.finishCursor(this, cursor, nrows, suspended);
             }
             catch (RuntimeException e) {
                 exceptionDuringCleanup = e;
@@ -171,6 +175,11 @@ public class PostgresOperatorStatement extends PostgresBaseOperatorStatement
     protected InOutTap acquireLockTap()
     {
         return ACQUIRE_LOCK_TAP;
+    }
+
+    @Override
+    public CostEstimate getCostEstimate() {
+        return costEstimate;
     }
 
 }

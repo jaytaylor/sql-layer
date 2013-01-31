@@ -26,6 +26,8 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
+import com.akiban.qp.row.ImmutableRow;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
@@ -444,7 +446,10 @@ class Sort_InsertionLimited extends Operator
         public void freeze() {
             Row arow = row.get();
             if (arow instanceof ProjectedRow)
-                ((ProjectedRow)arow).freeze();
+            {
+                Row copied = new ImmutableRow((ProjectedRow)arow);
+                row.hold(copied);
+            }
         }
 
         public int compareTo(Holder other) {

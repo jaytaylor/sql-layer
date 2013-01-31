@@ -24,9 +24,17 @@ group-equals: two equals on group index
 
 in-index: IN that can use index
 
+in-index-no-union: IN that can use index
+
 in-sorted: IN that needs sorting
 
+in-sorted-no-union: IN that needs sorting
+
+in-leftover: IN condition after more important joins
+
 in-many: IN with lots of values
+
+in-popular: IN with just popular values
 
 equals-sorted: Same with = for comparison.
 
@@ -118,3 +126,4 @@ geospatial-3: covering spatial index
 
 geospatial-4: two spatial indexes considered for intersection
 
+index-is-null: IS NULL condition

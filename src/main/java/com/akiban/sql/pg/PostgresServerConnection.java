@@ -27,6 +27,9 @@
 package com.akiban.sql.pg;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
+import com.akiban.sql.parser.SetConfigurationNode;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerSessionBase;
 import com.akiban.sql.server.ServerSessionMonitor;
@@ -569,7 +572,7 @@ public class PostgresServerConnection extends ServerSessionBase
                                          GSSCredential.ACCEPT_ONLY);
             GSSContext serverContext = manager.createContext(serverCreds);
             do {
-                switch (messenger.readMessage(true)) {
+                switch (messenger.readMessage()) {
                 case PASSWORD_MESSAGE_TYPE:
                     break;
                 default:
@@ -625,6 +628,7 @@ public class PostgresServerConnection extends ServerSessionBase
         }
         int rowsProcessed = 0;
         if (pstmt != null) {
+            checkStatementIsAllowed(pstmt);
             pstmt.sendDescription(context, false);
             rowsProcessed = executeStatementWithAutoTxn(pstmt, context, -1);
         }
@@ -657,6 +661,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 boolean success = false;
                 try {
                     pstmt = finishGenerating(context, pstmt, stmtSQL, stmt, null, null);
+                    checkStatementIsAllowed(pstmt);
                     if ((statementCache != null) && singleStmt && pstmt.putInCache())
                         statementCache.put(stmtSQL, pstmt);
                     pstmt.sendDescription(context, false);
@@ -673,6 +678,43 @@ public class PostgresServerConnection extends ServerSessionBase
         if (reqs.monitor().isQueryLogEnabled()) {
             reqs.monitor().logQuery(sessionMonitor);
         }
+    }
+
+    private void checkStatementIsAllowed(PostgresStatement pstmt) {
+        if (!getStore().isBulkloading())
+            return;
+
+        if (pstmt instanceof PostgresModifyOperatorStatement) {
+            PostgresModifyOperatorStatement modifyStatement = (PostgresModifyOperatorStatement) pstmt;
+            if (modifyStatement.isInsert())
+                return;
+        }
+        else if (pstmt instanceof PostgresBaseOperatorStatement) {
+            PostgresBaseOperatorStatement operatorStatement = (PostgresBaseOperatorStatement) pstmt;
+            Set<UserTable> affectedTables = operatorStatement.getAffectedTables();
+            boolean allTablesAllowed = true;
+            for (UserTable affectedTable : affectedTables) {
+                if (!TableName.INFORMATION_SCHEMA.equals(affectedTable.getName().getSchemaName())) {
+                    allTablesAllowed = false;
+                    break;
+                }
+            }
+            if (allTablesAllowed)
+                return;
+        }
+        else if (pstmt instanceof PostgresSessionStatement) {
+            PostgresSessionStatement sessionStatement = (PostgresSessionStatement) pstmt;
+            StatementNode node = sessionStatement.getStatement();
+            if (node instanceof SetConfigurationNode) {
+                SetConfigurationNode setNode = (SetConfigurationNode) node;
+                if ("bulkload".equals(setNode.getVariable()))
+                    return;
+            }
+        }
+        else if (pstmt instanceof PostgresCopyInStatement) {
+            return;
+        }
+        throw new BulkloadException("operation is not permitted while bulkloading");
     }
 
     protected void processParse() throws IOException {
@@ -713,6 +755,7 @@ public class PostgresServerConnection extends ServerSessionBase
             boolean success = false;
             try {
                 pstmt = finishGenerating(context, pstmt, sql, stmt, params, paramTypes);
+                checkStatementIsAllowed(pstmt);
                 success = true;
             } finally {
                 afterExecute(pstmt, local, success);
@@ -848,6 +891,7 @@ public class PostgresServerConnection extends ServerSessionBase
         if (context == null)
             throw new NoSuchCursorException(portalName);
         PostgresPreparedStatement pstmt = context.getStatement();
+        checkStatementIsAllowed(pstmt.getStatement());
         sessionMonitor.startStatement(pstmt.getSQL(), pstmt.getName(), startTime);
         int rowsProcessed = executeStatementWithAutoTxn(pstmt.getStatement(), context, maxrows);
         sessionMonitor.endStatement(rowsProcessed);
@@ -915,6 +959,9 @@ public class PostgresServerConnection extends ServerSessionBase
     // When the AIS changes, throw everything away, since it might
     // point to obsolete objects.
     protected void updateAIS(PostgresQueryContext context) {
+        StoreAdapter store = getStore();
+        if (store != null && store.isBulkloading())
+            return;
         boolean locked = false;
         try {
             if (context != null) {
@@ -974,7 +1021,8 @@ public class PostgresServerConnection extends ServerSessionBase
             new PostgresCallStatementGenerator(this),
             new PostgresExplainStatementGenerator(this),
             new PostgresServerStatementGenerator(this),
-            new PostgresCursorStatementGenerator(this)
+            new PostgresCursorStatementGenerator(this),
+            new PostgresCopyStatementGenerator(this)
         };
 
         statementCache = getStatementCache();
@@ -1290,6 +1338,10 @@ public class PostgresServerConnection extends ServerSessionBase
         }
         if ("zeroDateTimeBehavior".equals(key)) {
             valueEncoder = null; // Also depends on this.
+        }
+        if ("bulkload".equals(key)) {
+            getStore().setBulkload(session, Boolean.parseBoolean(value));
+            return true;
         }
         return super.propertySet(key, value);
     }

@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.optimizer.plan.CostEstimate;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.server.ServerStatement;
@@ -65,4 +66,8 @@ public interface PostgresStatement extends ServerStatement
 
     /** Should this statement be put into the statement cache? */
     public boolean putInCache();
+
+    /** Get the estimated cost, if known and applicable. */
+    public CostEstimate getCostEstimate();
+
 }

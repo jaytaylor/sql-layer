@@ -39,4 +39,7 @@ public interface PreparedStatementMonitor {
     /** The time at which the statement was prepared. */
     long getPrepareTimeMillis();
 
+    /** The estimated number of rows that will be returned. */
+    int getEstimatedRowCount();
+
 }

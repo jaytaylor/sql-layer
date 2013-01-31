@@ -121,11 +121,6 @@ public class DDLFunctionsMockBase implements DDLFunctions {
     }
 
     @Override
-    public List<String> getDDLs(Session session) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public int getGenerationAsInt(Session session) {
         throw new UnsupportedOperationException();
     }

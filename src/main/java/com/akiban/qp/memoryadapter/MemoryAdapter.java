@@ -70,7 +70,7 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public Store getUnderlyingStore() {
+    protected Store getUnderlyingStore() {
         throw new UnsupportedOperationException();
     }
 
@@ -132,7 +132,7 @@ public class MemoryAdapter extends StoreAdapter {
         throw new UnsupportedOperationException();
     }
 
-        @Override
+    @Override
     public long hash(ValueSource valueSource, AkCollator collator) {
         return
             collator == null

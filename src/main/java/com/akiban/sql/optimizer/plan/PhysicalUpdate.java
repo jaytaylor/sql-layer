@@ -26,6 +26,7 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.types.DataTypeDescriptor;
 
@@ -36,6 +37,7 @@ import com.akiban.server.explain.ExplainContext;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 /** Physical INSERT/UPDATE/DELETE statement */
 public class PhysicalUpdate extends BasePlannable
@@ -50,8 +52,10 @@ public class PhysicalUpdate extends BasePlannable
                           List<PhysicalResultColumn> resultColumns,
                           boolean returning, 
                           boolean requireStepIsolation,
-                          boolean putInCache) {
-        super (resultsOperator, paramterTypes, rowType, resultColumns);
+                          boolean putInCache,
+                          CostEstimate costEstimate,
+                          Set<UserTable> affectedTables) {
+        super (resultsOperator, paramterTypes, rowType, resultColumns, costEstimate, affectedTables);
         this.requireStepIsolation = requireStepIsolation;
         this.returning = returning;
         this.putInCache = putInCache;

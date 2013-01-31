@@ -205,7 +205,7 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public Store getUnderlyingStore() {
+        protected Store getUnderlyingStore() {
             throw new UnsupportedOperationException();
         }
 

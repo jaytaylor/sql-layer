@@ -1,0 +1,14 @@
+# Insert into c, then o, then c again
+- Include: caoi.yaml
+---
+- Statement: set bulkload='true'
+---
+- Statement: insert into c values (1, 'one', '1999-01-01')
+---
+- Statement: insert into o values (11, 1, '2001-01-01')
+---
+- Statement: insert into c values (2, 'bogus!', '2012-12-21')
+- error: [57007]
+---
+- Statement: set bulkload='false'
+...

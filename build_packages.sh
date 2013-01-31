@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 #
 # END USER LICENSE AGREEMENT (“EULA”)
 #
@@ -25,6 +25,8 @@
 # PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
 #
 
+set -e
+
 usage="Usage: ./build_packages.sh [debian|redhat|macosx|binary] [... epoch]"
 if [ $# -lt 1 ]; then
     echo "${usage}"
@@ -33,6 +35,7 @@ fi
 
 platform=$1
 bzr_revno=`bzr revno`
+server_version=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep -o '^[0-9.]\+')
 
 # Handle file preparation for release target
 if [ -z "${AKIBAN_DE_FLAG}" ]; then
@@ -44,65 +47,47 @@ echo "Building Akiban Server for ##### ${target} #####"
 
 # Select the correct license. Handled as a special case to keep LICENSE*.txt files in the top level
 case "${target}" in
-    'enterprise') license=LICENSE-EE.txt;;
-    'developer')  license=LICENSE-DE.txt;;
-    *) echo "fatal: Invalid release type (name: [{$target}]). Check that \
-     the script is handling condition flags correctly."
+    'enterprise')
+        license=LICENSE-EE.txt
+        ;;
+    'developer')
+        license=LICENSE-DE.txt
+        ;;
+    *)
+        echo "fatal: Invalid release type (name: [{$target}]). Check that the script is handling condition flags correctly."
         exit 1
         ;;
 esac
 
 mkdir -p target
 mkdir -p packages-common/client
+mkdir -p packages-common/plugins
 common_dir="config-files/${target}" # require config-files/dir to be the same as the ${target} variable
-[ -d ${common_dir} ] || \
-    { echo "fatal: Couldn't find configuration files in: ${common_dir}"; exit 1; }
+if [ ! -d ${common_dir} ]; then
+    echo "fatal: Couldn't find configuration files in: ${common_dir}"
+    exit 1
+fi
 echo "-- packages-common directory: ${common_dir} (Linux only)"
-cp ${license} packages-common/LICENSE.txt # All licenses become LICENSE.txt
+# All licenses become LICENSE.txt
+cp ${license} packages-common/LICENSE.txt
 cp ${common_dir}/* packages-common/
 
-# Add akiban-client tools via `bzr root`/target/akiban-client-tools
-[ ! -z "$TOOLS_BRANCH" ] || TOOLS_BRANCH="lp:akiban-client-tools"
+#
+# Add akiban-client tools
+#
+: ${TOOLS_BRANCH:="lp:akiban-client-tools"}
 echo "Using akiban-client-tools bazaar branch: ${TOOLS_BRANCH}"
-pushd target && rm -rf akiban-client-tools && \
-    bzr branch ${TOOLS_BRANCH} akiban-client-tools && pushd akiban-client-tools
-mvn  -Dmaven.test.skip clean install
+pushd .
+cd target
+rm -rf akiban-client-tools
+bzr branch ${TOOLS_BRANCH} akiban-client-tools
+cd akiban-client-tools
+mvn -DskipTests=true install 
 rm -f target/*-tests.jar target/*-sources.jar
 cp bin/akdump ../../packages-common/
 cp target/akiban-client-tools-*.jar ../../packages-common/
 cp target/dependency/* ../../packages-common/client/
-
-popd && popd
-
-# Add akiban-server-plugins
-mkdir -p packages-common/plugins
-rm packages-common/plugins/* # in case this existed from an old build
-
-[ ! -z "$PLUGINS_BRANCH" ] || PLUGINS_BRANCH="https://github.com/akiban/akiban-server-plugins/archive/master.zip"
-echo "Using akiban-server-plugins git branch: ${PLUGINS_BRANCH}"
-pushd target && rm -rf akiban-server-plugins-master ; \
-    rm akiban-server-plugins.zip ; \
-    curl -kLo akiban-server-plugins.zip ${PLUGINS_BRANCH} && \
-    unzip akiban-server-plugins.zip && \
-    pushd akiban-server-plugins-master
-mvn -Dmaven.test.skip=true clean install && \
-    pushd http-conductor && mvn -Dmaven.test.skip=true assembly:single && popd
-cp $(find . -name 'server-plugins-http-conductor*with-dependencies.jar') ../../packages-common/plugins
-
-popd && popd
-
-# Add akiban-rest
-[ ! -z "$REST_BRANCH" ] || REST_BRANCH="https://github.com/akiban/akiban-rest/archive/master.zip"
-echo "Using akiban-rest git branch: ${REST_BRANCH}"
-pushd target && rm -rf akiban-rest-plugin ; \
-    rm rest.zip ; \
-    curl -kL -o rest.zip ${REST_BRANCH} && \
-    unzip rest.zip && \
-    pushd akiban-rest-*
-mvn -Dmaven.test.skip=true clean package
-cp $(find . -name '*with-dependencies.jar') ../../packages-common/plugins
-
-popd && popd
+popd
 
 if [ -z "$2" ] ; then
 	epoch=`date +%s`
@@ -116,18 +101,17 @@ if [ ${platform} == "debian" ]; then
     mvn -Dmaven.test.skip.exec clean install -DBZR_REVISION=${bzr_revno}
     mkdir -p ${platform}/server/
     cp ./target/dependency/* ${platform}/server/
-    mkdir -p ${platform}/plugins/
-    cp packages-common/plugins/* ${platform}/plugins
+    cp -R packages-common/plugins/ ${platform}/
     debuild
 elif [ ${platform} == "redhat" ]; then
     mkdir -p ${PWD}/redhat/rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
     tar_file=${PWD}/redhat/rpmbuild/SOURCES/akserver.tar
     bzr export --format=tar $tar_file
-    rm {$PWD}/redhat/akserver/redhat/* # Clear out old files
+    rm -f ${PWD}/redhat/akserver/redhat/* # Clear out old files
     cp -R packages-common/* ${PWD}/redhat/akserver/redhat
     pushd redhat
-# bzr st -S outs lines like "? redhat/akserver/redhat/log4j.properties"
-# we want to turn those to just "akserver/redhat/log4j.properties"
+    # bzr st -S outs lines like "? redhat/akserver/redhat/log4j.properties"
+    # we want to turn those to just "akserver/redhat/log4j.properties"
     for to_add in $(bzr st -S . | sed 's/\?\s\+redhat\///'); do
         tar --append -f $tar_file $to_add
     done
@@ -164,14 +148,11 @@ elif [ ${platform} == "binary" ]; then
     cp ${license} ${BINARY_NAME}/LICENSE.txt
     tar zcf ${BINARY_TAR_NAME} ${BINARY_NAME}    
 elif [ ${platform} == "macosx" ]; then
-    server_jar=target/akiban-server-*.jar
-    server_deps=target/dependency
     client_jar=packages-common/akiban-client-tools-*.jar
     client_deps=packages-common/client
     akdump_bin=packages-common/akdump
     plugins_dir=packages-common/plugins
     mac_app='target/Akiban Server.app'
-    mac_dmg='target/Akiban Server.dmg'
     inst_temp=/tmp/inst_temp
 
     # copy icon data from a "prototype" file
@@ -181,51 +162,58 @@ elif [ ${platform} == "macosx" ]; then
     rm prototype.txt
     
     # build jar
-    mvn -Dmaven.test.skip clean install -DBZR_REVISION=${bzr_revno}
+    mvn -DskipTests=true -DBZR_REVISION=${bzr_revno} clean install 
     rm -f ./target/*-tests.jar ./target/*-sources.jar
 
-    # add ce/ee specific config files to Contents/Resources/config
-    rm macosx/Contents/Resources/config/*
-    cp macosx/${target}/* macosx/Contents/Resources/config/
-    # build app bundle
-    mkdir "$mac_app"
-    cp -R macosx/Contents "$mac_app"
-    mkdir "$mac_app/Contents/MacOS"
-    cp /System/Library/Frameworks/JavaVM.framework/Versions/Current/Resources/MacOS/JavaApplicationStub "$mac_app/Contents/MacOS"
-    mkdir -p "$mac_app/Contents/Resources/Java/server"
-    cp $server_jar "$mac_app/Contents/Resources/Java"
-    cp $server_deps/* "$mac_app/Contents/Resources/Java/server/"
-    mkdir -p "$mac_app/Contents/Resources/tools/lib/client"
-    cp $client_jar "$mac_app/Contents/Resources/tools/lib/"
-    cp $client_deps/* "$mac_app/Contents/Resources/tools/lib/client/"
-    mkdir -p "$mac_app/Contents/Resources/tools/bin"
-    cp $akdump_bin "$mac_app/Contents/Resources/tools/bin/"
-    cp -R $plugins_dir "$mac_app/Contents/Resources/plugins"
-    # Wildcards are not supported in ClassPath key; expand now.
-    CLASSPATH=$(cd "$mac_app/Contents/Resources/Java"; echo akiban-server-*.jar server/*.jar | sed 's| |:$JAVAROOT/|g')
-    sed "s|@CLASSPATH@|\$JAVAROOT/$CLASSPATH|" macosx/Contents/Info.plist >"$mac_app/Contents/Info.plist"
-    SetFile -a B "$mac_app"
-    # build disk image template
-    rm -rf $inst_temp; mkdir $inst_temp; mkdir "$inst_temp/Akiban Server.app"
-    ln -s /Applications $inst_temp
-    mkdir $inst_temp/.background
-    cp macosx/dmg_background.png $inst_temp/.background
-    rm -f $inst_temp.dmg
-    hdiutil create -fs HFSX -layout SPUD -size 40m $inst_temp.dmg -format UDRW -volname 'Akiban Server' -srcfolder $inst_temp
-    rm -rf $inst_temp
-    # update disk image
-    mkdir $inst_temp
-    hdiutil attach $inst_temp.dmg -noautoopen -mountpoint $inst_temp
-    ditto "$mac_app" "$inst_temp/Akiban Server.app"
-    ${mac_ce_cmd}
-    # == add non-app files here ==
-    cp macosx/dmg.DS_Store $inst_temp/.DS_Store
-    cp macosx/dmg_VolumeIcon.icns $inst_temp/.VolumeIcon.icns
-    cp ${license} $inst_temp/LICENSE.txt
-    SetFile -a C $inst_temp
-    hdiutil detach `hdiutil info | grep $inst_temp | grep '^/dev' | cut -f1`
-    hdiutil convert $inst_temp.dmg -format UDZO -imagekey zlib-level=9 -o "$mac_dmg"
-    rm $inst_temp.dmg
+    build_dmg() {
+        ant_target="$1"
+        mac_dmg="target/$2"
+
+        # build app bundle
+        curl -Ls -o target/appbundler-1.0.jar http://java.net/projects/appbundler/downloads/download/appbundler-1.0.jar
+        ant -f macosx/appbundler.xml ${ant_target} -Djdk.home=$(/usr/libexec/java_home) -Dakserver.version="${server_version}-r${bzr_revno}"
+
+        # add config files to bundle
+        mkdir "${mac_app}/Contents/Resources/config/"
+        cp macosx/${target}/* "${mac_app}/Contents/Resources/config/"
+
+        # add client dependencies and binaries to bundle
+        mkdir -p "$mac_app/Contents/Resources/tools/lib/client"
+        cp $client_jar "$mac_app/Contents/Resources/tools/lib/"
+        cp $client_deps/* "$mac_app/Contents/Resources/tools/lib/client/"
+        mkdir -p "$mac_app/Contents/Resources/tools/bin"
+        cp $akdump_bin "$mac_app/Contents/Resources/tools/bin/"
+        cp -R "$plugins_dir" "$mac_app/Contents/Resources/"
+
+        # build disk image template
+        rm -rf $inst_temp
+        rm -f $inst_temp.dmg
+        mkdir $inst_temp
+        mkdir "$inst_temp/Akiban Server.app"
+        ln -s /Applications $inst_temp
+        mkdir $inst_temp/.background
+        cp macosx/dmg_background.png $inst_temp/.background
+        hdiutil create -fs HFSX -layout SPUD -size 200m $inst_temp.dmg -format UDRW -volname 'Akiban Server' -srcfolder $inst_temp
+        rm -rf $inst_temp
+
+        # update disk image
+        mkdir $inst_temp
+        hdiutil attach $inst_temp.dmg -noautoopen -mountpoint $inst_temp
+        ditto "$mac_app" "$inst_temp/Akiban Server.app"
+        
+        # == add non-app files here ==
+        cp macosx/dmg.DS_Store $inst_temp/.DS_Store
+        cp macosx/dmg_VolumeIcon.icns $inst_temp/.VolumeIcon.icns
+        cp ${license} $inst_temp/LICENSE.txt
+        SetFile -a C $inst_temp
+        hdiutil detach `hdiutil info | grep $inst_temp | grep '^/dev' | cut -f1`
+        hdiutil convert $inst_temp.dmg -format UDZO -imagekey zlib-level=9 -o "$mac_dmg"
+        rm $inst_temp.dmg
+    }
+    
+    dmg_basename="Akiban_Server_${server_version}"
+    build_dmg "bundle_app" "${dmg_basename}.dmg"
+    build_dmg "bundle_app_jre" "${dmg_basename}_JRE.dmg"
 else
     echo "Invalid Argument: ${platform}"
     echo "${usage}"

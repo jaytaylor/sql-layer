@@ -40,7 +40,10 @@ import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.util.AkibanAppender;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Iterators;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class ProjectedRow extends AbstractRow
@@ -136,41 +139,49 @@ public class ProjectedRow extends AbstractRow
                         Row row,
                         QueryContext context,
                         List<? extends Expression> expressions,
-                        List<? extends TPreparedExpression> pExpressions,
+                        List<TEvaluatableExpression> pEvaluatableExprs,
                         List<? extends TInstance> tInstances)
     {
         this.context = context;
         this.rowType = rowType;
         this.row = row;
         this.evaluations = createEvaluations(expressions, row, context);
-        if (pExpressions != null) {
-            this.pEvaluatableExpressions = createTEvaluatableExpressions(pExpressions, row, context);
-            this.evaluated = new boolean[pExpressions.size()];
-        } else {
-            this.pEvaluatableExpressions = null;
-            this.evaluated = null;
-        }
+        this.pEvaluatableExpressions = pEvaluatableExprs;
+        if (pEvaluatableExpressions == null)
+            evaluated = null;
+        else
+            evaluated = new boolean[pEvaluatableExpressions.size()];
         this.tInstances = tInstances;
         this.holders = expressions == null ? null : new ValueHolder[expressions.size()];
     }
 
-    /** Make sure all the cached values are full. */
-    public void freeze() {
-        if (holders != null) {
-            for (int i = 0; i < holders.length; i++) {
-                if (holders[i] == null) {
-                    eval(i);
-                }
-            }
-        } else if (evaluated != null) {
-            for (int i = 0; i < evaluated.length; i++) {
-                if (!evaluated[i]) {
-                    pvalue(i);
-                }
-            }
+    public Iterator<ValueSource> getValueSources()
+    {
+        if (evaluations == null)
+            return null;
+        else
+        {
+            int size = evaluations.size();
+            List<ValueSource> ret = new ArrayList<ValueSource>(size);
+            for (int i = 0; i < size; ++i)
+                ret.add(eval(i));
+            return ret.iterator();
         }
     }
-
+    
+    public Iterator<PValueSource> getPValueSources()
+    {
+        if (pEvaluatableExpressions == null)
+            return null;
+        else
+        {
+            int size = pEvaluatableExpressions.size();
+            List<PValueSource> ret = new ArrayList<PValueSource>(size);
+            for (int i = 0; i < size; ++i)
+                ret.add(pvalue(i));
+            return ret.iterator();
+        }
+    }
     // For use by this class
 
     private List<ExpressionEvaluation> createEvaluations(List<? extends Expression> expressions,
@@ -189,8 +200,8 @@ public class ProjectedRow extends AbstractRow
         return result;
     }
 
-    private List<TEvaluatableExpression> createTEvaluatableExpressions
-        (List<? extends TPreparedExpression> pExpressions, Row row, QueryContext context)
+    public static List<TEvaluatableExpression> createTEvaluatableExpressions
+        (List<? extends TPreparedExpression> pExpressions)
     {
         if (pExpressions == null)
             return null;
@@ -202,6 +213,7 @@ public class ProjectedRow extends AbstractRow
         }
         return result;
     }
+
 
     // Object state
 

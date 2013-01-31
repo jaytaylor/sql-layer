@@ -112,6 +112,7 @@ public class PostgresExecuteStatement extends PostgresBaseCursorStatement
         return server.executePreparedStatement(this, maxrows);
     }
     
+    @Override
     public boolean putInCache() {
         return true;
     }

@@ -36,7 +36,8 @@ import java.util.Set;
 public class BaseQuery extends BasePlanWithInput
 {
     private EquivalenceFinder<ColumnExpression> columnEquivalencies;
-    
+    private CostEstimate costEstimate;
+
     protected BaseQuery(PlanNode query, EquivalenceFinder<ColumnExpression> columnEquivalencies) {
         super(query);
         this.columnEquivalencies = columnEquivalencies;
@@ -53,4 +54,12 @@ public class BaseQuery extends BasePlanWithInput
     public EquivalenceFinder<ColumnExpression> getColumnEquivalencies() {
         return columnEquivalencies;
     }
+
+    public CostEstimate getCostEstimate() {
+        return costEstimate;
+    }
+    public void setCostEstimate(CostEstimate costEstimate) {
+        this.costEstimate = costEstimate;
+    }
+
 }

@@ -1,0 +1,1 @@
+SELECT COUNT(*) FROM sources WHERE country IN ('MEX','CHN')

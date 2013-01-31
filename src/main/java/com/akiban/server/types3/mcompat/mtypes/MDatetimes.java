@@ -285,7 +285,7 @@ public class MDatetimes
             {
                 year = Integer.parseInt(tks[0]);
                 month = Integer.parseInt(tks[1]);
-                day = Integer.parseInt(CastUtils.truncateNonDigits(tks[2], context));
+                day = (int) CastUtils.parseInRange(tks[2], Long.MAX_VALUE, Long.MIN_VALUE, context);
             }
             else if (tks.length == 1)
             {
@@ -890,13 +890,10 @@ public class MDatetimes
                                       ).getMillis();
             return (int)CastUtils.getInRange(TIMESTAMP_MAX, TIMESTAMP_MIN, millis / 1000L, TS_ERROR_VALUE, context);
         }
-        catch (IllegalFieldValueException e)
+        catch (IllegalFieldValueException | NumberFormatException e)
         {
+            context.warnClient(new InvalidDateFormatException("timestamp", ts));
             return 0; // e.g. SELECT UNIX_TIMESTAMP('1920-21-01 00:00:00') -> 0
-        }
-        catch (NumberFormatException ex)
-        {
-            throw new InvalidDateFormatException("datetime", ts);
         }
     }
 

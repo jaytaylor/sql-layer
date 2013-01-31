@@ -25,9 +25,11 @@
  */
 package com.akiban.server.types3.common;
 
+import com.akiban.server.types3.DeepCopiable;
 import java.math.BigDecimal;
 
-public interface BigDecimalWrapper extends Comparable<BigDecimalWrapper> {
+public interface BigDecimalWrapper extends Comparable<BigDecimalWrapper>, DeepCopiable<BigDecimalWrapper>
+{
     
     BigDecimalWrapper set(BigDecimalWrapper value);
     BigDecimalWrapper add(BigDecimalWrapper addend);
@@ -45,7 +47,8 @@ public interface BigDecimalWrapper extends Comparable<BigDecimalWrapper> {
     BigDecimalWrapper negate();
     BigDecimalWrapper abs();
     BigDecimalWrapper mod(BigDecimalWrapper num);
-
+    BigDecimalWrapper deepCopy();
+    
     int compareTo (BigDecimalWrapper o);
     int getScale();
     int getPrecision();

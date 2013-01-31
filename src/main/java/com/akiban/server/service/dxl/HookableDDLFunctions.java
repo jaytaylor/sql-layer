@@ -39,7 +39,6 @@ import com.akiban.ais.util.TableChange;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
@@ -365,23 +364,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
         }
     }
 
-    @Override
-    public List<String> getDDLs(final Session session) throws InvalidOperationException {
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunction.GET_DDLS);
-            return delegate.getDDLs(session);
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunction.GET_DDLS, t);
-            throwIfInstanceOf(t, InvalidOperationException.class);
-            throw throwAlways(t);
-        } finally {
-            hook.hookFunctionFinally(session, DXLFunction.GET_DDLS, thrown);
-        }
-    }
-
-    @Override
+   @Override
     public int getGenerationAsInt(Session session) {
         Throwable thrown = null;
         try {

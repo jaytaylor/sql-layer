@@ -39,6 +39,7 @@ import com.akiban.server.error.TransactionAbortedException;
 import com.akiban.server.error.TransactionInProgressException;
 import com.akiban.server.error.TransactionReadOnlyException;
 import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.externaldata.ExternalDataService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.monitor.SessionMonitor;
 import com.akiban.server.service.routines.RoutineLoader;
@@ -275,6 +276,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     @Override
+    public ExternalDataService getExternalDataService() {
+        return reqs.externalData();
+    }
+
+    @Override
     public Date currentTime() {
         return new Date();
     }
@@ -335,6 +341,8 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             case WRITE:
             case NEW_WRITE:
             case WRITE_STEP_ISOLATED:
+                if (getStore().isBulkloading())
+                    break;
                 if (transactionDefaultReadOnly)
                     throw new TransactionReadOnlyException();
                 localTransaction = new ServerTransaction(this, false);
@@ -375,7 +383,10 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
             case REQUIRED_WRITE:
             case WRITE:
             case WRITE_STEP_ISOLATED:
-                transaction.afterUpdate(transactionMode == ServerStatement.TransactionMode.WRITE_STEP_ISOLATED);
+                if (transaction != null)
+                    transaction.afterUpdate(transactionMode == ServerStatement.TransactionMode.WRITE_STEP_ISOLATED);
+                else
+                    assert getStore() != null && getStore().isBulkloading() : "no transaction, but not bulk loading";
                 break;
             }
         }

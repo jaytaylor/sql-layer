@@ -157,7 +157,7 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
             }
         }
         finally {
-            suspended = context.finishCursor(this, cursor, suspended);            
+            suspended = context.finishCursor(this, cursor, nrows, suspended);
             ServerCallContextStack.pop(context, invocation);
         }
         if (suspended) {

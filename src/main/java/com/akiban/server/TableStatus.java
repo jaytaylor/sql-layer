@@ -38,8 +38,9 @@ public interface TableStatus {
     /** Record that a row has been deleted. */
     void rowDeleted();
 
-    /** Record that a row has been written. */
-    void rowWritten();
+    /** Record that a row has been written.
+     * @param count*/
+    void rowsWritten(long count);
 
     /** Reset, but do not remove, the state of a table. */
     void truncate() throws PersistitInterruptedException;
@@ -85,4 +86,8 @@ public interface TableStatus {
     int getTableID();
 
     void setRowCount(long rowCount);
+
+    long getApproximateUniqueID();
+
+    void setUniqueId(long value);
 }

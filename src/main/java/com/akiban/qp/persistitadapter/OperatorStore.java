@@ -38,6 +38,7 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.api.dml.ConstantColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.NoRowsUpdatedException;
@@ -48,6 +49,7 @@ import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
@@ -99,22 +101,27 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         try {
             AkibanInformationSchema ais = schemaManager.getAis(session);
             RowDef rowDef = ais.getUserTable(oldRowData.getRowDefId()).rowDef();
-            if ((columnSelector != null) && !rowDef.table().getGroupIndexes().isEmpty()) {
+            UserTable userTable = rowDef.userTable();
+            PersistitAdapter adapter = createAdapter(ais, session);
+
+            if(canSkipMaintenance(userTable)) {
+                // PersistitStore needs full rows and OperatorStore will look them up (unspecified behavior),
+                // so keep that behavior for the places that use it (tests only?)
+                if(columnSelector == null || columnSelector == ConstantColumnSelector.ALL_ON) {
+                    super.updateRow(session, oldRowData, newRowData, columnSelector, indexes);
+                    return;
+                }
+            } else if (columnSelector != null) {
                 throw new RuntimeException("group index maintenance won't work with partial rows");
             }
+
             BitSet changedColumnPositions = changedColumnPositions(rowDef, oldRowData, newRowData);
-
-            PersistitAdapter adapter = createAdapter(ais, session);
-            Schema schema = adapter.schema();
-
             UpdateFunction updateFunction = new InternalUpdateFunction(adapter, rowDef, newRowData, columnSelector);
 
-            UserTable userTable = ais.getUserTable(oldRowData.getRowDefId());
             Group group = userTable.getGroup();
-
             final TableIndex index = userTable.getPrimaryKeyIncludingInternal().getIndex();
             assert index != null : userTable;
-            UserTableRowType tableType = schema.userTableRowType(userTable);
+            UserTableRowType tableType = adapter.schema().userTableRowType(userTable);
             IndexRowType indexType = tableType.indexRowType(index);
             ColumnSelector indexColumnSelector =
                 new ColumnSelector()
@@ -172,16 +179,20 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         INSERT_TOTAL.in();
         INSERT_MAINTENANCE.in();
         try {
-            AkibanInformationSchema ais = schemaManager.getAis(session);
-            PersistitAdapter adapter = createAdapter(ais, session);
-            UserTable uTable = ais.getUserTable(rowData.getRowDefId());
-            super.writeRow(session, rowData);
-            maintainGroupIndexes(session,
-                                 ais,
-                                 adapter,
-                                 rowData, null,
-                                 OperatorStoreGIHandler.forTable(adapter, uTable),
-                                 OperatorStoreGIHandler.Action.STORE);
+            if (!isBulkloading()) {
+                AkibanInformationSchema ais = schemaManager.getAis(session);
+                PersistitAdapter adapter = createAdapter(ais, session);
+                UserTable uTable = ais.getUserTable(rowData.getRowDefId());
+                super.writeRow(session, rowData);
+                maintainGroupIndexes(session,
+                                     ais,
+                                     adapter,
+                                     rowData, null,
+                                     OperatorStoreGIHandler.forTable(adapter, uTable),
+                                     OperatorStoreGIHandler.Action.STORE);
+            } else {
+                super.writeRow(session, rowData);
+            }
         } finally {
             INSERT_MAINTENANCE.out();
             INSERT_TOTAL.out();
@@ -250,8 +261,9 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     // OperatorStore interface
 
     @Inject
-    public OperatorStore(TreeService treeService, ConfigurationService config, SchemaManager schemaManager, LockService lockService) {
-        super(new PersistitStore(false, treeService, config, schemaManager, lockService));
+    public OperatorStore(TreeService treeService, ConfigurationService config, SchemaManager schemaManager,
+                         LockService lockService, TransactionService transactionService) {
+        super(new PersistitStore(false, treeService, config, schemaManager, lockService, transactionService));
         this.treeService = treeService;
         this.config = config;
         this.schemaManager = schemaManager;

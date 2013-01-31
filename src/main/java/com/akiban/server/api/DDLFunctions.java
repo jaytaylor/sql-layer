@@ -174,15 +174,6 @@ public interface DDLFunctions {
     RowDef getRowDef(Session session, int tableId) throws RowDefNotFoundException;
 
     /**
-     * Retrieves the "CREATE" DDLs for all Akiban tables, including tables in the <tt>information_schema</tt>
-     * schema. The DDLs will be arranged such that it should be safe to call them in order, but they will not contain
-     * any DROP commands; it is up to the caller to drop all conflicting tables. Schemas will be created with
-     * <tt>IF NOT EXISTS</tt>, so the caller does not need to drop conflicting schemas.
-     * @return the list of CREATE SCHEMA and CREATE TABLE statements that correspond to known tables
-     */
-    List<String> getDDLs(Session session);
-
-    /**
      * Get an integer version of the generation of the AIS. Upon change this is only guaranteed to be different,
      * increasing or decreasing is unspecified, from the last.
      * @see #getGeneration
