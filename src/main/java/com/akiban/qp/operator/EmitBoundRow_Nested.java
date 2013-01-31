@@ -26,15 +26,8 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.exec.Plannable;
-import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.HKeyRowType;
-import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.explain.*;
 import com.akiban.server.explain.std.LookUpOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
@@ -198,16 +191,16 @@ class EmitBoundRow_Nested extends Operator
         @Override
         public Row next()
         {
-            if (OPERATOR_NEXT_TAPS_ENABLED) {
+            if (TAP_NEXT_ENABLED) {
                 TAP_NEXT.in();
             }
             try {
-                if (OPERATOR_CURSOR_LIFECYCLE_CHECKS_ENABLED) {
+                if (CURSOR_LIFECYCLE_ENABLED) {
                     CursorLifecycle.checkIdleOrActive(this);
                 }
                 checkQueryCancelation();
                 Row row = input.next();
-                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                     LOG.debug("EmitBoundRow: {}", row == null ? null : row);
                 }
                 if (row == null) {
@@ -225,12 +218,12 @@ class EmitBoundRow_Nested extends Operator
                         assert (row != null) : rowFromBindings;
                     }
                 }
-                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                     LOG.debug("EmitBoundRow_Nested: yield {}", row);
                 }
                 return row;
             } finally {
-                if (OPERATOR_NEXT_TAPS_ENABLED) {
+                if (TAP_NEXT_ENABLED) {
                     TAP_NEXT.out();
                 }
             }

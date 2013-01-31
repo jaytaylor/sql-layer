@@ -227,11 +227,11 @@ class HKeyUnion_Ordered extends Operator
         @Override
         public Row next()
         {
-            if (OPERATOR_NEXT_TAPS_ENABLED) {
+            if (TAP_NEXT_ENABLED) {
                 TAP_NEXT.in();
             }
             try {
-                if (OPERATOR_CURSOR_LIFECYCLE_CHECKS_ENABLED) {
+                if (CURSOR_LIFECYCLE_ENABLED) {
                     CursorLifecycle.checkIdleOrActive(this);
                 }
                 Row nextRow = null;
@@ -266,12 +266,12 @@ class HKeyUnion_Ordered extends Operator
                         nextRow = null;
                     }
                 }
-                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                     LOG.debug("HKeyUnion_Ordered: yield {}", nextRow);
                 }
                 return nextRow;
             } finally {
-                if (OPERATOR_NEXT_TAPS_ENABLED) {
+                if (TAP_NEXT_ENABLED) {
                     TAP_NEXT.out();
                 }
             }

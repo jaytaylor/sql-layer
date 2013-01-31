@@ -165,11 +165,11 @@ class Count_TableStatus extends Operator
         @Override
         public Row next()
         {
-            if (OPERATOR_NEXT_TAPS_ENABLED) {
+            if (TAP_NEXT_ENABLED) {
                 TAP_NEXT.in();
             }
             try {
-                if (OPERATOR_CURSOR_LIFECYCLE_CHECKS_ENABLED) {
+                if (CURSOR_LIFECYCLE_ENABLED) {
                     CursorLifecycle.checkIdleOrActive(this);
                 }
                 Row output;
@@ -184,12 +184,12 @@ class Count_TableStatus extends Operator
                 else {
                     output = null;
                 }
-                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                     LOG.debug("Count_TableStatus: yield {}", output);
                 }
                 return output;
             } finally {
-                if (OPERATOR_NEXT_TAPS_ENABLED) {
+                if (TAP_NEXT_ENABLED) {
                     TAP_NEXT.out();
                 }
             }

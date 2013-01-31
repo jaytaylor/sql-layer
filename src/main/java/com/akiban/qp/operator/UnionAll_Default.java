@@ -27,7 +27,6 @@
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -50,7 +49,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  <h1>Overview</h1>
@@ -231,11 +229,11 @@ final class UnionAll_Default extends Operator {
 
         @Override
         public Row next() {
-            if (OPERATOR_NEXT_TAPS_ENABLED) {
+            if (TAP_NEXT_ENABLED) {
                 TAP_NEXT.in();
             }
             try {
-                if (OPERATOR_CURSOR_LIFECYCLE_CHECKS_ENABLED) {
+                if (CURSOR_LIFECYCLE_ENABLED) {
                     CursorLifecycle.checkIdleOrActive(this);
                 }
                 Row outputRow;
@@ -256,12 +254,12 @@ final class UnionAll_Default extends Operator {
                 else {
                     outputRow = wrapped(outputRow);
                 }
-                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                     LOG.debug("UnionAll_Default: yield {}", outputRow);
                 }
                 return outputRow;
             } finally {
-                if (OPERATOR_NEXT_TAPS_ENABLED) {
+                if (TAP_NEXT_ENABLED) {
                     TAP_NEXT.out();
                 }
             }

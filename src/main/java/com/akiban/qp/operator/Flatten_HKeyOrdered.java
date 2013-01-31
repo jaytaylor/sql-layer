@@ -27,7 +27,6 @@
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.HKeySegment;
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.FlattenedRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
@@ -47,7 +46,6 @@ import java.util.Set;
 
 import static com.akiban.qp.operator.API.FlattenOption.KEEP_CHILD;
 import static com.akiban.qp.operator.API.FlattenOption.KEEP_PARENT;
-import java.util.Map;
 
 /**
 
@@ -323,11 +321,11 @@ class Flatten_HKeyOrdered extends Operator
         @Override
         public Row next()
         {
-            if (OPERATOR_NEXT_TAPS_ENABLED) {
+            if (TAP_NEXT_ENABLED) {
                 TAP_NEXT.in();
             }
             try {
-                if (OPERATOR_CURSOR_LIFECYCLE_CHECKS_ENABLED) {
+                if (CURSOR_LIFECYCLE_ENABLED) {
                     CursorLifecycle.checkIdleOrActive(this);
                 }
                 checkQueryCancelation();
@@ -374,12 +372,12 @@ class Flatten_HKeyOrdered extends Operator
                     outputRow = pending.take();
                 }
                 idle = outputRow == null;
-                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                     LOG.debug("Flatten_HKeyOrdered: yield {}", outputRow);
                 }
                 return outputRow;
             } finally {
-                if (OPERATOR_NEXT_TAPS_ENABLED) {
+                if (TAP_NEXT_ENABLED) {
                     TAP_NEXT.out();
                 }
             }

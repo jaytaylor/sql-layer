@@ -152,11 +152,11 @@ public class Delete_Returning extends Operator {
         @Override
         public Row next()
         {
-            if (OPERATOR_NEXT_TAPS_ENABLED) {
+            if (TAP_NEXT_ENABLED) {
                 TAP_NEXT.in();
             }
             try {
-                if (OPERATOR_CURSOR_LIFECYCLE_CHECKS_ENABLED) {
+                if (CURSOR_LIFECYCLE_ENABLED) {
                     CursorLifecycle.checkIdleOrActive(this);
                 }
                 checkQueryCancelation();
@@ -164,13 +164,13 @@ public class Delete_Returning extends Operator {
                 Row inputRow;
                 if ((inputRow = input.next()) != null) {
                     adapter().deleteRow(inputRow, usePValues);
-                    if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                    if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                         LOG.debug("Delete_Returning: deleting {}", inputRow);
                     }
                 }
                 return inputRow; 
             } finally {
-                if (OPERATOR_NEXT_TAPS_ENABLED) {
+                if (TAP_NEXT_ENABLED) {
                     TAP_NEXT.out();
                 }
             }

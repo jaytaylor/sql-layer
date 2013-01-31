@@ -209,11 +209,11 @@ class Sort_InsertionLimited extends Operator
         @Override
         public Row next()
         {
-            if (OPERATOR_NEXT_TAPS_ENABLED) {
+            if (TAP_NEXT_ENABLED) {
                 TAP_NEXT.in();
             }
             try {
-                if (OPERATOR_CURSOR_LIFECYCLE_CHECKS_ENABLED) {
+                if (CURSOR_LIFECYCLE_ENABLED) {
                     CursorLifecycle.checkIdleOrActive(this);
                 }
                 checkQueryCancelation();
@@ -276,7 +276,7 @@ class Sort_InsertionLimited extends Operator
                         close();
                         output = null;
                     }
-                    if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                    if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                         LOG.debug("Sort_InsertionLimited: yield {}", output);
                     }
                     return output;
@@ -285,13 +285,13 @@ class Sort_InsertionLimited extends Operator
                     // Fall through
                 case CLOSED:
                 default:
-                    if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                    if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                         LOG.debug("Sort_InsertionLimited: yield null");
                     }
                     return null;
                 }
             } finally {
-                if (OPERATOR_NEXT_TAPS_ENABLED) {
+                if (TAP_NEXT_ENABLED) {
                     TAP_NEXT.out();
                 }
             }

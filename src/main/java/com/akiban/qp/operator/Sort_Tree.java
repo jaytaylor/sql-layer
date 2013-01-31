@@ -26,12 +26,10 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.CompoundExplainer;
 import com.akiban.server.explain.ExplainContext;
-import com.akiban.server.explain.PrimitiveExplainer;
 import com.akiban.server.explain.std.SortOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
@@ -40,7 +38,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -194,11 +191,11 @@ class Sort_Tree extends Operator
         public Row next()
         {
             Row row = null;
-            if (OPERATOR_NEXT_TAPS_ENABLED) {
+            if (TAP_NEXT_ENABLED) {
                 TAP_NEXT.in();
             }
             try {
-                if (OPERATOR_CURSOR_LIFECYCLE_CHECKS_ENABLED) {
+                if (CURSOR_LIFECYCLE_ENABLED) {
                     CursorLifecycle.checkIdleOrActive(this);
                 }
                 checkQueryCancelation();
@@ -209,11 +206,11 @@ class Sort_Tree extends Operator
                     }
                 }
             } finally {
-                if (OPERATOR_NEXT_TAPS_ENABLED) {
+                if (TAP_NEXT_ENABLED) {
                     TAP_NEXT.out();
                 }
             }
-            if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+            if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                 LOG.debug("Sort_Tree: yield {}", row);
             }
             return row;

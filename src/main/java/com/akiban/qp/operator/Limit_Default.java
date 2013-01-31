@@ -257,11 +257,11 @@ final class Limit_Default extends Operator
 
         @Override
         public Row next() {
-            if (OPERATOR_NEXT_TAPS_ENABLED) {
+            if (TAP_NEXT_ENABLED) {
                 TAP_NEXT.in();
             }
             try {
-                if (OPERATOR_CURSOR_LIFECYCLE_CHECKS_ENABLED) {
+                if (CURSOR_LIFECYCLE_ENABLED) {
                     CursorLifecycle.checkIdleOrActive(this);
                 }
                 checkQueryCancelation();
@@ -271,7 +271,7 @@ final class Limit_Default extends Operator
                         skipLeft = 0;
                         limitLeft = -1;
                         close();
-                        if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                        if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                             LOG.debug("Limit_Default: yield null");
                         }
                         return null;
@@ -280,14 +280,14 @@ final class Limit_Default extends Operator
                 }
                 if (limitLeft < 0) {
                     close();
-                    if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                    if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                         LOG.debug("Limit_Default: yield null");
                     }
                     return null;
                 }
                 if (limitLeft == 0) {
                     close();
-                    if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                    if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                         LOG.debug("Limit_Default: yield null");
                     }
                     return null;
@@ -295,18 +295,18 @@ final class Limit_Default extends Operator
                 if ((row = input.next()) == null) {
                     limitLeft = -1;
                     close();
-                    if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                    if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                         LOG.debug("Limit_Default: yield null");
                     }
                     return null;
                 }
                 --limitLeft;
-                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                     LOG.debug("Limit_Default: yield {}", row);
                 }
                 return row;
             } finally {
-                if (OPERATOR_NEXT_TAPS_ENABLED) {
+                if (TAP_NEXT_ENABLED) {
                     TAP_NEXT.out();
                 }
             }

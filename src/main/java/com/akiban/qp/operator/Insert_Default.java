@@ -26,7 +26,6 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
@@ -39,10 +38,8 @@ import com.akiban.util.tap.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
 
@@ -147,7 +144,7 @@ class Insert_Default implements UpdatePlannable {
         public UpdateResult run()
         {
             int seen = 0, modified = 0;
-            if (OPERATOR_NEXT_TAPS_ENABLED) {
+            if (TAP_NEXT_ENABLED) {
                 INSERT_TAP.in();
             }
             try {
@@ -160,7 +157,7 @@ class Insert_Default implements UpdatePlannable {
                     context.checkConstraints(row, usePValues);
                     adapter().writeRow(row, usePValues);
                     ++modified;
-                    if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                    if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                         LOG.debug("Insert_Default: inserting {}", row);
                     }
                 }
@@ -168,7 +165,7 @@ class Insert_Default implements UpdatePlannable {
                 if (input != null) {
                     input.close();
                 }
-                if (OPERATOR_NEXT_TAPS_ENABLED) {
+                if (TAP_NEXT_ENABLED) {
                     INSERT_TAP.out();
                 }
             }

@@ -40,7 +40,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
 
@@ -173,7 +172,7 @@ class Update_Default implements UpdatePlannable {
         {
             boolean usePValues = updateFunction.usePValues();
             int seen = 0, modified = 0;
-            if (OPERATOR_NEXT_TAPS_ENABLED) {
+            if (TAP_NEXT_ENABLED) {
                 UPDATE_TAP.in();
             }
             try {
@@ -186,7 +185,7 @@ class Update_Default implements UpdatePlannable {
                         Row newRow = updateFunction.evaluate(oldRow, context);
                         context.checkConstraints(newRow, usePValues);
                         adapter().updateRow(oldRow, newRow, usePValues);
-                        if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                        if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                             LOG.debug("Update_Default: update {} to {}", oldRow, newRow);
                         }
                         ++modified;
@@ -196,7 +195,7 @@ class Update_Default implements UpdatePlannable {
                 if (input != null) {
                     input.close();
                 }
-                if (OPERATOR_NEXT_TAPS_ENABLED) {
+                if (TAP_NEXT_ENABLED) {
                     UPDATE_TAP.out();
                 }
             }

@@ -45,7 +45,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Set;
 
 import static java.lang.Math.min;
-import java.util.Map;
 
 /**
 
@@ -306,7 +305,7 @@ public class BranchLookup_Nested extends Operator
             try {
                 CursorLifecycle.checkIdle(this);
                 Row rowFromBindings = context.getRow(inputBindingPosition);
-                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                     LOG.debug("BranchLookup_Nested: open using {}", rowFromBindings);
                 }
                 assert rowFromBindings.rowType() == inputRowType : rowFromBindings;
@@ -323,11 +322,11 @@ public class BranchLookup_Nested extends Operator
         @Override
         public Row next()
         {
-            if (OPERATOR_NEXT_TAPS_ENABLED) {
+            if (TAP_NEXT_ENABLED) {
                 TAP_NEXT.in();
             }
             try {
-                if (OPERATOR_CURSOR_LIFECYCLE_CHECKS_ENABLED) {
+                if (CURSOR_LIFECYCLE_ENABLED) {
                     CursorLifecycle.checkIdleOrActive(this);
                 }
                 checkQueryCancelation();
@@ -346,13 +345,13 @@ public class BranchLookup_Nested extends Operator
                         close();
                     }
                 }
-                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                     LOG.debug("BranchLookup_Nested: yield {}", row);
                 }
                 idle = row == null;
                 return row;
             } finally {
-                if (OPERATOR_NEXT_TAPS_ENABLED) {
+                if (TAP_NEXT_ENABLED) {
                     TAP_NEXT.out();
                 }
             }

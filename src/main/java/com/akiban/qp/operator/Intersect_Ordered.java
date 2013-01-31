@@ -26,7 +26,6 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -283,11 +282,11 @@ class Intersect_Ordered extends Operator
         @Override
         public Row next()
         {
-            if (OPERATOR_NEXT_TAPS_ENABLED) {
+            if (TAP_NEXT_ENABLED) {
                 TAP_NEXT.in();
             }
             try {
-                if (OPERATOR_CURSOR_LIFECYCLE_CHECKS_ENABLED) {
+                if (CURSOR_LIFECYCLE_ENABLED) {
                     CursorLifecycle.checkIdleOrActive(this);
                 }
                 Row next = null;
@@ -336,12 +335,12 @@ class Intersect_Ordered extends Operator
                         close();
                     }
                 }
-                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                     LOG.debug("Intersect_Ordered: yield {}", next);
                 }
                 return next;
             } finally {
-                if (OPERATOR_NEXT_TAPS_ENABLED) {
+                if (TAP_NEXT_ENABLED) {
                     TAP_NEXT.out();
                 }
             }
@@ -422,7 +421,7 @@ class Intersect_Ordered extends Operator
         {
             Row row = leftInput.next();
             leftRow.hold(row);
-            if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+            if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                 LOG.debug("Intersect_Ordered: left {}", row);
             }
         }
@@ -431,7 +430,7 @@ class Intersect_Ordered extends Operator
         {
             Row row = rightInput.next();
             rightRow.hold(row);
-            if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+            if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                 LOG.debug("Intersect_Ordered: right {}", row);
             }
         }

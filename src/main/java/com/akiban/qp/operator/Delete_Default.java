@@ -26,7 +26,6 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.exec.Plannable;
 import java.util.Collections;
 import java.util.List;
 
@@ -42,8 +41,6 @@ import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 /**
 
@@ -160,7 +157,7 @@ class Delete_Default implements UpdatePlannable {
         public UpdateResult run()
         {
             int seen = 0, modified = 0;
-            if (OPERATOR_NEXT_TAPS_ENABLED) {
+            if (TAP_NEXT_ENABLED) {
                 DELETE_TAP.in();
             }
             try {
@@ -168,7 +165,7 @@ class Delete_Default implements UpdatePlannable {
                 Row oldRow;
                 while ((oldRow = input.next()) != null) {
                     checkQueryCancelation();
-                    if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                    if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                         LOG.debug("Delete_Default: deleting {}", oldRow);
                     }
                     ++seen;
@@ -179,7 +176,7 @@ class Delete_Default implements UpdatePlannable {
                 if (input != null) {
                     input.close();
                 }
-                if (OPERATOR_NEXT_TAPS_ENABLED) {
+                if (TAP_NEXT_ENABLED) {
                     DELETE_TAP.out();
                 }
             }

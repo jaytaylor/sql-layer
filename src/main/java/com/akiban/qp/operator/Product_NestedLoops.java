@@ -26,7 +26,6 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.ProductRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.ProductRowType;
@@ -43,7 +42,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -229,11 +227,11 @@ class Product_NestedLoops extends Operator
         @Override
         public Row next()
         {
-            if (OPERATOR_NEXT_TAPS_ENABLED) {
+            if (TAP_NEXT_ENABLED) {
                 TAP_NEXT.in();
             }
             try {
-                if (OPERATOR_CURSOR_LIFECYCLE_CHECKS_ENABLED) {
+                if (CURSOR_LIFECYCLE_ENABLED) {
                     CursorLifecycle.checkIdleOrActive(this);
                 }
                 checkQueryCancelation();
@@ -250,14 +248,14 @@ class Product_NestedLoops extends Operator
                                 Row branchRow = row.subRow(branchType);
                                 assert branchRow != null : row;
                                 if (outerBranchRow.isEmpty() || !branchRow.hKey().equals(outerBranchRow.get().hKey())) {
-                                    if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                                    if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                                         LOG.debug("Product_NestedLoops: branch row {}", row);
                                     }
                                     outerBranchRow.hold(branchRow);
                                     innerRows.newBranchRow(branchRow);
                                 }
                                 outerRow.hold(row);
-                                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                                     LOG.debug("Product_NestedLoops: restart inner loop using current branch row");
                                 }
                                 innerRows.resetForCurrentBranchRow();
@@ -265,12 +263,12 @@ class Product_NestedLoops extends Operator
                         }
                     }
                 }
-                if (LOG_OPERATOR_EXECUTION && LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION && LOG.isDebugEnabled()) {
                     LOG.debug("Product_NestedLoops: yield {}", outputRow);
                 }
                 return outputRow;
             } finally {
-                if (OPERATOR_NEXT_TAPS_ENABLED) {
+                if (TAP_NEXT_ENABLED) {
                     TAP_NEXT.out();
                 }
             }
