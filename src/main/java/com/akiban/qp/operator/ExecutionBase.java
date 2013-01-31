@@ -51,6 +51,4 @@ public abstract class ExecutionBase
     }
 
     protected QueryContext context;
-
-    protected static final boolean LOG_OPERATOR_EXECUTION = false;
 }

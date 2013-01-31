@@ -38,6 +38,8 @@ import java.util.Set;
 
 public abstract class Operator implements Plannable
 {
+    protected static final boolean LOG_OPERATOR_EXECUTION = false;
+
     // Object interface
 
     @Override
