@@ -1067,7 +1067,7 @@ public class ApiTestBase {
     }
 
     public NewRow createNewRow(int tableId, Object... columns) {
-        return createNewRow(tableId, getRowDef(tableId), columns);
+        return createNewRow(getRowDef(tableId), columns);
     }
     
     public static NewRow createNewRow(RowDef rowDef, Object... columns) {
