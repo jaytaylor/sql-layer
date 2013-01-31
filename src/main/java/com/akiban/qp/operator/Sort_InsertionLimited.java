@@ -213,7 +213,9 @@ class Sort_InsertionLimited extends Operator
                 TAP_NEXT.in();
             }
             try {
-                // CursorLifecycle.checkIdleOrActive(this);
+                if (OPERATOR_CURSOR_LIFECYCLE_CHECKS_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 checkQueryCancelation();
                 switch (state) {
                 case FILLING:

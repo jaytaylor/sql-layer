@@ -327,7 +327,9 @@ public class BranchLookup_Nested extends Operator
                 TAP_NEXT.in();
             }
             try {
-                // CursorLifecycle.checkIdleOrActive(this);
+                if (OPERATOR_CURSOR_LIFECYCLE_CHECKS_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 checkQueryCancelation();
                 Row row;
                 if (keepInput && inputPrecedesBranch && inputRow.isHolding()) {

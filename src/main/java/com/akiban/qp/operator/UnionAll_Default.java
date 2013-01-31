@@ -235,7 +235,9 @@ final class UnionAll_Default extends Operator {
                 TAP_NEXT.in();
             }
             try {
-                // CursorLifecycle.checkIdleOrActive(this);
+                if (OPERATOR_CURSOR_LIFECYCLE_CHECKS_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 Row outputRow;
                 if (currentCursor == null) {
                     outputRow = nextCursorFirstRow();

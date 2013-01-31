@@ -198,7 +198,9 @@ class Sort_Tree extends Operator
                 TAP_NEXT.in();
             }
             try {
-                // CursorLifecycle.checkIdleOrActive(this);
+                if (OPERATOR_CURSOR_LIFECYCLE_CHECKS_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 checkQueryCancelation();
                 if (!input.isActive()) {
                     row = output.next();

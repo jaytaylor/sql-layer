@@ -287,7 +287,9 @@ class Intersect_Ordered extends Operator
                 TAP_NEXT.in();
             }
             try {
-                // CursorLifecycle.checkIdleOrActive(this);
+                if (OPERATOR_CURSOR_LIFECYCLE_CHECKS_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 Row next = null;
                 while (!closed && next == null) {
                     assert !(leftRow.isEmpty() && rightRow.isEmpty());

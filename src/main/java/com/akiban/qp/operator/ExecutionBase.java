@@ -54,4 +54,5 @@ public abstract class ExecutionBase
 
     protected static final boolean LOG_OPERATOR_EXECUTION = false;
     protected static final boolean OPERATOR_NEXT_TAPS_ENABLED = false;
+    protected static final boolean OPERATOR_CURSOR_LIFECYCLE_CHECKS_ENABLED = false;
 }

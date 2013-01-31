@@ -231,7 +231,9 @@ class HKeyUnion_Ordered extends Operator
                 TAP_NEXT.in();
             }
             try {
-                // CursorLifecycle.checkIdleOrActive(this);
+                if (OPERATOR_CURSOR_LIFECYCLE_CHECKS_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 Row nextRow = null;
                 while (!closed && nextRow == null) {
                     assert !(leftRow.isEmpty() && rightRow.isEmpty());
