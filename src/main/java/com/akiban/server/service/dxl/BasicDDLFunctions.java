@@ -466,7 +466,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                                                   oldRow,
                                                   queryContext,
                                                   projections,
-                                                  pProjections,
+                                                  ProjectedRow.createTEvaluatableExpressions(pProjections),
                                                   TInstance.createTInstances(pProjections));
                     queryContext.checkConstraints(newRow, usePValues);
                     adapter.alterRow(oldRow, newRow, oldTypeIndexes, groupChange, usePValues);
@@ -928,12 +928,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     public RowDef getRowDef(Session session, int tableId) throws RowDefNotFoundException {
         logger.trace("getting RowDef for {}", tableId);
         return getAIS(session).getUserTable(tableId).rowDef();
-    }
-
-    @Override
-    public List<String> getDDLs(final Session session) {
-        logger.trace("getting DDLs");
-        return schemaManager().schemaStrings(session, false);
     }
 
     @Override

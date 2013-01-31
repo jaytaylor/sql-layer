@@ -59,7 +59,7 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
         this.routine = routine;
         this.inputs = inputs;
     }
-
+     
     @Override
     public TPreptimeValue evaluateConstant(QueryContext context) {
         List<TPreptimeValue> values = new ArrayList<TPreptimeValue>(inputs.size());

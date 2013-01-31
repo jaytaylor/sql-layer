@@ -30,6 +30,7 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.row.ImmutableRow;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
@@ -136,7 +137,8 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
         public void add(Row row) {
             assert (state == State.FILLING);
             if (row instanceof ProjectedRow)
-                ((ProjectedRow)row).freeze();
+                // create a copy of this row, and hold it instead
+                row = new ImmutableRow((ProjectedRow)row);
             ShareHolder<Row> holder = new ShareHolder<Row>();
             holder.hold(row);
             rows.add(holder);

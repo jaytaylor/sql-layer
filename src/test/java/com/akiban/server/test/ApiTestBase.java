@@ -32,6 +32,7 @@ import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+import java.io.File;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -790,6 +791,23 @@ public class ApiTestBase {
         }
         updateAISGeneration();
         return ddl().getTableId(session(), tables.get(0).getName());
+    }
+
+    protected int loadSchemaFile(String schemaName, File file) throws Exception {
+        String sql = Strings.dumpFileToString(file);
+        return createTablesAndIndexesFromDDL(schemaName, sql);
+    }
+
+    protected void loadDataFile(String schemaName, File file) throws Exception {
+        String tableName = file.getName().replace(".dat", "");
+        int tableId = tableId(schemaName, tableName);
+        for (String line : Strings.dumpFile(file)) {
+            String[] cols = line.split("\t");
+            NewRow row = createNewRow(tableId);
+            for (int i = 0; i < cols.length; i++)
+                row.put(i, cols[i]);
+            dml().writeRow(session(), row);
+        }
     }
 
     /**

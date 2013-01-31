@@ -119,7 +119,7 @@ public abstract class Rand extends TScalarBase {
     
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget out)
-    { 
+    {
         Random rand;
         if (context.hasExectimeObject(RAND_INDEX))
             rand = (Random) context.exectimeObjectAt(RAND_INDEX);

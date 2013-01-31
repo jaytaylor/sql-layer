@@ -25,3 +25,6 @@
     com.akiban.server.service.lock.LockService : com.akiban.server.service.lock.LockServiceImpl
     com.akiban.server.service.plugins.PluginsFinder : com.akiban.server.service.plugins.HomeDirPluginsFinder
     com.akiban.server.service.externaldata.ExternalDataService : com.akiban.server.service.externaldata.ExternalDataServiceImpl
+    com.akiban.http.HttpConductor : com.akiban.http.HttpConductorImpl
+    com.akiban.rest.RestService : com.akiban.rest.RestServiceImpl
+    com.akiban.server.service.restdml.RestDMLService: com.akiban.server.service.restdml.RestDMLServiceImpl

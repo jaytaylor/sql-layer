@@ -292,15 +292,9 @@ public class TParsers
         @Override
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            try
-            {
-                target.putInt32(MDatetimes.parseTimestamp(source.getString(), context.getCurrentTimezone(), context));
-            }
-             catch (InvalidDateFormatException e)
-            {
-                context.warnClient(e);
-                target.putNull();
-            }
+            target.putInt32(MDatetimes.parseTimestamp(source.getString(),
+                                                      context.getCurrentTimezone(),
+                                                      context));
         }
     };
     

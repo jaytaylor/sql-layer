@@ -145,6 +145,12 @@ public class DDLGenerator
                 declaration.append(charAndCol.collation());
             }
         }
+        
+        if (column.getDefaultValue() != null) {
+            declaration.append(" DEFAULT '");
+            declaration.append(column.getDefaultValue());
+            declaration.append("'");
+        }
         if (column.getNullable() == false) {
             declaration.append(" NOT");
         }
