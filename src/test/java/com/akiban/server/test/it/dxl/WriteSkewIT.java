@@ -164,6 +164,8 @@ public class WriteSkewIT extends ITBase
                 exceptionInAnyThread.set(true);
                 txnService().rollbackTransaction(threadPrivateSession);
             } catch (Exception e) {
+                System.out.printf("Thread %s threw unexpected Exception %s\n", Thread.currentThread().getName(), e);
+                e.printStackTrace();
             }
         }
         
