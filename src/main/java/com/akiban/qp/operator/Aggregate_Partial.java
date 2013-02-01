@@ -45,6 +45,8 @@ import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -341,6 +343,7 @@ final class Aggregate_Partial extends Operator
     
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Aggregate_Partial open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Aggregate_Partial next");
+    private static final Logger LOG = LoggerFactory.getLogger(Aggregate_Partial.class);
 
     // object state
 
@@ -395,46 +398,65 @@ final class Aggregate_Partial extends Operator
 
         @Override
         public Row next() {
-            TAP_NEXT.in();
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 if (cursorState == CursorState.CLOSED)
                     throw new IllegalStateException("cursor not open");
                 if (cursorState == CursorState.CLOSING) {
                     close();
+                    if (LOG_EXECUTION) {
+                        LOG.debug("Aggregate_Partial null");
+                    }
                     return null;
                 }
 
                 assert cursorState == CursorState.OPENING || cursorState == CursorState.RUNNING : cursorState;
                 while (true) {
                     Row input = nextInput();
+                    Row output;
                     if (input == null) {
                         if (everSawInput) {
                             cursorState = CursorState.CLOSING;
-                            return createOutput();
+                            output = createOutput();
                         }
                         else if (noGroupBy()) {
                             cursorState = CursorState.CLOSING;
-                            return createEmptyOutput();
+                            output = createEmptyOutput();
                         }
                         else {
                             close();
-                            return null;
+                            output = null;
                         }
+                        if (LOG_EXECUTION) {
+                            LOG.debug("Aggregate_Partial: yield {}", output);
+                        }
+                        return output;
                     }
                     if (!input.rowType().equals(inputRowType)) {
+                        if (LOG_EXECUTION) {
+                            LOG.debug("Aggregate_Partial: yield {}", input);
+                        }
                         return input; // pass through
                     }
                     everSawInput = true;
                     if (outputNeeded(input)) {
                         saveInput(input); // save this input for the next time this method is invoked
-                        return createOutput();
+                        output = createOutput();
+                        if (LOG_EXECUTION) {
+                            LOG.debug("Aggregate_Partial: yield {}", output);
+                        }
+                        return output;
                     }
                     aggregate(input);
                 }
             } finally {
-                TAP_NEXT.out();
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
 

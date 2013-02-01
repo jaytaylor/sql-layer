@@ -39,6 +39,8 @@ import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.BloomFilter;
 import com.akiban.util.tap.InOutTap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -169,6 +171,7 @@ class Select_BloomFilter extends Operator
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Select_BloomFilter open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Select_BloomFilter next");
     private static final InOutTap TAP_CHECK = OPERATOR_TAP.createSubsidiaryTap("operator: Select_BloomFilter check");
+    private static final Logger LOG = LoggerFactory.getLogger(Select_BloomFilter.class);
 
     // Object state
 
@@ -261,9 +264,13 @@ class Select_BloomFilter extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 Row row;
                 do {
                     row = inputCursor.next();
@@ -273,9 +280,14 @@ class Select_BloomFilter extends Operator
                         row = null;
                     }
                 } while (!idle && row == null);
+                if (LOG_EXECUTION) {
+                    LOG.debug("Select_BloomFilter: yield {}", row);
+                }
                 return row;
             } finally {
-                TAP_NEXT.out();
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
 
