@@ -32,7 +32,6 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.AkibanAppender;
 
@@ -69,15 +68,23 @@ public class JsonRowWriter
 
     private static final Logger logger = LoggerFactory.getLogger(JsonRowWriter.class);
 
-    public boolean writeRows(Cursor cursor, AkibanAppender appender, String prefix)
+    public boolean writeRows(Cursor cursor, AkibanAppender appender, String prefix, WriteRow rowWriter)
             throws IOException {
         cursor.open();
         int depth = minDepth-1;
         Row row;
         while ((row = cursor.next()) != null) {
             logger.trace("Row {}", row);
-            UserTableRowType rowType = (UserTableRowType)row.rowType();
-            UserTable table = rowType.userTable();
+            RowType rowType;
+            UserTable table; 
+            
+            if (row.rowType().hasUserTable()) {
+                rowType = row.rowType();
+                table = rowType.userTable();
+            } else {
+                throw new RuntimeException ("Invaid row type for JsonRowWriter#writeRows()");
+            }
+            
             int rowDepth = table.getDepth();
             boolean begun = false;
             if (depth >= rowDepth) {
@@ -105,6 +112,8 @@ public class JsonRowWriter
                 appender.append(prefix);
             }
             appender.append('{');
+            rowWriter.write(row, appender);
+/*
             List<Column> columns = table.getColumns();
             for (int i = 0; i < columns.size(); i++) {
                 if (i > 0) appender.append(',');
@@ -114,6 +123,7 @@ public class JsonRowWriter
                 PValueSource pvalue = row.pvalue(i);
                 pvalue.tInstance().formatAsJson(pvalue, appender);
             }
+*/            
         }
         cursor.close();
         if (depth < minDepth)
@@ -123,5 +133,46 @@ public class JsonRowWriter
             depth--;
         } while (depth >= minDepth);
         return true;
+    }
+    
+    /**
+     * Write the name:value pairs of the data from a row into Json format.
+     * Current implementations take names from the table columns or the
+     * table's primary key columns. 
+     * @author tjoneslo
+     *
+     */
+    public static abstract class WriteRow {
+        public abstract void write(Row row, AkibanAppender appender);
+        protected void writeValue (String name, PValueSource pvalue, AkibanAppender appender) {
+            appender.append('"');
+            appender.append(name);
+            appender.append("\":");
+            pvalue.tInstance().formatAsJson(pvalue, appender);
+        }
+    }
+    
+    public static class WriteTableRow extends WriteRow {
+        public WriteTableRow () {}
+        
+        public void write(Row row, AkibanAppender appender) {
+            List<Column> columns = row.rowType().userTable().getColumns();
+            for (int i = 0; i < columns.size(); i++) {
+                if (i > 0) appender.append(',');
+                writeValue (columns.get(i).getName(), row.pvalue(i), appender);
+             }
+        }
+    }
+    
+    public static class WritePKRow extends WriteRow {
+        public WritePKRow () {}
+        
+        public void write(Row row, AkibanAppender appender) {
+            List<Column> columns = row.rowType().userTable().getPrimaryKey().getColumns();
+            for (int i = 0; i < columns.size(); i++) {
+                if (i > 0) appender.append(',');
+                writeValue(columns.get(i).getName(), row.pvalue(i), appender);
+            }
+        }
     }
 }
