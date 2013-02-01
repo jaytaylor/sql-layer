@@ -29,21 +29,36 @@ package com.akiban.http;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.google.inject.Inject;
+import org.eclipse.jetty.util.security.Constraint;
+import org.eclipse.jetty.security.ConstraintMapping;
+import org.eclipse.jetty.security.ConstraintSecurityHandler;
+import org.eclipse.jetty.security.JDBCLoginService;
+import org.eclipse.jetty.security.SecurityHandler;
+import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
+import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
 public final class HttpConductorImpl implements HttpConductor, Service {
     private static final Logger logger = LoggerFactory.getLogger(HttpConductorImpl.class);
     private static final String PORT_PROPERTY = "akserver.http.port";
+    private static final String SSL_PROPERTY = "akserver.http.ssl";
+    private static final String LOGIN_PROPERTY = "akserver.http.login";
+
+    private static final String REST_ROLE = "rest-user";
+    private static final String LOGIN_REALM = "AkServer";
+    private static final String JDBC_REALM_RESOURCE = "jdbcRealm.properties";
 
     private final ConfigurationService configurationService;
 
@@ -54,7 +69,8 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     private volatile int port = -1;
 
     @Inject
-    public HttpConductorImpl(ConfigurationService configurationService) {
+    public HttpConductorImpl(ConfigurationService configurationService,
+                             com.akiban.sql.embedded.EmbeddedJDBCService jdbcService) {
         this.configurationService = configurationService;
         java.util.logging.Logger jerseyLogging = java.util.logging.Logger.getLogger("com.sun.jersey");
         jerseyLogging.setLevel(java.util.logging.Level.OFF);
@@ -112,7 +128,10 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     @Override
     public void start() {
         String portProperty = configurationService.getProperty(PORT_PROPERTY);
+        String sslProperty = configurationService.getProperty(SSL_PROPERTY);
+        String loginProperty = configurationService.getProperty(LOGIN_PROPERTY);
         int portLocal;
+        boolean ssl, login;
         try {
             portLocal = Integer.parseInt(portProperty);
         }
@@ -120,10 +139,23 @@ public final class HttpConductorImpl implements HttpConductor, Service {
             logger.error("bad port descriptor: " + portProperty);
             throw e;
         }
-        logger.info("Starting HTTP service on port {}", portProperty);
+        ssl = Boolean.parseBoolean(sslProperty);
+        login = Boolean.parseBoolean(loginProperty);
+        logger.info("Starting {} service on port {}", 
+                    ssl ? "HTTPS" : "HTTP", portProperty);
 
         Server localServer = new Server();
-        SelectChannelConnector connector = new SelectChannelConnector();
+        SelectChannelConnector connector;
+        if (!ssl) {
+            connector = new SelectChannelConnector();
+        }
+        else {
+            // Share keystore configuration with PSQL.
+            SslContextFactory sslFactory = new SslContextFactory();
+            sslFactory.setKeyStorePath(System.getProperty("javax.net.ssl.keyStore"));
+            sslFactory.setKeyStorePassword(System.getProperty("javax.net.ssl.keyStorePassword"));
+            connector = new SslSelectChannelConnector(sslFactory);
+        }
         connector.setPort(portLocal);
         connector.setThreadPool(new QueuedThreadPool(200));
         connector.setAcceptors(4);
@@ -133,9 +165,31 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         localServer.setConnectors(new Connector[]{connector});
 
         HandlerCollection localHandlerCollection = new HandlerCollection(true);
-        localServer.setHandler(localHandlerCollection);
 
         try {
+            if (!login) {
+                localServer.setHandler(localHandlerCollection);
+            }
+            else {
+                Constraint constraint = new Constraint(Constraint.__BASIC_AUTH, REST_ROLE);
+                constraint.setAuthenticate(true);
+
+                ConstraintMapping cm = new ConstraintMapping();
+                cm.setPathSpec("/*");
+                cm.setConstraint(constraint);
+
+                ConstraintSecurityHandler sh = new ConstraintSecurityHandler();
+                sh.setAuthenticator(new BasicAuthenticator());
+                sh.setConstraintMappings(Collections.singletonList(cm));
+
+                JDBCLoginService loginService =
+                    new JDBCLoginService(LOGIN_REALM, 
+                                         HttpConductorImpl.class.getResource(JDBC_REALM_RESOURCE).toString());
+                sh.setLoginService(loginService);
+
+                sh.setHandler(localHandlerCollection);
+                localServer.setHandler(sh);
+            }
             localServer.start();
         }
         catch (Exception e) {
