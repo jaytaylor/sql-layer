@@ -191,9 +191,7 @@ public class RestServiceFilesIT extends ITBase {
 
         httpConn.setRequestMethod(caseParams.requestMethod);
         httpConn.setUseCaches(false);
-        //httpConn.setDoInput(true);
         httpConn.setDoOutput(true);
-        //httpConn.connect();
 
         try {
             // Request
@@ -220,7 +218,7 @@ public class RestServiceFilesIT extends ITBase {
             }
             StringBuilder builder = new StringBuilder();
             Strings.readStreamTo(is, builder, true);
-            LOG.debug(builder.toString());
+            LOG.error(builder.toString());
 
             ObjectMapper mapper = new ObjectMapper();
             JsonNode expectedNode = mapper.readTree(caseParams.expectedResponse);

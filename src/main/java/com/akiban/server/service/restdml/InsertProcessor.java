@@ -87,6 +87,7 @@ public class InsertProcessor {
                 }
             };
 
+    private enum ArrayStatus { NONE, FIRST, SECOND, DONE} 
     
     public String processInsert(Session session, AkibanInformationSchema ais, TableName rootTable, JsonParser jp) 
             throws JsonParseException, IOException {
@@ -109,13 +110,20 @@ public class InsertProcessor {
         //StoreAdapter adapter;
         QueryContext queryContext = null;
         boolean inObject = false;
+        ArrayStatus inArray = ArrayStatus.NONE;
         
         while((token = jp.nextToken()) != null) {
             
             switch (token) {
             case START_ARRAY:
+                appender.append('[');
+                inArray = ArrayStatus.FIRST;
+                break;
             case START_OBJECT:
-                if (!inObject) {
+                if (inArray == ArrayStatus.SECOND) {
+                    setColumnsNull(queryContext, table);
+                    inObject = true;
+                } else if (!inObject) {
                     currentTable = TableName.parse(rootTable.getSchemaName(), field);
                     table = ais.getUserTable(currentTable);
                     if (table == null) {
@@ -126,7 +134,16 @@ public class InsertProcessor {
                 }
                 break;
             case END_ARRAY:
+                inArray = ArrayStatus.NONE;
+                appender.append(']');
+                break;
             case END_OBJECT:
+                if (inArray == ArrayStatus.FIRST) {
+                    inArray = ArrayStatus.SECOND;
+                } else if (inArray == ArrayStatus.SECOND) {
+                    appender.append(','); 
+                }
+
                 if (inObject) {
                     runUpdate(queryContext, appender, table);
                     inObject = false;
@@ -223,14 +240,15 @@ public class InsertProcessor {
     
     private QueryContext newQueryContext (Session session, UserTable table) {
         QueryContext queryContext = new RestQueryContext(getAdapter(session, table));
-        
+        setColumnsNull (queryContext, table);
+        return queryContext;
+    }
+    
+    private void setColumnsNull (QueryContext queryContext, UserTable table) {
         for (Column column : table.getColumns()) {
             PValue pvalue = new PValue (column.tInstance());
             pvalue.putNull();
             queryContext.setPValue(column.getPosition(), pvalue);
         }
-        
-        return queryContext;
-
     }
 }
