@@ -26,10 +26,7 @@
 package com.akiban.server.service.restdml;
 
 import java.io.IOException;
-import java.io.StringWriter;
 
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
@@ -49,8 +46,11 @@ import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
+import com.akiban.server.error.NoSuchColumnException;
+import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.externaldata.JsonRowWriter;
+import com.akiban.server.service.externaldata.JsonRowWriter.WritePKRow;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
@@ -115,7 +115,10 @@ public class InsertProcessor {
             case START_OBJECT:
                 currentTable = TableName.parse(rootTable.getSchemaName(), field);
                 table = ais.getUserTable(currentTable);
-                queryContext = new SimpleQueryContext(getAdapter(session, table));
+                if (table == null) {
+                    throw new NoSuchTableException(currentTable.getSchemaName(), currentTable.getTableName());
+                }
+                queryContext = newQueryContext(session, table); 
                 break;
             case END_ARRAY:
             case END_OBJECT:
@@ -128,19 +131,20 @@ public class InsertProcessor {
                 break;
             case VALUE_EMBEDDED_OBJECT:
                 break;
-            case VALUE_FALSE:
-                break;
             case VALUE_NULL:
-                setValue(queryContext, currentTable, field, null);
+                setValue(queryContext, getColumn(table, field), null);
                 break;
             case VALUE_NUMBER_FLOAT:
                 break;
             case VALUE_NUMBER_INT:
+                setValue (queryContext, getColumn(table, field), jp.getIntValue());
                 break;
             case VALUE_STRING:
-                setValue (queryContext, currentTable, field, jp.getText());
+                setValue (queryContext, getColumn(table, field), jp.getText());
                 break;
+            case VALUE_FALSE:
             case VALUE_TRUE:
+                setValue (queryContext, getColumn(table, field), jp.getBooleanValue());
                 break;
             default:
                 break;
@@ -153,19 +157,22 @@ public class InsertProcessor {
 
     private void runUpdate (QueryContext queryContext, AkibanAppender appender, UserTable table) throws IOException {
         assert queryContext != null : "Bad Json format";
-        
         Operator insert = insertGenerator.createInsert(table.getName());
 
         Cursor cursor = API.cursor(insert, queryContext);
         JsonRowWriter writer = new JsonRowWriter (table, 0);
-        writer.writeRows(cursor, appender, "\n");
+        writer.writeRows(cursor, appender, "\n", new WritePKRow());
     }
     
-    private void setValue (QueryContext queryContext, TableName currentTable,  String field, String value) {
-        
-        UserTable table = schema.ais().getUserTable(currentTable);
+    private Column getColumn (UserTable table, String field) {
         Column column = table.getColumn(field);
-        int index = column.getPosition();
+        if (column == null) {
+            throw new NoSuchColumnException(field);
+        }
+        return column;
+    }
+    
+    private void setValue (QueryContext queryContext, Column column, String value) {
         PValue pvalue = null;
         if (value == null) {
             pvalue = new PValue(column.tInstance());
@@ -173,7 +180,15 @@ public class InsertProcessor {
         } else {
             pvalue = new PValue(column.tInstance(), value);
         }
-        queryContext.setPValue(index, pvalue);
+        queryContext.setPValue(column.getPosition(), pvalue);
+    }
+    
+    private void setValue (QueryContext queryContext,Column column, int value) {
+        queryContext.setPValue(column.getPosition(), new PValue (column.tInstance(), value));
+    }
+    
+    private void setValue (QueryContext queryContext, Column column, boolean value) {
+        queryContext.setPValue(column.getPosition(), new PValue(column.tInstance(), value));
     }
     
     
@@ -186,5 +201,16 @@ public class InsertProcessor {
         return adapter;
     }
     
-    
+    private QueryContext newQueryContext (Session session, UserTable table) {
+        QueryContext queryContext = new SimpleQueryContext(getAdapter(session, table));
+        
+        for (Column column : table.getColumns()) {
+            PValue pvalue = new PValue (column.tInstance());
+            pvalue.putNull();
+            queryContext.setPValue(column.getPosition(), pvalue);
+        }
+        
+        return queryContext;
+
+    }
 }

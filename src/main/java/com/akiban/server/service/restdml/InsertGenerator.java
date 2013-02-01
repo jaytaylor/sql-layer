@@ -128,8 +128,9 @@ public  class InsertGenerator {
                 int fieldIndex = column.getColumn().getPosition();
                 pExpressions.add (new TPreparedField(stream.rowType.typeInstanceAt(fieldIndex), fieldIndex));
             }
-            stream.operator = API.project_Default(stream.operator,
+            stream.operator = API.project_Table(stream.operator,
                     stream.rowType,
+                    schema.userTableRowType(table),
                     null,
                     pExpressions);
         }
@@ -222,9 +223,9 @@ public  class InsertGenerator {
         }
         insertsP = Arrays.asList(row);
         
-        input.rowType = targetRowType;
         input.operator = API.project_Table(input.operator, input.rowType,
                 targetRowType, null, insertsP);
+        input.rowType = targetRowType;
         return input;
     }
 

@@ -122,11 +122,10 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     @Override
     public Response insert(final String schemaName, final String tableName, JsonParser jp)  {
         TableName rootTable = new TableName (schemaName, tableName);
-        try {
-            Session session = sessionService.createSession();
+        try (Session session = sessionService.createSession();
+            CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
             AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
             String pk = insertProcessor.processInsert(session, ais, rootTable, jp);
-            
             return Response.status(Response.Status.OK)
                 .entity(pk).build();
         } catch (JsonParseException ex) {
