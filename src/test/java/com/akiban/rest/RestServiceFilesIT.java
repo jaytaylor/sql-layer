@@ -185,21 +185,33 @@ public class RestServiceFilesIT extends ITBase {
         URL requestURL = getRestURL(caseParams.requestURI);
         HttpURLConnection httpConn = (HttpURLConnection)requestURL.openConnection();
 
-        if(!caseParams.requestMethod.equals("GET")) {
+        if(!(caseParams.requestMethod.equals("GET") || caseParams.requestMethod.equals("POST"))) {
             throw new UnsupportedOperationException("Unsupported method: " + caseParams.requestMethod);
         }
 
         httpConn.setRequestMethod(caseParams.requestMethod);
         httpConn.setUseCaches(false);
-        httpConn.setDoInput(true);
+        //httpConn.setDoInput(true);
         httpConn.setDoOutput(true);
+        //httpConn.connect();
 
-        httpConn.connect();
         try {
             // Request
             // TODO: write to getOutputStream for PUT and POST
-
+            if (caseParams.requestMethod.equals("POST")) {
+                if (caseParams.requestBody == null) {
+                    throw new UnsupportedOperationException ("PUT/POST expects request body (<test>.body)");
+                }
+                LOG.error(caseParams.requestBody);
+                byte[] request = caseParams.requestBody.getBytes();
+                httpConn.setDoInput(true);
+                httpConn.setFixedLengthStreamingMode(request.length);
+                httpConn.setRequestProperty("Content-Type", "application/json");
+                httpConn.setRequestProperty("Accept", "application/json");
+                httpConn.getOutputStream().write(request);
+            }
             // Response
+            
             InputStream is;
             try {
                 is = httpConn.getInputStream();
@@ -208,6 +220,7 @@ public class RestServiceFilesIT extends ITBase {
             }
             StringBuilder builder = new StringBuilder();
             Strings.readStreamTo(is, builder, true);
+            LOG.error(builder.toString());
 
             ObjectMapper mapper = new ObjectMapper();
             JsonNode expectedNode = mapper.readTree(caseParams.expectedResponse);
