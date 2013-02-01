@@ -91,23 +91,22 @@ public class AccumLiveValueAfterAbortIT extends ITBase {
         }
     }
 
-    @Test
-    public void onDuplicateKeyUpdate() {
+    private void testOp(Op op) {
         createAndLoad();
         final int UPDATE_ID = 1;
         for(int i = 1; i <= UPDATE_COUNT; ++i) {
-            insertAs(Op.ON_DUP_KEY_UPDATE, UPDATE_ID, i);
+            insertAs(op, UPDATE_ID, i);
         }
         postCheck();
     }
 
     @Test
+    public void onDuplicateKeyUpdate() {
+        testOp(Op.ON_DUP_KEY_UPDATE);
+    }
+
+    @Test
     public void replace() {
-        createAndLoad();
-        final int UPDATE_ID = 1;
-        for(int i = 1; i <= UPDATE_COUNT; ++i) {
-            insertAs(Op.REPLACE, UPDATE_ID, i);
-        }
-        postCheck();
+        testOp(Op.REPLACE);
     }
 }
