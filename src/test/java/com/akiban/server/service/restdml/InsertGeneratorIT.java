@@ -149,7 +149,43 @@ public class InsertGeneratorIT extends ITBase {
                 "    Insert_Returning(INTO c)\n" +
                 "      Project_Default(ifnull(Field(0), 0), ifnull(Field(1), ''), ifnull(Field(2), 0.000000e+00))\n" +
                 "        ValuesScan_Default([$1, $2, $3])");
-        
+    }
+    
+    @Test 
+    public void testPKNotFirst() {
+        createTable (SCHEMA, "c",
+                "name varchar(32) not null",
+                "address varchar(64) not null",
+                "cid int not null primary key");
+        TableName table = new TableName (SCHEMA, "c");
+        this.insertGenerator = new InsertGenerator (this.ais());
+        insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(T3RegistryService.class));
+        Operator insert = insertGenerator.createInsert(table);
+        assertEquals(
+                getExplain(insert, table.getSchemaName()),
+                "\n  Project_Default(Field(2))\n" +
+                "    Insert_Returning(INTO c)\n" +
+                "      Project_Default(Field(0), Field(1), Field(2))\n" +
+                "        ValuesScan_Default([$1, $2, $3])");
+    }
+    
+    @Test
+    public void testPKMultiColumn() {
+        createTable(SCHEMA, "o",
+                "cid int not null",
+                "oid int not null",
+                "items int not null",
+                "primary key (cid, oid)");
+        TableName table = new TableName (SCHEMA, "o");
+        this.insertGenerator = new InsertGenerator (this.ais());
+        insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(T3RegistryService.class));
+        Operator insert = insertGenerator.createInsert(table);
+        assertEquals(
+                getExplain(insert, table.getSchemaName()),
+                "\n  Project_Default(Field(0), Field(1))\n" +
+                "    Insert_Returning(INTO o)\n" +
+                "      Project_Default(Field(0), Field(1), Field(2))\n" +
+                "        ValuesScan_Default([$1, $2, $3])");
     }
 
     protected String getExplain (Operator plannable, String defaultSchemaName) {
