@@ -170,11 +170,11 @@ public class WriteSkewIT extends ITBase
             } catch (RollbackException e) {
                 termination = e;
                 exceptionInAnyThread.set(true);
-                txnService().rollbackTransaction(threadPrivateSession);
             } catch (Exception e) {
                 System.out.printf("Thread %s threw unexpected Exception %s\n", Thread.currentThread().getName(), e);
                 e.printStackTrace();
             } finally {
+                txnService().rollbackTransactionIfOpen(threadPrivateSession);
                 semB.release();
             }
         }
@@ -186,14 +186,7 @@ public class WriteSkewIT extends ITBase
             return termination;
         }
 
-        public synchronized void proceed() throws InterruptedException
-        {
-            semA.release();
-            semB.acquire();
-        }
-
         protected final Session threadPrivateSession = serviceManager().getSessionService().createSession();
-        private volatile boolean okToProceed = true;
         private Exception termination;
         private final Semaphore semA = new Semaphore(0);
         private final Semaphore semB = new Semaphore(0);
