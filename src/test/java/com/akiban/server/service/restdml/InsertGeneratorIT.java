@@ -198,5 +198,4 @@ public class InsertGeneratorIT extends ITBase {
         }
         return str.toString();
     }
-
 }

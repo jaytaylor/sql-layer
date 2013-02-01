@@ -35,13 +35,13 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CacheValueGenerator;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.memoryadapter.MemoryAdapter;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
@@ -55,6 +55,8 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.util.AkibanAppender;
 
@@ -104,25 +106,31 @@ public class InsertProcessor {
         String field = rootTable.getDescription();
         TableName currentTable = rootTable;
 
-        StoreAdapter adapter;
+        //StoreAdapter adapter;
         QueryContext queryContext = null;
-
+        boolean inObject = false;
         
         while((token = jp.nextToken()) != null) {
             
             switch (token) {
             case START_ARRAY:
             case START_OBJECT:
-                currentTable = TableName.parse(rootTable.getSchemaName(), field);
-                table = ais.getUserTable(currentTable);
-                if (table == null) {
-                    throw new NoSuchTableException(currentTable.getSchemaName(), currentTable.getTableName());
+                if (!inObject) {
+                    currentTable = TableName.parse(rootTable.getSchemaName(), field);
+                    table = ais.getUserTable(currentTable);
+                    if (table == null) {
+                        throw new NoSuchTableException(currentTable.getSchemaName(), currentTable.getTableName());
+                    }
+                    queryContext = newQueryContext(session, table); 
+                    inObject = true;
                 }
-                queryContext = newQueryContext(session, table); 
                 break;
             case END_ARRAY:
             case END_OBJECT:
-                runUpdate(queryContext, appender, table);
+                if (inObject) {
+                    runUpdate(queryContext, appender, table);
+                    inObject = false;
+                }
                 break;
             case FIELD_NAME:
                 field = jp.getCurrentName();
@@ -135,6 +143,7 @@ public class InsertProcessor {
                 setValue(queryContext, getColumn(table, field), null);
                 break;
             case VALUE_NUMBER_FLOAT:
+                setValue (queryContext, getColumn(table, field), jp.getFloatValue());
                 break;
             case VALUE_NUMBER_INT:
                 setValue (queryContext, getColumn(table, field), jp.getIntValue());
@@ -177,6 +186,14 @@ public class InsertProcessor {
         if (value == null) {
             pvalue = new PValue(column.tInstance());
             pvalue.putNull();
+        } else if (column.getType().equals(Types.DATETIME)) {
+            pvalue = new PValue(column.tInstance(), MDatetimes.parseDatetime(value));
+        } else if (column.getType().equals(Types.DATE)) {
+            int date = MDatetimes.parseDate(value, new TExecutionContext(null, null, queryContext));
+            pvalue = new PValue(column.tInstance(), date);
+        } else if (column.getType().equals(Types.TIME)) {
+            int time = MDatetimes.parseTime(value,  new TExecutionContext(null, null, queryContext));
+            pvalue = new PValue(column.tInstance(), time);
         } else {
             pvalue = new PValue(column.tInstance(), value);
         }
@@ -191,6 +208,9 @@ public class InsertProcessor {
         queryContext.setPValue(column.getPosition(), new PValue(column.tInstance(), value));
     }
     
+    private void setValue (QueryContext queryContext, Column column, float value) {
+        queryContext.setPValue(column.getPosition(), new PValue(column.tInstance(), value));
+    }
     
     private StoreAdapter getAdapter(Session session, UserTable table) {
         if (table.hasMemoryTableFactory())
@@ -202,7 +222,7 @@ public class InsertProcessor {
     }
     
     private QueryContext newQueryContext (Session session, UserTable table) {
-        QueryContext queryContext = new SimpleQueryContext(getAdapter(session, table));
+        QueryContext queryContext = new RestQueryContext(getAdapter(session, table));
         
         for (Column column : table.getColumns()) {
             PValue pvalue = new PValue (column.tInstance());

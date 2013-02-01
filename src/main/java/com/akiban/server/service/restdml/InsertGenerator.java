@@ -117,14 +117,11 @@ public  class InsertGenerator {
         stream.operator = API.insert_Returning(stream.operator, true);
 
         List<TPreparedExpression> pExpressions = null;
-        List<PhysicalResultColumn> resultsColumns = null;
         if (table.getPrimaryKey() != null) {
             PrimaryKey key = table.getPrimaryKey();
             int size  = key.getIndex().getKeyColumns().size();
-            resultsColumns = new ArrayList<PhysicalResultColumn>(size);
             pExpressions = new ArrayList<TPreparedExpression>(size);
             for (IndexColumn column : key.getIndex().getKeyColumns()) {
-                resultsColumns.add(new PhysicalResultColumn(column.getColumn().getName()));
                 int fieldIndex = column.getColumn().getPosition();
                 pExpressions.add (new TPreparedField(stream.rowType.typeInstanceAt(fieldIndex), fieldIndex));
             }
@@ -134,26 +131,7 @@ public  class InsertGenerator {
                     null,
                     pExpressions);
         }
-        
-
         return stream.operator; 
-/*            
-        ArrayList<DataTypeDescriptor> parameterTypes = new ArrayList<DataTypeDescriptor>();
-        for (int i = 0; i < table.getColumns().size(); i++) {
-            parameterTypes.add(new DataTypeDescriptor (TypeId.VARCHAR_ID, false));
-        }
-        Set<UserTable> affectedTables = new HashSet<UserTable>();
-        affectedTables.add(table);
-
-        
-        return new PhysicalUpdate(stream.operator, 
-                parameterTypes.toArray(new DataTypeDescriptor[parameterTypes.size()]),
-                stream.rowType,
-                resultsColumns,
-                true, false, false,
-                new CostEstimate (1, 0.0), 
-                affectedTables);
-*/                    
     }
     
     protected RowStream assembleValueScan(UserTable table) {

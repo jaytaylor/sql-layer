@@ -46,14 +46,10 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
-import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.server.t3expressions.T3RegistryService;
-import com.akiban.sql.optimizer.plan.PhysicalUpdate;
 import com.google.inject.Inject;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -64,15 +60,10 @@ import static com.akiban.server.service.transaction.TransactionService.Closeable
 
 public class RestDMLServiceImpl implements Service, RestDMLService {
 
-    private final ConfigurationService configService;
-    private final SchemaManager schemaManager;
     private final SessionService sessionService;
     
     private final DXLService dxlService;
-    private final Store store;
     private final TransactionService transactionService;
-    private final TreeService treeService;
-    private final T3RegistryService t3RegistryService;
     private final ExternalDataService extDataService;
     private InsertProcessor insertProcessor;
     
@@ -82,23 +73,14 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                               Store store,
                               TransactionService transactionService,
                               T3RegistryService registryService,
-                              SchemaManager schemaService,
                               TreeService treeService,
                               ExternalDataService extDataService,
                               SessionService sessionService) {
-        this.configService = configService;
-        this.schemaManager = schemaService;
         this.sessionService = sessionService;
-        this.t3RegistryService = registryService;
-        
         this.dxlService = dxlService;
-        this.store = store;
         this.transactionService = transactionService;
-        this.treeService = treeService;
 
-        this.insertProcessor = new InsertProcessor (configService, treeService, store, t3RegistryService);
-        
-        
+        this.insertProcessor = new InsertProcessor (configService, treeService, store, registryService);
         this.extDataService = extDataService;
     }
     

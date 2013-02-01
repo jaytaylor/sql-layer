@@ -27,6 +27,8 @@
 package com.akiban.server.service.externaldata;
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.NopVisitor;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.Cursor;
@@ -168,10 +170,11 @@ public class JsonRowWriter
         public WritePKRow () {}
         
         public void write(Row row, AkibanAppender appender) {
-            List<Column> columns = row.rowType().userTable().getPrimaryKey().getColumns();
+            List<IndexColumn> columns = row.rowType().userTable().getPrimaryKey().getIndex().getKeyColumns();
             for (int i = 0; i < columns.size(); i++) {
                 if (i > 0) appender.append(',');
-                writeValue(columns.get(i).getName(), row.pvalue(i), appender);
+                Column column = columns.get(i).getColumn();
+                writeValue(column.getName(), row.pvalue(column.getPosition()), appender);
             }
         }
     }

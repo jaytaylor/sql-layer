@@ -185,7 +185,7 @@ public class RestServiceFilesIT extends ITBase {
         URL requestURL = getRestURL(caseParams.requestURI);
         HttpURLConnection httpConn = (HttpURLConnection)requestURL.openConnection();
 
-        if(!(caseParams.requestMethod.equals("GET") || caseParams.requestMethod.equals("POST"))) {
+        if(caseParams.requestMethod.equals("DELETE")) {
             throw new UnsupportedOperationException("Unsupported method: " + caseParams.requestMethod);
         }
 
@@ -198,11 +198,11 @@ public class RestServiceFilesIT extends ITBase {
         try {
             // Request
             // TODO: write to getOutputStream for PUT and POST
-            if (caseParams.requestMethod.equals("POST")) {
+            if (caseParams.requestMethod.equals("POST") || caseParams.requestMethod.equals("PUT")) {
                 if (caseParams.requestBody == null) {
                     throw new UnsupportedOperationException ("PUT/POST expects request body (<test>.body)");
                 }
-                LOG.error(caseParams.requestBody);
+                LOG.debug(caseParams.requestBody);
                 byte[] request = caseParams.requestBody.getBytes();
                 httpConn.setDoInput(true);
                 httpConn.setFixedLengthStreamingMode(request.length);
@@ -220,7 +220,7 @@ public class RestServiceFilesIT extends ITBase {
             }
             StringBuilder builder = new StringBuilder();
             Strings.readStreamTo(is, builder, true);
-            LOG.error(builder.toString());
+            LOG.debug(builder.toString());
 
             ObjectMapper mapper = new ObjectMapper();
             JsonNode expectedNode = mapper.readTree(caseParams.expectedResponse);
