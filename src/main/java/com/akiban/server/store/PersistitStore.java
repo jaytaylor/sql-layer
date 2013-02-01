@@ -448,11 +448,14 @@ public class PersistitStore implements Store, Service {
                     rowDef.getTableStatus().setAutoIncrement(autoIncrementValue);
                 }
             }
-            rowDef.getTableStatus().rowsWritten(1);
+
             PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
             for (Index index : rowDef.getIndexes()) {
                 insertIntoIndex(session, index, rowData, hEx.getKey(), indexRow, deferIndexes);
             }
+
+            // bug1112940: Bump row count *after* uniqueness checks in insertIntoIndex
+            rowDef.getTableStatus().rowsWritten(1);
 
             if (propagateHKeyChanges && hasChildren(rowDef.userTable())) {
                 // The row being inserted might be the parent of orphan rows
