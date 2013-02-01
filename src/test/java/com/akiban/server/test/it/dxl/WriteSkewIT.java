@@ -26,18 +26,20 @@
 
 package com.akiban.server.test.it.dxl;
 
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.junit.Test;
+
 import com.akiban.ais.model.TableName;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.test.it.ITBase;
 import com.persistit.exception.RollbackException;
-import org.junit.Test;
-
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 // Inspired by bug 1078331
 
@@ -102,10 +104,15 @@ public class WriteSkewIT extends ITBase
     {
         sessionA.start();
         sessionB.start();
-        sessionA.proceed();
-        sessionB.proceed();
-        sessionA.proceed();
-        sessionB.proceed();
+
+        sessionA.semA.release();
+        sessionA.semB.acquire();
+        
+        sessionB.semA.release();
+        
+        sessionA.semA.release();
+        sessionA.semB.acquire();
+                
         sessionA.join();
         sessionB.join();
         assertNull(sessionA.termination());
@@ -154,11 +161,12 @@ public class WriteSkewIT extends ITBase
         {
             txnService().beginTransaction(threadPrivateSession);
             try {
-                waitForPermissionToProceed();
+                semA.acquire();
                 doAction();
-                waitForPermissionToProceed();
+                semB.release();
+                semA.acquire();
                 txnService().commitTransaction(threadPrivateSession);
-            } catch (OtherThreadTerminatedException e) {
+                semB.release();
             } catch (RollbackException e) {
                 termination = e;
                 exceptionInAnyThread.set(true);
@@ -166,6 +174,8 @@ public class WriteSkewIT extends ITBase
             } catch (Exception e) {
                 System.out.printf("Thread %s threw unexpected Exception %s\n", Thread.currentThread().getName(), e);
                 e.printStackTrace();
+            } finally {
+                semB.release();
             }
         }
         
@@ -178,31 +188,15 @@ public class WriteSkewIT extends ITBase
 
         public synchronized void proceed() throws InterruptedException
         {
-            okToProceed = false;
-            notifyAll();
-            while (!exceptionInAnyThread.get() && !okToProceed) {
-                wait();
-            }
-        }
-
-        private synchronized void waitForPermissionToProceed() throws InterruptedException, OtherThreadTerminatedException
-        {
-            while (!exceptionInAnyThread.get() && okToProceed) {
-                wait();
-            }
-            if (exceptionInAnyThread.get()) {
-                throw new OtherThreadTerminatedException();
-            }
-            okToProceed = true;
-            notifyAll();
+            semA.release();
+            semB.acquire();
         }
 
         protected final Session threadPrivateSession = serviceManager().getSessionService().createSession();
         private volatile boolean okToProceed = true;
         private Exception termination;
+        private final Semaphore semA = new Semaphore(0);
+        private final Semaphore semB = new Semaphore(0);
     }
 
-    @SuppressWarnings("serial")
-    private static class OtherThreadTerminatedException extends Exception
-    {}
 }
