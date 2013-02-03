@@ -126,15 +126,15 @@ public class SecurityServiceImpl implements SecurityService, Service {
     protected AkibanInformationSchema buildSystemObjects() {
         NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
         builder.userTable(ROLES_TABLE_NAME)
-            .autoIncLong("id", 0)
+            .autoIncLong("id", 1)
             .colString("name", 128, false)
             .pk("id");
         builder.userTable(USERS_TABLE_NAME)
-            .autoIncLong("id", 0)
+            .autoIncLong("id", 1)
             .colString("name", 128, false)
             .pk("id");
         builder.userTable(USER_ROLES_TABLE_NAME)
-            .autoIncLong("id", 0)
+            .autoIncLong("id", 1)
             .colLong("role_id", false)
             .colLong("user_id", false)
             .pk("id")

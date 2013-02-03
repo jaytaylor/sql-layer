@@ -1558,7 +1558,9 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private static void checkJoinTo(Join join, TableName childName, boolean isInternal) {
         TableName parentName = (join != null) ? join.getParent().getName() : null;
         if(parentName != null) {
-            boolean inAIS = TableName.INFORMATION_SCHEMA.equals(parentName.getSchemaName());
+            String parentSchema = parentName.getSchemaName();
+            boolean inAIS = (TableName.INFORMATION_SCHEMA.equals(parentSchema) ||
+                             TableName.SECURITY_SCHEMA.equals(parentSchema));
             if(inAIS && !isInternal) {
                 throw new JoinToProtectedTableException(parentName, childName);
             } else if(!inAIS && isInternal) {

@@ -227,10 +227,16 @@ public class AISBBasedBuilder
             checkUsable();
             aisb.column(schema, userTable, name, uTableColumnPos++, "INT", 10L, null, nullable, autoIncrement, null, null);
             if (initialAutoInc != null) {
+                String sequenceName = "temp-seq-" + userTable + "-" + name;
+                long initValue = initialAutoInc.longValue();
+                aisb.sequence(schema, sequenceName, 
+                              initValue, 1L, Long.MIN_VALUE, Long.MAX_VALUE, 
+                              false);
+                aisb.columnAsIdentity(schema, userTable, name, sequenceName, true);
                 aisb.akibanInformationSchema().
                      getUserTable(schema, userTable).
                      getColumn(name).
-                     setInitialAutoIncrementValue(initialAutoInc.longValue());
+                     setInitialAutoIncrementValue(initValue);
             }
             return this;
         }
