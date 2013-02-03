@@ -32,6 +32,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
 
@@ -55,7 +56,7 @@ public class WriteSkewIT extends ITBase
         dml().writeRow(session(), ITBase.createNewRow(parentRowDef, 2, 200));
         dml().writeRow(session(), ITBase.createNewRow(childRowDef, 1, 1, 1100));
         dml().writeRow(session(), ITBase.createNewRow(grandchildRowDef, 1, 1, 11100));
-        TestThread threadA = new TestThread()
+        TestThread threadA = new TestThread("a")
         {
             @Override
             public void doAction()
@@ -63,7 +64,7 @@ public class WriteSkewIT extends ITBase
                 dml().writeRow(threadPrivateSession, ITBase.createNewRow(childRowDef, 2, 2, 2200));
             }
         };
-        TestThread threadB = new TestThread()
+        TestThread threadB = new TestThread("b")
         {
             @Override
             public void doAction()
@@ -81,7 +82,7 @@ public class WriteSkewIT extends ITBase
         createDatabase();
         dml().writeRow(session(), ITBase.createNewRow(parentRowDef, 1, 100));
         dml().writeRow(session(), ITBase.createNewRow(childRowDef, 11, 1, 1100));
-        TestThread threadA = new TestThread()
+        TestThread threadA = new TestThread("a")
         {
             @Override
             public void doAction()
@@ -89,7 +90,7 @@ public class WriteSkewIT extends ITBase
                 dml().writeRow(threadPrivateSession, ITBase.createNewRow(parentRowDef, 2, 2200));
             }
         };
-        TestThread threadB = new TestThread()
+        TestThread threadB = new TestThread("b")
         {
             @Override
             public void doAction()
@@ -154,19 +155,33 @@ public class WriteSkewIT extends ITBase
     
     private final AtomicBoolean exceptionInAnyThread = new AtomicBoolean(false);
 
-
+    private final AtomicInteger sequence = new AtomicInteger();
+    
     abstract private class TestThread extends Thread
     {
+        
+        TestThread(final String name) {
+            super(name);
+        }
+        
         @Override
         public void run()
         {
             txnService().beginTransaction(threadPrivateSession);
             try {
                 semA.tryAcquire(5, TimeUnit.SECONDS);
+                System.out.printf("Thread %s before doAction sequence=%d\n", 
+                        Thread.currentThread().getName(), sequence.incrementAndGet());
                 doAction();
+                System.out.printf("Thread %s  after doAction sequence=%d\n", 
+                        Thread.currentThread().getName(), sequence.incrementAndGet());
                 semB.release();
                 semA.tryAcquire(5, TimeUnit.SECONDS);
+                System.out.printf("Thread %s before commit   sequence=%d\n", 
+                        Thread.currentThread().getName(), sequence.incrementAndGet());
                 txnService().commitTransaction(threadPrivateSession);
+                System.out.printf("Thread %s  after commit   sequence=%d\n", 
+                        Thread.currentThread().getName(), sequence.incrementAndGet());
                 semB.release();
             } catch (RollbackException e) {
                 termination = e;
