@@ -30,6 +30,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Test;
@@ -106,15 +107,15 @@ public class WriteSkewIT extends ITBase
         sessionB.start();
 
         sessionA.semA.release();
-        sessionA.semB.acquire();
+        sessionA.semB.tryAcquire(5, TimeUnit.SECONDS);
         
         sessionB.semA.release();
         
         sessionA.semA.release();
-        sessionA.semB.acquire();
+        sessionA.semB.tryAcquire(5, TimeUnit.SECONDS);
                 
-        sessionA.join();
-        sessionB.join();
+        sessionA.join(10000);
+        sessionB.join(10000);
         assertNull(sessionA.termination());
         assertTrue(sessionB.termination() instanceof RollbackException);
     }
@@ -161,10 +162,10 @@ public class WriteSkewIT extends ITBase
         {
             txnService().beginTransaction(threadPrivateSession);
             try {
-                semA.acquire();
+                semA.tryAcquire(5, TimeUnit.SECONDS);
                 doAction();
                 semB.release();
-                semA.acquire();
+                semA.tryAcquire(5, TimeUnit.SECONDS);
                 txnService().commitTransaction(threadPrivateSession);
                 semB.release();
             } catch (RollbackException e) {
