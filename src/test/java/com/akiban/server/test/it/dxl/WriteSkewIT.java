@@ -111,6 +111,11 @@ public class WriteSkewIT extends ITBase
         sessionA.semB.tryAcquire(5, TimeUnit.SECONDS);
         
         sessionB.semA.release();
+        /**
+         * Give session B time to conflict before A
+         * commits.
+         */
+        sessionB.semB.tryAcquire(1, TimeUnit.SECONDS);
         
         sessionA.semA.release();
         sessionA.semB.tryAcquire(5, TimeUnit.SECONDS);
@@ -154,8 +159,6 @@ public class WriteSkewIT extends ITBase
     private RowDef grandchildRowDef;
     
     private final AtomicBoolean exceptionInAnyThread = new AtomicBoolean(false);
-
-    private final AtomicInteger sequence = new AtomicInteger();
     
     abstract private class TestThread extends Thread
     {
@@ -168,21 +171,15 @@ public class WriteSkewIT extends ITBase
         public void run()
         {
             txnService().beginTransaction(threadPrivateSession);
+            boolean committed = false;
             try {
                 semA.tryAcquire(5, TimeUnit.SECONDS);
-                System.out.printf("Thread %s before doAction sequence=%d\n", 
-                        Thread.currentThread().getName(), sequence.incrementAndGet());
                 doAction();
-                System.out.printf("Thread %s  after doAction sequence=%d\n", 
-                        Thread.currentThread().getName(), sequence.incrementAndGet());
                 semB.release();
                 semA.tryAcquire(5, TimeUnit.SECONDS);
-                System.out.printf("Thread %s before commit   sequence=%d\n", 
-                        Thread.currentThread().getName(), sequence.incrementAndGet());
                 txnService().commitTransaction(threadPrivateSession);
-                System.out.printf("Thread %s  after commit   sequence=%d\n", 
-                        Thread.currentThread().getName(), sequence.incrementAndGet());
                 semB.release();
+                committed = true;
             } catch (RollbackException e) {
                 termination = e;
                 exceptionInAnyThread.set(true);
@@ -190,8 +187,10 @@ public class WriteSkewIT extends ITBase
                 System.out.printf("Thread %s threw unexpected Exception %s\n", Thread.currentThread().getName(), e);
                 e.printStackTrace();
             } finally {
-                txnService().rollbackTransactionIfOpen(threadPrivateSession);
-                semB.release();
+                if (!committed) {
+                    txnService().rollbackTransactionIfOpen(threadPrivateSession);
+                    semB.release();
+                }
             }
         }
         
