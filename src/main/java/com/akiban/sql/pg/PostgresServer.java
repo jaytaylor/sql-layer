@@ -67,7 +67,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     private static final String THREAD_NAME_PREFIX = "PostgresServer_Accept-"; // Port is appended
 
     protected static enum AuthenticationType {
-        NONE, CLEAR_TEXT, GSS
+        NONE, CLEAR_TEXT, MD5, GSS
     };
 
     private final Properties properties;
@@ -352,12 +352,24 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
 
     public synchronized AuthenticationType getAuthenticationType() {
         if (authenticationType == null) {
-            if (properties.getProperty("gssConfigName") != null)
+            if (properties.getProperty("gssConfigName") != null) {
                 authenticationType = AuthenticationType.GSS;
-            else if (Boolean.parseBoolean(properties.getProperty("require_password", "false")))
-                authenticationType = AuthenticationType.CLEAR_TEXT;
-            else
-                authenticationType = AuthenticationType.NONE;
+            }
+            else {
+                String login = properties.getProperty("login", "none");
+                if (login.equals("password")) {
+                    authenticationType = AuthenticationType.CLEAR_TEXT;
+                }
+                else if (login.equals("md5")) {
+                    authenticationType = AuthenticationType.MD5;
+                }
+                else {
+                    authenticationType = AuthenticationType.NONE;
+                }
+            }
+            if (authenticationType != AuthenticationType.NONE) {
+                logger.info("Authentication required {}", authenticationType);
+            }
         }
         return authenticationType;
     }
