@@ -29,6 +29,7 @@ package com.akiban.ais.model;
 public class TableName implements Comparable<TableName>
 {
     public final static String INFORMATION_SCHEMA = "information_schema";
+    public final static String SECURITY_SCHEMA = "security_schema";
     public final static String SQLJ_SCHEMA = "sqlj";
     public final static String SYS_SCHEMA = "sys";
 

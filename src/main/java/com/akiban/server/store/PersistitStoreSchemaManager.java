@@ -787,6 +787,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         for(Schema schema : ais.getSchemas().values()) {
             if(!withISTables && 
                (TableName.INFORMATION_SCHEMA.equals(schema.getName()) ||
+                TableName.SECURITY_SCHEMA.equals(schema.getName()) ||
                 TableName.SYS_SCHEMA.equals(schema.getName()) ||
                 TableName.SQLJ_SCHEMA.equals(schema.getName()))) {
                 continue;
@@ -1062,7 +1063,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private void saveProtobuf(Exchange ex, GrowableByteBuffer buffer, AkibanInformationSchema newAIS, final String schema)
             throws PersistitException {
         final ProtobufWriter.WriteSelector selector;
-        if(TableName.INFORMATION_SCHEMA.equals(schema)) {
+        if(TableName.INFORMATION_SCHEMA.equals(schema) ||
+           TableName.SECURITY_SCHEMA.equals(schema)) {
             selector = new ProtobufWriter.SingleSchemaSelector(schema) {
                 @Override
                 public Columnar getSelected(Columnar columnar) {
@@ -1542,6 +1544,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private static void checkSystemSchema(TableName tableName, boolean shouldBeSystem) {
         String schemaName = tableName.getSchemaName();
         final boolean inSystem = TableName.INFORMATION_SCHEMA.equals(schemaName) ||
+                                 TableName.SECURITY_SCHEMA.equals(schemaName) ||
                                  TableName.SYS_SCHEMA.equals(schemaName) ||
                                  TableName.SQLJ_SCHEMA.equals(schemaName);
         if(shouldBeSystem && !inSystem) {

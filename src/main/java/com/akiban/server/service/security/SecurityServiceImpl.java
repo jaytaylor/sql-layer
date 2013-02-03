@@ -26,8 +26,14 @@
 
 package com.akiban.server.service.security;
 
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Routine;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.store.SchemaManager;
 import com.akiban.sql.embedded.EmbeddedJDBCService;
 
 import com.google.inject.Inject;
@@ -41,18 +47,29 @@ import java.sql.SQLException;
 import java.util.Collection;
 
 public class SecurityServiceImpl implements SecurityService, Service {
+    public static final String SCHEMA = TableName.SECURITY_SCHEMA;
+    public static final String ROLES_TABLE_NAME = "roles";
+    public static final String USERS_TABLE_NAME = "users";
+    public static final String USER_ROLES_TABLE_NAME = "user_roles";
+    public static final String ADD_ROLE_PROC_NAME = "add_role";
+    public static final String ADD_USER_PROC_NAME = "add_user";
+    public static final int TABLE_VERSION = 1;
+
     private final ConfigurationService configService;
     private final EmbeddedJDBCService jdbcService;
-    
+    private final SchemaManager schemaManager;
+
     private Connection connection;
 
     private static final Logger logger = LoggerFactory.getLogger(SecurityServiceImpl.class);
 
     @Inject
     public SecurityServiceImpl(ConfigurationService configService,
-                               EmbeddedJDBCService jdbcService) {
+                               EmbeddedJDBCService jdbcService,
+                               SchemaManager schemaManager) {
         this.configService = configService;
         this.jdbcService = jdbcService;
+        this.schemaManager = schemaManager;
     }
 
     /* SecurityService */
@@ -76,6 +93,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
     
     @Override
     public void start() {
+        registerSystemObjects();
     }
 
     @Override
@@ -94,6 +112,55 @@ public class SecurityServiceImpl implements SecurityService, Service {
     @Override
     public void crash() {
         stop();
+    }
+
+    protected void registerSystemObjects() {
+        AkibanInformationSchema ais = buildSystemObjects();
+        schemaManager.registerStoredInformationSchemaTable(ais.getUserTable(SCHEMA, ROLES_TABLE_NAME), TABLE_VERSION);
+        schemaManager.registerStoredInformationSchemaTable(ais.getUserTable(SCHEMA, USERS_TABLE_NAME), TABLE_VERSION);
+        schemaManager.registerStoredInformationSchemaTable(ais.getUserTable(SCHEMA, USER_ROLES_TABLE_NAME), TABLE_VERSION);
+        schemaManager.registerSystemRoutine(ais.getRoutine(SCHEMA, ADD_ROLE_PROC_NAME));
+        schemaManager.registerSystemRoutine(ais.getRoutine(SCHEMA, ADD_USER_PROC_NAME));
+    }
+
+    protected AkibanInformationSchema buildSystemObjects() {
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.userTable(ROLES_TABLE_NAME)
+            .autoIncLong("id", 0)
+            .colString("name", 128, false)
+            .pk("id");
+        builder.userTable(USERS_TABLE_NAME)
+            .autoIncLong("id", 0)
+            .colString("name", 128, false)
+            .pk("id");
+        builder.userTable(USER_ROLES_TABLE_NAME)
+            .autoIncLong("id", 0)
+            .colLong("role_id", false)
+            .colLong("user_id", false)
+            .pk("id")
+            .joinTo(USERS_TABLE_NAME)
+            .on("user_id", "id");
+        builder.procedure(ADD_ROLE_PROC_NAME)
+            .language("java", Routine.CallingConvention.JAVA)
+            .paramStringIn("role_name", 128)
+            .paramLongOut("role_id")
+            .externalName(Routines.class.getName(), "addRole");
+        builder.procedure(ADD_USER_PROC_NAME)
+            .language("java", Routine.CallingConvention.JAVA)
+            .paramStringIn("user_name", 128)
+            .paramStringIn("password", 128)
+            .paramStringIn("roles", 128)
+            .paramLongOut("user_id")
+            .externalName(Routines.class.getName(), "addUser");
+        return builder.ais(true);
+    }
+
+    static class Routines {
+        public static void addRole(String roleName, long[] roleId) {
+        }
+
+        public static void addUser(String roleName, long[] roleId) {
+        }
     }
 
 }
