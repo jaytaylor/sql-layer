@@ -28,13 +28,14 @@ package com.akiban.http;
 
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.security.SecurityService;
 import com.google.inject.Inject;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.JDBCLoginService;
 import org.eclipse.jetty.security.SecurityHandler;
-import org.eclipse.jetty.security.authentication.BasicAuthenticator;
+import org.eclipse.jetty.security.authentication.DigestAuthenticator;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandler;
@@ -57,10 +58,10 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     private static final String LOGIN_PROPERTY = "akserver.http.login";
 
     private static final String REST_ROLE = "rest-user";
-    private static final String LOGIN_REALM = "AkServer";
     private static final String JDBC_REALM_RESOURCE = "jdbcRealm.properties";
 
     private final ConfigurationService configurationService;
+    private final SecurityService securityService;
 
     private final Object lock = new Object();
     private HandlerCollection handlerCollection;
@@ -70,8 +71,10 @@ public final class HttpConductorImpl implements HttpConductor, Service {
 
     @Inject
     public HttpConductorImpl(ConfigurationService configurationService,
-                             com.akiban.sql.embedded.EmbeddedJDBCService jdbcService) {
+                             SecurityService securityService) {
         this.configurationService = configurationService;
+        this.securityService = securityService;
+
         java.util.logging.Logger jerseyLogging = java.util.logging.Logger.getLogger("com.sun.jersey");
         jerseyLogging.setLevel(java.util.logging.Level.OFF);
     }
@@ -171,7 +174,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                 localServer.setHandler(localHandlerCollection);
             }
             else {
-                Constraint constraint = new Constraint(Constraint.__BASIC_AUTH, REST_ROLE);
+                Constraint constraint = new Constraint(Constraint.__DIGEST_AUTH, REST_ROLE);
                 constraint.setAuthenticate(true);
 
                 ConstraintMapping cm = new ConstraintMapping();
@@ -179,11 +182,11 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                 cm.setConstraint(constraint);
 
                 ConstraintSecurityHandler sh = new ConstraintSecurityHandler();
-                sh.setAuthenticator(new BasicAuthenticator());
+                sh.setAuthenticator(new DigestAuthenticator());
                 sh.setConstraintMappings(Collections.singletonList(cm));
 
                 JDBCLoginService loginService =
-                    new JDBCLoginService(LOGIN_REALM, 
+                    new JDBCLoginService(SecurityService.REALM, 
                                          HttpConductorImpl.class.getResource(JDBC_REALM_RESOURCE).toString());
                 sh.setLoginService(loginService);
 

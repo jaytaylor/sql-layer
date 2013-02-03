@@ -34,6 +34,7 @@ import com.akiban.server.service.externaldata.ExternalDataService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.monitor.MonitorService;
 import com.akiban.server.service.routines.RoutineLoader;
+import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
@@ -127,6 +128,10 @@ public final class ServerServiceRequirements {
 
     public ExternalDataService externalData() {
         return serviceManager.getServiceByClass(ExternalDataService.class);
+    }
+
+    public SecurityService securityService() {
+        return serviceManager.getServiceByClass(SecurityService.class);
     }
 
     private final AkServerInterface akServer;

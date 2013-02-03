@@ -516,16 +516,20 @@ public class PostgresServerConnection extends ServerSessionBase
     protected void processPasswordMessage() throws IOException {
         String user = properties.getProperty("user");
         String pass = messenger.readString();
+        Principal principal = null;
         switch (server.getAuthenticationType()) {
         case NONE:
             break;
         case CLEAR_TEXT:
+            principal = reqs.securityService()
+                .authenticate(user, pass);
             break;
         case MD5:
-            // (byte[])attributes.remove(MD5_SALT)
+            principal = reqs.securityService()
+                .authenticate(user, pass, (byte[])attributes.remove(MD5_SALT));
             break;
         }
-        logger.debug("Login {}", user);
+        logger.debug("Login {}", (principal != null) ? principal : user);
         authenticationOkay(user);
     }
     
