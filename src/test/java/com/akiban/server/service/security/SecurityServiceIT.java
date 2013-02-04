@@ -42,6 +42,9 @@ import java.net.PasswordAuthentication;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -104,16 +107,17 @@ public class SecurityServiceIT extends ITBase
         assertEquals("user1", securityService().authenticate("user1", "password").getName());
     }
 
-    private URL getRestURL(String request) throws MalformedURLException {
+    private void openRestURL() throws Exception {
         int port = serviceManager().getServiceByClass(com.akiban.http.HttpConductor.class).getPort();
         String context = serviceManager().getServiceByClass(com.akiban.rest.RestService.class).getContextPath();
-        return new URL("http", "localhost", port, context + request);
+        String request = "/security_schema.roles/1";
+        URL url = new URL("http", "localhost", port, context + request);
+        url.openConnection().getInputStream().close();
     }
 
     @Test(expected = IOException.class)
     public void restUnauthenticated() throws Exception {
-        URL url = getRestURL("/security_schema.roles/1");
-        url.openConnection().getInputStream().close();
+        openRestURL();
     }
 
     @Test
@@ -121,8 +125,7 @@ public class SecurityServiceIT extends ITBase
         authUser = "user1";
         authPass = "password";
 
-        URL url = getRestURL("/security_schema.roles/1");
-        url.openConnection().getInputStream().close();
+        openRestURL();
     }
 
     @Test
@@ -130,8 +133,7 @@ public class SecurityServiceIT extends ITBase
         authUser = "user2";
         authPass = "none";
 
-        URL url = getRestURL("/security_schema.roles/1");
-        url.openConnection().getInputStream().close();
+        openRestURL();
     }
 
     @Test
@@ -139,8 +141,35 @@ public class SecurityServiceIT extends ITBase
         authUser = "user1";
         authPass = "wrong";
 
-        URL url = getRestURL("/security_schema.roles/1");
-        url.openConnection().getInputStream().close();
+        openRestURL();
+    }
+
+    private void openPostgresConnection(String user, String password) throws Exception {
+        int port = serviceManager().getServiceByClass(com.akiban.sql.pg.PostgresService.class).getPort();
+        Class.forName("org.postgresql.Driver");
+        String url = String.format("jdbc:postgresql://localhost:%d/akiban", port);
+        Connection connection = DriverManager.getConnection(url, user, password);
+        connection.close();
+    }
+
+    @Test(expected = SQLException.class)
+    public void postgresUnauthenticated() throws Exception {
+        openPostgresConnection(null, null);
+    }
+
+    @Test
+    public void postgresAuthenticated() throws Exception {
+        openPostgresConnection("user1", "password");
+    }
+
+    @Test
+    public void postgresBadUser() throws Exception {
+        openPostgresConnection("user2", "whatever");
+    }
+
+    @Test
+    public void postgresBadPassword() throws Exception {
+        openPostgresConnection("user1", "nope");
     }
 
 }
