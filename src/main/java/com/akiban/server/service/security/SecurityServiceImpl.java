@@ -75,8 +75,29 @@ public class SecurityServiceImpl implements SecurityService, Service {
     /* SecurityService */
 
     @Override
+    public void addRole(String name) {
+    }
+
+    @Override
+    public void deleteRole(String name) {
+    }
+
+    @Override
+    public User getUser(String name) {
+        return null;
+    }
+
+    @Override
     public User addUser(String name, String password, Collection<String> roles) {
         return null;
+    }
+
+    @Override
+    public void deleteUser(String name) {
+    }
+
+    @Override
+    public void changeUserPassword(String name, String password) {
     }
 
     @Override
@@ -98,6 +119,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
 
     @Override
     public void stop() {
+        deregisterSystemObjects();
         if (connection != null) {
             try {
                 connection.close();
@@ -121,6 +143,11 @@ public class SecurityServiceImpl implements SecurityService, Service {
         schemaManager.registerStoredInformationSchemaTable(ais.getUserTable(SCHEMA, USER_ROLES_TABLE_NAME), TABLE_VERSION);
         schemaManager.registerSystemRoutine(ais.getRoutine(SCHEMA, ADD_ROLE_PROC_NAME));
         schemaManager.registerSystemRoutine(ais.getRoutine(SCHEMA, ADD_USER_PROC_NAME));
+    }
+
+    protected void deregisterSystemObjects() {
+        schemaManager.unRegisterSystemRoutine(new TableName(SCHEMA, ADD_ROLE_PROC_NAME));
+        schemaManager.unRegisterSystemRoutine(new TableName(SCHEMA, ADD_USER_PROC_NAME));
     }
 
     protected AkibanInformationSchema buildSystemObjects() {

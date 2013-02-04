@@ -26,18 +26,46 @@
 
 package com.akiban.server.service.security;
 
-import java.util.Collection;
+import com.akiban.rest.RestService;
+import com.akiban.rest.RestServiceImpl;
+import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import com.akiban.server.test.it.ITBase;
 
-public interface SecurityService
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.util.Arrays;
+import java.util.Map;
+
+public class SecurityServiceIT extends ITBase
 {
-    public static final String REALM = "AkServer";
+    @Override
+    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
+        return super.serviceBindingsProvider()
+            .bindAndRequire(SecurityService.class, SecurityServiceImpl.class)
+            .bindAndRequire(RestService.class, RestServiceImpl.class);
+    }
 
-    public void addRole(String name);
-    public void deleteRole(String name);
-    public User getUser(String name);
-    public User addUser(String name, String password, Collection<String> roles);
-    public void deleteUser(String name);
-    public void changeUserPassword(String name, String password);
-    public User authenticate(String name, String password);
-    public User authenticate(String name, String password, byte[] salt);
+    @Override
+    protected Map<String, String> startupConfigProperties() {
+        return uniqueStartupConfigProperties(getClass());
+    }
+
+    protected SecurityService securityService() {
+        return serviceManager().getServiceByClass(SecurityService.class);
+    }
+
+    @Before
+    public void createUsers() {
+        SecurityService securityService = securityService();
+        securityService.addRole("rest-user");
+        securityService.addRole("admin");
+        securityService.addUser("user1", "password", Arrays.asList("rest-user"));
+    }
+
+    @Test
+    public void restUnauthenticated() {
+    }
+
 }
