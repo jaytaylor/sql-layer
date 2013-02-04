@@ -31,6 +31,7 @@ import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.AuthenticationFailedException;
 import com.akiban.server.error.SecurityException;
 import com.akiban.server.service.Service;
@@ -45,6 +46,9 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -74,6 +78,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
     public static final String DELETE_ROLE_SQL = "DELETE FROM roles WHERE name = ?";
     public static final String GET_USER_SQL = "SELECT id, name, password_digest, password_md5, (SELECT r.name FROM roles r INNER JOIN user_roles ur ON r.id = ur.role_id WHERE ur.user_id = users.id) FROM users WHERE name = ?";
     public static final String ADD_USER_SQL = "INSERT INTO users(name, password_digest, password_md5) VALUES(?,?,?) RETURNING id";
+    public static final String ADD_USER_ROLE_SQL = "INSERT INTO user_roles(user_id, role_id) VALUES(?,(SELECT role_id FROM roles WHERE name = ?))";
     public static final String CHANGE_USER_PASSWORD_SQL = "UPDATE users SET password_digest = ?, password_md5 = ? WHERE name = ?";
     public static final String DELETE_USER_SQL = "DELETE FROM users WHERE name = ?";
     public static final String DELETE_ROLE_USER_ROLES_SQL = "DELETE FROM user_roles WHERE role_id IN (SELECT id FROM roles WHERE name = ?)";
@@ -130,7 +135,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
             stmt.setString(1, name);
             int nrows = stmt.executeUpdate();
             if (nrows != 1) {
-                throw new SecurityException("Failed to add role");
+                throw new SecurityException("Failed to add role " + name);
             }
             connection.commit();
             success = true;
@@ -237,9 +242,18 @@ public class SecurityServiceImpl implements SecurityService, Service {
                 id = rs.getInt(1);
             }
             else {
-                throw new SecurityException("Failed to add user");
+                throw new SecurityException("Failed to add user " + name);
             }
             rs.close();
+            stmt = prepare(ADD_USER_ROLE_SQL);
+            for (String role : roles) {
+                stmt.setString(1, name);
+                stmt.setString(2, role);
+                int nrows = stmt.executeUpdate();
+                if (nrows != 1) {
+                    throw new SecurityException("Failed to add role " + role);
+                }
+            }
             connection.commit();
             success = true;
         }
@@ -390,15 +404,64 @@ public class SecurityServiceImpl implements SecurityService, Service {
     }
 
     protected String digestPassword(String user, String password) {
-        return "MD5:" + "foo";
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(user.getBytes("UTF-8"));
+            md.update((":" + REALM + ":").getBytes("UTF-8"));
+            md.update(password.getBytes("UTF-8"));
+            return formatMD5(md.digest(), true);
+        }
+        catch (NoSuchAlgorithmException ex) {
+            throw new AkibanInternalException("Cannot create digest", ex);
+        }
+        catch (UnsupportedEncodingException ex) {
+            throw new AkibanInternalException("Cannot create digest", ex);
+        }
     }
 
     protected String md5Password(String user, String password) {
-        return "md" + "foo";
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(password.getBytes("UTF-8"));
+            md.update(user.getBytes("UTF-8"));
+            return formatMD5(md.digest(), false);
+        }
+        catch (NoSuchAlgorithmException ex) {
+            throw new AkibanInternalException("Cannot create digest", ex);
+        }
+        catch (UnsupportedEncodingException ex) {
+            throw new AkibanInternalException("Cannot create digest", ex);
+        }
     }
 
     protected String salted(String base, byte[] salt) {
-        return "md" + "foo";
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(base.getBytes("UTF-8"));
+            md.update(salt);
+            return formatMD5(md.digest(), false);
+        }
+        catch (NoSuchAlgorithmException ex) {
+            throw new AkibanInternalException("Cannot create digest", ex);
+        }
+        catch (UnsupportedEncodingException ex) {
+            throw new AkibanInternalException("Cannot create digest", ex);
+        }
+    }
+
+    protected final char[] HEX_UC = "0123456789ABCDEF".toCharArray();
+    protected final char[] HEX_LC = "0123456789abcdef".toCharArray();
+
+    protected String formatMD5(byte[] md5, boolean forDigest) {
+        StringBuilder str = new StringBuilder();
+        str.append(forDigest ? "MD5:" : "md5");
+        final char[] hex = forDigest ? HEX_UC : HEX_LC;
+        for (int i = 0; i < md5.length; i++) {
+            int b = md5[i] & 0xFF;
+            str.append(hex[b >> 8]);
+            str.append(hex[b & 0xF]);
+        }
+        return str.toString();
     }
 
     /* Service */
@@ -450,6 +513,8 @@ public class SecurityServiceImpl implements SecurityService, Service {
         builder.userTable(USERS_TABLE_NAME)
             .autoIncLong("id", 1)
             .colString("name", 128, false)
+            .colString("password_digest", 36, true)
+            .colString("password_md5", 35, true)
             .pk("id");
         builder.userTable(USER_ROLES_TABLE_NAME)
             .autoIncLong("id", 1)

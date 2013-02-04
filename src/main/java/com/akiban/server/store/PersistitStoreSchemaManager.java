@@ -608,7 +608,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         transactionally(sessionService.createSession(), new ThrowingRunnable() {
             @Override
             public void run(Session session) throws PersistitException {
-                dropRoutineCommon(session, routineName, false);
+                dropRoutineCommon(session, routineName, true);
             }
         });
     }

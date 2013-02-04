@@ -65,6 +65,11 @@ public class SecurityServiceIT extends ITBase
     }
 
     @Test
+    public void authenticate() {
+        assertEquals("user1", securityService().authenticate("user1", "password").getName());
+    }
+
+    @Test
     public void restUnauthenticated() {
     }
 
