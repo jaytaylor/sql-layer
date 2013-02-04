@@ -26,6 +26,9 @@
 
 package com.akiban.server.entity;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+import com.google.common.collect.ImmutableBiMap;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.IOException;
@@ -83,18 +86,16 @@ public final class Entity {
         this.validations = validations;
     }
 
-    public Map<String, List<List<String>>> getIndexes() {
+    public BiMap<String, EntityIndex> getIndexes() {
         return indexes;
     }
 
     public void setIndexes(Map<String, List<List<String>>> indexes) {
-        for (List<List<String>> index : indexes.values()) {
-            for (List<String> column : index) {
-                if (column.size() != 2)
-                    throw new IllegalEntityDefinition("illegal column definition (list must have two entries)");
-            }
+        this.indexes = HashBiMap.create(indexes.size());
+        for (Map.Entry<String, List<List<String>>> entry : indexes.entrySet()) {
+            EntityIndex index = EntityIndex.create(entry.getValue());
+            this.indexes.put(entry.getKey(), index);
         }
-        this.indexes = indexes;
     }
 
     @Override
@@ -127,7 +128,7 @@ public final class Entity {
     private UUID uuid;
     private Map<String, Attribute> attributes = Collections.emptyMap();
     private List<Map<String, ?>> validations = Collections.emptyList();
-    private Map<String, List<List<String>>> indexes = Collections.emptyMap();
+    private BiMap<String, EntityIndex> indexes = ImmutableBiMap.of();
 
     private Entity() {}
 }
