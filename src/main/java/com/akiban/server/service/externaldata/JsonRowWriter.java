@@ -111,17 +111,6 @@ public class JsonRowWriter
             }
             appender.append('{');
             rowWriter.write(row, appender);
-/*
-            List<Column> columns = table.getColumns();
-            for (int i = 0; i < columns.size(); i++) {
-                if (i > 0) appender.append(',');
-                appender.append('"');
-                appender.append(columns.get(i).getName());
-                appender.append("\":");
-                PValueSource pvalue = row.pvalue(i);
-                pvalue.tInstance().formatAsJson(pvalue, appender);
-            }
-*/            
         }
         cursor.close();
         if (depth < minDepth)
