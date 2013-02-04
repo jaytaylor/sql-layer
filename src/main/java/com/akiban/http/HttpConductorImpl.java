@@ -31,10 +31,12 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.security.SecurityService;
 import com.google.inject.Inject;
 import org.eclipse.jetty.util.security.Constraint;
+import org.eclipse.jetty.security.Authenticator;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.JDBCLoginService;
 import org.eclipse.jetty.security.SecurityHandler;
+import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.security.authentication.DigestAuthenticator;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
@@ -128,13 +130,18 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         }
     }
 
+    static enum AuthenticationType {
+        NONE, BASIC, DIGEST
+    }
+
     @Override
     public void start() {
         String portProperty = configurationService.getProperty(PORT_PROPERTY);
         String sslProperty = configurationService.getProperty(SSL_PROPERTY);
         String loginProperty = configurationService.getProperty(LOGIN_PROPERTY);
         int portLocal;
-        boolean ssl, login;
+        boolean ssl;
+        AuthenticationType login;
         try {
             portLocal = Integer.parseInt(portProperty);
         }
@@ -143,10 +150,18 @@ public final class HttpConductorImpl implements HttpConductor, Service {
             throw e;
         }
         ssl = Boolean.parseBoolean(sslProperty);
-        login = Boolean.parseBoolean(loginProperty);
-        logger.info("Starting {} service on port {}", 
-                    ssl ? "HTTPS" : "HTTP", portProperty);
-
+        if ("basic".equals(loginProperty)) {
+            login = AuthenticationType.BASIC;
+        }
+        else if ("digest".equals(loginProperty)) {
+            login = AuthenticationType.DIGEST;
+        }
+        else {
+            login = AuthenticationType.NONE;
+        }
+        logger.info("Starting {} service on port {} with authentication {}", 
+                    new Object[] { ssl ? "HTTPS" : "HTTP", portProperty, login });
+                    
         Server localServer = new Server();
         SelectChannelConnector connector;
         if (!ssl) {
@@ -170,11 +185,24 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         HandlerCollection localHandlerCollection = new HandlerCollection(true);
 
         try {
-            if (!login) {
+            if (login == AuthenticationType.NONE) {
                 localServer.setHandler(localHandlerCollection);
             }
             else {
-                Constraint constraint = new Constraint(Constraint.__DIGEST_AUTH, REST_ROLE);
+                Authenticator authenticator;
+                switch (login) {
+                case BASIC:
+                    authenticator = new BasicAuthenticator();
+                    break;
+                case DIGEST:
+                    authenticator = new DigestAuthenticator();
+                    break;
+                default:
+                    assert false : "Unexpected authentication type " + login;
+                    authenticator = null;
+                }
+                Constraint constraint = new Constraint(authenticator.getAuthMethod(),
+                                                       REST_ROLE);
                 constraint.setAuthenticate(true);
 
                 ConstraintMapping cm = new ConstraintMapping();
@@ -182,7 +210,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                 cm.setConstraint(constraint);
 
                 ConstraintSecurityHandler sh = new ConstraintSecurityHandler();
-                sh.setAuthenticator(new DigestAuthenticator());
+                sh.setAuthenticator(authenticator);
                 sh.setConstraintMappings(Collections.singletonList(cm));
 
                 JDBCLoginService loginService =
