@@ -77,10 +77,10 @@ public class SecurityServiceImpl implements SecurityService, Service {
 
     public static final String ADD_ROLE_SQL = "INSERT INTO roles(name) VALUES(?)";
     public static final String DELETE_ROLE_SQL = "DELETE FROM roles WHERE name = ?";
-    public static final String GET_USER_SQL = "SELECT id, name, password_digest, password_md5, (SELECT r.id, r.name FROM roles r INNER JOIN user_roles ur ON r.id = ur.role_id WHERE ur.user_id = users.id) FROM users WHERE name = ?";
-    public static final String ADD_USER_SQL = "INSERT INTO users(name, password_digest, password_md5) VALUES(?,?,?) RETURNING id";
+    public static final String GET_USER_SQL = "SELECT id, name, password_basic, password_digest, password_md5, (SELECT r.id, r.name FROM roles r INNER JOIN user_roles ur ON r.id = ur.role_id WHERE ur.user_id = users.id) FROM users WHERE name = ?";
+    public static final String ADD_USER_SQL = "INSERT INTO users(name, password_basic, password_digest, password_md5) VALUES(?,?,?,?) RETURNING id";
     public static final String ADD_USER_ROLE_SQL = "INSERT INTO user_roles(user_id, role_id) VALUES(?,(SELECT id FROM roles WHERE name = ?))";
-    public static final String CHANGE_USER_PASSWORD_SQL = "UPDATE users SET password_digest = ?, password_md5 = ? WHERE name = ?";
+    public static final String CHANGE_USER_PASSWORD_SQL = "UPDATE users SET password_basic = ?, password_digest = ?, password_md5 = ? WHERE name = ?";
     public static final String DELETE_USER_SQL = "DELETE FROM users WHERE name = ?";
     public static final String DELETE_ROLE_USER_ROLES_SQL = "DELETE FROM user_roles WHERE role_id IN (SELECT id FROM roles WHERE name = ?)";
     public static final String DELETE_USER_USER_ROLES_SQL = "DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE name = ?)";
@@ -220,7 +220,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
 
     protected User getUser(ResultSet rs) throws SQLException {
         List<String> roles = new ArrayList<String>();
-        ResultSet rs1 = (ResultSet)rs.getObject(5);
+        ResultSet rs1 = (ResultSet)rs.getObject(6);
         while (rs1.next()) {
             roles.add(rs1.getString(2));
         }
@@ -236,8 +236,9 @@ public class SecurityServiceImpl implements SecurityService, Service {
         try {
             PreparedStatement stmt = prepare(ADD_USER_SQL);
             stmt.setString(1, name);
-            stmt.setString(2, digestPassword(name, password));
-            stmt.setString(3, md5Password(name, password));
+            stmt.setString(2, basicPassword(password));
+            stmt.setString(3, digestPassword(name, password));
+            stmt.setString(4, md5Password(name, password));
             int nrows = stmt.executeUpdate();
             if (nrows != 1) {
                 throw new SecurityException("Failed to add user " + name);
@@ -314,9 +315,10 @@ public class SecurityServiceImpl implements SecurityService, Service {
         boolean success = false;
         try {
             PreparedStatement stmt = prepare(CHANGE_USER_PASSWORD_SQL);
-            stmt.setString(1, digestPassword(name, password));
-            stmt.setString(2, md5Password(name, password));
-            stmt.setString(3, name);
+            stmt.setString(1, basicPassword(password));
+            stmt.setString(2, digestPassword(name, password));
+            stmt.setString(3, md5Password(name, password));
+            stmt.setString(4, name);
             int nrows = stmt.executeUpdate();
             if (nrows != 1) {
                 throw new SecurityException("Failed to change user");
@@ -348,7 +350,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
             PreparedStatement stmt = prepare(GET_USER_SQL);
             stmt.setString(1, name);
             ResultSet rs = stmt.executeQuery();
-            if (rs.next() && expected.equals(rs.getString(4))) {
+            if (rs.next() && expected.equals(rs.getString(5))) {
                 user = getUser(rs);
             }
             rs.close();
@@ -382,7 +384,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
             PreparedStatement stmt = prepare(GET_USER_SQL);
             stmt.setString(1, name);
             ResultSet rs = stmt.executeQuery();
-            if (rs.next() && password.equals(salted(rs.getString(4), salt))) {
+            if (rs.next() && password.equals(salted(rs.getString(5), salt))) {
                 user = getUser(rs);
             }
             rs.close();
@@ -406,6 +408,20 @@ public class SecurityServiceImpl implements SecurityService, Service {
             throw new AuthenticationFailedException("invalid username or password");
         }
         return user;
+    }
+
+    protected String basicPassword(String password) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(password.getBytes("UTF-8"));
+            return formatMD5(md.digest(), true);
+        }
+        catch (NoSuchAlgorithmException ex) {
+            throw new AkibanInternalException("Cannot create digest", ex);
+        }
+        catch (UnsupportedEncodingException ex) {
+            throw new AkibanInternalException("Cannot create digest", ex);
+        }
     }
 
     protected String digestPassword(String user, String password) {
@@ -556,6 +572,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
         builder.userTable(USERS_TABLE_NAME)
             .autoIncLong("id", 1)
             .colString("name", 128, false)
+            .colString("password_basic", 36, true)
             .colString("password_digest", 36, true)
             .colString("password_md5", 35, true)
             .pk("id")
