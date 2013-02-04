@@ -37,6 +37,8 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.sql.embedded.EmbeddedJDBCService;
+import com.akiban.sql.server.ServerCallContextStack;
+import com.akiban.sql.server.ServerQueryContext;
 import com.akiban.sql.server.ServerSession;
 
 import com.google.inject.Inject;
@@ -49,6 +51,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -458,23 +461,28 @@ public class SecurityServiceImpl implements SecurityService, Service {
         builder.procedure(ADD_ROLE_PROC_NAME)
             .language("java", Routine.CallingConvention.JAVA)
             .paramStringIn("role_name", 128)
-            .paramLongOut("role_id")
             .externalName(Routines.class.getName(), "addRole");
         builder.procedure(ADD_USER_PROC_NAME)
             .language("java", Routine.CallingConvention.JAVA)
             .paramStringIn("user_name", 128)
             .paramStringIn("password", 128)
             .paramStringIn("roles", 128)
-            .paramLongOut("user_id")
             .externalName(Routines.class.getName(), "addUser");
         return builder.ais(true);
     }
 
+    // TODO: Temporary way of accessing these via stored procedures.
     static class Routines {
-        public static void addRole(String roleName, long[] roleId) {
+        public static void addRole(String roleName) {
+            ServerQueryContext context = ServerCallContextStack.current().getContext();
+            SecurityService service = context.getServer().getSecurityService();
+            service.addRole(roleName);
         }
 
-        public static void addUser(String roleName, long[] roleId) {
+        public static void addUser(String userName, String password, String roles) {
+            ServerQueryContext context = ServerCallContextStack.current().getContext();
+            SecurityService service = context.getServer().getSecurityService();
+            service.addUser(userName, password, Arrays.asList(roles.split(",")));
         }
     }
 
