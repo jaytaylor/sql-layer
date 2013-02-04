@@ -218,7 +218,7 @@ public class RestServiceFilesIT extends ITBase {
             }
             StringBuilder builder = new StringBuilder();
             Strings.readStreamTo(is, builder, true);
-            LOG.error(builder.toString());
+            //LOG.error(builder.toString());
 
             ObjectMapper mapper = new ObjectMapper();
             JsonNode expectedNode = mapper.readTree(caseParams.expectedResponse);

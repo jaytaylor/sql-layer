@@ -26,10 +26,13 @@
 package com.akiban.server.service.restdml;
 
 import java.io.IOException;
+import java.util.Stack;
 
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CacheValueGenerator;
@@ -66,7 +69,8 @@ public class InsertProcessor {
     private final Store store;
     private final T3RegistryService registryService;
     private InsertGenerator insertGenerator;
-    
+    private static final Logger LOG = LoggerFactory.getLogger(InsertProcessor.class);
+
     private Schema schema;
     
     public InsertProcessor (ConfigurationService configService, 
@@ -87,14 +91,29 @@ public class InsertProcessor {
                 }
             };
 
-    private enum ArrayStatus { NONE, FIRST, SECOND, DONE} 
+    private enum JsonStatus { START, DONE, OBJECT, ARRAY_FIRST, ARRAY_SECOND, ROOT_FIRST, ROOT_SECOND } 
+    
+    private class InsertContext {
+        public TableName tableName;
+        public UserTable table;
+        public QueryContext queryContext;
+        public JsonStatus status; 
+        public boolean inObject;
+        public InsertContext (TableName tableName, UserTable table, QueryContext queryContext) {
+            this.table = table;
+            this.tableName = tableName;
+            this.queryContext = queryContext;
+            status = JsonStatus.START;
+            inObject = false;
+        }
+    }
     
     public String processInsert(Session session, AkibanInformationSchema ais, TableName rootTable, JsonParser jp) 
             throws JsonParseException, IOException {
         this.schema = SchemaCache.globalSchema(ais);
-        
-        StringBuilder write = new StringBuilder();
-        AkibanAppender appender = AkibanAppender.of(write);
+        Stack<InsertContext> insertContext  = new Stack<>();
+        StringBuilder builder = new StringBuilder();
+        AkibanAppender appender = AkibanAppender.of(builder);
 
         insertGenerator = ais.getCachedValue(this, CACHED_INSERT_GENERATOR);
         insertGenerator.setT3Registry(registryService);
@@ -104,49 +123,71 @@ public class InsertProcessor {
         JsonToken token;
 
         UserTable table = ais.getUserTable(rootTable);
+        if (table == null) {
+            throw new NoSuchTableException(rootTable.getSchemaName(), rootTable.getTableName());
+        }
         String field = rootTable.getDescription();
         TableName currentTable = rootTable;
-
-        //StoreAdapter adapter;
-        QueryContext queryContext = null;
-        boolean inObject = false;
-        ArrayStatus inArray = ArrayStatus.NONE;
+        insertContext.push(new InsertContext(rootTable, table, newQueryContext(session, table)));
         
         while((token = jp.nextToken()) != null) {
             
             switch (token) {
             case START_ARRAY:
-                appender.append('[');
-                inArray = ArrayStatus.FIRST;
-                break;
-            case START_OBJECT:
-                if (inArray == ArrayStatus.SECOND) {
-                    setColumnsNull(queryContext, table);
-                    inObject = true;
-                } else if (!inObject) {
+                if (insertContext.peek().inObject) {
+                    LOG.debug("Starting sub table: {}", field);
+                    if (insertContext.peek().status == JsonStatus.ARRAY_SECOND) {
+                        appender.append(',');
+                    }
+                    if (insertContext.peek().status == JsonStatus.ARRAY_FIRST ||
+                        insertContext.peek().status == JsonStatus.ARRAY_SECOND) {
+                        runUpdate(insertContext.peek().queryContext, appender, insertContext.peek().table);
+                        // delete the closing } for the object
+                        builder.deleteCharAt(builder.length()-1);
+                        insertContext.peek().status = JsonStatus.ROOT_FIRST;
+                    }
                     currentTable = TableName.parse(rootTable.getSchemaName(), field);
                     table = ais.getUserTable(currentTable);
                     if (table == null) {
                         throw new NoSuchTableException(currentTable.getSchemaName(), currentTable.getTableName());
                     }
-                    queryContext = newQueryContext(session, table); 
-                    inObject = true;
+                    insertContext.push(new InsertContext(currentTable, table, newQueryContext(session, table)));
+                    appender.append(",\"");
+                    appender.append(currentTable.getDescription());
+                    appender.append("\":");
                 }
+                appender.append('[');
+                insertContext.peek().status = JsonStatus.ARRAY_FIRST;
+                break;
+            case START_OBJECT:
+                if (insertContext.peek().status == JsonStatus.ROOT_FIRST) {
+                    appender.append(',');
+                    setColumnsNull(insertContext.peek().queryContext, insertContext.peek().table);
+                    insertContext.peek().status = JsonStatus.ARRAY_FIRST;
+                } else if (insertContext.peek().status == JsonStatus.ARRAY_SECOND) {
+                    setColumnsNull(insertContext.peek().queryContext, insertContext.peek().table);
+                }
+                insertContext.peek().inObject = true;
+
                 break;
             case END_ARRAY:
-                inArray = ArrayStatus.NONE;
                 appender.append(']');
+                insertContext.pop();
                 break;
             case END_OBJECT:
-                if (inArray == ArrayStatus.FIRST) {
-                    inArray = ArrayStatus.SECOND;
-                } else if (inArray == ArrayStatus.SECOND) {
+                if (insertContext.peek().status == JsonStatus.ARRAY_FIRST) {
+                    insertContext.peek().status = JsonStatus.ARRAY_SECOND;
+                } else if (insertContext.peek().status == JsonStatus.ARRAY_SECOND) {
                     appender.append(','); 
-                }
-
-                if (inObject) {
-                    runUpdate(queryContext, appender, table);
-                    inObject = false;
+                } else if (insertContext.peek().status == JsonStatus.ROOT_FIRST) {
+                    appender.append('}');
+                    insertContext.peek().inObject = false;
+                } 
+                if (insertContext.peek().inObject) {
+                    runUpdate(insertContext.peek().queryContext, 
+                            appender, 
+                            insertContext.peek().table);
+                    insertContext.peek().inObject = false;
                 }
                 break;
             case FIELD_NAME:
@@ -157,28 +198,38 @@ public class InsertProcessor {
             case VALUE_EMBEDDED_OBJECT:
                 break;
             case VALUE_NULL:
-                setValue(queryContext, getColumn(table, field), null);
+                setValue(insertContext.peek().queryContext, 
+                        getColumn(insertContext.peek().table, field),
+                        null);
                 break;
             case VALUE_NUMBER_FLOAT:
-                setValue (queryContext, getColumn(table, field), jp.getFloatValue());
+                setValue (insertContext.peek().queryContext, 
+                        getColumn(insertContext.peek().table, field), 
+                        jp.getFloatValue());
                 break;
             case VALUE_NUMBER_INT:
-                setValue (queryContext, getColumn(table, field), jp.getIntValue());
+                setValue (insertContext.peek().queryContext, 
+                        getColumn(insertContext.peek().table, field), 
+                        jp.getIntValue());
                 break;
             case VALUE_STRING:
-                setValue (queryContext, getColumn(table, field), jp.getText());
+                setValue (insertContext.peek().queryContext, 
+                        getColumn(insertContext.peek().table, field), 
+                        jp.getText());
                 break;
             case VALUE_FALSE:
             case VALUE_TRUE:
-                setValue (queryContext, getColumn(table, field), jp.getBooleanValue());
+                setValue (insertContext.peek().queryContext, 
+                        getColumn(insertContext.peek().table, field), 
+                        jp.getBooleanValue());
                 break;
             default:
                 break;
                 
             }
         }
-        
-        return write.toString();
+        LOG.debug(appender.toString());
+        return appender.toString();
     }
 
     private void runUpdate (QueryContext queryContext, AkibanAppender appender, UserTable table) throws IOException {

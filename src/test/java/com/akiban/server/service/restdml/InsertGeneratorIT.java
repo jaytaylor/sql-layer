@@ -26,6 +26,9 @@
 package com.akiban.server.service.restdml;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.util.regex.Pattern;
 
 import org.junit.After;
 import org.junit.Before;
@@ -40,7 +43,7 @@ import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.test.it.ITBase;
 
 public class InsertGeneratorIT extends ITBase {
-    
+
     public static final String SCHEMA = "test";
     private InsertGenerator insertGenerator;
     
@@ -104,12 +107,11 @@ public class InsertGeneratorIT extends ITBase {
         insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(T3RegistryService.class));
         Operator insert = insertGenerator.createInsert(table);
         
-        assertEquals(
-                getExplain(insert, table.getSchemaName()),
-                "\n  Project_Default(Field(0))\n" +
-                "    Insert_Returning(INTO c)\n" +
-                "      Project_Default(ifnull(Field(0), NEXTVAL('test', '_sequence-3556597')), Field(1))\n" +
-                "        ValuesScan_Default([$1, $2])");
+        Pattern explain = Pattern.compile("\n  Project_Default\\(Field\\(0\\)\\)\n" +
+                "    Insert_Returning\\(INTO c\\)\n" +
+                "      Project_Default\\(ifnull\\(Field\\(0\\), NEXTVAL\\('test', '_sequence-3556597(\\$1)?'\\)\\), Field\\(1\\)\\)\n" +
+                "        ValuesScan_Default\\(\\[\\$1, \\$2\\]\\)");
+        assertTrue("Generated explain does not match test explain", explain.matcher(getExplain(insert, table.getSchemaName())).matches());
     }
     
     @Test
@@ -122,14 +124,11 @@ public class InsertGeneratorIT extends ITBase {
         this.insertGenerator = new InsertGenerator (this.ais());
         insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(T3RegistryService.class));
         Operator insert = insertGenerator.createInsert(table);
-        
-        assertEquals(
-                getExplain(insert, table.getSchemaName()),
-                "\n  Project_Default(Field(0))\n" +
-                "    Insert_Returning(INTO c)\n" +
-                "      Project_Default(NEXTVAL('test', '_sequence-3556597$1'), Field(1))\n" +
-                "        ValuesScan_Default([$1, $2])");
-        
+        Pattern explain = Pattern.compile("\n  Project_Default\\(Field\\(0\\)\\)\n" +
+                "    Insert_Returning\\(INTO c\\)\n" +
+                "      Project_Default\\(NEXTVAL\\('test', '_sequence-3556597(\\$1)?'\\), Field\\(1\\)\\)\n" +
+                "        ValuesScan_Default\\(\\[\\$1, \\$2\\]\\)");
+        assertTrue("Generated explain does not match test explain", explain.matcher(getExplain(insert, table.getSchemaName())).matches());
     }
     
     @Test
@@ -184,6 +183,30 @@ public class InsertGeneratorIT extends ITBase {
                 getExplain(insert, table.getSchemaName()),
                 "\n  Project_Default(Field(0), Field(1))\n" +
                 "    Insert_Returning(INTO o)\n" +
+                "      Project_Default(Field(0), Field(1), Field(2))\n" +
+                "        ValuesScan_Default([$1, $2, $3])");
+    }
+    
+    @Test
+    public void testJoinedTable() {
+        createTable(SCHEMA, "c",
+                "cid int not null",
+                "fist_name varchar(32)",
+                "PRIMARY KEY(cid)");
+        createTable (SCHEMA, "a",
+                "aid int not null",
+                "cid int not null",
+                "state char(2)",
+                "PRIMARY KEY (aid)",
+                "GROUPING FOREIGN KEY (cid) REFERENCES c(cid)");
+        TableName table = new TableName (SCHEMA, "a");
+        this.insertGenerator = new InsertGenerator (this.ais());
+        insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(T3RegistryService.class));
+        Operator insert = insertGenerator.createInsert(table);
+        assertEquals(
+                getExplain(insert, table.getSchemaName()),
+                "\n  Project_Default(Field(0))\n" +
+                "    Insert_Returning(INTO a)\n" +
                 "      Project_Default(Field(0), Field(1), Field(2))\n" +
                 "        ValuesScan_Default([$1, $2, $3])");
     }

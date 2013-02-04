@@ -67,7 +67,6 @@ import com.akiban.server.types3.texpressions.TPreparedFunction;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.akiban.server.types3.texpressions.TPreparedParameter;
 import com.akiban.server.types3.texpressions.TValidatedScalar;
-import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 
 public  class InsertGenerator {
 

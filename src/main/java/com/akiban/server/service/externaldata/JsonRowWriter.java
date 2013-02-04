@@ -27,7 +27,6 @@
 package com.akiban.server.service.externaldata;
 
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.NopVisitor;
 import com.akiban.ais.model.UserTable;
@@ -80,12 +79,9 @@ public class JsonRowWriter
             RowType rowType;
             UserTable table; 
             
-            if (row.rowType().hasUserTable()) {
-                rowType = row.rowType();
-                table = rowType.userTable();
-            } else {
-                throw new RuntimeException ("Invaid row type for JsonRowWriter#writeRows()");
-            }
+            assert row.rowType().hasUserTable() : "Invalid row type for JsonRowWriter#writeRows()";
+            rowType = row.rowType();
+            table = rowType.userTable();
             
             int rowDepth = table.getDepth();
             boolean begun = false;
