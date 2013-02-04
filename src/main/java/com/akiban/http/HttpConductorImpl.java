@@ -60,7 +60,6 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     private static final String LOGIN_PROPERTY = "akserver.http.login";
 
     private static final String REST_ROLE = "rest-user";
-    private static final String JDBC_REALM_RESOURCE = "jdbcRealm.properties";
 
     private final ConfigurationService configurationService;
     private final SecurityService securityService;
@@ -189,16 +188,20 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                 localServer.setHandler(localHandlerCollection);
             }
             else {
+                String resource;
                 Authenticator authenticator;
                 switch (login) {
                 case BASIC:
+                    resource = "basic.properties";
                     authenticator = new BasicAuthenticator();
                     break;
                 case DIGEST:
+                    resource = "digest.properties";
                     authenticator = new DigestAuthenticator();
                     break;
                 default:
                     assert false : "Unexpected authentication type " + login;
+                    resource = null;
                     authenticator = null;
                 }
                 Constraint constraint = new Constraint(authenticator.getAuthMethod(),
@@ -215,7 +218,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
 
                 JDBCLoginService loginService =
                     new JDBCLoginService(SecurityService.REALM, 
-                                         HttpConductorImpl.class.getResource(JDBC_REALM_RESOURCE).toString());
+                                         HttpConductorImpl.class.getResource(resource).toString());
                 sh.setLoginService(loginService);
 
                 sh.setHandler(localHandlerCollection);

@@ -58,7 +58,7 @@ public class SecurityServiceIT extends ITBase
     @Override
     protected Map<String, String> startupConfigProperties() {
         Map<String, String> properties = new HashMap<String, String>();
-        properties.put("akserver.http.login", "basic");
+        properties.put("akserver.http.login", "basic"); // "digest"
         properties.put("akserver.postgres.login", "md5");
         return properties;
     }
