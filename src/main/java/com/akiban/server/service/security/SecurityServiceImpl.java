@@ -513,18 +513,21 @@ public class SecurityServiceImpl implements SecurityService, Service {
         builder.userTable(ROLES_TABLE_NAME)
             .autoIncLong("id", 1)
             .colString("name", 128, false)
-            .pk("id");
+            .pk("id")
+            .uniqueKey("role_name", "name");
         builder.userTable(USERS_TABLE_NAME)
             .autoIncLong("id", 1)
             .colString("name", 128, false)
             .colString("password_digest", 36, true)
             .colString("password_md5", 35, true)
-            .pk("id");
+            .pk("id")
+            .uniqueKey("user_name", "name");
         builder.userTable(USER_ROLES_TABLE_NAME)
             .autoIncLong("id", 1)
             .colLong("role_id", false)
             .colLong("user_id", false)
             .pk("id")
+            .uniqueKey("user_roles", "user_id", "role_id")
             .joinTo(USERS_TABLE_NAME)
             .on("user_id", "id");
         builder.procedure(ADD_ROLE_PROC_NAME)
