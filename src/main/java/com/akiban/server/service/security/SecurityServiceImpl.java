@@ -463,7 +463,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
         final char[] hex = forDigest ? HEX_UC : HEX_LC;
         for (int i = 0; i < md5.length; i++) {
             int b = md5[i] & 0xFF;
-            str.append(hex[b >> 8]);
+            str.append(hex[b >> 4]);
             str.append(hex[b & 0xF]);
         }
         return str.toString();
