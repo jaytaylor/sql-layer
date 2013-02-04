@@ -36,7 +36,14 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 public class SecurityServiceIT extends ITBase
@@ -50,7 +57,10 @@ public class SecurityServiceIT extends ITBase
 
     @Override
     protected Map<String, String> startupConfigProperties() {
-        return uniqueStartupConfigProperties(getClass());
+        Map<String, String> properties = new HashMap<String, String>();
+        properties.put("akserver.http.login", "true");
+        properties.put("akserver.postgres.login", "md5");
+        return properties;
     }
 
     protected SecurityService securityService() {
@@ -84,8 +94,24 @@ public class SecurityServiceIT extends ITBase
         assertEquals("user1", securityService().authenticate("user1", "password").getName());
     }
 
+    private URL getRestURL(String userInfo, String request) 
+            throws MalformedURLException, URISyntaxException {
+        int port = serviceManager().getServiceByClass(com.akiban.http.HttpConductor.class).getPort();
+        String context = serviceManager().getServiceByClass(com.akiban.rest.RestService.class).getContextPath();
+        return new URI("http", userInfo, "localhost", port, context + request, null, null).toURL();
+    }
+
+    @Test(expected = IOException.class)
+    public void restUnauthenticated() throws Exception {
+        URL url = getRestURL(null, "/version");
+        Object c = url.openConnection().getContent();
+    }
+
     @Test
-    public void restUnauthenticated() {
+    public void restAuthenticated() throws Exception {
+        URL url = getRestURL("user1:password", "/version");
+        Object c = url.openConnection().getContent();
+        System.out.println("*** " + c);
     }
 
 }
