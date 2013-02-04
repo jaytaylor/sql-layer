@@ -76,9 +76,9 @@ public class SecurityServiceImpl implements SecurityService, Service {
 
     public static final String ADD_ROLE_SQL = "INSERT INTO roles(name) VALUES(?)";
     public static final String DELETE_ROLE_SQL = "DELETE FROM roles WHERE name = ?";
-    public static final String GET_USER_SQL = "SELECT id, name, password_digest, password_md5, (SELECT r.name FROM roles r INNER JOIN user_roles ur ON r.id = ur.role_id WHERE ur.user_id = users.id) FROM users WHERE name = ?";
+    public static final String GET_USER_SQL = "SELECT id, name, password_digest, password_md5, (SELECT r.id, r.name FROM roles r INNER JOIN user_roles ur ON r.id = ur.role_id WHERE ur.user_id = users.id) FROM users WHERE name = ?";
     public static final String ADD_USER_SQL = "INSERT INTO users(name, password_digest, password_md5) VALUES(?,?,?) RETURNING id";
-    public static final String ADD_USER_ROLE_SQL = "INSERT INTO user_roles(user_id, role_id) VALUES(?,(SELECT role_id FROM roles WHERE name = ?))";
+    public static final String ADD_USER_ROLE_SQL = "INSERT INTO user_roles(user_id, role_id) VALUES(?,(SELECT id FROM roles WHERE name = ?))";
     public static final String CHANGE_USER_PASSWORD_SQL = "UPDATE users SET password_digest = ?, password_md5 = ? WHERE name = ?";
     public static final String DELETE_USER_SQL = "DELETE FROM users WHERE name = ?";
     public static final String DELETE_ROLE_USER_ROLES_SQL = "DELETE FROM user_roles WHERE role_id IN (SELECT id FROM roles WHERE name = ?)";
@@ -221,7 +221,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
         List<String> roles = new ArrayList<String>();
         ResultSet rs1 = (ResultSet)rs.getObject(5);
         while (rs1.next()) {
-            roles.add(rs1.getString(1));
+            roles.add(rs1.getString(2));
         }
         rs1.close();
         return new User(rs.getInt(1), rs.getString(2), roles);
@@ -237,19 +237,23 @@ public class SecurityServiceImpl implements SecurityService, Service {
             stmt.setString(1, name);
             stmt.setString(2, digestPassword(name, password));
             stmt.setString(3, md5Password(name, password));
-            ResultSet rs = stmt.executeQuery();
+            int nrows = stmt.executeUpdate();
+            if (nrows != 1) {
+                throw new SecurityException("Failed to add user " + name);
+            }
+            ResultSet rs = stmt.getGeneratedKeys();
             if (rs.next()) {
                 id = rs.getInt(1);
             }
             else {
-                throw new SecurityException("Failed to add user " + name);
+                throw new SecurityException("Failed to get user id for " + name);
             }
             rs.close();
             stmt = prepare(ADD_USER_ROLE_SQL);
             for (String role : roles) {
                 stmt.setString(1, name);
                 stmt.setString(2, role);
-                int nrows = stmt.executeUpdate();
+                nrows = stmt.executeUpdate();
                 if (nrows != 1) {
                     throw new SecurityException("Failed to add role " + role);
                 }
