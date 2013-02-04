@@ -34,10 +34,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 
-public final class EntityTest {
+public final class SpaceTest {
     @Test()
     public void coi() {
-        Entity actual = getEntity("coi.json");
+        Space actual = getEntity("coi.json");
         throw new AssertionError("todo -- validate");
     }
 
@@ -46,13 +46,13 @@ public final class EntityTest {
         throw new AssertionError("todo");
     }
 
-    private Entity getEntity(String fileName) {
-        try (InputStream is = EntityTest.class.getResourceAsStream(fileName)) {
+    private Space getEntity(String fileName) {
+        try (InputStream is = SpaceTest.class.getResourceAsStream(fileName)) {
             if (is == null) {
                 throw new RuntimeException("resource not found: " + fileName);
             }
             Reader reader = new BufferedReader(new InputStreamReader(is, "utf-8"));
-            return Entity.create(reader);
+            return Space.create(reader);
         }
         catch (IOException e) {
             throw new RuntimeException(e);

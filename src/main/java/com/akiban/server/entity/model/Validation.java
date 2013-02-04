@@ -26,24 +26,32 @@
 
 package com.akiban.server.entity.model;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ObjectNode;
 
-import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
-public final class EntityIndex {
+public final class Validation {
 
-    public static EntityIndex create(List<List<String>> index) {
-        return new EntityIndex(Lists.transform(index, namesToColumn));
+    public static Validation create(Map<String, ?> validation) {
+        if (validation.size() != 1)
+            throw new IllegalEntityDefinition("illegal validation definition (map must have one entry)");
+        Map.Entry<String, ?> entry = validation.entrySet().iterator().next();
+        return new Validation(entry.getKey(), entry.getValue());
     }
 
-
-    public EntityIndex(List<EntityColumn> columns) {
-        this.columns = columns;
+    public Validation(String name, Object value) {
+        this.name = name;
+        this.value = value;
     }
 
-    public List<EntityColumn> getColumns() {
-        return columns;
+    public String getName() {
+        return name;
+    }
+
+    public Object getValue() {
+        return value;
     }
 
     @Override
@@ -51,32 +59,29 @@ public final class EntityIndex {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        EntityIndex that = (EntityIndex) o;
-        return columns.equals(that.columns);
-
+        Validation that = (Validation) o;
+        return name.equals(that.name) && Objects.equals(value, that.value);
     }
 
     @Override
     public int hashCode() {
-        return columns.hashCode();
+        int result = name.hashCode();
+        result = 31 * result + (value != null ? value.hashCode() : 0);
+        return result;
     }
 
     @Override
     public String toString() {
-        return columns.toString();
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode jsonObject = mapper.createObjectNode();
+        jsonObject.put(name, mapper.valueToTree(value));
+        return jsonObject.toString();
     }
 
-    private final List<EntityColumn> columns;
+    private String name;
+    private Object value;
 
-    private static final Function<List<String>, EntityColumn> namesToColumn =
-            new Function<List<String>, EntityColumn>() {
-                @Override
-                public EntityColumn apply(List<String> column) {
-                    return new EntityColumn(column);
-                }
-            };
-
-    public void accept(String myName, EntityVisitor visitor) {
-        visitor.visitIndex(myName, this);
+    public void accept(EntityVisitor visitor) {
+        visitor.visitValidation(this);
     }
 }

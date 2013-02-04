@@ -35,31 +35,6 @@ import java.util.UUID;
 
 public final class Attribute {
 
-    void validate(Set<? super UUID> uuids) {
-        if (attributeType == null)
-            throw new IllegalEntityDefinition("no attribute type set (needs to be scalar or collection)");
-        assert uuid != null : "no uuid set";
-        if (!uuids.add(uuid))
-            throw new IllegalEntityDefinition("duplicate uuid found: " + uuid);
-        if (attributeType == AttributeType.SCALAR) {
-            if (type == null)
-                throw new IllegalEntityDefinition("no type set for scalar");
-            if (attributes != null)
-                throw new IllegalEntityDefinition("attributes can't be set for scalar");
-        }
-        else if (attributeType == AttributeType.COLLECTION) {
-            if (type != null)
-                throw new IllegalEntityDefinition("type can't be set for collection");
-            if (attributes == null)
-                throw new IllegalEntityDefinition("no attributes set for collection");
-            for (Attribute attribute : attributes.values())
-                attribute.validate(uuids);
-        }
-        else {
-            throw new AssertionError("unknown attribute type: " + attributeType);
-        }
-    }
-
     public UUID getUUID() {
         return uuid;
     }
@@ -199,6 +174,20 @@ public final class Attribute {
     private Map<String, Attribute> attributes;
 
     private Attribute() {}
+
+    public void accept(String myName, EntityVisitor visitor) {
+        if (attributeType == null)
+            throw new IllegalEntityDefinition("attribute " + myName + " has no attribute type (scalar or collection)");
+        if (attributeType == AttributeType.SCALAR) {
+            visitor.visitScalar(myName, this);
+        }
+        else if (attributeType == AttributeType.COLLECTION) {
+            visitor.visitCollection(myName, this);
+        }
+        else {
+            assert false : "unknown attribute type: " + attributeType;
+        }
+    }
 
     public enum AttributeType {
         SCALAR,

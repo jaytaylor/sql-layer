@@ -26,57 +26,24 @@
 
 package com.akiban.server.entity.model;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
-
-import java.util.List;
-
-public final class EntityIndex {
-
-    public static EntityIndex create(List<List<String>> index) {
-        return new EntityIndex(Lists.transform(index, namesToColumn));
-    }
-
-
-    public EntityIndex(List<EntityColumn> columns) {
-        this.columns = columns;
-    }
-
-    public List<EntityColumn> getColumns() {
-        return columns;
+public abstract class AbstractEntityVisitor implements EntityVisitor {
+    @Override
+    public void visitEntity(String name, Entity entity) {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        EntityIndex that = (EntityIndex) o;
-        return columns.equals(that.columns);
-
+    public void visitScalar(String name, Attribute scalar) {
     }
 
     @Override
-    public int hashCode() {
-        return columns.hashCode();
+    public void visitCollection(String name, Attribute collection) {
     }
 
     @Override
-    public String toString() {
-        return columns.toString();
+    public void visitValidation(Validation validation) {
     }
 
-    private final List<EntityColumn> columns;
-
-    private static final Function<List<String>, EntityColumn> namesToColumn =
-            new Function<List<String>, EntityColumn>() {
-                @Override
-                public EntityColumn apply(List<String> column) {
-                    return new EntityColumn(column);
-                }
-            };
-
-    public void accept(String myName, EntityVisitor visitor) {
-        visitor.visitIndex(myName, this);
+    @Override
+    public void visitIndex(String name, EntityIndex index) {
     }
 }

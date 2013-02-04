@@ -26,38 +26,15 @@
 
 package com.akiban.server.entity.model;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
-import com.google.common.collect.ImmutableBiMap;
-import org.codehaus.jackson.map.ObjectMapper;
-
-import java.io.IOException;
-import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 
 public final class Entity {
-
-    public static Entity create(Reader reader) throws IOException {
-        Entity result = new ObjectMapper().readValue(reader, Entity.class);
-        result.validate(new HashSet<UUID>());
-        return result;
-    }
-
-    private void validate(Set<? super UUID> uuids) {
-        if (uuid == null)
-            throw new IllegalEntityDefinition("no uuid specified");
-        if (!uuids.add(uuid))
-            throw new IllegalEntityDefinition("duplicate uuid found: " + uuid);
-        for (Attribute attribute : attributes.values())
-            attribute.validate(uuids);
-    }
-
     public UUID uuid() {
         return uuid;
     }
@@ -74,24 +51,23 @@ public final class Entity {
         this.attributes = attributes;
     }
 
-    public List<Map<String, ?>> getValidation() {
+    public List<Validation> getValidation() {
         return validations;
     }
 
     public void setValidation(List<Map<String, ?>> validations) {
+        this.validations = new ArrayList<>(validations.size());
         for (Map<String, ?> validation : validations) {
-            if (validation.size() != 1)
-                throw new IllegalEntityDefinition("illegal validation definition (map must have one entry)");
+            this.validations.add(Validation.create(validation));
         }
-        this.validations = validations;
     }
 
-    public BiMap<String, EntityIndex> getIndexes() {
+    public Map<String, EntityIndex> getIndexes() {
         return indexes;
     }
 
     public void setIndexes(Map<String, List<List<String>>> indexes) {
-        this.indexes = HashBiMap.create(indexes.size());
+        this.indexes = new HashMap<>(indexes.size());
         for (Map.Entry<String, List<List<String>>> entry : indexes.entrySet()) {
             EntityIndex index = EntityIndex.create(entry.getValue());
             this.indexes.put(entry.getKey(), index);
@@ -127,8 +103,21 @@ public final class Entity {
 
     private UUID uuid;
     private Map<String, Attribute> attributes = Collections.emptyMap();
-    private List<Map<String, ?>> validations = Collections.emptyList();
-    private BiMap<String, EntityIndex> indexes = ImmutableBiMap.of();
+    private List<Validation> validations = Collections.emptyList();
+    private Map<String, EntityIndex> indexes = Collections.emptyMap();
 
     private Entity() {}
+
+    public void accept(String myName, EntityVisitor visitor) {
+        visitor.visitEntity(myName, this);
+        for (Map.Entry<String, Attribute> entry : attributes.entrySet()) {
+            entry.getValue().accept(entry.getKey(), visitor);
+        }
+        for (Validation validation : validations) {
+            validation.accept(visitor);
+        }
+        for (Map.Entry<String, EntityIndex> entry : indexes.entrySet()) {
+            entry.getValue().accept(entry.getKey(), visitor);
+        }
+    }
 }

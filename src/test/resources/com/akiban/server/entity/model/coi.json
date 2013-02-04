@@ -1,40 +1,44 @@
 {
-    "entity" : "2a57b59e-e1b7-4377-996e-a5c04e0abf29",
-    "attributes" : {
-        "id" : {
-            "scalar" : "8644c36b-f881-4369-a06b-59e3fc580309",
-            "type" : "int",
-            "id" : true
-        },
-        "last_name" : {
-            "scalar" : "257e9b59-e77f-4a4d-a5da-00c7c2261875",
-            "type" : "varchar",
-            "validation" : [
-                { "max_length" : 64 },
-                { "required" : false }
-            ]
-        },
-        "orders" : {
-            "collection" : "c5cedd91-9751-41c2-9417-8c29117ca2c9",
+    "entities" : {
+        "customer" : {
+            "entity" : "2a57b59e-e1b7-4377-996e-a5c04e0abf29",
             "attributes" : {
                 "id" : {
-                    "scalar" : "58dd53b7-e8a1-488b-a751-c83f9beca04c",
+                    "scalar" : "8644c36b-f881-4369-a06b-59e3fc580309",
                     "type" : "int",
                     "id" : true
                 },
-                "placed" : {
-                    "scalar" : "ef411d22-735d-4198-a1f4-dc604b7dc430",
-                    "type" : "date"
+                "last_name" : {
+                    "scalar" : "257e9b59-e77f-4a4d-a5da-00c7c2261875",
+                    "type" : "varchar",
+                    "validation" : [
+                        { "max_length" : 64 },
+                        { "required" : false }
+                    ]
+                },
+                "orders" : {
+                    "collection" : "c5cedd91-9751-41c2-9417-8c29117ca2c9",
+                    "attributes" : {
+                        "id" : {
+                            "scalar" : "58dd53b7-e8a1-488b-a751-c83f9beca04c",
+                            "type" : "int",
+                            "id" : true
+                        },
+                        "placed" : {
+                            "scalar" : "ef411d22-735d-4198-a1f4-dc604b7dc430",
+                            "type" : "date"
+                        }
+                    }
                 }
+            },
+            "validation" : [
+                { "unique" : [ ["customer", "last_name"], ["customer", "first_name"] ] },
+                { "unique" : [ ["orders", "placed"] ] }
+            ],
+            "indexes" : {
+                "by_lastname" : [ ["customer", "last_name"] ],
+                "orderplaced_lastname" : [ ["orders", "placed"], ["customer", "last_name"] ]
             }
         }
-    },
-    "validation" : [
-        { "unique" : [ ["customer", "last_name"], ["customer", "first_name"] ] },
-        { "unique" : [ ["orders", "placed"] ] }
-    ],
-    "indexes" : {
-        "by_lastname" : [ ["customer", "last_name"] ],
-        "orderplaced_lastname" : [ ["orders", "placed"], ["customer", "last_name"] ]
     }
 }
