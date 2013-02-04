@@ -37,10 +37,10 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.net.Authenticator;
+import java.net.PasswordAuthentication;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -67,17 +67,27 @@ public class SecurityServiceIT extends ITBase
         return serviceManager().getServiceByClass(SecurityService.class);
     }
 
+    protected String authUser, authPass;
+
     @Before
-    public void createUsers() {
+    public void setUp() {
         SecurityService securityService = securityService();
         securityService.addRole("rest-user");
         securityService.addRole("admin");
         securityService.addUser("user1", "password", Arrays.asList("rest-user"));
+        Authenticator.setDefault(new Authenticator() {
+                @Override
+                protected PasswordAuthentication getPasswordAuthentication() {
+                    if (authUser == null) return null;
+                    return new PasswordAuthentication(authUser, authPass.toCharArray());
+                }
+            });
     }
 
     @After
     public void cleanUp() {
         securityService().clearAll();
+        Authenticator.setDefault(null);
     }
 
     @Test
@@ -94,24 +104,43 @@ public class SecurityServiceIT extends ITBase
         assertEquals("user1", securityService().authenticate("user1", "password").getName());
     }
 
-    private URL getRestURL(String userInfo, String request) 
-            throws MalformedURLException, URISyntaxException {
+    private URL getRestURL(String request) throws MalformedURLException {
         int port = serviceManager().getServiceByClass(com.akiban.http.HttpConductor.class).getPort();
         String context = serviceManager().getServiceByClass(com.akiban.rest.RestService.class).getContextPath();
-        return new URI("http", userInfo, "localhost", port, context + request, null, null).toURL();
+        return new URL("http", "localhost", port, context + request);
     }
 
     @Test(expected = IOException.class)
     public void restUnauthenticated() throws Exception {
-        URL url = getRestURL(null, "/version");
-        Object c = url.openConnection().getContent();
+        URL url = getRestURL("/security_schema.roles/1");
+        url.openConnection().getInputStream().close();
     }
 
     @Test
     public void restAuthenticated() throws Exception {
-        URL url = getRestURL("user1:password", "/version");
-        Object c = url.openConnection().getContent();
-        System.out.println("*** " + c);
+        authUser = "user1";
+        authPass = "password";
+
+        URL url = getRestURL("/security_schema.roles/1");
+        url.openConnection().getInputStream().close();
+    }
+
+    @Test
+    public void restAuthenticateBadUser() throws Exception {
+        authUser = "user2";
+        authPass = "none";
+
+        URL url = getRestURL("/security_schema.roles/1");
+        url.openConnection().getInputStream().close();
+    }
+
+    @Test
+    public void restAuthenticateBadPassword() throws Exception {
+        authUser = "user1";
+        authPass = "wrong";
+
+        URL url = getRestURL("/security_schema.roles/1");
+        url.openConnection().getInputStream().close();
     }
 
 }
