@@ -31,24 +31,28 @@ import org.codehaus.jackson.map.ObjectMapper;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 public final class Entity {
 
     public static Entity create(Reader reader) throws IOException {
         Entity result = new ObjectMapper().readValue(reader, Entity.class);
-        result.validate();
+        result.validate(new HashSet<UUID>());
         return result;
     }
 
-    public void validate() {
+    private void validate(Set<? super UUID> uuids) {
         if (uuid == null)
             throw new IllegalEntityDefinition("no uuid specified");
+        if (!uuids.add(uuid))
+            throw new IllegalEntityDefinition("duplicate uuid found: " + uuid);
         for (Attribute attribute : attributes.values())
-            attribute.validate();
+            attribute.validate(uuids);
     }
 
     public UUID uuid() {

@@ -26,7 +26,6 @@
 
 package com.akiban.server.entity;
 
-import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -39,7 +38,6 @@ public final class EntityTest {
     @Test()
     public void coi() {
         Entity actual = getEntity("coi.json");
-        actual.validate();
         throw new AssertionError("todo -- validate");
     }
 
@@ -54,7 +52,7 @@ public final class EntityTest {
                 throw new RuntimeException("resource not found: " + fileName);
             }
             Reader reader = new BufferedReader(new InputStreamReader(is, "utf-8"));
-            return new ObjectMapper().readValue(reader, Entity.class);
+            return Entity.create(reader);
         }
         catch (IOException e) {
             throw new RuntimeException(e);

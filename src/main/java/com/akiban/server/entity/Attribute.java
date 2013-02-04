@@ -30,14 +30,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 public final class Attribute {
 
-    public void validate() {
+    void validate(Set<? super UUID> uuids) {
         if (attributeType == null)
             throw new IllegalEntityDefinition("no attribute type set (needs to be scalar or collection)");
         assert uuid != null : "no uuid set";
+        if (!uuids.add(uuid))
+            throw new IllegalEntityDefinition("duplicate uuid found: " + uuid);
         if (attributeType == AttributeType.SCALAR) {
             if (type == null)
                 throw new IllegalEntityDefinition("no type set for scalar");
@@ -50,7 +53,7 @@ public final class Attribute {
             if (attributes == null)
                 throw new IllegalEntityDefinition("no attributes set for collection");
             for (Attribute attribute : attributes.values())
-                attribute.validate();
+                attribute.validate(uuids);
         }
         else {
             throw new AssertionError("unknown attribute type: " + attributeType);
