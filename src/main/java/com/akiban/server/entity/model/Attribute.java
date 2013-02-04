@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.entity;
+package com.akiban.server.entity.model;
 
 import java.util.Collections;
 import java.util.List;

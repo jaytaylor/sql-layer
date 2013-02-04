@@ -24,10 +24,35 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.entity;
+package com.akiban.server.entity.model;
 
-public final class IllegalEntityDefinition extends RuntimeException {
-    public IllegalEntityDefinition(String message) {
-        super(message);
+import org.codehaus.jackson.map.ObjectMapper;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.UUID;
+
+final class Util {
+
+    public static UUID parseUUID(String string) {
+        UUID uuid;
+        try {
+            uuid = UUID.fromString(string);
+        }
+        catch (IllegalArgumentException e) {
+            throw new IllegalEntityDefinition("invalid uuid");
+        }
+        return uuid;
+    }
+
+    public static String toJsonString(Object object) {
+        StringWriter writer = new StringWriter();
+        try {
+            new ObjectMapper().writeValue(writer, object);
+        } catch (IOException e) {
+            return "error: " + e;
+        }
+        writer.flush();
+        return writer.toString();
     }
 }

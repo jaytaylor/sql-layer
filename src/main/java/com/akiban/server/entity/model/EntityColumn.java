@@ -24,26 +24,21 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.entity;
+package com.akiban.server.entity.model;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ArrayNode;
 
 import java.util.List;
 
-public final class EntityIndex {
+public final class EntityColumn {
 
-    public static EntityIndex create(List<List<String>> index) {
-        return new EntityIndex(Lists.transform(index, namesToColumn));
+    public String getTable() {
+        return table;
     }
 
-
-    public EntityIndex(List<EntityColumn> columns) {
-        this.columns = columns;
-    }
-
-    public List<EntityColumn> getColumns() {
-        return columns;
+    public String getColumn() {
+        return column;
     }
 
     @Override
@@ -51,28 +46,33 @@ public final class EntityIndex {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        EntityIndex that = (EntityIndex) o;
-        return columns.equals(that.columns);
-
+        EntityColumn that = (EntityColumn) o;
+        return column.equals(that.column) && table.equals(that.table);
     }
 
     @Override
     public int hashCode() {
-        return columns.hashCode();
+        int result = table.hashCode();
+        result = 31 * result + column.hashCode();
+        return result;
     }
 
     @Override
     public String toString() {
-        return columns.toString();
+        // put it into a json array, for escaping purposes
+        ArrayNode jsonArray = new ObjectMapper().createArrayNode();
+        jsonArray.add(table);
+        jsonArray.add(column);
+        return jsonArray.toString();
     }
 
-    private final List<EntityColumn> columns;
+    public EntityColumn(List<String> names) {
+        if (names.size() != 2)
+            throw new IllegalEntityDefinition("column names must be 2-long");
+        table = names.get(0);
+        column = names.get(1);
+    }
 
-    private static final Function<List<String>, EntityColumn> namesToColumn =
-            new Function<List<String>, EntityColumn>() {
-                @Override
-                public EntityColumn apply(List<String> column) {
-                    return new EntityColumn(column);
-                }
-            };
+    private final String table;
+    private final String column;
 }

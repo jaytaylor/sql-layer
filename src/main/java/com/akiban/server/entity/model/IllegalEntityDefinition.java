@@ -24,38 +24,10 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.entity;
+package com.akiban.server.entity.model;
 
-import org.junit.Test;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-
-public final class EntityTest {
-    @Test()
-    public void coi() {
-        Entity actual = getEntity("coi.json");
-        throw new AssertionError("todo -- validate");
-    }
-
-    @Test
-    public void variousNegativeTests() {
-        throw new AssertionError("todo");
-    }
-
-    private Entity getEntity(String fileName) {
-        try (InputStream is = EntityTest.class.getResourceAsStream(fileName)) {
-            if (is == null) {
-                throw new RuntimeException("resource not found: " + fileName);
-            }
-            Reader reader = new BufferedReader(new InputStreamReader(is, "utf-8"));
-            return Entity.create(reader);
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+public final class IllegalEntityDefinition extends RuntimeException {
+    public IllegalEntityDefinition(String message) {
+        super(message);
     }
 }

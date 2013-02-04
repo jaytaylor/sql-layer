@@ -24,35 +24,38 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.entity;
+package com.akiban.server.entity.model;
 
-import org.codehaus.jackson.map.ObjectMapper;
+import org.junit.Test;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.StringWriter;
-import java.util.UUID;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 
-final class Util {
-
-    public static UUID parseUUID(String string) {
-        UUID uuid;
-        try {
-            uuid = UUID.fromString(string);
-        }
-        catch (IllegalArgumentException e) {
-            throw new IllegalEntityDefinition("invalid uuid");
-        }
-        return uuid;
+public final class EntityTest {
+    @Test()
+    public void coi() {
+        Entity actual = getEntity("coi.json");
+        throw new AssertionError("todo -- validate");
     }
 
-    public static String toJsonString(Object object) {
-        StringWriter writer = new StringWriter();
-        try {
-            new ObjectMapper().writeValue(writer, object);
-        } catch (IOException e) {
-            return "error: " + e;
+    @Test
+    public void variousNegativeTests() {
+        throw new AssertionError("todo");
+    }
+
+    private Entity getEntity(String fileName) {
+        try (InputStream is = EntityTest.class.getResourceAsStream(fileName)) {
+            if (is == null) {
+                throw new RuntimeException("resource not found: " + fileName);
+            }
+            Reader reader = new BufferedReader(new InputStreamReader(is, "utf-8"));
+            return Entity.create(reader);
         }
-        writer.flush();
-        return writer.toString();
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
