@@ -1,4 +1,4 @@
-[{"cid": 7, 
+[{"cid": 6, 
     "test.addresses":[{"aid":106}], 
     "test.orders": [{"oid": 106, 
         "test.items": [{"iid": 1016}, { "iid": 1017}]},

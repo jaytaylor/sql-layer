@@ -108,6 +108,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
             AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
             String pk = insertProcessor.processInsert(session, ais, rootTable, jp);
+            txn.commit();
             return Response.status(Response.Status.OK)
                 .entity(pk).build();
         } catch (JsonParseException ex) {

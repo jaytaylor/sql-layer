@@ -40,7 +40,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class JsonRowWriter
 {
@@ -142,6 +144,7 @@ public class JsonRowWriter
     public static class WriteTableRow extends WriteRow {
         public WriteTableRow () {}
         
+        @Override
         public void write(Row row, AkibanAppender appender) {
             List<Column> columns = row.rowType().userTable().getColumns();
             for (int i = 0; i < columns.size(); i++) {
@@ -154,6 +157,7 @@ public class JsonRowWriter
     public static class WritePKRow extends WriteRow {
         public WritePKRow () {}
         
+        @Override
         public void write(Row row, AkibanAppender appender) {
             List<IndexColumn> columns = row.rowType().userTable().getPrimaryKey().getIndex().getKeyColumns();
             for (int i = 0; i < columns.size(); i++) {
@@ -161,6 +165,25 @@ public class JsonRowWriter
                 Column column = columns.get(i).getColumn();
                 writeValue(column.getName(), row.pvalue(column.getPosition()), appender);
             }
+        }
+    }
+    
+    public static class WriteCapturePKRow extends WriteRow {
+
+        private Map<Column, PValueSource> pkValues = new HashMap<>();
+        public WriteCapturePKRow () {}
+        @Override
+        public void write(Row row, AkibanAppender appender) {
+            List<IndexColumn> columns = row.rowType().userTable().getPrimaryKey().getIndex().getKeyColumns();
+            for (int i = 0; i < columns.size(); i++) {
+                if (i > 0) appender.append(',');
+                Column column = columns.get(i).getColumn();
+                writeValue(column.getName(), row.pvalue(column.getPosition()), appender);
+                pkValues.put(column, row.pvalue(column.getPosition()));
+            }
+        }
+        public  Map<Column, PValueSource> getPKValues() {
+            return pkValues;
         }
     }
 }

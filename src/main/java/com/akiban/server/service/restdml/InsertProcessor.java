@@ -26,6 +26,9 @@
 package com.akiban.server.service.restdml;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Stack;
 
 import org.codehaus.jackson.JsonParseException;
@@ -37,10 +40,10 @@ import org.slf4j.LoggerFactory;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CacheValueGenerator;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.memoryadapter.MemoryAdapter;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
@@ -49,18 +52,22 @@ import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
+import com.akiban.server.error.FKValueMismatchException;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.ProtectedTableDDLException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.externaldata.JsonRowWriter;
-import com.akiban.server.service.externaldata.JsonRowWriter.WritePKRow;
+import com.akiban.server.service.externaldata.JsonRowWriter.WriteCapturePKRow;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.AkibanAppender;
 
 public class InsertProcessor {
@@ -99,6 +106,8 @@ public class InsertProcessor {
         public QueryContext queryContext;
         public JsonStatus status; 
         public boolean inObject;
+        public Map<Column, PValueSource> pkValues;
+        
         public InsertContext (TableName tableName, UserTable table, QueryContext queryContext) {
             this.table = table;
             this.tableName = tableName;
@@ -121,11 +130,7 @@ public class InsertProcessor {
         //JsonGenerator generate = JsonFactory.createJsonGenerator();
 
         JsonToken token;
-
-        UserTable table = ais.getUserTable(rootTable);
-        if (table == null) {
-            throw new NoSuchTableException(rootTable.getSchemaName(), rootTable.getTableName());
-        }
+        UserTable table = getTable(ais, rootTable);
         String field = rootTable.getDescription();
         TableName currentTable = rootTable;
         insertContext.push(new InsertContext(rootTable, table, newQueryContext(session, table)));
@@ -141,16 +146,16 @@ public class InsertProcessor {
                     }
                     if (insertContext.peek().status == JsonStatus.ARRAY_FIRST ||
                         insertContext.peek().status == JsonStatus.ARRAY_SECOND) {
-                        runUpdate(insertContext.peek().queryContext, appender, insertContext.peek().table);
+                        insertContext.peek().pkValues = (insertContext.size() > 1) ? 
+                                insertContext.get(insertContext.size()-2).pkValues :
+                                null;
+                        runUpdate(insertContext.peek(), appender);
                         // delete the closing } for the object
                         builder.deleteCharAt(builder.length()-1);
                         insertContext.peek().status = JsonStatus.ROOT_FIRST;
                     }
                     currentTable = TableName.parse(rootTable.getSchemaName(), field);
-                    table = ais.getUserTable(currentTable);
-                    if (table == null) {
-                        throw new NoSuchTableException(currentTable.getSchemaName(), currentTable.getTableName());
-                    }
+                    table = getTable(ais, currentTable);
                     insertContext.push(new InsertContext(currentTable, table, newQueryContext(session, table)));
                     appender.append(",\"");
                     appender.append(currentTable.getDescription());
@@ -168,7 +173,6 @@ public class InsertProcessor {
                     setColumnsNull(insertContext.peek().queryContext, insertContext.peek().table);
                 }
                 insertContext.peek().inObject = true;
-
                 break;
             case END_ARRAY:
                 appender.append(']');
@@ -184,9 +188,10 @@ public class InsertProcessor {
                     insertContext.peek().inObject = false;
                 } 
                 if (insertContext.peek().inObject) {
-                    runUpdate(insertContext.peek().queryContext, 
-                            appender, 
-                            insertContext.peek().table);
+                    insertContext.peek().pkValues = (insertContext.size() > 1) ? 
+                            insertContext.get(insertContext.size()-2).pkValues :
+                            null;
+                    runUpdate(insertContext.peek(), appender); 
                     insertContext.peek().inObject = false;
                 }
                 break;
@@ -232,13 +237,32 @@ public class InsertProcessor {
         return appender.toString();
     }
 
-    private void runUpdate (QueryContext queryContext, AkibanAppender appender, UserTable table) throws IOException {
-        assert queryContext != null : "Bad Json format";
-        Operator insert = insertGenerator.createInsert(table.getName());
-
-        Cursor cursor = API.cursor(insert, queryContext);
-        JsonRowWriter writer = new JsonRowWriter (table, 0);
-        writer.writeRows(cursor, appender, "\n", new WritePKRow());
+    private void runUpdate (InsertContext context, AkibanAppender appender) throws IOException { 
+        assert context != null : "Bad Json format";
+        Operator insert = insertGenerator.createInsert(context.table.getName());
+        // If Child table, write the parent group column values into the 
+        // child table join key. 
+        if (context.pkValues != null && context.table.getParentJoin() != null) {
+            Join join = context.table.getParentJoin();
+            for (Entry<Column, PValueSource> entry : context.pkValues.entrySet()) {
+                
+                int pos = join.getMatchingChild(entry.getKey()).getPosition();
+                
+                if (context.queryContext.getPValue(pos).isNull()) {
+                    context.queryContext.setPValue(join.getMatchingChild(entry.getKey()).getPosition(), entry.getValue());
+                } else if (TClass.compare (context.queryContext.getPValue(pos).tInstance(), 
+                                context.queryContext.getPValue(pos),
+                                entry.getValue().tInstance(),
+                                entry.getValue()) != 0) {
+                    throw new FKValueMismatchException (join.getMatchingChild(entry.getKey()).getName());
+                }
+            }
+        }
+        Cursor cursor = API.cursor(insert, context.queryContext);
+        JsonRowWriter writer = new JsonRowWriter (context.table, 0);
+        WriteCapturePKRow rowWriter = new WriteCapturePKRow();
+        writer.writeRows(cursor, appender, "\n", rowWriter);
+        context.pkValues = rowWriter.getPKValues();
     }
     
     private Column getColumn (UserTable table, String field) {
@@ -281,8 +305,9 @@ public class InsertProcessor {
     }
     
     private StoreAdapter getAdapter(Session session, UserTable table) {
+        // no writing to the memory tables. 
         if (table.hasMemoryTableFactory())
-            return new MemoryAdapter(schema, session, configService);
+            throw new ProtectedTableDDLException (table.getName());
         StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
         if (adapter == null)
             adapter = new PersistitAdapter(schema, store, treeService, session, configService);
@@ -301,5 +326,18 @@ public class InsertProcessor {
             pvalue.putNull();
             queryContext.setPValue(column.getPosition(), pvalue);
         }
+    }
+    
+    private UserTable getTable (AkibanInformationSchema ais, TableName name) {
+        UserTable table = ais.getUserTable(name);
+        String schemaName = name.getSchemaName();
+        if (table == null) {
+            throw new NoSuchTableException(name.getSchemaName(), name.getTableName());
+        } else if (TableName.INFORMATION_SCHEMA.equals(schemaName) ||
+                    TableName.SYS_SCHEMA.equals(schemaName) ||
+                    TableName.SQLJ_SCHEMA.equals(schemaName)) {
+            throw  new ProtectedTableDDLException (table.getName());
+        }
+        return table;
     }
 }
