@@ -31,6 +31,7 @@ import com.akiban.rest.RestServiceImpl;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.test.it.ITBase;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -62,6 +63,11 @@ public class SecurityServiceIT extends ITBase
         securityService.addRole("rest-user");
         securityService.addRole("admin");
         securityService.addUser("user1", "password", Arrays.asList("rest-user"));
+    }
+
+    @After
+    public void cleanUp() {
+        securityService().clearAll();
     }
 
     @Test

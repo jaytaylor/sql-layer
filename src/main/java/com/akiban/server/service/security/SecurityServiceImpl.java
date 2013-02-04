@@ -53,6 +53,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -466,6 +467,43 @@ public class SecurityServiceImpl implements SecurityService, Service {
             str.append(hex[b & 0xF]);
         }
         return str.toString();
+    }
+
+    @Override
+    public void clearAll() {
+        boolean success = false;
+        Statement stmt = null;
+        try {
+            ensureConnection();
+            // Just for testing, so don't bother with preparing.
+            stmt = connection.createStatement();
+            stmt.execute("DELETE FROM user_roles");
+            stmt.execute("DELETE FROM users");
+            stmt.execute("DELETE FROM roles");
+            connection.commit();
+            success = true;
+        }
+        catch (SQLException ex) {
+            throw new SecurityException("Error adding role", ex);
+        }
+        finally {
+            if (stmt != null) {
+                try {
+                    stmt.close();
+                }
+                catch (SQLException ex) {
+                    logger.warn("Error closing statement", ex);
+                }
+            }
+            if (!success) {
+                try {
+                    connection.rollback();
+                }
+                catch (SQLException ex) {
+                    logger.warn("Error rolling back", ex);
+                }
+            }
+        }
     }
 
     /* Service */

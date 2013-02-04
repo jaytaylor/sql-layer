@@ -40,4 +40,5 @@ public interface SecurityService
     public void changeUserPassword(String name, String password);
     public User authenticate(String name, String password);
     public User authenticate(String name, String password, byte[] salt);
+    public void clearAll();
 }
