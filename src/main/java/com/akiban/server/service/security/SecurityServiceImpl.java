@@ -31,10 +31,13 @@ import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.server.error.AuthenticationFailedException;
+import com.akiban.server.error.SecurityException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.sql.embedded.EmbeddedJDBCService;
+import com.akiban.sql.server.ServerSession;
 
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -43,8 +46,14 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 public class SecurityServiceImpl implements SecurityService, Service {
     public static final String SCHEMA = TableName.SECURITY_SCHEMA;
@@ -55,11 +64,25 @@ public class SecurityServiceImpl implements SecurityService, Service {
     public static final String ADD_USER_PROC_NAME = "add_user";
     public static final int TABLE_VERSION = 1;
 
+    public static final String ADMIN_USER_NAME = "akiban";
+    public static final String CONNECTION_URL = "jdbc:default:connection";
+
+    public static final String ADD_ROLE_SQL = "INSERT INTO roles(name) VALUES(?)";
+    public static final String DELETE_ROLE_SQL = "DELETE FROM roles WHERE name = ?";
+    public static final String GET_USER_SQL = "SELECT id, name, password_digest, password_md5, (SELECT r.name FROM roles r INNER JOIN user_roles ur ON r.id = ur.role_id WHERE ur.user_id = users.id) FROM users WHERE name = ?";
+    public static final String ADD_USER_SQL = "INSERT INTO users(name, password_digest, password_md5) VALUES(?,?,?) RETURNING id";
+    public static final String CHANGE_USER_PASSWORD_SQL = "UPDATE users SET password_digest = ?, password_md5 = ? WHERE name = ?";
+    public static final String DELETE_USER_SQL = "DELETE FROM users WHERE name = ?";
+    public static final String DELETE_ROLE_USER_ROLES_SQL = "DELETE FROM user_roles WHERE role_id IN (SELECT id FROM roles WHERE name = ?)";
+    public static final String DELETE_USER_USER_ROLES_SQL = "DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE name = ?)";
+    
     private final ConfigurationService configService;
     private final EmbeddedJDBCService jdbcService;
     private final SchemaManager schemaManager;
 
-    private Connection connection;
+    // TODO: Could have a connection pool and not synchronize.
+    protected Connection connection;
+    private Map<String,PreparedStatement> statements;
 
     private static final Logger logger = LoggerFactory.getLogger(SecurityServiceImpl.class);
 
@@ -72,42 +95,307 @@ public class SecurityServiceImpl implements SecurityService, Service {
         this.schemaManager = schemaManager;
     }
 
+    protected synchronized void ensureConnection() throws SQLException {
+        if (connection == null) {
+            Properties info = new Properties();
+            info.put("user", ADMIN_USER_NAME);
+            info.put("password", "");
+            info.put("database", SCHEMA);
+            connection = DriverManager.getConnection(CONNECTION_URL, info);
+            connection.setAutoCommit(false);
+            statements = new HashMap<String,PreparedStatement>();
+        }
+    }
+
+    protected synchronized PreparedStatement prepare(String sql) throws SQLException {
+        ensureConnection();
+        PreparedStatement statement = statements.get(sql);
+        if (statement == null) {
+            statement = connection.prepareStatement(sql);
+            statements.put(sql, statement);
+        }
+        return statement;
+    }
+
     /* SecurityService */
 
     @Override
-    public void addRole(String name) {
+    public synchronized void addRole(String name) {
+        boolean success = false;
+        try {
+            PreparedStatement stmt = prepare(ADD_ROLE_SQL);
+            stmt.setString(1, name);
+            int nrows = stmt.executeUpdate();
+            if (nrows != 1) {
+                throw new SecurityException("Failed to add role");
+            }
+            connection.commit();
+            success = true;
+        }
+        catch (SQLException ex) {
+            throw new SecurityException("Error adding role", ex);
+        }
+        finally {
+            if (!success) {
+                try {
+                    connection.rollback();
+                }
+                catch (SQLException ex) {
+                    logger.warn("Error rolling back", ex);
+                }
+            }
+        }
     }
 
     @Override
-    public void deleteRole(String name) {
+    public synchronized void deleteRole(String name) {
+        boolean success = false;
+        try {
+            PreparedStatement stmt = prepare(DELETE_ROLE_USER_ROLES_SQL);
+            stmt.setString(1, name);
+            stmt.executeUpdate();
+            stmt = prepare(DELETE_ROLE_SQL);
+            stmt.setString(1, name);
+            int nrows = stmt.executeUpdate();
+            if (nrows != 1) {
+                throw new SecurityException("Failed to delete role");
+            }
+            connection.commit();
+            success = true;
+        }
+        catch (SQLException ex) {
+            throw new SecurityException("Error deleting role", ex);
+        }
+        finally {
+            if (!success) {
+                try {
+                    connection.rollback();
+                }
+                catch (SQLException ex) {
+                    logger.warn("Error rolling back", ex);
+                }
+            }
+        }
     }
 
     @Override
-    public User getUser(String name) {
-        return null;
+    public synchronized User getUser(String name) {
+        User user = null;
+        boolean success = false;
+        try {
+            PreparedStatement stmt = prepare(GET_USER_SQL);
+            stmt.setString(1, name);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                user = getUser(rs);
+            }
+            rs.close();
+            connection.commit();
+            success = true;
+        }
+        catch (SQLException ex) {
+            throw new SecurityException("Error adding role", ex);
+        }
+        finally {
+            if (!success) {
+                try {
+                    connection.rollback();
+                }
+                catch (SQLException ex) {
+                    logger.warn("Error rolling back", ex);
+                }
+            }
+        }
+        return user;
+    }
+
+    protected User getUser(ResultSet rs) throws SQLException {
+        List<String> roles = new ArrayList<String>();
+        ResultSet rs1 = (ResultSet)rs.getObject(5);
+        while (rs1.next()) {
+            roles.add(rs1.getString(1));
+        }
+        rs1.close();
+        return new User(rs.getInt(1), rs.getString(2), roles);
     }
 
     @Override
-    public User addUser(String name, String password, Collection<String> roles) {
-        return null;
+    public synchronized User addUser(String name, String password, 
+                                     Collection<String> roles) {
+        int id;
+        boolean success = false;
+        try {
+            PreparedStatement stmt = prepare(ADD_USER_SQL);
+            stmt.setString(1, name);
+            stmt.setString(2, digestPassword(name, password));
+            stmt.setString(3, md5Password(name, password));
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                id = rs.getInt(1);
+            }
+            else {
+                throw new SecurityException("Failed to add user");
+            }
+            rs.close();
+            connection.commit();
+            success = true;
+        }
+        catch (SQLException ex) {
+            throw new SecurityException("Error adding user", ex);
+        }
+        finally {
+            if (!success) {
+                try {
+                    connection.rollback();
+                }
+                catch (SQLException ex) {
+                    logger.warn("Error rolling back", ex);
+                }
+            }
+        }
+        return new User(id, name, new ArrayList<String>(roles));
     }
 
     @Override
-    public void deleteUser(String name) {
+    public synchronized void deleteUser(String name) {
+        boolean success = false;
+        try {
+            PreparedStatement stmt = prepare(DELETE_USER_USER_ROLES_SQL);
+            stmt.setString(1, name);
+            stmt.executeUpdate();
+            stmt = prepare(DELETE_USER_SQL);
+            stmt.setString(1, name);
+            int nrows = stmt.executeUpdate();
+            if (nrows != 1) {
+                throw new SecurityException("Failed to delete user");
+            }
+            connection.commit();
+            success = true;
+        }
+        catch (SQLException ex) {
+            throw new SecurityException("Error deleting user", ex);
+        }
+        finally {
+            if (!success) {
+                try {
+                    connection.rollback();
+                }
+                catch (SQLException ex) {
+                    logger.warn("Error rolling back", ex);
+                }
+            }
+        }
     }
 
     @Override
-    public void changeUserPassword(String name, String password) {
+    public synchronized void changeUserPassword(String name, String password) {
+        boolean success = false;
+        try {
+            PreparedStatement stmt = prepare(CHANGE_USER_PASSWORD_SQL);
+            stmt.setString(1, digestPassword(name, password));
+            stmt.setString(2, md5Password(name, password));
+            stmt.setString(3, name);
+            int nrows = stmt.executeUpdate();
+            if (nrows != 1) {
+                throw new SecurityException("Failed to change user");
+            }
+            connection.commit();
+            success = true;
+        }
+        catch (SQLException ex) {
+            throw new SecurityException("Error changing user", ex);
+        }
+        finally {
+            if (!success) {
+                try {
+                    connection.rollback();
+                }
+                catch (SQLException ex) {
+                    logger.warn("Error rolling back", ex);
+                }
+            }
+        }
     }
 
     @Override
-    public User authenticate(String name, String password) {
-        return null;
+    public synchronized User authenticate(String name, String password) {
+        String expected = md5Password(name, password);
+        User user = null;
+        boolean success = false;
+        try {
+            PreparedStatement stmt = prepare(GET_USER_SQL);
+            stmt.setString(1, name);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next() && expected.equals(rs.getString(4))) {
+                user = getUser(rs);
+            }
+            rs.close();
+            connection.commit();
+            success = true;
+        }
+        catch (SQLException ex) {
+            throw new SecurityException("Error adding role", ex);
+        }
+        finally {
+            if (!success) {
+                try {
+                    connection.rollback();
+                }
+                catch (SQLException ex) {
+                    logger.warn("Error rolling back", ex);
+                }
+            }
+        }
+        if (user == null) {
+            throw new AuthenticationFailedException("invalid username or password");
+        }
+        return user;
     }
 
     @Override
-    public User authenticate(String name, String password, byte[] salt) {
-        return null;
+    public synchronized User authenticate(String name, String password, byte[] salt) {
+        User user = null;
+        boolean success = false;
+        try {
+            PreparedStatement stmt = prepare(GET_USER_SQL);
+            stmt.setString(1, name);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next() && password.equals(salted(rs.getString(4), salt))) {
+                user = getUser(rs);
+            }
+            rs.close();
+            connection.commit();
+            success = true;
+        }
+        catch (SQLException ex) {
+            throw new SecurityException("Error adding role", ex);
+        }
+        finally {
+            if (!success) {
+                try {
+                    connection.rollback();
+                }
+                catch (SQLException ex) {
+                    logger.warn("Error rolling back", ex);
+                }
+            }
+        }
+        if (user == null) {
+            throw new AuthenticationFailedException("invalid username or password");
+        }
+        return user;
+    }
+
+    protected String digestPassword(String user, String password) {
+        return "MD5:" + "foo";
+    }
+
+    protected String md5Password(String user, String password) {
+        return "md" + "foo";
+    }
+
+    protected String salted(String base, byte[] salt) {
+        return "md" + "foo";
     }
 
     /* Service */
