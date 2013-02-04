@@ -29,7 +29,7 @@ package com.akiban.server.entity;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.IOException;
-import java.io.StringWriter;
+import java.io.Reader;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +37,12 @@ import java.util.Objects;
 import java.util.UUID;
 
 public final class Entity {
+
+    public static Entity create(Reader reader) throws IOException {
+        Entity result = new ObjectMapper().readValue(reader, Entity.class);
+        result.validate();
+        return result;
+    }
 
     public void validate() {
         if (uuid == null)
@@ -119,5 +125,5 @@ public final class Entity {
     private List<Map<String, ?>> validations = Collections.emptyList();
     private Map<String, List<List<String>>> indexes = Collections.emptyMap();
 
-    Entity() {}
+    private Entity() {}
 }

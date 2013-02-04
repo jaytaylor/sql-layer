@@ -195,7 +195,7 @@ public final class Attribute {
     // collection fields
     private Map<String, Attribute> attributes;
 
-    Attribute() {}
+    private Attribute() {}
 
     public enum AttributeType {
         SCALAR,

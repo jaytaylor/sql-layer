@@ -40,8 +40,7 @@ public final class EntityTest {
     public void coi() {
         Entity actual = getEntity("coi.json");
         actual.validate();
-        Entity expected = new Entity();
-        throw new AssertionError("todo -- validate expected");
+        throw new AssertionError("todo -- validate");
     }
 
     @Test
