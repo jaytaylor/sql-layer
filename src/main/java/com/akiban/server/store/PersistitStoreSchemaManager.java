@@ -1118,7 +1118,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             @Override
             public boolean isSelected(Routine routine) {
                 return TableName.SYS_SCHEMA.equals(routine.getName().getSchemaName()) ||
-                       TableName.SQLJ_SCHEMA.equals(routine.getName().getSchemaName());
+                       TableName.SQLJ_SCHEMA.equals(routine.getName().getSchemaName()) ||
+                       TableName.SECURITY_SCHEMA.equals(routine.getName().getSchemaName());
             }
 
             @Override

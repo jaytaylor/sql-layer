@@ -71,6 +71,15 @@ public class SecurityServiceIT extends ITBase
     }
 
     @Test
+    public void getUser() {
+        SecurityService securityService = securityService();
+        User user = securityService.getUser("user1");
+        assertNotNull("user found", user);
+        assertTrue("user has role", user.hasRole("rest-user"));
+        assertFalse("user does not have role", user.hasRole("admin"));
+    }
+
+    @Test
     public void authenticate() {
         assertEquals("user1", securityService().authenticate("user1", "password").getName());
     }

@@ -251,8 +251,8 @@ public class SecurityServiceImpl implements SecurityService, Service {
             }
             rs.close();
             stmt = prepare(ADD_USER_ROLE_SQL);
+            stmt.setInt(1, id);
             for (String role : roles) {
-                stmt.setString(1, name);
                 stmt.setString(2, role);
                 nrows = stmt.executeUpdate();
                 if (nrows != 1) {
@@ -582,7 +582,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
     }
 
     // TODO: Temporary way of accessing these via stored procedures.
-    static class Routines {
+    public static class Routines {
         public static void addRole(String roleName) {
             ServerQueryContext context = ServerCallContextStack.current().getContext();
             SecurityService service = context.getServer().getSecurityService();
