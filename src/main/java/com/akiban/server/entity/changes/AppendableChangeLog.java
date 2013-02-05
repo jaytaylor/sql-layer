@@ -26,6 +26,29 @@
 
 package com.akiban.server.entity.changes;
 
-public interface DdlAction {
-    // TODO
+import com.akiban.server.entity.model.Attribute;
+import com.akiban.server.entity.model.Entity;
+import com.akiban.server.entity.model.EntityIndex;
+import com.akiban.server.entity.model.Validation;
+
+import java.util.UUID;
+
+public interface AppendableChangeLog {
+    void addEntry(UUID entityUuid);
+    void dropEntry(Entity dropped);
+    void renameEntry(UUID entityUuid, String oldName);
+
+    void addAttribute(UUID attributeUuid);
+    void dropAttribute(Attribute dropped);
+    void renameAttribute(UUID attributeUuid, String oldName);
+    void changeScalarType(UUID scalarUuid, Attribute afterChange);
+    void changeScalarValidations(UUID scalarUuid, Attribute afterChange);
+    void changeScalarProperties(UUID scalarUuid, Attribute afterChange);
+
+    void addValidation(Validation validation);
+    void dropValidation(Validation validation);
+
+    void addIndex(EntityIndex index);
+    void dropIndex(String name, EntityIndex index);
+    void renameIndex(EntityIndex index, String oldName, String newName);
 }

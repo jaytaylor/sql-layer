@@ -28,8 +28,10 @@ package com.akiban.server.entity.model;
 
 public interface EntityVisitor {
     void visitEntity(String name, Entity entity);
+    void leaveEntity();
     void visitScalar(String name, Attribute scalar);
     void visitCollection(String name, Attribute collection);
+    void leaveCollection();
     void visitValidation(Validation validation);
     void visitIndex(String name, EntityIndex index);
 }

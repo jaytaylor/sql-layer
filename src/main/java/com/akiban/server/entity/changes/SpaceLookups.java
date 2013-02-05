@@ -24,34 +24,48 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.entity.model;
+package com.akiban.server.entity.changes;
 
-public abstract class AbstractEntityVisitor implements EntityVisitor {
-    @Override
-    public void visitEntity(String name, Entity entity) {
+import com.akiban.server.entity.model.Entity;
+import com.akiban.server.entity.model.Space;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+class SpaceLookups {
+
+    public boolean containsUuid(UUID uuid) {
+        return entriesByUuid.containsKey(uuid);
     }
 
-    @Override
-    public void leaveEntity() {
+    public Map<UUID, Entity> entitiesByUuid() {
+        return entriesByUuid;
     }
 
-    @Override
-    public void visitScalar(String name, Attribute scalar) {
+    public Set<UUID> keySet() {
+        return entriesByUuid.keySet();
     }
 
-    @Override
-    public void visitCollection(String name, Attribute collection) {
+    public String getName(UUID uuid) {
+        return namesByUuid.get(uuid);
     }
 
-    @Override
-    public void leaveCollection() {
+    public Entity getEntity(UUID uuid) {
+        return entriesByUuid.get(uuid);
     }
 
-    @Override
-    public void visitValidation(Validation validation) {
+    public SpaceLookups(Space space) {
+        Map<String, Entity> entities = space.getEntities();
+        for (Map.Entry<String, Entity> entry : entities.entrySet()) {
+            String name = entry.getKey();
+            Entity entity = entry.getValue();
+            entriesByUuid.put(entity.uuid(), entity);
+            namesByUuid.put(entity.uuid(), name);
+        }
     }
 
-    @Override
-    public void visitIndex(String name, EntityIndex index) {
-    }
+    private Map<UUID, Entity> entriesByUuid = new HashMap<>();
+    private Map<UUID, String> namesByUuid = new HashMap<>();
 }

@@ -183,6 +183,10 @@ public final class Attribute {
         }
         else if (attributeType == AttributeType.COLLECTION) {
             visitor.visitCollection(myName, this);
+            for(Map.Entry<String, Attribute> child : attributes.entrySet()) {
+                child.getValue().accept(child.getKey(), visitor);
+            }
+            visitor.leaveCollection();
         }
         else {
             assert false : "unknown attribute type: " + attributeType;

@@ -62,7 +62,7 @@ public final class Entity {
         }
     }
 
-    public Map<String, EntityIndex> getIndexes() {
+    public Map<EntityIndex, String> getIndexes() {
         return indexes;
     }
 
@@ -70,7 +70,8 @@ public final class Entity {
         this.indexes = new HashMap<>(indexes.size());
         for (Map.Entry<String, List<List<String>>> entry : indexes.entrySet()) {
             EntityIndex index = EntityIndex.create(entry.getValue());
-            this.indexes.put(entry.getKey(), index);
+            if (this.indexes.put(index, entry.getKey()) != null)
+                throw new IllegalEntityDefinition("multiple names given for index: " + index);
         }
     }
 
@@ -104,7 +105,7 @@ public final class Entity {
     private UUID uuid;
     private Map<String, Attribute> attributes = Collections.emptyMap();
     private List<Validation> validations = Collections.emptyList();
-    private Map<String, EntityIndex> indexes = Collections.emptyMap();
+    private Map<EntityIndex, String> indexes = Collections.emptyMap();
 
     private Entity() {}
 
@@ -116,8 +117,9 @@ public final class Entity {
         for (Validation validation : validations) {
             validation.accept(visitor);
         }
-        for (Map.Entry<String, EntityIndex> entry : indexes.entrySet()) {
-            entry.getValue().accept(entry.getKey(), visitor);
+        for (Map.Entry<EntityIndex, String> entry : indexes.entrySet()) {
+            entry.getKey().accept(entry.getValue(), visitor);
         }
+        visitor.leaveEntity();
     }
 }

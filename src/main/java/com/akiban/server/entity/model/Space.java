@@ -49,6 +49,10 @@ public final class Space {
         }
     }
 
+    public Map<String, Entity> getEntities() {
+        return entities;
+    }
+
     public void setEntities(Map<String, Entity> entities) {
         this.entities = entities;
     }
