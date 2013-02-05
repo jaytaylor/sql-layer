@@ -26,25 +26,10 @@
 
 package com.akiban.server.entity.model;
 
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.node.ObjectNode;
-
 import java.util.Map;
 import java.util.Objects;
 
 public final class Validation {
-
-    public static Validation create(Map<String, ?> validation) {
-        if (validation.size() != 1)
-            throw new IllegalEntityDefinition("illegal validation definition (map must have one entry)");
-        Map.Entry<String, ?> entry = validation.entrySet().iterator().next();
-        return new Validation(entry.getKey(), entry.getValue());
-    }
-
-    public Validation(String name, Object value) {
-        this.name = name;
-        this.value = value;
-    }
 
     public String getName() {
         return name;
@@ -75,10 +60,24 @@ public final class Validation {
         return String.format("%s: %s", name, value);
     }
 
-    private String name;
-    private Object value;
-
     public void accept(EntityVisitor visitor) {
         visitor.visitValidation(this);
     }
+
+    Validation(Map<String, ?> validation) {
+        if (validation.size() != 1)
+            throw new IllegalEntityDefinition("illegal validation definition (map must have one entry)");
+        Map.Entry<String, ?> entry = validation.entrySet().iterator().next();
+        this.name = entry.getKey();
+        this.value = entry.getValue();
+    }
+
+    // for testing
+    Validation(String name, Object value) {
+        this.name = name;
+        this.value = value;
+    }
+
+    private final String name;
+    private final Object value;
 }

@@ -39,8 +39,7 @@ public final class Entity {
         return uuid;
     }
 
-    @SuppressWarnings("unused")
-    public void setEntity(String entity) {
+    void setEntity(String entity) {
         this.uuid = Util.parseUUID(entity);
     }
 
@@ -48,8 +47,7 @@ public final class Entity {
         return attributes;
     }
 
-    @SuppressWarnings("unused")
-    public void setAttributes(Map<String, Attribute> attributes) {
+    void setAttributes(Map<String, Attribute> attributes) {
         this.attributes = attributes;
     }
 
@@ -57,11 +55,10 @@ public final class Entity {
         return validations;
     }
 
-    @SuppressWarnings("unused")
-    public void setValidation(List<Map<String, ?>> validations) {
+    void setValidation(List<Map<String, ?>> validations) {
         this.validations = new ArrayList<>(validations.size());
         for (Map<String, ?> validation : validations) {
-            this.validations.add(Validation.create(validation));
+            this.validations.add(new Validation(validation));
         }
     }
 
@@ -69,8 +66,7 @@ public final class Entity {
         return indexes;
     }
 
-    @SuppressWarnings("unused")
-    public void setIndexes(Map<String, List<List<String>>> indexes) {
+    void setIndexes(Map<String, List<List<String>>> indexes) {
         this.indexes = new HashMap<>(indexes.size());
         for (Map.Entry<String, List<List<String>>> entry : indexes.entrySet()) {
             EntityIndex index = EntityIndex.create(entry.getValue());
@@ -111,7 +107,7 @@ public final class Entity {
     private List<Validation> validations = Collections.emptyList();
     private Map<EntityIndex, String> indexes = Collections.emptyMap();
 
-    private Entity() {}
+    Entity() {}
 
     public void accept(String myName, EntityVisitor visitor) {
         visitor.visitEntity(myName, this);

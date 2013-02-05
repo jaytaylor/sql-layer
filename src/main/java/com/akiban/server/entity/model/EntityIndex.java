@@ -37,11 +37,6 @@ public final class EntityIndex {
         return new EntityIndex(Lists.transform(index, namesToColumn));
     }
 
-
-    public EntityIndex(List<EntityColumn> columns) {
-        this.columns = columns;
-    }
-
     public List<EntityColumn> getColumns() {
         return columns;
     }
@@ -66,6 +61,14 @@ public final class EntityIndex {
         return columns.toString();
     }
 
+    public void accept(String myName, EntityVisitor visitor) {
+        visitor.visitIndex(myName, this);
+    }
+
+    EntityIndex(List<EntityColumn> columns) {
+        this.columns = columns;
+    }
+
     private final List<EntityColumn> columns;
 
     private static final Function<List<String>, EntityColumn> namesToColumn =
@@ -75,8 +78,4 @@ public final class EntityIndex {
                     return new EntityColumn(column);
                 }
             };
-
-    public void accept(String myName, EntityVisitor visitor) {
-        visitor.visitIndex(myName, this);
-    }
 }

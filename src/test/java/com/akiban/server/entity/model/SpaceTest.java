@@ -33,11 +33,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.Collections;
+
+import static org.junit.Assert.assertEquals;
 
 public final class SpaceTest {
     @Test()
     public void coi() {
         Space actual = getEntity("coi.json");
+        assertEquals("space keys", Collections.singleton("customer"), actual.getEntities().keySet());
         throw new AssertionError("todo -- validate");
     }
 

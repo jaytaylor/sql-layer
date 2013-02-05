@@ -59,7 +59,7 @@ public final class EntityColumn {
         return String.format("%s.%s", table, column);
     }
 
-    public EntityColumn(List<String> names) {
+    EntityColumn(List<String> names) {
         if (names.size() != 2)
             throw new IllegalEntityDefinition("column names must be 2-long");
         table = names.get(0);

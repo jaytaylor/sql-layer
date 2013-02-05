@@ -53,8 +53,7 @@ public final class Space {
         return entities;
     }
 
-    @SuppressWarnings("unused")
-    public void setEntities(Map<String, Entity> entities) {
+    void setEntities(Map<String, Entity> entities) {
         this.entities = entities;
     }
 
@@ -76,6 +75,8 @@ public final class Space {
     public String toString() {
         return entities.toString();
     }
+
+    Space() {}
 
     private Map<String, Entity> entities;
 
