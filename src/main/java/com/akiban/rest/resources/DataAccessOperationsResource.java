@@ -112,6 +112,9 @@ public class DataAccessOperationsResource {
     public Response deleteEntity(@PathParam("schema") String schema,
                                  @PathParam("table") String table,
                                  @Context UriInfo uri) throws Exception {
-        return ResponseHelper.buildNotYetImplemented();
+        //return ResponseHelper.buildNotYetImplemented();
+        String[] pks = uri.getPath(false).split("/");
+        assert pks.length > 0 : uri;
+        return dmlService.delete(schema, table, pks[pks.length-1]);
     }
 }

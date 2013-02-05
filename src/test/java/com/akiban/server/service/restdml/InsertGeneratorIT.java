@@ -68,7 +68,7 @@ public class InsertGeneratorIT extends ITBase {
         TableName table = new TableName (SCHEMA, "c");
         this.insertGenerator = new InsertGenerator (this.ais());
         insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(T3RegistryService.class));
-        Operator insert = insertGenerator.createInsert(table);
+        Operator insert = insertGenerator.create(table);
         
         assertEquals(
                 getExplain(insert, table.getSchemaName()),
@@ -87,7 +87,7 @@ public class InsertGeneratorIT extends ITBase {
         TableName table = new TableName (SCHEMA, "c");
         this.insertGenerator = new InsertGenerator (this.ais());
         insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(T3RegistryService.class));
-        Operator insert = insertGenerator.createInsert(table);
+        Operator insert = insertGenerator.create(table);
         
         assertEquals(
                 getExplain(insert, table.getSchemaName()),
@@ -105,7 +105,7 @@ public class InsertGeneratorIT extends ITBase {
         TableName table = new TableName (SCHEMA, "c");
         this.insertGenerator = new InsertGenerator (this.ais());
         insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(T3RegistryService.class));
-        Operator insert = insertGenerator.createInsert(table);
+        Operator insert = insertGenerator.create(table);
         
         Pattern explain = Pattern.compile("\n  Project_Default\\(Field\\(0\\)\\)\n" +
                 "    Insert_Returning\\(INTO c\\)\n" +
@@ -123,7 +123,7 @@ public class InsertGeneratorIT extends ITBase {
         TableName table = new TableName (SCHEMA, "c");
         this.insertGenerator = new InsertGenerator (this.ais());
         insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(T3RegistryService.class));
-        Operator insert = insertGenerator.createInsert(table);
+        Operator insert = insertGenerator.create(table);
         Pattern explain = Pattern.compile("\n  Project_Default\\(Field\\(0\\)\\)\n" +
                 "    Insert_Returning\\(INTO c\\)\n" +
                 "      Project_Default\\(NEXTVAL\\('test', '_sequence-3556597(\\$1)?'\\), Field\\(1\\)\\)\n" +
@@ -141,7 +141,7 @@ public class InsertGeneratorIT extends ITBase {
         TableName table = new TableName (SCHEMA, "c");
         this.insertGenerator = new InsertGenerator (this.ais());
         insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(T3RegistryService.class));
-        Operator insert = insertGenerator.createInsert(table);
+        Operator insert = insertGenerator.create(table);
         assertEquals(
                 getExplain(insert, table.getSchemaName()),
                 "\n  Project_Default(Field(0))\n" +
@@ -159,7 +159,7 @@ public class InsertGeneratorIT extends ITBase {
         TableName table = new TableName (SCHEMA, "c");
         this.insertGenerator = new InsertGenerator (this.ais());
         insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(T3RegistryService.class));
-        Operator insert = insertGenerator.createInsert(table);
+        Operator insert = insertGenerator.create(table);
         assertEquals(
                 getExplain(insert, table.getSchemaName()),
                 "\n  Project_Default(Field(2))\n" +
@@ -178,7 +178,7 @@ public class InsertGeneratorIT extends ITBase {
         TableName table = new TableName (SCHEMA, "o");
         this.insertGenerator = new InsertGenerator (this.ais());
         insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(T3RegistryService.class));
-        Operator insert = insertGenerator.createInsert(table);
+        Operator insert = insertGenerator.create(table);
         assertEquals(
                 getExplain(insert, table.getSchemaName()),
                 "\n  Project_Default(Field(0), Field(1))\n" +
@@ -202,7 +202,7 @@ public class InsertGeneratorIT extends ITBase {
         TableName table = new TableName (SCHEMA, "a");
         this.insertGenerator = new InsertGenerator (this.ais());
         insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(T3RegistryService.class));
-        Operator insert = insertGenerator.createInsert(table);
+        Operator insert = insertGenerator.create(table);
         assertEquals(
                 getExplain(insert, table.getSchemaName()),
                 "\n  Project_Default(Field(0))\n" +
