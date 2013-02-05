@@ -26,8 +26,6 @@
 
 package com.akiban.server.entity.model;
 
-import com.google.common.base.Functions;
-import com.google.common.collect.Lists;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -35,7 +33,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -145,7 +142,7 @@ public final class SpaceTest {
         );
         ToStringVisitor visitor = new ToStringVisitor();
         getSpace("coi.json").visit(visitor);
-        assertCollectionEquals("messages", expected, visitor.messages);
+        assertCollectionEquals("messages", expected, visitor.getMessages());
     }
 
     static Space getSpace(String fileName) {
@@ -176,51 +173,4 @@ public final class SpaceTest {
         return new Validation("unique", columns);
     }
 
-    private static class ToStringVisitor implements EntityVisitor {
-        @Override
-        public void visitEntity(String name, Entity entity) {
-            message("visiting entity", name, entity);
-        }
-
-        @Override
-        public void leaveEntity() {
-            message("leaving entity");
-        }
-
-        @Override
-        public void visitScalar(String name, Attribute scalar) {
-            message("visiting scalar", name, scalar);
-        }
-
-        @Override
-        public void visitCollection(String name, Attribute collection) {
-            message("visiting collection", name, collection);
-        }
-
-        @Override
-        public void leaveCollection() {
-            message("leaving collection");
-        }
-
-        @Override
-        public void visitEntityValidation(Validation validation) {
-            message("visiting entity validation", validation);
-        }
-
-        @Override
-        public void visitIndex(String name, EntityIndex index) {
-            message("visiting index", name, index);
-        }
-
-        private void message(String label) {
-            messages.add(label);
-        }
-
-        private void message(String label, Object... args) {
-            List<String> line = Lists.transform(asList(args), Functions.toStringFunction());
-            messages.add(label +": " + line);
-        }
-
-        private final List<String> messages = new ArrayList<>();
-    }
 }

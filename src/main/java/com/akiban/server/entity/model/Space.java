@@ -26,6 +26,7 @@
 
 package com.akiban.server.entity.model;
 
+import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.IOException;
@@ -40,7 +41,14 @@ import java.util.UUID;
 public final class Space {
 
     public static Space create(Reader reader) throws IOException {
-        Space result = new ObjectMapper().readValue(reader, Space.class);
+        Space result;
+        try {
+            result = new ObjectMapper().readValue(reader, Space.class);
+        } catch (JsonMappingException e) {
+            if (e.getCause() instanceof IllegalEntityDefinition)
+                throw (IllegalEntityDefinition) e.getCause();
+            throw e;
+        }
         result.visit(new Validator());
         return result;
     }
@@ -67,13 +75,15 @@ public final class Space {
 
     Space() {}
 
-    private Map<String, Entity> entities;
+    private Map<String, Entity> entities = Collections.emptyMap();
 
     private static class Validator extends AbstractEntityVisitor {
 
         @Override
         public void visitEntity(String name, Entity entity) {
             validateUUID(entity.uuid());
+            if (entity.getAttributes() == null || entity.getAttributes().isEmpty())
+                throw new IllegalEntityDefinition("no attributes set for entity: " + name);
         }
 
         @Override
@@ -90,7 +100,7 @@ public final class Space {
             validateUUID(collection.getUUID());
             if (collection.getType() != null)
                 throw new IllegalEntityDefinition("type can't be set for collection");
-            if (collection.getAttributes() == null)
+            if (collection.getAttributes() == null || collection.getAttributes().isEmpty())
                 throw new IllegalEntityDefinition("no attributes set for collection");
         }
 
