@@ -110,6 +110,10 @@ public final class SchemaManagerIT extends ITBase {
         schemaManager.registerStoredInformationSchemaTable(table, version);
     }
 
+    private void unRegisterISTable(final TableName name) throws Exception {
+        schemaManager.unRegisterMemoryInformationSchemaTable(name);
+    }
+
     private void deleteTableDef(final String schema, final String table) throws Exception {
         transactionally(new Callable<Void>() {
             public Void call() throws Exception {
@@ -667,9 +671,14 @@ public final class SchemaManagerIT extends ITBase {
         TableName name = new TableName(TableName.INFORMATION_SCHEMA, "p");
         NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
         builder.userTable(name).colLong("id", false).pk("id");
-        builder.userTable(T1_NAME).colLong("id", false).colLong("pid", true).pk("id").joinTo("information_schema", "p").on("pid", "id");
-        registerISTable(builder.unvalidatedAIS().getUserTable(name), new MemoryTableFactoryMock());
-        ddl().createTable(session(), builder.unvalidatedAIS().getUserTable(SCHEMA, T1_NAME));
+        try {
+            builder.userTable(T1_NAME).colLong("id", false).colLong("pid", true).pk("id").joinTo("information_schema", "p").on("pid", "id");
+            registerISTable(builder.unvalidatedAIS().getUserTable(name), new MemoryTableFactoryMock());
+            ddl().createTable(session(), builder.unvalidatedAIS().getUserTable(SCHEMA, T1_NAME));
+        } finally {
+            // ApiTestBase#tearDownAllTables skips IS tables 
+            unRegisterISTable(name);
+        }
     }
 
     @Test
