@@ -26,11 +26,11 @@
 
 package com.akiban.server.entity.model;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 
 public final class Attribute {
@@ -45,14 +45,18 @@ public final class Attribute {
 
     // scalar fields
 
-    public void setScalar(String uuid) {
+    @SuppressWarnings("unused")
+    void setScalar(String uuid) {
         if (attributeType != null)
             throw new IllegalEntityDefinition("'scalar' field not allowed; attribute is already a " + attributeType);
         this.uuid = Util.parseUUID(uuid);
         attributeType = AttributeType.SCALAR;
+        properties = Collections.emptyMap();
+        validations = Collections.emptyList();
     }
 
-    public void setAttributeType(AttributeType attributeType) {
+    @SuppressWarnings("unused")
+    void setAttributeType(AttributeType attributeType) {
         this.attributeType = attributeType;
     }
 
@@ -60,7 +64,8 @@ public final class Attribute {
         return type;
     }
 
-    public void setType(String type) {
+    @SuppressWarnings("unused")
+    void setType(String type) {
         this.type = type;
     }
 
@@ -68,33 +73,37 @@ public final class Attribute {
         return properties;
     }
 
-    public void setProperties(Map<String, ?> properties) {
-        this.properties = properties;
+    @SuppressWarnings("unused")
+    void setProperties(Map<String, ?> properties) {
+        this.properties = Collections.unmodifiableMap(properties);
     }
 
-    public List<Map<String, ?>> getValidation() {
+    public Collection<Validation> getValidation() {
         return validations;
     }
 
-    public void setValidation(List<Map<String, ?>> validations) {
+    @SuppressWarnings("unused")
+    void setValidation(List<Map<String, ?>> validations) {
+        this.validations = new ArrayList<>(validations.size());
         for (Map<String, ?> validation : validations) {
-            if (validation.size() != 1)
-                throw new IllegalEntityDefinition("illegal validation definition");
+            this.validations.add(new Validation(validation));
         }
-        this.validations = validations;
+        this.validations = Collections.unmodifiableCollection(this.validations);
     }
 
     public boolean isId() {
         return isId;
     }
 
-    public void setId(boolean id) {
+    @SuppressWarnings("unused")
+    void setId(boolean id) {
         isId = id;
     }
 
     // collection fields
 
-    public void setCollection(String uuid) {
+    @SuppressWarnings("unused")
+    void setCollection(String uuid) {
         if (attributeType != null)
             throw new IllegalEntityDefinition(
                     "'collection' field not allowed; attribute is already a " + attributeType);
@@ -106,53 +115,9 @@ public final class Attribute {
         return attributes;
     }
 
-    public void setAttributes(Map<String, Attribute> attributes) {
+    @SuppressWarnings("unused")
+    void setAttributes(Map<String, Attribute> attributes) {
         this.attributes = attributes;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Attribute attribute = (Attribute) o;
-        if (attributeType == null)
-            return  attribute.attributeType == null;
-        if (!uuid.equals(attribute.uuid))
-            return  false;
-        if (attributeType == AttributeType.SCALAR) {
-            return (isId == attribute.isId)
-                    && Objects.equals(type, attribute.type)
-                    && Objects.equals(properties, attribute.properties)
-                    && Objects.equals(validations, attribute.validations);
-        }
-        else if (attributeType == AttributeType.COLLECTION) {
-            return Objects.equals(attributes, attribute.attributes);
-        }
-        else {
-            throw new AssertionError("unknown attribute type: " + attributeType);
-        }
-    }
-
-    @Override
-    public int hashCode() {
-        if (attributeType == null)
-            return 0;
-        int result = attributeType.hashCode();
-        result = 31 * result + (uuid != null ? uuid.hashCode() : 0);
-        if (attributeType == AttributeType.SCALAR) {
-            result = 31 * result + (type != null ? type.hashCode() : 0);
-            result = 31 * result + properties.hashCode();
-            result = 31 * result + validations.hashCode();
-            result = 31 * result + (isId ? 1 : 0);
-        }
-        else if (attributeType == AttributeType.COLLECTION) {
-            result = 31 * result + (attributes != null ? attributes.hashCode() : 0);
-        }
-        else {
-            throw new AssertionError("unknown attribute type: " + attributeType);
-        }
-        return result;
     }
 
     @Override
@@ -166,8 +131,8 @@ public final class Attribute {
 
     // scalar fields
     private String type;
-    private Map<String, ?> properties = Collections.emptyMap();
-    private List<Map<String, ?>> validations = Collections.emptyList();
+    private Map<String, ?> properties;
+    private Collection<Validation> validations;
     private boolean isId;
 
     // collection fields

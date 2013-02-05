@@ -11,6 +11,9 @@
                 "last_name" : {
                     "scalar" : "257e9b59-e77f-4a4d-a5da-00c7c2261875",
                     "type" : "varchar",
+                    "properties" : {
+                        "charset" : "utf8"
+                    },
                     "validation" : [
                         { "max_length" : 64 },
                         { "required" : false }
@@ -23,10 +26,6 @@
                             "scalar" : "58dd53b7-e8a1-488b-a751-c83f9beca04c",
                             "type" : "int",
                             "id" : true
-                        },
-                        "placed" : {
-                            "scalar" : "ef411d22-735d-4198-a1f4-dc604b7dc430",
-                            "type" : "date"
                         }
                     }
                 }
@@ -36,7 +35,6 @@
                 { "unique" : [ ["orders", "placed"] ] }
             ],
             "indexes" : {
-                "by_lastname" : [ ["customer", "last_name"] ],
                 "orderplaced_lastname" : [ ["orders", "placed"], ["customer", "last_name"] ]
             }
         }

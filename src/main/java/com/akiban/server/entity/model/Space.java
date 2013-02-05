@@ -30,6 +30,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -54,21 +55,7 @@ public final class Space {
     }
 
     void setEntities(Map<String, Entity> entities) {
-        this.entities = entities;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Space space = (Space) o;
-        return entities.equals(space.entities);
-    }
-
-    @Override
-    public int hashCode() {
-        return entities.hashCode();
+        this.entities = Collections.unmodifiableMap(entities);
     }
 
     @Override

@@ -113,8 +113,8 @@ public final class SpaceDiff {
     }
 
     private void indexActions(UUID uuid, AppendableChangeLog out) {
-        Map<EntityIndex, String> originalIndexes = originalEntities.getEntity(uuid).getIndexes();
-        Map<EntityIndex, String> updatedIndexes = updatedEntities.getEntity(uuid).getIndexes();
+        Map<EntityIndex, String> originalIndexes = originalEntities.getEntity(uuid).getIndexes().inverse();
+        Map<EntityIndex, String> updatedIndexes = updatedEntities.getEntity(uuid).getIndexes().inverse();
         for (Map.Entry<EntityIndex, String> origEntry : originalIndexes.entrySet()) {
             EntityIndex origIndex = origEntry.getKey();
             String origName = origEntry.getValue();
