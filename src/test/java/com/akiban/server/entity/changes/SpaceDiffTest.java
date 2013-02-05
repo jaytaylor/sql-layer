@@ -89,7 +89,7 @@ public final class SpaceDiffTest {
     private final String testName;
     private static final File dir = JUnitUtils.getContainingFile(SpaceDiffTest.class);
 
-    private static class StringChangeLog extends JUnitUtils.MessageTaker implements AppendableChangeLog {
+    private static class StringChangeLog extends JUnitUtils.MessageTaker implements SpaceModificationHandler {
 
         @Override
         public void addEntry(UUID entityUuid) {

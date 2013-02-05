@@ -33,7 +33,7 @@ import com.akiban.server.entity.model.Validation;
 
 import java.util.UUID;
 
-public interface AppendableChangeLog {
+public interface SpaceModificationHandler {
     void addEntry(UUID entityUuid);
     void dropEntry(Entity dropped);
     void renameEntry(UUID entityUuid, String oldName);

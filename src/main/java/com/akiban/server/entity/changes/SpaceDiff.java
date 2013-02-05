@@ -40,7 +40,7 @@ import java.util.UUID;
 
 public final class SpaceDiff {
 
-    public void apply(AppendableChangeLog out) {
+    public void apply(SpaceModificationHandler out) {
         Set<UUID> inBoth = new HashSet<>();
         // dropped entities
         for (Map.Entry<UUID, Entity> orig : originalEntities.entitiesByUuid().entrySet()) {
@@ -64,7 +64,7 @@ public final class SpaceDiff {
         }
     }
 
-    private void attributeActions(UUID entityUUID, AppendableChangeLog out) {
+    private void attributeActions(UUID entityUUID, SpaceModificationHandler out) {
         AttributeLookups origLookups = new AttributeLookups(originalEntities.getEntity(entityUUID));
         AttributeLookups updateLookups = new AttributeLookups(updatedEntities.getEntity(entityUUID));
 
@@ -110,7 +110,7 @@ public final class SpaceDiff {
         }
     }
 
-    private void validationActions(UUID entityUUID, AppendableChangeLog out) {
+    private void validationActions(UUID entityUUID, SpaceModificationHandler out) {
         Set<Validation> origValidations = new HashSet<>(originalEntities.getEntity(entityUUID).getValidation());
         Set<Validation> updatedValidations = new HashSet<>(updatedEntities.getEntity(entityUUID).getValidation());
         for (Validation orig : origValidations) {
@@ -123,7 +123,7 @@ public final class SpaceDiff {
         }
     }
 
-    private void indexActions(UUID uuid, AppendableChangeLog out) {
+    private void indexActions(UUID uuid, SpaceModificationHandler out) {
         Map<EntityIndex, String> originalIndexes = originalEntities.getEntity(uuid).getIndexes().inverse();
         Map<EntityIndex, String> updatedIndexes = updatedEntities.getEntity(uuid).getIndexes().inverse();
         for (Map.Entry<EntityIndex, String> origEntry : originalIndexes.entrySet()) {
