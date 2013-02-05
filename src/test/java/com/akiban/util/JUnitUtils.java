@@ -27,6 +27,8 @@
 package com.akiban.util;
 
 import com.akiban.server.entity.model.SpaceValidation;
+import com.google.common.base.Functions;
+import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -35,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -95,6 +98,24 @@ public final class JUnitUtils {
         }
 
         private BuildingMap() {}
+    }
+
+    public static abstract class MessageTaker {
+
+        private final List<String> messages = new ArrayList<>();
+
+        protected final void message(String label) {
+            messages.add(label);
+        }
+
+        protected final void message(String label, Object... args) {
+            List<String> line = Lists.transform(asList(args), Functions.toStringFunction());
+            messages.add(label +": " + line);
+        }
+
+        public final List<String> getMessages() {
+            return messages;
+        }
     }
 
     private JUnitUtils() {}

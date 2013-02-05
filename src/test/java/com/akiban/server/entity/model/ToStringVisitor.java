@@ -26,19 +26,9 @@
 
 package com.akiban.server.entity.model;
 
-import com.google.common.base.Functions;
-import com.google.common.collect.Lists;
+import com.akiban.util.JUnitUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import static java.util.Arrays.asList;
-
-class ToStringVisitor implements EntityVisitor {
-
-    public List<String> getMessages() {
-        return messages;
-    }
+class ToStringVisitor extends JUnitUtils.MessageTaker implements EntityVisitor {
 
     @Override
     public void visitEntity(String name, Entity entity) {
@@ -75,14 +65,4 @@ class ToStringVisitor implements EntityVisitor {
         message("visiting index", name, index);
     }
 
-    private void message(String label) {
-        messages.add(label);
-    }
-
-    private void message(String label, Object... args) {
-        List<String> line = Lists.transform(asList(args), Functions.toStringFunction());
-        messages.add(label +": " + line);
-    }
-
-    private final List<String> messages = new ArrayList<>();
 }

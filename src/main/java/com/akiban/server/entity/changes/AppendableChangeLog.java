@@ -45,8 +45,8 @@ public interface AppendableChangeLog {
     void changeScalarValidations(UUID scalarUuid, Attribute afterChange);
     void changeScalarProperties(UUID scalarUuid, Attribute afterChange);
 
-    void addValidation(Validation validation);
-    void dropValidation(Validation validation);
+    void addEntityValidation(Validation validation);
+    void dropEntityValidation(Validation validation);
 
     void addIndex(EntityIndex index);
     void dropIndex(String name, EntityIndex index);

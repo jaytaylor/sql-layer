@@ -26,11 +26,12 @@
 
 package com.akiban.server.entity.model;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -53,7 +54,7 @@ public final class Attribute {
         this.uuid = Util.parseUUID(uuid);
         attributeType = AttributeType.SCALAR;
         properties = Collections.emptyMap();
-        validations = Collections.emptyList();
+        validations = Collections.emptySet();
     }
 
     @SuppressWarnings("unused")
@@ -85,11 +86,12 @@ public final class Attribute {
 
     @SuppressWarnings("unused")
     void setValidation(List<Map<String, ?>> validations) {
-        this.validations = new ArrayList<>(validations.size());
+        this.validations = new HashSet<>(validations.size());
         for (Map<String, ?> validation : validations) {
-            this.validations.add(new Validation(validation));
+            if (!this.validations.add(new Validation(validation)))
+                throw new IllegalEntityDefinition("duplicate validation:" + validation);
         }
-        this.validations = Collections.unmodifiableCollection(this.validations);
+        this.validations = Collections.unmodifiableSet(this.validations);
     }
 
     public boolean isId() {
@@ -133,7 +135,7 @@ public final class Attribute {
     // scalar fields
     private String type;
     private Map<String, ?> properties;
-    private Collection<Validation> validations;
+    private Set<Validation> validations;
     private boolean isId;
 
     // collection fields

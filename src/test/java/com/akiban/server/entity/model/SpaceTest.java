@@ -28,11 +28,6 @@ package com.akiban.server.entity.model;
 
 import org.junit.Test;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -55,7 +50,7 @@ public final class SpaceTest {
     @Test()
     public void coi() {
         // space
-        Space space = getSpace("coi.json");
+        Space space = Space.readSpace("coi.json", SpaceTest.class);
         isUnmodifiable("space", space.getEntities());
         assertEquals("space keys", set("customer"), space.getEntities().keySet());
 
@@ -141,21 +136,8 @@ public final class SpaceTest {
                 "leaving entity"
         );
         ToStringVisitor visitor = new ToStringVisitor();
-        getSpace("coi.json").visit(visitor);
+        Space.readSpace("coi.json", SpaceTest.class).visit(visitor);
         assertCollectionEquals("messages", expected, visitor.getMessages());
-    }
-
-    static Space getSpace(String fileName) {
-        try (InputStream is = SpaceTest.class.getResourceAsStream(fileName)) {
-            if (is == null) {
-                throw new RuntimeException("resource not found: " + fileName);
-            }
-            Reader reader = new BufferedReader(new InputStreamReader(is, "utf-8"));
-            return Space.create(reader);
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private static Set<String> set(String... elements) {

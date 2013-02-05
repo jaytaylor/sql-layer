@@ -29,7 +29,10 @@ package com.akiban.server.entity.model;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Collections;
 import java.util.HashSet;
@@ -51,6 +54,19 @@ public final class Space {
         }
         result.visit(new Validator());
         return result;
+    }
+
+    public static Space readSpace(String fileName, Class<?> forClass) {
+        try (InputStream is = forClass.getResourceAsStream(fileName)) {
+            if (is == null) {
+                throw new RuntimeException("resource not found: " + fileName);
+            }
+            Reader reader = new BufferedReader(new InputStreamReader(is, "utf-8"));
+            return create(reader);
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void visit(EntityVisitor visitor) {

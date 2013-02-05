@@ -34,6 +34,7 @@ import com.akiban.server.entity.model.Validation;
 
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -90,12 +91,22 @@ public final class SpaceDiff {
                 out.renameAttribute(uuid, origLookups.nameFor(uuid));
             Attribute orig = origLookups.attributeFor(uuid);
             Attribute updated = updateLookups.attributeFor(uuid);
-            if (!orig.getType().equals(updated.getType()))
-                out.changeScalarType(uuid, updated);
-            if (!orig.getValidation().equals(updated.getValidation()))
-                out.changeScalarValidations(uuid, updated);
-            if (!orig.getProperties().equals(updated.getProperties()))
-                out.changeScalarProperties(uuid, updated);
+            if (!Objects.equals(orig.getAttributeType(), updated.getAttributeType()))
+                throw new UnsupportedOperationException("can't change an attribute's class (scalar or collection)");
+            if (orig.getAttributeType() == Attribute.AttributeType.SCALAR) {
+                if (!orig.getType().equals(updated.getType()))
+                    out.changeScalarType(uuid, updated);
+                if (!orig.getValidation().equals(updated.getValidation()))
+                    out.changeScalarValidations(uuid, updated);
+                if (!orig.getProperties().equals(updated.getProperties()))
+                    out.changeScalarProperties(uuid, updated);
+            }
+            else if (orig.getAttributeType() == Attribute.AttributeType.COLLECTION) {
+                // do nothing -- the visitor will have captured children
+            }
+            else {
+                throw new AssertionError("unknown attribute class: " + orig.getAttributeType());
+            }
         }
     }
 
@@ -104,11 +115,11 @@ public final class SpaceDiff {
         Set<Validation> updatedValidations = new HashSet<>(updatedEntities.getEntity(entityUUID).getValidation());
         for (Validation orig : origValidations) {
             if (!updatedValidations.contains(orig))
-                out.dropValidation(orig);
+                out.dropEntityValidation(orig);
         }
         for (Validation updated : updatedValidations) {
             if (!origValidations.contains(updated))
-                out.addValidation(updated);
+                out.addEntityValidation(updated);
         }
     }
 
