@@ -26,6 +26,13 @@
 
 package com.akiban.server.service.restdml;
 
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+
+import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.JsonParser;
+
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -40,10 +47,9 @@ import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
+import com.akiban.server.t3expressions.T3RegistryService;
 import com.google.inject.Inject;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -54,31 +60,31 @@ import static com.akiban.server.service.transaction.TransactionService.Closeable
 
 public class RestDMLServiceImpl implements Service, RestDMLService {
 
-    private final ConfigurationService configService;
-    private final DXLService dxlService;
-    private final Store store;
-    private final TransactionService transactionService;
-    private final TreeService treeService;
-    private final ExternalDataService extDataService;
     private final SessionService sessionService;
+    
+    private final DXLService dxlService;
+    private final TransactionService transactionService;
+    private final ExternalDataService extDataService;
+    private InsertProcessor insertProcessor;
     
     @Inject
     public RestDMLServiceImpl(ConfigurationService configService,
                               DXLService dxlService,
                               Store store,
                               TransactionService transactionService,
+                              T3RegistryService registryService,
                               TreeService treeService,
                               ExternalDataService extDataService,
                               SessionService sessionService) {
-        this.configService = configService;
-        this.dxlService = dxlService;
-        this.store = store;
-        this.transactionService = transactionService;
-        this.treeService = treeService;
-        this.extDataService = extDataService;
         this.sessionService = sessionService;
-    }
+        this.dxlService = dxlService;
+        this.transactionService = transactionService;
 
+        this.insertProcessor = new InsertProcessor (configService, treeService, store, registryService);
+        this.extDataService = extDataService;
+    }
+    
+    /* service */
     @Override
     public void start() {
         // None
@@ -87,11 +93,39 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     @Override
     public void stop() {
         // None
-    }
+   }
 
     @Override
     public void crash() {
-        // None
+        //None
+    }
+    
+    /* RestDML Service Impl */
+    @Override
+    public Response insert(final String schemaName, final String tableName, JsonParser jp)  {
+        TableName rootTable = new TableName (schemaName, tableName);
+        try (Session session = sessionService.createSession();
+            CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+            String pk = insertProcessor.processInsert(session, ais, rootTable, jp);
+            txn.commit();
+            return Response.status(Response.Status.OK)
+                .entity(pk).build();
+        } catch (JsonParseException ex) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.BAD_REQUEST)
+                            .entity(ex.toString())
+                            .build());
+        } catch (IOException e) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity(e.toString())
+                        .build());
+        } catch (InvalidOperationException e) {
+            throwToClient(e);
+        }
+        assert false : "No value returned from insert";
+        return null;
     }
 
     @Override
@@ -153,7 +187,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         final Response.Status status;
         if(e instanceof NoSuchTableException) {
             status = Response.Status.NOT_FOUND;
-        } else {
+         } else {
             status = Response.Status.INTERNAL_SERVER_ERROR;
         }
         throw new WebApplicationException(

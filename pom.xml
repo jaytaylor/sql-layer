@@ -353,6 +353,10 @@
                         <exclude>**/*.test</exclude>
                         <exclude>**/*.yaml</exclude>
                         <exclude>**/*.yml</exclude>
+                        <exclude>**/*.get</exclude>
+                        <exclude>**/*.put</exclude>
+                        <exclude>**/*.post</exclude>
+                        <exclude>**/*.body</exclude>
                         <exclude>src/test/bin/*.sh</exclude>
                         <exclude>src/test/bin/*.cmd</exclude>
                         <exclude>.idea/**</exclude>
