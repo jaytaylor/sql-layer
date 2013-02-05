@@ -162,12 +162,12 @@ public class SecurityServiceIT extends ITBase
         openPostgresConnection("user1", "password");
     }
 
-    @Test
+    @Test(expected = SQLException.class)
     public void postgresBadUser() throws Exception {
         openPostgresConnection("user2", "whatever");
     }
 
-    @Test
+    @Test(expected = SQLException.class)
     public void postgresBadPassword() throws Exception {
         openPostgresConnection("user1", "nope");
     }

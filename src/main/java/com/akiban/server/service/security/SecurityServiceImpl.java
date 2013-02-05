@@ -89,10 +89,6 @@ public class SecurityServiceImpl implements SecurityService, Service {
     private final EmbeddedJDBCService jdbcService;
     private final SchemaManager schemaManager;
 
-    // TODO: Could have a connection pool and not synchronize.
-    protected Connection connection;
-    private Map<String,PreparedStatement> statements;
-
     private static final Logger logger = LoggerFactory.getLogger(SecurityServiceImpl.class);
 
     @Inject
@@ -104,116 +100,106 @@ public class SecurityServiceImpl implements SecurityService, Service {
         this.schemaManager = schemaManager;
     }
 
-    protected synchronized void ensureConnection() throws SQLException {
-        if (connection == null) {
-            Properties info = new Properties();
-            info.put("user", ADMIN_USER_NAME);
-            info.put("password", "");
-            info.put("database", SCHEMA);
-            connection = DriverManager.getConnection(CONNECTION_URL, info);
-            connection.setAutoCommit(false);
-            statements = new HashMap<String,PreparedStatement>();
-        }
+    // Connections are not thread safe, and prepared statements remember a Session,
+    // so rather than trying to pool them, just make a new one each
+    // request, which is reasonably cheap.
+    protected Connection openConnection() throws SQLException {
+        Properties info = new Properties();
+        info.put("user", ADMIN_USER_NAME);
+        info.put("password", "");
+        info.put("database", SCHEMA);
+        Connection conn = DriverManager.getConnection(CONNECTION_URL, info);
+        conn.setAutoCommit(false);
+        return conn;
     }
 
-    protected synchronized PreparedStatement prepare(String sql) throws SQLException {
-        ensureConnection();
-        PreparedStatement statement = statements.get(sql);
-        if (statement == null) {
-            statement = connection.prepareStatement(sql);
-            statements.put(sql, statement);
+    protected void cleanup(Connection conn, Statement stmt) {
+        if (stmt != null) {
+            try {
+                stmt.close();
+            }
+            catch (SQLException ex) {
+                logger.warn("Error closing statement", ex);
+            }
         }
-        return statement;
+        if (conn != null) {
+            try {
+                conn.close();
+            }
+            catch (SQLException ex) {
+                logger.warn("Error closing connection", ex);
+            }
+        }
     }
 
     /* SecurityService */
 
     @Override
-    public synchronized void addRole(String name) {
-        boolean success = false;
+    public void addRole(String name) {
+        Connection conn = null;
+        PreparedStatement stmt = null;
         try {
-            PreparedStatement stmt = prepare(ADD_ROLE_SQL);
+            conn = openConnection();
+            stmt = conn.prepareStatement(ADD_ROLE_SQL);
             stmt.setString(1, name);
             int nrows = stmt.executeUpdate();
             if (nrows != 1) {
                 throw new SecurityException("Failed to add role " + name);
             }
-            connection.commit();
-            success = true;
+            conn.commit();
         }
         catch (SQLException ex) {
             throw new SecurityException("Error adding role", ex);
         }
         finally {
-            if (!success) {
-                try {
-                    connection.rollback();
-                }
-                catch (SQLException ex) {
-                    logger.warn("Error rolling back", ex);
-                }
-            }
+            cleanup(conn, stmt);
+
         }
     }
 
     @Override
-    public synchronized void deleteRole(String name) {
-        boolean success = false;
+    public void deleteRole(String name) {
+        Connection conn = null;
+        PreparedStatement stmt = null;
         try {
-            PreparedStatement stmt = prepare(DELETE_ROLE_USER_ROLES_SQL);
-            stmt.setString(1, name);
-            stmt.executeUpdate();
-            stmt = prepare(DELETE_ROLE_SQL);
+            conn = openConnection();
+            stmt = conn.prepareStatement(DELETE_ROLE_SQL);
             stmt.setString(1, name);
             int nrows = stmt.executeUpdate();
             if (nrows != 1) {
                 throw new SecurityException("Failed to delete role");
             }
-            connection.commit();
-            success = true;
+            conn.commit();
         }
         catch (SQLException ex) {
             throw new SecurityException("Error deleting role", ex);
         }
         finally {
-            if (!success) {
-                try {
-                    connection.rollback();
-                }
-                catch (SQLException ex) {
-                    logger.warn("Error rolling back", ex);
-                }
-            }
+            cleanup(conn, stmt);
         }
     }
 
     @Override
-    public synchronized User getUser(String name) {
+    public User getUser(String name) {
         User user = null;
-        boolean success = false;
+        Connection conn = null;
+        PreparedStatement stmt = null;
         try {
-            PreparedStatement stmt = prepare(GET_USER_SQL);
+            conn = openConnection();
+            stmt = conn.prepareStatement(GET_USER_SQL);
             stmt.setString(1, name);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 user = getUser(rs);
             }
             rs.close();
-            connection.commit();
-            success = true;
+            conn.commit();
         }
         catch (SQLException ex) {
             throw new SecurityException("Error adding role", ex);
         }
         finally {
-            if (!success) {
-                try {
-                    connection.rollback();
-                }
-                catch (SQLException ex) {
-                    logger.warn("Error rolling back", ex);
-                }
-            }
+            cleanup(conn, stmt);
         }
         return user;
     }
@@ -229,12 +215,13 @@ public class SecurityServiceImpl implements SecurityService, Service {
     }
 
     @Override
-    public synchronized User addUser(String name, String password, 
-                                     Collection<String> roles) {
+    public User addUser(String name, String password, Collection<String> roles) {
         int id;
-        boolean success = false;
+        Connection conn = null;
+        PreparedStatement stmt = null;
         try {
-            PreparedStatement stmt = prepare(ADD_USER_SQL);
+            conn = openConnection();
+            stmt = conn.prepareStatement(ADD_USER_SQL);
             stmt.setString(1, name);
             stmt.setString(2, basicPassword(password));
             stmt.setString(3, digestPassword(name, password));
@@ -251,7 +238,9 @@ public class SecurityServiceImpl implements SecurityService, Service {
                 throw new SecurityException("Failed to get user id for " + name);
             }
             rs.close();
-            stmt = prepare(ADD_USER_ROLE_SQL);
+            stmt.close();
+            stmt = null;
+            stmt = conn.prepareStatement(ADD_USER_ROLE_SQL);
             stmt.setInt(1, id);
             for (String role : roles) {
                 stmt.setString(2, role);
@@ -260,61 +249,53 @@ public class SecurityServiceImpl implements SecurityService, Service {
                     throw new SecurityException("Failed to add role " + role);
                 }
             }
-            connection.commit();
-            success = true;
+            conn.commit();
         }
         catch (SQLException ex) {
             throw new SecurityException("Error adding user", ex);
         }
         finally {
-            if (!success) {
-                try {
-                    connection.rollback();
-                }
-                catch (SQLException ex) {
-                    logger.warn("Error rolling back", ex);
-                }
-            }
+            cleanup(conn, stmt);
         }
         return new User(id, name, new ArrayList<String>(roles));
     }
 
     @Override
-    public synchronized void deleteUser(String name) {
+    public void deleteUser(String name) {
+        Connection conn = null;
+        PreparedStatement stmt = null;
         boolean success = false;
         try {
-            PreparedStatement stmt = prepare(DELETE_USER_USER_ROLES_SQL);
+            conn = openConnection();
+            stmt = conn.prepareStatement(DELETE_USER_USER_ROLES_SQL);
             stmt.setString(1, name);
             stmt.executeUpdate();
-            stmt = prepare(DELETE_USER_SQL);
+            stmt.close();
+            stmt = null;
+            stmt = conn.prepareStatement(DELETE_USER_SQL);
             stmt.setString(1, name);
             int nrows = stmt.executeUpdate();
             if (nrows != 1) {
                 throw new SecurityException("Failed to delete user");
             }
-            connection.commit();
-            success = true;
+            conn.commit();
         }
         catch (SQLException ex) {
             throw new SecurityException("Error deleting user", ex);
         }
         finally {
-            if (!success) {
-                try {
-                    connection.rollback();
-                }
-                catch (SQLException ex) {
-                    logger.warn("Error rolling back", ex);
-                }
-            }
+            cleanup(conn, stmt);
         }
     }
 
     @Override
-    public synchronized void changeUserPassword(String name, String password) {
+    public void changeUserPassword(String name, String password) {
+        Connection conn = null;
+        PreparedStatement stmt = null;
         boolean success = false;
         try {
-            PreparedStatement stmt = prepare(CHANGE_USER_PASSWORD_SQL);
+            conn = openConnection();
+            stmt = conn.prepareStatement(CHANGE_USER_PASSWORD_SQL);
             stmt.setString(1, basicPassword(password));
             stmt.setString(2, digestPassword(name, password));
             stmt.setString(3, md5Password(name, password));
@@ -323,52 +304,39 @@ public class SecurityServiceImpl implements SecurityService, Service {
             if (nrows != 1) {
                 throw new SecurityException("Failed to change user");
             }
-            connection.commit();
-            success = true;
+            conn.commit();
         }
         catch (SQLException ex) {
             throw new SecurityException("Error changing user", ex);
         }
         finally {
-            if (!success) {
-                try {
-                    connection.rollback();
-                }
-                catch (SQLException ex) {
-                    logger.warn("Error rolling back", ex);
-                }
-            }
+            cleanup(conn, stmt);
         }
     }
 
     @Override
-    public synchronized User authenticate(String name, String password) {
+    public User authenticate(String name, String password) {
         String expected = md5Password(name, password);
         User user = null;
+        Connection conn = null;
+        PreparedStatement stmt = null;
         boolean success = false;
         try {
-            PreparedStatement stmt = prepare(GET_USER_SQL);
+            conn = openConnection();
+            stmt = conn.prepareStatement(GET_USER_SQL);
             stmt.setString(1, name);
             ResultSet rs = stmt.executeQuery();
             if (rs.next() && expected.equals(rs.getString(5))) {
                 user = getUser(rs);
             }
             rs.close();
-            connection.commit();
-            success = true;
+            conn.commit();
         }
         catch (SQLException ex) {
             throw new SecurityException("Error adding role", ex);
         }
         finally {
-            if (!success) {
-                try {
-                    connection.rollback();
-                }
-                catch (SQLException ex) {
-                    logger.warn("Error rolling back", ex);
-                }
-            }
+            cleanup(conn, stmt);
         }
         if (user == null) {
             throw new AuthenticationFailedException("invalid username or password");
@@ -377,32 +345,27 @@ public class SecurityServiceImpl implements SecurityService, Service {
     }
 
     @Override
-    public synchronized User authenticate(String name, String password, byte[] salt) {
+    public User authenticate(String name, String password, byte[] salt) {
         User user = null;
+        Connection conn = null;
+        PreparedStatement stmt = null;
         boolean success = false;
         try {
-            PreparedStatement stmt = prepare(GET_USER_SQL);
+            conn = openConnection();
+            stmt = conn.prepareStatement(GET_USER_SQL);
             stmt.setString(1, name);
             ResultSet rs = stmt.executeQuery();
             if (rs.next() && password.equals(salted(rs.getString(5), salt))) {
                 user = getUser(rs);
             }
             rs.close();
-            connection.commit();
-            success = true;
+            conn.commit();
         }
         catch (SQLException ex) {
             throw new SecurityException("Error adding role", ex);
         }
         finally {
-            if (!success) {
-                try {
-                    connection.rollback();
-                }
-                catch (SQLException ex) {
-                    logger.warn("Error rolling back", ex);
-                }
-            }
+            cleanup(conn, stmt);
         }
         if (user == null) {
             throw new AuthenticationFailedException("invalid username or password");
@@ -487,38 +450,23 @@ public class SecurityServiceImpl implements SecurityService, Service {
 
     @Override
     public void clearAll() {
-        boolean success = false;
+        Connection conn = null;
         Statement stmt = null;
+        boolean success = false;
         try {
-            ensureConnection();
-            // Just for testing, so don't bother with preparing.
-            stmt = connection.createStatement();
+            conn = openConnection();
+            stmt = conn.createStatement();
             stmt.execute("DELETE FROM user_roles");
             stmt.execute("DELETE FROM users");
             stmt.execute("DELETE FROM roles");
-            connection.commit();
+            conn.commit();
             success = true;
         }
         catch (SQLException ex) {
             throw new SecurityException("Error adding role", ex);
         }
         finally {
-            if (stmt != null) {
-                try {
-                    stmt.close();
-                }
-                catch (SQLException ex) {
-                    logger.warn("Error closing statement", ex);
-                }
-            }
-            if (!success) {
-                try {
-                    connection.rollback();
-                }
-                catch (SQLException ex) {
-                    logger.warn("Error rolling back", ex);
-                }
-            }
+            cleanup(conn, stmt);
         }
     }
 
@@ -532,15 +480,6 @@ public class SecurityServiceImpl implements SecurityService, Service {
     @Override
     public void stop() {
         deregisterSystemObjects();
-        if (connection != null) {
-            try {
-                connection.close();
-            }
-            catch (SQLException ex) {
-                logger.warn("Error closing connection", ex);
-            }
-            connection = null;
-        }
     }
 
     @Override
