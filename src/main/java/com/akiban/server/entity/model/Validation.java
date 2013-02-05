@@ -72,10 +72,7 @@ public final class Validation {
 
     @Override
     public String toString() {
-        ObjectMapper mapper = new ObjectMapper();
-        ObjectNode jsonObject = mapper.createObjectNode();
-        jsonObject.put(name, mapper.valueToTree(value));
-        return jsonObject.toString();
+        return String.format("%s: %s", name, value);
     }
 
     private String name;

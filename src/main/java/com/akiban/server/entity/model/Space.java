@@ -53,8 +53,28 @@ public final class Space {
         return entities;
     }
 
+    @SuppressWarnings("unused")
     public void setEntities(Map<String, Entity> entities) {
         this.entities = entities;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Space space = (Space) o;
+        return entities.equals(space.entities);
+    }
+
+    @Override
+    public int hashCode() {
+        return entities.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return entities.toString();
     }
 
     private Map<String, Entity> entities;

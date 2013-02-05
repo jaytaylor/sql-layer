@@ -39,6 +39,7 @@ public final class Entity {
         return uuid;
     }
 
+    @SuppressWarnings("unused")
     public void setEntity(String entity) {
         this.uuid = Util.parseUUID(entity);
     }
@@ -47,6 +48,7 @@ public final class Entity {
         return attributes;
     }
 
+    @SuppressWarnings("unused")
     public void setAttributes(Map<String, Attribute> attributes) {
         this.attributes = attributes;
     }
@@ -55,6 +57,7 @@ public final class Entity {
         return validations;
     }
 
+    @SuppressWarnings("unused")
     public void setValidation(List<Map<String, ?>> validations) {
         this.validations = new ArrayList<>(validations.size());
         for (Map<String, ?> validation : validations) {
@@ -66,6 +69,7 @@ public final class Entity {
         return indexes;
     }
 
+    @SuppressWarnings("unused")
     public void setIndexes(Map<String, List<List<String>>> indexes) {
         this.indexes = new HashMap<>(indexes.size());
         for (Map.Entry<String, List<List<String>>> entry : indexes.entrySet()) {
@@ -99,7 +103,7 @@ public final class Entity {
 
     @Override
     public String toString() {
-        return Util.toJsonString(this);
+        return String.format("entity {%s}", uuid());
     }
 
     private UUID uuid;

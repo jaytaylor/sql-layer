@@ -26,9 +26,6 @@
 
 package com.akiban.server.entity.model;
 
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.node.ArrayNode;
-
 import java.util.List;
 
 public final class EntityColumn {
@@ -59,11 +56,7 @@ public final class EntityColumn {
 
     @Override
     public String toString() {
-        // put it into a json array, for escaping purposes
-        ArrayNode jsonArray = new ObjectMapper().createArrayNode();
-        jsonArray.add(table);
-        jsonArray.add(column);
-        return jsonArray.toString();
+        return String.format("%s.%s", table, column);
     }
 
     public EntityColumn(List<String> names) {

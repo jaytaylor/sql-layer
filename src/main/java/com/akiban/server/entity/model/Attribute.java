@@ -157,7 +157,7 @@ public final class Attribute {
 
     @Override
     public String toString() {
-        return Util.toJsonString(this);
+        return String.format("%s {%s}", attributeType.name().toLowerCase(), uuid);
     }
 
     // common fields

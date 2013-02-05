@@ -26,10 +26,6 @@
 
 package com.akiban.server.entity.model;
 
-import org.codehaus.jackson.map.ObjectMapper;
-
-import java.io.IOException;
-import java.io.StringWriter;
 import java.util.UUID;
 
 final class Util {
@@ -43,16 +39,5 @@ final class Util {
             throw new IllegalEntityDefinition("invalid uuid");
         }
         return uuid;
-    }
-
-    public static String toJsonString(Object object) {
-        StringWriter writer = new StringWriter();
-        try {
-            new ObjectMapper().writeValue(writer, object);
-        } catch (IOException e) {
-            return "error: " + e;
-        }
-        writer.flush();
-        return writer.toString();
     }
 }
