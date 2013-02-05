@@ -421,7 +421,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
     protected String salted(String base, byte[] salt) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
-            md.update(base.getBytes("UTF-8"));
+            md.update(base.getBytes("UTF-8"), 3, 32); // Skipping "md5".
             md.update(salt);
             return formatMD5(md.digest(), false);
         }
