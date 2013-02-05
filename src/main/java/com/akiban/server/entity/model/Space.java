@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.UUID;
 
 public final class Space {
@@ -54,8 +55,9 @@ public final class Space {
         return entities;
     }
 
+    @SuppressWarnings("unused")
     void setEntities(Map<String, Entity> entities) {
-        this.entities = Collections.unmodifiableMap(entities);
+        this.entities = Collections.unmodifiableMap(new TreeMap<>(entities));
     }
 
     @Override

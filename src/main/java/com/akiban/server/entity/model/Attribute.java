@@ -31,6 +31,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 
 public final class Attribute {
@@ -117,7 +118,7 @@ public final class Attribute {
 
     @SuppressWarnings("unused")
     void setAttributes(Map<String, Attribute> attributes) {
-        this.attributes = attributes;
+        this.attributes = Collections.unmodifiableMap(new TreeMap<>(attributes));
     }
 
     @Override

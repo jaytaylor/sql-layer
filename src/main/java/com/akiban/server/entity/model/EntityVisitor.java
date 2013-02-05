@@ -32,6 +32,6 @@ public interface EntityVisitor {
     void visitScalar(String name, Attribute scalar);
     void visitCollection(String name, Attribute collection);
     void leaveCollection();
-    void visitValidation(Validation validation);
+    void visitEntityValidation(Validation validation);
     void visitIndex(String name, EntityIndex index);
 }

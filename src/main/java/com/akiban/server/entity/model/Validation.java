@@ -61,7 +61,7 @@ public final class Validation {
     }
 
     public void accept(EntityVisitor visitor) {
-        visitor.visitValidation(this);
+        visitor.visitEntityValidation(this);
     }
 
     Validation(Map<String, ?> validation) {

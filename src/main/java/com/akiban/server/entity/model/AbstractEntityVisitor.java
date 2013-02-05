@@ -48,7 +48,7 @@ public abstract class AbstractEntityVisitor implements EntityVisitor {
     }
 
     @Override
-    public void visitValidation(Validation validation) {
+    public void visitEntityValidation(Validation validation) {
     }
 
     @Override

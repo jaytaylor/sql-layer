@@ -26,6 +26,8 @@
 
 package com.akiban.server.entity.model;
 
+import com.google.common.base.Functions;
+import com.google.common.collect.Lists;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -33,6 +35,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -40,6 +43,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.akiban.util.AssertUtils.assertCollectionEquals;
 import static com.akiban.util.JUnitUtils.equalsIncludingHash;
 import static com.akiban.util.JUnitUtils.isUnmodifiable;
 import static com.akiban.util.JUnitUtils.map;
@@ -54,7 +58,7 @@ public final class SpaceTest {
     @Test()
     public void coi() {
         // space
-        Space space = getEntity("coi.json");
+        Space space = getSpace("coi.json");
         isUnmodifiable("space", space.getEntities());
         assertEquals("space keys", set("customer"), space.getEntities().keySet());
 
@@ -111,7 +115,7 @@ public final class SpaceTest {
         assertNull("orders properties", orders.getProperties());
         assertNull("orders validations", orders.getValidation());
         assertFalse("orders is ID", orders.isId());
-        isUnmodifiable("orders attributes", customer.getAttributes());
+        isUnmodifiable("orders attributes", orders.getAttributes());
         assertEquals("orders attributes key", set("id"), orders.getAttributes().keySet());
 
 
@@ -126,11 +130,25 @@ public final class SpaceTest {
     }
 
     @Test
-    public void variousNegativeTests() {
-        throw new AssertionError("todo");
+    public void visitor() {
+        List<String> expected = asList(
+                "visiting entity: [customer, entity {2a57b59e-e1b7-4377-996e-a5c04e0abf29}]",
+                "visiting scalar: [id, scalar {8644c36b-f881-4369-a06b-59e3fc580309}]",
+                "visiting scalar: [last_name, scalar {257e9b59-e77f-4a4d-a5da-00c7c2261875}]",
+                "visiting collection: [orders, collection {c5cedd91-9751-41c2-9417-8c29117ca2c9}]",
+                "visiting scalar: [id, scalar {58dd53b7-e8a1-488b-a751-c83f9beca04c}]",
+                "leaving collection",
+                "visiting entity validation: [unique: [[customer, last_name], [customer, first_name]]]",
+                "visiting entity validation: [unique: [[orders, placed]]]",
+                "visiting index: [orderplaced_lastname, [orders.placed, customer.last_name]]",
+                "leaving entity"
+        );
+        ToStringVisitor visitor = new ToStringVisitor();
+        getSpace("coi.json").visit(visitor);
+        assertCollectionEquals("messages", expected, visitor.messages);
     }
 
-    private Space getEntity(String fileName) {
+    static Space getSpace(String fileName) {
         try (InputStream is = SpaceTest.class.getResourceAsStream(fileName)) {
             if (is == null) {
                 throw new RuntimeException("resource not found: " + fileName);
@@ -156,5 +174,53 @@ public final class SpaceTest {
 
     private static Validation unique(List<List<String>> columns) {
         return new Validation("unique", columns);
+    }
+
+    private static class ToStringVisitor implements EntityVisitor {
+        @Override
+        public void visitEntity(String name, Entity entity) {
+            message("visiting entity", name, entity);
+        }
+
+        @Override
+        public void leaveEntity() {
+            message("leaving entity");
+        }
+
+        @Override
+        public void visitScalar(String name, Attribute scalar) {
+            message("visiting scalar", name, scalar);
+        }
+
+        @Override
+        public void visitCollection(String name, Attribute collection) {
+            message("visiting collection", name, collection);
+        }
+
+        @Override
+        public void leaveCollection() {
+            message("leaving collection");
+        }
+
+        @Override
+        public void visitEntityValidation(Validation validation) {
+            message("visiting entity validation", validation);
+        }
+
+        @Override
+        public void visitIndex(String name, EntityIndex index) {
+            message("visiting index", name, index);
+        }
+
+        private void message(String label) {
+            messages.add(label);
+        }
+
+        private void message(String label, Object... args) {
+            List<String> line = Lists.transform(asList(args), Functions.toStringFunction());
+            messages.add(label +": " + line);
+        }
+
+        private final List<String> messages = new ArrayList<>();
     }
 }

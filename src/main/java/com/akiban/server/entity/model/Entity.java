@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 
 public final class Entity {
@@ -53,7 +54,7 @@ public final class Entity {
 
     @SuppressWarnings("unused")
     void setAttributes(Map<String, Attribute> attributes) {
-        this.attributes = Collections.unmodifiableMap(attributes);
+        this.attributes = Collections.unmodifiableMap(new TreeMap<>(attributes));
     }
 
     public Collection<Validation> getValidation() {
@@ -104,7 +105,7 @@ public final class Entity {
         for (Validation validation : validations) {
             validation.accept(visitor);
         }
-        for (Map.Entry<String, EntityIndex> entry : indexes.entrySet()) {
+        for (Map.Entry<String, EntityIndex> entry : new TreeMap<>(indexes).entrySet()) {
             entry.getValue().accept(entry.getKey(), visitor);
         }
         visitor.leaveEntity();
