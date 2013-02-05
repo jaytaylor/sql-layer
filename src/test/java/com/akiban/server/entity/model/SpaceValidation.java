@@ -30,6 +30,7 @@ import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.OnlyIf;
 import com.akiban.junit.OnlyIfNot;
 import com.akiban.junit.Parameterization;
+import com.akiban.util.JUnitUtils;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import org.junit.Test;
@@ -45,11 +46,7 @@ import java.util.Collection;
 public final class SpaceValidation {
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params() throws IOException {
-        String myPath = SpaceValidation.class.getCanonicalName().replace('.', File.separatorChar);
-        String parent = "src/test/resources/" +
-                myPath.substring(0, myPath.length() - SpaceValidation.class.getSimpleName().length() - 1);
-        File parentFile = new File(parent);
-        String[] testNames = parentFile.list(new FilenameFilter() {
+        String[] testNames = JUnitUtils.getContainingFile(SpaceValidation.class).list(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
                 return name.endsWith(".json");

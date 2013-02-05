@@ -26,6 +26,9 @@
 
 package com.akiban.util;
 
+import com.akiban.server.entity.model.SpaceValidation;
+
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -78,6 +81,11 @@ public final class JUnitUtils {
         BuildingMap<K, V> map = new BuildingMap<>();
         map.put(key, value);
         return map;
+    }
+
+    public static File getContainingFile(Class<?> cls) {
+        String path = "src/test/resources/" + cls.getCanonicalName().replace('.', File.separatorChar);
+        return new File(path).getParentFile();
     }
 
     public static class BuildingMap<K,V> extends HashMap<K,V> {
