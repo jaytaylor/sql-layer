@@ -39,6 +39,8 @@ import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -141,6 +143,7 @@ class Count_Default extends Operator
 
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Count_Default open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Count_Default next");
+    private static final Logger LOG = LoggerFactory.getLogger(Count_Default.class);
 
     // Object state
 
@@ -178,9 +181,13 @@ class Count_Default extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 checkQueryCancelation();
                 Row row = null;
                 while ((row == null) && !closed) {
@@ -195,9 +202,14 @@ class Count_Default extends Operator
                         count++;
                     }
                 }
+                if (LOG_EXECUTION) {
+                    LOG.debug("Count_Default: yield {}", row);
+                }
                 return row;
             } finally {
-                TAP_NEXT.out();
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
 

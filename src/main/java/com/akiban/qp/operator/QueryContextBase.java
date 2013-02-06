@@ -48,6 +48,7 @@ public abstract class QueryContextBase implements QueryContext
     private SparseArray<Object> bindings = new SparseArray<Object>();
     // startTimeMsec is used to control query timeouts.
     private final long startTimeMsec = System.currentTimeMillis();
+    private long queryTimeoutMsec = Long.MAX_VALUE;
 
     @Override
     public String toString() {
@@ -216,7 +217,10 @@ public abstract class QueryContextBase implements QueryContext
 
     @Override
     public long getQueryTimeoutMilli() {
-        return getStore().getQueryTimeoutMilli();
+        if (queryTimeoutMsec == Long.MAX_VALUE) {
+            queryTimeoutMsec = getStore().getQueryTimeoutMilli();
+        }
+        return queryTimeoutMsec;
     }
 
     @Override

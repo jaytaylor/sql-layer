@@ -26,7 +26,6 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.RowType;
@@ -39,7 +38,6 @@ import com.akiban.server.explain.Attributes;
 import com.akiban.server.explain.CompoundExplainer;
 import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.Label;
-import com.akiban.server.explain.CompoundExplainer;
 import com.akiban.server.explain.PrimitiveExplainer;
 import com.akiban.server.explain.Type;
 import com.akiban.util.ArgumentValidation;
@@ -50,7 +48,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -246,9 +243,13 @@ class IfEmpty_Default extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 Row row = null;
                 checkQueryCancelation();
                 switch (inputState) {
@@ -274,12 +275,14 @@ class IfEmpty_Default extends Operator
                 if (row == null) {
                     close();
                 }
-                if (LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("IfEmpty_Default: yield {}", row);
                 }
                 return row;
             } finally {
-                TAP_NEXT.out();
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
 
