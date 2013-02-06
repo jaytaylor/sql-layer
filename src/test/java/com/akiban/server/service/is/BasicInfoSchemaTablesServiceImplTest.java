@@ -45,6 +45,7 @@ import com.akiban.qp.memoryadapter.MemoryAdapter;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;
@@ -818,6 +819,10 @@ public class BasicInfoSchemaTablesServiceImplTest {
         @Override
         public boolean hasTableChanged(Session session, int tableID) {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setSecurityService(SecurityService securityService) {
         }
     }
 }

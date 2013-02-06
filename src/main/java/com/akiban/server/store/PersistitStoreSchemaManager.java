@@ -101,6 +101,7 @@ import com.akiban.server.error.UnsupportedMetadataTypeException;
 import com.akiban.server.error.UnsupportedMetadataVersionException;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeLink;
@@ -269,6 +270,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private final TreeService treeService;
     private final ConfigurationService config;
     private final TransactionService txnService;
+    private SecurityService securityService;
     private RowDefCache rowDefCache;
     private int maxAISBufferSize;
     private boolean skipAISUpgrade;
@@ -294,6 +296,11 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         this.sessionService = sessionService;
         this.treeService = treeService;
         this.txnService = txnService;
+    }
+
+    @Override
+    public void setSecurityService(SecurityService securityService) {
+        this.securityService = securityService;
     }
 
     @Override
@@ -1572,6 +1579,10 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     private void checkTableName(Session session, TableName tableName, boolean shouldExist, boolean inIS) {
         checkSystemSchema(tableName, inIS);
+        if (!inIS && (securityService != null) &&
+            !securityService.isAccessible(session, tableName.getSchemaName())) {
+            throw new ProtectedTableDDLException(tableName);
+        }
         final boolean tableExists = getAis(session).getTable(tableName) != null;
         if(shouldExist && !tableExists) {
             throw new NoSuchTableException(tableName);

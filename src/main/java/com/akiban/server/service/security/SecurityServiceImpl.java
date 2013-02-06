@@ -505,6 +505,9 @@ public class SecurityServiceImpl implements SecurityService, Service {
     @Override
     public void start() {
         registerSystemObjects();
+        if (true) {
+            schemaManager.setSecurityService(this); // Injection would be circular.
+        }
     }
 
     @Override
