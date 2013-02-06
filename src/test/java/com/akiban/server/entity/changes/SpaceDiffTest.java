@@ -92,17 +92,17 @@ public final class SpaceDiffTest {
     private static class StringChangeLog extends JUnitUtils.MessageTaker implements SpaceModificationHandler {
 
         @Override
-        public void addEntry(UUID entityUuid) {
+        public void addEntity(UUID entityUuid) {
             message("add entry", entityUuid);
         }
 
         @Override
-        public void dropEntry(Entity dropped) {
+        public void dropEntity(Entity dropped) {
             message("drop entry", dropped);
         }
 
         @Override
-        public void renameEntry(UUID entityUuid, String oldName) {
+        public void renameEntity(UUID entityUuid, String oldName) {
             message("rename entry", entityUuid, oldName);
         }
 

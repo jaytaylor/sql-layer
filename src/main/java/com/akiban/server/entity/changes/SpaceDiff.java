@@ -48,16 +48,16 @@ public final class SpaceDiff {
             if (updatedEntities.containsUuid(uuid))
                 inBoth.add(uuid);
             else
-                out.dropEntry(orig.getValue());
+                out.dropEntity(orig.getValue());
         }
         // new entities
         for (UUID uuid : updatedEntities.keySet()) {
             if (!originalEntities.containsUuid(uuid))
-                out.addEntry(uuid);
+                out.addEntity(uuid);
         }
         for (UUID uuid : inBoth) {
             if (!originalEntities.getName(uuid).equals(updatedEntities.getName(uuid)))
-                out.renameEntry(uuid, updatedEntities.getName(uuid));
+                out.renameEntity(uuid, updatedEntities.getName(uuid));
             attributeActions(uuid, out);
             validationActions(uuid, out);
             indexActions(uuid, out);
