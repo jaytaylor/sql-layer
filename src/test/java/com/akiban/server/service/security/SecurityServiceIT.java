@@ -147,32 +147,31 @@ public class SecurityServiceIT extends ITBase
         openRestURL();
     }
 
-    private void openPostgresConnection(String user, String password) throws Exception {
+    private Connection openPostgresConnection(String user, String password) throws Exception {
         int port = serviceManager().getServiceByClass(com.akiban.sql.pg.PostgresService.class).getPort();
         Class.forName("org.postgresql.Driver");
         String url = String.format("jdbc:postgresql://localhost:%d/akiban", port);
-        Connection connection = DriverManager.getConnection(url, user, password);
-        connection.close();
+        return DriverManager.getConnection(url, user, password);
     }
 
     @Test(expected = SQLException.class)
     public void postgresUnauthenticated() throws Exception {
-        openPostgresConnection(null, null);
+        openPostgresConnection(null, null).close();
     }
 
     @Test
     public void postgresAuthenticated() throws Exception {
-        openPostgresConnection("user1", "password");
+        openPostgresConnection("user1", "password").close();
     }
 
     @Test(expected = SQLException.class)
     public void postgresBadUser() throws Exception {
-        openPostgresConnection("user2", "whatever");
+        openPostgresConnection("user2", "whatever").close();
     }
 
     @Test(expected = SQLException.class)
     public void postgresBadPassword() throws Exception {
-        openPostgresConnection("user1", "nope");
+        openPostgresConnection("user1", "nope").close();
     }
 
 }
