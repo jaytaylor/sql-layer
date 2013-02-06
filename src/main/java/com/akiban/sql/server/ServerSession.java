@@ -171,4 +171,7 @@ public interface ServerSession
 
     /** Get the security service */
     public SecurityService getSecurityService();
+
+    /** Check access to given schema */
+    public boolean isSchemaAccessible(String schemaName);
 }

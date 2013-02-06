@@ -416,8 +416,8 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     @Override
-    public boolean isAccessible(TableName object) {
-        return reqs.securityService().isAccessible(session, object.getSchemaName());
+    public boolean isSchemaAccessible(String schemaName) {
+        return reqs.securityService().isAccessible(session, schemaName);
     }
 
 }

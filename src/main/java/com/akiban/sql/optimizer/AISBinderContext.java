@@ -262,6 +262,10 @@ public class AISBinderContext
     }
 
     public boolean isAccessible(TableName object) {
+        return isSchemaAccessible(object.getSchemaName());
+    }
+
+    public boolean isSchemaAccessible(String schemaName) {
         return true;
     }
 
