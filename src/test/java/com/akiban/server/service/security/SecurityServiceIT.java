@@ -49,7 +49,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -157,7 +159,7 @@ public class SecurityServiceIT extends ITBase
             throws Exception {
         int port = serviceManager().getServiceByClass(com.akiban.sql.pg.PostgresService.class).getPort();
         Class.forName("org.postgresql.Driver");
-        String url = String.format("jdbc:postgresql://localhost:%d/akiban", port);
+        String url = String.format("jdbc:postgresql://localhost:%d/%s", port, user);
         return DriverManager.getConnection(url, user, password);
     }
 
@@ -168,7 +170,15 @@ public class SecurityServiceIT extends ITBase
 
     @Test
     public void postgresAuthenticated() throws Exception {
-        openPostgresConnection("user1", "password").close();
+        Connection conn = openPostgresConnection("user1", "password");
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("SELECT id FROM utable");
+        assertTrue(rs.next());
+        assertEquals(1, rs.getInt(1));
+        rs.close();
+        stmt.execute("DROP TABLE utable");
+        stmt.close();
+        conn.close();
     }
 
     @Test(expected = SQLException.class)
@@ -179,6 +189,20 @@ public class SecurityServiceIT extends ITBase
     @Test(expected = SQLException.class)
     public void postgresBadPassword() throws Exception {
         openPostgresConnection("user1", "nope").close();
+    }
+
+    @Test(expected = SQLException.class)
+    public void postgresWrongSchema() throws Exception {
+        Connection conn = openPostgresConnection("user1", "password");
+        Statement stmt = conn.createStatement();
+        stmt.executeQuery("SELECT id FROM user2.utable");
+    }
+
+    @Test(expected = SQLException.class)
+    public void postgresWrongSchemaDDL() throws Exception {
+        Connection conn = openPostgresConnection("user1", "password");
+        Statement stmt = conn.createStatement();
+        stmt.executeQuery("DROP TABLE user2.utable");
     }
 
 }
