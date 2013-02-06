@@ -34,7 +34,7 @@ import static org.junit.Assert.*;
 public class ChangeDiffTest
 {
     @Test
-    public void testAddEntry()
+    public void testAddRenameEntry()
     {
         ChangeDiff diff = new ChangeDiff();
         UUID uuid1 = UUID.fromString("f599fdb6-3a1a-440a-99aa-5bb6a072903f");
