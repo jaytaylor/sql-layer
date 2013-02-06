@@ -82,7 +82,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
     public void setUp() throws Exception {
         ais = BasicInfoSchemaTablesServiceImpl.createTablesToRegister();
         createTables();
-        bist = new BasicInfoSchemaTablesServiceImpl(new MockSchemaManager(ais));
+        bist = new BasicInfoSchemaTablesServiceImpl(new MockSchemaManager(ais), null);
         bist.attachFactories(ais, false);
         adapter = new MemoryAdapter(new Schema(ais), null, null);
     }

@@ -54,6 +54,7 @@ import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.Service;
+import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 import com.google.inject.Inject;
@@ -91,9 +92,13 @@ public class BasicInfoSchemaTablesServiceImpl
     private static final String CHARSET_SCHEMA = SCHEMA_NAME;
     private static final String COLLATION_SCHEMA = SCHEMA_NAME;
 
+    private final SecurityService securityService;
+
     @Inject
-    public BasicInfoSchemaTablesServiceImpl(SchemaManager schemaManager) {
+    public BasicInfoSchemaTablesServiceImpl(SchemaManager schemaManager,
+                                            SecurityService securityService) {
         super(schemaManager);
+        this.securityService = securityService;
     }
 
     @Override
@@ -112,6 +117,15 @@ public class BasicInfoSchemaTablesServiceImpl
         // Nothing
     }
 
+    protected boolean isAccessible(Session session, String schemaName) {
+        if (securityService == null) return true;
+        return securityService.isAccessible(session, schemaName);
+    }
+
+    protected boolean isAccessible(Session session, TableName name) {
+        return isAccessible(session, name.getSchemaName());
+    }
+
     private class SchemataFactory extends BasicFactoryBase {
         public SchemataFactory(TableName sourceTable) {
             super(sourceTable);
@@ -128,26 +142,30 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         private class Scan extends BaseScan {
+            final Session session;
             final Iterator<Schema> it;
 
             public Scan(Session session, RowType rowType) {
                 super(rowType);
+                this.session = session;
                 it = getAIS(session).getSchemas().values().iterator();
             }
 
             @Override
             public Row next() {
-                if(!it.hasNext()) {
-                    return null;
+                while(it.hasNext()) {
+                    Schema schema = it.next();
+                    if(isAccessible(session, schema.getName())) {
+                        return new ValuesRow(rowType,
+                                             schema.getName(),
+                                             null, // owner
+                                             null, // charset
+                                             null, // collation
+                                             ++rowCounter /*hidden pk*/); 
+                    }
                 }
-                Schema schema = it.next();
-                return new ValuesRow(rowType,
-                                     schema.getName(),
-                                     null, // owner
-                                     null, // charset
-                                     null, // collation
-                                     ++rowCounter /*hidden pk*/);
-            }
+                return null;
+           }
         }
     }
 
@@ -189,37 +207,40 @@ public class BasicInfoSchemaTablesServiceImpl
             @Override
             public Row next() {
                 if(viewIt == null) {
-                    if(tableIt.hasNext()) {
+                    while(tableIt.hasNext()) {
                         UserTable table = tableIt.next();
                         final String tableType = table.hasMemoryTableFactory() ? "DICTIONARY VIEW" : "TABLE";
-                        return new ValuesRow(rowType,
-                                             table.getName().getSchemaName(),
-                                             table.getName().getTableName(),
-                                             tableType,
-                                             table.getTableId(),
-                                             table.hasMemoryTableFactory() ? null : table.getGroup().getTreeName(),
-                                             CHARSET_SCHEMA,
-                                             table.getCharsetAndCollation().charset(),
-                                             COLLATION_SCHEMA,
-                                             table.getCharsetAndCollation().collation(),
-                                             ++rowCounter /*hidden pk*/);
-                    } else {
-                        viewIt = getAIS(session).getViews().values().iterator();
+                        if(isAccessible(session, table.getName())) {
+                            return new ValuesRow(rowType,
+                                                 table.getName().getSchemaName(),
+                                                 table.getName().getTableName(),
+                                                 tableType,
+                                                 table.getTableId(),
+                                                 table.hasMemoryTableFactory() ? null : table.getGroup().getTreeName(),
+                                                 CHARSET_SCHEMA,
+                                                 table.getCharsetAndCollation().charset(),
+                                                 COLLATION_SCHEMA,
+                                                 table.getCharsetAndCollation().collation(),
+                                                 ++rowCounter /*hidden pk*/);
+                        }
                     }
+                    viewIt = getAIS(session).getViews().values().iterator();
                 }
-                if(viewIt.hasNext()) {
+                while(viewIt.hasNext()) {
                     View view = viewIt.next();
-                    return new ValuesRow(rowType,
-                                         view.getName().getSchemaName(),
-                                         view.getName().getTableName(),
-                                         "VIEW",
-                                         null,
-                                         null,
-                                         null,
-                                         null,
-                                         null,
-                                         null,
-                                         ++rowCounter /*hidden pk*/);
+                    if(isAccessible(session, view.getName())) {
+                        return new ValuesRow(rowType,
+                                             view.getName().getSchemaName(),
+                                             view.getName().getTableName(),
+                                             "VIEW",
+                                             null,
+                                             null,
+                                             null,
+                                             null,
+                                             null,
+                                             null,
+                                             ++rowCounter /*hidden pk*/);
+                    }
                 }
                 return null;
             }
@@ -265,18 +286,23 @@ public class BasicInfoSchemaTablesServiceImpl
             public Row next() {
                 while(columnIt == null || !columnIt.hasNext()) {
                     if(viewIt == null) {
-                        if(tableIt.hasNext()) {
-                            columnIt = tableIt.next().getColumns().iterator();
-                            continue;
-                        } else {
-                            viewIt = getAIS(session).getViews().values().iterator();
+                        while(tableIt.hasNext()) {
+                            UserTable table = tableIt.next();
+                            if(isAccessible(session, table.getName())) {
+                                columnIt = table.getColumns().iterator();
+                                break;
+                            }
+                        }
+                        viewIt = getAIS(session).getViews().values().iterator();
+                    }
+                    while(viewIt.hasNext()) {
+                        View view = viewIt.next();
+                        if(isAccessible(session, view.getName())) {
+                            columnIt = view.getColumns().iterator();
+                            break;
                         }
                     }
-                    if(viewIt.hasNext()) {
-                        columnIt = viewIt.next().getColumns().iterator();
-                    } else {
-                        return null;
-                    }
+                    return null;
                 }
 
                 Column column = columnIt.next();
@@ -341,8 +367,9 @@ public class BasicInfoSchemaTablesServiceImpl
             super(sourceTable);
         }
 
-        private TableConstraintsIteration newIteration(AkibanInformationSchema ais) {
-            return new TableConstraintsIteration(ais.getUserTables().values().iterator());
+        private TableConstraintsIteration newIteration(Session session,
+                                                       AkibanInformationSchema ais) {
+            return new TableConstraintsIteration(session, ais.getUserTables().values().iterator());
         }
 
         @Override
@@ -354,7 +381,7 @@ public class BasicInfoSchemaTablesServiceImpl
         public long rowCount() {
             AkibanInformationSchema ais = getDirtyAIS();
             long count = 0;
-            TableConstraintsIteration it = newIteration(ais);
+            TableConstraintsIteration it = newIteration(null, ais);
             while(it.next()) {
                 ++count;
             }
@@ -366,7 +393,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
             public Scan(Session session, RowType rowType) {
                 super(rowType);
-                this.it = newIteration(getAIS(session));
+                this.it = newIteration(session, getAIS(session));
             }
 
             @Override
@@ -485,7 +512,12 @@ public class BasicInfoSchemaTablesServiceImpl
                 // Desired output: groups together, ordered by branch (ordinal), then ordered by depth
                 // Highest level sorting will be by schema.root, which seems as good as any
                 rootPathTables = new ArrayList<RootPathTable>();
-                Collection<UserTable> allTables = ais.getUserTables().values();
+                Collection<UserTable> allTables = new ArrayList<UserTable>();
+                for(UserTable table : ais.getUserTables().values()) {
+                    if(isAccessible(session, table.getName())) {
+                        allTables.add(table);
+                    }
+                }
                 StringBuilder builder = new StringBuilder();
                 for(UserTable table : allTables) {
                     if(table.isRoot()) {
@@ -539,8 +571,9 @@ public class BasicInfoSchemaTablesServiceImpl
             super(sourceTable);
         }
 
-        private TableConstraintsIteration newIteration(AkibanInformationSchema ais) {
-            return new TableConstraintsIteration(ais.getUserTables().values().iterator());
+        private TableConstraintsIteration newIteration(Session session,
+                                                       AkibanInformationSchema ais) {
+            return new TableConstraintsIteration(session, ais.getUserTables().values().iterator());
         }
 
         @Override
@@ -551,7 +584,7 @@ public class BasicInfoSchemaTablesServiceImpl
         @Override
         public long rowCount() {
             int count = 0;
-            TableConstraintsIteration it = newIteration(getDirtyAIS());
+            TableConstraintsIteration it = newIteration(null, getDirtyAIS());
             while(it.next()) {
                 ++count;
             }
@@ -568,7 +601,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
             public Scan(Session session, RowType rowType) {
                 super(rowType);
-                this.it = newIteration(getAIS(session));
+                this.it = newIteration(session, getAIS(session));
             }
 
             // Find position in parents PK
@@ -630,8 +663,9 @@ public class BasicInfoSchemaTablesServiceImpl
             super(sourceTable);
         }
 
-        private IndexIteration newIteration(AkibanInformationSchema ais) {
-            return new IndexIteration(ais.getUserTables().values().iterator());
+        private IndexIteration newIteration(Session session,
+                                            AkibanInformationSchema ais) {
+            return new IndexIteration(session, ais.getUserTables().values().iterator());
         }
 
         @Override
@@ -642,7 +676,7 @@ public class BasicInfoSchemaTablesServiceImpl
         @Override
         public long rowCount() {
             long count = 0;
-            IndexIteration it = newIteration(getDirtyAIS());
+            IndexIteration it = newIteration(null, getDirtyAIS());
             while(it.next() != null) {
                 ++count;
             }
@@ -654,7 +688,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
             public Scan(Session session, RowType rowType) {
                 super(rowType);
-                this.indexIt = newIteration(getAIS(session));
+                this.indexIt = newIteration(session, getAIS(session));
             }
 
             @Override
@@ -694,8 +728,9 @@ public class BasicInfoSchemaTablesServiceImpl
             super(sourceTable);
         }
 
-        private IndexIteration newIteration(AkibanInformationSchema ais) {
-            return new IndexIteration(ais.getUserTables().values().iterator());
+        private IndexIteration newIteration(Session session,
+                                            AkibanInformationSchema ais) {
+            return new IndexIteration(session, ais.getUserTables().values().iterator());
         }
 
         @Override
@@ -705,7 +740,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public long rowCount() {
-            IndexIteration indexIt = newIteration(getDirtyAIS());
+            IndexIteration indexIt = newIteration(null, getDirtyAIS());
             long count = 0;
             Index index;
             while((index = indexIt.next()) != null) {
@@ -720,7 +755,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
             public Scan(Session session, RowType rowType) {
                 super(rowType);
-                this.indexIt = newIteration(getAIS(session));
+                this.indexIt = newIteration(session, getAIS(session));
             }
 
             private IndexColumn advance() {
@@ -771,30 +806,33 @@ public class BasicInfoSchemaTablesServiceImpl
         }
         
         private class Scan extends BaseScan {
+            final Session session;
             final Iterator<Sequence> it;
             
             public Scan(Session session, RowType rowType) {
                 super(rowType);
+                this.session = session;
                 this.it =  getAIS(session).getSequences().values().iterator();
             }
 
             @Override
             public Row next() {
-                if (it.hasNext()) {
-                    Sequence sequence  = it.next();
-                    return new ValuesRow (rowType,
-                            sequence.getSequenceName().getSchemaName(),
-                            sequence.getSequenceName().getTableName(),
-                            sequence.getTreeName(),
-                            sequence.getStartsWith(),
-                            sequence.getIncrement(),
-                            sequence.getMinValue(),
-                            sequence.getMaxValue(),
-                            boolResult(sequence.isCycle()),
-                            ++rowCounter);
-                } else {
-                    return null;
+                while(it.hasNext()) {
+                    Sequence sequence = it.next();
+                    if(isAccessible(session, sequence.getSequenceName())) {
+                        return new ValuesRow(rowType,
+                                             sequence.getSequenceName().getSchemaName(),
+                                             sequence.getSequenceName().getTableName(),
+                                             sequence.getTreeName(),
+                                             sequence.getStartsWith(),
+                                             sequence.getIncrement(),
+                                             sequence.getMinValue(),
+                                             sequence.getMaxValue(),
+                                             boolResult(sequence.isCycle()),
+                                             ++rowCounter);
+                    }
                 }
+                return null;
             }
         }
     }
@@ -814,26 +852,29 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         private class Scan extends BaseScan {
+            final Session session;
             final Iterator<View> it;
 
             public Scan(Session session, RowType rowType) {
                 super(rowType);
+                this.session = session;
                 it = getAIS(session).getViews().values().iterator();
             }
 
             @Override
             public Row next() {
-                if(it.hasNext()) {
+                while(it.hasNext()) {
                     View view = it.next();
-                    return new ValuesRow(rowType,
-                                         view.getName().getSchemaName(),
-                                         view.getName().getTableName(),
-                                         view.getDefinition(),
-                                         boolResult(false),
-                                         ++rowCounter /*hidden pk*/);
-                } else {
-                    return null;
-                }
+                    if(isAccessible(session, view.getName())) {
+                        return new ValuesRow(rowType,
+                                             view.getName().getSchemaName(),
+                                             view.getName().getTableName(),
+                                             view.getDefinition(),
+                                             boolResult(false),
+                                             ++rowCounter /*hidden pk*/);
+                    }
+                } 
+                return null;
             }
         }
     }
@@ -858,22 +899,28 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         private class Scan extends BaseScan {
+            final Session session;
             final Iterator<View> viewIt;
             View view;
             Iterator<TableName> tableIt = null;
 
             public Scan(Session session, RowType rowType) {
                 super(rowType);
+                this.session = session;
                 this.viewIt =  getAIS(session).getViews().values().iterator();
             }
 
             @Override
             public Row next() {
                 while((tableIt == null) || !tableIt.hasNext()) {
-                    if (!viewIt.hasNext())
-                        return null;
-                    view = viewIt.next();
-                    tableIt = view.getTableReferences().iterator();
+                    while(viewIt.hasNext()) {
+                        view = viewIt.next();
+                        if(isAccessible(session, view.getName())) {
+                            tableIt = view.getTableReferences().iterator();
+                            break;
+                        }
+                    }
+                    return null;
                 }
                 TableName table = tableIt.next();
                 return new ValuesRow(rowType,
@@ -908,6 +955,7 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         private class Scan extends BaseScan {
+            final Session session;
             final Iterator<View> viewIt;
             View view;
             Iterator<Map.Entry<TableName,Collection<String>>> tableIt = null;
@@ -916,6 +964,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
             public Scan(Session session, RowType rowType) {
                 super(rowType);
+                this.session = session;
                 this.viewIt = getAIS(session).getViews().values().iterator();
             }
 
@@ -923,10 +972,14 @@ public class BasicInfoSchemaTablesServiceImpl
             public Row next() {
                 while((columnIt == null) || !columnIt.hasNext()) {
                     while((tableIt == null) || !tableIt.hasNext()) {
-                        if (!viewIt.hasNext())
-                            return null;
-                        view = viewIt.next();
-                        tableIt = view.getTableColumnReferences().entrySet().iterator();
+                        while(viewIt.hasNext()) {
+                            view = viewIt.next();
+                            if(isAccessible(session, view.getName())) {
+                                tableIt = view.getTableColumnReferences().entrySet().iterator();                            
+                                break;
+                            }
+                        }
+                        return null;
                     }
                     Map.Entry<TableName,Collection<String>> entry = tableIt.next();
                     table = entry.getKey();
@@ -944,7 +997,8 @@ public class BasicInfoSchemaTablesServiceImpl
         }
     }
     
-    private static class TableConstraintsIteration {
+    private class TableConstraintsIteration {
+        private final Session session;
         private final Iterator<UserTable> tableIt;
         private Iterator<? extends Index> indexIt;
         private UserTable curTable;
@@ -952,7 +1006,8 @@ public class BasicInfoSchemaTablesServiceImpl
         private String name;
         private String type;
 
-        public TableConstraintsIteration(Iterator<UserTable> tableIt) {
+        public TableConstraintsIteration(Session session, Iterator<UserTable> tableIt) {
+            this.session = session;
             this.tableIt = tableIt;
         }
 
@@ -960,6 +1015,10 @@ public class BasicInfoSchemaTablesServiceImpl
             while(curTable != null || tableIt.hasNext()) {
                 if(curTable == null) {
                     curTable = tableIt.next();
+                    if (!isAccessible(session, curTable.getName())) {
+                        curTable = null;
+                        continue;
+                    }
                     if(curTable.getParentJoin() != null) {
                         name = curTable.getParentJoin().getName(); // TODO: Need a real constraint name here
                         type = "GROUPING";
@@ -1005,17 +1064,20 @@ public class BasicInfoSchemaTablesServiceImpl
         }
     }
 
-    private static class IndexIteration {
+    private class IndexIteration {
+        private final Session session;
         private final Iterator<UserTable> tableIt;
         Iterator<TableIndex> tableIndexIt;
         Iterator<GroupIndex> groupIndexIt;
         UserTable curTable;
 
-        public IndexIteration(Iterator<UserTable> tableIt) {
+        public IndexIteration(Session session,
+                              Iterator<UserTable> tableIt) {
+            this.session = session;
             this.tableIt = tableIt;
         }
 
-        Index next() {
+        public Index next() {
             while(tableIndexIt == null || !tableIndexIt.hasNext()) {
                 while(groupIndexIt != null && groupIndexIt.hasNext()) {
                     GroupIndex index = groupIndexIt.next();
@@ -1023,18 +1085,20 @@ public class BasicInfoSchemaTablesServiceImpl
                         return index;
                     }
                 }
-                if(tableIt.hasNext()) {
+                while(tableIt.hasNext()) {
                     curTable = tableIt.next();
-                    tableIndexIt = curTable.getIndexes().iterator();
-                    groupIndexIt = curTable.getGroup().getIndexes().iterator();
-                } else {
-                    return null;
-                }
+                    if(isAccessible(session, curTable.getName())) {
+                        tableIndexIt = curTable.getIndexes().iterator();
+                        groupIndexIt = curTable.getGroup().getIndexes().iterator();
+                        break;
+                    }
+                } 
+                return null;
             }
             return tableIndexIt.next();
         }
 
-        UserTable getTable() {
+        public UserTable getTable() {
             return curTable;
         }
     }
@@ -1055,33 +1119,36 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         private class Scan extends BaseScan {
+            final Session session;
             final Iterator<Routine> it;
 
             public Scan(Session session, RowType rowType) {
                 super(rowType);
+                this.session = session;
                 this.it = getAIS(session).getRoutines().values().iterator();
             }
 
             @Override
             public Row next() {
-                if(it.hasNext()) {
+                while(it.hasNext()) {
                     Routine routine = it.next();
-                    return new ValuesRow(rowType,
-                                         routine.getName().getSchemaName(),
-                                         routine.getName().getTableName(),
-                                         routine.isProcedure() ? "PROCEDURE" : "FUNCTION",
-                                         routine.getDefinition(),
-                                         routine.getExternalName(),
-                                         routine.getLanguage(),
-                                         routine.getCallingConvention().name(),
-                                         boolResult(false),
-                                         (routine.getSQLAllowed() == null) ? null : routine.getSQLAllowed().name().replace('_', ' '),
-                                         boolResult(true),
-                                         routine.getDynamicResultSets(),
-                                         ++rowCounter /*hidden pk*/);
-                } else {
-                    return null;
+                    if(isAccessible(session, routine.getName())) {
+                        return new ValuesRow(rowType,
+                                             routine.getName().getSchemaName(),
+                                             routine.getName().getTableName(),
+                                             routine.isProcedure() ? "PROCEDURE" : "FUNCTION",
+                                             routine.getDefinition(),
+                                             routine.getExternalName(),
+                                             routine.getLanguage(),
+                                             routine.getCallingConvention().name(),
+                                             boolResult(false),
+                                             (routine.getSQLAllowed() == null) ? null : routine.getSQLAllowed().name().replace('_', ' '),
+                                             boolResult(true),
+                                             routine.getDynamicResultSets(),
+                                             ++rowCounter /*hidden pk*/);
+                    }
                 }
+                return null;
             }
         }
     }
@@ -1109,12 +1176,14 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         private class Scan extends BaseScan {
+            final Session session;
             final Iterator<Routine> routinesIt;
             Iterator<Parameter> paramsIt;
             long ordinal;
 
             public Scan(Session session, RowType rowType) {
                 super(rowType);
+                this.session = session;
                 this.routinesIt = getAIS(session).getRoutines().values().iterator();
             }
 
@@ -1132,6 +1201,8 @@ public class BasicInfoSchemaTablesServiceImpl
                     if (!routinesIt.hasNext())
                         return null;
                     Routine routine = routinesIt.next();
+                    if (!isAccessible(session, routine.getName()))
+                        continue;
                     paramsIt = routine.getParameters().iterator();
                     ordinal = 0;
                     param = routine.getReturnValue();
@@ -1184,25 +1255,28 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         private class Scan extends BaseScan {
+            final Session session;
             final Iterator<SQLJJar> it;
 
             public Scan(Session session, RowType rowType) {
                 super(rowType);
+                this.session = session;
                 this.it = getAIS(session).getSQLJJars().values().iterator();
             }
 
             @Override
             public Row next() {
-                if(it.hasNext()) {
+                while(it.hasNext()) {
                     SQLJJar jar = it.next();
-                    return new ValuesRow(rowType,
-                                         jar.getName().getSchemaName(),
-                                         jar.getName().getTableName(),
-                                         jar.getURL().toExternalForm(),
-                                         ++rowCounter /*hidden pk*/);
-                } else {
-                    return null;
+                    if(isAccessible(session, jar.getName())) {
+                        return new ValuesRow(rowType,
+                                             jar.getName().getSchemaName(),
+                                             jar.getName().getTableName(),
+                                             jar.getURL().toExternalForm(),
+                                             ++rowCounter /*hidden pk*/);
+                    }
                 }
+                return null;
             }
         }
     }
@@ -1229,10 +1303,12 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         private class Scan extends BaseScan {
+            final Session session;
             final Iterator<Routine> it;
 
             public Scan(Session session, RowType rowType) {
                 super(rowType);
+                this.session = session;
                 this.it = getAIS(session).getRoutines().values().iterator();
             }
 
@@ -1240,6 +1316,8 @@ public class BasicInfoSchemaTablesServiceImpl
             public Row next() {
                 while (it.hasNext()) {
                     Routine routine = it.next();
+                    if (!isAccessible(session, routine.getName()))
+                        continue;
                     SQLJJar jar = routine.getSQLJJar();
                     if (jar != null) {
                         return new ValuesRow(rowType,
