@@ -26,6 +26,7 @@
 
 package com.akiban.server.entity.model.diff;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.entity.changes.SpaceModificationHandler;
 import com.akiban.server.entity.model.Attribute;
 import com.akiban.server.entity.model.Entity;
@@ -36,10 +37,13 @@ import java.util.UUID;
 
 public class ApplyChangeDiff implements SpaceModificationHandler
 {
+    private AkibanInformationSchema ais;
+    // TODO: Is it still neccessary to generate the JSON rep?
 
     @Override
     public void addEntry(UUID entityUuid)
     {
+        
         throw new UnsupportedOperationException("Not supported yet.");
         // compile DDL statements?
     }

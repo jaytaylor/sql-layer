@@ -37,6 +37,7 @@ import com.akiban.util.JUnitUtils;
 import com.akiban.util.Strings;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
+import java.io.StringWriter;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -164,6 +165,12 @@ public final class SpaceDiffTest {
         @Override
         public void error(String message) {
             message("error", message);
+        }
+
+        @Override
+        public StringWriter toJSON()
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 }

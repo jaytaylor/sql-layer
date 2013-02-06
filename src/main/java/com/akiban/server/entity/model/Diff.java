@@ -121,5 +121,5 @@ public class Diff
     private List<Map<String, ?>> validations = Collections.emptyList();
     private BiMap<String, EntityIndex> indexes = ImmutableBiMap.of();
 
-    private Entity() {}  
+//    private Entity() {}  
 }

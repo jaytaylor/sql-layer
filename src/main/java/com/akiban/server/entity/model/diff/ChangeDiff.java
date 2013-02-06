@@ -32,8 +32,6 @@ import com.akiban.server.entity.model.Entity;
 import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Validation;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.io.StringWriter;
 import java.util.UUID;
 import org.codehaus.jackson.JsonFactory;
