@@ -33,17 +33,20 @@ import com.akiban.server.test.it.ITBase;
 import com.akiban.sql.embedded.EmbeddedJDBCService;
 import com.akiban.sql.embedded.EmbeddedJDBCServiceImpl;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
-import java.net.Authenticator;
-import java.net.PasswordAuthentication;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -74,8 +77,6 @@ public class SecurityServiceIT extends ITBase
         return serviceManager().getServiceByClass(SecurityService.class);
     }
 
-    protected String authUser, authPass;
-
     @Before
     public void setUp() {
         int t1 = createTable("user1", "utable", "id int primary key not null");
@@ -87,19 +88,11 @@ public class SecurityServiceIT extends ITBase
         securityService.addRole("rest-user");
         securityService.addRole("admin");
         securityService.addUser("user1", "password", Arrays.asList("rest-user"));
-        Authenticator.setDefault(new Authenticator() {
-                @Override
-                protected PasswordAuthentication getPasswordAuthentication() {
-                    if (authUser == null) return null;
-                    return new PasswordAuthentication(authUser, authPass.toCharArray());
-                }
-            });
     }
 
     @After
     public void cleanUp() {
         securityService().clearAll(session());
-        Authenticator.setDefault(null);
     }
 
     @Test
@@ -116,51 +109,52 @@ public class SecurityServiceIT extends ITBase
         assertEquals("user1", securityService().authenticate(session(), "user1", "password").getName());
     }
 
-    private void openRestURL(String request) throws Exception {
+    private int openRestURL(String request, String userInfo)
+            throws Exception {
         int port = serviceManager().getServiceByClass(com.akiban.http.HttpConductor.class).getPort();
         String context = serviceManager().getServiceByClass(com.akiban.rest.RestService.class).getContextPath();
-        URL url = new URL("http", "localhost", port, context + request);
-        url.openConnection().getInputStream().close();
+        URI uri = new URI("http", userInfo, "localhost", port, context + request, null, null);
+        HttpGet get = new HttpGet(uri);
+        HttpClient client = new DefaultHttpClient();
+        HttpResponse response = client.execute(get);
+        int code = response.getStatusLine().getStatusCode();
+        EntityUtils.consume(response.getEntity());
+        client.getConnectionManager().shutdown();
+        return code;
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void restUnauthenticated() throws Exception {
-        openRestURL("/user1.utable/1");
+        assertEquals(HttpStatus.SC_UNAUTHORIZED,
+                     openRestURL("/user1.utable/1", null));
     }
 
     @Test
     public void restAuthenticated() throws Exception {
-        authUser = "user1";
-        authPass = "password";
-
-        openRestURL("/user1.utable/1");
+        assertEquals(HttpStatus.SC_OK,
+                     openRestURL("/user1.utable/1", "user1:password"));
     }
 
     @Test
     public void restAuthenticateBadUser() throws Exception {
-        authUser = "user2";
-        authPass = "none";
-
-        openRestURL("/user1.utable/1");
+        assertEquals(HttpStatus.SC_UNAUTHORIZED,
+                     openRestURL("/user1.utable/1", "user2:none"));
     }
 
     @Test
     public void restAuthenticateBadPassword() throws Exception {
-        authUser = "user1";
-        authPass = "wrong";
-
-        openRestURL("/user1.utable/1");
+        assertEquals(HttpStatus.SC_UNAUTHORIZED,
+                     openRestURL("/user1.utable/1", "user1:wrong"));
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void restAuthenticateWrongSchema() throws Exception {
-        authUser = "user1";
-        authPass = "password";
-
-        openRestURL("/user2.utable/1");
+        assertEquals(HttpStatus.SC_FORBIDDEN,
+                     openRestURL("/user2.utable/1", "user1:password"));
     }
 
-    private Connection openPostgresConnection(String user, String password) throws Exception {
+    private Connection openPostgresConnection(String user, String password) 
+            throws Exception {
         int port = serviceManager().getServiceByClass(com.akiban.sql.pg.PostgresService.class).getPort();
         Class.forName("org.postgresql.Driver");
         String url = String.format("jdbc:postgresql://localhost:%d/akiban", port);
