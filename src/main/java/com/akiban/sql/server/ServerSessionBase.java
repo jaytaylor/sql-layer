@@ -403,6 +403,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         if (call != null) {
             ServerSessionBase server = (ServerSessionBase)call.getContext().getServer();
             defaultSchemaName = server.defaultSchemaName;
+            session = server.session;
             transaction = server.transaction;
             transactionDefaultReadOnly = server.transactionDefaultReadOnly;
             sessionMonitor.setCallerSessionId(server.getSessionMonitor().getSessionId());

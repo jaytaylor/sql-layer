@@ -84,7 +84,8 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             (info.getProperty("database") == null))
             info.put("database", defaultSchemaName);
         setProperties(info);
-        session = reqs.sessionService().createSession();
+        if (session == null)
+            session = reqs.sessionService().createSession();
         commitMode = (transaction != null) ? CommitMode.INHERITED : CommitMode.AUTO;
     }
 
