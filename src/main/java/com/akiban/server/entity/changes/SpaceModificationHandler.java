@@ -51,4 +51,6 @@ public interface SpaceModificationHandler {
     void addIndex(EntityIndex index);
     void dropIndex(String name, EntityIndex index);
     void renameIndex(EntityIndex index, String oldName, String newName);
+
+    void error(String message);
 }

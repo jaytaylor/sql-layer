@@ -85,15 +85,17 @@ public final class SpaceDiff {
         // modified
         for (UUID uuid : inBoth) {
             if (!origLookups.pathFor(uuid).equals(updateLookups.pathFor(uuid))) {
-                throw new UnsupportedOperationException("moving an attribute is unsupported");
+                out.error("moving an attribute is unsupported");
+                continue;
             }
             if (!origLookups.nameFor(uuid).equals(updateLookups.nameFor(uuid)))
                 out.renameAttribute(uuid, origLookups.nameFor(uuid));
             Attribute orig = origLookups.attributeFor(uuid);
             Attribute updated = updateLookups.attributeFor(uuid);
-            if (!Objects.equals(orig.getAttributeType(), updated.getAttributeType()))
-                throw new UnsupportedOperationException("can't change an attribute's class (scalar or collection)");
-            if (orig.getAttributeType() == Attribute.AttributeType.SCALAR) {
+            if (!Objects.equals(orig.getAttributeType(), updated.getAttributeType())) {
+                out.error("can't change an attribute's class (scalar or collection)");
+            }
+            else if (orig.getAttributeType() == Attribute.AttributeType.SCALAR) {
                 if (!orig.getType().equals(updated.getType()))
                     out.changeScalarType(uuid, updated);
                 if (!orig.getValidation().equals(updated.getValidation()))

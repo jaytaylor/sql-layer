@@ -160,5 +160,10 @@ public final class SpaceDiffTest {
         public void renameIndex(EntityIndex index, String oldName, String newName) {
             message("rename index", oldName, newName);
         }
+
+        @Override
+        public void error(String message) {
+            message("error", message);
+        }
     }
 }
