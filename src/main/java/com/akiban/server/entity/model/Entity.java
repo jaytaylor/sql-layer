@@ -98,16 +98,17 @@ public final class Entity {
     Entity() {}
 
     public void accept(String myName, EntityVisitor visitor) {
-        visitor.visitEntity(myName, this);
-        for (Map.Entry<String, Attribute> entry : attributes.entrySet()) {
-            entry.getValue().accept(entry.getKey(), visitor);
+        if (visitor.visitEntity(myName, this)) {
+            for (Map.Entry<String, Attribute> entry : attributes.entrySet()) {
+                entry.getValue().accept(entry.getKey(), visitor);
+            }
+            for (Validation validation : validations) {
+                validation.accept(visitor);
+            }
+            for (Map.Entry<String, EntityIndex> entry : new TreeMap<>(indexes).entrySet()) {
+                entry.getValue().accept(entry.getKey(), visitor);
+            }
+            visitor.leaveEntity();
         }
-        for (Validation validation : validations) {
-            validation.accept(visitor);
-        }
-        for (Map.Entry<String, EntityIndex> entry : new TreeMap<>(indexes).entrySet()) {
-            entry.getValue().accept(entry.getKey(), visitor);
-        }
-        visitor.leaveEntity();
     }
 }

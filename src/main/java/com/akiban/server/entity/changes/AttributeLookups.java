@@ -71,8 +71,9 @@ final class AttributeLookups {
 
     private class Visitor extends AbstractEntityVisitor {
         @Override
-        public void visitEntity(String name, Entity entity) {
+        public boolean visitEntity(String name, Entity entity) {
             currentPath.push(entity.uuid());
+            return true;
         }
 
         @Override
@@ -81,9 +82,10 @@ final class AttributeLookups {
         }
 
         @Override
-        public void visitCollection(String name, Attribute collection) {
+        public boolean visitCollection(String name, Attribute collection) {
             seeAttribute(name, collection);
             currentPath.push(collection.getUUID());
+            return true;
         }
 
         @Override

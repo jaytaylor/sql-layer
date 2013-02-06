@@ -28,7 +28,8 @@ package com.akiban.server.entity.model;
 
 public abstract class AbstractEntityVisitor implements EntityVisitor {
     @Override
-    public void visitEntity(String name, Entity entity) {
+    public boolean visitEntity(String name, Entity entity) {
+        return true;
     }
 
     @Override
@@ -40,7 +41,8 @@ public abstract class AbstractEntityVisitor implements EntityVisitor {
     }
 
     @Override
-    public void visitCollection(String name, Attribute collection) {
+    public boolean visitCollection(String name, Attribute collection) {
+        return true;
     }
 
     @Override

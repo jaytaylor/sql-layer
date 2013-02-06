@@ -31,8 +31,9 @@ import com.akiban.util.JUnitUtils;
 class ToStringVisitor extends JUnitUtils.MessageTaker implements EntityVisitor {
 
     @Override
-    public void visitEntity(String name, Entity entity) {
+    public boolean visitEntity(String name, Entity entity) {
         message("visiting entity", name, entity);
+        return true;
     }
 
     @Override
@@ -46,8 +47,9 @@ class ToStringVisitor extends JUnitUtils.MessageTaker implements EntityVisitor {
     }
 
     @Override
-    public void visitCollection(String name, Attribute collection) {
+    public boolean visitCollection(String name, Attribute collection) {
         message("visiting collection", name, collection);
+        return true;
     }
 
     @Override
