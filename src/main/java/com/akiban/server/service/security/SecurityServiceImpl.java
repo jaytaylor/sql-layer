@@ -46,15 +46,18 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.http.HttpServletRequest;
+
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -474,6 +477,27 @@ public class SecurityServiceImpl implements SecurityService, Service {
         finally {
             cleanup(conn, stmt);
         }
+    }
+
+    @Override
+    public boolean accessible(Session session, String schema) {
+        User user = session.get(SESSION_KEY);
+        if (user == null) return true; // Not authenticated = open.
+        return accessible(user.getName(), schema) || user.hasRole(ADMIN_ROLE);
+    }
+
+    @Override
+    public boolean accessible(HttpServletRequest request, String schema) {
+        Principal user = request.getUserPrincipal();
+        if (user == null) return true; // Not authenticated = open.
+        return accessible(user.getName(), schema) || request.isUserInRole(ADMIN_ROLE);
+    }
+
+    protected boolean accessible(String user, String schema) {
+        return user.equals(schema) ||
+            TableName.INFORMATION_SCHEMA.equals(schema) ||
+            TableName.SQLJ_SCHEMA.equals(schema) ||
+            TableName.SYS_SCHEMA.equals(schema);
     }
 
     /* Service */
