@@ -36,6 +36,7 @@ import com.akiban.server.error.AuthenticationFailedException;
 import com.akiban.server.error.SecurityException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.sql.embedded.EmbeddedJDBCService;
 import com.akiban.sql.server.ServerCallContextStack;
@@ -85,6 +86,9 @@ public class SecurityServiceImpl implements SecurityService, Service {
     public static final String DELETE_ROLE_USER_ROLES_SQL = "DELETE FROM user_roles WHERE role_id IN (SELECT id FROM roles WHERE name = ?)";
     public static final String DELETE_USER_USER_ROLES_SQL = "DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE name = ?)";
     
+    public static final Session.Key<User> SESSION_KEY = 
+        Session.Key.named("SECURITY_USER");
+
     private final ConfigurationService configService;
     private final EmbeddedJDBCService jdbcService;
     private final SchemaManager schemaManager;
@@ -315,7 +319,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
     }
 
     @Override
-    public User authenticate(String name, String password) {
+    public User authenticate(Session session, String name, String password) {
         String expected = md5Password(name, password);
         User user = null;
         Connection conn = null;
@@ -341,11 +345,14 @@ public class SecurityServiceImpl implements SecurityService, Service {
         if (user == null) {
             throw new AuthenticationFailedException("invalid username or password");
         }
+        if (session != null) {
+            session.put(SESSION_KEY, user);
+        }
         return user;
     }
 
     @Override
-    public User authenticate(String name, String password, byte[] salt) {
+    public User authenticate(Session session, String name, String password, byte[] salt) {
         User user = null;
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -369,6 +376,9 @@ public class SecurityServiceImpl implements SecurityService, Service {
         }
         if (user == null) {
             throw new AuthenticationFailedException("invalid username or password");
+        }
+        if (session != null) {
+            session.put(SESSION_KEY, user);
         }
         return user;
     }

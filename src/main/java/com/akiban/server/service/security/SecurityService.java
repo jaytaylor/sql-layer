@@ -26,6 +26,8 @@
 
 package com.akiban.server.service.security;
 
+import com.akiban.server.service.session.Session;
+
 import java.util.Collection;
 
 public interface SecurityService
@@ -38,7 +40,7 @@ public interface SecurityService
     public User addUser(String name, String password, Collection<String> roles);
     public void deleteUser(String name);
     public void changeUserPassword(String name, String password);
-    public User authenticate(String name, String password);
-    public User authenticate(String name, String password, byte[] salt);
+    public User authenticate(Session session, String name, String password);
+    public User authenticate(Session session, String name, String password, byte[] salt);
     public void clearAll();
 }

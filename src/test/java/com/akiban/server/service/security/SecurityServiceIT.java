@@ -104,7 +104,7 @@ public class SecurityServiceIT extends ITBase
 
     @Test
     public void authenticate() {
-        assertEquals("user1", securityService().authenticate("user1", "password").getName());
+        assertEquals("user1", securityService().authenticate(session(), "user1", "password").getName());
     }
 
     private void openRestURL() throws Exception {

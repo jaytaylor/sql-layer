@@ -522,11 +522,11 @@ public class PostgresServerConnection extends ServerSessionBase
             break;
         case CLEAR_TEXT:
             principal = reqs.securityService()
-                .authenticate(user, pass);
+                .authenticate(session, user, pass);
             break;
         case MD5:
             principal = reqs.securityService()
-                .authenticate(user, pass, (byte[])attributes.remove(MD5_SALT));
+                .authenticate(session, user, pass, (byte[])attributes.remove(MD5_SALT));
             break;
         }
         logger.debug("Login {}", (principal != null) ? principal : user);
