@@ -1,8 +1,8 @@
-[{"cid": 1, 
-    "test.addresses":[{"aid":1}], 
+{"cid": 1, 
+    "test.addresses":{"aid":1}, 
     "test.orders": [{"oid": 100, 
         "test.items": [{"iid": 1000}, { "iid": 1001}]},
     {"oid": 101},
     {"oid": 102,
         "test.items":[{"iid": 1002}]}]
-}]
+}
