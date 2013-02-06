@@ -40,8 +40,8 @@ public interface SecurityService
     public User authenticate(Session session, String name, String password);
     public User authenticate(Session session, String name, String password, byte[] salt);
 
-    public boolean accessible(Session session, String schema);
-    public boolean accessible(HttpServletRequest request, String schema);
+    public boolean isAccessible(Session session, String schema);
+    public boolean isAccessible(HttpServletRequest request, String schema);
 
     public void addRole(String name);
     public void deleteRole(String name);

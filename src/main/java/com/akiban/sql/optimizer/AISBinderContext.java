@@ -261,4 +261,8 @@ public class AISBinderContext
         return view;
     }
 
+    public boolean isAccessible(TableName object) {
+        return true;
+    }
+
 }

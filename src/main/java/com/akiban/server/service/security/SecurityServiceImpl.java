@@ -480,20 +480,20 @@ public class SecurityServiceImpl implements SecurityService, Service {
     }
 
     @Override
-    public boolean accessible(Session session, String schema) {
+    public boolean isAccessible(Session session, String schema) {
         User user = session.get(SESSION_KEY);
         if (user == null) return true; // Not authenticated = open.
-        return accessible(user.getName(), schema) || user.hasRole(ADMIN_ROLE);
+        return isAccessible(user.getName(), schema) || user.hasRole(ADMIN_ROLE);
     }
 
     @Override
-    public boolean accessible(HttpServletRequest request, String schema) {
+    public boolean isAccessible(HttpServletRequest request, String schema) {
         Principal user = request.getUserPrincipal();
         if (user == null) return true; // Not authenticated = open.
-        return accessible(user.getName(), schema) || request.isUserInRole(ADMIN_ROLE);
+        return isAccessible(user.getName(), schema) || request.isUserInRole(ADMIN_ROLE);
     }
 
-    protected boolean accessible(String user, String schema) {
+    protected boolean isAccessible(String user, String schema) {
         return user.equals(schema) ||
             TableName.INFORMATION_SCHEMA.equals(schema) ||
             TableName.SQLJ_SCHEMA.equals(schema) ||
