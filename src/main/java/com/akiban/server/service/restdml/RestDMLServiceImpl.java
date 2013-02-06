@@ -188,7 +188,6 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         if(e instanceof NoSuchTableException) {
             status = Response.Status.NOT_FOUND;
          } else {
-            //status = Response.Status.INTERNAL_SERVER_ERROR;
             status = Response.Status.CONFLICT;
         }
         throw new WebApplicationException(
