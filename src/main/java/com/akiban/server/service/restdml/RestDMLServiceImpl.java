@@ -29,8 +29,8 @@ package com.akiban.server.service.restdml;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
+import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
@@ -102,12 +102,12 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     
     /* RestDML Service Impl */
     @Override
-    public Response insert(final String schemaName, final String tableName, JsonParser jp)  {
+    public Response insert(final String schemaName, final String tableName, JsonNode node)  {
         TableName rootTable = new TableName (schemaName, tableName);
         try (Session session = sessionService.createSession();
             CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
             AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-            String pk = insertProcessor.processInsert(session, ais, rootTable, jp);
+            String pk = insertProcessor.processInsert(session, ais, rootTable, node);
             txn.commit();
             return Response.status(Response.Status.OK)
                 .entity(pk).build();
@@ -188,7 +188,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         if(e instanceof NoSuchTableException) {
             status = Response.Status.NOT_FOUND;
          } else {
-            status = Response.Status.INTERNAL_SERVER_ERROR;
+            //status = Response.Status.INTERNAL_SERVER_ERROR;
+            status = Response.Status.CONFLICT;
         }
         throw new WebApplicationException(
                 Response.status(status)
