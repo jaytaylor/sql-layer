@@ -56,6 +56,7 @@ public final class ServerServiceRequirements {
                                      T3RegistryService t3RegistryService,
                                      RoutineLoader routineLoader,
                                      TransactionService txnService,
+                                     SecurityService securityService,
                                      ServiceManager serviceManager) {
         this.akServer = akServer;
         this.dxlService = dxlService;
@@ -69,6 +70,7 @@ public final class ServerServiceRequirements {
         this.t3RegistryService = t3RegistryService;
         this.routineLoader = routineLoader;
         this.txnService = txnService;
+        this.securityService = securityService;
         this.serviceManager = serviceManager;
     }
 
@@ -124,14 +126,14 @@ public final class ServerServiceRequirements {
         return serviceManager;
     }
 
+    public SecurityService securityService() {
+        return securityService;
+    }
+
     /* Less commonly used, started on demand */
 
     public ExternalDataService externalData() {
         return serviceManager.getServiceByClass(ExternalDataService.class);
-    }
-
-    public SecurityService securityService() {
-        return serviceManager.getServiceByClass(SecurityService.class);
     }
 
     private final AkServerInterface akServer;
@@ -146,5 +148,6 @@ public final class ServerServiceRequirements {
     private final T3RegistryService t3RegistryService;
     private final RoutineLoader routineLoader;
     private final TransactionService txnService;
+    private final SecurityService securityService;
     private final ServiceManager serviceManager;
 }

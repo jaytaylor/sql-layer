@@ -77,6 +77,7 @@ public class ServerSessionITBase extends ITBase {
                                                 serviceManager().getServiceByClass(com.akiban.server.t3expressions.T3RegistryService.class),
                                                 routineLoader(),
                                                 txnService(),
+                                                serviceManager().getServiceByClass(com.akiban.server.service.security.SecurityService.class),
                                                 serviceManager()));
             session = session();
             ais = ais();
