@@ -86,7 +86,7 @@ public final class SpaceTest {
         assertEquals("id type", "int", customerId.getType());
         assertEquals("id properties", Collections.<String, Object>emptyMap(), customerId.getProperties());
         assertEquals("id validations", Collections.<Validation>emptySet(), set(customerId.getValidation()));
-        assertTrue("id is not ID", customerId.isSpine());
+        assertEquals("id spine position", 0, customerId.getSpinePos());
         assertNull("id attribute", customerId.getAttributes());
 
         Attribute lastName = customer.getAttributes().get("last_name");
@@ -97,7 +97,7 @@ public final class SpaceTest {
         assertEquals("last_name validations",
                 newHashSet(new Validation("required", false), new Validation("max_length", 64)),
                 set(lastName.getValidation()));
-        assertFalse("last_name is ID", lastName.isSpine());
+        assertEquals("last_name spine pos", -1, lastName.getSpinePos());
         assertNull("last_name attribute", lastName.getAttributes());
         
         Attribute orders = customer.getAttributes().get("orders");
@@ -106,7 +106,7 @@ public final class SpaceTest {
         assertNull("orders type", orders.getType());
         assertNull("orders properties", orders.getProperties());
         assertNull("orders validations", orders.getValidation());
-        assertFalse("orders is ID", orders.isSpine());
+        assertEquals("orders spine pos", -1, orders.getSpinePos());
         isUnmodifiable("orders attributes", orders.getAttributes());
         assertEquals("orders attributes key", set("id"), orders.getAttributes().keySet());
 
@@ -117,7 +117,7 @@ public final class SpaceTest {
         assertEquals("id type", "int", orderId.getType());
         assertEquals("id properties", Collections.<String, Object>emptyMap(), orderId.getProperties());
         assertEquals("id validations", Collections.<Validation>emptySet(), set(orderId.getValidation()));
-        assertTrue("id is not ID", orderId.isSpine());
+        assertEquals("id spine pos", 0, orderId.getSpinePos());
         assertNull("id attribute", orderId.getAttributes());
     }
 

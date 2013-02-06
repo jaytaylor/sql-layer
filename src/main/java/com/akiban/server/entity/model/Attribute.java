@@ -94,12 +94,14 @@ public final class Attribute {
         this.validations = Collections.unmodifiableSet(this.validations);
     }
 
-    public boolean isSpine() {
+    public int getSpinePos() {
         return spine;
     }
 
     @SuppressWarnings("unused")
-    void setSpine(boolean spine) {
+    void setSpine_pos(int spine) {
+        if (spine < 0)
+            throw new IllegalEntityDefinition("spine may not be negative");
         this.spine = spine;
     }
 
@@ -136,7 +138,7 @@ public final class Attribute {
     private String type;
     private Map<String, ?> properties;
     private Set<Validation> validations;
-    private boolean spine;
+    private int spine;
 
     // collection fields
     private Map<String, Attribute> attributes;
