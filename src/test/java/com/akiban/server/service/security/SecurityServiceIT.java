@@ -66,6 +66,7 @@ public class SecurityServiceIT extends ITBase
         Map<String, String> properties = new HashMap<String, String>();
         properties.put("akserver.http.login", "basic"); // "digest"
         properties.put("akserver.postgres.login", "md5");
+        properties.put("akserver.restrict_user_schema", "true");
         return properties;
     }
 
@@ -77,6 +78,11 @@ public class SecurityServiceIT extends ITBase
 
     @Before
     public void setUp() {
+        int t1 = createTable("user1", "utable", "id int primary key not null");
+        int t2 = createTable("user2", "utable", "id int primary key not null");        
+        writeRow(t1, 1L);
+        writeRow(t2, 2L);
+        
         SecurityService securityService = securityService();
         securityService.addRole("rest-user");
         securityService.addRole("admin");
@@ -92,7 +98,7 @@ public class SecurityServiceIT extends ITBase
 
     @After
     public void cleanUp() {
-        securityService().clearAll();
+        securityService().clearAll(session());
         Authenticator.setDefault(null);
     }
 
@@ -110,17 +116,16 @@ public class SecurityServiceIT extends ITBase
         assertEquals("user1", securityService().authenticate(session(), "user1", "password").getName());
     }
 
-    private void openRestURL() throws Exception {
+    private void openRestURL(String request) throws Exception {
         int port = serviceManager().getServiceByClass(com.akiban.http.HttpConductor.class).getPort();
         String context = serviceManager().getServiceByClass(com.akiban.rest.RestService.class).getContextPath();
-        String request = "/security_schema.roles/1";
         URL url = new URL("http", "localhost", port, context + request);
         url.openConnection().getInputStream().close();
     }
 
     @Test(expected = IOException.class)
     public void restUnauthenticated() throws Exception {
-        openRestURL();
+        openRestURL("/user1.utable/1");
     }
 
     @Test
@@ -128,7 +133,7 @@ public class SecurityServiceIT extends ITBase
         authUser = "user1";
         authPass = "password";
 
-        openRestURL();
+        openRestURL("/user1.utable/1");
     }
 
     @Test
@@ -136,7 +141,7 @@ public class SecurityServiceIT extends ITBase
         authUser = "user2";
         authPass = "none";
 
-        openRestURL();
+        openRestURL("/user1.utable/1");
     }
 
     @Test
@@ -144,7 +149,15 @@ public class SecurityServiceIT extends ITBase
         authUser = "user1";
         authPass = "wrong";
 
-        openRestURL();
+        openRestURL("/user1.utable/1");
+    }
+
+    @Test(expected = IOException.class)
+    public void restAuthenticateWrongSchema() throws Exception {
+        authUser = "user1";
+        authPass = "password";
+
+        openRestURL("/user2.utable/1");
     }
 
     private Connection openPostgresConnection(String user, String password) throws Exception {

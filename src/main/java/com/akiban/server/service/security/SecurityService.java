@@ -49,5 +49,5 @@ public interface SecurityService
     public User addUser(String name, String password, Collection<String> roles);
     public void deleteUser(String name);
     public void changeUserPassword(String name, String password);
-    public void clearAll();
+    public void clearAll(Session session);
 }

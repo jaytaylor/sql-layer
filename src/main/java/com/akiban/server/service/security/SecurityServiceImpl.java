@@ -462,7 +462,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
     }
 
     @Override
-    public void clearAll() {
+    public void clearAll(Session session) {
         Connection conn = null;
         Statement stmt = null;
         boolean success = false;
@@ -481,6 +481,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
         finally {
             cleanup(conn, stmt);
         }
+        session.remove(SESSION_KEY);
     }
 
     @Override
