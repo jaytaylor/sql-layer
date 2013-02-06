@@ -93,17 +93,17 @@ public final class SpaceDiffTest {
 
         @Override
         public void addEntity(UUID entityUuid) {
-            message("add entry", entityUuid);
+            message("add entity", entityUuid);
         }
 
         @Override
         public void dropEntity(Entity dropped) {
-            message("drop entry", dropped);
+            message("drop entity", dropped.uuid());
         }
 
         @Override
         public void renameEntity(UUID entityUuid, String oldName) {
-            message("rename entry", entityUuid, oldName);
+            message("rename entity", entityUuid, oldName);
         }
 
         @Override
@@ -113,7 +113,7 @@ public final class SpaceDiffTest {
 
         @Override
         public void dropAttribute(Attribute dropped) {
-            message("drop attribute", dropped);
+            message("drop attribute", dropped.getUUID());
         }
 
         @Override
@@ -133,7 +133,7 @@ public final class SpaceDiffTest {
 
         @Override
         public void changeScalarProperties(UUID scalarUuid, Attribute afterChange) {
-            message("change scalar properties", scalarUuid, afterChange);
+            message("change scalar properties", scalarUuid, afterChange.getProperties());
         }
 
         @Override
@@ -147,8 +147,8 @@ public final class SpaceDiffTest {
         }
 
         @Override
-        public void addIndex(EntityIndex index) {
-            message("add index", index);
+        public void addIndex(String name) {
+            message("add index", name);
         }
 
         @Override

@@ -48,7 +48,7 @@ public interface SpaceModificationHandler {
     void addEntityValidation(Validation validation);
     void dropEntityValidation(Validation validation);
 
-    void addIndex(EntityIndex index);
+    void addIndex(String name);
     void dropIndex(String name, EntityIndex index);
     void renameIndex(EntityIndex index, String oldName, String newName);
 

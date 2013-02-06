@@ -85,7 +85,7 @@ public final class SpaceDiff {
         // modified
         for (UUID uuid : inBoth) {
             if (!origLookups.pathFor(uuid).equals(updateLookups.pathFor(uuid))) {
-                out.error("moving an attribute is unsupported");
+                out.error("Can't move attribute");
                 continue;
             }
             if (!origLookups.nameFor(uuid).equals(updateLookups.nameFor(uuid)))
@@ -93,7 +93,7 @@ public final class SpaceDiff {
             Attribute orig = origLookups.attributeFor(uuid);
             Attribute updated = updateLookups.attributeFor(uuid);
             if (!Objects.equals(orig.getAttributeType(), updated.getAttributeType())) {
-                out.error("can't change an attribute's class (scalar or collection)");
+                out.error("Can't change an attribute's class (scalar or collection)");
             }
             else if (orig.getAttributeType() == Attribute.AttributeType.SCALAR) {
                 if (!orig.getType().equals(updated.getType()))
@@ -136,9 +136,9 @@ public final class SpaceDiff {
             else if (!origName.equals(updatedIndexes.get(origIndex)))
                 out.renameIndex(origIndex, origName, updatedIndexes.get(origIndex));
         }
-        for (EntityIndex updatedIndex : updatedIndexes.keySet()) {
-            if (!originalIndexes.containsKey(updatedIndex))
-                out.addIndex(updatedIndex);
+        for (Map.Entry<EntityIndex, String> updatedIndex : updatedIndexes.entrySet()) {
+            if (!originalIndexes.containsKey(updatedIndex.getKey()))
+                out.addIndex(updatedIndex.getValue());
         }
     }
 
