@@ -43,10 +43,10 @@ import java.util.Arrays;
 import java.util.Collection;
 
 @RunWith(NamedParameterizedRunner.class)
-public final class SpaceValidation {
+public final class SpaceValidationTest {
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params() throws IOException {
-        String[] testNames = JUnitUtils.getContainingFile(SpaceValidation.class).list(new FilenameFilter() {
+        String[] testNames = JUnitUtils.getContainingFile(SpaceValidationTest.class).list(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
                 return name.endsWith(".json");
@@ -64,20 +64,20 @@ public final class SpaceValidation {
     @Test(expected = IllegalEntityDefinition.class)
     @OnlyIfNot("expectedValid()")
     public void invalid() throws IOException {
-        Space.readSpace(testName, SpaceValidation.class);
+        Space.readSpace(testName, SpaceValidationTest.class);
     }
 
     @Test
     @OnlyIf("expectedValid()")
     public void valid() throws IOException {
-        Space.readSpace(testName, SpaceValidation.class);
+        Space.readSpace(testName, SpaceValidationTest.class);
     }
 
     public boolean expectedValid() {
         return ! testName.startsWith("neg-");
     }
 
-    public SpaceValidation(String testName) {
+    public SpaceValidationTest(String testName) {
         this.testName = testName;
     }
 
