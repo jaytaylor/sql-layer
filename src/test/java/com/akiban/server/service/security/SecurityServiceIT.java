@@ -30,6 +30,8 @@ import com.akiban.rest.RestService;
 import com.akiban.rest.RestServiceImpl;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.sql.embedded.EmbeddedJDBCService;
+import com.akiban.sql.embedded.EmbeddedJDBCServiceImpl;
 
 import org.junit.After;
 import org.junit.Before;
@@ -55,6 +57,7 @@ public class SecurityServiceIT extends ITBase
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
             .bindAndRequire(SecurityService.class, SecurityServiceImpl.class)
+            .bindAndRequire(EmbeddedJDBCService.class, EmbeddedJDBCServiceImpl.class)
             .bindAndRequire(RestService.class, RestServiceImpl.class);
     }
 

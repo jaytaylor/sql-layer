@@ -38,7 +38,6 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
-import com.akiban.sql.embedded.EmbeddedJDBCService;
 import com.akiban.sql.server.ServerCallContextStack;
 import com.akiban.sql.server.ServerQueryContext;
 import com.akiban.sql.server.ServerSession;
@@ -90,17 +89,14 @@ public class SecurityServiceImpl implements SecurityService, Service {
         Session.Key.named("SECURITY_USER");
 
     private final ConfigurationService configService;
-    private final EmbeddedJDBCService jdbcService;
     private final SchemaManager schemaManager;
 
     private static final Logger logger = LoggerFactory.getLogger(SecurityServiceImpl.class);
 
     @Inject
     public SecurityServiceImpl(ConfigurationService configService,
-                               EmbeddedJDBCService jdbcService,
                                SchemaManager schemaManager) {
         this.configService = configService;
-        this.jdbcService = jdbcService;
         this.schemaManager = schemaManager;
     }
 
