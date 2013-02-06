@@ -35,6 +35,7 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.externaldata.ExternalDataService;
+import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
@@ -42,6 +43,7 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.google.inject.Inject;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
@@ -61,6 +63,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     private final TreeService treeService;
     private final ExternalDataService extDataService;
     private final SessionService sessionService;
+    private final SecurityService securityService;
     
     @Inject
     public RestDMLServiceImpl(ConfigurationService configService,
@@ -69,7 +72,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                               TransactionService transactionService,
                               TreeService treeService,
                               ExternalDataService extDataService,
-                              SessionService sessionService) {
+                              SessionService sessionService,
+                              SecurityService securityService) {
         this.configService = configService;
         this.dxlService = dxlService;
         this.store = store;
@@ -77,6 +81,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         this.treeService = treeService;
         this.extDataService = extDataService;
         this.sessionService = sessionService;
+        this.securityService = securityService;
     }
 
     @Override
@@ -95,7 +100,9 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
-    public Response getAllEntities(final String schema, final String table, Integer depth) {
+    public Response getAllEntities(final HttpServletRequest request, final String schema, final String table, Integer depth) {
+        if (!securityService.isAccessible(request, schema))
+            return Response.status(Response.Status.FORBIDDEN).build();
         final int realDepth = (depth != null) ? Math.max(depth, 0) : -1;
         return Response.status(Response.Status.OK)
                 .entity(new StreamingOutput() {
@@ -116,7 +123,9 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
-    public Response getEntities(final String schema, final String table, Integer inDepth, final String identifiers) {
+    public Response getEntities(final HttpServletRequest request, final String schema, final String table, Integer inDepth, final String identifiers) {
+        if (!securityService.isAccessible(request, schema))
+            return Response.status(Response.Status.FORBIDDEN).build();
         final TableName tableName = new TableName(schema, table);
         final int depth = (inDepth != null) ? Math.max(inDepth, 0) : -1;
         return Response.status(Response.Status.OK)

@@ -26,9 +26,13 @@
 
 package com.akiban.server.service.restdml;
 
+import javax.servlet.http.HttpServletRequest;
+
 import javax.ws.rs.core.Response;
 
 public interface RestDMLService {
-    public Response getAllEntities(String schema, String table, Integer depth);
-    public Response getEntities(String schema, String table, Integer depth, String pks);
+    public Response getAllEntities(HttpServletRequest request, 
+                                   String schema, String table, Integer depth);
+    public Response getEntities(HttpServletRequest request, 
+                                String schema, String table, Integer depth, String pks);
 }
