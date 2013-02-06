@@ -88,11 +88,15 @@ public class SecurityServiceImpl implements SecurityService, Service {
     public static final String DELETE_ROLE_USER_ROLES_SQL = "DELETE FROM user_roles WHERE role_id IN (SELECT id FROM roles WHERE name = ?)";
     public static final String DELETE_USER_USER_ROLES_SQL = "DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE name = ?)";
     
+    public static final String RESTRICT_USER_SCHEMA_PROPERTY = "akserver.restrict_user_schema";
+
     public static final Session.Key<User> SESSION_KEY = 
         Session.Key.named("SECURITY_USER");
 
     private final ConfigurationService configService;
     private final SchemaManager schemaManager;
+
+    private boolean restrictUserSchema;
 
     private static final Logger logger = LoggerFactory.getLogger(SecurityServiceImpl.class);
 
@@ -494,7 +498,8 @@ public class SecurityServiceImpl implements SecurityService, Service {
     }
 
     protected boolean isAccessible(String user, String schema) {
-        return user.equals(schema) ||
+        return !restrictUserSchema ||
+            user.equals(schema) ||
             TableName.INFORMATION_SCHEMA.equals(schema) ||
             TableName.SQLJ_SCHEMA.equals(schema) ||
             TableName.SYS_SCHEMA.equals(schema);
@@ -504,8 +509,9 @@ public class SecurityServiceImpl implements SecurityService, Service {
     
     @Override
     public void start() {
+        restrictUserSchema = Boolean.parseBoolean(configService.getProperty(RESTRICT_USER_SCHEMA_PROPERTY));
         registerSystemObjects();
-        if (true) {
+        if (restrictUserSchema) {
             schemaManager.setSecurityService(this); // Injection would be circular.
         }
     }
