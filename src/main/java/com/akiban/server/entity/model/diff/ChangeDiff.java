@@ -86,7 +86,7 @@ public class ChangeDiff implements SpaceModificationHandler
             startObject();
             entry("action", "add_entity");
             entry("destructive", false);
-            entry("uuid", entityUuid);
+            entry("uuid", entityUuid.toString());
             endObject();
         }
         catch (IOException ex)
@@ -177,6 +177,7 @@ public class ChangeDiff implements SpaceModificationHandler
     @Override
     public void renameAttribute(UUID attributeUuid, String oldName)
     {
+        //TODO: need a third argument being new_name?
         try
         {
             startObject();
@@ -184,6 +185,7 @@ public class ChangeDiff implements SpaceModificationHandler
             entry("destructive", false);
             entry("uuid", attributeUuid);
             entry("old_name", oldName);
+            //entry("new_name", newName);
             endObject();
         }
         catch (IOException ex)
@@ -361,16 +363,23 @@ public class ChangeDiff implements SpaceModificationHandler
     
     private void startObject() throws IOException
     {
-        //TODO: start locking the shared buffer
+        //TODO: start locking the shared buffer ?
         jsonGen.writeStartObject();
     }
     
     private void endObject() throws IOException
     {
-        //TODO: release the buffer
-        jsonGen.writeEndObject();
+        jsonGen.writeEndObject();;
+        //TODO: release the buffer ?
     }
     
+    private void entry(String name, UUID uuid) throws IOException
+    {
+        // JSonGenerator.writeObject does not handle object of types UUID
+        // So use it's String representation instead (for now)
+        entry(name, uuid.toString());
+    }
+
     private void entry(String name, Object value) throws IOException
     {
         jsonGen.writeFieldName(name);

@@ -26,7 +26,7 @@
 
 package com.akiban.util;
 
-import com.akiban.server.entity.model.SpaceValidation;
+//import com.akiban.server.entity.model.SpaceValidation;
 import com.google.common.base.Functions;
 import com.google.common.collect.Lists;
 
