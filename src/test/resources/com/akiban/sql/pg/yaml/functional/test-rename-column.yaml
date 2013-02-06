@@ -27,9 +27,12 @@
 ---
 - Statement: DROP INDEX idx_d
 ---
-- Statement: CREATE INDEX idx_d3 ON t(a, d, b)
+- Statement: CREATE INDEX idx_d3 ON t(a, e, b)
 ---
-- Statement: RENAME COLUMN t.d TO e;
+- Statement: RENAME COLUMN t.e TO f;
+---
+- Statement: SELECT a, f, b from  t;
+- output: [[0, 13.0, 6.0], [1, 5.0, 2.0], [3, 9.0, 4.0]]
 ---
 - DropTable: t
 ---

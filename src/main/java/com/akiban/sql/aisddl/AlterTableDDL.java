@@ -26,6 +26,7 @@
 
 package com.akiban.sql.aisddl;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.sql.parser.AlterTableRenameColumnNode;
 import com.akiban.sql.parser.AlterTableRenameNode;
 import com.akiban.ais.AISCloner;
@@ -196,16 +197,62 @@ public class AlterTableDDL {
                     return ChangeLevel.METADATA;
                     
                 case NodeTypes.AT_RENAME_COLUMN_NODE:
-                    AlterTableRenameColumnNode atRenameColumn = (AlterTableRenameColumnNode) node;
+                    
+                    AlterTableRenameColumnNode alterRenameCol = (AlterTableRenameColumnNode) node;
+                    String oldColName = alterRenameCol.getName();
+                    String newColName = alterRenameCol.newName();
+            
+                    final AkibanInformationSchema aisCopy = AISCloner.clone(ddl.getAIS(session));
+                    final TableName tableName = table.getName();
+                    final UserTable tableCopy = aisCopy.getUserTable(tableName);
 
-                    columnChanges.add(TableChange.createModify(atRenameColumn.getName(),
-                                                               atRenameColumn.newName()));
-                    break;
+                    if (tableCopy == null)
+                        throw new NoSuchTableException(table.getName());
+                    
+                    Column oldCol = tableCopy.getColumn(oldColName);
+                    if (oldCol == null)
+                        throw new NoSuchColumnException(oldColName);
+                    
+                    List<Column> cols = new ArrayList<>(tableCopy.getColumns());
+                    tableCopy.dropColumns();
+                    for (Column col : cols)
+                        Column.create(tableCopy, col, col == oldCol ? newColName : null, null);
+                     
+                    Column newCol = tableCopy.getColumn(newColName);
+                    if (newCol == null)
+                        throw new AkibanInternalException("new column not created successfully: " + newColName);
+
+                    List<TableIndex> indexes = new ArrayList<>(tableCopy.getIndexes());
+                    for (TableIndex index : indexes)
+                        if (index.containsTableColumn(tableName, oldColName))
+                        {
+                            tableCopy.removeIndexes(Collections.singleton(index));
+                            TableIndex indexCopy = TableIndex.create(tableCopy, index);
+                            for (IndexColumn iCol : index.getKeyColumns())
+                                IndexColumn.create(indexCopy,
+                                                   iCol.getColumn() == oldCol 
+                                                        ? newCol
+                                                        : iCol.getColumn(),
+                                                   iCol, 
+                                                   iCol.getPosition());
+                        }
+
+                    columnChanges.add(TableChange.createModify(alterRenameCol.getName(),
+                                                               alterRenameCol.newName()));
+
+                    // TODO: (Similar to AT_RENAME_NODE, )this breaks
+                    //        the general flow, ie., explicitly does not support
+                    //        multiple-action ALTER
+                    //        But we do not support multiple-action ALTER even at the
+                    //        parser level anyways.
+                    return ddl.alterTable(session, table.getName(), tableCopy,
+                                          columnChanges, indexChanges, context);
+
                 default:
                     return null; // Something unsupported
             }
         }
-
+        
         final AkibanInformationSchema origAIS = table.getAIS();
         final UserTable tableCopy = copyTable(table, columnChanges);
         final AkibanInformationSchema aisCopy = tableCopy.getAIS();
@@ -275,6 +322,8 @@ public class AlterTableDDL {
             }
         }
 
+        System.out.println("columnChanges: " + columnChanges);
+        System.out.println("indexChanges: " + indexChanges);
         return ddl.alterTable(session, table.getName(), tableCopy, columnChanges, indexChanges, context);
     }
 
