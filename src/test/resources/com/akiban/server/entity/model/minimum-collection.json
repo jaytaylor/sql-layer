@@ -6,10 +6,10 @@
                 "orders" : {
                     "collection" : "c5cedd91-9751-41c2-9417-8c29117ca2c9",
                     "attributes" : {
-                        "id" : {
+                        "spine" : {
                             "scalar" : "58dd53b7-e8a1-488b-a751-c83f9beca04c",
                             "type" : "int",
-                            "id" : true
+                            "spine" : true
                         }
                     }
                 }

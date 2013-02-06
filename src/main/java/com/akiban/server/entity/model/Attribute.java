@@ -94,13 +94,13 @@ public final class Attribute {
         this.validations = Collections.unmodifiableSet(this.validations);
     }
 
-    public boolean isId() {
-        return isId;
+    public boolean isSpine() {
+        return spine;
     }
 
     @SuppressWarnings("unused")
-    void setId(boolean id) {
-        isId = id;
+    void setSpine(boolean spine) {
+        this.spine = spine;
     }
 
     // collection fields
@@ -136,7 +136,7 @@ public final class Attribute {
     private String type;
     private Map<String, ?> properties;
     private Set<Validation> validations;
-    private boolean isId;
+    private boolean spine;
 
     // collection fields
     private Map<String, Attribute> attributes;

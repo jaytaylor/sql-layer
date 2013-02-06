@@ -2,10 +2,10 @@
     "entities" : {
         "customer" : {
             "attributes" : {
-                "id" : {
+                "spine" : {
                     "scalar" : "8644c36b-f881-4369-a06b-59e3fc580309",
                     "type" : "int",
-                    "id" : true
+                    "spine" : true
                 }
             }
         }

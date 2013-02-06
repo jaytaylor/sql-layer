@@ -86,7 +86,7 @@ public final class SpaceTest {
         assertEquals("id type", "int", customerId.getType());
         assertEquals("id properties", Collections.<String, Object>emptyMap(), customerId.getProperties());
         assertEquals("id validations", Collections.<Validation>emptySet(), set(customerId.getValidation()));
-        assertTrue("id is not ID", customerId.isId());
+        assertTrue("id is not ID", customerId.isSpine());
         assertNull("id attribute", customerId.getAttributes());
 
         Attribute lastName = customer.getAttributes().get("last_name");
@@ -97,7 +97,7 @@ public final class SpaceTest {
         assertEquals("last_name validations",
                 newHashSet(new Validation("required", false), new Validation("max_length", 64)),
                 set(lastName.getValidation()));
-        assertFalse("last_name is ID", lastName.isId());
+        assertFalse("last_name is ID", lastName.isSpine());
         assertNull("last_name attribute", lastName.getAttributes());
         
         Attribute orders = customer.getAttributes().get("orders");
@@ -106,7 +106,7 @@ public final class SpaceTest {
         assertNull("orders type", orders.getType());
         assertNull("orders properties", orders.getProperties());
         assertNull("orders validations", orders.getValidation());
-        assertFalse("orders is ID", orders.isId());
+        assertFalse("orders is ID", orders.isSpine());
         isUnmodifiable("orders attributes", orders.getAttributes());
         assertEquals("orders attributes key", set("id"), orders.getAttributes().keySet());
 
@@ -117,7 +117,7 @@ public final class SpaceTest {
         assertEquals("id type", "int", orderId.getType());
         assertEquals("id properties", Collections.<String, Object>emptyMap(), orderId.getProperties());
         assertEquals("id validations", Collections.<Validation>emptySet(), set(orderId.getValidation()));
-        assertTrue("id is not ID", orderId.isId());
+        assertTrue("id is not ID", orderId.isSpine());
         assertNull("id attribute", orderId.getAttributes());
     }
 
