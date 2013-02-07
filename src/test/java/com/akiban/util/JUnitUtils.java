@@ -32,6 +32,7 @@ import com.google.common.collect.Lists;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public final class JUnitUtils {
+
+    public static void equalMaps(String message, Map<?, ?> expected, Map<?, ?> actual) {
+        List<String> expectedStrings = Strings.entriesToString(expected);
+        List<String> actualStrings = Strings.entriesToString(actual);
+        Collections.sort(expectedStrings);
+        Collections.sort(actualStrings);
+        equalCollections(message, expectedStrings, actualStrings);
+    }
 
     public static void equalCollections(String message, Collection<?> expected, Collection<?> actual) {
         if (expected == null) {

@@ -72,15 +72,22 @@ public final class SpaceDiff {
         Set<UUID> inBoth = new HashSet<>();
         for (Map.Entry<UUID, Attribute> orig : origLookups.getAttributesByUuid().entrySet()) {
             UUID uuid = orig.getKey();
-            if (updateLookups.containsAttribute(uuid))
+            if (updateLookups.containsAttribute(uuid)) {
                 inBoth.add(uuid);
-            else
-                out.dropAttribute(orig.getValue());
+            }
+            else {
+                UUID parent = origLookups.getParentAttribute(uuid);
+                if (parent == null || updateLookups.containsAttribute(parent))
+                    out.dropAttribute(orig.getValue());
+            }
         }
         // dropped attributes
         for (UUID uuid : updateLookups.getAttributesByUuid().keySet()) {
-            if (!origLookups.containsAttribute(uuid))
-                out.addAttribute(uuid);
+            if (!origLookups.containsAttribute(uuid)) {
+                UUID parent = updateLookups.getParentAttribute(uuid);
+                if (parent == null || origLookups.containsAttribute(parent))
+                    out.addAttribute(uuid);
+            }
         }
         // modified
         for (UUID uuid : inBoth) {

@@ -36,6 +36,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 final class AttributeLookups {
@@ -60,8 +61,16 @@ final class AttributeLookups {
         return attributesByUuid.containsKey(uuid);
     }
 
-    public AttributeLookups(Entity space) {
-        space.accept(null, new Visitor());
+    public AttributeLookups(Entity entity) {
+        entity.accept(null, new Visitor());
+    }
+
+    public UUID getParentAttribute(UUID uuid) {
+        List<UUID> path = pathsByUuid.get(uuid);
+        if (path == null)
+            throw new NoSuchElementException(String.valueOf(uuid));
+        return path.size() < 2 ? null : path.get(0);
+
     }
 
     private Map<UUID, Attribute> attributesByUuid = new HashMap<>();
