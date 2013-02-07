@@ -96,11 +96,10 @@ public final class Space {
     private static class Validator extends AbstractEntityVisitor {
 
         @Override
-        public boolean visitEntity(String name, Entity entity) {
+        public void visitEntity(String name, Entity entity) {
             validateUUID(entity.uuid());
             if (entity.getAttributes() == null || entity.getAttributes().isEmpty())
                 throw new IllegalEntityDefinition("no attributes set for entity: " + name);
-            return true;
         }
 
         @Override
@@ -113,13 +112,12 @@ public final class Space {
         }
 
         @Override
-        public boolean visitCollection(String name, Attribute collection) {
+        public void visitCollection(String name, Attribute collection) {
             validateUUID(collection.getUUID());
             if (collection.getType() != null)
                 throw new IllegalEntityDefinition("type can't be set for collection");
             if (collection.getAttributes() == null || collection.getAttributes().isEmpty())
                 throw new IllegalEntityDefinition("no attributes set for collection");
-            return true;
         }
 
         private void validateUUID(UUID uuid) {

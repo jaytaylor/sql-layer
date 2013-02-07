@@ -156,12 +156,11 @@ public final class Attribute {
             visitor.visitScalar(myName, this);
         }
         else if (attributeType == AttributeType.COLLECTION) {
-            if (visitor.visitCollection(myName, this)) {
-                for(Map.Entry<String, Attribute> child : attributes.entrySet()) {
-                    child.getValue().accept(child.getKey(), visitor);
-                }
-                visitor.leaveCollection();
+            visitor.visitCollection(myName, this);
+            for(Map.Entry<String, Attribute> child : attributes.entrySet()) {
+                child.getValue().accept(child.getKey(), visitor);
             }
+            visitor.leaveCollection();
         }
         else {
             assert false : "unknown attribute type: " + attributeType;
