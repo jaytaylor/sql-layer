@@ -29,10 +29,12 @@ package com.akiban.server.entity.model;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableBiMap;
+import com.google.common.collect.Lists;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -78,7 +80,8 @@ public final class Entity {
     void setIndexes(Map<String, List<List<String>>> indexes) {
         this.indexes = HashBiMap.create(indexes.size());
         for (Map.Entry<String, List<List<String>>> entry : indexes.entrySet()) {
-            EntityIndex index = new EntityIndex(entry.getValue());
+            List<EntityColumn> columns = Lists.transform(entry.getValue(), EntityColumn.namesToColumn);
+            EntityIndex index = new EntityIndex(columns);
             if (this.indexes.put(entry.getKey(), index) != null)
                 throw new IllegalEntityDefinition("multiple names given for index: " + index);
         }
@@ -94,6 +97,15 @@ public final class Entity {
     private Map<String, Attribute> attributes = Collections.emptyMap();
     private List<Validation> validations = Collections.emptyList();
     private BiMap<String, EntityIndex> indexes = ImmutableBiMap.of();
+
+    public static Entity modifiableEntity(UUID uuid) {
+        Entity entity = new Entity();
+        entity.uuid = uuid;
+        entity.attributes = new HashMap<>();
+        entity.validations = new ArrayList<>();
+        entity.indexes = HashBiMap.create();
+        return entity;
+    }
 
     Entity() {}
 

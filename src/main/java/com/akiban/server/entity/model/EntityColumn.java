@@ -26,6 +26,8 @@
 
 package com.akiban.server.entity.model;
 
+import com.google.common.base.Function;
+
 import java.util.List;
 
 public final class EntityColumn {
@@ -59,7 +61,7 @@ public final class EntityColumn {
         return String.format("%s.%s", table, column);
     }
 
-    EntityColumn(String table, String column) {
+    public EntityColumn(String table, String column) {
         this.table = table;
         this.column = column;
     }
@@ -73,4 +75,11 @@ public final class EntityColumn {
 
     private final String table;
     private final String column;
+
+    static final Function<List<String>, EntityColumn> namesToColumn = new Function<List<String>, EntityColumn>() {
+        @Override
+        public EntityColumn apply(List<String> column) {
+            return new EntityColumn(column);
+        }
+    };
 }

@@ -24,51 +24,10 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.entity.model;
+package com.akiban.server.entity.fromais;
 
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-
-import java.util.List;
-
-public final class EntityIndex {
-
-    public List<EntityColumn> getColumns() {
-        return columns;
+public final class InconvertibleAisException extends RuntimeException {
+    public InconvertibleAisException(String message) {
+        super(message);
     }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        EntityIndex that = (EntityIndex) o;
-        return columns.equals(that.columns);
-
-    }
-
-    @Override
-    public int hashCode() {
-        return columns.hashCode();
-    }
-
-    @Override
-    public String toString() {
-        return columns.toString();
-    }
-
-    public void accept(String myName, EntityVisitor visitor) {
-        visitor.visitIndex(myName, this);
-    }
-
-    public EntityIndex(List<EntityColumn> columns) {
-        this.columns = ImmutableList.copyOf(columns);
-    }
-
-    public static EntityIndex create(List<EntityColumn> columns) {
-        return new EntityIndex(columns);
-    }
-
-    private final List<EntityColumn> columns;
 }

@@ -89,6 +89,13 @@ public final class Space {
         return entities.toString();
     }
 
+    public static Space create(Map<String, Entity> entities) {
+        Space space = new Space();
+        space.setEntities(entities);
+        space.visit(new Validator());
+        return space;
+    }
+
     Space() {}
 
     private Map<String, Entity> entities = Collections.emptyMap();

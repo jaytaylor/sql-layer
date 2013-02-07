@@ -26,6 +26,8 @@
 
 package com.akiban.server.entity.model;
 
+import com.akiban.util.ArgumentValidation;
+
 import java.util.Map;
 import java.util.Objects;
 
@@ -73,7 +75,8 @@ public final class Validation {
     }
 
     // for testing
-    Validation(String name, Object value) {
+    public Validation(String name, Object value) {
+        ArgumentValidation.notNull("validation name", name);
         this.name = name;
         this.value = value;
     }

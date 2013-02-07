@@ -24,51 +24,31 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.entity.model;
+package com.akiban.server.entity.fromais;
 
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.UserTable;
+import com.akiban.server.entity.model.Entity;
+import com.akiban.server.entity.model.Space;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
-public final class EntityIndex {
+public final class AisToSpace {
 
-    public List<EntityColumn> getColumns() {
-        return columns;
+    public static Space create(AkibanInformationSchema ais) {
+        Map<String, Entity> entities = new HashMap<>();
+        for (Group group : ais.getGroups().values()) {
+            UserTable root = group.getRoot();
+            String entityName = root.getName().getTableName();
+            if (entities.containsKey(entityName))
+                throw new InconvertibleAisException("duplicate table name: " + entityName);
+            Entity entity = new EntityBuilder(root).getEntity();
+            entities.put(entityName, entity);
+        }
+        return Space.create(entities);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        EntityIndex that = (EntityIndex) o;
-        return columns.equals(that.columns);
-
-    }
-
-    @Override
-    public int hashCode() {
-        return columns.hashCode();
-    }
-
-    @Override
-    public String toString() {
-        return columns.toString();
-    }
-
-    public void accept(String myName, EntityVisitor visitor) {
-        visitor.visitIndex(myName, this);
-    }
-
-    public EntityIndex(List<EntityColumn> columns) {
-        this.columns = ImmutableList.copyOf(columns);
-    }
-
-    public static EntityIndex create(List<EntityColumn> columns) {
-        return new EntityIndex(columns);
-    }
-
-    private final List<EntityColumn> columns;
+    private AisToSpace() {}
 }
