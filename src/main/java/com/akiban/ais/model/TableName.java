@@ -47,6 +47,19 @@ public class TableName implements Comparable<TableName>
         return new TableName(schemaName, tableName);
     }
 
+    public static TableName parse (String defaultSchema, String tableName) 
+    {
+        String schema = defaultSchema;
+        String table = null;
+        if (tableName.contains(".")) {
+            schema = tableName.substring(0, tableName.indexOf("."));
+            table = tableName.substring(tableName.indexOf(".")+1);
+        } else  {
+            table = tableName;
+        }
+        return new TableName (schema, table);
+    }
+    
     public String getSchemaName()
     {
         return schemaName;

@@ -1,0 +1,6 @@
+[
+    {
+        "code":"50018",
+        "message":"NO_SUCH_COLUMN: Unknown column: `bad-column`"
+    }
+]

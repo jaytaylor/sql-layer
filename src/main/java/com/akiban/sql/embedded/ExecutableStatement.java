@@ -40,4 +40,8 @@ abstract class ExecutableStatement implements ServerStatement
         return null;
     }
 
+    public long getEstimatedRowCount() {
+        return -1;
+    }
+
 }
