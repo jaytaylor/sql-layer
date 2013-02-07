@@ -126,7 +126,7 @@ public final class SpaceDiff {
                     else
                         out.error("Can't make non-spinal attribute spinal");
                 }
-                if (!orig.getType().equals(updated.getType())) {
+                if (!lc(orig.getType()).equals(lc(updated.getType()))) {
                     if (orig.isSpinal())
                         out.error("Can't change type of spinal attributes");
                     else
@@ -148,6 +148,10 @@ public final class SpaceDiff {
                 throw new AssertionError("unknown attribute class: " + orig.getAttributeType());
             }
         }
+    }
+
+    private static String lc(String string) {
+        return string.toLowerCase();
     }
 
     private void validationActions(UUID entityUUID, SpaceModificationHandler out) {

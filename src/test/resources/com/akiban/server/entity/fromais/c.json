@@ -1,11 +1,11 @@
 {
     "entities" : {
-        "customer" : {
+        "customers" : {
             "entity" : "4d4ed75f-2b78-4316-a054-b0dde3eaa10e",
             "attributes" : {
                 "id" : {
                     "scalar" : "21bc729e-495f-499c-b78e-87cb2c2c68ae",
-                    "type" : "int",
+                    "type" : "integer",
                     "spinal_pos" : 0,
                     "validation" : [
                         { "required" : true }

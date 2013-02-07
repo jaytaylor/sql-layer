@@ -63,8 +63,8 @@ final class EntityBuilder {
                 if (pkPos >= 0)
                     scalar.setSpinalPos(pkPos);
             }
-            Validation required = new Validation("required", !tInstance.nullability());
-            scalar.getValidation().add(required);
+            if (!tInstance.nullability())
+                scalar.getValidation().add(new Validation("required", Boolean.TRUE));
 
             Map<String, Object> properties = scalar.getProperties();
             for (int classAttr = 0, max = tClass.nAttributes(); classAttr < max; ++classAttr) {
@@ -103,11 +103,15 @@ final class EntityBuilder {
     }
 
     private static UUID uuidOrCreate(UserTable table) {
-        return UUID.randomUUID(); // TODO!
+        UUID uuid = table.getUuid();
+        assert uuid != null : table;
+        return uuid;
     }
 
     private UUID uuidOrCreate(Column column) {
-        return UUID.randomUUID(); // TODO!
+        UUID uuid = column.getUuid();
+        assert uuid != null : column;
+        return uuid;
     }
 
     private final Entity entity;

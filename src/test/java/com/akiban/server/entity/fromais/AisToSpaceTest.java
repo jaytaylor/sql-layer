@@ -27,6 +27,9 @@
 package com.akiban.server.entity.fromais;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.NopVisitor;
+import com.akiban.ais.model.UserTable;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
 import com.akiban.server.entity.changes.SpaceDiff;
@@ -36,6 +39,8 @@ import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.util.JUnitUtils;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
+import com.google.common.collect.Maps;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -45,6 +50,10 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
+import java.util.UUID;
+
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(NamedParameterizedRunner.class)
 public final class AisToSpaceTest {
@@ -54,7 +63,7 @@ public final class AisToSpaceTest {
         String[] testNames = testDir.list(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
-                return name.endsWith(".json");
+                return name.endsWith(".json") && !name.endsWith("-uuids.json");
             }
         });
         return Collections2.transform(Arrays.asList(testNames), new Function<String, Parameterization>() {
@@ -71,12 +80,51 @@ public final class AisToSpaceTest {
         Space expectedSpace = Space.readSpace(testName + ".json", AisToSpaceTest.class);
 
         AkibanInformationSchema ais = SchemaFactory.loadAIS(new File(testDir, testName + ".ddl"), "test_schema");
+        ais.traversePostOrder(new SetUuidAssigner());
         Space actualSpace = AisToSpace.create(ais);
 
         StringChangeLog changes = new StringChangeLog();
         new SpaceDiff(expectedSpace, actualSpace).apply(changes);
 
         JUnitUtils.equalCollections("no changes expected", Collections.emptyList(), changes.getMessages());
+    }
+
+    private class SetUuidAssigner extends NopVisitor {
+
+        @Override
+        public void visitUserTable(UserTable userTable) {
+            UUID uuid = setUuids.get(userTable.getName().getTableName());
+            assertNotNull("uuid for " + userTable, uuid);
+            userTable.setUuid(uuid);
+        }
+
+        @Override
+        public void visitColumn(Column column) {
+            UUID uuid = setUuids.get(column.getName());
+            assertNotNull("uuid for " + column, uuid);
+            column.setUuid(uuid);
+        }
+
+        private SetUuidAssigner() {
+            String fileName = testName + "-uuids.json";
+            Map<String, String> asStrings;
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                Map asMap = mapper.readValue(new File(testDir, fileName), Map.class);
+                asStrings = Collections.checkedMap(asMap, String.class, String.class);
+            }
+            catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            setUuids = Maps.transformValues(asStrings, new Function<String, UUID>() {
+                @Override
+                public UUID apply(String input) {
+                    return UUID.fromString(input);
+                }
+            });
+        }
+
+        private final Map<String, UUID> setUuids;
     }
 
     public AisToSpaceTest(String testName) {
