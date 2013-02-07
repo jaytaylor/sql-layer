@@ -40,6 +40,7 @@ public class RestServiceImpl implements RestService, Service {
     private final ConfigurationService configService;
 	private final HttpConductor http;
 	private volatile ServletContextHandler handler;
+	
 
 	@Inject
 	public RestServiceImpl(ConfigurationService configService, HttpConductor http) {

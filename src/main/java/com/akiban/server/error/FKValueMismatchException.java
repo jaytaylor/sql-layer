@@ -23,15 +23,11 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.server.error;
 
-package com.akiban.server.service.restdml;
+public class FKValueMismatchException extends InvalidOperationException {
 
-import javax.ws.rs.core.Response;
-
-import org.codehaus.jackson.JsonNode;
-
-public interface RestDMLService {
-    public Response insert(String schema, String table, JsonNode node);
-    public Response getAllEntities(String schema, String table, Integer depth);
-    public Response getEntities(String schema, String table, Integer depth, String pks);
+    public FKValueMismatchException(String columnName) {
+        super(ErrorCode.FK_VALUE_MISMATCH, columnName);
+    }
 }

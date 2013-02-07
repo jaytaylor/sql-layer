@@ -23,15 +23,26 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-
 package com.akiban.server.service.restdml;
 
-import javax.ws.rs.core.Response;
+import com.akiban.ais.model.TableName;
+import com.akiban.qp.operator.SimpleQueryContext;
+import com.akiban.qp.operator.StoreAdapter;
 
-import org.codehaus.jackson.JsonNode;
+public class RestQueryContext extends SimpleQueryContext {
 
-public interface RestDMLService {
-    public Response insert(String schema, String table, JsonNode node);
-    public Response getAllEntities(String schema, String table, Integer depth);
-    public Response getEntities(String schema, String table, Integer depth, String pks);
+    public RestQueryContext(StoreAdapter adapter) {
+        super(adapter);
+    }
+    
+    @Override
+    public long sequenceNextValue(TableName sequence) {
+        return getStore().sequenceNextValue(sequence);
+
+    }
+
+    @Override
+    public long sequenceCurrentValue(TableName sequence) {
+        return getStore().sequenceCurrentValue(sequence);
+    }
 }
