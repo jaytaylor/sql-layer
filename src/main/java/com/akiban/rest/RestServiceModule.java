@@ -34,15 +34,27 @@ import com.akiban.rest.resources.SqlQueryResource;
 import com.akiban.rest.resources.SqlSchemataResource;
 import com.akiban.rest.resources.SqlTablesResource;
 import com.akiban.rest.resources.VersionResource;
+import com.google.inject.servlet.GuiceFilter;
 import com.google.inject.servlet.ServletModule;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Guice Module which registers essential classes.
  */
 public class RestServiceModule extends ServletModule {
+    // Hang onto reference or setting will get GC-ed.
+    private Logger guiceFilterLogger = null;
+
     @Override
     protected void configureServlets() {
+        // GuiceFilter has a static member that causes a superfluous (for us) warning when services
+        // (the injector, really) are cycled during the ITs. Disable it.
+        guiceFilterLogger = Logger.getLogger(GuiceFilter.class.getName());
+        guiceFilterLogger.setLevel(Level.OFF);
+
         bind(FaviconResource.class).asEagerSingleton();
         bind(DataAccessOperationsResource.class).asEagerSingleton();
         bind(SqlGroupsResource.class).asEagerSingleton();
