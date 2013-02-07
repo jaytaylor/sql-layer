@@ -468,6 +468,7 @@ public class AISMerge {
         targetTable.setEngine(table.getEngine());
         targetTable.setCharsetAndCollation(table.getCharsetAndCollation());
         targetTable.setPendingOSC(table.getPendingOSC());
+        targetTable.setUuid(table.getUuid());
         
         // columns
         for (Column column : table.getColumns()) {
@@ -481,6 +482,7 @@ public class AISMerge {
                     column.getCharsetAndCollation().collation(),
                     column.getDefaultValue());
             Column newColumn = targetTable.getColumn(column.getPosition());
+            newColumn.setUuid(column.getUuid());
             // if an auto-increment column, set the starting value. 
             if (column.getInitialAutoIncrementValue() != null) {
                 newColumn.setInitialAutoIncrementValue(column.getInitialAutoIncrementValue());
