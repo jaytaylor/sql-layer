@@ -98,6 +98,7 @@ public final class Space {
         @Override
         public void visitEntity(String name, Entity entity) {
             validateUUID(entity.uuid());
+            ensureUnique(name);
             if (entity.getAttributes() == null || entity.getAttributes().isEmpty())
                 throw new IllegalEntityDefinition("no attributes set for entity: " + name);
         }
@@ -114,6 +115,7 @@ public final class Space {
         @Override
         public void visitCollection(String name, Attribute collection) {
             validateUUID(collection.getUUID());
+            ensureUnique(name);
             if (collection.getType() != null)
                 throw new IllegalEntityDefinition("type can't be set for collection");
             if (collection.getAttributes() == null || collection.getAttributes().isEmpty())
@@ -127,6 +129,12 @@ public final class Space {
                 throw new IllegalEntityDefinition("duplicate uuid found: " + uuid);
         }
 
+        private void ensureUnique(String name) {
+            if (!collectionNames.add(name))
+                throw new IllegalEntityDefinition("duplicate name within entity and collections: " + name);
+        }
+
         private final Set<UUID> uuids = new HashSet<>();
+        private final Set<String> collectionNames = new HashSet<>();
     }
 }
