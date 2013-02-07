@@ -49,6 +49,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.LogManager;
 
 public final class HttpConductorImpl implements HttpConductor, Service {
     private static final Logger logger = LoggerFactory.getLogger(HttpConductorImpl.class);
@@ -68,11 +69,14 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     private Set<String> registeredPaths;
     private volatile int port = -1;
 
+    // Need reference to prevent GC and setting loss
+    private final java.util.logging.Logger jerseyLogging;
+
     @Inject
     public HttpConductorImpl(ConfigurationService configurationService,
                              com.akiban.sql.embedded.EmbeddedJDBCService jdbcService) {
         this.configurationService = configurationService;
-        java.util.logging.Logger jerseyLogging = java.util.logging.Logger.getLogger("com.sun.jersey");
+        jerseyLogging = java.util.logging.Logger.getLogger("com.sun.jersey");
         jerseyLogging.setLevel(java.util.logging.Level.OFF);
     }
 
