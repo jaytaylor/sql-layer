@@ -1,1 +1,1 @@
-error: [Can't change spinal attribute's properties]
+error: [Can't change properties of spinal attributes]

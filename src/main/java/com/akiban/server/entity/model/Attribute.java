@@ -94,6 +94,10 @@ public final class Attribute {
         this.validations = Collections.unmodifiableSet(this.validations);
     }
 
+    public boolean isSpinal() {
+        return spine >= 0;
+    }
+
     public int getSpinePos() {
         return spine;
     }
@@ -138,7 +142,7 @@ public final class Attribute {
     private String type;
     private Map<String, ?> properties;
     private Set<Validation> validations;
-    private int spine;
+    private int spine = -1;
 
     // collection fields
     private Map<String, Attribute> attributes;

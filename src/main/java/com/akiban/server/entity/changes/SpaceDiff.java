@@ -77,16 +77,26 @@ public final class SpaceDiff {
             }
             else {
                 UUID parent = origLookups.getParentAttribute(uuid);
-                if (parent == null || updateLookups.containsAttribute(parent))
-                    out.dropAttribute(orig.getValue());
+                if (parent == null || updateLookups.containsAttribute(parent)) {
+                    Attribute droppedAttribute = orig.getValue();
+                    if (droppedAttribute.isSpinal())
+                        out.error("Can't drop spinal attribute");
+                    else
+                        out.dropAttribute(droppedAttribute);
+                }
             }
         }
         // dropped attributes
-        for (UUID uuid : updateLookups.getAttributesByUuid().keySet()) {
+        for (Map.Entry<UUID, Attribute> updated : updateLookups.getAttributesByUuid().entrySet()) {
+            UUID uuid = updated.getKey();
             if (!origLookups.containsAttribute(uuid)) {
                 UUID parent = updateLookups.getParentAttribute(uuid);
-                if (parent == null || origLookups.containsAttribute(parent))
-                    out.addAttribute(uuid);
+                if (parent == null || origLookups.containsAttribute(parent)) {
+                    if (updated.getValue().isSpinal())
+                        out.error("Can't add spinal attributes to entities or collections");
+                    else
+                        out.addAttribute(uuid);
+                }
             }
         }
         // modified
@@ -95,20 +105,41 @@ public final class SpaceDiff {
                 out.error("Can't move attribute");
                 continue;
             }
-            if (!origLookups.nameFor(uuid).equals(updateLookups.nameFor(uuid)))
-                out.renameAttribute(uuid, origLookups.nameFor(uuid));
             Attribute orig = origLookups.attributeFor(uuid);
             Attribute updated = updateLookups.attributeFor(uuid);
+            if (!origLookups.nameFor(uuid).equals(updateLookups.nameFor(uuid))) {
+                if (orig.isSpinal())
+                    out.error("Can't rename spinal attributes");
+                else
+                    out.renameAttribute(uuid, origLookups.nameFor(uuid));
+            }
             if (!Objects.equals(orig.getAttributeType(), updated.getAttributeType())) {
                 out.error("Can't change an attribute's class (scalar or collection)");
             }
             else if (orig.getAttributeType() == Attribute.AttributeType.SCALAR) {
-                if (!orig.getType().equals(updated.getType()))
-                    out.changeScalarType(uuid, updated);
+                if (orig.getSpinePos() != updated.getSpinePos()) {
+                    // assume at least one of them isSpinal; otherwise they're both -1.
+                    if (orig.isSpinal() && updated.isSpinal())
+                        out.error("Can't change order of spinal attributes");
+                    else if (orig.isSpinal())
+                        out.error("Can't make spinal attribute non-spinal");
+                    else
+                        out.error("Can't make non-spinal attribute spinal");
+                }
+                if (!orig.getType().equals(updated.getType())) {
+                    if (orig.isSpinal())
+                        out.error("Can't change type of spinal attributes");
+                    else
+                        out.changeScalarType(uuid, updated);
+                }
                 if (!orig.getValidation().equals(updated.getValidation()))
                     out.changeScalarValidations(uuid, updated);
-                if (!orig.getProperties().equals(updated.getProperties()))
-                    out.changeScalarProperties(uuid, updated);
+                if (!orig.getProperties().equals(updated.getProperties())) {
+                    if (orig.isSpinal())
+                        out.error("Can't change properties of spinal attributes");
+                    else
+                        out.changeScalarProperties(uuid, updated);
+                }
             }
             else if (orig.getAttributeType() == Attribute.AttributeType.COLLECTION) {
                 // do nothing -- the visitor will have captured children

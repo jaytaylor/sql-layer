@@ -1,1 +1,1 @@
-error: [Can't change spinal attribute's type]
+error: [Can't change type of spinal attributes]
