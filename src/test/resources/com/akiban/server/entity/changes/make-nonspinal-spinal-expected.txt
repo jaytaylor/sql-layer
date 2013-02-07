@@ -1,0 +1,1 @@
+error: [Can't make non-spinal attribute spinal]
