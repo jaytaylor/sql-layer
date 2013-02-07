@@ -29,7 +29,6 @@ package com.akiban.server.entity.changes;
 import com.akiban.server.entity.model.AbstractEntityVisitor;
 import com.akiban.server.entity.model.Attribute;
 import com.akiban.server.entity.model.Entity;
-import com.akiban.server.entity.model.Space;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayDeque;
