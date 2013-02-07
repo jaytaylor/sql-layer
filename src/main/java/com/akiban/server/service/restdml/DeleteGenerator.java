@@ -25,7 +25,6 @@
  */
 package com.akiban.server.service.restdml;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,7 +45,6 @@ import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
 import com.akiban.server.types3.texpressions.TPreparedParameter;
-import com.akiban.sql.optimizer.plan.TableNode;
 
 public class DeleteGenerator extends OperatorGenerator {
 
@@ -56,7 +54,7 @@ public class DeleteGenerator extends OperatorGenerator {
     @Override
     protected Operator create(TableName tableName) {
         UserTable table = ais().getUserTable(tableName);
-        PrimaryKey pkey = table.getPrimaryKey();
+        PrimaryKey pkey = table.getPrimaryKeyIncludingInternal();
         final int nkeys = pkey.getColumns().size();
 
         UserTableRowType tableType = schema().userTableRowType(table);

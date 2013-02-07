@@ -97,6 +97,7 @@ public class DeleteProcessor extends DMLProcessor {
                 while ((row = cursor.next()) != null) {
                     // Do Nothing - the act of reading the cursor 
                     // does the delete row processing.
+                    // TODO: Check that we got 1 row through.
                 }
                 cursor.close();
             }

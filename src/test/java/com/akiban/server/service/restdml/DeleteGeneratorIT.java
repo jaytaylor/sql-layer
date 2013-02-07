@@ -107,6 +107,23 @@ public class DeleteGeneratorIT extends ITBase {
                 "    AncestorLookup_Default(Index(o.PRIMARY) -> o)\n"+
                 "      IndexScan_Default(Index(o.PRIMARY), cid = $1, oid = $2)");
     }
+    
+    @Test
+    public void testNoPK() {
+        createTable (SCHEMA, "c",
+                "name varchar(32) not null",
+                "address varchar(64) not null",
+                "cid int not null");
+        TableName table = new TableName (SCHEMA, "c");
+        this.deleteGenerator = new DeleteGenerator (this.ais());
+        deleteGenerator.setT3Registry(this.serviceManager().getServiceByClass(T3RegistryService.class));
+        Operator delete = deleteGenerator.create(table);
+        assertEquals (
+                getExplain(delete, table.getSchemaName()),
+                "\n  Delete_Returning()\n"+
+                "    AncestorLookup_Default(Index(c.PRIMARY) -> c)\n"+
+                "      IndexScan_Default(Index(c.PRIMARY), __akiban_pk = $1)");
+    }
 
     protected String getExplain (Operator plannable, String defaultSchemaName) {
         StringBuilder str = new StringBuilder();
