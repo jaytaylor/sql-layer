@@ -24,13 +24,16 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.entity.changes;
+package com.akiban.server.entity.fromais;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
+import com.akiban.server.entity.changes.SpaceDiff;
+import com.akiban.server.entity.changes.StringChangeLog;
 import com.akiban.server.entity.model.Space;
+import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.util.JUnitUtils;
-import com.akiban.util.Strings;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import org.junit.Test;
@@ -42,46 +45,44 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
-
-import static com.akiban.util.AssertUtils.assertCollectionEquals;
 
 @RunWith(NamedParameterizedRunner.class)
-public final class SpaceDiffTest {
+public final class AisToSpaceTest {
+
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params() throws IOException {
-        String[] testNames = JUnitUtils.getContainingFile(SpaceDiffTest.class).list(new FilenameFilter() {
+        String[] testNames = testDir.list(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
-                return name.endsWith("-orig.json");
+                return name.endsWith(".json");
             }
         });
         return Collections2.transform(Arrays.asList(testNames), new Function<String, Parameterization>() {
             @Override
             public Parameterization apply(String testName) {
-                String shortName = testName.substring(0, testName.length() - "-orig.json".length());
+                String shortName = testName.substring(0, testName.length() - ".json".length());
                 return new Parameterization(shortName, true, shortName);
             }
         });
     }
 
     @Test
-    public void test() throws IOException {
-        Space orig = Space.readSpace(testName + "-orig.json", SpaceDiffTest.class);
-        Space updated = Space.readSpace(testName + "-update.json", SpaceDiffTest.class);
-        List<String> expected = Strings.dumpFile(new File(dir, testName + "-expected.txt"));
-        Collections.sort(expected);
-        StringChangeLog log = new StringChangeLog();
-        new SpaceDiff(orig, updated).apply(log);
-        Collections.sort(log.getMessages());
-        assertCollectionEquals("changes", expected, log.getMessages());
+    public void test() {
+        Space expectedSpace = Space.readSpace(testName + ".json", AisToSpaceTest.class);
+
+        AkibanInformationSchema ais = SchemaFactory.loadAIS(new File(testDir, testName + ".ddl"), "test_schema");
+        Space actualSpace = AisToSpace.create(ais);
+
+        StringChangeLog changes = new StringChangeLog();
+        new SpaceDiff(expectedSpace, actualSpace).apply(changes);
+
+        JUnitUtils.equalCollections("no changes expected", Collections.emptyList(), changes.getMessages());
     }
 
-    public SpaceDiffTest(String testName) {
+    public AisToSpaceTest(String testName) {
         this.testName = testName;
     }
 
     private final String testName;
-    private static final File dir = JUnitUtils.getContainingFile(SpaceDiffTest.class);
-
+    private static final File testDir = JUnitUtils.getContainingFile(AisToSpaceTest.class);
 }
