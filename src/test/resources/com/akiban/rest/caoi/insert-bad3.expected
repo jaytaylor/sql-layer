@@ -1,0 +1,7 @@
+[
+    {
+        "code":"57008",
+        "message":"FK_VALUE_MISMATCH: Nested insert of child table grouping column `cid` value does not match parent column value"
+    }
+]
+        

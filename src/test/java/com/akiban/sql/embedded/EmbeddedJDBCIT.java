@@ -89,6 +89,7 @@ public class EmbeddedJDBCIT extends ITBase
     public void testPrepared() throws Exception {
         Connection conn = DriverManager.getConnection(CONNECTION_URL, SCHEMA_NAME, "");
         PreparedStatement stmt = conn.prepareStatement("SELECT name, order_date FROM c INNER JOIN o USING(cid) WHERE c.cid = ?");
+        assertEquals("estimated count", 2, ((JDBCPreparedStatement)stmt).getEstimatedRowCount());
         stmt.setInt(1, 2);
         assertTrue("has result set", stmt.execute());
         ResultSet rs = stmt.getResultSet();
