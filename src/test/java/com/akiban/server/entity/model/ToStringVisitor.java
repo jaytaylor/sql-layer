@@ -27,8 +27,12 @@
 package com.akiban.server.entity.model;
 
 import com.akiban.util.JUnitUtils;
+import com.google.common.collect.BiMap;
 
-class ToStringVisitor extends JUnitUtils.MessageTaker implements EntityVisitor {
+import java.util.Map;
+import java.util.Set;
+
+class ToStringVisitor extends JUnitUtils.MessageTaker implements EntityVisitor<RuntimeException> {
 
     @Override
     public void visitEntity(String name, Entity entity) {
@@ -56,13 +60,16 @@ class ToStringVisitor extends JUnitUtils.MessageTaker implements EntityVisitor {
     }
 
     @Override
-    public void visitEntityValidation(Validation validation) {
-        message("visiting entity validation", validation);
+    public void visitIndexes(BiMap<String, EntityIndex> indexes) {
+        for (Map.Entry<String, EntityIndex> index : indexes.entrySet())
+            message("visiting index", index.getKey(), index.getValue());
     }
 
     @Override
-    public void visitIndex(String name, EntityIndex index) {
-        message("visiting index", name, index);
+    public void visitEntityValidations(Set<Validation> validations) {
+        for (Validation validation : validations)
+            message("visiting entity validation", validation);
+
     }
 
 }

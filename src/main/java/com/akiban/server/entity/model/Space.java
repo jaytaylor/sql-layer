@@ -26,6 +26,7 @@
 
 package com.akiban.server.entity.model;
 
+import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -69,7 +70,7 @@ public final class Space {
         }
     }
 
-    public void visit(EntityVisitor visitor) {
+    public <E extends Exception> void visit(EntityVisitor<E> visitor) throws E {
         for (Map.Entry<String, Entity> entry : entities.entrySet()) {
             entry.getValue().accept(entry.getKey(), visitor);
         }
@@ -94,6 +95,14 @@ public final class Space {
         space.setEntities(entities);
         space.visit(new Validator());
         return space;
+    }
+
+    public void toJson(JsonGenerator json) throws IOException {
+        json.writeStartObject();
+        json.writeObjectFieldStart("entities");
+        visit(new JsonEntityFormatter(json));
+        json.writeEndObject();
+        json.writeEndObject();
     }
 
     Space() {}

@@ -171,7 +171,7 @@ public final class Attribute {
 
     private Attribute() {}
 
-    public void accept(String myName, EntityVisitor visitor) {
+    public <E extends Exception> void accept(String myName, EntityVisitor<E> visitor) throws E {
         if (attributeType == null)
             throw new IllegalEntityDefinition("attribute " + myName + " has no attribute type (scalar or collection)");
         if (attributeType == AttributeType.SCALAR) {

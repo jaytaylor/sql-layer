@@ -62,10 +62,6 @@ public final class Validation {
         return String.format("%s: %s", name, value);
     }
 
-    public void accept(EntityVisitor visitor) {
-        visitor.visitEntityValidation(this);
-    }
-
     Validation(Map<String, ?> validation) {
         if (validation.size() != 1)
             throw new IllegalEntityDefinition("illegal validation definition (map must have one entry)");

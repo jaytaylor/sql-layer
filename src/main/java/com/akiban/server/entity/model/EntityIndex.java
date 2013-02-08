@@ -26,9 +26,7 @@
 
 package com.akiban.server.entity.model;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 
 import java.util.List;
 
@@ -56,10 +54,6 @@ public final class EntityIndex {
     @Override
     public String toString() {
         return columns.toString();
-    }
-
-    public void accept(String myName, EntityVisitor visitor) {
-        visitor.visitIndex(myName, this);
     }
 
     public EntityIndex(List<EntityColumn> columns) {

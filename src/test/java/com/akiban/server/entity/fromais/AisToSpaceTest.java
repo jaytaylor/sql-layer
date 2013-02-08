@@ -40,6 +40,8 @@ import com.akiban.util.JUnitUtils;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Maps;
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,12 +49,14 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(NamedParameterizedRunner.class)
@@ -87,6 +91,19 @@ public final class AisToSpaceTest {
         new SpaceDiff(expectedSpace, actualSpace).apply(changes);
 
         JUnitUtils.equalCollections("no changes expected", Collections.emptyList(), changes.getMessages());
+
+        // TODO temporary just to test things out
+        try {
+            JsonFactory factory = new JsonFactory();
+            factory.setCodec(new ObjectMapper());
+            JsonGenerator generator = factory.createJsonGenerator(System.out);
+            actualSpace.toJson(generator);
+            generator.flush();
+            throw new AssertionError("remove this!");
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private class SetUuidAssigner extends NopVisitor {
