@@ -165,6 +165,12 @@
             <artifactId>jersey-guice</artifactId>
             <version>1.13</version>
         </dependency>
+        <dependency>
+	    <groupId>org.apache.httpcomponents</groupId>
+	    <artifactId>httpclient</artifactId>
+	    <version>4.2.3</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <resources>
