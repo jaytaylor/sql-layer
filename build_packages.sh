@@ -37,32 +37,14 @@ platform=$1
 bzr_revno=`bzr revno`
 server_version=$(mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version |grep -o '^[0-9.]\+')
 
-# Handle file preparation for release target
-if [ -z "${AKIBAN_DE_FLAG}" ]; then
-    target='enterprise'
-else
-    target='developer'
-fi
-echo "Building Akiban Server for ##### ${target} #####"
+echo "Building Akiban Server"
 
-# Select the correct license. Handled as a special case to keep LICENSE*.txt files in the top level
-case "${target}" in
-    'enterprise')
-        license=LICENSE-EE.txt
-        ;;
-    'developer')
-        license=LICENSE-DE.txt
-        ;;
-    *)
-        echo "fatal: Invalid release type (name: [{$target}]). Check that the script is handling condition flags correctly."
-        exit 1
-        ;;
-esac
+license=LICENSE.txt
 
 mkdir -p target
 mkdir -p packages-common/client
 mkdir -p packages-common/plugins
-common_dir="config-files/${target}" # require config-files/dir to be the same as the ${target} variable
+common_dir="config-files/"
 if [ ! -d ${common_dir} ]; then
     echo "fatal: Couldn't find configuration files in: ${common_dir}"
     exit 1
@@ -175,7 +157,7 @@ elif [ ${platform} == "macosx" ]; then
 
         # add config files to bundle
         mkdir "${mac_app}/Contents/Resources/config/"
-        cp macosx/${target}/* "${mac_app}/Contents/Resources/config/"
+        cp macosx/config-files/* "${mac_app}/Contents/Resources/config/"
 
         # add client dependencies and binaries to bundle
         mkdir -p "$mac_app/Contents/Resources/tools/lib/client"
