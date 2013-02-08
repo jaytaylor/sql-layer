@@ -141,7 +141,7 @@ public abstract class TClass {
             getPValueIO().copyCanonical(in, typeInstance, out);
     }
 
-    public Object attributeToObject(int attributeIndex, long value) {
+    protected Object attributeToObject(int attributeIndex, long value) {
         return value;
     }
 
