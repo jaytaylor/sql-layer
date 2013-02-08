@@ -37,6 +37,7 @@ import com.akiban.server.entity.model.Validation;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -81,15 +82,19 @@ final class EntityBuilder {
                 if (pkPos >= 0)
                     scalar.setSpinalPos(pkPos);
             }
-            if (!tInstance.nullability())
-                scalar.getValidation().add(new Validation("required", Boolean.TRUE));
-
             Map<String, Object> properties = scalar.getProperties();
+            Collection<Validation> validations = scalar.getValidation();
+            if (!tInstance.nullability())
+                validations.add(new Validation("required", Boolean.TRUE));
             for (int classAttr = 0, max = tClass.nAttributes(); classAttr < max; ++classAttr) {
-                properties.put("property_" + classAttr, "value_" + classAttr);
+                String attrName = tClass.attributeName(classAttr);
+                Object attrValue = tInstance.attributeToObject(classAttr);
+                if (tClass.attributeIsPhysical(classAttr))
+                    properties.put(attrName, attrValue);
+                else
+                    validations.add(new Validation(attrName, attrValue));
             }
-            String name = column.getName();
-            addAttribute(attributes, name, scalar);
+            attributes.put(column.getName(), scalar);
         }
     }
 

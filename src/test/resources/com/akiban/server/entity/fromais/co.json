@@ -8,12 +8,20 @@
                     "type" : "integer",
                     "spinal_pos" : 0,
                     "validation" : [
-                        { "required" : true }
+                        { "required" : true },
+                        { "width" : 11 }
                     ]
                 },
                 "name" : {
                     "scalar" : "b8b960ab-d169-44b8-8ee1-e9babfb92409",
-                    "type" : "varchar"
+                    "type" : "varchar",
+                    "validation" : [
+                        { "length" : 32 }
+                    ],
+                    "properties" : {
+                        "charset" : "UTF8",
+                        "collation" : "UCS_BINARY"
+                    }
                 },
                 "orders" : {
                     "collection" : "03aace2a-657c-47a6-a7cc-8f5b39a5b286",
@@ -23,7 +31,8 @@
                             "type" : "integer",
                             "spinal_pos" : 0,
                             "validation" : [
-                                { "required" : true }
+                                { "required" : true },
+                                { "width" : 11 }
                             ]
                         },
                         "oid_2" : {
@@ -31,8 +40,13 @@
                             "type" : "varchar",
                             "spinal_pos" : 1,
                             "validation" : [
-                                { "required" : true }
-                            ]
+                                { "required" : true },
+                                { "length" : 56 }
+                            ],
+                            "properties" : {
+                                "charset" : "UTF8",
+                                "collation" : "UCS_BINARY"
+                            }
                         },
                         "placed" : {
                             "scalar" : "6b52abfa-d1e8-48dd-8e7e-1cd473e7cd72",

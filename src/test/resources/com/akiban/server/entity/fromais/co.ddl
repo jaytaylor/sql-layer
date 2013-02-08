@@ -3,7 +3,7 @@ CREATE TABLE customers (
     name VARCHAR(32));
 CREATE TABLE orders(
     oid_1 INT NOT NULL,
-    oid_2 VARCHAR(32) NOT NULL,
+    oid_2 VARCHAR(56) NOT NULL,
     cid INT,
     placed DATE,
     PRIMARY KEY(oid_1, oid_2),
