@@ -492,7 +492,7 @@ public class PersistitStore implements Store, Service {
                         }
                     }
                 }
-                propagateDownGroup(session, hEx, tablesRequiringHKeyMaintenance, indexRow, true);
+                propagateDownGroup(session, hEx, tablesRequiringHKeyMaintenance, indexRow, true, false);
             }
 
             if (deferredIndexKeyLimit <= 0) {
@@ -661,18 +661,25 @@ public class PersistitStore implements Store, Service {
     public void deleteRow(Session session, RowData rowData)
         throws PersistitException
     {
-        deleteRow(session, rowData, true);
+        deleteRow(session, rowData, true, false, null, true);
         // TODO: It should be possible to optimize propagateDownGroup for inserts too
         // deleteRow(session, rowData, hKeyDependentTableOrdinals(rowData.getRowDefId()));
     }
+    
 
     @Override
     public void deleteRow(Session session, RowData rowData, boolean deleteIndexes) throws PersistitException
     {
-        deleteRow(session, rowData, deleteIndexes, null, true);
+        deleteRow(session, rowData, deleteIndexes, false, null, true);
     }
 
-    private void deleteRow(Session session, RowData rowData, boolean deleteIndexes,
+    @Override
+    public void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete) throws PersistitException
+    {
+        deleteRow(session, rowData, deleteIndexes, cascadeDelete, null, true);
+    }
+    
+    private void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete, 
                            BitSet tablesRequiringHKeyMaintenance, boolean propagateHKeyChanges)
         throws PersistitException
     {
@@ -707,7 +714,7 @@ public class PersistitStore implements Store, Service {
             // now become orphans. The hkeys
             // of these rows need to be maintained.
             if(propagateHKeyChanges && hasChildren(rowDef.userTable())) {
-                propagateDownGroup(session, hEx, tablesRequiringHKeyMaintenance, indexRow, deleteIndexes);
+                propagateDownGroup(session, hEx, tablesRequiringHKeyMaintenance, indexRow, deleteIndexes, cascadeDelete);
             }
         } finally {
             DELETE_ROW_TAP.out();
@@ -793,7 +800,7 @@ public class PersistitStore implements Store, Service {
                 // A PK or FK field has changed. The row has to be deleted and reinserted, and hkeys of descendent
                 // rows maintained. tablesRequiringHKeyMaintenance contains the ordinals of the tables whose hkeys
                 // could possible be affected.
-                deleteRow(session, oldRowData, true, tablesRequiringHKeyMaintenance, true);
+                deleteRow(session, oldRowData, true, false, tablesRequiringHKeyMaintenance, true);
                 writeRowStandard(session, mergedRowData, tablesRequiringHKeyMaintenance, true); // May throw DuplicateKeyException
             }
         } finally {
@@ -860,7 +867,8 @@ public class PersistitStore implements Store, Service {
                                     Exchange exchange,
                                     BitSet tablesRequiringHKeyMaintenance,
                                     PersistitIndexRowBuffer indexRowBuffer,
-                                    boolean deleteIndexes)
+                                    boolean deleteIndexes,
+                                    boolean cascadeDelete)
             throws PersistitException
     {
         // exchange is positioned at a row R that has just been replaced by R', (because we're processing an update
@@ -891,8 +899,10 @@ public class PersistitStore implements Store, Service {
                         deleteIndex(session, index, descendentRowData, exchange.getKey(), indexRowBuffer);
                     }
                 }
-                // Reinsert it, recomputing the hkey and maintaining indexes
-                writeRowStandard(session, descendentRowData, tablesRequiringHKeyMaintenance, false);
+                if (!cascadeDelete) {
+                    // Reinsert it, recomputing the hkey and maintaining indexes
+                    writeRowStandard(session, descendentRowData, tablesRequiringHKeyMaintenance, false);
+                }
             }
         }
     }

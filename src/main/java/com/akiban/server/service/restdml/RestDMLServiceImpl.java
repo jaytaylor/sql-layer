@@ -67,7 +67,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     private final ExternalDataService extDataService;
     private InsertProcessor insertProcessor;
     private DeleteProcessor deleteProcessor;
-    
+    private UpdateProcessor updateProcessor;
     @Inject
     public RestDMLServiceImpl(ConfigurationService configService,
                               DXLService dxlService,
@@ -83,6 +83,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
 
         this.insertProcessor = new InsertProcessor (configService, treeService, store, registryService);
         this.deleteProcessor = new DeleteProcessor (configService, treeService, store, registryService);
+        this.updateProcessor = new UpdateProcessor (configService, treeService, store, registryService);
         this.extDataService = extDataService;
     }
     
@@ -180,13 +181,13 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
 
 
     @Override
-    public Response delete(String schema, String table, String identifier) {
+    public Response delete(String schema, String table, String identifier, Integer depth) {
         final TableName tableName = new TableName (schema, table);
         
         try (Session session = sessionService.createSession();
                 CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
             AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-            deleteProcessor.processDelete(session, ais, tableName, identifier);
+            deleteProcessor.processDelete(session, ais, tableName, identifier, depth);
             txn.commit();
             return Response.status(Response.Status.OK)
                     .entity("")
@@ -194,10 +195,31 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         } catch (InvalidOperationException e) {
             throwToClient(e);
         }
-        assert false : "No value returned from insert";
+        assert false : "No value returned from delete";
         return null;
     }
 
+    @Override
+    public Response update(String schema, String table, String values, JsonNode node) {
+        final TableName tableName = new TableName (schema, table);
+        
+        try (Session session = sessionService.createSession();
+                CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+            updateProcessor.processUpdate (session, ais, tableName, values, node);
+            txn.commit();
+            return Response.status(Response.Status.OK)
+                    .entity("")
+                    .build();
+            
+        } catch (InvalidOperationException e) {
+            throwToClient (e);
+        }
+        assert false : "No value returned from update";
+        return null;
+    }
+
+    
     private void throwToClient(InvalidOperationException e) {
         StringBuilder err = new StringBuilder(100);
         err.append("[{\"code\":\"");
@@ -218,4 +240,6 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                         .build()
         );
     }
+    
+    
 }

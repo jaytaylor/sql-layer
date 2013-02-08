@@ -222,7 +222,7 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public void deleteRow(Row oldRow, boolean usePValues)
+        public void deleteRow(Row oldRow, boolean usePValues, boolean cascadeDefault)
         {
             throw new UnsupportedOperationException();
         }

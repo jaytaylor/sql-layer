@@ -116,9 +116,10 @@ public class Delete_Returning extends Operator {
         return new DUIOperatorExplainer(getName(), atts, inputOperator, context);
     }
 
-    public Delete_Returning (Operator inputOperator, boolean usePVals) {
+    public Delete_Returning (Operator inputOperator, boolean usePVals, boolean cascadeDelete) {
         this.inputOperator = inputOperator;
         this.usePValues = usePVals;
+        this.cascadeDelete = cascadeDelete; 
     }
     // Class state
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: DeleteReturning open");
@@ -129,6 +130,7 @@ public class Delete_Returning extends Operator {
 
     protected final Operator inputOperator;
     private final boolean usePValues;
+    private final boolean cascadeDelete;
 
     // Inner classes
     private class Execution extends OperatorExecutionBase implements Cursor
@@ -163,7 +165,7 @@ public class Delete_Returning extends Operator {
                 
                 Row inputRow;
                 if ((inputRow = input.next()) != null) {
-                    adapter().deleteRow(inputRow, usePValues);
+                    adapter().deleteRow(inputRow, usePValues, cascadeDelete);
                     if (LOG_EXECUTION) {
                         LOG.debug("Delete_Returning: deleting {}", inputRow);
                     }

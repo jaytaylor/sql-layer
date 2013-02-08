@@ -101,6 +101,10 @@ public abstract class DelegatingStore<S extends Store & Service> implements Stor
     public void deleteRow(Session session, RowData rowData, boolean deleteIndexes) throws PersistitException {
         delegate.deleteRow(session, rowData);
     }
+    
+    public void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete) throws PersistitException {
+        delegate.deleteRow(session, rowData, deleteIndexes, cascadeDelete);
+    }
 
     public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector, Index[] indexes) throws PersistitException {
         delegate.updateRow(session, oldRowData, newRowData, columnSelector, indexes);

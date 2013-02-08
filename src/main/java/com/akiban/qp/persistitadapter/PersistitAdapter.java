@@ -169,13 +169,13 @@ public class PersistitAdapter extends StoreAdapter
     }
     
     @Override
-    public void deleteRow (Row oldRow, boolean usePValues) {
+    public void deleteRow (Row oldRow, boolean usePValues, boolean cascadeDelete) {
         RowDef rowDef = oldRow.rowType().userTable().rowDef();
         RowData oldRowData = rowData(rowDef, oldRow, rowDataCreator(usePValues));
         oldRowData.setExplicitRowDef(rowDef);
         int oldStep = enterUpdateStep();
         try {
-            store.deleteRow(getSession(), oldRowData);
+            store.deleteRow(getSession(), oldRowData, true, cascadeDelete);
         } catch (InvalidOperationException e) {
             rollbackIfNeeded(e);
             throw e;

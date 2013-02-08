@@ -34,7 +34,6 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.api.dml.ColumnSelector;
@@ -207,6 +206,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             AkibanInformationSchema ais = schemaManager.getAis(session);
             PersistitAdapter adapter = createAdapter(ais, session);
             UserTable uTable = ais.getUserTable(rowData.getRowDefId());
+            boolean cascadeDelete = false;
 
             maintainGroupIndexes(session,
                                  ais,
@@ -215,7 +215,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                                  null,
                                  OperatorStoreGIHandler.forTable(adapter, uTable),
                                  OperatorStoreGIHandler.Action.DELETE);
-            super.deleteRow(session, rowData);
+            super.deleteRow(session, rowData, true, cascadeDelete);
         } finally {
             DELETE_MAINTENANCE.out();
             DELETE_TOTAL.out();

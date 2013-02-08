@@ -26,7 +26,6 @@
 
 package com.akiban.rest.resources;
 
-
 import com.akiban.rest.ResponseHelper;
 import com.akiban.server.service.restdml.RestDMLService;
 import com.google.inject.Inject;
@@ -47,7 +46,6 @@ import javax.ws.rs.core.UriInfo;
 
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
 
 /**
@@ -115,9 +113,10 @@ public class DataAccessOperationsResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteEntity(@PathParam("schema") String schema,
                                  @PathParam("table") String table,
+                                 @QueryParam("depth") Integer depth,
                                  @Context UriInfo uri) throws Exception {
         String[] pks = uri.getPath(false).split("/");
         assert pks.length > 0 : uri;
-        return dmlService.delete(schema, table, pks[pks.length-1]);
+        return dmlService.delete(schema, table, pks[pks.length-1], depth);
     }
 }

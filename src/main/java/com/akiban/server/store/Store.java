@@ -57,6 +57,7 @@ public interface Store {
 
     void deleteRow(Session session, RowData rowData) throws PersistitException;
     void deleteRow(Session session, RowData rowData, boolean deleteIndexes) throws PersistitException;
+    void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete) throws PersistitException;
 
     void updateRow(Session session, RowData oldRowData,
                    RowData newRowData,
