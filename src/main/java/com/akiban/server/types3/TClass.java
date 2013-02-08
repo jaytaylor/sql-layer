@@ -145,13 +145,6 @@ public abstract class TClass {
         output.append(value);
     }
 
-    protected static void attributeToString(Object[] array, long arrayIndex, StringBuilder output) {
-        if ( (array == null) || (arrayIndex < 0) || arrayIndex >= array.length)
-            output.append(arrayIndex);
-        else
-            output.append(array[(int)arrayIndex]);
-    }
-
     protected PValueIO getPValueIO() {
         return defaultPValueIO;
     }
@@ -205,6 +198,10 @@ public abstract class TClass {
 
     public int nAttributes() {
         return attributes.length;
+    }
+
+    public String attributeName(int index) {
+        return attributes[index].name().toLowerCase();
     }
 
     public TName name() {

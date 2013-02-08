@@ -424,6 +424,13 @@ public class AkInterval extends TClassBase {
             return false;
     }
 
+    private static void attributeToString(IntervalFormat[] formatters, long arrayIndex, StringBuilder output) {
+        if ( (formatters == null) || (arrayIndex < 0) || arrayIndex >= formatters.length)
+            output.append(arrayIndex);
+        else
+            output.append(formatters[(int)arrayIndex]);
+    }
+
     private final IntervalFormat[] formatters;
     private final Attribute formatAttribute;
     private final Map<TypeId,IntervalFormat> typeIdToFormat;
