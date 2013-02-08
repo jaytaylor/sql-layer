@@ -26,10 +26,6 @@
 
 package com.akiban.util;
 
-<<<<<<< TREE
-//import com.akiban.server.entity.model.SpaceValidation;
-=======
->>>>>>> MERGE-SOURCE
 import com.google.common.base.Functions;
 import com.google.common.collect.Lists;
 

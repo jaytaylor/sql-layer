@@ -33,7 +33,6 @@ import com.akiban.util.JUnitUtils;
 import com.akiban.util.Strings;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
-import java.io.StringWriter;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -84,91 +83,4 @@ public final class SpaceDiffTest {
 
     private final String testName;
     private static final File dir = JUnitUtils.getContainingFile(SpaceDiffTest.class);
-
-<<<<<<< TREE
-    private static class StringChangeLog extends JUnitUtils.MessageTaker implements SpaceModificationHandler {
-
-        @Override
-        public void addEntry(UUID entityUuid) {
-            message("add entry", entityUuid);
-        }
-
-        @Override
-        public void dropEntry(Entity dropped) {
-            message("drop entry", dropped);
-        }
-
-        @Override
-        public void renameEntry(UUID entityUuid, String oldName) {
-            message("rename entry", entityUuid, oldName);
-        }
-
-        @Override
-        public void addAttribute(UUID attributeUuid) {
-            message("add attribute", attributeUuid);
-        }
-
-        @Override
-        public void dropAttribute(Attribute dropped) {
-            message("drop attribute", dropped);
-        }
-
-        @Override
-        public void renameAttribute(UUID attributeUuid, String oldName) {
-            message("rename attribute", attributeUuid, oldName);
-        }
-
-        @Override
-        public void changeScalarType(UUID scalarUuid, Attribute afterChange) {
-            message("change scalar type", scalarUuid, afterChange.getType());
-        }
-
-        @Override
-        public void changeScalarValidations(UUID scalarUuid, Attribute afterChange) {
-            message("change scalar validation", scalarUuid, afterChange.getValidation());
-        }
-
-        @Override
-        public void changeScalarProperties(UUID scalarUuid, Attribute afterChange) {
-            message("change scalar properties", scalarUuid, afterChange);
-        }
-
-        @Override
-        public void addEntityValidation(Validation validation) {
-            message("add entity validation", validation);
-        }
-
-        @Override
-        public void dropEntityValidation(Validation validation) {
-            message("drop entity validation", validation);
-        }
-
-        @Override
-        public void addIndex(EntityIndex index) {
-            message("add index", index);
-        }
-
-        @Override
-        public void dropIndex(String name, EntityIndex index) {
-            message("drop index", name, index);
-        }
-
-        @Override
-        public void renameIndex(EntityIndex index, String oldName, String newName) {
-            message("rename index", oldName, newName);
-        }
-
-        @Override
-        public void error(String message) {
-            message("error", message);
-        }
-
-        @Override
-        public StringWriter toJSON()
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-    }
-=======
->>>>>>> MERGE-SOURCE
 }
