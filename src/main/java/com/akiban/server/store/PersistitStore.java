@@ -51,6 +51,7 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
+import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.statistics.Histogram;
@@ -420,9 +421,9 @@ public class PersistitStore implements Store, Service {
                                   boolean propagateHKeyChanges) throws PersistitException
     {
         final RowDef rowDef = writeRowCheck(session, rowData, false);
-
         Exchange hEx;
         hEx = getExchange(session, rowDef);
+        lockKeys(adapter(session), rowDef, rowData, hEx);
         WRITE_ROW_TAP.in();
         try {
             // Does the heavy lifting of looking up the full hkey in
@@ -448,11 +449,14 @@ public class PersistitStore implements Store, Service {
                     rowDef.getTableStatus().setAutoIncrement(autoIncrementValue);
                 }
             }
-            rowDef.getTableStatus().rowsWritten(1);
+
             PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
             for (Index index : rowDef.getIndexes()) {
                 insertIntoIndex(session, index, rowData, hEx.getKey(), indexRow, deferIndexes);
             }
+
+            // bug1112940: Bump row count *after* uniqueness checks in insertIntoIndex
+            rowDef.getTableStatus().rowsWritten(1);
 
             if (propagateHKeyChanges && hasChildren(rowDef.userTable())) {
                 // The row being inserted might be the parent of orphan rows
@@ -673,12 +677,11 @@ public class PersistitStore implements Store, Service {
         throws PersistitException
     {
         RowDef rowDef = writeCheck(session, rowData, false);
-
         Exchange hEx = null;
         DELETE_ROW_TAP.in();
         try {
             hEx = getExchange(session, rowDef);
-
+            lockKeys(adapter(session), rowDef, rowData, hEx);
             constructHKey(session, hEx, rowDef, rowData, false);
             hEx.fetch();
             //
@@ -742,11 +745,13 @@ public class PersistitStore implements Store, Service {
         // Only non-pk or grouping columns could have change in this scenario
         RowDef rowDef = writeCheck(session, oldRowData, false);
         RowDef newRowDef = rowDefFromExplicitOrId(session, newRowData);
-
+        PersistitAdapter adapter = adapter(session);
         Exchange hEx = null;
         UPDATE_ROW_TAP.in();
         try {
             hEx = getExchange(session, rowDef);
+            lockKeys(adapter, rowDef, oldRowData, hEx);
+            lockKeys(adapter, newRowDef, newRowData, hEx);
             constructHKey(session, hEx, rowDef, oldRowData, false);
             hEx.fetch();
             //
@@ -775,7 +780,6 @@ public class PersistitStore implements Store, Service {
                 // Store the h-row
                 hEx.store();
                 // Update the indexes
-                PersistitAdapter adapter = adapter(session);
                 PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(adapter);
                 Index[] indexes = (indexesToMaintain == null) ? rowDef.getIndexes() : indexesToMaintain;
                 for (Index index : indexes) {
@@ -1436,7 +1440,8 @@ public class PersistitStore implements Store, Service {
             LOG.error("Corrupt RowData at key {}: {}", exchange.getKey(), e.getMessage());
             throw new RowDataCorruptionException(exchange.getKey());
         }
-        rowData.prepareRow(0);
+        // UNNECESSARY: Already done by value.directGet(...)
+        // rowData.prepareRow(0);
         int rowDefId = treeService.storeToAis(exchange.getVolume(), rowData.getRowDefId());
         /*
          * Overwrite the rowDefId field within the RowData instance with the
@@ -1702,7 +1707,7 @@ public class PersistitStore implements Store, Service {
 
     private TreeBuilder createTreeBuilder(String name, float bufferBoolFraction) {
         TreeBuilder tb = new TreeBuilder(getDb(), name, -1, bufferBoolFraction)
-//        // TODO: throw an Akiban dup-key exception once we can handle them
+        // TODO: throw an Akiban dup-key exception once we can handle them
         {
             @Override
             protected boolean duplicateKeyDetected(Tree tree, Key key, Value v1, Value v2) throws Exception {
@@ -1717,6 +1722,49 @@ public class PersistitStore implements Store, Service {
             }
         }
         return tb;
+    }
+
+    private void lockKeys(PersistitAdapter adapter, RowDef rowDef, RowData rowData, Exchange exchange)
+        throws PersistitException
+    {
+        UserTable table = rowDef.userTable();
+        // Make fieldDefs big enough to accomodate PK field defs and FK field defs
+        FieldDef[] fieldDefs = new FieldDef[table.getColumnsIncludingInternal().size()];
+        Key lockKey = adapter.newKey();
+        PersistitKeyAppender lockKeyAppender = PersistitKeyAppender.create(lockKey);
+        // Primary key
+        List<Column> pkColumns = table.getPrimaryKeyIncludingInternal().getColumns();
+        for (int c = 0; c < pkColumns.size(); c++) {
+            fieldDefs[c] = rowDef.getFieldDef(c);
+        }
+        lockKey(rowData, table, fieldDefs, pkColumns.size(), lockKeyAppender, exchange);
+        // Grouping foreign key
+        Join parentJoin = table.getParentJoin();
+        if (parentJoin != null) {
+            List<JoinColumn> joinColumns = parentJoin.getJoinColumns();
+            for (int c = 0; c < joinColumns.size(); c++) {
+                fieldDefs[c] = rowDef.getFieldDef(joinColumns.get(c).getChild().getPosition());
+            }
+            lockKey(rowData, parentJoin.getParent(), fieldDefs, joinColumns.size(), lockKeyAppender, exchange);
+        }
+    }
+
+    private void lockKey(RowData rowData,
+                         UserTable lockTable,
+                         FieldDef[] fieldDefs,
+                         int nFields,
+                         PersistitKeyAppender lockKeyAppender,
+                         Exchange exchange)
+        throws PersistitException
+    {
+        // Write ordinal id to the lock key
+        lockKeyAppender.key().append(lockTable.rowDef().getOrdinal());
+        // Write column values to the lock key
+        for (int f = 0; f < nFields; f++) {
+            lockKeyAppender.append(fieldDefs[f], rowData);
+        }
+        exchange.lock(lockKeyAppender.key());
+        lockKeyAppender.clear();
     }
 
     private class Bulkload {

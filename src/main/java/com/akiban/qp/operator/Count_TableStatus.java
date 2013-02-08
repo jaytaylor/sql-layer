@@ -40,6 +40,8 @@ import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 
@@ -128,7 +130,8 @@ class Count_TableStatus extends Operator
     
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Count_TableStatus open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Count_TableStatus next");
-    
+    private static final Logger LOG = LoggerFactory.getLogger(Count_TableStatus.class);
+
     // Object state
 
     private final RowType tableType;
@@ -162,22 +165,33 @@ class Count_TableStatus extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
+                Row output;
                 checkQueryCancelation();
                 if (pending) {
                     long rowCount = adapter().rowCount(tableType);
                     close();
-                    return usePValues
-                            ? new PValuesRow(resultType, new PValue(MNumeric.BIGINT.instance(false), rowCount))
-                            : new ValuesRow(resultType, new Object[] { rowCount });
+                    output = usePValues
+                             ? new PValuesRow(resultType, new PValue(MNumeric.BIGINT.instance(false), rowCount))
+                             : new ValuesRow(resultType, new Object[] { rowCount });
                 }
                 else {
-                    return null;
+                    output = null;
                 }
+                if (LOG_EXECUTION) {
+                    LOG.debug("Count_TableStatus: yield {}", output);
+                }
+                return output;
             } finally {
-                TAP_NEXT.out();
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
 

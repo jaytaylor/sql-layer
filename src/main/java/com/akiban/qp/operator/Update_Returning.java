@@ -34,6 +34,8 @@ import com.akiban.server.explain.PrimitiveExplainer;
 import com.akiban.server.explain.std.DUIOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
 
@@ -120,11 +122,12 @@ public class Update_Returning extends Operator {
 
     private final Operator inputOperator;
     private final UpdateFunction updateFunction;
+    private final boolean usePValues;
     // Class state
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: UpdateReturning open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: UpdateReturning next");
-    private final boolean usePValues;
-    
+    private static final Logger LOG = LoggerFactory.getLogger(Update_Returning.class);
+
     // Inner classes
     private class Execution extends OperatorExecutionBase implements Cursor
     {
@@ -147,9 +150,13 @@ public class Update_Returning extends Operator {
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 checkQueryCancelation();
                 
                 Row inputRow;
@@ -159,9 +166,14 @@ public class Update_Returning extends Operator {
                     context.checkConstraints(newRow, usePValues);
                     adapter().updateRow(inputRow, newRow, usePValues);
                 }
+                if (LOG_EXECUTION) {
+                    LOG.debug("Update_Returning: updating {} to {}", inputRow, newRow);
+                }
                 return newRow; 
             } finally {
-                TAP_NEXT.out();
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
     

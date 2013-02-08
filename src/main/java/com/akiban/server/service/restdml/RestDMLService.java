@@ -28,7 +28,10 @@ package com.akiban.server.service.restdml;
 
 import javax.ws.rs.core.Response;
 
+import org.codehaus.jackson.JsonNode;
+
 public interface RestDMLService {
+    public Response insert(String schema, String table, JsonNode node);
     public Response getAllEntities(String schema, String table, Integer depth);
     public Response getEntities(String schema, String table, Integer depth, String pks);
 }

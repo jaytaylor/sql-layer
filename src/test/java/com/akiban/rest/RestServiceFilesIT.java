@@ -185,21 +185,31 @@ public class RestServiceFilesIT extends ITBase {
         URL requestURL = getRestURL(caseParams.requestURI);
         HttpURLConnection httpConn = (HttpURLConnection)requestURL.openConnection();
 
-        if(!caseParams.requestMethod.equals("GET")) {
+        if(caseParams.requestMethod.equals("DELETE")) {
             throw new UnsupportedOperationException("Unsupported method: " + caseParams.requestMethod);
         }
 
         httpConn.setRequestMethod(caseParams.requestMethod);
         httpConn.setUseCaches(false);
-        httpConn.setDoInput(true);
         httpConn.setDoOutput(true);
 
-        httpConn.connect();
         try {
             // Request
             // TODO: write to getOutputStream for PUT and POST
-
+            if (caseParams.requestMethod.equals("POST") || caseParams.requestMethod.equals("PUT")) {
+                if (caseParams.requestBody == null) {
+                    throw new UnsupportedOperationException ("PUT/POST expects request body (<test>.body)");
+                }
+                LOG.debug(caseParams.requestBody);
+                byte[] request = caseParams.requestBody.getBytes();
+                httpConn.setDoInput(true);
+                httpConn.setFixedLengthStreamingMode(request.length);
+                httpConn.setRequestProperty("Content-Type", "application/json");
+                httpConn.setRequestProperty("Accept", "application/json");
+                httpConn.getOutputStream().write(request);
+            }
             // Response
+            
             InputStream is;
             try {
                 is = httpConn.getInputStream();
@@ -208,7 +218,7 @@ public class RestServiceFilesIT extends ITBase {
             }
             StringBuilder builder = new StringBuilder();
             Strings.readStreamTo(is, builder, true);
-
+            
             ObjectMapper mapper = new ObjectMapper();
             JsonNode expectedNode = mapper.readTree(caseParams.expectedResponse);
             JsonNode actualNode = mapper.readTree(builder.toString());

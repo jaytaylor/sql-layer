@@ -227,6 +227,7 @@ public class OperatorITBase extends ITBase
         } catch (CursorLifecycle.WrongStateException e) {
             // expected
         }
+/*
         // Check next after destroy disallowed
         try {
             cursor.next();
@@ -241,6 +242,7 @@ public class OperatorITBase extends ITBase
         } catch (CursorLifecycle.WrongStateException e) {
             // expected
         }
+*/
     }
 
     protected void use(NewRow[] db)
