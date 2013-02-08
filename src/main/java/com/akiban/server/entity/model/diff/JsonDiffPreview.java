@@ -45,8 +45,8 @@ public class JsonDiffPreview implements SpaceModificationHandler
 {
     private final JsonFactory factory = new JsonFactory();
     
-    private /*final*/ JsonGenerator jsonGen; // find json print stream
-    private /*final*/ StringWriter stringWriter;
+    private JsonGenerator jsonGen; // find json print stream
+    private StringWriter stringWriter;
     private boolean useDefaultPrettyPrinter = true;
     
     public JsonDiffPreview()
@@ -60,8 +60,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ex.printStackTrace();
-            // TODO: report error
+            
         }
     }
 
@@ -73,8 +72,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ex.printStackTrace();
-            //TODO:  REPORT error?
+            ioException(ex);
         }
         return stringWriter;
     }
@@ -92,8 +90,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ex.printStackTrace();
-            // TODO REPORT error back to client ?
+            ioException(ex);
         }
     }
 
@@ -111,8 +108,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ex.printStackTrace();
-            //TODO: report error?
+            ioException(ex);
         }
     }
 
@@ -130,8 +126,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ex.printStackTrace();
-            // TODO: report error
+            ioException(ex);
         }
     }
 
@@ -148,8 +143,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ex.printStackTrace();
-            // TODO: report error
+            ioException(ex);
         }
     }
 
@@ -166,8 +160,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ex.printStackTrace();
-            // TODO: report error
+            ioException(ex);
         }
     }
 
@@ -185,8 +178,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ex.printStackTrace();
-            // TODO: report error
+            ioException(ex);
         }
     }
 
@@ -204,8 +196,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ex.printStackTrace();
-            // TODO: report error
+            ioException(ex);
         }
     }
 
@@ -216,15 +207,14 @@ public class JsonDiffPreview implements SpaceModificationHandler
         {
             startObject();
             entry("action", "change_scalar_validations");
-            entry("destructive", true); //TODO: or false?
+            entry("destructive", true);
             entry("uuid", scalarUuid);
             entry("new_validations", afterChange.getValidation());
             endObject();
         }
         catch (IOException ex)
         {
-            ex.printStackTrace();
-            // TODO: report error
+            ioException(ex);
         }
     }
 
@@ -235,36 +225,31 @@ public class JsonDiffPreview implements SpaceModificationHandler
         {
             startObject();
             entry("action", "change_scalar_properties");
-            entry("destructive", true); // TODO: or false?
+            entry("destructive", true);
             entry("uuid", scalarUuid);
             entry("new_properties", afterChange.getProperties());
             endObject();
         }
         catch (IOException ex)
         {
-            ex.printStackTrace();
-            // TODO: report error
+            ioException(ex);
         }
     }
 
     @Override
     public void addEntityValidation(Validation validation)
     {
-        //TODO: shouldn't there be an "uuid" argument,
-        //      identifying what entity to add this validation to?
         try
         {
             startObject();
             entry("action", "add_entity_validation");
             entry("destructive", false);
-            //entry("uuid", entityUuid);
             entry("new_validation", validation);
             endObject();
         }
         catch (IOException ex)
         {
-            ex.printStackTrace();
-            // TODO: report error
+            ioException(ex);
         }
     }
 
@@ -281,8 +266,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ex.printStackTrace();
-            // TODO: report error
+            ioException(ex);
         }
     }
 
@@ -299,8 +283,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ex.printStackTrace();
-            // TODO: report error
+            ioException(ex);
         }
     }
 
@@ -318,8 +301,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ex.printStackTrace();
-            // TODO: report error
+            ioException(ex);
         }
     }
 
@@ -338,8 +320,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ex.printStackTrace();
-            // TODO: report error
+            ioException(ex);
         }
     }
 
@@ -354,8 +335,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ex.printStackTrace();
-            // TODO: report error
+            ioException(ex);
             
         }
     }
@@ -368,7 +348,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
     
     private void endObject() throws IOException
     {
-        jsonGen.writeEndObject();;
+        jsonGen.writeEndObject();
         //TODO: release the buffer ?
     }
     
@@ -383,5 +363,10 @@ public class JsonDiffPreview implements SpaceModificationHandler
     {
         jsonGen.writeFieldName(name);
         jsonGen.writeObject(value);
+    }
+    
+    private static Exception ioException(Exception e)
+    {
+        return new DiffIOException(e.getMessage());
     }
 }
