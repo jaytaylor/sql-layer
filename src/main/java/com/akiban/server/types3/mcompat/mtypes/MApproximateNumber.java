@@ -56,7 +56,12 @@ public class MApproximateNumber extends SimpleDtdTClass
                 1, 1, 8,
                 underlying, parser, defaultVarcharLen, typeId);
     }
-    
+
+    @Override
+    public boolean attributeIsPhysical(int attributeIndex) {
+        return true;
+    }
+
     @Override
     public TInstance instance(boolean nullable)
     {
