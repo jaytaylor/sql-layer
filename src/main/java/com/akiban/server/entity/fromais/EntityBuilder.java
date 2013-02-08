@@ -28,6 +28,7 @@ package com.akiban.server.entity.fromais;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Join;
+import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.entity.model.Attribute;
@@ -36,8 +37,11 @@ import com.akiban.server.entity.model.Validation;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 final class EntityBuilder {
@@ -51,7 +55,21 @@ final class EntityBuilder {
     private void buildScalars(Map<String, Attribute> attributes, UserTable table) {
         PrimaryKey primaryKey = table.getPrimaryKey();
         List<Column> pkColumns = primaryKey == null ? null : primaryKey.getColumns();
+        Join parentJoin = table.getParentJoin();
+        Set<Column> parentJoinColumns;
+        if (parentJoin == null) {
+            parentJoinColumns = Collections.emptySet();
+        }
+        else {
+            List<JoinColumn> joinColumns = parentJoin.getJoinColumns();
+            parentJoinColumns = new HashSet<>(joinColumns.size());
+            for (JoinColumn joinColumn : joinColumns)
+                parentJoinColumns.add(joinColumn.getChild());
+        }
+
         for (Column column : table.getColumns()) {
+            if (parentJoinColumns.contains(column))
+                continue;
             TInstance tInstance = column.tInstance();
             TClass tClass = tInstance.typeClass();
             String type = tClass.name().unqualifiedName();
