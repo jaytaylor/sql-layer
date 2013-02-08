@@ -27,7 +27,6 @@
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -44,10 +43,12 @@ import com.akiban.util.Strings;
 import com.akiban.util.tap.InOutTap;
 
 import com.google.common.base.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  <h1>Overview</h1>
@@ -186,8 +187,9 @@ final class UnionAll_Default extends Operator {
     // Class state
     
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: UnionAll_Default open"); 
-    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: UnionAll_Default next"); 
-    
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: UnionAll_Default next");
+    private static final Logger LOG = LoggerFactory.getLogger(UnionAll_Default.class);
+
     // Object state
 
     private final List<? extends Operator> inputs;
@@ -227,9 +229,13 @@ final class UnionAll_Default extends Operator {
 
         @Override
         public Row next() {
-            TAP_NEXT.in();
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 Row outputRow;
                 if (currentCursor == null) {
                     outputRow = nextCursorFirstRow();
@@ -244,11 +250,18 @@ final class UnionAll_Default extends Operator {
                 if (outputRow == null) {
                     close();
                     idle = true;
-                    return null;
                 }
-                return wrapped(outputRow);
+                else {
+                    outputRow = wrapped(outputRow);
+                }
+                if (LOG_EXECUTION) {
+                    LOG.debug("UnionAll_Default: yield {}", outputRow);
+                }
+                return outputRow;
             } finally {
-                TAP_NEXT.out();
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
 

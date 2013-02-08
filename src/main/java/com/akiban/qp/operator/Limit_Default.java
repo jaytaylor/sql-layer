@@ -40,6 +40,8 @@ import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -172,7 +174,8 @@ final class Limit_Default extends Operator
     
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Limit_Default open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Limit_Default next");
-    
+    private static final Logger LOG = LoggerFactory.getLogger(Limit_Default.class);
+
     // Object state
 
     private final int skip, limit;
@@ -254,9 +257,13 @@ final class Limit_Default extends Operator
 
         @Override
         public Row next() {
-            TAP_NEXT.in();
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 checkQueryCancelation();
                 Row row;
                 while (skipLeft > 0) {
@@ -264,27 +271,44 @@ final class Limit_Default extends Operator
                         skipLeft = 0;
                         limitLeft = -1;
                         close();
+                        if (LOG_EXECUTION) {
+                            LOG.debug("Limit_Default: yield null");
+                        }
                         return null;
                     }
                     skipLeft--;
                 }
                 if (limitLeft < 0) {
                     close();
+                    if (LOG_EXECUTION) {
+                        LOG.debug("Limit_Default: yield null");
+                    }
                     return null;
                 }
                 if (limitLeft == 0) {
                     close();
+                    if (LOG_EXECUTION) {
+                        LOG.debug("Limit_Default: yield null");
+                    }
                     return null;
                 }
                 if ((row = input.next()) == null) {
                     limitLeft = -1;
                     close();
+                    if (LOG_EXECUTION) {
+                        LOG.debug("Limit_Default: yield null");
+                    }
                     return null;
                 }
                 --limitLeft;
+                if (LOG_EXECUTION) {
+                    LOG.debug("Limit_Default: yield {}", row);
+                }
                 return row;
             } finally {
-                TAP_NEXT.out();
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
 

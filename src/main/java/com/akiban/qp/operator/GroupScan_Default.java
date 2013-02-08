@@ -29,13 +29,13 @@ package com.akiban.qp.operator;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.server.explain.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
-import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
 
@@ -114,6 +114,7 @@ class GroupScan_Default extends Operator
 
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: GroupScan_Default open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: GroupScan_Default next");
+    private static final Logger LOG = LoggerFactory.getLogger(GroupScan_Default.class);
 
     // Object state
 
@@ -153,7 +154,9 @@ class GroupScan_Default extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
                 checkQueryCancelation();
                 Row row;
@@ -161,9 +164,14 @@ class GroupScan_Default extends Operator
                     close();
                     row = null;
                 }
+                if (LOG_EXECUTION) {
+                    LOG.debug("GroupScan_Default: yield {}", row);
+                }
                 return row;
             } finally {
-                TAP_NEXT.out();
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
 

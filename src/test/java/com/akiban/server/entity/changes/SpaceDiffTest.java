@@ -28,11 +28,7 @@ package com.akiban.server.entity.changes;
 
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
-import com.akiban.server.entity.model.Attribute;
-import com.akiban.server.entity.model.Entity;
-import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Space;
-import com.akiban.server.entity.model.Validation;
 import com.akiban.util.JUnitUtils;
 import com.akiban.util.Strings;
 import com.google.common.base.Function;
@@ -48,7 +44,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import static com.akiban.util.AssertUtils.assertCollectionEquals;
 
@@ -90,6 +85,7 @@ public final class SpaceDiffTest {
     private final String testName;
     private static final File dir = JUnitUtils.getContainingFile(SpaceDiffTest.class);
 
+<<<<<<< TREE
     private static class StringChangeLog extends JUnitUtils.MessageTaker implements SpaceModificationHandler {
 
         @Override
@@ -173,4 +169,6 @@ public final class SpaceDiffTest {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }
+=======
+>>>>>>> MERGE-SOURCE
 }

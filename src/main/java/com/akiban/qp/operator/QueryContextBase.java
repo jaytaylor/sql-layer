@@ -48,6 +48,7 @@ public abstract class QueryContextBase implements QueryContext
     private SparseArray<Object> bindings = new SparseArray<Object>();
     // startTimeMsec is used to control query timeouts.
     private final long startTimeMsec = System.currentTimeMillis();
+    private long queryTimeoutMsec = Long.MAX_VALUE;
 
     @Override
     public String toString() {
@@ -63,6 +64,15 @@ public abstract class QueryContextBase implements QueryContext
         return (PValueSource)bindings.get(index);
     }
 
+    /*
+     * (non-Javadoc)
+     * @see com.akiban.qp.operator.QueryContext#setPValue(int, com.akiban.server.types3.pvalue.PValueSource)
+     * This makes a copy of the PValueSource value, rather than simply
+     * storing the reference. The assumption is the PValueSource parameter
+     * will be reused by the caller as rows are processed, so the QueryContext
+     * needs to keep a copy of the underlying value.
+     *
+     */
     @Override
     public void setPValue(int index, PValueSource value) {
         PValue holder = null;
@@ -77,7 +87,7 @@ public abstract class QueryContextBase implements QueryContext
         }
         PValueTargets.copyFrom(value, holder);
     }
-
+    
     @Override
     public ValueSource getValue(int index) {
         if (!bindings.isDefined(index))
@@ -207,7 +217,10 @@ public abstract class QueryContextBase implements QueryContext
 
     @Override
     public long getQueryTimeoutMilli() {
-        return getStore().getQueryTimeoutMilli();
+        if (queryTimeoutMsec == Long.MAX_VALUE) {
+            queryTimeoutMsec = getStore().getQueryTimeoutMilli();
+        }
+        return queryTimeoutMsec;
     }
 
     @Override

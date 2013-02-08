@@ -29,12 +29,15 @@ package com.akiban.server.entity.model;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableBiMap;
+import com.google.common.collect.Lists;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -63,11 +66,12 @@ public final class Entity {
 
     @SuppressWarnings("unused")
     void setValidation(List<Map<String, ?>> validations) {
-        this.validations = new ArrayList<>(validations.size());
+        this.validations = new HashSet<>(validations.size());
         for (Map<String, ?> validation : validations) {
-            this.validations.add(new Validation(validation));
+            if (!this.validations.add(new Validation(validation)))
+                throw new IllegalEntityDefinition("duplicate validation: " + validation);
         }
-        this.validations = Collections.unmodifiableList(this.validations);
+        this.validations = Collections.unmodifiableSet(this.validations);
     }
 
     public BiMap<String, EntityIndex> getIndexes() {
@@ -78,7 +82,8 @@ public final class Entity {
     void setIndexes(Map<String, List<List<String>>> indexes) {
         this.indexes = HashBiMap.create(indexes.size());
         for (Map.Entry<String, List<List<String>>> entry : indexes.entrySet()) {
-            EntityIndex index = new EntityIndex(entry.getValue());
+            List<EntityColumn> columns = Lists.transform(entry.getValue(), EntityColumn.namesToColumn);
+            EntityIndex index = new EntityIndex(columns);
             if (this.indexes.put(entry.getKey(), index) != null)
                 throw new IllegalEntityDefinition("multiple names given for index: " + index);
         }
@@ -92,22 +97,27 @@ public final class Entity {
 
     private UUID uuid;
     private Map<String, Attribute> attributes = Collections.emptyMap();
-    private List<Validation> validations = Collections.emptyList();
+    private Set<Validation> validations = Collections.emptySet();
     private BiMap<String, EntityIndex> indexes = ImmutableBiMap.of();
+
+    public static Entity modifiableEntity(UUID uuid) {
+        Entity entity = new Entity();
+        entity.uuid = uuid;
+        entity.attributes = new HashMap<>();
+        entity.validations = new HashSet<>();
+        entity.indexes = HashBiMap.create();
+        return entity;
+    }
 
     Entity() {}
 
-    public void accept(String myName, EntityVisitor visitor) {
+    public <E extends Exception> void accept(String myName, EntityVisitor<E>  visitor) throws E {
         visitor.visitEntity(myName, this);
         for (Map.Entry<String, Attribute> entry : attributes.entrySet()) {
             entry.getValue().accept(entry.getKey(), visitor);
         }
-        for (Validation validation : validations) {
-            validation.accept(visitor);
-        }
-        for (Map.Entry<String, EntityIndex> entry : new TreeMap<>(indexes).entrySet()) {
-            entry.getValue().accept(entry.getKey(), visitor);
-        }
+        visitor.visitEntityValidations(validations);
+        visitor.visitIndexes(indexes);
         visitor.leaveEntity();
     }
 }

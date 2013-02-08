@@ -26,6 +26,7 @@
 
 package com.akiban.server.entity.model;
 
+import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -69,7 +70,7 @@ public final class Space {
         }
     }
 
-    public void visit(EntityVisitor visitor) {
+    public <E extends Exception> void visit(EntityVisitor<E> visitor) throws E {
         for (Map.Entry<String, Entity> entry : entities.entrySet()) {
             entry.getValue().accept(entry.getKey(), visitor);
         }
@@ -89,6 +90,21 @@ public final class Space {
         return entities.toString();
     }
 
+    public static Space create(Map<String, Entity> entities) {
+        Space space = new Space();
+        space.setEntities(entities);
+        space.visit(new Validator());
+        return space;
+    }
+
+    public void toJson(JsonGenerator json) throws IOException {
+        json.writeStartObject();
+        json.writeObjectFieldStart("entities");
+        visit(new JsonEntityFormatter(json));
+        json.writeEndObject();
+        json.writeEndObject();
+    }
+
     Space() {}
 
     private Map<String, Entity> entities = Collections.emptyMap();
@@ -98,6 +114,7 @@ public final class Space {
         @Override
         public void visitEntity(String name, Entity entity) {
             validateUUID(entity.uuid());
+            ensureUnique(name);
             if (entity.getAttributes() == null || entity.getAttributes().isEmpty())
                 throw new IllegalEntityDefinition("no attributes set for entity: " + name);
         }
@@ -114,6 +131,7 @@ public final class Space {
         @Override
         public void visitCollection(String name, Attribute collection) {
             validateUUID(collection.getUUID());
+            ensureUnique(name);
             if (collection.getType() != null)
                 throw new IllegalEntityDefinition("type can't be set for collection");
             if (collection.getAttributes() == null || collection.getAttributes().isEmpty())
@@ -127,6 +145,12 @@ public final class Space {
                 throw new IllegalEntityDefinition("duplicate uuid found: " + uuid);
         }
 
+        private void ensureUnique(String name) {
+            if (!collectionNames.add(name))
+                throw new IllegalEntityDefinition("duplicate name within entity and collections: " + name);
+        }
+
         private final Set<UUID> uuids = new HashSet<>();
+        private final Set<String> collectionNames = new HashSet<>();
     }
 }

@@ -26,8 +26,11 @@
 
 package com.akiban.server.entity.model;
 
+import org.codehaus.jackson.annotate.JsonProperty;
+
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +74,7 @@ public final class Attribute {
         this.type = type;
     }
 
-    public Map<String, ?> getProperties() {
+    public Map<String, Object> getProperties() {
         return properties;
     }
 
@@ -94,12 +97,17 @@ public final class Attribute {
         this.validations = Collections.unmodifiableSet(this.validations);
     }
 
+    public boolean isSpinal() {
+        return spine >= 0;
+    }
+
     public int getSpinePos() {
         return spine;
     }
 
     @SuppressWarnings("unused")
-    void setSpine_pos(int spine) {
+    @JsonProperty("spinal_pos")
+    public void setSpinalPos(int spine) {
         if (spine < 0)
             throw new IllegalEntityDefinition("spine may not be negative");
         this.spine = spine;
@@ -136,16 +144,34 @@ public final class Attribute {
 
     // scalar fields
     private String type;
-    private Map<String, ?> properties;
+    private Map<String, Object> properties;
     private Set<Validation> validations;
-    private int spine;
+    private int spine = -1;
 
     // collection fields
     private Map<String, Attribute> attributes;
 
+    public static Attribute modifiableScalar(UUID uuid, String type) {
+        Attribute scalar = new Attribute();
+        scalar.uuid = uuid;
+        scalar.attributeType = AttributeType.SCALAR;
+        scalar.type = type;
+        scalar.properties = new HashMap<>();
+        scalar.validations = new HashSet<>();
+        return scalar;
+    }
+
+    public static Attribute modifiableCollection(UUID uuid) {
+        Attribute collection = new Attribute();
+        collection.uuid = uuid;
+        collection.attributeType = AttributeType.COLLECTION;
+        collection.attributes = new HashMap<>();
+        return collection;
+    }
+
     private Attribute() {}
 
-    public void accept(String myName, EntityVisitor visitor) {
+    public <E extends Exception> void accept(String myName, EntityVisitor<E> visitor) throws E {
         if (attributeType == null)
             throw new IllegalEntityDefinition("attribute " + myName + " has no attribute type (scalar or collection)");
         if (attributeType == AttributeType.SCALAR) {

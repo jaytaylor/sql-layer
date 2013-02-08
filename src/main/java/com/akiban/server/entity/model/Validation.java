@@ -26,6 +26,8 @@
 
 package com.akiban.server.entity.model;
 
+import com.akiban.util.ArgumentValidation;
+
 import java.util.Map;
 import java.util.Objects;
 
@@ -60,10 +62,6 @@ public final class Validation {
         return String.format("%s: %s", name, value);
     }
 
-    public void accept(EntityVisitor visitor) {
-        visitor.visitEntityValidation(this);
-    }
-
     Validation(Map<String, ?> validation) {
         if (validation.size() != 1)
             throw new IllegalEntityDefinition("illegal validation definition (map must have one entry)");
@@ -73,7 +71,8 @@ public final class Validation {
     }
 
     // for testing
-    Validation(String name, Object value) {
+    public Validation(String name, Object value) {
+        ArgumentValidation.notNull("validation name", name);
         this.name = name;
         this.value = value;
     }

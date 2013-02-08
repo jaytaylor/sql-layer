@@ -26,9 +26,7 @@
 
 package com.akiban.server.entity.model;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 
 import java.util.List;
 
@@ -58,30 +56,13 @@ public final class EntityIndex {
         return columns.toString();
     }
 
-    public void accept(String myName, EntityVisitor visitor) {
-        visitor.visitIndex(myName, this);
-    }
-
-    EntityIndex(List<List<String>> index) {
-        this.columns = ImmutableList.copyOf(Lists.transform(index, namesToColumn));
-    }
-
-    // the Void is only here to disambiguate in the face of erasure
-    private EntityIndex(List<EntityColumn> columns, @SuppressWarnings("unused") Void placeholder) {
+    public EntityIndex(List<EntityColumn> columns) {
         this.columns = ImmutableList.copyOf(columns);
     }
 
     public static EntityIndex create(List<EntityColumn> columns) {
-        return new EntityIndex(columns, null);
+        return new EntityIndex(columns);
     }
 
     private final List<EntityColumn> columns;
-
-    private static final Function<List<String>, EntityColumn> namesToColumn =
-            new Function<List<String>, EntityColumn>() {
-                @Override
-                public EntityColumn apply(List<String> column) {
-                    return new EntityColumn(column);
-                }
-            };
 }

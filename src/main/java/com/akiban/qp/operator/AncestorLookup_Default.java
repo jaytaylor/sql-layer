@@ -28,7 +28,6 @@ package com.akiban.qp.operator;
 
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.HKeyRowType;
@@ -282,20 +281,26 @@ class AncestorLookup_Default extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 checkQueryCancelation();
                 while (pending.isEmpty() && inputRow.isHolding()) {
                     advance();
                 }
                 Row row = pending.take();
-                if (LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("AncestorLookup: {}", row == null ? null : row);
                 }
                 return row;
             } finally {
-                TAP_NEXT.out();
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
 

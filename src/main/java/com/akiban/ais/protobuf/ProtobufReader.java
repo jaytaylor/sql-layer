@@ -66,6 +66,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 
 public class ProtobufReader {
     private final AkibanInformationSchema destAIS;
@@ -224,6 +225,17 @@ public class ProtobufReader {
                     pbTable.getTableName(),
                     pbTable.hasTableId() ? pbTable.getTableId() : generatedId++
             );
+            UUID uuid;
+            if (pbTable.hasUuid()) {
+                try {
+                    uuid = UUID.fromString(pbTable.getUuid());
+                } catch (IllegalArgumentException e) {
+                    throw new ProtobufReadException(
+                            AISProtobuf.Table.getDescriptor().getFullName(),
+                            "invalid UUID string: " + pbTable.getUuid());
+                }
+                userTable.setUuid(uuid);
+            }
             userTable.setCharsetAndCollation(getCharColl(pbTable.hasCharColl(), pbTable.getCharColl()));
             if(pbTable.hasVersion()) {
                 userTable.setVersion(pbTable.getVersion());
@@ -354,6 +366,19 @@ public class ProtobufReader {
                     maxStorageSize,
                     prefixSize
             );
+            if (pbColumn.hasUuid()) {
+                if (pbColumn.hasUuid()) {
+                    UUID uuid;
+                    try {
+                        uuid = UUID.fromString(pbColumn.getUuid());
+                    } catch (IllegalArgumentException e) {
+                        throw new ProtobufReadException(
+                                AISProtobuf.Column.getDescriptor().getFullName(),
+                                "invalid UUID string: " + pbColumn.getUuid());
+                    }
+                    column.setUuid(uuid);
+                }
+            }
             if (pbColumn.hasDefaultIdentity()) {
                 column.setDefaultIdentity(pbColumn.getDefaultIdentity());
             }
@@ -696,7 +721,8 @@ public class ProtobufReader {
                 AISProtobuf.Table.DESCRIPTION_FIELD_NUMBER,
                 AISProtobuf.Table.PROTECTED_FIELD_NUMBER,
                 AISProtobuf.Table.VERSION_FIELD_NUMBER,
-                AISProtobuf.Table.PENDINGOSC_FIELD_NUMBER
+                AISProtobuf.Table.PENDINGOSC_FIELD_NUMBER,
+                AISProtobuf.Table.UUID_FIELD_NUMBER
         );
     }
 
@@ -725,7 +751,8 @@ public class ProtobufReader {
                 AISProtobuf.Column.PREFIXSIZE_FIELD_NUMBER,
                 AISProtobuf.Column.TYPEBUNDLEUUID_FIELD_NUMBER,
                 AISProtobuf.Column.TYPEVERSION_FIELD_NUMBER,
-                AISProtobuf.Column.DEFAULTVALUE_FIELD_NUMBER
+                AISProtobuf.Column.DEFAULTVALUE_FIELD_NUMBER,
+                AISProtobuf.Column.UUID_FIELD_NUMBER
         );
     }
 

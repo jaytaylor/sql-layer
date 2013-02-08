@@ -26,7 +26,6 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -47,7 +46,6 @@ import java.util.Set;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
-import java.util.*;
 
 /**
  <h1>Overview</h1>
@@ -231,9 +229,13 @@ class Union_Ordered extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 Row next = null;
                 if (isActive()) {
                     assert !(leftRow.isEmpty() && rightRow.isEmpty());
@@ -254,13 +256,15 @@ class Union_Ordered extends Operator
                     if (leftRow.isEmpty() && rightRow.isEmpty()) {
                         close();
                     }
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Union_Ordered: yield {}", next);
-                    }
+                }
+                if (LOG_EXECUTION) {
+                    LOG.debug("Union_Ordered: yield {}", next);
                 }
                 return next;
             } finally {
-                TAP_NEXT.out();
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
 
@@ -329,7 +333,7 @@ class Union_Ordered extends Operator
         {
             Row row = leftInput.next();
             leftRow.hold(row);
-            if (LOG.isDebugEnabled()) {
+            if (LOG_EXECUTION) {
                 LOG.debug("Union_Ordered: left {}", row);
             }
         }
@@ -338,7 +342,7 @@ class Union_Ordered extends Operator
         {
             Row row = rightInput.next();
             rightRow.hold(row);
-            if (LOG.isDebugEnabled()) {
+            if (LOG_EXECUTION) {
                 LOG.debug("Union_Ordered: right {}", row);
             }
         }

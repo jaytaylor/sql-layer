@@ -60,7 +60,6 @@ import static com.akiban.util.Strings.join;
 
 public class PlanGenerator
 {
-    private AkibanInformationSchema ais;
     private Schema schema;
     private Map<UserTable,Operator> scanPlans = new HashMap<>();
     private Map<UserTable,Operator> branchPlans = new HashMap<>();
@@ -68,7 +67,6 @@ public class PlanGenerator
     private static final Logger logger = LoggerFactory.getLogger(PlanGenerator.class);
 
     public PlanGenerator(AkibanInformationSchema ais) {
-        this.ais = ais;
         this.schema = SchemaCache.globalSchema(ais);
     }
 

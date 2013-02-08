@@ -100,6 +100,16 @@ public class JDBCPreparedStatement extends JDBCStatement implements PreparedStat
         }
     }
 
+    // TODO: Will need a separate interface for this when class loader
+    // isolated implementation classes from stored procedures.
+
+    /** Return the estimated number of rows that will be returned or
+     * <code>-1</code> if unknown.
+     */
+    public long getEstimatedRowCount() throws SQLException {
+        return executableStatement.getEstimatedRowCount();
+    }
+
     /* PreparedStatement */
 
     @Override

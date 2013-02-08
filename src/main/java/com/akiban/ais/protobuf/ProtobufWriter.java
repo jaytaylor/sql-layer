@@ -36,6 +36,7 @@ import com.google.protobuf.MessageLite;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 
 public class ProtobufWriter {
     public static interface WriteSelector {
@@ -337,6 +338,11 @@ public class ProtobufWriter {
                 setCharColl(convertCharAndCol(table.getCharsetAndCollation()));
                 // Not yet in AIS: ordinal, description, protected
 
+        UUID tableUuid = table.getUuid();
+        if (tableUuid != null) {
+            tableBuilder.setUuid(tableUuid.toString());
+        }
+
         if(table.hasVersion()) {
             tableBuilder.setVersion(table.getVersion());
         }
@@ -428,6 +434,11 @@ public class ProtobufWriter {
                 setIsNullable(column.getNullable()).
                 setPosition(column.getPosition()).
                 setCharColl(convertCharAndCol(column.getCharsetAndCollation()));
+
+        UUID columnUuid = column.getUuid();
+        if (columnUuid != null) {
+            columnBuilder.setUuid(columnUuid.toString());
+        }
 
         if(column.getTypeParameter1() != null) {
             columnBuilder.setTypeParam1(column.getTypeParameter1());

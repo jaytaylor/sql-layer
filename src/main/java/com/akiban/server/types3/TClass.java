@@ -141,15 +141,14 @@ public abstract class TClass {
             getPValueIO().copyCanonical(in, typeInstance, out);
     }
 
-    public void attributeToString(int attributeIndex, long value, StringBuilder output) {
-        output.append(value);
+    protected Object attributeToObject(int attributeIndex, int value) {
+        return value;
     }
 
-    protected static void attributeToString(Object[] array, long arrayIndex, StringBuilder output) {
-        if ( (array == null) || (arrayIndex < 0) || arrayIndex >= array.length)
-            output.append(arrayIndex);
-        else
-            output.append(array[(int)arrayIndex]);
+    public abstract boolean attributeIsPhysical(int attributeIndex);
+
+    public void attributeToString(int attributeIndex, long value, StringBuilder output) {
+        output.append(value);
     }
 
     protected PValueIO getPValueIO() {
@@ -205,6 +204,10 @@ public abstract class TClass {
 
     public int nAttributes() {
         return attributes.length;
+    }
+
+    public String attributeName(int index) {
+        return attributes[index].name().toLowerCase();
     }
 
     public TName name() {

@@ -48,16 +48,16 @@ public final class SpaceDiff {
             if (updatedEntities.containsUuid(uuid))
                 inBoth.add(uuid);
             else
-                out.dropEntry(orig.getValue());
+                out.dropEntity(orig.getValue());
         }
         // new entities
         for (UUID uuid : updatedEntities.keySet()) {
             if (!originalEntities.containsUuid(uuid))
-                out.addEntry(uuid);
+                out.addEntity(uuid);
         }
         for (UUID uuid : inBoth) {
             if (!originalEntities.getName(uuid).equals(updatedEntities.getName(uuid)))
-                out.renameEntry(uuid, updatedEntities.getName(uuid));
+                out.renameEntity(uuid, updatedEntities.getName(uuid));
             attributeActions(uuid, out);
             validationActions(uuid, out);
             indexActions(uuid, out);
@@ -72,36 +72,74 @@ public final class SpaceDiff {
         Set<UUID> inBoth = new HashSet<>();
         for (Map.Entry<UUID, Attribute> orig : origLookups.getAttributesByUuid().entrySet()) {
             UUID uuid = orig.getKey();
-            if (updateLookups.containsAttribute(uuid))
+            if (updateLookups.containsAttribute(uuid)) {
                 inBoth.add(uuid);
-            else
-                out.dropAttribute(orig.getValue());
+            }
+            else {
+                UUID parent = origLookups.getParentAttribute(uuid);
+                if (parent == null || updateLookups.containsAttribute(parent)) {
+                    Attribute droppedAttribute = orig.getValue();
+                    if (droppedAttribute.isSpinal())
+                        out.error("Can't drop spinal attribute");
+                    else
+                        out.dropAttribute(droppedAttribute);
+                }
+            }
         }
         // dropped attributes
-        for (UUID uuid : updateLookups.getAttributesByUuid().keySet()) {
-            if (!origLookups.containsAttribute(uuid))
-                out.addAttribute(uuid);
+        for (Map.Entry<UUID, Attribute> updated : updateLookups.getAttributesByUuid().entrySet()) {
+            UUID uuid = updated.getKey();
+            if (!origLookups.containsAttribute(uuid)) {
+                UUID parent = updateLookups.getParentAttribute(uuid);
+                if (parent == null || origLookups.containsAttribute(parent)) {
+                    if (updated.getValue().isSpinal())
+                        out.error("Can't add spinal attributes to entities or collections");
+                    else
+                        out.addAttribute(uuid);
+                }
+            }
         }
         // modified
         for (UUID uuid : inBoth) {
             if (!origLookups.pathFor(uuid).equals(updateLookups.pathFor(uuid))) {
-                out.error("moving an attribute is unsupported");
+                out.error("Can't move attribute");
                 continue;
             }
-            if (!origLookups.nameFor(uuid).equals(updateLookups.nameFor(uuid)))
-                out.renameAttribute(uuid, origLookups.nameFor(uuid));
             Attribute orig = origLookups.attributeFor(uuid);
             Attribute updated = updateLookups.attributeFor(uuid);
+            if (!origLookups.nameFor(uuid).equals(updateLookups.nameFor(uuid))) {
+                if (orig.isSpinal())
+                    out.error("Can't rename spinal attributes");
+                else
+                    out.renameAttribute(uuid, origLookups.nameFor(uuid));
+            }
             if (!Objects.equals(orig.getAttributeType(), updated.getAttributeType())) {
-                out.error("can't change an attribute's class (scalar or collection)");
+                out.error("Can't change an attribute's class (scalar or collection)");
             }
             else if (orig.getAttributeType() == Attribute.AttributeType.SCALAR) {
-                if (!orig.getType().equals(updated.getType()))
-                    out.changeScalarType(uuid, updated);
+                if (orig.getSpinePos() != updated.getSpinePos()) {
+                    // assume at least one of them isSpinal; otherwise they're both -1.
+                    if (orig.isSpinal() && updated.isSpinal())
+                        out.error("Can't change order of spinal attributes");
+                    else if (orig.isSpinal())
+                        out.error("Can't make spinal attribute non-spinal");
+                    else
+                        out.error("Can't make non-spinal attribute spinal");
+                }
+                if (!lc(orig.getType()).equals(lc(updated.getType()))) {
+                    if (orig.isSpinal())
+                        out.error("Can't change type of spinal attributes");
+                    else
+                        out.changeScalarType(uuid, updated);
+                }
                 if (!orig.getValidation().equals(updated.getValidation()))
                     out.changeScalarValidations(uuid, updated);
-                if (!orig.getProperties().equals(updated.getProperties()))
-                    out.changeScalarProperties(uuid, updated);
+                if (!orig.getProperties().equals(updated.getProperties())) {
+                    if (orig.isSpinal())
+                        out.error("Can't change properties of spinal attributes");
+                    else
+                        out.changeScalarProperties(uuid, updated);
+                }
             }
             else if (orig.getAttributeType() == Attribute.AttributeType.COLLECTION) {
                 // do nothing -- the visitor will have captured children
@@ -110,6 +148,10 @@ public final class SpaceDiff {
                 throw new AssertionError("unknown attribute class: " + orig.getAttributeType());
             }
         }
+    }
+
+    private static String lc(String string) {
+        return string.toLowerCase();
     }
 
     private void validationActions(UUID entityUUID, SpaceModificationHandler out) {
@@ -136,9 +178,9 @@ public final class SpaceDiff {
             else if (!origName.equals(updatedIndexes.get(origIndex)))
                 out.renameIndex(origIndex, origName, updatedIndexes.get(origIndex));
         }
-        for (EntityIndex updatedIndex : updatedIndexes.keySet()) {
-            if (!originalIndexes.containsKey(updatedIndex))
-                out.addIndex(updatedIndex);
+        for (Map.Entry<EntityIndex, String> updatedIndex : updatedIndexes.entrySet()) {
+            if (!originalIndexes.containsKey(updatedIndex.getKey()))
+                out.addIndex(updatedIndex.getValue());
         }
     }
 

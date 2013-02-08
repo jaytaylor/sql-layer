@@ -30,6 +30,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.HKeyCache;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.encoding.EncodingException;
@@ -58,7 +59,12 @@ public class PersistitGroupRow extends AbstractRow
     @Override
     public RowType rowType()
     {
-        return adapter.schema().userTableRowType(rowDef().userTable());
+        if (rowDef() == lastRowDef) {
+            return lastRowType;
+        }
+        lastRowDef = rowDef();
+        lastRowType = adapter.schema().userTableRowType(lastRowDef.userTable());
+        return lastRowType;
     }
 
     @Override
@@ -230,4 +236,6 @@ public class PersistitGroupRow extends AbstractRow
     private LegacyRowWrapper row;
     private PersistitHKey currentHKey;
     private HKeyCache<PersistitHKey> hKeyCache;
+    private RowDef lastRowDef;
+    private RowType lastRowType;
 }

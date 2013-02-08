@@ -34,6 +34,8 @@ import com.akiban.server.explain.CompoundExplainer;
 import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.std.DUIOperatorExplainer;
 import com.akiban.util.tap.InOutTap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
 
@@ -121,7 +123,8 @@ public class Delete_Returning extends Operator {
     // Class state
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: DeleteReturning open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: DeleteReturning next");
-    
+    private static final Logger LOG = LoggerFactory.getLogger(Delete_Returning.class);
+
     // Object state
 
     protected final Operator inputOperator;
@@ -149,18 +152,27 @@ public class Delete_Returning extends Operator {
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 checkQueryCancelation();
                 
                 Row inputRow;
                 if ((inputRow = input.next()) != null) {
                     adapter().deleteRow(inputRow, usePValues);
+                    if (LOG_EXECUTION) {
+                        LOG.debug("Delete_Returning: deleting {}", inputRow);
+                    }
                 }
                 return inputRow; 
             } finally {
-                TAP_NEXT.out();
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
     
