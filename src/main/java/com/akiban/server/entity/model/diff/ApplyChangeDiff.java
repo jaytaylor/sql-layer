@@ -131,12 +131,4 @@ public class ApplyChangeDiff implements SpaceModificationHandler
     {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    @Override
-    public StringWriter toJSON()
-    {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-    
-   
 }

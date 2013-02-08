@@ -31,7 +31,6 @@ import com.akiban.server.entity.model.Entity;
 import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Validation;
 
-import java.io.StringWriter;
 import java.util.UUID;
 
 public interface SpaceModificationHandler {
@@ -54,6 +53,4 @@ public interface SpaceModificationHandler {
     void renameIndex(EntityIndex index, String oldName, String newName);
 
     void error(String message);
-    
-    StringWriter toJSON();
 }
