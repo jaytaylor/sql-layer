@@ -42,5 +42,7 @@
 ---
 - Statement: ALTER TABLE  t RENAME COLUMN c to a
 ---
+- Statement: \d t
+---
 - DropTable: t
 ...

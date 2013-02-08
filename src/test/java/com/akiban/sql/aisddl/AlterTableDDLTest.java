@@ -235,7 +235,7 @@ public class AlterTableDDLTest {
             expectFinalTable(A_NAME, "aid bigint NOT NULL", "new bigint NOT NULL", "UNIQUE new(new)", "PRIMARY(new)");
         }
     }
-    
+
     //
     // DROP COLUMN
     //
@@ -412,6 +412,37 @@ public class AlterTableDDLTest {
             expectFinalTable(C_NAME, "c1 MCOMPAT_ BIGINT(21) NOT NULL");
         else
             expectFinalTable(C_NAME, "c1 bigint NOT NULL");
+    }
+
+    @Test
+    public void renameColumn() throws StandardException
+    {   
+        builder.userTable(C_NAME).colBigInt("a", true)
+                                 .colBigInt("b", true)
+                                 .colBigInt("x", false)
+                                 .colBigInt("d", true)
+                                 .pk("x")
+                                 .key("idx1", "b", "x");
+        
+        parseAndRun("RENAME COLUMN c.x TO y");
+        expectColumnChanges("MODIFY:x->y");
+        expectIndexChanges();
+        if (Types3Switch.ON)
+            expectFinalTable(C_NAME,
+                             "a MCOMPAT_ BIGINT(21) NULL, " +
+                                "b MCOMPAT_ BIGINT(21) NULL, " +
+                                "y MCOMPAT_ BIGINT(21) NOT NULL, " +
+                                "d MCOMPAT_ BIGINT(21) NULL",
+                             "idx1(b,y)",
+                             "PRIMARY(y)");
+        else
+            expectFinalTable(C_NAME,
+                             "a bigint NULL, " +
+                                "b bigint NULL, " +
+                                "y bigint NOT NULL, " +
+                                "d bigint NULL",
+                             "idx1(b,y)",
+                             "PRIMARY(y)");
     }
 
     //
@@ -1050,7 +1081,6 @@ public class AlterTableDDLTest {
         parseAndRun("ALTER GROUP DROP TABLE i");
         expectGroupIsSame(C_NAME, I_NAME, false);
     }
-
 
     private void parseAndRun(String sqlText) throws StandardException {
         StatementNode node = parser.parseStatement(sqlText);

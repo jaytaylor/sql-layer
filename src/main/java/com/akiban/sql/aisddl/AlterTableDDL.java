@@ -322,8 +322,6 @@ public class AlterTableDDL {
             }
         }
 
-        System.out.println("columnChanges: " + columnChanges);
-        System.out.println("indexChanges: " + indexChanges);
         return ddl.alterTable(session, table.getName(), tableCopy, columnChanges, indexChanges, context);
     }
 
