@@ -54,7 +54,14 @@
                         }
                     }
                 }
-            }
+            },
+            "indexes" : {
+                "customers_idx_n" : [ ["customers", "name"] ],
+                "orders_idx_p" : [ ["orders", "placed"], ["customers", "name"] ]
+            },
+            "validation" : [
+                { "unique" : "customers_idx_n" }
+            ]
         }
     }
 }

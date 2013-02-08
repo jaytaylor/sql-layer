@@ -8,3 +8,5 @@ CREATE TABLE orders(
     placed DATE,
     PRIMARY KEY(oid_1, oid_2),
     GROUPING FOREIGN KEY (cid) REFERENCES customers(id));
+CREATE UNIQUE INDEX idx_n ON customers(name);
+CREATE INDEX idx_p ON orders(orders.placed, customers.name) USING LEFT JOIN;
