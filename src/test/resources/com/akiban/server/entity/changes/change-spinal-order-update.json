@@ -6,12 +6,12 @@
                 "id_1" : {
                     "scalar" : "8644c36b-f881-4369-a06b-59e3fc580309",
                     "type" : "int",
-                    "spine_pos" : 1
+                    "spinal_pos" : 1
                 },
                 "id_2" : {
                     "scalar" : "288a1e2c-8380-4e9a-b216-78b0dbe688a5",
                     "type" : "int",
-                    "spine_pos" : 0
+                    "spinal_pos" : 0
                 }
             }
         }
