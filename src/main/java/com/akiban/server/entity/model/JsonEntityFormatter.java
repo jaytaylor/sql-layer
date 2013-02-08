@@ -45,8 +45,7 @@ final class JsonEntityFormatter implements EntityVisitor<IOException> {
 
     @Override
     public void leaveEntity() throws IOException {
-        json.writeEndObject(); // "attributes" object
-        json.writeEndObject(); // the entity itself
+        json.writeEndObject();
     }
 
     @Override
@@ -73,6 +72,11 @@ final class JsonEntityFormatter implements EntityVisitor<IOException> {
     public void leaveCollection() throws IOException {
         json.writeEndObject(); // "attributes" object
         json.writeEndObject(); // the collection itself
+    }
+
+    @Override
+    public void leaveEntityAttributes() throws IOException {
+        json.writeEndObject();
     }
 
     @Override

@@ -916,19 +916,17 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         };
         if (!skipAISUpgrade) {
             final AkibanInformationSchema upgradeAIS = AISCloner.clone(newAIS);
-            transactionally(sessionService.createSession(), new ThrowingCallable<Void>() {
-                @Override
-                public Void runAndReturn(Session session) throws PersistitException {
-                    upgradeAIS.traversePostOrder(new UuidAssigner());
-                    saveAISChangeWithRowDefs(session, upgradeAIS, upgradeAIS.getSchemas().keySet());
-                    buildRowDefCache(upgradeAIS);
-                    long startTimestamp = txnService.getTransactionStartTimestamp(session);
-                    SharedAIS sharedAIS = new SharedAIS(upgradeAIS);
-                    sharedAIS.acquire(); // So count while in cache is 1
-                    latestAISCache = new AISAndTimestamp(sharedAIS, startTimestamp);
-                    return null;
-                }
-            });
+            UuidAssigner uuidAssigner = new UuidAssigner();
+            upgradeAIS.traversePostOrder(uuidAssigner);
+            if (uuidAssigner.assignedAny()) {
+                transactionally(sessionService.createSession(), new ThrowingCallable<Void>() {
+                    @Override
+                    public Void runAndReturn(Session session) throws PersistitException {
+                        saveAISChangeWithRowDefs(session, upgradeAIS, upgradeAIS.getSchemas().keySet());
+                        return null;
+                    }
+                });
+            }
         }
         else {
             //LOG.warn("Skipping AIS upgrade");

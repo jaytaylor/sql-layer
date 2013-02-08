@@ -36,6 +36,7 @@ public interface EntityVisitor<E extends Exception> {
     void visitScalar(String name, Attribute scalar) throws E;
     void visitCollection(String name, Attribute collection) throws E;
     void leaveCollection() throws E;
+    void leaveEntityAttributes() throws E;
     void visitEntityValidations(Set<Validation> validations) throws E;
     void visitIndexes(BiMap<String, EntityIndex> indexes) throws E;
 }

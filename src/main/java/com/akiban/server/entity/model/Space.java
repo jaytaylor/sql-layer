@@ -26,15 +26,18 @@
 
 package com.akiban.server.entity.model;
 
+import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringWriter;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -97,17 +100,41 @@ public final class Space {
         return space;
     }
 
-    public void toJson(JsonGenerator json) throws IOException {
+    public void generateJson(JsonGenerator json) throws IOException {
         json.writeStartObject();
-        json.writeObjectFieldStart("entities");
-        visit(new JsonEntityFormatter(json));
+        if (!entities.isEmpty()) {
+            json.writeObjectFieldStart("entities");
+            visit(new JsonEntityFormatter(json));
+            json.writeEndObject();
+        }
         json.writeEndObject();
-        json.writeEndObject();
+    }
+
+    public String toJson() {
+        try {
+            StringWriter writer = new StringWriter();
+            JsonGenerator generator = jsonFactory.createJsonGenerator(writer);
+            generateJson(generator);
+            generator.flush();
+            writer.flush();
+            return writer.toString();
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     Space() {}
 
     private Map<String, Entity> entities = Collections.emptyMap();
+
+    private static final JsonFactory jsonFactory = createJsonFactory();
+
+    private static JsonFactory createJsonFactory() {
+        JsonFactory factory = new JsonFactory();
+        factory.setCodec(new ObjectMapper());
+        return factory;
+    }
 
     private static class Validator extends AbstractEntityVisitor {
 

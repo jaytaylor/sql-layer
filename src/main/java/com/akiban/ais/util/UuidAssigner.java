@@ -36,14 +36,23 @@ public class UuidAssigner extends NopVisitor {
 
     @Override
     public void visitUserTable(UserTable userTable) {
-        if (userTable.getUuid() == null)
+        if (userTable.getUuid() == null) {
+            assignedAny = true;
             userTable.setUuid(UUID.randomUUID());
+        }
     }
 
     @Override
     public void visitColumn(Column column) {
-        if (column.getUuid() == null)
+        if (column.getUuid() == null) {
+            assignedAny = true;
             column.setUuid(UUID.randomUUID());
+        }
     }
 
+    public boolean assignedAny() {
+        return assignedAny;
+    }
+
+    private boolean assignedAny = false;
 }
