@@ -26,7 +26,7 @@
 
 package com.akiban.server.entity.changes;
 
-import com.akiban.server.entity.model.diff.ChangeDiff;
+import com.akiban.server.entity.model.diff.JsonDiffPreview;
 import java.util.UUID;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -36,11 +36,11 @@ public class ChangeDiffTest
     @Test
     public void testAddRenameEntry()
     {
-        ChangeDiff diff = new ChangeDiff();
+        JsonDiffPreview diff = new JsonDiffPreview();
         UUID uuid1 = UUID.fromString("f599fdb6-3a1a-440a-99aa-5bb6a072903f");
         UUID uuid2 = UUID.fromString("b79fdd65-6aa3-4f25-9166-74bb52534c7e");
         
-        diff.addEntry(uuid1);
+        diff.addEntity(uuid1);
         diff.renameAttribute(uuid2, "oldAttribute");
         
         String exp = 

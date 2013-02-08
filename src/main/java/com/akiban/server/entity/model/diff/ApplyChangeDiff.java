@@ -41,7 +41,7 @@ public class ApplyChangeDiff implements SpaceModificationHandler
     // TODO: Is it still neccessary to generate the JSON rep?
 
     @Override
-    public void addEntry(UUID entityUuid)
+    public void addEntity(UUID entityUuid)
     {
         
         throw new UnsupportedOperationException("Not supported yet.");
@@ -49,13 +49,13 @@ public class ApplyChangeDiff implements SpaceModificationHandler
     }
 
     @Override
-    public void dropEntry(Entity dropped)
+    public void dropEntity(Entity dropped)
     {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public void renameEntry(UUID entityUuid, String oldName)
+    public void renameEntity(UUID entityUuid, String oldName)
     {
         throw new UnsupportedOperationException("Not supported yet.");
     }
@@ -109,7 +109,7 @@ public class ApplyChangeDiff implements SpaceModificationHandler
     }
 
     @Override
-    public void addIndex(EntityIndex index)
+    public void addIndex(String ame)
     {
         throw new UnsupportedOperationException("Not supported yet.");
     }
