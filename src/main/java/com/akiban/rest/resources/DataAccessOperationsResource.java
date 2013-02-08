@@ -26,6 +26,7 @@
 
 package com.akiban.rest.resources;
 
+
 import com.akiban.rest.ResponseHelper;
 import com.akiban.server.service.restdml.RestDMLService;
 import com.google.inject.Inject;
@@ -45,6 +46,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.map.ObjectMapper;
+
 /**
  * Implementation of REST-oriented Get, Multi-Get, Create, Update, Delete and
  * Multi-Delete.
@@ -54,6 +60,8 @@ public class DataAccessOperationsResource {
     
     @Inject
     RestDMLService dmlService;
+    
+    JsonFactory jsonFactory = new JsonFactory();
     
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -86,16 +94,21 @@ public class DataAccessOperationsResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createEntity(@PathParam("schema") final String schema,
+    public Response createEntity(@Context HttpServletRequest request,
+                                 @PathParam("schema") final String schema,
                                  @PathParam("table") final String table,
                                  final byte[] entityBytes) throws Exception {
-        return ResponseHelper.buildNotYetImplemented();
+        ObjectMapper m = new ObjectMapper();
+        JsonNode node = m.readTree(entityBytes);
+        
+        return dmlService.insert(request, schema, table, node);
     }
 
     @PUT
     @Path("{identifiers:.*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateEntity(@PathParam("schema") final String schema,
+    public Response updateEntity(@Context HttpServletRequest request,
+                                 @PathParam("schema") final String schema,
                                  @PathParam("table") final String table,
                                  final byte[] entityBytes,
                                  @Context final UriInfo uri) throws Exception {
@@ -105,7 +118,8 @@ public class DataAccessOperationsResource {
     @DELETE
     @Path("{identifiers:.*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteEntity(@PathParam("schema") String schema,
+    public Response deleteEntity(@Context HttpServletRequest request,
+                                 @PathParam("schema") String schema,
                                  @PathParam("table") String table,
                                  @Context UriInfo uri) throws Exception {
         return ResponseHelper.buildNotYetImplemented();

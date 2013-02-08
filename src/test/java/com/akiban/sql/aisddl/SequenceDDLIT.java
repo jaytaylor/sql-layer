@@ -30,6 +30,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import com.akiban.ais.model.TableName;
@@ -43,6 +44,12 @@ import java.util.Collections;
 
 public class SequenceDDLIT extends AISDDLITBase {
 
+    @Before
+    public void sessionStart() {
+        // Creating one of these may start services that add system
+        // sequences, making numbers unstable unless done first.
+        new TestSession();
+    }
     
     @Test (expected=SQLParserException.class)
     public void dropSequenceFail() throws Exception{
@@ -52,17 +59,21 @@ public class SequenceDDLIT extends AISDDLITBase {
     
     @Test
     public void createSequence () throws Exception {
+        assertEquals (3, ais().getSequences().size());
+
         String sql = "CREATE SEQUENCE new_sequence";
         executeDDL(sql);
         assertNotNull (ais().getSequence(new TableName ("test", "new_sequence")));
         
         sql = "DROP SEQUENCE new_sequence restrict";
         executeDDL(sql);
-        assertEquals (0, ais().getSequences().size());
+        assertEquals (3, ais().getSequences().size());
     }
 
     @Test 
     public void duplicateSequence() throws Exception {
+        assertEquals (3, ais().getSequences().size());
+
         String sql = "CREATE SEQUENCE test.new_sequence";
         executeDDL(sql);
         assertNotNull (ais().getSequence(new TableName ("test", "new_sequence")));
@@ -76,7 +87,7 @@ public class SequenceDDLIT extends AISDDLITBase {
 
         sql = "DROP SEQUENCE test.new_sequence restrict";
         executeDDL(sql);
-        assertEquals (0, ais().getSequences().size());
+        assertEquals (3, ais().getSequences().size());
 
     }
     
@@ -88,7 +99,7 @@ public class SequenceDDLIT extends AISDDLITBase {
 
         sql = "DROP SEQUENCE test.new_sequence restrict";
         executeDDL(sql);
-        assertEquals (0, ais().getSequences().size());
+        assertEquals (3, ais().getSequences().size());
 
         // fails for the second one due to non-existence of the sequence. 
         executeDDL(sql);

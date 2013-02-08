@@ -544,7 +544,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         while (iter.hasNext()) {
             String name = iter.next();
             if ((noIS &&
-                 name.equals(TableName.INFORMATION_SCHEMA)) ||
+                 name.equals(TableName.INFORMATION_SCHEMA) ||
+                 name.equals(TableName.SECURITY_SCHEMA)) ||
                 ((pattern != null) && 
                  !pattern.matcher(name).find()) ||
                 !server.isSchemaAccessible(name))
@@ -589,7 +590,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         while (iter.hasNext()) {
             TableName name = iter.next().getName();
             boolean keep = true;
-            if ((name.getSchemaName().equals(TableName.INFORMATION_SCHEMA) ? noIS : onlyIS) ||
+            if (((name.getSchemaName().equals(TableName.INFORMATION_SCHEMA) ||
+                  name.getSchemaName().equals(TableName.SECURITY_SCHEMA))
+                 ? noIS : onlyIS) ||
                 ((schemaPattern != null) && 
                  !schemaPattern.matcher(name.getSchemaName()).find()) ||
                 ((tablePattern != null) && 
