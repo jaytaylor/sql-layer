@@ -30,7 +30,11 @@ import javax.servlet.http.HttpServletRequest;
 
 import javax.ws.rs.core.Response;
 
+import org.codehaus.jackson.JsonNode;
+
 public interface RestDMLService {
+    public Response insert(HttpServletRequest request, 
+                           String schema, String table, JsonNode node);
     public Response getAllEntities(HttpServletRequest request, 
                                    String schema, String table, Integer depth);
     public Response getEntities(HttpServletRequest request, 

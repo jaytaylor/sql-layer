@@ -430,6 +430,7 @@ public enum ErrorCode {
     INSERT_NULL_CHECK       ("57", "005", Importance.DEBUG, InsertNullCheckFailedException.class),
     TABLE_CHANGED_BY_DDL    ("57", "006", Importance.DEBUG, TableChangedByDDLException.class),
     BULKLOAD                ("57", "007", Importance.DEBUG, BulkloadException.class),
+    FK_VALUE_MISMATCH       ("57", "008", Importance.DEBUG, FKValueMismatchException.class),
 
     // Class 58 - Query canceled by user
     QUERY_CANCELED          ("58", "000", Importance.ERROR, QueryCanceledException.class),    

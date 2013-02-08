@@ -127,7 +127,6 @@
             <groupId>org.codehaus.jackson</groupId>
             <artifactId>jackson-mapper-asl</artifactId>
             <version>1.9.11</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
@@ -359,6 +358,10 @@
                         <exclude>**/*.test</exclude>
                         <exclude>**/*.yaml</exclude>
                         <exclude>**/*.yml</exclude>
+                        <exclude>**/*.get</exclude>
+                        <exclude>**/*.put</exclude>
+                        <exclude>**/*.post</exclude>
+                        <exclude>**/*.body</exclude>
                         <exclude>src/test/bin/*.sh</exclude>
                         <exclude>src/test/bin/*.cmd</exclude>
                         <exclude>.idea/**</exclude>
