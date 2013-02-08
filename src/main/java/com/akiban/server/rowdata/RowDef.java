@@ -563,7 +563,7 @@ public class RowDef {
     @Override
     public boolean equals(final Object o) {
         final RowDef def = (RowDef) o;
-        return this == def || def.getRowDefId() == def.getRowDefId()
+        return this == def || getRowDefId() == def.getRowDefId()
                 && AkServerUtil.equals(table.getName(), def.table.getName())
                 && Arrays.deepEquals(fieldDefs, def.fieldDefs)
                 && Arrays.deepEquals(indexes, def.indexes)
