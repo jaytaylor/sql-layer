@@ -52,6 +52,10 @@ public abstract class AbstractEntityVisitor implements EntityVisitor<RuntimeExce
     }
 
     @Override
+    public void leaveEntityAttributes() {
+    }
+
+    @Override
     public void visitEntityValidations(Set<Validation> validations) {
     }
 

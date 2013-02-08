@@ -60,6 +60,10 @@ class ToStringVisitor extends JUnitUtils.MessageTaker implements EntityVisitor<R
     }
 
     @Override
+    public void leaveEntityAttributes() {
+    }
+
+    @Override
     public void visitIndexes(BiMap<String, EntityIndex> indexes) {
         for (Map.Entry<String, EntityIndex> index : indexes.entrySet())
             message("visiting index", index.getKey(), index.getValue());

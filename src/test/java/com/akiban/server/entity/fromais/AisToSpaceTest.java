@@ -91,19 +91,6 @@ public final class AisToSpaceTest {
         new SpaceDiff(expectedSpace, actualSpace).apply(changes);
 
         JUnitUtils.equalCollections("no changes expected", Collections.emptyList(), changes.getMessages());
-
-        // TODO temporary just to test things out
-        try {
-            JsonFactory factory = new JsonFactory();
-            factory.setCodec(new ObjectMapper());
-            JsonGenerator generator = factory.createJsonGenerator(System.out);
-            actualSpace.toJson(generator);
-            generator.flush();
-            throw new AssertionError("remove this!");
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private class SetUuidAssigner extends NopVisitor {

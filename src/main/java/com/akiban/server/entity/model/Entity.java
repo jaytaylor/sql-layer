@@ -66,12 +66,7 @@ public final class Entity {
 
     @SuppressWarnings("unused")
     void setValidation(List<Map<String, ?>> validations) {
-        this.validations = new HashSet<>(validations.size());
-        for (Map<String, ?> validation : validations) {
-            if (!this.validations.add(new Validation(validation)))
-                throw new IllegalEntityDefinition("duplicate validation: " + validation);
-        }
-        this.validations = Collections.unmodifiableSet(this.validations);
+        this.validations = Validation.createValidations(validations);
     }
 
     public BiMap<String, EntityIndex> getIndexes() {
@@ -116,6 +111,7 @@ public final class Entity {
         for (Map.Entry<String, Attribute> entry : attributes.entrySet()) {
             entry.getValue().accept(entry.getKey(), visitor);
         }
+        visitor.leaveEntityAttributes();
         visitor.visitEntityValidations(validations);
         visitor.visitIndexes(indexes);
         visitor.leaveEntity();

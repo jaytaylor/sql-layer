@@ -6,7 +6,7 @@
                 "id" : {
                     "scalar" : "8644c36b-f881-4369-a06b-59e3fc580309",
                     "type" : "int",
-                    "spine_pos" : 0
+                    "spinal_pos" : 0
                 },
                 "last_name" : {
                     "scalar" : "257e9b59-e77f-4a4d-a5da-00c7c2261875",
@@ -25,7 +25,7 @@
                         "id" : {
                             "scalar" : "58dd53b7-e8a1-488b-a751-c83f9beca04c",
                             "type" : "int",
-                            "spine_pos" : 0
+                            "spinal_pos" : 0
                         }
                     }
                 }

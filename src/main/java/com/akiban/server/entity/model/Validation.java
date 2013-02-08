@@ -28,10 +28,14 @@ package com.akiban.server.entity.model;
 
 import com.akiban.util.ArgumentValidation;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 
-public final class Validation {
+public final class Validation implements Comparable<Validation> {
 
     public String getName() {
         return name;
@@ -60,6 +64,29 @@ public final class Validation {
     @Override
     public String toString() {
         return String.format("%s: %s", name, value);
+    }
+
+    @Override
+    public int compareTo(Validation o) {
+        int keyCompares = name.compareTo(o.name);
+        if (keyCompares != 0)
+            return keyCompares;
+        if (value == null)
+            return o.value == null ? 0 : -1;
+        else if (o.value == null)
+            return 1;
+        String valueString = value.toString();
+        String oValueString = o.value.toString();
+        return valueString.compareTo(oValueString);
+    }
+
+    public static Set<Validation> createValidations(Collection<Map<String, ?>> validations) {
+        Set<Validation> result = new TreeSet<>();
+        for (Map<String, ?> validation : validations) {
+            if (!result.add(new Validation(validation)))
+                throw new IllegalEntityDefinition("duplicate validation:" + validation);
+        }
+        return Collections.unmodifiableSet(result);
     }
 
     Validation(Map<String, ?> validation) {
