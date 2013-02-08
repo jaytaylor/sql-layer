@@ -63,8 +63,9 @@ public final class MBinary extends SimpleDtdTClass {
         LENGTH
     }
 
-    public int getFixedLength() {
-        return defaultLength;
+    @Override
+    public boolean attributeIsPhysical(int attributeIndex) {
+        return false;
     }
 
     @Override

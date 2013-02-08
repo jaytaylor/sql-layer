@@ -108,6 +108,11 @@ public class MBigDecimal extends TClassBase {
     }
 
     @Override
+    public boolean attributeIsPhysical(int attributeIndex) {
+        return true;
+    }
+
+    @Override
     protected PValueIO getPValueIO() {
         return valueIO;
     }
