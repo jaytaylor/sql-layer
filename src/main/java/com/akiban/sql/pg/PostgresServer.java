@@ -357,14 +357,18 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
             }
             else {
                 String login = properties.getProperty("login", "none");
-                if (login.equals("password")) {
+                if (login.equals("none")) {
+                    authenticationType = AuthenticationType.NONE;
+                }
+                else if (login.equals("password")) {
                     authenticationType = AuthenticationType.CLEAR_TEXT;
                 }
                 else if (login.equals("md5")) {
                     authenticationType = AuthenticationType.MD5;
                 }
                 else {
-                    authenticationType = AuthenticationType.NONE;
+                    throw new IllegalArgumentException("Invalid login property: " +
+                                                       login);
                 }
             }
             if (authenticationType != AuthenticationType.NONE) {

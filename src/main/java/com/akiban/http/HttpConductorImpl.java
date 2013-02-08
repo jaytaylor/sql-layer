@@ -157,14 +157,18 @@ public final class HttpConductorImpl implements HttpConductor, Service {
             throw e;
         }
         ssl = Boolean.parseBoolean(sslProperty);
-        if ("basic".equals(loginProperty)) {
+        if ("none".equals(loginProperty)) {
+            login = AuthenticationType.NONE;
+        }
+        else if ("basic".equals(loginProperty)) {
             login = AuthenticationType.BASIC;
         }
         else if ("digest".equals(loginProperty)) {
             login = AuthenticationType.DIGEST;
         }
         else {
-            login = AuthenticationType.NONE;
+            throw new IllegalArgumentException("Invalid " + LOGIN_PROPERTY +
+                                               " property: " + loginProperty);
         }
         logger.info("Starting {} service on port {} with authentication {}", 
                     new Object[] { ssl ? "HTTPS" : "HTTP", portProperty, login });
