@@ -33,12 +33,11 @@ import com.google.common.collect.Lists;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
 
 public final class Entity {
@@ -98,8 +97,8 @@ public final class Entity {
     public static Entity modifiableEntity(UUID uuid) {
         Entity entity = new Entity();
         entity.uuid = uuid;
-        entity.attributes = new HashMap<>();
-        entity.validations = new HashSet<>();
+        entity.attributes = new TreeMap<>();
+        entity.validations = new TreeSet<>();
         entity.indexes = HashBiMap.create();
         return entity;
     }

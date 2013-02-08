@@ -31,11 +31,11 @@ import org.codehaus.jackson.annotate.JsonProperty;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
 
 public final class Attribute {
@@ -152,7 +152,7 @@ public final class Attribute {
         scalar.attributeType = AttributeType.SCALAR;
         scalar.type = type;
         scalar.properties = new HashMap<>();
-        scalar.validations = new HashSet<>();
+        scalar.validations = new TreeSet<>();
         return scalar;
     }
 
@@ -160,7 +160,7 @@ public final class Attribute {
         Attribute collection = new Attribute();
         collection.uuid = uuid;
         collection.attributeType = AttributeType.COLLECTION;
-        collection.attributes = new HashMap<>();
+        collection.attributes = new TreeMap<>();
         return collection;
     }
 

@@ -32,16 +32,12 @@ import com.akiban.ais.model.NopVisitor;
 import com.akiban.ais.model.UserTable;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
-import com.akiban.server.entity.changes.SpaceDiff;
-import com.akiban.server.entity.changes.StringChangeLog;
 import com.akiban.server.entity.model.Space;
 import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.util.JUnitUtils;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Maps;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,13 +45,13 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.akiban.util.JUnitUtils.normalizeJson;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -87,10 +83,7 @@ public final class AisToSpaceTest {
         ais.traversePostOrder(new SetUuidAssigner());
         Space actualSpace = AisToSpace.create(ais);
 
-        StringChangeLog changes = new StringChangeLog();
-        new SpaceDiff(expectedSpace, actualSpace).apply(changes);
-
-        JUnitUtils.equalCollections("no changes expected", Collections.emptyList(), changes.getMessages());
+        assertEquals("space json", normalizeJson(expectedSpace.toJson()), normalizeJson(actualSpace.toJson()));
     }
 
     private class SetUuidAssigner extends NopVisitor {

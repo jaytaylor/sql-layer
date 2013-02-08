@@ -73,7 +73,7 @@ final class EntityBuilder {
                 continue;
             TInstance tInstance = column.tInstance();
             TClass tClass = tInstance.typeClass();
-            String type = tClass.name().unqualifiedName();
+            String type = tClass.name().unqualifiedName().toLowerCase();
 
             Attribute scalar = Attribute.modifiableScalar(uuidOrCreate(column), type);
 

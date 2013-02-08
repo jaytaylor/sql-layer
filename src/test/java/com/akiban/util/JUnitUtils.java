@@ -28,8 +28,12 @@ package com.akiban.util;
 
 import com.google.common.base.Functions;
 import com.google.common.collect.Lists;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -97,6 +101,17 @@ public final class JUnitUtils {
     public static File getContainingFile(Class<?> cls) {
         String path = "src/test/resources/" + cls.getCanonicalName().replace('.', File.separatorChar);
         return new File(path).getParentFile();
+    }
+
+    public static String normalizeJson(String jsonString) {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            JsonNode node = mapper.readTree(new StringReader(jsonString));
+            return mapper.defaultPrettyPrintingWriter().writeValueAsString(node);
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static class BuildingMap<K,V> extends HashMap<K,V> {
