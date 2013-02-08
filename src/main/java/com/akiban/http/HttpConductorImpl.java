@@ -26,6 +26,7 @@
 
 package com.akiban.http;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.security.SecurityService;
@@ -35,6 +36,7 @@ import org.eclipse.jetty.security.Authenticator;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.JDBCLoginService;
+import org.eclipse.jetty.security.LoginService;
 import org.eclipse.jetty.security.SecurityHandler;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.security.authentication.DigestAuthenticator;
@@ -49,6 +51,8 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Method;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -220,9 +224,9 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                 sh.setAuthenticator(authenticator);
                 sh.setConstraintMappings(Collections.singletonList(cm));
 
-                JDBCLoginService loginService =
-                    new JDBCLoginService(SecurityService.REALM, 
-                                         HttpConductorImpl.class.getResource(resource).toString());
+                LoginService loginService =
+                    new SingleThreadJDBCLoginService(SecurityService.REALM, 
+                                                     HttpConductorImpl.class.getResource(resource).toString());
                 sh.setLoginService(loginService);
 
                 sh.setHandler(localHandlerCollection);
@@ -277,5 +281,40 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         if (result.contains("*"))
             throw new IllegalPathRequest("can't ask for a glob within the first URL segment");
         return result;
+    }
+
+    // Embedded JDBC is single-threaded, but default assumes it is not.
+    // Login service is already synchronized, so remember thread and
+    // close connection when it changes. Unfortunately, that's a
+    // private method.
+    static class SingleThreadJDBCLoginService extends JDBCLoginService {
+        private Thread thread;
+        private Method closeMethod;
+
+        public SingleThreadJDBCLoginService(String name, String config)
+                throws IOException {
+            super(name, config);
+            try {
+                closeMethod = JDBCLoginService.class.getDeclaredMethod("closeConnection", null);
+                closeMethod.setAccessible(true);
+            }
+            catch (Exception ex) {
+                throw new AkibanInternalException("Cannot get JDBC close method", ex);
+            }
+        }
+
+        @Override
+        protected org.eclipse.jetty.server.UserIdentity loadUser(String username) {
+            if (thread != Thread.currentThread()) {
+                try {
+                    closeMethod.invoke(this);
+                }
+                catch (Exception ex) {
+                    throw new AkibanInternalException("Cannot call JDBC close method", ex);
+                }
+                thread = Thread.currentThread();
+            }
+            return super.loadUser(username);
+        }
     }
 }
