@@ -34,4 +34,5 @@ public interface RestDMLService {
     public Response insert(String schema, String table, JsonNode node);
     public Response getAllEntities(String schema, String table, Integer depth);
     public Response getEntities(String schema, String table, Integer depth, String pks);
+    public Response delete(String schema, String table, String pks);
 }

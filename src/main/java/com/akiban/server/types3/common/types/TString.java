@@ -178,6 +178,11 @@ public abstract class TString extends TClass
     }
 
     @Override
+    public boolean attributeIsPhysical(int attributeIndex) {
+        return attributeIndex != StringAttribute.LENGTH.ordinal();
+    }
+
+    @Override
     public void attributeToString(int attributeIndex, long value, StringBuilder output) {
         StringAttribute attribute = StringAttribute.values()[attributeIndex];
         switch (attribute) {
@@ -209,6 +214,40 @@ public abstract class TString extends TClass
                 output.append(collator.getName());
             }
             break;
+        }
+    }
+
+    @Override
+    public Object attributeToObject(int attributeIndex, long value) {
+        StringAttribute attribute = StringAttribute.values()[attributeIndex];
+        switch (attribute) {
+        case LENGTH:
+            return value;
+        case CHARSET:
+            StringFactory.Charset[] charsets = StringFactory.Charset.values();
+            if (value < 0 || value >= charsets.length) {
+                logger.warn("charset value out of range: {}", value);
+                return value;
+            }
+            else {
+                return charsets[(int)value];
+            }
+        case COLLATION:
+            AkCollator collator = AkCollatorFactory.getAkCollator((int)value);
+            if (collator == null) {
+                if (value == StringFactory.NULL_COLLATION_ID) {
+                    return "NONE";
+                }
+                else {
+                    logger.warn("unknown collator for id " + value + " (" + ((int)value) + ')');
+                    return value;
+                }
+            }
+            else {
+                return collator.getName();
+            }
+        default:
+            throw new IllegalArgumentException("illegal attribute index: " + attributeIndex);
         }
     }
 
