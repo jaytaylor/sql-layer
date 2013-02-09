@@ -124,18 +124,25 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                             appender.append('[');
                             boolean res = s.execute(sql);
                             if(res) {
-                                JDBCResultSet rs = (JDBCResultSet) s.getResultSet();
+                                JDBCResultSet rs = (JDBCResultSet)s.getResultSet();
                                 SQLOutputCursor a = new SQLOutputCursor(rs);
                                 JsonRowWriter jsonRowWriter = new JsonRowWriter(a);
                                 if(jsonRowWriter.writeRows(a, appender, "\n", a)) {
                                     appender.append('\n');
                                 }
+                            } else {
+                                int updateCount = s.getUpdateCount();
+                                appender.append("{\"update_count\":");
+                                appender.append(updateCount);
+                                appender.append('}');
                             }
                             appender.append(']');
                             writer.write('\n');
                             writer.close();
                         } catch(SQLException e) {
                             throw new WebApplicationException(e);
+                        } catch(InvalidOperationException e) {
+                            throw wrapIOE(e);
                         }
                     }
                 })
