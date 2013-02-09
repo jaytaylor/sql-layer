@@ -443,7 +443,7 @@ public class JDBCResultSet implements ResultSet
     }
 
     @Override
-    public ResultSetMetaData getMetaData() throws SQLException {
+    public JDBCResultSetMetaData getMetaData() throws SQLException {
         return metaData;
     }
 
