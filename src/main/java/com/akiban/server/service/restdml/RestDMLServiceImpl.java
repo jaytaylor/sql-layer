@@ -125,7 +125,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                             boolean res = s.execute(sql);
                             if(res) {
                                 JDBCResultSet rs = (JDBCResultSet) s.getResultSet();
-                                EmbeddedSQLOutputHelper a = new EmbeddedSQLOutputHelper(rs);
+                                SQLOutputCursor a = new SQLOutputCursor(rs);
                                 JsonRowWriter jsonRowWriter = new JsonRowWriter(a);
                                 if(jsonRowWriter.writeRows(a, appender, "\n", a)) {
                                     appender.append('\n');

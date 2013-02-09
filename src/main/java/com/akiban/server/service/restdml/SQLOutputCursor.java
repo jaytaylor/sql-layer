@@ -27,6 +27,7 @@
 package com.akiban.server.service.restdml;
 
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.row.DelegateRow;
 import com.akiban.qp.row.Row;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.service.externaldata.GenericRowTracker;
@@ -40,49 +41,52 @@ import java.sql.SQLException;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-public class EmbeddedSQLOutputHelper extends GenericRowTracker implements Cursor, JsonRowWriter.WriteRow {
+public class SQLOutputCursor extends GenericRowTracker implements Cursor, JsonRowWriter.WriteRow {
     private final Deque<ResultSetHolder> holderStack = new ArrayDeque<>();
-    private ResultSetHolder holder;
+    private ResultSetHolder currentHolder;
 
-    public EmbeddedSQLOutputHelper(JDBCResultSet rs) throws SQLException {
-        holder = new ResultSetHolder(rs, null, 0);
+    public SQLOutputCursor(JDBCResultSet rs) throws SQLException {
+        currentHolder = new ResultSetHolder(rs, null, 0);
     }
 
+    //
     // GenericRowTracker
+    //
 
     @Override
     public String getRowName() {
-        return holder.name;
+        return currentHolder.name;
     }
 
+    //
     // Cursor
+    //
 
     @Override
     public void open() {
-        // None
     }
 
     @Override
     public Row next() {
-        if(holder == null) {
+        if(currentHolder == null) {
             assert holderStack.isEmpty();
             return null;
         }
         try {
             Row row = null;
-            if(!holderStack.isEmpty() && holderStack.peek().depth > holder.depth) {
-                holder = holderStack.pop();
+            if(!holderStack.isEmpty() && holderStack.peek().depth > currentHolder.depth) {
+                currentHolder = holderStack.pop();
             }
-            if(holder.rs.next()) {
-                row = holder.rs.unwrap(Row.class);
-                setDepth(holder.depth);
+            if(currentHolder.resultSet.next()) {
+                row = currentHolder.resultSet.unwrap(Row.class);
+                setDepth(currentHolder.depth);
             } else if(!holderStack.isEmpty()) {
-                holder = holderStack.pop();
+                currentHolder = holderStack.pop();
                 row = next();
             } else {
-                holder = null;
+                currentHolder = null;
             }
-            return row;
+            return (row != null) ? new RowHolder(row, currentHolder) : null;
         } catch(SQLException e) {
             throw new IllegalStateException(e);
         }
@@ -95,7 +99,8 @@ public class EmbeddedSQLOutputHelper extends GenericRowTracker implements Cursor
 
     @Override
     public void close() {
-        // None
+        holderStack.clear();
+        currentHolder = null;
     }
 
     @Override
@@ -118,26 +123,34 @@ public class EmbeddedSQLOutputHelper extends GenericRowTracker implements Cursor
         throw new UnsupportedOperationException();
     }
 
+    //
     // JsonRowWriter.WriteRow
+    //
 
     @Override
     public void write(Row row, AkibanAppender appender) {
+        if(!(row instanceof RowHolder)) {
+            throw new IllegalArgumentException("Unexpected row: " + row.getClass());
+        }
         try {
-            JDBCResultSetMetaData metaData = holder.metaData();
+            RowHolder rowHolder = (RowHolder)row;
+            JDBCResultSet resultSet = rowHolder.rsHolder.resultSet;
+            JDBCResultSetMetaData metaData = resultSet.getMetaData();
+            boolean begun = false;
             boolean savedCurrent = false;
-            int count = metaData.getColumnCount();
-            for(int i = 0; i < count; ++i) {
-                String name = metaData.getColumnName(i+1);
-                if(metaData.getNestedResultSet(i+1) != null) {
+            for(int col = 1; col <= metaData.getColumnCount(); ++col) {
+                String colName = metaData.getColumnName(col);
+                if(metaData.getNestedResultSet(col) != null) {
                     if(!savedCurrent) {
-                        holderStack.push(holder);
+                        holderStack.push(currentHolder);
                         savedCurrent = true;
                     }
-                    JDBCResultSet nested = (JDBCResultSet)holder.rs.getObject(i+1);
-                    holderStack.push(new ResultSetHolder(nested, name, holder.depth + 1));
+                    JDBCResultSet nested = (JDBCResultSet)resultSet.getObject(col);
+                    holderStack.push(new ResultSetHolder(nested, colName, rowHolder.rsHolder.depth + 1));
                 } else {
-                    PValueSource pValueSource = row.pvalue(i);
-                    JsonRowWriter.writeValue(name, pValueSource, appender, i == 0);
+                    PValueSource pValueSource = row.pvalue(col - 1);
+                    JsonRowWriter.writeValue(colName, pValueSource, appender, !begun);
+                    begun = true;
                 }
             }
         } catch(SQLException e) {
@@ -145,14 +158,13 @@ public class EmbeddedSQLOutputHelper extends GenericRowTracker implements Cursor
         }
     }
 
-
     private static class ResultSetHolder {
-        public final JDBCResultSet rs;
+        public final JDBCResultSet resultSet;
         public final String name;
         public final int depth;
 
-        private ResultSetHolder(JDBCResultSet rs, String name, int depth) {
-            this.rs = rs;
+        private ResultSetHolder(JDBCResultSet resultSet, String name, int depth) {
+            this.resultSet = resultSet;
             this.name = name;
             this.depth = depth;
         }
@@ -161,14 +173,14 @@ public class EmbeddedSQLOutputHelper extends GenericRowTracker implements Cursor
         public String toString() {
             return name + "(" + depth + ")";
         }
-
-        public JDBCResultSetMetaData metaData() {
-            try {
-                return rs.getMetaData();
-            } catch(SQLException e) {
-                throw new IllegalArgumentException(e);
-            }
-        }
     }
 
+    private static class RowHolder extends DelegateRow {
+        public final ResultSetHolder rsHolder;
+
+        public RowHolder(Row delegate, ResultSetHolder rsHolder) {
+            super(delegate);
+            this.rsHolder = rsHolder;
+        }
+    }
 }
