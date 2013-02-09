@@ -28,8 +28,8 @@ package com.akiban.server.entity.model.diff;
 
 public class DiffIOException extends RuntimeException
 {
-    public DiffIOException (String msg)
+    public DiffIOException (Throwable cause)
     {
-        super(msg);
+        super(cause);
     }
 }

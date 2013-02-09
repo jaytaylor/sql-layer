@@ -43,11 +43,11 @@ import org.codehaus.jackson.JsonGenerator;
  */
 public class JsonDiffPreview implements SpaceModificationHandler
 {
-    private final JsonFactory factory = new JsonFactory();
+    private static final JsonFactory factory = new JsonFactory();
+    private static final boolean useDefaultPrettyPrinter = true;
     
-    private JsonGenerator jsonGen; // find json print stream
-    private StringWriter stringWriter;
-    private boolean useDefaultPrettyPrinter = true;
+    private final JsonGenerator jsonGen;
+    private final StringWriter stringWriter;
     
     public JsonDiffPreview()
     {
@@ -60,7 +60,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            
+            throw new DiffIOException(ex);
         }
     }
 
@@ -72,7 +72,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ioException(ex);
+            throw new DiffIOException(ex);
         }
         return stringWriter;
     }
@@ -90,7 +90,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ioException(ex);
+            throw new DiffIOException(ex);
         }
     }
 
@@ -108,7 +108,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ioException(ex);
+            throw new DiffIOException(ex);
         }
     }
 
@@ -126,7 +126,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ioException(ex);
+            throw new DiffIOException(ex);
         }
     }
 
@@ -143,7 +143,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ioException(ex);
+            throw new DiffIOException(ex);
         }
     }
 
@@ -160,7 +160,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ioException(ex);
+            throw new DiffIOException(ex);
         }
     }
 
@@ -178,7 +178,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ioException(ex);
+            throw new DiffIOException(ex);
         }
     }
 
@@ -196,7 +196,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ioException(ex);
+            throw new DiffIOException(ex);
         }
     }
 
@@ -214,7 +214,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ioException(ex);
+            throw new DiffIOException(ex);
         }
     }
 
@@ -232,7 +232,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ioException(ex);
+            throw new DiffIOException(ex);
         }
     }
 
@@ -249,7 +249,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ioException(ex);
+            throw new DiffIOException(ex);
         }
     }
 
@@ -266,7 +266,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ioException(ex);
+            throw new DiffIOException(ex);
         }
     }
 
@@ -283,7 +283,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ioException(ex);
+            throw new DiffIOException(ex);
         }
     }
 
@@ -301,7 +301,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ioException(ex);
+            throw new DiffIOException(ex);
         }
     }
 
@@ -320,7 +320,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ioException(ex);
+            throw new DiffIOException(ex);
         }
     }
 
@@ -335,27 +335,23 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         catch (IOException ex)
         {
-            ioException(ex);
+            throw new DiffIOException(ex);
             
         }
     }
     
     private void startObject() throws IOException
     {
-        //TODO: start locking the shared buffer ?
         jsonGen.writeStartObject();
     }
     
     private void endObject() throws IOException
     {
         jsonGen.writeEndObject();
-        //TODO: release the buffer ?
     }
     
     private void entry(String name, UUID uuid) throws IOException
     {
-        // JSonGenerator.writeObject does not handle object of types UUID
-        // So use it's String representation instead (for now)
         entry(name, uuid.toString());
     }
 
@@ -363,10 +359,5 @@ public class JsonDiffPreview implements SpaceModificationHandler
     {
         jsonGen.writeFieldName(name);
         jsonGen.writeObject(value);
-    }
-    
-    private static Exception ioException(Exception e)
-    {
-        return new DiffIOException(e.getMessage());
     }
 }
