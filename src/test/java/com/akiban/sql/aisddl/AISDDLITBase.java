@@ -29,6 +29,7 @@ package com.akiban.sql.aisddl;
 import com.akiban.sql.ServerSessionITBase;
 import com.akiban.sql.parser.DDLStatementNode;
 import com.akiban.sql.parser.StatementNode;
+import org.junit.Before;
 
 public class AISDDLITBase extends ServerSessionITBase {
     @Before
