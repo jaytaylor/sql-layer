@@ -3,12 +3,12 @@
         "cid": 1,
         "first_name": "John",
         "last_name": "Smith",
-        "orders": [
+        "test.orders": [
             {
                 "oid": 101,
                 "cid": 1,
                 "odate": "2011-03-01 00:00:00",
-                "items": [
+                "test.items": [
                     {
                         "iid": 1011,
                         "oid": 101,
@@ -27,7 +27,7 @@
                 "odate": "2011-03-02 00:00:00"
             }
         ],
-        "addresses": [
+        "test.addresses": [
             {
                 "aid": 101,
                 "cid": 1,

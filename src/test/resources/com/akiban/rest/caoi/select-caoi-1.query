@@ -1,15 +1,1 @@
-SELECT *,
-       (
-       SELECT *
-       FROM test.addresses WHERE test.addresses.cid=test.customers.cid
-       ) AS addresses,
-       (
-       SELECT *,
-              (
-              SELECT *
-              FROM test.items WHERE test.items.oid=test.orders.oid
-              ) AS items
-       FROM test.orders WHERE test.orders.cid=test.customers.cid
-       ) AS orders
-FROM test.customers
-WHERE test.customers.cid=1
+SELECT ** FROM test.customers WHERE cid=1
