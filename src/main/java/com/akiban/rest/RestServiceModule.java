@@ -29,10 +29,7 @@ package com.akiban.rest;
 import com.akiban.rest.resources.DataAccessOperationsResource;
 import com.akiban.rest.resources.FaviconResource;
 import com.akiban.rest.resources.SqlExecutionResource;
-import com.akiban.rest.resources.SqlGroupsResource;
 import com.akiban.rest.resources.SqlQueryResource;
-import com.akiban.rest.resources.SqlSchemataResource;
-import com.akiban.rest.resources.SqlTablesResource;
 import com.akiban.rest.resources.VersionResource;
 import com.google.inject.servlet.ServletModule;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
@@ -45,10 +42,7 @@ public class RestServiceModule extends ServletModule {
     protected void configureServlets() {
         bind(FaviconResource.class).asEagerSingleton();
         bind(DataAccessOperationsResource.class).asEagerSingleton();
-        bind(SqlGroupsResource.class).asEagerSingleton();
         bind(SqlQueryResource.class).asEagerSingleton();
-        bind(SqlSchemataResource.class).asEagerSingleton();
-        bind(SqlTablesResource.class).asEagerSingleton();
         bind(SqlExecutionResource.class).asEagerSingleton();
         bind(VersionResource.class).asEagerSingleton();
 
