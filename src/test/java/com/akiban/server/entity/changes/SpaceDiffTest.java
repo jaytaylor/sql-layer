@@ -83,5 +83,4 @@ public final class SpaceDiffTest {
 
     private final String testName;
     private static final File dir = JUnitUtils.getContainingFile(SpaceDiffTest.class);
-
 }
