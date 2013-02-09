@@ -24,31 +24,58 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.rest.resources;
+package com.akiban.server.service.externaldata;
 
-import com.akiban.server.service.restdml.RestDMLService;
-import com.google.inject.Inject;
+import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.RowType;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.List;
 
-/**
- * Allows free-form SQL queries using SELECT.
- */
-@Path("/query")
-public class SqlQueryResource {
-    @Inject
-    private RestDMLService restDMLService;
+public abstract class GenericRowTracker implements RowTracker {
+    private final List<RowType> openTypes = new ArrayList<>(3);
+    private RowType curRowType;
+    private int curDepth;
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getQueryResults(@QueryParam("format") String format,
-                                    @QueryParam("jsoncallback") String jsonp,
-                                    @QueryParam("q") String query) throws Exception {
-        return restDMLService.runSQL(query);
+    protected void setDepth(int depth) {
+        curDepth = depth;
+    }
+
+    @Override
+    public void reset() {
+        curRowType = null;
+        curDepth = 0;
+        openTypes.clear();
+    }
+
+    @Override
+    public int getMinDepth() {
+        return 0;
+    }
+
+    @Override
+    public int getMaxDepth() {
+        return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public void beginRow(Row row) {
+        curRowType = row.rowType();
+    }
+
+    @Override
+    public int getRowDepth() {
+        return curDepth;
+    }
+
+    @Override
+    public boolean isSameRowType() {
+        return (getRowDepth() < openTypes.size()) &&
+               (curRowType == openTypes.get(getRowDepth()));
+    }
+
+    @Override
+    public void pushRowType() {
+        openTypes.add(curRowType);
     }
 }
