@@ -66,6 +66,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     private final TransactionService transactionService;
     private final ExternalDataService extDataService;
     private InsertProcessor insertProcessor;
+    private DeleteProcessor deleteProcessor;
     
     @Inject
     public RestDMLServiceImpl(ConfigurationService configService,
@@ -81,6 +82,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         this.transactionService = transactionService;
 
         this.insertProcessor = new InsertProcessor (configService, treeService, store, registryService);
+        this.deleteProcessor = new DeleteProcessor (configService, treeService, store, registryService);
         this.extDataService = extDataService;
     }
     
@@ -174,6 +176,26 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                     }
                 })
                 .build();
+    }
+
+
+    @Override
+    public Response delete(String schema, String table, String identifier) {
+        final TableName tableName = new TableName (schema, table);
+        
+        try (Session session = sessionService.createSession();
+                CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+            deleteProcessor.processDelete(session, ais, tableName, identifier);
+            txn.commit();
+            return Response.status(Response.Status.OK)
+                    .entity("")
+                    .build();
+        } catch (InvalidOperationException e) {
+            throwToClient(e);
+        }
+        assert false : "No value returned from insert";
+        return null;
     }
 
     private void throwToClient(InvalidOperationException e) {
