@@ -110,6 +110,10 @@ public class JDBCParameterMetaData implements ParameterMetaData
         return params.get(param - 1);
     }
 
+    public String getParameterName(int param) throws SQLException {
+        return getParameter(param).getName();
+    }
+
     /* Wrapper */
 
     @Override

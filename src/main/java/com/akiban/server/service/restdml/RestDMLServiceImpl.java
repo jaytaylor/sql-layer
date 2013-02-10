@@ -32,6 +32,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
@@ -45,7 +46,9 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.embedded.EmbeddedJDBCService;
+import com.akiban.sql.embedded.JDBCCallableStatement;
 import com.akiban.sql.embedded.JDBCConnection;
+import com.akiban.sql.embedded.JDBCParameterMetaData;
 import com.akiban.sql.embedded.JDBCResultSet;
 import com.akiban.util.AkibanAppender;
 import com.google.inject.Inject;
@@ -264,11 +267,35 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                     @Override
                     public void write(OutputStream output) throws IOException, WebApplicationException {
                         try (Connection conn = jdbcService.newConnection(new Properties(), request.getUserPrincipal());
-                             CallableStatement s = ((JDBCConnection)conn).prepareCall(procName)) {
-                            
+                             JDBCCallableStatement call = ((JDBCConnection)conn).prepareCall(procName)) {
+                            for (Map.Entry<String,List<String>> entry : params.entrySet()) {
+                                if ("jsoncallback".equals(entry.getKey()))
+                                    continue;
+                                if (entry.getValue().size() != 1)
+                                    throw new WrongExpressionArityException(1, entry.getValue().size());
+                                call.setString(entry.getKey(), entry.getValue().get(0));
+                            }
+                            call.execute();
                             PrintWriter writer = new PrintWriter(output);
                             AkibanAppender appender = AkibanAppender.of(writer);
-                            writer.write('\n');
+                            appender.append('{');
+                            boolean first = true;
+                            JDBCParameterMetaData md = (JDBCParameterMetaData)call.getParameterMetaData();
+                            for (int i = 1; i <= md.getParameterCount(); i++) {
+                                switch (md.getParameterMode(i)) {
+                                case ParameterMetaData.parameterModeOut:
+                                case ParameterMetaData.parameterModeInOut:
+                                    if (first)
+                                        first = false;
+                                    else
+                                        appender.append(',');
+                                    appender.append('"');
+                                    appender.append(md.getParameterName(i));
+                                    appender.append("\":");
+                                    call.formatAsJson(i, appender);
+                                }
+                            }
+                            appender.append('}');
                             writer.close();
                         } catch(SQLException e) {
                             throw new WebApplicationException(e);

@@ -259,7 +259,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         return reqs.akServer();
     }
 
-    public CallableStatement prepareCall(TableName routineName) throws SQLException {
+    public JDBCCallableStatement prepareCall(TableName routineName) throws SQLException {
         EmbeddedQueryContext context = new EmbeddedQueryContext(this);
         updateAIS(context);
         return new JDBCCallableStatement(this, ExecutableCallStatement.executableStatement(routineName, context));
