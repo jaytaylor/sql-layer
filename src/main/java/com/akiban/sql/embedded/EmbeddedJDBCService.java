@@ -26,9 +26,12 @@
 
 package com.akiban.sql.embedded;
 
+import java.sql.Connection;
 import java.sql.Driver;
+import java.sql.SQLException;
 
 public interface EmbeddedJDBCService
 {
     public Driver getDriver();
+    public Connection newConnection() throws SQLException;
 }

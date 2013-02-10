@@ -44,8 +44,10 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 
+import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.SQLException;
+import java.util.Properties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,6 +82,11 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
     @Override
     public Driver getDriver() {
         return driver;
+    }
+
+    @Override
+    public Connection newConnection() throws SQLException {
+        return driver.connect(JDBCDriver.URL, new Properties());
     }
 
     @Override
