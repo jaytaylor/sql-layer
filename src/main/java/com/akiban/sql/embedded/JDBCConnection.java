@@ -353,7 +353,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     @Override
     public void close() throws SQLException {
         if (isTransactionActive())
-            rollback();
+            rollbackTransaction();
         while (!openResultSets.isEmpty()) {
             openResultSets.get(0).close();
         }

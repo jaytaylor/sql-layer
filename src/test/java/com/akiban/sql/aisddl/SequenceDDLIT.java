@@ -30,7 +30,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import com.akiban.ais.model.TableName;
@@ -44,13 +43,6 @@ import java.util.Collections;
 
 public class SequenceDDLIT extends AISDDLITBase {
 
-    @Before
-    public void sessionStart() {
-        // Creating one of these may start services that add system
-        // sequences, making numbers unstable unless done first.
-        new TestSession();
-    }
-    
     @Test (expected=SQLParserException.class)
     public void dropSequenceFail() throws Exception{
         String sql = "DROP SEQUENCE not_here";

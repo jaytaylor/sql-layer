@@ -286,12 +286,12 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         return result;
     }
 
-    // Embedded JDBC is single-threaded, but default assumes it is not.
-    // Login service is already synchronized, so remember thread and
-    // close connection when it changes. Unfortunately, that's a
-    // private method.
+    // Embedded JDBC is single-threaded, but login service assumes it
+    // is thread-safe.  Also, it does not close its ResultSet, which
+    // leaves a transaction active. So just close connection around
+    // each use.  Login service is already
+    // synchronized. Unfortunately, this needs a private method.
     static class SingleThreadJDBCLoginService extends JDBCLoginService {
-        private Thread thread;
         private Method closeMethod;
 
         public SingleThreadJDBCLoginService(String name, String config)
@@ -308,16 +308,17 @@ public final class HttpConductorImpl implements HttpConductor, Service {
 
         @Override
         protected org.eclipse.jetty.server.UserIdentity loadUser(String username) {
-            if (thread != Thread.currentThread()) {
+            try {
+                return super.loadUser(username);
+            }
+            finally {
                 try {
                     closeMethod.invoke(this);
                 }
                 catch (Exception ex) {
-                    throw new AkibanInternalException("Cannot call JDBC close method", ex);
+                    logger.warn("Cannot call JDBC close method", ex);
                 }
-                thread = Thread.currentThread();
             }
-            return super.loadUser(username);
         }
     }
 }

@@ -77,6 +77,18 @@ public final class TInstance {
         tclass.formatAsJson(this, source, out);
     }
 
+    public Object attributeToObject(int attributeIndex) {
+        int value;
+        switch (attributeIndex) {
+        case 0: value = attr0; break;
+        case 1: value = attr1; break;
+        case 2: value = attr2; break;
+        case 3: value = attr3; break;
+        default: throw new IllegalArgumentException("index out of range for " + tclass +  ": " + attributeIndex);
+        }
+        return tclass.attributeToObject(attributeIndex, value);
+    }
+
     public int attribute(Attribute attribute) {
         if (enumClass != attribute.getClass())
             throw new IllegalArgumentException("Illegal attribute: " + attribute.name());

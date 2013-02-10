@@ -67,6 +67,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     private final SecurityService securityService;
     private final ExternalDataService extDataService;
     private final InsertProcessor insertProcessor;
+    private final DeleteProcessor deleteProcessor;
     
     @Inject
     public RestDMLServiceImpl(SessionService sessionService,
@@ -84,9 +85,11 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         this.securityService = securityService;
         this.extDataService = extDataService;
         this.insertProcessor = new InsertProcessor (configService, treeService, store, registryService);
+        this.deleteProcessor = new DeleteProcessor (configService, treeService, store, registryService);
     }
     
-    /* service */
+    /* Service */
+
     @Override
     public void start() {
         // None
@@ -102,35 +105,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         //None
     }
     
-    /* RestDML Service Impl */
-    @Override
-    public Response insert(final HttpServletRequest request, final String schemaName, final String tableName, JsonNode node)  {
-        if (!securityService.isAccessible(request, schemaName))
-            return Response.status(Response.Status.FORBIDDEN).build();
-        TableName rootTable = new TableName (schemaName, tableName);
-        try (Session session = sessionService.createSession();
-            CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
-            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-            String pk = insertProcessor.processInsert(session, ais, rootTable, node);
-            txn.commit();
-            return Response.status(Response.Status.OK)
-                .entity(pk).build();
-        } catch (JsonParseException ex) {
-            throw new WebApplicationException(
-                    Response.status(Response.Status.BAD_REQUEST)
-                            .entity(ex.toString())
-                            .build());
-        } catch (IOException e) {
-            throw new WebApplicationException(
-                    Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                        .entity(e.toString())
-                        .build());
-        } catch (InvalidOperationException e) {
-            throwToClient(e);
-        }
-        assert false : "No value returned from insert";
-        return null;
-    }
+    /* RestDMLService */
 
     @Override
     public Response getAllEntities(final HttpServletRequest request, final String schema, final String table, Integer depth) {
@@ -182,6 +157,56 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                     }
                 })
                 .build();
+    }
+
+    @Override
+    public Response insert(final HttpServletRequest request, final String schemaName, final String tableName, JsonNode node)  {
+        if (!securityService.isAccessible(request, schemaName))
+            return Response.status(Response.Status.FORBIDDEN).build();
+        TableName rootTable = new TableName (schemaName, tableName);
+        try (Session session = sessionService.createSession();
+            CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+            String pk = insertProcessor.processInsert(session, ais, rootTable, node);
+            txn.commit();
+            return Response.status(Response.Status.OK)
+                .entity(pk).build();
+        } catch (JsonParseException ex) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.BAD_REQUEST)
+                            .entity(ex.toString())
+                            .build());
+        } catch (IOException e) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity(e.toString())
+                        .build());
+        } catch (InvalidOperationException e) {
+            throwToClient(e);
+        }
+        assert false : "No value returned from insert";
+        return null;
+    }
+
+    @Override
+    public Response delete(final HttpServletRequest request, final String schema, final String table, final String identifier) {
+        if (!securityService.isAccessible(request, schema))
+            return Response.status(Response.Status.FORBIDDEN).build();
+        final TableName tableName = new TableName (schema, table);
+        
+        try (Session session = sessionService.createSession();
+                CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+            deleteProcessor.processDelete(session, ais, tableName, identifier);
+            txn.commit();
+            return Response.status(Response.Status.OK)
+                    .entity("")
+                    .build();
+        } catch (InvalidOperationException e) {
+            throwToClient(e);
+        }
+        assert false : "No value returned from insert";
+        return null;
     }
 
     private void throwToClient(InvalidOperationException e) {

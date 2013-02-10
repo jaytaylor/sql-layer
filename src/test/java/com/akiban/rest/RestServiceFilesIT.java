@@ -177,25 +177,27 @@ public class RestServiceFilesIT extends ITBase {
             loadDataFile(SCHEMA_NAME, data);
         }
     }
+    
+    public void checkRequest() throws Exception {
+        if (caseParams.checkURI != null && caseParams.checkExpected != null) {
+            HttpURLConnection httpConn = openConnection(getRestURL(caseParams.checkURI.trim()), "GET");
+            try {
+                String actual = getOutput (httpConn);
+                compareExpected (caseParams.caseName + " check expected response ", caseParams.checkExpected, actual);
+            } finally {
+                httpConn.disconnect();
+            }
+        }
+    }
 
     @Test
     public void testRequest() throws Exception {
         loadDatabase(caseParams.subDir);
 
-        URL requestURL = getRestURL(caseParams.requestURI);
-        HttpURLConnection httpConn = (HttpURLConnection)requestURL.openConnection();
-
-        if(caseParams.requestMethod.equals("DELETE")) {
-            throw new UnsupportedOperationException("Unsupported method: " + caseParams.requestMethod);
-        }
-
-        httpConn.setRequestMethod(caseParams.requestMethod);
-        httpConn.setUseCaches(false);
-        httpConn.setDoOutput(true);
+        HttpURLConnection httpConn = openConnection (getRestURL(caseParams.requestURI), caseParams.requestMethod);
 
         try {
             // Request
-            // TODO: write to getOutputStream for PUT and POST
             if (caseParams.requestMethod.equals("POST") || caseParams.requestMethod.equals("PUT")) {
                 if (caseParams.requestBody == null) {
                     throw new UnsupportedOperationException ("PUT/POST expects request body (<test>.body)");
@@ -207,25 +209,44 @@ public class RestServiceFilesIT extends ITBase {
                 httpConn.setRequestProperty("Content-Type", "application/json");
                 httpConn.setRequestProperty("Accept", "application/json");
                 httpConn.getOutputStream().write(request);
-            }
+            } // else GET || DELETE 
             // Response
-            
-            InputStream is;
-            try {
-                is = httpConn.getInputStream();
-            } catch(Exception e) {
-                is = httpConn.getErrorStream();
-            }
-            StringBuilder builder = new StringBuilder();
-            Strings.readStreamTo(is, builder, true);
-            
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode expectedNode = mapper.readTree(caseParams.expectedResponse);
-            JsonNode actualNode = mapper.readTree(builder.toString());
 
-            assertEquals(caseParams.requestMethod + " response", expectedNode, actualNode);
+            String actual = getOutput (httpConn);
+            
+            compareExpected (caseParams.requestMethod + " response", caseParams.expectedResponse, actual);
+            
         } finally {
             httpConn.disconnect();
         }
+        checkRequest();
+    }
+    
+    private HttpURLConnection openConnection(URL url, String requestMethod) throws IOException {
+        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+        conn.setUseCaches(false);
+        conn.setDoOutput(true);
+        conn.setRequestMethod(requestMethod);
+        return conn;
+    }
+     
+    private String getOutput(HttpURLConnection httpConn) throws IOException {
+        InputStream is = null;
+        try {
+            is = httpConn.getInputStream();
+        } catch(Exception e) {
+            is = httpConn.getErrorStream();
+        }
+        if (is == null) return null;
+        StringBuilder builder = new StringBuilder();
+        Strings.readStreamTo(is, builder, true);
+        return builder.toString().length() > 0 ? builder.toString() : null;
+    }
+    
+    private void compareExpected(String assertMsg, String expected, String actual) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode expectedNode = expected != null ? mapper.readTree(expected) : null;
+        JsonNode actualNode = actual != null ? mapper.readTree(actual) : null;
+        assertEquals(assertMsg, expectedNode, actualNode);    
     }
 }
