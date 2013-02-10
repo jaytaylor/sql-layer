@@ -31,7 +31,9 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.Quote;
+import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.service.Service;
@@ -141,7 +143,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                             writer.write('\n');
                             writer.close();
                         } catch(InvalidOperationException e) {
-                            throw wrapIOE(e);
+                            throw wrapException(e);
                         }
                     }
                 })
@@ -170,7 +172,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                             txn.commit();
                             writer.close();
                         } catch(InvalidOperationException e) {
-                            throw wrapIOE(e);
+                            throw wrapException(e);
                         }
                     }
                 })
@@ -193,7 +195,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         } catch (IOException e) {
             throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
         } catch (InvalidOperationException e) {
-            throw wrapIOE(e);
+            throw wrapException(e);
         }
     }
 
@@ -212,7 +214,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                     .entity("")
                     .build();
         } catch (InvalidOperationException e) {
-            throw wrapIOE(e);
+            throw wrapException(e);
         }
     }
 
@@ -246,9 +248,9 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                             writer.write('\n');
                             writer.close();
                         } catch(SQLException e) {
-                            throw new WebApplicationException(e);
+                            throw wrapException(e);
                         } catch(InvalidOperationException e) {
-                            throw wrapIOE(e);
+                            throw wrapException(e);
                         }
                     }
                 })
@@ -324,25 +326,34 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                             writer.write('\n');
                             writer.close();
                         } catch(SQLException e) {
-                            throw new WebApplicationException(e);
+                            throw wrapException(e);
                         } catch(InvalidOperationException e) {
-                            throw wrapIOE(e);
+                            throw wrapException(e);
                         }
                     }
                 })
                 .build();
     }
 
-    private WebApplicationException wrapIOE(InvalidOperationException e) {
+    private WebApplicationException wrapException(Exception e) {
         StringBuilder err = new StringBuilder(100);
         err.append("[{\"code\":\"");
-        err.append(e.getCode().getFormattedValue());
+        String code;
+        if (e instanceof InvalidOperationException) {
+            code = ((InvalidOperationException)e).getCode().getFormattedValue();
+        } else if (e instanceof SQLException) {
+            code = ((SQLException)e).getSQLState();
+        } else {
+            code = ErrorCode.UNEXPECTED_EXCEPTION.getFormattedValue();
+        }
+        err.append(code);
         err.append("\",\"message\":\"");
         err.append(e.getMessage());
         err.append("\"}]\n");
         // TODO: Map various IOEs to other codes?
         final Response.Status status;
-        if(e instanceof NoSuchTableException) {
+        if((e instanceof NoSuchTableException) ||
+           (e instanceof NoSuchRoutineException)) {
             status = Response.Status.NOT_FOUND;
          } else {
             status = Response.Status.CONFLICT;
