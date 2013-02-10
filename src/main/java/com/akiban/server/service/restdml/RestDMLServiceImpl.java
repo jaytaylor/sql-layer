@@ -30,6 +30,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.Quote;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.WrongExpressionArityException;
@@ -275,26 +276,49 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                                     throw new WrongExpressionArityException(1, entry.getValue().size());
                                 call.setString(entry.getKey(), entry.getValue().get(0));
                             }
-                            call.execute();
+                            boolean results = call.execute();
                             PrintWriter writer = new PrintWriter(output);
                             AkibanAppender appender = AkibanAppender.of(writer);
                             appender.append('{');
                             boolean first = true;
                             JDBCParameterMetaData md = (JDBCParameterMetaData)call.getParameterMetaData();
                             for (int i = 1; i <= md.getParameterCount(); i++) {
+                                String name;
                                 switch (md.getParameterMode(i)) {
                                 case ParameterMetaData.parameterModeOut:
                                 case ParameterMetaData.parameterModeInOut:
+                                    name = md.getParameterName(i);
+                                    if (name == null)
+                                        name = String.format("arg%d", i);
                                     if (first)
                                         first = false;
                                     else
                                         appender.append(',');
                                     appender.append('"');
-                                    appender.append(md.getParameterName(i));
+                                    Quote.DOUBLE_QUOTE.append(appender, name);
                                     appender.append("\":");
                                     call.formatAsJson(i, appender);
                                     break;
                                 }
+                            }
+                            int nresults = 0;
+                            while (results) {
+                                String name = (nresults++ > 0) ? String.format("result_set_%d", nresults) : "result_set";
+                                if (first)
+                                    first = false;
+                                else
+                                    appender.append(',');
+                                appender.append('"');
+                                appender.append(name);
+                                appender.append("\":[");
+                                JDBCResultSet resultSet = (JDBCResultSet)call.getResultSet();
+                                SQLOutputCursor cursor = new SQLOutputCursor(resultSet);
+                                JsonRowWriter jsonRowWriter = new JsonRowWriter(cursor);
+                                if(jsonRowWriter.writeRows(cursor, appender, "\n", cursor)) {
+                                    appender.append('\n');
+                                }
+                                appender.append(']');
+                                results = call.getMoreResults();
                             }
                             appender.append('}');
                             writer.write('\n');
