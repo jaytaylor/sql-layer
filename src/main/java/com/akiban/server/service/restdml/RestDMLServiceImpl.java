@@ -293,9 +293,11 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                                     appender.append(md.getParameterName(i));
                                     appender.append("\":");
                                     call.formatAsJson(i, appender);
+                                    break;
                                 }
                             }
                             appender.append('}');
+                            writer.write('\n');
                             writer.close();
                         } catch(SQLException e) {
                             throw new WebApplicationException(e);

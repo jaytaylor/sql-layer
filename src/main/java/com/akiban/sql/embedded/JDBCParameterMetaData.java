@@ -26,8 +26,12 @@
 
 package com.akiban.sql.embedded;
 
+import com.akiban.ais.model.Parameter;
+import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
+import com.akiban.sql.StandardException;
+import com.akiban.sql.optimizer.ColumnBinding;
 import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.types.DataTypeDescriptor;
 
@@ -44,10 +48,32 @@ public class JDBCParameterMetaData implements ParameterMetaData
         private int jdbcType;
         private AkType akType;
         private TInstance tInstance;
+        private int mode;       // parameterModeXxx (In for non-CALL)
 
-        protected ParameterType(String name, DataTypeDescriptor sqlType) {
-            this(sqlType);
-            this.name = name;
+        protected static DataTypeDescriptor getType(Parameter param) {
+            try {
+                return ColumnBinding.getType(param);
+            }
+            catch (StandardException ex) {
+                throw new SQLParserInternalException(ex);
+            }
+        }
+
+        protected ParameterType(Parameter param) {
+            this(getType(param));
+            this.name = param.getName();
+            switch (param.getDirection()) {
+            case IN:
+                mode = parameterModeIn;
+                break;
+            case OUT:
+            case RETURN:
+                mode = parameterModeOut;
+                break;
+            case INOUT:
+                mode = parameterModeInOut;
+                break;
+            }
         }
 
         protected ParameterType(DataTypeDescriptor sqlType) {
@@ -57,6 +83,7 @@ public class JDBCParameterMetaData implements ParameterMetaData
                 akType = TypesTranslation.sqlTypeToAkType(sqlType);
                 tInstance = TypesTranslation.toTInstance(sqlType);
             }
+            mode = parameterModeIn;
         }
 
         public String getName() {
@@ -93,6 +120,10 @@ public class JDBCParameterMetaData implements ParameterMetaData
 
         public String getTypeName() {
             return sqlType.getTypeName();
+        }
+
+        public int getMode() {
+            return mode;
         }
     }
     
@@ -170,6 +201,6 @@ public class JDBCParameterMetaData implements ParameterMetaData
 
     @Override
     public int getParameterMode(int param) throws SQLException {
-        return parameterModeIn;
+        return getParameter(param).getMode();
     }
 }
