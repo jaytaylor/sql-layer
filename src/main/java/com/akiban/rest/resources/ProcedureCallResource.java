@@ -24,28 +24,37 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service.restdml;
+package com.akiban.rest.resources;
+
+import com.akiban.server.service.restdml.RestDMLService;
+import com.google.inject.Inject;
 
 import javax.servlet.http.HttpServletRequest;
-
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
-import org.codehaus.jackson.JsonNode;
+/**
+ * Allows calling stored procedures directly.
+ */
+@Path("/call/{proc}")
+public class ProcedureCallResource {
+    @Inject
+    private RestDMLService restDMLService;
 
-import java.util.List;
-import java.util.Map;
-
-public interface RestDMLService {
-    public Response getAllEntities(HttpServletRequest request, 
-                                   String schema, String table, Integer depth);
-    public Response getEntities(HttpServletRequest request, 
-                                String schema, String table, Integer depth, String pks);
-    public Response insert(HttpServletRequest request, 
-                           String schema, String table, JsonNode node);
-    public Response delete(HttpServletRequest request, 
-                           String schema, String table, String pks);
-    public Response runSQL(HttpServletRequest request, String sql);
-    public Response callProcedure(HttpServletRequest request, 
-                                  String schema, String proc,
-                                  Map<String,List<String>> params);
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getQueryResults(@Context HttpServletRequest request,
+                                    @PathParam("proc") String proc,
+                                    @QueryParam("jsoncallback") String jsonp,
+                                    @Context UriInfo uri) throws Exception {
+        String[] names = DataAccessOperationsResource.parseTableName(request, proc);
+        return restDMLService.callProcedure(request, names[0], names[1], uri.getQueryParameters());
+    }
 }

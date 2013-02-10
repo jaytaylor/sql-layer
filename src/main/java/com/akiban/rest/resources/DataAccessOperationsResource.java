@@ -127,7 +127,7 @@ public class DataAccessOperationsResource {
         return dmlService.delete(request, names[0], names[1], pks[pks.length-1]);
     }
 
-    protected String[] parseTableName(HttpServletRequest request, String name) {
+    protected static String[] parseTableName(HttpServletRequest request, String name) {
         String schema, table;
         int idx = name.indexOf('.');
         if (idx >= 0) {

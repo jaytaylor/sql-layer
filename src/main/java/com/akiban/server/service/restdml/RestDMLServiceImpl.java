@@ -62,6 +62,7 @@ import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Map;
 import java.util.List;
 import java.util.Properties;
 
@@ -235,6 +236,34 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                                 appender.append('}');
                             }
                             appender.append(']');
+                            writer.write('\n');
+                            writer.close();
+                        } catch(SQLException e) {
+                            throw new WebApplicationException(e);
+                        } catch(InvalidOperationException e) {
+                            throw wrapIOE(e);
+                        }
+                    }
+                })
+                .build();
+    }
+
+    @Override
+    public Response callProcedure(final HttpServletRequest request, 
+                                  final String schema, final String proc, 
+                                  final Map<String,List<String>> params) {
+        if (!securityService.isAccessible(request, schema))
+            return Response.status(Response.Status.FORBIDDEN).build();
+        final TableName procName = new TableName(schema, proc);
+        return Response
+                .status(Response.Status.OK)
+                .entity(new StreamingOutput() {
+                    @Override
+                    public void write(OutputStream output) throws IOException, WebApplicationException {
+                        try (Connection conn = jdbcService.newConnection(new Properties(), request.getUserPrincipal());
+                             Statement s = conn.createStatement()) {
+                            PrintWriter writer = new PrintWriter(output);
+                            AkibanAppender appender = AkibanAppender.of(writer);
                             writer.write('\n');
                             writer.close();
                         } catch(SQLException e) {
