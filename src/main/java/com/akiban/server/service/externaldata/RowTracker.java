@@ -24,27 +24,19 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.rest.resources;
+package com.akiban.server.service.externaldata;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import com.akiban.qp.row.Row;
 
-/**
- * Easy access to database schemata
- */
-@Path("/schemata")
-public class SqlSchemataResource {
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getSchemata(@QueryParam("format") String format,
-                                @QueryParam("jsoncallback") String jsonp) throws Exception {
-        return Response
-                .status(Response.Status.OK)
-                .entity("Not yet implemented")
-                .build();
-    }
+public interface RowTracker {
+    void reset();
+    int getMinDepth();
+    int getMaxDepth();
+
+    void beginRow(Row row);
+    int getRowDepth();
+    String getRowName();
+
+    void pushRowType();
+    boolean isSameRowType();
 }

@@ -43,9 +43,11 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -108,7 +110,7 @@ public class RestServiceFilesIT extends ITBase {
     }
 
     public static File[] gatherRequestFiles(File dir) {
-        File[] result = dir.listFiles(new RegexFilenameFilter(".*\\.(get|put|post|delete)"));
+        File[] result = dir.listFiles(new RegexFilenameFilter(".*\\.(get|put|post|delete|query)"));
         Arrays.sort(result, new Comparator<File>() {
             public int compare(File f1, File f2) {
                 return f1.getName().compareTo(f2.getName());
@@ -122,6 +124,10 @@ public class RestServiceFilesIT extends ITBase {
             return Strings.dumpFileToString(file);
         }
         return null;
+    }
+
+    private static String trimAndURLEncode(String s) throws UnsupportedEncodingException {
+        return URLEncoder.encode(s.trim().replaceAll("\\s+", " "), "UTF-8");
     }
 
     @NamedParameterizedRunner.TestParameters
@@ -151,6 +157,11 @@ public class RestServiceFilesIT extends ITBase {
                 String expected = dumpFileIfExists(new File(basePath + ".expected"));
                 String checkURI = dumpFileIfExists(new File(basePath + ".check"));
                 String checkExpected = dumpFileIfExists(new File(basePath + ".check_expected"));
+
+                if("QUERY".equals(method)) {
+                    method = "GET";
+                    uri = "/query?q=" + trimAndURLEncode(uri);
+                }
 
                 result.add(Parameterization.create(
                         subDirName + File.separator + caseName,
@@ -210,12 +221,10 @@ public class RestServiceFilesIT extends ITBase {
                 httpConn.setRequestProperty("Accept", "application/json");
                 httpConn.getOutputStream().write(request);
             } // else GET || DELETE 
-            // Response
 
-            String actual = getOutput (httpConn);
-            
-            compareExpected (caseParams.requestMethod + " response", caseParams.expectedResponse, actual);
-            
+            // Response
+            String actual = getOutput(httpConn);
+            compareExpected(caseParams.requestMethod + " response", caseParams.expectedResponse, actual);
         } finally {
             httpConn.disconnect();
         }
@@ -231,7 +240,7 @@ public class RestServiceFilesIT extends ITBase {
     }
      
     private String getOutput(HttpURLConnection httpConn) throws IOException {
-        InputStream is = null;
+        InputStream is;
         try {
             is = httpConn.getInputStream();
         } catch(Exception e) {
@@ -247,6 +256,11 @@ public class RestServiceFilesIT extends ITBase {
         ObjectMapper mapper = new ObjectMapper();
         JsonNode expectedNode = expected != null ? mapper.readTree(expected) : null;
         JsonNode actualNode = actual != null ? mapper.readTree(actual) : null;
-        assertEquals(assertMsg, expectedNode, actualNode);    
+        // Try manual for pretty print
+        if(expectedNode != null && actualNode != null && !expectedNode.equals(actualNode)) {
+            assertEquals(assertMsg, expectedNode.toString(), actualNode.toString());
+        } else {
+            assertEquals(assertMsg, expectedNode, actualNode);
+        }
     }
 }

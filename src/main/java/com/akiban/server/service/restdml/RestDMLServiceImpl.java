@@ -29,6 +29,10 @@ package com.akiban.server.service.restdml;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
+import com.akiban.server.service.externaldata.JsonRowWriter;
+import com.akiban.sql.embedded.EmbeddedJDBCService;
+import com.akiban.sql.embedded.JDBCResultSet;
+import com.akiban.util.AkibanAppender;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParseException;
 
@@ -54,20 +58,23 @@ import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 
 import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 
 public class RestDMLServiceImpl implements Service, RestDMLService {
-
     private final SessionService sessionService;
-    
     private final DXLService dxlService;
     private final TransactionService transactionService;
     private final ExternalDataService extDataService;
     private InsertProcessor insertProcessor;
     private DeleteProcessor deleteProcessor;
     private UpdateProcessor updateProcessor;
+    private final EmbeddedJDBCService jdbcService;
+    
     @Inject
     public RestDMLServiceImpl(ConfigurationService configService,
                               DXLService dxlService,
@@ -76,15 +83,17 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                               T3RegistryService registryService,
                               TreeService treeService,
                               ExternalDataService extDataService,
-                              SessionService sessionService) {
+                              SessionService sessionService,
+                              EmbeddedJDBCService jdbcService) {
         this.sessionService = sessionService;
         this.dxlService = dxlService;
         this.transactionService = transactionService;
+        this.extDataService = extDataService;
+        this.jdbcService = jdbcService;
 
         this.insertProcessor = new InsertProcessor (configService, treeService, store, registryService);
         this.deleteProcessor = new DeleteProcessor (configService, treeService, store, registryService);
         this.updateProcessor = new UpdateProcessor (configService, treeService, store, registryService);
-        this.extDataService = extDataService;
     }
     
     /* service */
@@ -102,7 +111,46 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     public void crash() {
         //None
     }
-    
+
+    @Override
+    public Response runSQL(final String sql) {
+        return Response
+                .status(Response.Status.OK)
+                .entity(new StreamingOutput() {
+                    @Override
+                    public void write(OutputStream output) throws IOException, WebApplicationException {
+                        try (Connection conn = jdbcService.newConnection();
+                             Statement s = conn.createStatement()) {
+                            PrintWriter writer = new PrintWriter(output);
+                            AkibanAppender appender = AkibanAppender.of(writer);
+                            appender.append('[');
+                            boolean res = s.execute(sql);
+                            if(res) {
+                                JDBCResultSet resultSet = (JDBCResultSet)s.getResultSet();
+                                SQLOutputCursor cursor = new SQLOutputCursor(resultSet);
+                                JsonRowWriter jsonRowWriter = new JsonRowWriter(cursor);
+                                if(jsonRowWriter.writeRows(cursor, appender, "\n", cursor)) {
+                                    appender.append('\n');
+                                }
+                            } else {
+                                int updateCount = s.getUpdateCount();
+                                appender.append("{\"update_count\":");
+                                appender.append(updateCount);
+                                appender.append('}');
+                            }
+                            appender.append(']');
+                            writer.write('\n');
+                            writer.close();
+                        } catch(SQLException e) {
+                            throw new WebApplicationException(e);
+                        } catch(InvalidOperationException e) {
+                            throw wrapIOE(e);
+                        }
+                    }
+                })
+                .build();
+    }
+
     /* RestDML Service Impl */
     @Override
     public Response insert(final String schemaName, final String tableName, JsonNode node)  {
@@ -112,23 +160,14 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
             String pk = insertProcessor.processInsert(session, ais, rootTable, node);
             txn.commit();
-            return Response.status(Response.Status.OK)
-                .entity(pk).build();
+            return Response.status(Response.Status.OK).entity(pk).build();
         } catch (JsonParseException ex) {
-            throw new WebApplicationException(
-                    Response.status(Response.Status.BAD_REQUEST)
-                            .entity(ex.toString())
-                            .build());
+            throw new WebApplicationException(ex, Response.Status.BAD_REQUEST);
         } catch (IOException e) {
-            throw new WebApplicationException(
-                    Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                        .entity(e.toString())
-                        .build());
+            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
         } catch (InvalidOperationException e) {
-            throwToClient(e);
+            throw wrapIOE(e);
         }
-        assert false : "No value returned from insert";
-        return null;
     }
 
     @Override
@@ -145,7 +184,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                             writer.write('\n');
                             writer.close();
                         } catch(InvalidOperationException e) {
-                            throwToClient(e);
+                            throw wrapIOE(e);
                         }
                     }
                 })
@@ -172,13 +211,12 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                             txn.commit();
                             writer.close();
                         } catch(InvalidOperationException e) {
-                            throwToClient(e);
+                            throw wrapIOE(e);
                         }
                     }
                 })
                 .build();
     }
-
 
     @Override
     public Response delete(String schema, String table, String identifier, Integer depth) {
@@ -193,10 +231,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                     .entity("")
                     .build();
         } catch (InvalidOperationException e) {
-            throwToClient(e);
+            throw wrapIOE(e);
         }
-        assert false : "No value returned from delete";
-        return null;
     }
 
     @Override
@@ -213,14 +249,12 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                     .build();
             
         } catch (InvalidOperationException e) {
-            throwToClient (e);
+            throw wrapIOE (e);
         }
-        assert false : "No value returned from update";
-        return null;
     }
 
     
-    private void throwToClient(InvalidOperationException e) {
+    private WebApplicationException wrapIOE(InvalidOperationException e) {
         StringBuilder err = new StringBuilder(100);
         err.append("[{\"code\":\"");
         err.append(e.getCode().getFormattedValue());
@@ -234,7 +268,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
          } else {
             status = Response.Status.CONFLICT;
         }
-        throw new WebApplicationException(
+        return new WebApplicationException(
                 Response.status(status)
                         .entity(err.toString())
                         .build()

@@ -121,7 +121,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                             Operator plan) throws IOException {
         StoreAdapter adapter = getAdapter(session, table, schema);
         QueryContext queryContext = new SimpleQueryContext(adapter);
-        JsonRowWriter json = new JsonRowWriter(table, depth);
+        JsonRowWriter json = new JsonRowWriter(new TableRowTracker(table, depth));
         WriteTableRow rowWriter = new WriteTableRow();
         AkibanAppender appender = AkibanAppender.of(writer);
         boolean transaction = false;

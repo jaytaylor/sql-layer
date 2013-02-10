@@ -26,6 +26,9 @@
 
 package com.akiban.rest.resources;
 
+import com.akiban.server.service.restdml.RestDMLService;
+import com.google.inject.Inject;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -38,14 +41,14 @@ import javax.ws.rs.core.Response;
  */
 @Path("/query")
 public class SqlQueryResource {
+    @Inject
+    private RestDMLService restDMLService;
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getQueryResults(@QueryParam("format") String format,
                                     @QueryParam("jsoncallback") String jsonp,
                                     @QueryParam("q") String query) throws Exception {
-        return Response
-                .status(Response.Status.OK)
-                .entity("Not yet implemented")
-                .build();
+        return restDMLService.runSQL(query);
     }
 }
