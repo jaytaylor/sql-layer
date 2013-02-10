@@ -33,8 +33,8 @@ import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.api.dml.ColumnSelector;
@@ -45,8 +45,10 @@ import com.akiban.server.error.NoRowsUpdatedException;
 import com.akiban.server.error.TooManyRowsUpdatedException;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDataExtractor;
+import com.akiban.server.rowdata.RowDataPValueSource;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.externaldata.PlanGenerator;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
@@ -75,6 +77,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
      * or we'll get a double increment for each row (if we are already being called with it).
      */
     private static final boolean WITH_STEPS = false;
+
 
     private PersistitAdapter createAdapter(AkibanInformationSchema ais, Session session) {
         PersistitAdapter adapter =
@@ -200,7 +203,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
 
     @Override
-    public void deleteRow(Session session, RowData rowData) throws PersistitException {
+    public void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete) throws PersistitException {
         DELETE_TOTAL.in();
         DELETE_MAINTENANCE.in();
         try {
@@ -208,14 +211,18 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             PersistitAdapter adapter = createAdapter(ais, session);
             UserTable uTable = ais.getUserTable(rowData.getRowDefId());
 
-            maintainGroupIndexes(session,
-                                 ais,
-                                 adapter,
-                                 rowData,
-                                 null,
-                                 OperatorStoreGIHandler.forTable(adapter, uTable),
-                                 OperatorStoreGIHandler.Action.DELETE);
-            super.deleteRow(session, rowData);
+            if (cascadeDelete) {
+                cascadeDeleteMaintainGroupIndex (session, ais, adapter, rowData);
+            } else { // one row, one update to group indexes
+                maintainGroupIndexes(session,
+                                     ais,
+                                     adapter,
+                                     rowData,
+                                     null,
+                                     OperatorStoreGIHandler.forTable(adapter, uTable),
+                                     OperatorStoreGIHandler.Action.DELETE);
+                super.deleteRow(session, rowData, deleteIndexes, cascadeDelete);
+            }
         } finally {
             DELETE_MAINTENANCE.out();
             DELETE_TOTAL.out();
@@ -296,7 +303,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         if(canSkipMaintenance(userTable)) {
             return;
         }
-
         Exchange hEx = adapter.takeExchange(userTable.getGroup());
         try {
             // the "false" at the end of constructHKey toggles whether the RowData should be modified to increment
@@ -344,12 +350,72 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             cursor.destroy();
         }
     }
-
+    
     private OperatorStoreMaintenance groupIndexCreationPlan(
             AkibanInformationSchema ais, GroupIndex groupIndex, UserTableRowType rowType
     ) {
         return OperatorStoreMaintenancePlans.forAis(ais).forRowType(groupIndex, rowType);
     }
+    
+    /*
+     * This does the full cascading delete, updating both the group indexes for
+     * each table affected and removing the rows.  
+     * It does this root to leaf order. 
+     */
+    private void cascadeDeleteMaintainGroupIndex (Session session,
+            AkibanInformationSchema ais, 
+            PersistitAdapter adapter, 
+            RowData rowData)
+    throws PersistitException
+    {
+        UserTable uTable = ais.getUserTable(rowData.getRowDefId());
+        PlanGenerator generator = new PlanGenerator (ais);
+        Operator plan = generator.generateBranchPlan(uTable);
+        
+        QueryContext queryContext = new SimpleQueryContext(adapter);
+        Cursor cursor = API.cursor(plan, queryContext);
+
+        List<Column> lookupCols = uTable.getPrimaryKeyIncludingInternal().getColumns();
+        RowDataPValueSource pSource = new RowDataPValueSource();
+        for (int i=0; i < lookupCols.size(); ++i) {
+            Column col = lookupCols.get(i);
+            pSource.bind(col.getFieldDef(), rowData);
+            queryContext.setPValue(i, pSource);
+        }
+        try {
+            Row row;
+            cursor.open();
+             while ((row = cursor.next()) != null) {
+                UserTable table = row.rowType().userTable();
+                RowData data = rowData(adapter, table.rowDef(), row, new PValueRowDataCreator());
+                maintainGroupIndexes(session,
+                        ais,
+                        adapter,
+                        data,
+                        null,
+                        OperatorStoreGIHandler.forTable(adapter, table),
+                        OperatorStoreGIHandler.Action.DELETE);
+                super.deleteRow(session, data, true, false);
+            }
+            cursor.close();
+        } finally {
+            cursor.destroy();
+        }
+    }
+
+    private <S> RowData rowData (PersistitAdapter adapter, RowDef rowDef, RowBase row, RowDataCreator<S> creator) {
+        if (row instanceof PersistitGroupRow) {
+            return ((PersistitGroupRow) row).rowData();
+        }
+        NewRow niceRow = adapter.newRow(rowDef);
+        for(int i = 0; i < row.rowType().nFields(); ++i) {
+            S source = creator.eval(row, i);
+            creator.put(source, niceRow, rowDef.getFieldDef(i), i);
+        }
+        return niceRow.toRowData();
+    }
+        
+
 
     // private static methods
 
@@ -399,6 +465,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
        return userTable.getGroupIndexes().isEmpty();
     }
 
+    
     // object state
     private final ConfigurationService config;
     private final TreeService treeService;

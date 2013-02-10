@@ -25,22 +25,39 @@
  */
 package com.akiban.server.service.restdml;
 
+import java.io.IOException;
+
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.JsonParseException;
+
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Operator;
+import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.Store;
+import com.akiban.server.t3expressions.T3RegistryService;
 
-public class DeleteGenerator extends OperatorGenerator {
+public class UpdateProcessor extends DMLProcessor {
 
-    public DeleteGenerator (AkibanInformationSchema ais) {
-        super(ais);
+    private final DeleteProcessor deleteProcessor;
+    private final InsertProcessor insertProcessor;
+
+    public UpdateProcessor(ConfigurationService configService,
+            TreeService treeService, Store store,
+            T3RegistryService t3RegistryService,
+            DeleteProcessor deleteProcessor,
+            InsertProcessor insertProcessor) {
+        super(configService, treeService, store, t3RegistryService);
+        this.deleteProcessor = deleteProcessor;
+        this.insertProcessor = insertProcessor;
     }
-    
-    @Override
-    protected Operator create(TableName tableName) {
-        Operator lookup = indexAncestorLookup(tableName); 
-        // build delete operator.
-        return API.delete_Returning(lookup, true, true);
-    }       
-    
+
+    public String processUpdate (Session session, AkibanInformationSchema ais, TableName tableName, String values, JsonNode node) 
+            throws JsonParseException, IOException {
+        setAIS (ais);
+        deleteProcessor.processDelete(session, ais, tableName, values, -1);
+        return insertProcessor.processInsert(session, ais, tableName, node);
+        
+    }
 }

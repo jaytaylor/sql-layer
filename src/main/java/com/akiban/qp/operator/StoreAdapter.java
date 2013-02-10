@@ -63,7 +63,7 @@ public abstract class StoreAdapter
     
     public abstract void writeRow (Row newRow, boolean usePValues);
     
-    public abstract void deleteRow (Row oldRow, boolean usePValues);
+    public abstract void deleteRow (Row oldRow, boolean usePValues, boolean cascadeDelete);
 
     public abstract void alterRow(Row oldRow, Row newRow, Index[] indexesToMaintain, boolean hKeyChanged, boolean usePValues);
 

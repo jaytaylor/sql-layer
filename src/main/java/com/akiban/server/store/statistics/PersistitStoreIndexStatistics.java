@@ -301,7 +301,7 @@ public class PersistitStoreIndexStatistics
             store.expandRowData(exchange, rowData);
             if (rowData.getRowDefId() == indexStatisticsEntryRowDef.getRowDefId() &&
                 selectedIndex(indexStatisticsEntryRowDef, rowData, tableId, indexId)) {
-                store.deleteRow(session, rowData);
+                store.deleteRow(session, rowData, true, false);
             }
         }
         // Delete only the parent index_statistics row
@@ -310,7 +310,7 @@ public class PersistitStoreIndexStatistics
             store.expandRowData(exchange, rowData);
             if (rowData.getRowDefId() == indexStatisticsRowDef.getRowDefId() &&
                 selectedIndex(indexStatisticsRowDef, rowData, tableId, indexId)) {
-                store.deleteRow(session, rowData);
+                store.deleteRow(session, rowData, true, false);
             }
         }
         // TODO: Maintain row counts for index_statistics and index_statistics_entry tables.

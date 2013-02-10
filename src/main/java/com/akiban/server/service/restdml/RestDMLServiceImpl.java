@@ -70,9 +70,10 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     private final DXLService dxlService;
     private final TransactionService transactionService;
     private final ExternalDataService extDataService;
+    private InsertProcessor insertProcessor;
+    private DeleteProcessor deleteProcessor;
+    private UpdateProcessor updateProcessor;
     private final EmbeddedJDBCService jdbcService;
-    private final InsertProcessor insertProcessor;
-    private final DeleteProcessor deleteProcessor;
     
     @Inject
     public RestDMLServiceImpl(ConfigurationService configService,
@@ -92,6 +93,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
 
         this.insertProcessor = new InsertProcessor (configService, treeService, store, registryService);
         this.deleteProcessor = new DeleteProcessor (configService, treeService, store, registryService);
+        this.updateProcessor = new UpdateProcessor (configService, treeService, store, registryService,
+                deleteProcessor, insertProcessor);
     }
     
     /* service */
@@ -217,13 +220,13 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
-    public Response delete(String schema, String table, String identifier) {
+    public Response delete(String schema, String table, String identifier, Integer depth) {
         final TableName tableName = new TableName (schema, table);
         
         try (Session session = sessionService.createSession();
                 CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
             AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-            deleteProcessor.processDelete(session, ais, tableName, identifier);
+            deleteProcessor.processDelete(session, ais, tableName, identifier, depth);
             txn.commit();
             return Response.status(Response.Status.OK)
                     .entity("")
@@ -233,6 +236,28 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         }
     }
 
+    @Override
+    public Response update(String schema, String table, String values, JsonNode node) {
+        final TableName tableName = new TableName (schema, table);
+        
+        try (Session session = sessionService.createSession();
+                CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+            String pk = updateProcessor.processUpdate (session, ais, tableName, values, node);
+            txn.commit();
+            return Response.status(Response.Status.OK)
+                    .entity(pk)
+                    .build();
+        } catch (JsonParseException ex) {
+            throw new WebApplicationException(ex, Response.Status.BAD_REQUEST);
+        } catch (IOException e) {
+            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
+        } catch (InvalidOperationException e) {
+            throw wrapIOE (e);
+        }
+    }
+
+    
     private WebApplicationException wrapIOE(InvalidOperationException e) {
         StringBuilder err = new StringBuilder(100);
         err.append("[{\"code\":\"");
@@ -253,4 +278,6 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                         .build()
         );
     }
+    
+    
 }

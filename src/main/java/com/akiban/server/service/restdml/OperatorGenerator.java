@@ -25,18 +25,34 @@
  */
 package com.akiban.server.service.restdml;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
+import com.akiban.qp.expression.IndexBound;
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.expression.RowBasedUnboundExpressions;
+import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
+import com.akiban.qp.operator.API.Ordering;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedField;
+import com.akiban.server.types3.texpressions.TPreparedParameter;
 
 public abstract class OperatorGenerator {
     
@@ -58,7 +74,6 @@ public abstract class OperatorGenerator {
     public void setT3Registry(T3RegistryService registryService) {
         this.registryService = registryService;
     }
-    
     
     public Operator get (TableName tableName) {
         Operator plan = null;
@@ -92,5 +107,54 @@ public abstract class OperatorGenerator {
         RowType rowType;
     }
     
+    protected Operator indexAncestorLookup(TableName tableName) {
+        UserTable table = ais().getUserTable(tableName);
+        PrimaryKey pkey = table.getPrimaryKeyIncludingInternal();
+        final int nkeys = pkey.getColumns().size();
 
+        UserTableRowType tableType = schema().userTableRowType(table);
+        IndexRowType indexType = schema().indexRowType(pkey.getIndex());
+
+        // prepared parameters for all values in a index
+        // build a primary key index scan
+        List<TPreparedExpression> pexprs = new ArrayList<TPreparedExpression>(nkeys);
+        for (int i = 0; i < nkeys; i++) {
+            pexprs.add(new TPreparedParameter(i, indexType.typeInstanceAt(i)));
+        }
+        IndexBound bound = 
+            new IndexBound(new RowBasedUnboundExpressions(indexType, null, pexprs),
+                           new ColumnSelector() {
+                               @Override
+                               public boolean includesColumn(int columnPosition) {
+                                   return columnPosition < nkeys;
+                               }
+                           });
+        IndexKeyRange indexRange = IndexKeyRange.bounded(indexType,
+                                                         bound, true,
+                                                         bound, true);
+
+        Ordering ordering = API.ordering(true);
+        
+        for (int i = 0; i < nkeys; i++) {
+            ordering.append(null, 
+                            new TPreparedField(indexType.typeInstanceAt(i), i), 
+                            false);
+        }
+        
+        Operator indexScan = API.indexScan_Default(indexType, indexRange, ordering,
+                                                   true);
+        
+        // build ancestor lookup default
+        Group group = table.getGroup(); 
+        List<UserTableRowType> ancestorType = new ArrayList<>(1);
+        ancestorType.add (tableType);
+        
+        Operator lookup = API.ancestorLookup_Default(indexScan,
+                group,
+                indexType,
+                ancestorType,
+                API.InputPreservationOption.DISCARD_INPUT);
+
+        return lookup;
+    }
 }
