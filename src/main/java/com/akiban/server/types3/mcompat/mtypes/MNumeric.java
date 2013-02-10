@@ -75,6 +75,11 @@ public class MNumeric extends SimpleDtdTClass {
     }
 
     @Override
+    public boolean attributeIsPhysical(int attributeIndex) {
+        return false;
+    }
+
+    @Override
     public TInstance instance(boolean nullable) {
         return instance(defaultWidth, nullable);
     }

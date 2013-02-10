@@ -349,6 +349,11 @@ public class AkInterval extends TClassBase {
     }
 
     @Override
+    public boolean attributeIsPhysical(int attributeIndex) {
+        return false;
+    }
+
+    @Override
     public void attributeToString(int attributeIndex, long value, StringBuilder output) {
         if (attributeIndex == formatAttribute.ordinal())
             attributeToString(formatters, value, output);
@@ -422,6 +427,13 @@ public class AkInterval extends TClassBase {
             return !isDate(ins);
         else
             return false;
+    }
+
+    private static void attributeToString(IntervalFormat[] formatters, long arrayIndex, StringBuilder output) {
+        if ( (formatters == null) || (arrayIndex < 0) || arrayIndex >= formatters.length)
+            output.append(arrayIndex);
+        else
+            output.append(formatters[(int)arrayIndex]);
     }
 
     private final IntervalFormat[] formatters;

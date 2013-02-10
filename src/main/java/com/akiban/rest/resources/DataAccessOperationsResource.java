@@ -122,7 +122,9 @@ public class DataAccessOperationsResource {
                                  @PathParam("table") String table,
                                  @Context UriInfo uri) throws Exception {
         String[] names = parseTableName(request, table);
-        return ResponseHelper.buildNotYetImplemented();
+        String[] pks = uri.getPath(false).split("/");
+        assert pks.length > 0 : uri;
+        return dmlService.delete(request, names[0], names[1], pks[pks.length-1]);
     }
 
     protected String[] parseTableName(HttpServletRequest request, String name) {

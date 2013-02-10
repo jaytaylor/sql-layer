@@ -687,7 +687,8 @@ public class AISBinder implements Visitor
 
     protected Table lookupTableName(TableName origName, String schemaName, String tableName) {
         Table result = ais.getUserTable(schemaName, tableName);
-        if ((result == null) || !context.isAccessible(result.getName()))
+        if ((result == null) || 
+            ((context != null) && !context.isAccessible(result.getName())))
             throw new NoSuchTableException(schemaName, tableName, origName);
         return result;
     }
