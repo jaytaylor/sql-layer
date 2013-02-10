@@ -658,22 +658,6 @@ public class PersistitStore implements Store, Service {
     }
 
     @Override
-    public void deleteRow(Session session, RowData rowData)
-        throws PersistitException
-    {
-        deleteRow(session, rowData, true, false, null, true);
-        // TODO: It should be possible to optimize propagateDownGroup for inserts too
-        // deleteRow(session, rowData, hKeyDependentTableOrdinals(rowData.getRowDefId()));
-    }
-    
-
-    @Override
-    public void deleteRow(Session session, RowData rowData, boolean deleteIndexes) throws PersistitException
-    {
-        deleteRow(session, rowData, deleteIndexes, false, null, true);
-    }
-
-    @Override
     public void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete) throws PersistitException
     {
         deleteRow(session, rowData, deleteIndexes, cascadeDelete, null, true);

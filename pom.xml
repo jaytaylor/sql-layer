@@ -355,6 +355,9 @@
                         <exclude>**/*.get</exclude>
                         <exclude>**/*.put</exclude>
                         <exclude>**/*.post</exclude>
+                        <exclude>**/*.delete</exclude>
+                        <exclude>**/*.check_expected</exclude>
+                        <exclude>**/*.check</exclude>
                         <exclude>**/*.body</exclude>
                         <exclude>src/test/bin/*.sh</exclude>
                         <exclude>src/test/bin/*.cmd</exclude>

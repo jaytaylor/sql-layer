@@ -615,7 +615,19 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         logger.trace("deleting a row");
         final RowData rowData = niceRowToRowData(row);
         try {
-            store().deleteRow(session, rowData);
+            store().deleteRow(session, rowData, true, false);
+        } catch (PersistitException ex) {
+            throw new PersistitAdapterException(ex);
+        }
+    }
+
+    @Override
+    public void deleteRow(Session session, NewRow row, boolean cascadeDelete)
+    {
+        logger.trace("deleting a row (cascade: {})", cascadeDelete);
+        final RowData rowData = niceRowToRowData(row);
+        try {
+            store().deleteRow(session, rowData, true, cascadeDelete);
         } catch (PersistitException ex) {
             throw new PersistitAdapterException(ex);
         }

@@ -173,10 +173,10 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
         }
 
         @Override
-        public void deleteRow(Session session, NewRow row) {
+        public void deleteRow(Session session, NewRow row, boolean cascadeDelete) {
             BeforeAndAfter hook = getIUDHook(session);
             hook.doBefore();
-            super.deleteRow(session, row);
+            super.deleteRow(session, row, cascadeDelete);
             hook.doAfter();
         }
 
