@@ -284,13 +284,14 @@ public class BasicInfoSchemaTablesServiceImpl
 
             @Override
             public Row next() {
+                getCols:
                 while(columnIt == null || !columnIt.hasNext()) {
                     if(viewIt == null) {
                         while(tableIt.hasNext()) {
                             UserTable table = tableIt.next();
                             if(isAccessible(session, table.getName())) {
                                 columnIt = table.getColumns().iterator();
-                                break;
+                                continue getCols;
                             }
                         }
                         viewIt = getAIS(session).getViews().values().iterator();
@@ -299,7 +300,7 @@ public class BasicInfoSchemaTablesServiceImpl
                         View view = viewIt.next();
                         if(isAccessible(session, view.getName())) {
                             columnIt = view.getColumns().iterator();
-                            break;
+                            continue getCols;
                         }
                     }
                     return null;
@@ -912,12 +913,13 @@ public class BasicInfoSchemaTablesServiceImpl
 
             @Override
             public Row next() {
+                getTables:
                 while((tableIt == null) || !tableIt.hasNext()) {
                     while(viewIt.hasNext()) {
                         view = viewIt.next();
                         if(isAccessible(session, view.getName())) {
                             tableIt = view.getTableReferences().iterator();
-                            break;
+                            continue getTables;
                         }
                     }
                     return null;
@@ -971,12 +973,13 @@ public class BasicInfoSchemaTablesServiceImpl
             @Override
             public Row next() {
                 while((columnIt == null) || !columnIt.hasNext()) {
+                    getTables:
                     while((tableIt == null) || !tableIt.hasNext()) {
                         while(viewIt.hasNext()) {
                             view = viewIt.next();
                             if(isAccessible(session, view.getName())) {
                                 tableIt = view.getTableColumnReferences().entrySet().iterator();                            
-                                break;
+                                continue getTables;
                             }
                         }
                         return null;
@@ -1078,6 +1081,7 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         public Index next() {
+            getIndexes:
             while(tableIndexIt == null || !tableIndexIt.hasNext()) {
                 while(groupIndexIt != null && groupIndexIt.hasNext()) {
                     GroupIndex index = groupIndexIt.next();
@@ -1090,7 +1094,7 @@ public class BasicInfoSchemaTablesServiceImpl
                     if(isAccessible(session, curTable.getName())) {
                         tableIndexIt = curTable.getIndexes().iterator();
                         groupIndexIt = curTable.getGroup().getIndexes().iterator();
-                        break;
+                        continue getIndexes;
                     }
                 } 
                 return null;
