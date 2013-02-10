@@ -90,9 +90,6 @@ public class SecurityServiceImpl implements SecurityService, Service {
     
     public static final String RESTRICT_USER_SCHEMA_PROPERTY = "akserver.restrict_user_schema";
 
-    public static final Session.Key<User> SESSION_KEY = 
-        Session.Key.named("SECURITY_USER");
-
     private final ConfigurationService configService;
     private final SchemaManager schemaManager;
 

@@ -63,6 +63,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.Properties;
 
 import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 
@@ -214,7 +215,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                 .entity(new StreamingOutput() {
                     @Override
                     public void write(OutputStream output) throws IOException, WebApplicationException {
-                        try (Connection conn = jdbcService.newConnection();
+                        try (Connection conn = jdbcService.newConnection(new Properties(), request.getUserPrincipal());
                              Statement s = conn.createStatement()) {
                             PrintWriter writer = new PrintWriter(output);
                             AkibanAppender appender = AkibanAppender.of(writer);
