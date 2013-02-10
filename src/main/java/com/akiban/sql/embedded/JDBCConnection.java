@@ -27,6 +27,7 @@
 package com.akiban.sql.embedded;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.TableName;
 import com.akiban.server.AkServerInterface;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerSessionBase;
@@ -256,6 +257,12 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     protected AkServerInterface getAkServer() {
         return reqs.akServer();
+    }
+
+    public CallableStatement prepareCall(TableName routineName) throws SQLException {
+        EmbeddedQueryContext context = new EmbeddedQueryContext(this);
+        updateAIS(context);
+        return new JDBCCallableStatement(this, ExecutableCallStatement.executableStatement(routineName, context));
     }
 
     /* Wrapper */

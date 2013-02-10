@@ -29,6 +29,7 @@ package com.akiban.sql.embedded;
 import com.akiban.sql.embedded.JDBCParameterMetaData.ParameterType;
 
 import com.akiban.ais.model.Parameter;
+import com.akiban.ais.model.TableName;
 import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.StandardException;
@@ -59,31 +60,38 @@ abstract class ExecutableCallStatement extends ExecutableStatement
         StaticMethodCallNode methodCall = (StaticMethodCallNode)call.methodCall().getJavaValueNode();
         ServerCallInvocation invocation =
             ServerCallInvocation.of(context.getServer(), methodCall);
-        JDBCParameterMetaData parameterMetaData = parameterMetaData(invocation, 
-                                                                    sqlParams);
+        return executableStatement(invocation, call, sqlParams, context);
+    }
+
+    public static ExecutableStatement executableStatement(TableName routineName,
+                                                          EmbeddedQueryContext context) {
+        ServerCallInvocation invocation =
+            ServerCallInvocation.of(context.getServer(), routineName);
+        return executableStatement(invocation, null, null, context);
+    }
+
+    protected static ExecutableStatement executableStatement(ServerCallInvocation invocation,
+                                                             CallStatementNode call,
+                                                             List<ParameterNode> sqlParams,
+                                                             EmbeddedQueryContext context) {
+        int nparams = (sqlParams == null) ? invocation.size() : sqlParams.size();
+        JDBCParameterMetaData parameterMetaData = parameterMetaData(invocation, nparams);
         switch (invocation.getCallingConvention()) {
         case LOADABLE_PLAN:
             return ExecutableLoadableOperator.executableStatement(invocation, parameterMetaData, call, context);
         case JAVA:
-            return ExecutableJavaMethod.executableStatement(invocation, parameterMetaData, call, context);
+            return ExecutableJavaMethod.executableStatement(invocation, parameterMetaData, context);
         case SCRIPT_FUNCTION_JAVA:
-            return ExecutableScriptFunctionJavaRoutine.executableStatement(invocation, parameterMetaData, call, context);
+            return ExecutableScriptFunctionJavaRoutine.executableStatement(invocation, parameterMetaData, context);
         case SCRIPT_BINDINGS:
-            return ExecutableScriptBindingsRoutine.executableStatement(invocation, parameterMetaData, call, context);
+            return ExecutableScriptBindingsRoutine.executableStatement(invocation, parameterMetaData, context);
         default:
             throw new UnsupportedSQLException("Unknown routine", call);
         }
     }
 
-    public static JDBCParameterMetaData parameterMetaData(ServerCallInvocation invocation) {
-        List<ParameterType> params = new ArrayList<ParameterType>();
-        
-        return new JDBCParameterMetaData(params);
-    }
-
     protected static JDBCParameterMetaData parameterMetaData(ServerCallInvocation invocation,
-                                                             List<ParameterNode> sqlParams) {
-        int nparams = sqlParams.size();
+                                                             int nparams) {
         ParameterType[] ptypes = new ParameterType[nparams];
         for (int i = 0; i < nparams; i++) {
             int usage = invocation.parameterUsage(i);

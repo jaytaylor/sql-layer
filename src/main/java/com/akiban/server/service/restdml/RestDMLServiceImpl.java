@@ -45,6 +45,7 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.embedded.EmbeddedJDBCService;
+import com.akiban.sql.embedded.JDBCConnection;
 import com.akiban.sql.embedded.JDBCResultSet;
 import com.akiban.util.AkibanAppender;
 import com.google.inject.Inject;
@@ -59,7 +60,9 @@ import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.ParameterMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
@@ -261,7 +264,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                     @Override
                     public void write(OutputStream output) throws IOException, WebApplicationException {
                         try (Connection conn = jdbcService.newConnection(new Properties(), request.getUserPrincipal());
-                             Statement s = conn.createStatement()) {
+                             CallableStatement s = ((JDBCConnection)conn).prepareCall(procName)) {
+                            
                             PrintWriter writer = new PrintWriter(output);
                             AkibanAppender appender = AkibanAppender.of(writer);
                             writer.write('\n');
