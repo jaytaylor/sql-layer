@@ -33,12 +33,14 @@ import com.akiban.server.explain.Label;
 
 import com.akiban.server.error.AkibanInternalException;
 
+import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 
 import java.util.List;
 import java.util.Map;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.StringWriter;
 
 public class JsonFormatter
@@ -59,6 +61,15 @@ public class JsonFormatter
             throw new AkibanInternalException("Error writing to string", ex);
         }
         return str.toString();
+    }
+
+    public void format(Explainer explainer, OutputStream stream) throws IOException {
+        JsonGenerator generator = factory.createJsonGenerator(stream, JsonEncoding.UTF8);
+        if (true) {
+            generator.useDefaultPrettyPrinter();
+        }
+        generate(generator, explainer);
+        generator.flush();
     }
 
     public void generate(JsonGenerator generator, Explainer explainer) throws IOException {
