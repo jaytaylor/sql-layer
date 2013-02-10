@@ -93,7 +93,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
 
         this.insertProcessor = new InsertProcessor (configService, treeService, store, registryService);
         this.deleteProcessor = new DeleteProcessor (configService, treeService, store, registryService);
-        this.updateProcessor = new UpdateProcessor (configService, treeService, store, registryService);
+        this.updateProcessor = new UpdateProcessor (configService, treeService, store, registryService,
+                deleteProcessor, insertProcessor);
     }
     
     /* service */
@@ -242,12 +243,15 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         try (Session session = sessionService.createSession();
                 CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
             AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-            updateProcessor.processUpdate (session, ais, tableName, values, node);
+            String pk = updateProcessor.processUpdate (session, ais, tableName, values, node);
             txn.commit();
             return Response.status(Response.Status.OK)
-                    .entity("")
+                    .entity(pk)
                     .build();
-            
+        } catch (JsonParseException ex) {
+            throw new WebApplicationException(ex, Response.Status.BAD_REQUEST);
+        } catch (IOException e) {
+            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
         } catch (InvalidOperationException e) {
             throw wrapIOE (e);
         }
