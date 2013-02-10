@@ -43,6 +43,7 @@ import java.util.Collections;
 
 public class SequenceDDLIT extends AISDDLITBase {
 
+    
     @Test (expected=SQLParserException.class)
     public void dropSequenceFail() throws Exception{
         String sql = "DROP SEQUENCE not_here";
@@ -51,21 +52,17 @@ public class SequenceDDLIT extends AISDDLITBase {
     
     @Test
     public void createSequence () throws Exception {
-        assertEquals (3, ais().getSequences().size());
-
         String sql = "CREATE SEQUENCE new_sequence";
         executeDDL(sql);
         assertNotNull (ais().getSequence(new TableName ("test", "new_sequence")));
         
         sql = "DROP SEQUENCE new_sequence restrict";
         executeDDL(sql);
-        assertEquals (3, ais().getSequences().size());
+        assertEquals (0, ais().getSequences().size());
     }
 
     @Test 
     public void duplicateSequence() throws Exception {
-        assertEquals (3, ais().getSequences().size());
-
         String sql = "CREATE SEQUENCE test.new_sequence";
         executeDDL(sql);
         assertNotNull (ais().getSequence(new TableName ("test", "new_sequence")));
@@ -79,7 +76,7 @@ public class SequenceDDLIT extends AISDDLITBase {
 
         sql = "DROP SEQUENCE test.new_sequence restrict";
         executeDDL(sql);
-        assertEquals (3, ais().getSequences().size());
+        assertEquals (0, ais().getSequences().size());
 
     }
     
@@ -91,7 +88,7 @@ public class SequenceDDLIT extends AISDDLITBase {
 
         sql = "DROP SEQUENCE test.new_sequence restrict";
         executeDDL(sql);
-        assertEquals (3, ais().getSequences().size());
+        assertEquals (0, ais().getSequences().size());
 
         // fails for the second one due to non-existence of the sequence. 
         executeDDL(sql);

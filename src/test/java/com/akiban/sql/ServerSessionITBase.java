@@ -77,7 +77,7 @@ public class ServerSessionITBase extends ITBase {
                                                 serviceManager().getServiceByClass(com.akiban.server.t3expressions.T3RegistryService.class),
                                                 routineLoader(),
                                                 txnService(),
-                                                serviceManager().getServiceByClass(com.akiban.server.service.security.SecurityService.class),
+                                                new DummySecurityService(),
                                                 serviceManager()));
             session = session();
             ais = ais();
@@ -98,6 +98,52 @@ public class ServerSessionITBase extends ITBase {
             if (warnings == null)
                 warnings = new ArrayList<String>();
             warnings.add(message);
+        }
+    }
+
+    protected static class DummySecurityService implements com.akiban.server.service.security.SecurityService {
+        @Override
+        public void addRole(String name) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void deleteRole(String name) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public com.akiban.server.service.security.User getUser(String name) {
+            return null;
+        }
+
+        @Override
+        public com.akiban.server.service.security.User addUser(String name, String password, java.util.Collection<String> roles) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void deleteUser(String name) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void changeUserPassword(String name, String password) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public com.akiban.server.service.security.User authenticate(com.akiban.server.service.session.Session session, String name, String password) {
+            return null;
+        }
+
+        @Override
+        public com.akiban.server.service.security.User authenticate(com.akiban.server.service.session.Session session, String name, String password, byte[] salt) {
+            return null;
+        }
+
+        @Override
+        public void clearAll() {
         }
     }
 

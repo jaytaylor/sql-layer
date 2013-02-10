@@ -29,16 +29,8 @@ package com.akiban.sql.aisddl;
 import com.akiban.sql.ServerSessionITBase;
 import com.akiban.sql.parser.DDLStatementNode;
 import com.akiban.sql.parser.StatementNode;
-import org.junit.Before;
 
 public class AISDDLITBase extends ServerSessionITBase {
-    @Before
-    public void sessionStart() {
-        // Creating one of these may start services that add system
-        // objects, making numbers unstable unless done first.
-        new TestSession();
-    }
-
     protected void executeDDL(String sql) throws Exception {
         // Most of the state in this depends on the current AIS, which changes
         // as a result of this, so it's simplest to just make a new session
