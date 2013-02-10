@@ -118,7 +118,8 @@ public class BasicInfoSchemaTablesServiceImpl
     }
 
     protected boolean isAccessible(Session session, String schemaName) {
-        if (securityService == null) return true;
+        if ((session == null) || (securityService == null))
+            return true;
         return securityService.isAccessible(session, schemaName);
     }
 
