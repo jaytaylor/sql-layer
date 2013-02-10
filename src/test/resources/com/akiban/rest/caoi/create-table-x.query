@@ -1,0 +1,1 @@
+CREATE TABLE test.x(y int, z int)

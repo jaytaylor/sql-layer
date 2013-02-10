@@ -30,6 +30,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.akiban.server.service.externaldata.TableRowTracker;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParseException;
 import org.slf4j.Logger;
@@ -217,7 +218,7 @@ public class InsertProcessor extends DMLProcessor {
             }
         }
         Cursor cursor = API.cursor(insert, context.queryContext);
-        JsonRowWriter writer = new JsonRowWriter (context.table, 0);
+        JsonRowWriter writer = new JsonRowWriter(new TableRowTracker(context.table, 0));
         WriteCapturePKRow rowWriter = new WriteCapturePKRow();
         writer.writeRows(cursor, appender, "\n", rowWriter);
         context.pkValues = rowWriter.getPKValues();

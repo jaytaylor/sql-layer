@@ -41,4 +41,5 @@ public interface RestDMLService {
                            String schema, String table, JsonNode node);
     public Response delete(HttpServletRequest request, 
                            String schema, String table, String pks);
+    public Response runSQL(HttpServletRequest request, String sql);
 }
