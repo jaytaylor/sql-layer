@@ -34,6 +34,7 @@ import com.akiban.server.service.externaldata.ExternalDataService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.monitor.MonitorService;
 import com.akiban.server.service.routines.RoutineLoader;
+import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
@@ -55,6 +56,7 @@ public final class ServerServiceRequirements {
                                      T3RegistryService t3RegistryService,
                                      RoutineLoader routineLoader,
                                      TransactionService txnService,
+                                     SecurityService securityService,
                                      ServiceManager serviceManager) {
         this.akServer = akServer;
         this.dxlService = dxlService;
@@ -68,6 +70,7 @@ public final class ServerServiceRequirements {
         this.t3RegistryService = t3RegistryService;
         this.routineLoader = routineLoader;
         this.txnService = txnService;
+        this.securityService = securityService;
         this.serviceManager = serviceManager;
     }
 
@@ -123,6 +126,10 @@ public final class ServerServiceRequirements {
         return serviceManager;
     }
 
+    public SecurityService securityService() {
+        return securityService;
+    }
+
     /* Less commonly used, started on demand */
 
     public ExternalDataService externalData() {
@@ -141,5 +148,6 @@ public final class ServerServiceRequirements {
     private final T3RegistryService t3RegistryService;
     private final RoutineLoader routineLoader;
     private final TransactionService txnService;
+    private final SecurityService securityService;
     private final ServiceManager serviceManager;
 }

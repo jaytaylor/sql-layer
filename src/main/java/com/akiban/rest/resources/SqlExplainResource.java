@@ -24,32 +24,34 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service.restdml;
+package com.akiban.rest.resources;
 
-import com.akiban.ais.model.TableName;
+import com.akiban.server.service.restdml.RestDMLService;
+import com.google.inject.Inject;
 
 import javax.servlet.http.HttpServletRequest;
-
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.codehaus.jackson.JsonNode;
+/**
+ * Exposed JSON formatted EXPLAIN for SQL statement.
+ */
+@Path("/explain")
+public class SqlExplainResource {
+    @Inject
+    private RestDMLService restDMLService;
 
-import java.util.List;
-import java.util.Map;
-
-public interface RestDMLService {
-    public Response getAllEntities(HttpServletRequest request, 
-                                   TableName tableName, Integer depth);
-    public Response getEntities(HttpServletRequest request, 
-                                TableName tableName, Integer depth, String pks);
-    public Response insert(HttpServletRequest request, 
-                           TableName tableName, JsonNode node);
-    public Response delete(HttpServletRequest request, 
-                           TableName tableName, String pks);
-    public Response update(HttpServletRequest request, 
-                        TableName tableName, String pks, JsonNode node);
-    public Response runSQL(HttpServletRequest request, String sql);
-    public Response explainSQL(HttpServletRequest request, String sql);
-    public Response callProcedure(HttpServletRequest request, 
-                                  TableName procName, Map<String,List<String>> params);
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getQueryResults(@Context HttpServletRequest request,
+                                    @QueryParam("format") String format,
+                                    @QueryParam("jsoncallback") String jsonp,
+                                    @QueryParam("q") String query) throws Exception {
+        return restDMLService.explainSQL(request, query);
+    }
 }

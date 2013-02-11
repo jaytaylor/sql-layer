@@ -31,6 +31,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
@@ -38,13 +39,16 @@ import com.akiban.ais.model.View;
 import com.akiban.server.MemoryOnlyTableStatusCache;
 import com.akiban.server.api.ddl.DDLFunctionsMockBase;
 import com.akiban.server.error.PersistitAdapterException;
+import com.akiban.server.service.routines.MockRoutineLoader;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.aisddl.IndexDDL;
+import com.akiban.sql.aisddl.RoutineDDL;
 import com.akiban.sql.aisddl.SequenceDDL;
 import com.akiban.sql.aisddl.TableDDL;
 import com.akiban.sql.aisddl.ViewDDL;
 import com.akiban.sql.optimizer.AISBinderContext;
+import com.akiban.sql.parser.CreateAliasNode;
 import com.akiban.sql.parser.CreateIndexNode;
 import com.akiban.sql.parser.CreateTableNode;
 import com.akiban.sql.parser.CreateViewNode;
@@ -117,6 +121,8 @@ public class SchemaFactory {
                                    new AISBinderContext(ddlFunctions.getAIS(null), defaultSchema), null);
             } else if (stmt instanceof CreateSequenceNode) {
                 SequenceDDL.createSequence(ddlFunctions, null, defaultSchema, (CreateSequenceNode)stmt);
+            } else if (stmt instanceof CreateAliasNode) {
+                RoutineDDL.createRoutine(ddlFunctions, new MockRoutineLoader(), null, defaultSchema, (CreateAliasNode)stmt);
             } else {
                 throw new IllegalStateException("Unsupported StatementNode type: " + stmt);
             }
@@ -192,6 +198,11 @@ public class SchemaFactory {
         @Override
         public void createSequence(Session session, Sequence sequence) {
             ais = AISMerge.mergeSequence(ais, sequence);
+        }
+
+        @Override
+        public void createRoutine(Session session, Routine routine) {
+            ais = AISMerge.mergeRoutine(ais, routine);
         }
     }
 }

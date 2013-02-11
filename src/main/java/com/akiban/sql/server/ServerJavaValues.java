@@ -48,6 +48,7 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.util.AkibanAppender;
 import com.akiban.util.WrappingByteSource;
 
 import org.joda.time.DateTime;
@@ -886,5 +887,10 @@ public abstract class ServerJavaValues
 
     public void setArray(int index, Array x) {
         throw new UnsupportedOperationException();
+    }
+
+    public void formatAsJson(int index, AkibanAppender appender) {
+        PValueSource pvalue = getPValue(index);
+        pvalue.tInstance().formatAsJson(pvalue, appender);
     }
 }

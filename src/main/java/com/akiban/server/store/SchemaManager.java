@@ -42,6 +42,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
 import com.akiban.ais.util.ChangedTableDescription;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
+import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
 
 public interface SchemaManager {
@@ -228,4 +229,7 @@ public interface SchemaManager {
     long getOldestActiveAISGeneration();
 
     boolean hasTableChanged(Session session, int tableID);
+
+    /** Link up to security service. */
+    void setSecurityService(SecurityService securityService);
 }

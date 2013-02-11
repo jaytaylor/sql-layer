@@ -101,6 +101,7 @@ import com.akiban.server.error.UnsupportedMetadataTypeException;
 import com.akiban.server.error.UnsupportedMetadataVersionException;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeLink;
@@ -269,6 +270,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private final TreeService treeService;
     private final ConfigurationService config;
     private final TransactionService txnService;
+    private SecurityService securityService;
     private RowDefCache rowDefCache;
     private int maxAISBufferSize;
     private boolean skipAISUpgrade;
@@ -294,6 +296,11 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         this.sessionService = sessionService;
         this.treeService = treeService;
         this.txnService = txnService;
+    }
+
+    @Override
+    public void setSecurityService(SecurityService securityService) {
+        this.securityService = securityService;
     }
 
     @Override
@@ -608,7 +615,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         transactionally(sessionService.createSession(), new ThrowingRunnable() {
             @Override
             public void run(Session session) throws PersistitException {
-                dropRoutineCommon(session, routineName, false);
+                dropRoutineCommon(session, routineName, true);
             }
         });
     }
@@ -787,6 +794,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         for(Schema schema : ais.getSchemas().values()) {
             if(!withISTables && 
                (TableName.INFORMATION_SCHEMA.equals(schema.getName()) ||
+                TableName.SECURITY_SCHEMA.equals(schema.getName()) ||
                 TableName.SYS_SCHEMA.equals(schema.getName()) ||
                 TableName.SQLJ_SCHEMA.equals(schema.getName()))) {
                 continue;
@@ -1062,7 +1070,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private void saveProtobuf(Exchange ex, GrowableByteBuffer buffer, AkibanInformationSchema newAIS, final String schema)
             throws PersistitException {
         final ProtobufWriter.WriteSelector selector;
-        if(TableName.INFORMATION_SCHEMA.equals(schema)) {
+        if(TableName.INFORMATION_SCHEMA.equals(schema) ||
+           TableName.SECURITY_SCHEMA.equals(schema)) {
             selector = new ProtobufWriter.SingleSchemaSelector(schema) {
                 @Override
                 public Columnar getSelected(Columnar columnar) {
@@ -1116,7 +1125,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             @Override
             public boolean isSelected(Routine routine) {
                 return TableName.SYS_SCHEMA.equals(routine.getName().getSchemaName()) ||
-                       TableName.SQLJ_SCHEMA.equals(routine.getName().getSchemaName());
+                       TableName.SQLJ_SCHEMA.equals(routine.getName().getSchemaName()) ||
+                       TableName.SECURITY_SCHEMA.equals(routine.getName().getSchemaName());
             }
 
             @Override
@@ -1542,6 +1552,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private static void checkSystemSchema(TableName tableName, boolean shouldBeSystem) {
         String schemaName = tableName.getSchemaName();
         final boolean inSystem = TableName.INFORMATION_SCHEMA.equals(schemaName) ||
+                                 TableName.SECURITY_SCHEMA.equals(schemaName) ||
                                  TableName.SYS_SCHEMA.equals(schemaName) ||
                                  TableName.SQLJ_SCHEMA.equals(schemaName);
         if(shouldBeSystem && !inSystem) {
@@ -1555,7 +1566,9 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private static void checkJoinTo(Join join, TableName childName, boolean isInternal) {
         TableName parentName = (join != null) ? join.getParent().getName() : null;
         if(parentName != null) {
-            boolean inAIS = TableName.INFORMATION_SCHEMA.equals(parentName.getSchemaName());
+            String parentSchema = parentName.getSchemaName();
+            boolean inAIS = (TableName.INFORMATION_SCHEMA.equals(parentSchema) ||
+                             TableName.SECURITY_SCHEMA.equals(parentSchema));
             if(inAIS && !isInternal) {
                 throw new JoinToProtectedTableException(parentName, childName);
             } else if(!inAIS && isInternal) {
@@ -1566,6 +1579,10 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     private void checkTableName(Session session, TableName tableName, boolean shouldExist, boolean inIS) {
         checkSystemSchema(tableName, inIS);
+        if (!inIS && (securityService != null) &&
+            !securityService.isAccessible(session, tableName.getSchemaName())) {
+            throw new ProtectedTableDDLException(tableName);
+        }
         final boolean tableExists = getAis(session).getTable(tableName) != null;
         if(shouldExist && !tableExists) {
             throw new NoSuchTableException(tableName);
