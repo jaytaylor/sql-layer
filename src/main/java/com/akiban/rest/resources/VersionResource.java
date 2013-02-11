@@ -30,10 +30,12 @@ import com.akiban.ais.model.TableName;
 import com.akiban.server.service.restdml.RestDMLService;
 import com.google.inject.Inject;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -51,8 +53,9 @@ public class VersionResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getVersion(@QueryParam("format") String format,
+    public Response getVersion(@Context HttpServletRequest request,
+                               @QueryParam("format") String format,
                                @QueryParam("jsoncallback") String jsonp) throws Exception {
-        return restDMLService.getAllEntities(SCHEMA_NAME, TABLE_NAME, DEPTH);
+        return restDMLService.getAllEntities(request, SCHEMA_NAME, TABLE_NAME, DEPTH);
     }
 }

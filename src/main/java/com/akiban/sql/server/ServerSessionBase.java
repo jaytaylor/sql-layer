@@ -26,6 +26,7 @@
 
 package com.akiban.sql.server;
 
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
@@ -403,6 +404,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         if (call != null) {
             ServerSessionBase server = (ServerSessionBase)call.getContext().getServer();
             defaultSchemaName = server.defaultSchemaName;
+            session = server.session;
             transaction = server.transaction;
             transactionDefaultReadOnly = server.transactionDefaultReadOnly;
             sessionMonitor.setCallerSessionId(server.getSessionMonitor().getSessionId());
@@ -411,6 +413,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
 
     public boolean shouldNotify(QueryContext.NotificationLevel level) {
         return (level.ordinal() <= maxNotificationLevel.ordinal());
+    }
+
+    @Override
+    public boolean isSchemaAccessible(String schemaName) {
+        return reqs.securityService().isAccessible(session, schemaName);
     }
 
 }

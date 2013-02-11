@@ -26,14 +26,20 @@
 
 package com.akiban.server.service.restdml;
 
+import javax.servlet.http.HttpServletRequest;
+
 import javax.ws.rs.core.Response;
 
 import org.codehaus.jackson.JsonNode;
 
 public interface RestDMLService {
-    public Response runSQL(String sql);
-    public Response insert(String schema, String table, JsonNode node);
-    public Response getAllEntities(String schema, String table, Integer depth);
-    public Response getEntities(String schema, String table, Integer depth, String pks);
-    public Response delete(String schema, String table, String pks);
+    public Response getAllEntities(HttpServletRequest request, 
+                                   String schema, String table, Integer depth);
+    public Response getEntities(HttpServletRequest request, 
+                                String schema, String table, Integer depth, String pks);
+    public Response insert(HttpServletRequest request, 
+                           String schema, String table, JsonNode node);
+    public Response delete(HttpServletRequest request, 
+                           String schema, String table, String pks);
+    public Response runSQL(HttpServletRequest request, String sql);
 }

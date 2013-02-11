@@ -26,16 +26,6 @@
 
 package com.akiban.server.service.restdml;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
-
-import com.akiban.server.service.externaldata.JsonRowWriter;
-import com.akiban.sql.embedded.EmbeddedJDBCService;
-import com.akiban.sql.embedded.JDBCResultSet;
-import com.akiban.util.AkibanAppender;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
-
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
@@ -46,14 +36,25 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.externaldata.ExternalDataService;
+import com.akiban.server.service.externaldata.JsonRowWriter;
+import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.sql.embedded.EmbeddedJDBCService;
+import com.akiban.sql.embedded.JDBCResultSet;
+import com.akiban.util.AkibanAppender;
 import com.google.inject.Inject;
 
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.JsonParseException;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -62,6 +63,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.Properties;
 
 import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 
@@ -69,32 +71,35 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     private final SessionService sessionService;
     private final DXLService dxlService;
     private final TransactionService transactionService;
+    private final SecurityService securityService;
     private final ExternalDataService extDataService;
     private final EmbeddedJDBCService jdbcService;
     private final InsertProcessor insertProcessor;
     private final DeleteProcessor deleteProcessor;
     
     @Inject
-    public RestDMLServiceImpl(ConfigurationService configService,
+    public RestDMLServiceImpl(SessionService sessionService,
                               DXLService dxlService,
-                              Store store,
                               TransactionService transactionService,
-                              T3RegistryService registryService,
-                              TreeService treeService,
+                              SecurityService securityService,
                               ExternalDataService extDataService,
-                              SessionService sessionService,
-                              EmbeddedJDBCService jdbcService) {
+                              EmbeddedJDBCService jdbcService,
+                              ConfigurationService configService,
+                              TreeService treeService,
+                              Store store,
+                              T3RegistryService registryService) {
         this.sessionService = sessionService;
         this.dxlService = dxlService;
         this.transactionService = transactionService;
+        this.securityService = securityService;
         this.extDataService = extDataService;
         this.jdbcService = jdbcService;
-
         this.insertProcessor = new InsertProcessor (configService, treeService, store, registryService);
         this.deleteProcessor = new DeleteProcessor (configService, treeService, store, registryService);
     }
     
-    /* service */
+    /* Service */
+
     @Override
     public void start() {
         // None
@@ -110,14 +115,107 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         //None
     }
 
+    /* RestDMLService */
+
     @Override
-    public Response runSQL(final String sql) {
+    public Response getAllEntities(final HttpServletRequest request, final String schema, final String table, Integer depth) {
+        if (!securityService.isAccessible(request, schema))
+            return Response.status(Response.Status.FORBIDDEN).build();
+        final int realDepth = (depth != null) ? Math.max(depth, 0) : -1;
+        return Response.status(Response.Status.OK)
+                .entity(new StreamingOutput() {
+                    @Override
+                    public void write(OutputStream output) throws IOException {
+                        try (Session session = sessionService.createSession()) {
+                            // Do not auto-close writer as that prevents an exception from propagating to the client
+                            PrintWriter writer = new PrintWriter(output);
+                            extDataService.dumpAllAsJson(session, writer, schema, table, realDepth, true);
+                            writer.write('\n');
+                            writer.close();
+                        } catch(InvalidOperationException e) {
+                            throw wrapIOE(e);
+                        }
+                    }
+                })
+                .build();
+    }
+
+    @Override
+    public Response getEntities(final HttpServletRequest request, final String schema, final String table, Integer inDepth, final String identifiers) {
+        if (!securityService.isAccessible(request, schema))
+            return Response.status(Response.Status.FORBIDDEN).build();
+        final TableName tableName = new TableName(schema, table);
+        final int depth = (inDepth != null) ? Math.max(inDepth, 0) : -1;
+        return Response.status(Response.Status.OK)
+                .entity(new StreamingOutput() {
+                    @Override
+                    public void write(OutputStream output) throws IOException {
+                        try (Session session = sessionService.createSession();
+                             CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+                            // Do not auto-close writer as that prevents an exception from propagating to the client
+                            PrintWriter writer = new PrintWriter(output);
+                            UserTable uTable = dxlService.ddlFunctions().getUserTable(session, tableName);
+                            Index pkIndex = uTable.getPrimaryKeyIncludingInternal().getIndex();
+                            List<List<String>> pks = PrimaryKeyParser.parsePrimaryKeys(identifiers, pkIndex);
+                            extDataService.dumpBranchAsJson(session, writer, schema, table, pks, depth, false);
+                            writer.write('\n');
+                            txn.commit();
+                            writer.close();
+                        } catch(InvalidOperationException e) {
+                            throw wrapIOE(e);
+                        }
+                    }
+                })
+                .build();
+    }
+
+    @Override
+    public Response insert(final HttpServletRequest request, final String schemaName, final String tableName, JsonNode node)  {
+        if (!securityService.isAccessible(request, schemaName))
+            return Response.status(Response.Status.FORBIDDEN).build();
+        TableName rootTable = new TableName (schemaName, tableName);
+        try (Session session = sessionService.createSession();
+            CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+            String pk = insertProcessor.processInsert(session, ais, rootTable, node);
+            txn.commit();
+            return Response.status(Response.Status.OK).entity(pk).build();
+        } catch (JsonParseException ex) {
+            throw new WebApplicationException(ex, Response.Status.BAD_REQUEST);
+        } catch (IOException e) {
+            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
+        } catch (InvalidOperationException e) {
+            throw wrapIOE(e);
+        }
+    }
+
+    @Override
+    public Response delete(final HttpServletRequest request, final String schema, final String table, final String identifier) {
+        if (!securityService.isAccessible(request, schema))
+            return Response.status(Response.Status.FORBIDDEN).build();
+        final TableName tableName = new TableName (schema, table);
+        
+        try (Session session = sessionService.createSession();
+                CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+            deleteProcessor.processDelete(session, ais, tableName, identifier);
+            txn.commit();
+            return Response.status(Response.Status.OK)
+                    .entity("")
+                    .build();
+        } catch (InvalidOperationException e) {
+            throw wrapIOE(e);
+        }
+    }
+
+    @Override
+    public Response runSQL(final HttpServletRequest request, final String sql) {
         return Response
                 .status(Response.Status.OK)
                 .entity(new StreamingOutput() {
                     @Override
                     public void write(OutputStream output) throws IOException, WebApplicationException {
-                        try (Connection conn = jdbcService.newConnection();
+                        try (Connection conn = jdbcService.newConnection(new Properties(), request.getUserPrincipal());
                              Statement s = conn.createStatement()) {
                             PrintWriter writer = new PrintWriter(output);
                             AkibanAppender appender = AkibanAppender.of(writer);
@@ -147,90 +245,6 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                     }
                 })
                 .build();
-    }
-
-    /* RestDML Service Impl */
-    @Override
-    public Response insert(final String schemaName, final String tableName, JsonNode node)  {
-        TableName rootTable = new TableName (schemaName, tableName);
-        try (Session session = sessionService.createSession();
-            CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
-            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-            String pk = insertProcessor.processInsert(session, ais, rootTable, node);
-            txn.commit();
-            return Response.status(Response.Status.OK).entity(pk).build();
-        } catch (JsonParseException ex) {
-            throw new WebApplicationException(ex, Response.Status.BAD_REQUEST);
-        } catch (IOException e) {
-            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
-        } catch (InvalidOperationException e) {
-            throw wrapIOE(e);
-        }
-    }
-
-    @Override
-    public Response getAllEntities(final String schema, final String table, Integer depth) {
-        final int realDepth = (depth != null) ? Math.max(depth, 0) : -1;
-        return Response.status(Response.Status.OK)
-                .entity(new StreamingOutput() {
-                    @Override
-                    public void write(OutputStream output) throws IOException {
-                        try (Session session = sessionService.createSession()) {
-                            // Do not auto-close writer as that prevents an exception from propagating to the client
-                            PrintWriter writer = new PrintWriter(output);
-                            extDataService.dumpAllAsJson(session, writer, schema, table, realDepth, true);
-                            writer.write('\n');
-                            writer.close();
-                        } catch(InvalidOperationException e) {
-                            throw wrapIOE(e);
-                        }
-                    }
-                })
-                .build();
-    }
-
-    @Override
-    public Response getEntities(final String schema, final String table, Integer inDepth, final String identifiers) {
-        final TableName tableName = new TableName(schema, table);
-        final int depth = (inDepth != null) ? Math.max(inDepth, 0) : -1;
-        return Response.status(Response.Status.OK)
-                .entity(new StreamingOutput() {
-                    @Override
-                    public void write(OutputStream output) throws IOException {
-                        try (Session session = sessionService.createSession();
-                             CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
-                            // Do not auto-close writer as that prevents an exception from propagating to the client
-                            PrintWriter writer = new PrintWriter(output);
-                            UserTable uTable = dxlService.ddlFunctions().getUserTable(session, tableName);
-                            Index pkIndex = uTable.getPrimaryKeyIncludingInternal().getIndex();
-                            List<List<String>> pks = PrimaryKeyParser.parsePrimaryKeys(identifiers, pkIndex);
-                            extDataService.dumpBranchAsJson(session, writer, schema, table, pks, depth, false);
-                            writer.write('\n');
-                            txn.commit();
-                            writer.close();
-                        } catch(InvalidOperationException e) {
-                            throw wrapIOE(e);
-                        }
-                    }
-                })
-                .build();
-    }
-
-    @Override
-    public Response delete(String schema, String table, String identifier) {
-        final TableName tableName = new TableName (schema, table);
-        
-        try (Session session = sessionService.createSession();
-                CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
-            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-            deleteProcessor.processDelete(session, ais, tableName, identifier);
-            txn.commit();
-            return Response.status(Response.Status.OK)
-                    .entity("")
-                    .build();
-        } catch (InvalidOperationException e) {
-            throw wrapIOE(e);
-        }
     }
 
     private WebApplicationException wrapIOE(InvalidOperationException e) {

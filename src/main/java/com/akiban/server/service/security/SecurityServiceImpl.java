@@ -46,15 +46,18 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.http.HttpServletRequest;
+
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -85,11 +88,12 @@ public class SecurityServiceImpl implements SecurityService, Service {
     public static final String DELETE_ROLE_USER_ROLES_SQL = "DELETE FROM user_roles WHERE role_id IN (SELECT id FROM roles WHERE name = ?)";
     public static final String DELETE_USER_USER_ROLES_SQL = "DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE name = ?)";
     
-    public static final Session.Key<User> SESSION_KEY = 
-        Session.Key.named("SECURITY_USER");
+    public static final String RESTRICT_USER_SCHEMA_PROPERTY = "akserver.restrict_user_schema";
 
     private final ConfigurationService configService;
     private final SchemaManager schemaManager;
+
+    private boolean restrictUserSchema;
 
     private static final Logger logger = LoggerFactory.getLogger(SecurityServiceImpl.class);
 
@@ -455,7 +459,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
     }
 
     @Override
-    public void clearAll() {
+    public void clearAll(Session session) {
         Connection conn = null;
         Statement stmt = null;
         boolean success = false;
@@ -474,13 +478,40 @@ public class SecurityServiceImpl implements SecurityService, Service {
         finally {
             cleanup(conn, stmt);
         }
+        session.remove(SESSION_KEY);
+    }
+
+    @Override
+    public boolean isAccessible(Session session, String schema) {
+        User user = session.get(SESSION_KEY);
+        if (user == null) return true; // Not authenticated = open.
+        return isAccessible(user.getName(), schema) || user.hasRole(ADMIN_ROLE);
+    }
+
+    @Override
+    public boolean isAccessible(HttpServletRequest request, String schema) {
+        Principal user = request.getUserPrincipal();
+        if (user == null) return true; // Not authenticated = open.
+        return isAccessible(user.getName(), schema) || request.isUserInRole(ADMIN_ROLE);
+    }
+
+    protected boolean isAccessible(String user, String schema) {
+        return !restrictUserSchema ||
+            user.equals(schema) ||
+            TableName.INFORMATION_SCHEMA.equals(schema) ||
+            TableName.SQLJ_SCHEMA.equals(schema) ||
+            TableName.SYS_SCHEMA.equals(schema);
     }
 
     /* Service */
     
     @Override
     public void start() {
+        restrictUserSchema = Boolean.parseBoolean(configService.getProperty(RESTRICT_USER_SCHEMA_PROPERTY));
         registerSystemObjects();
+        if (restrictUserSchema) {
+            schemaManager.setSecurityService(this); // Injection would be circular.
+        }
     }
 
     @Override

@@ -31,6 +31,7 @@ import com.akiban.rest.ResponseHelper;
 import com.akiban.server.service.restdml.RestDMLService;
 import com.google.inject.Inject;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -64,20 +65,22 @@ public class DataAccessOperationsResource {
     
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response retrieveEntity(@QueryParam("format") String format,
+    public Response retrieveEntity(@Context HttpServletRequest request,
+                                   @QueryParam("format") String format,
                                    @QueryParam("jsoncallback") String jsonp,
                                    @PathParam("schema") String schema,
                                    @PathParam("table") String table,
                                    @QueryParam("depth") Integer depth,
                                    @QueryParam("offset") Integer offset,
                                    @QueryParam("limit") Integer limit) throws Exception {
-        return dmlService.getAllEntities(schema, table, depth);
+        return dmlService.getAllEntities(request, schema, table, depth);
     }
 
     @GET
     @Path("{identifiers:.*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response retrieveEntity(@QueryParam("format") String format,
+    public Response retrieveEntity(@Context HttpServletRequest request,
+                                   @QueryParam("format") String format,
                                    @QueryParam("jsoncallback") String jsonp,
                                    @PathParam("schema") String schema,
                                    @PathParam("table") String table,
@@ -85,25 +88,27 @@ public class DataAccessOperationsResource {
                                    @Context UriInfo uri) throws Exception {
         String[] pks = uri.getPath(false).split("/");
         assert pks.length > 0 : uri;
-        return dmlService.getEntities(schema, table, depth, pks[pks.length-1]);
+        return dmlService.getEntities(request, schema, table, depth, pks[pks.length-1]);
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createEntity(@PathParam("schema") final String schema,
+    public Response createEntity(@Context HttpServletRequest request,
+                                 @PathParam("schema") final String schema,
                                  @PathParam("table") final String table,
                                  final byte[] entityBytes) throws Exception {
         ObjectMapper m = new ObjectMapper();
         JsonNode node = m.readTree(entityBytes);
         
-        return dmlService.insert(schema, table, node);
+        return dmlService.insert(request, schema, table, node);
     }
 
     @PUT
     @Path("{identifiers:.*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateEntity(@PathParam("schema") final String schema,
+    public Response updateEntity(@Context HttpServletRequest request,
+                                 @PathParam("schema") final String schema,
                                  @PathParam("table") final String table,
                                  final byte[] entityBytes,
                                  @Context final UriInfo uri) throws Exception {
@@ -113,11 +118,12 @@ public class DataAccessOperationsResource {
     @DELETE
     @Path("{identifiers:.*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteEntity(@PathParam("schema") String schema,
+    public Response deleteEntity(@Context HttpServletRequest request,
+                                 @PathParam("schema") String schema,
                                  @PathParam("table") String table,
                                  @Context UriInfo uri) throws Exception {
         String[] pks = uri.getPath(false).split("/");
         assert pks.length > 0 : uri;
-        return dmlService.delete(schema, table, pks[pks.length-1]);
+        return dmlService.delete(request, schema, table, pks[pks.length-1]);
     }
 }

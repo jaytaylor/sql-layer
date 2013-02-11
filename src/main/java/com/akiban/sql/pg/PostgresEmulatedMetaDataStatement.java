@@ -547,7 +547,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                  name.equals(TableName.INFORMATION_SCHEMA) ||
                  name.equals(TableName.SECURITY_SCHEMA)) ||
                 ((pattern != null) && 
-                 !pattern.matcher(name).find()))
+                 !pattern.matcher(name).find()) ||
+                !server.isSchemaAccessible(name))
                 iter.remove();
         }
         Collections.sort(names);
@@ -595,7 +596,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 ((schemaPattern != null) && 
                  !schemaPattern.matcher(name.getSchemaName()).find()) ||
                 ((tablePattern != null) && 
-                 !tablePattern.matcher(name.getTableName()).find()))
+                 !tablePattern.matcher(name.getTableName()).find()) ||
+                !server.isSchemaAccessible(name.getSchemaName()))
                 iter.remove();
         }
         Collections.sort(tables, LIST_TABLES_BY_GROUP ? tablesByGroup : tablesByName);
@@ -700,7 +702,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             if (((schemaPattern != null) && 
                  !schemaPattern.matcher(name.getSchemaName()).find()) ||
                 ((tablePattern != null) && 
-                 !tablePattern.matcher(name.getTableName()).find()))
+                 !tablePattern.matcher(name.getTableName()).find()) ||
+                !server.isSchemaAccessible(name.getSchemaName()))
                 iter.remove();
         }
         Collections.sort(names);
@@ -745,11 +748,14 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                     return ais.getColumnar(name);
                 }
             }
-            return null;
         }
         else {
-            return ais.getUserTable(id);
+            UserTable table = ais.getUserTable(id);
+            if (server.isSchemaAccessible(table.getName().getSchemaName())) {
+                return table;
+            }
         }
+        return null;
     }
 
     private int psqlDescribeTables2Query(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {

@@ -103,6 +103,26 @@ public class ServerSessionITBase extends ITBase {
 
     protected static class DummySecurityService implements com.akiban.server.service.security.SecurityService {
         @Override
+        public com.akiban.server.service.security.User authenticate(com.akiban.server.service.session.Session session, String name, String password) {
+            return null;
+        }
+
+        @Override
+        public com.akiban.server.service.security.User authenticate(com.akiban.server.service.session.Session session, String name, String password, byte[] salt) {
+            return null;
+        }
+
+        @Override
+        public boolean isAccessible(com.akiban.server.service.session.Session session, String schema) {
+            return true;
+        }
+
+        @Override
+        public boolean isAccessible(javax.servlet.http.HttpServletRequest request, String schema) {
+            return true;
+        }
+
+        @Override
         public void addRole(String name) {
             throw new UnsupportedOperationException();
         }
@@ -133,17 +153,7 @@ public class ServerSessionITBase extends ITBase {
         }
 
         @Override
-        public com.akiban.server.service.security.User authenticate(com.akiban.server.service.session.Session session, String name, String password) {
-            return null;
-        }
-
-        @Override
-        public com.akiban.server.service.security.User authenticate(com.akiban.server.service.session.Session session, String name, String password, byte[] salt) {
-            return null;
-        }
-
-        @Override
-        public void clearAll() {
+        public void clearAll(com.akiban.server.service.session.Session session) {
         }
     }
 
