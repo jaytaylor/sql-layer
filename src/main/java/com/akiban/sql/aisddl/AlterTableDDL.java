@@ -203,7 +203,7 @@ public class AlterTableDDL {
                     String newColName = alterRenameCol.newName();
                     columnChanges.add(TableChange.createModify(oldColName, newColName));
                     
-                    final Column oldCol = table.getColumn(oldColName); //{table.getColumn(oldColName)};
+                    final Column oldCol = table.getColumn(oldColName);
                     if (oldCol == null)
                         throw new NoSuchColumnException(oldColName);
                     final UserTable tableCopy = copyTable(table, columnChanges);
