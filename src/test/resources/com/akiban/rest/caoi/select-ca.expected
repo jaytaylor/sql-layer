@@ -1,0 +1,106 @@
+{
+  "type" : "project",
+  "input_operator" : [ {
+    "type" : "filter",
+    "input_operator" : [ {
+      "type" : "flatten_operator",
+      "input_operator" : [ {
+        "type" : "select_hkey",
+        "input_operator" : [ {
+          "type" : "scan_operator",
+          "name" : [ "GroupScan_Default" ],
+          "table_schema" : [ "test" ],
+          "table_name" : [ "customers" ],
+          "scan_option" : [ "full scan" ]
+        } ],
+        "predicate" : [ {
+          "type" : "binary_operator",
+          "operand" : [ {
+            "type" : "field",
+            "position" : [ 2 ],
+            "name" : [ "Field" ],
+            "table_schema" : [ "test" ],
+            "table_name" : [ "addresses" ],
+            "table_correlation" : [ "test.addresses" ],
+            "column_name" : [ "state" ]
+          }, {
+            "type" : "literal",
+            "operand" : [ "'MA'" ],
+            "name" : [ "Literal" ]
+          } ],
+          "infix_representation" : [ "==" ],
+          "name" : [ "==" ]
+        } ],
+        "name" : [ "Select_HKeyOrdered" ]
+      } ],
+      "name" : [ "Flatten_HKeyOrdered" ],
+      "join_option" : [ "INNER" ],
+      "parent_type" : [ {
+        "type" : "rowtype",
+        "name" : [ "test.customers" ],
+        "table_schema" : [ "test" ],
+        "table_name" : [ "customers" ]
+      } ],
+      "child_type" : [ {
+        "type" : "rowtype",
+        "name" : [ "test.addresses" ],
+        "table_schema" : [ "test" ],
+        "table_name" : [ "addresses" ]
+      } ]
+    } ],
+    "name" : [ "Filter_Default" ],
+    "keep_type" : [ {
+      "type" : "rowtype",
+      "name" : [ "flatten(test.customers, test.addresses)" ],
+      "parent_type" : [ {
+        "type" : "rowtype",
+        "name" : [ "test.customers" ],
+        "table_schema" : [ "test" ],
+        "table_name" : [ "customers" ]
+      } ],
+      "child_type" : [ {
+        "type" : "rowtype",
+        "name" : [ "test.addresses" ],
+        "table_schema" : [ "test" ],
+        "table_name" : [ "addresses" ]
+      } ]
+    } ]
+  } ],
+  "projection" : [ {
+    "type" : "function",
+    "operand" : [ {
+      "type" : "field",
+      "position" : [ 1 ],
+      "name" : [ "Field" ],
+      "table_schema" : [ "test" ],
+      "table_name" : [ "customers" ],
+      "table_correlation" : [ "test.customers" ],
+      "column_name" : [ "first_name" ]
+    }, {
+      "type" : "literal",
+      "operand" : [ "' '" ],
+      "name" : [ "Literal" ]
+    }, {
+      "type" : "field",
+      "position" : [ 2 ],
+      "name" : [ "Field" ],
+      "table_schema" : [ "test" ],
+      "table_name" : [ "customers" ],
+      "table_correlation" : [ "test.customers" ],
+      "column_name" : [ "last_name" ]
+    } ],
+    "infix_representation" : [ "||" ],
+    "associative" : [ true ],
+    "name" : [ "concatenate" ]
+  }, {
+    "type" : "field",
+    "position" : [ 3 ],
+    "name" : [ "Field" ],
+    "table_schema" : [ "test" ],
+    "table_name" : [ "addresses" ],
+    "table_correlation" : [ "test.addresses" ],
+    "column_name" : [ "city" ]
+  } ],
+  "cost" : [ "rows = 2, cost = 138.640" ],
+  "name" : [ "Project_Default" ]
+}

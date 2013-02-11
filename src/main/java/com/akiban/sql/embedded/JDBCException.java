@@ -57,7 +57,7 @@ public class JDBCException extends SQLException
         super(reason, cause);
     }
 
-    // Allow outer layer to throw SQLException throw inner layer that does not.
+    // Allow outer layer to throw SQLException through inner layer that does not.
     private static class Wrapper extends RuntimeException {
         public Wrapper(SQLException cause) {
             super(cause);
@@ -72,7 +72,7 @@ public class JDBCException extends SQLException
         if (ex instanceof Wrapper)
             throw (SQLException)ex.getCause();
         if (ex instanceof InvalidOperationException)
-            throw new JDBCException(ex);
+            throw new JDBCException((InvalidOperationException)ex);
         if (ex instanceof UnsupportedOperationException)
             throw new SQLFeatureNotSupportedException(ex.getMessage());
         return ex;

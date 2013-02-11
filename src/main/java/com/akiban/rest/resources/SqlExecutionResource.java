@@ -26,10 +26,12 @@
 
 package com.akiban.rest.resources;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
@@ -41,7 +43,8 @@ import java.io.InputStream;
 public class SqlExecutionResource {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    public Response execute(@QueryParam("format") String format,
+    public Response execute(@Context HttpServletRequest request,
+                            @QueryParam("format") String format,
                             @QueryParam("jsoncallback") String jsonp,
                             final InputStream entityLines) throws Exception {
         return Response

@@ -24,32 +24,46 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service.restdml;
+package com.akiban.server.service.security;
 
-import com.akiban.ais.model.TableName;
-
-import javax.servlet.http.HttpServletRequest;
-
-import javax.ws.rs.core.Response;
-
-import org.codehaus.jackson.JsonNode;
+import java.security.Principal;
 
 import java.util.List;
-import java.util.Map;
 
-public interface RestDMLService {
-    public Response getAllEntities(HttpServletRequest request, 
-                                   TableName tableName, Integer depth);
-    public Response getEntities(HttpServletRequest request, 
-                                TableName tableName, Integer depth, String pks);
-    public Response insert(HttpServletRequest request, 
-                           TableName tableName, JsonNode node);
-    public Response delete(HttpServletRequest request, 
-                           TableName tableName, String pks);
-    public Response update(HttpServletRequest request, 
-                            TableName tableName, String values, JsonNode node);
-    public Response runSQL(HttpServletRequest request, String sql);
-    public Response explainSQL(HttpServletRequest request, String sql);
-    public Response callProcedure(HttpServletRequest request, 
-                                  TableName procName, Map<String,List<String>> params);
+public class User implements Principal
+{
+    private final int id;
+    private final String name;
+    private final List<String> roles;
+
+    protected User(int id, String name, List<String> roles) {
+        this.id = id;
+        this.name = name;
+        this.roles = roles;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    public boolean hasRole(String role) {
+        return roles.contains(role);
+    }
+
+    @Override
+    public String toString() {
+        return name + "(" + id + ")";
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return ((other instanceof User) && (id == ((User)other).id));
+    }
+
+    @Override
+    public int hashCode() {
+        return id;
+    }
+
 }

@@ -24,32 +24,33 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service.restdml;
+package com.akiban.server.service.security;
 
-import com.akiban.ais.model.TableName;
+import com.akiban.server.service.session.Session;
 
 import javax.servlet.http.HttpServletRequest;
 
-import javax.ws.rs.core.Response;
+import java.util.Collection;
 
-import org.codehaus.jackson.JsonNode;
+public interface SecurityService
+{
+    public static final String REALM = "AkServer";
+    public static final String ADMIN_ROLE = "admin";
 
-import java.util.List;
-import java.util.Map;
+    public static final Session.Key<User> SESSION_KEY = 
+        Session.Key.named("SECURITY_USER");
 
-public interface RestDMLService {
-    public Response getAllEntities(HttpServletRequest request, 
-                                   TableName tableName, Integer depth);
-    public Response getEntities(HttpServletRequest request, 
-                                TableName tableName, Integer depth, String pks);
-    public Response insert(HttpServletRequest request, 
-                           TableName tableName, JsonNode node);
-    public Response delete(HttpServletRequest request, 
-                           TableName tableName, String pks);
-    public Response update(HttpServletRequest request, 
-                            TableName tableName, String values, JsonNode node);
-    public Response runSQL(HttpServletRequest request, String sql);
-    public Response explainSQL(HttpServletRequest request, String sql);
-    public Response callProcedure(HttpServletRequest request, 
-                                  TableName procName, Map<String,List<String>> params);
+    public User authenticate(Session session, String name, String password);
+    public User authenticate(Session session, String name, String password, byte[] salt);
+
+    public boolean isAccessible(Session session, String schema);
+    public boolean isAccessible(HttpServletRequest request, String schema);
+
+    public void addRole(String name);
+    public void deleteRole(String name);
+    public User getUser(String name);
+    public User addUser(String name, String password, Collection<String> roles);
+    public void deleteUser(String name);
+    public void changeUserPassword(String name, String password);
+    public void clearAll(Session session);
 }

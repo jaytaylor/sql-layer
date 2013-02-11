@@ -40,6 +40,7 @@ import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.monitor.MonitorService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.routines.RoutineLoader;
+import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
@@ -67,10 +68,12 @@ public class PostgresServerManager implements PostgresService, Service, JmxManag
                                  T3RegistryService overloadResolutionService,
                                  RoutineLoader routineLoader,
                                  TransactionService txnService,
+                                 SecurityService securityService,
                                  ServiceManager serviceManager) {
         reqs = new ServerServiceRequirements(akServer, dxlService, monitor, 
                 sessionService, store, treeService, functionsRegistry, 
-                config, indexStatisticsService, overloadResolutionService, routineLoader, txnService, serviceManager);
+                config, indexStatisticsService, overloadResolutionService, 
+                routineLoader, txnService, securityService, serviceManager);
     }
 
     @Override

@@ -29,10 +29,12 @@ package com.akiban.rest.resources;
 import com.akiban.server.service.restdml.RestDMLService;
 import com.google.inject.Inject;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -46,9 +48,10 @@ public class SqlQueryResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getQueryResults(@QueryParam("format") String format,
+    public Response getQueryResults(@Context HttpServletRequest request,
+                                    @QueryParam("format") String format,
                                     @QueryParam("jsoncallback") String jsonp,
                                     @QueryParam("q") String query) throws Exception {
-        return restDMLService.runSQL(query);
+        return restDMLService.runSQL(request, query);
     }
 }

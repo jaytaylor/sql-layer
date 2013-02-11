@@ -29,6 +29,8 @@ package com.akiban.rest;
 import com.akiban.http.HttpConductor;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
+import com.akiban.server.service.restdml.RestDMLService;
+import com.akiban.server.service.restdml.RestDMLServiceImpl;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.sql.RegexFilenameFilter;
@@ -101,7 +103,9 @@ public class RestServiceFilesIT extends ITBase {
 
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
-        return super.serviceBindingsProvider().bindAndRequire(RestService.class, RestServiceImpl.class);
+        return super.serviceBindingsProvider()
+            .bindAndRequire(RestService.class, RestServiceImpl.class)
+            .bindAndRequire(RestDMLService.class, RestDMLServiceImpl.class);
     }
 
     @Override
@@ -110,7 +114,7 @@ public class RestServiceFilesIT extends ITBase {
     }
 
     public static File[] gatherRequestFiles(File dir) {
-        File[] result = dir.listFiles(new RegexFilenameFilter(".*\\.(get|put|post|delete|query)"));
+        File[] result = dir.listFiles(new RegexFilenameFilter(".*\\.(get|put|post|delete|query|explain)"));
         Arrays.sort(result, new Comparator<File>() {
             public int compare(File f1, File f2) {
                 return f1.getName().compareTo(f2.getName());
@@ -161,6 +165,9 @@ public class RestServiceFilesIT extends ITBase {
                 if("QUERY".equals(method)) {
                     method = "GET";
                     uri = "/query?q=" + trimAndURLEncode(uri);
+                } else if("EXPLAIN".equals(method)) {
+                    method = "GET";
+                    uri = "/explain?q=" + trimAndURLEncode(uri);
                 }
 
                 result.add(Parameterization.create(
