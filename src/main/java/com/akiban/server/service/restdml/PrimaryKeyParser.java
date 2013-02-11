@@ -28,6 +28,8 @@ package com.akiban.server.service.restdml;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.server.error.KeyColumnMismatchException;
+import com.akiban.server.error.NoSuchColumnException;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -78,7 +80,7 @@ public class PrimaryKeyParser {
             for(String pk : allPKs) {
                 String[] encodedColumns = pk.split(",");
                 if(encodedColumns.length != columnCount) {
-                    throw new IllegalArgumentException("Column count mismatch");
+                    throw new KeyColumnMismatchException("Column count mismatch"); 
                 }
                 boolean colNameSpecified = false;
                 String[] decodedColumns = new String[columnCount];
@@ -90,17 +92,17 @@ public class PrimaryKeyParser {
                         pos = i;
                         value = pair[0];
                         if(colNameSpecified) {
-                            throw new IllegalArgumentException("Mixed values");
+                            throw new KeyColumnMismatchException("Can not mix values with key/values");
                         }
                     } else if(pair.length == 2) {
                         pos = positionInIndex(primaryKey, pair[0]);
                         value = pair[1];
                         if(i > 0 && !colNameSpecified) {
-                            throw new IllegalArgumentException("Mixed values");
+                            throw new KeyColumnMismatchException("Can not mix values with key/values");
                         }
                         colNameSpecified = true;
                     } else {
-                        throw new IllegalArgumentException("Malformed col=value pair");
+                        throw new KeyColumnMismatchException ("Malformed column=value pair");
                     }
                     decodedColumns[pos] = URLDecoder.decode(value, STRING_ENCODING);
                 }
@@ -118,6 +120,6 @@ public class PrimaryKeyParser {
                 return iCol.getPosition();
             }
         }
-        throw new IllegalArgumentException("Column not in primary key: " + columnName);
+        throw new NoSuchColumnException (columnName);
     }
 }

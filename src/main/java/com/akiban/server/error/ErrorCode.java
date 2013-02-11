@@ -279,6 +279,9 @@ public enum ErrorCode {
     NO_SUCH_CURSOR          ("42", "51C", Importance.DEBUG, NoSuchCursorException.class),
     NO_SUCH_PREPARED_STATEMENT ("42", "51D", Importance.DEBUG, NoSuchPreparedStatementException.class),
 
+    // Class 42/600 - JSON interface errors
+    KEY_COLUMN_MISMATCH     ("42", "600", Importance.DEBUG, KeyColumnMismatchException.class),
+    
 
     // Class 44 - with check option violation
     

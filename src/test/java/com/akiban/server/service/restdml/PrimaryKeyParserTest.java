@@ -33,6 +33,9 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.error.KeyColumnMismatchException;
+import com.akiban.server.error.NoSuchColumnException;
+
 import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
@@ -129,25 +132,25 @@ public class PrimaryKeyParserTest {
         test("4;a=5;6", pk, llist("4", "5", "6"));
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected=KeyColumnMismatchException.class)
     public void underColumn() {
         Index pk = createIndex(2);
         test("1", pk, llist("1"));
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected=KeyColumnMismatchException.class)
     public void overColumn() {
         Index pk = createIndex(1);
         test("1,2", pk, asList(asList("1", "2")));
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected=NoSuchColumnException.class)
     public void columnNotInIndex() {
         Index pk = createIndex(1);
         test("z=1", pk, llist("1"));
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected=KeyColumnMismatchException.class)
     public void mixedQualifiedSamePK() {
         Index pk = createIndex(2);
         test("a=1,2", pk, asList(asList("1", "2")));
