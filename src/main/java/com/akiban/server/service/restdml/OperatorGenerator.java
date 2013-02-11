@@ -53,6 +53,7 @@ import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
 import com.akiban.server.types3.texpressions.TPreparedParameter;
+import com.akiban.sql.optimizer.rule.PlanGenerator;
 
 public abstract class OperatorGenerator {
     
@@ -109,52 +110,6 @@ public abstract class OperatorGenerator {
     
     protected Operator indexAncestorLookup(TableName tableName) {
         UserTable table = ais().getUserTable(tableName);
-        PrimaryKey pkey = table.getPrimaryKeyIncludingInternal();
-        final int nkeys = pkey.getColumns().size();
-
-        UserTableRowType tableType = schema().userTableRowType(table);
-        IndexRowType indexType = schema().indexRowType(pkey.getIndex());
-
-        // prepared parameters for all values in a index
-        // build a primary key index scan
-        List<TPreparedExpression> pexprs = new ArrayList<TPreparedExpression>(nkeys);
-        for (int i = 0; i < nkeys; i++) {
-            pexprs.add(new TPreparedParameter(i, indexType.typeInstanceAt(i)));
-        }
-        IndexBound bound = 
-            new IndexBound(new RowBasedUnboundExpressions(indexType, null, pexprs),
-                           new ColumnSelector() {
-                               @Override
-                               public boolean includesColumn(int columnPosition) {
-                                   return columnPosition < nkeys;
-                               }
-                           });
-        IndexKeyRange indexRange = IndexKeyRange.bounded(indexType,
-                                                         bound, true,
-                                                         bound, true);
-
-        Ordering ordering = API.ordering(true);
-        
-        for (int i = 0; i < nkeys; i++) {
-            ordering.append(null, 
-                            new TPreparedField(indexType.typeInstanceAt(i), i), 
-                            false);
-        }
-        
-        Operator indexScan = API.indexScan_Default(indexType, indexRange, ordering,
-                                                   true);
-        
-        // build ancestor lookup default
-        Group group = table.getGroup(); 
-        List<UserTableRowType> ancestorType = new ArrayList<>(1);
-        ancestorType.add (tableType);
-        
-        Operator lookup = API.ancestorLookup_Default(indexScan,
-                group,
-                indexType,
-                ancestorType,
-                API.InputPreservationOption.DISCARD_INPUT);
-
-        return lookup;
+        return PlanGenerator.generateBranchPlan(ais(), table);
     }
 }

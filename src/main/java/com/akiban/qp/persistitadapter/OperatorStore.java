@@ -48,7 +48,6 @@ import com.akiban.server.rowdata.RowDataExtractor;
 import com.akiban.server.rowdata.RowDataPValueSource;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.externaldata.PlanGenerator;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
@@ -59,6 +58,7 @@ import com.akiban.server.store.SchemaManager;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.sql.optimizer.rule.PlanGenerator;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
@@ -369,8 +369,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     throws PersistitException
     {
         UserTable uTable = ais.getUserTable(rowData.getRowDefId());
-        PlanGenerator generator = new PlanGenerator (ais);
-        Operator plan = generator.generateBranchPlan(uTable);
+
+        Operator plan = PlanGenerator.generateBranchPlan(ais, uTable);
         
         QueryContext queryContext = new SimpleQueryContext(adapter);
         Cursor cursor = API.cursor(plan, queryContext);
