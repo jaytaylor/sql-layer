@@ -95,6 +95,6 @@ public abstract class OperatorGenerator {
     
     protected Operator indexAncestorLookup(TableName tableName) {
         UserTable table = ais().getUserTable(tableName);
-        return PlanGenerator.generateBranchPlan(ais(), table);
+        return PlanGenerator.generateAncestorPlan(ais(), table);
     }
 }

@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.NopVisitor;
 import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.UserTable;
@@ -109,7 +110,63 @@ public class PlanGenerator {
      */
     public static Operator generateBranchPlan (AkibanInformationSchema ais, UserTable table) {
         final Schema schema = SchemaCache.globalSchema(ais);
-        PrimaryKey pkey = table.getPrimaryKey();
+        final Operator indexScan = generateIndexScan (ais, table);
+        final UserTableRowType tableType = schema.userTableRowType(table);
+
+        PrimaryKey pkey = table.getPrimaryKeyIncludingInternal();
+        IndexRowType indexType = schema.indexRowType(pkey.getIndex());
+        
+        Operator plan = API.branchLookup_Default(indexScan, table.getGroup(), indexType,
+                                        tableType, 
+                                        API.InputPreservationOption.DISCARD_INPUT);
+                                        
+        if (logger.isDebugEnabled()) {
+            DefaultFormatter formatter = new DefaultFormatter(table.getName().getSchemaName());
+            logger.debug("Branch Plan for {}:\n{}", table,
+                         join(formatter.format(plan.getExplainer(new ExplainContext()))));
+        }
+        return plan;
+    }
+    
+    /**
+     * Scan a table starting with the primary key and return the full data row 
+     * Generates a plan like
+     * AncestorScan (Table)
+     *   IndexScan (table, pk->?[, ?])
+     */
+    public static Operator generateAncestorPlan (AkibanInformationSchema ais, UserTable table) {
+        final Schema schema = SchemaCache.globalSchema(ais);
+        UserTableRowType tableType = schema.userTableRowType(table);
+
+        List<UserTableRowType> ancestorType = new ArrayList<>(1);
+        ancestorType.add (tableType);
+
+        IndexRowType indexType = schema.indexRowType(table.getPrimaryKeyIncludingInternal().getIndex());
+        
+        Operator indexScan = generateIndexScan (ais, table);
+        Operator lookup = API.ancestorLookup_Default(indexScan,
+                table.getGroup(),
+                indexType,
+                ancestorType,
+                API.InputPreservationOption.DISCARD_INPUT);
+        if (logger.isDebugEnabled()) {
+            DefaultFormatter formatter = new DefaultFormatter(table.getName().getSchemaName());
+            logger.debug("Ancestor Plan for {}:\n{}", table,
+                         join(formatter.format(lookup.getExplainer(new ExplainContext()))));
+        }
+        return lookup;
+    }
+    
+    /**
+     * Generate an index scan of the table based upon the table's primary key
+     * Values for the scan are set as parameters in the PK order. 
+     * @param ais
+     * @param table
+     * @return Operator plan for the Index scan 
+     */
+    private static Operator generateIndexScan (AkibanInformationSchema ais, UserTable table) {
+        final Schema schema = SchemaCache.globalSchema(ais);
+        PrimaryKey pkey = table.getPrimaryKeyIncludingInternal();
         final int nkeys = pkey.getColumns().size();
         UserTableRowType tableType = schema.userTableRowType(table);
         IndexRowType indexType = schema.indexRowType(pkey.getIndex());
@@ -137,17 +194,7 @@ public class PlanGenerator {
                             false);
         }
 
-        Operator indexScan = API.indexScan_Default(indexType, indexRange, ordering,
-                                                   true);
-        Operator plan = API.branchLookup_Default(indexScan, table.getGroup(), indexType,
-                                        tableType, 
-                                        API.InputPreservationOption.DISCARD_INPUT);
-                                        
-        if (logger.isDebugEnabled()) {
-            DefaultFormatter formatter = new DefaultFormatter(table.getName().getSchemaName());
-            logger.debug("Branch Plan for {}:\n{}", table,
-                         join(formatter.format(plan.getExplainer(new ExplainContext()))));
-        }
-        return plan;
+        return API.indexScan_Default(indexType, indexRange, ordering, true);
+        
     }
 }
