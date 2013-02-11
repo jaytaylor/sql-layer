@@ -113,10 +113,9 @@ public class DataAccessOperationsResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteEntity(@PathParam("schema") String schema,
                                  @PathParam("table") String table,
-                                 @QueryParam("depth") Integer depth,
                                  @Context UriInfo uri) throws Exception {
         String[] pks = uri.getPath(false).split("/");
         assert pks.length > 0 : uri;
-        return dmlService.delete(schema, table, pks[pks.length-1], depth);
+        return dmlService.delete(schema, table, pks[pks.length-1]);
     }
 }

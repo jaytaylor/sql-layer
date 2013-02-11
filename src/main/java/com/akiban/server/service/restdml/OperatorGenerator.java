@@ -25,34 +25,19 @@
  */
 package com.akiban.server.service.restdml;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.expression.IndexBound;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.expression.RowBasedUnboundExpressions;
-import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.qp.operator.API.Ordering;
-import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.t3expressions.T3RegistryService;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.server.types3.texpressions.TPreparedField;
-import com.akiban.server.types3.texpressions.TPreparedParameter;
 import com.akiban.sql.optimizer.rule.PlanGenerator;
 
 public abstract class OperatorGenerator {
