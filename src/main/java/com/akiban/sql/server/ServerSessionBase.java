@@ -43,6 +43,7 @@ import com.akiban.server.service.externaldata.ExternalDataService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.monitor.SessionMonitor;
 import com.akiban.server.service.routines.RoutineLoader;
+import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.KeyCreator;
@@ -278,6 +279,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     @Override
     public ExternalDataService getExternalDataService() {
         return reqs.externalData();
+    }
+
+    @Override
+    public SecurityService getSecurityService() {
+        return reqs.securityService();
     }
 
     @Override

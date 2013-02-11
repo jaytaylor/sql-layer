@@ -1107,7 +1107,8 @@ public class ApiTestBase {
         for(Routine routine : ddl().getAIS(session).getRoutines().values()) {
             TableName name = routine.getName();
             if (!name.getSchemaName().equals(TableName.SQLJ_SCHEMA) &&
-                !name.getSchemaName().equals(TableName.SYS_SCHEMA)) {
+                !name.getSchemaName().equals(TableName.SYS_SCHEMA) &&
+                !name.getSchemaName().equals(TableName.SECURITY_SCHEMA)) {
                 routineLoader().unloadRoutine(session(), name);
                 ddl().dropRoutine(session(), name);
             }
@@ -1127,7 +1128,9 @@ public class ApiTestBase {
         // Note: Group names, being derived, can change across DDL. Save root names instead.
         Set<TableName> groupRoots = new HashSet<TableName>();
         for(UserTable table : ddl().getAIS(session).getUserTables().values()) {
-            if(table.getParentJoin() == null && !TableName.INFORMATION_SCHEMA.equals(table.getName().getSchemaName())) {
+            if(table.getParentJoin() == null && 
+               !TableName.INFORMATION_SCHEMA.equals(table.getName().getSchemaName()) &&
+               !TableName.SECURITY_SCHEMA.equals(table.getName().getSchemaName())) {
                 groupRoots.add(table.getName());
             }
         }
@@ -1138,7 +1141,9 @@ public class ApiTestBase {
         // Now sanity check
         Set<TableName> uTables = new HashSet<TableName>(ddl().getAIS(session).getUserTables().keySet());
         for (Iterator<TableName> iter = uTables.iterator(); iter.hasNext();) {
-            if (TableName.INFORMATION_SCHEMA.equals(iter.next().getSchemaName())) {
+            String schemaName = iter.next().getSchemaName();
+            if (TableName.INFORMATION_SCHEMA.equals(schemaName) ||
+                TableName.SECURITY_SCHEMA.equals(schemaName)) {
                 iter.remove();
             }
         }

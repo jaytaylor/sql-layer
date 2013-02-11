@@ -99,8 +99,9 @@ public abstract class DMLProcessor {
         if (table == null) {
             throw new NoSuchTableException(name.getSchemaName(), name.getTableName());
         } else if (TableName.INFORMATION_SCHEMA.equals(schemaName) ||
-                    TableName.SYS_SCHEMA.equals(schemaName) ||
-                    TableName.SQLJ_SCHEMA.equals(schemaName)) {
+                   TableName.SECURITY_SCHEMA.equals(schemaName) ||
+                   TableName.SYS_SCHEMA.equals(schemaName) ||
+                   TableName.SQLJ_SCHEMA.equals(schemaName)) {
             throw  new ProtectedTableDDLException (table.getName());
         }
         return table;
