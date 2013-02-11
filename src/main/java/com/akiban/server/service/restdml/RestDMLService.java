@@ -26,6 +26,8 @@
 
 package com.akiban.server.service.restdml;
 
+import com.akiban.ais.model.TableName;
+
 import javax.servlet.http.HttpServletRequest;
 
 import javax.ws.rs.core.Response;
@@ -37,15 +39,14 @@ import java.util.Map;
 
 public interface RestDMLService {
     public Response getAllEntities(HttpServletRequest request, 
-                                   String schema, String table, Integer depth);
+                                   TableName tableName, Integer depth);
     public Response getEntities(HttpServletRequest request, 
-                                String schema, String table, Integer depth, String pks);
+                                TableName tableName, Integer depth, String pks);
     public Response insert(HttpServletRequest request, 
-                           String schema, String table, JsonNode node);
+                           TableName tableName, JsonNode node);
     public Response delete(HttpServletRequest request, 
-                           String schema, String table, String pks);
+                           TableName tableName, String pks);
     public Response runSQL(HttpServletRequest request, String sql);
     public Response callProcedure(HttpServletRequest request, 
-                                  String schema, String proc,
-                                  Map<String,List<String>> params);
+                                  TableName procName, Map<String,List<String>> params);
 }
