@@ -206,7 +206,8 @@ public class AlterTableDDL {
                     final Column oldCol = table.getColumn(oldColName);
                     if (oldCol == null)
                         throw new NoSuchColumnException(oldColName);
-                    newCols = new ArrayList<>();
+                    if (newCols == null)
+                        newCols = new ArrayList<>();
                     newCols.add(newColName);
                     break;
 
