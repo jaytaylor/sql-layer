@@ -44,8 +44,8 @@ import javax.ws.rs.core.Response;
  */
 @Path("/version")
 public class VersionResource {
-    private static final String SCHEMA_NAME = TableName.INFORMATION_SCHEMA;
-    private static final String TABLE_NAME = "server_instance_summary";
+    private static final TableName TABLE_NAME = 
+        new TableName(TableName.INFORMATION_SCHEMA, "server_instance_summary");
     private static final int DEPTH = 0;
 
     @Inject
@@ -56,6 +56,6 @@ public class VersionResource {
     public Response getVersion(@Context HttpServletRequest request,
                                @QueryParam("format") String format,
                                @QueryParam("jsoncallback") String jsonp) throws Exception {
-        return restDMLService.getAllEntities(request, SCHEMA_NAME, TABLE_NAME, DEPTH);
+        return restDMLService.getAllEntities(request, TABLE_NAME, DEPTH);
     }
 }

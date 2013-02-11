@@ -118,8 +118,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     /* RestDMLService */
 
     @Override
-    public Response getAllEntities(final HttpServletRequest request, final String schema, final String table, Integer depth) {
-        if (!securityService.isAccessible(request, schema))
+    public Response getAllEntities(final HttpServletRequest request, final TableName tableName, Integer depth) {
+        if (!securityService.isAccessible(request, tableName.getSchemaName()))
             return Response.status(Response.Status.FORBIDDEN).build();
         final int realDepth = (depth != null) ? Math.max(depth, 0) : -1;
         return Response.status(Response.Status.OK)
@@ -129,7 +129,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                         try (Session session = sessionService.createSession()) {
                             // Do not auto-close writer as that prevents an exception from propagating to the client
                             PrintWriter writer = new PrintWriter(output);
-                            extDataService.dumpAllAsJson(session, writer, schema, table, realDepth, true);
+                            extDataService.dumpAllAsJson(session, writer, tableName.getSchemaName(), tableName.getTableName(), realDepth, true);
                             writer.write('\n');
                             writer.close();
                         } catch(InvalidOperationException e) {
@@ -141,10 +141,9 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
-    public Response getEntities(final HttpServletRequest request, final String schema, final String table, Integer inDepth, final String identifiers) {
-        if (!securityService.isAccessible(request, schema))
+    public Response getEntities(final HttpServletRequest request, final TableName tableName, Integer inDepth, final String identifiers) {
+        if (!securityService.isAccessible(request, tableName.getSchemaName()))
             return Response.status(Response.Status.FORBIDDEN).build();
-        final TableName tableName = new TableName(schema, table);
         final int depth = (inDepth != null) ? Math.max(inDepth, 0) : -1;
         return Response.status(Response.Status.OK)
                 .entity(new StreamingOutput() {
@@ -157,7 +156,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                             UserTable uTable = dxlService.ddlFunctions().getUserTable(session, tableName);
                             Index pkIndex = uTable.getPrimaryKeyIncludingInternal().getIndex();
                             List<List<String>> pks = PrimaryKeyParser.parsePrimaryKeys(identifiers, pkIndex);
-                            extDataService.dumpBranchAsJson(session, writer, schema, table, pks, depth, false);
+                            extDataService.dumpBranchAsJson(session, writer, tableName.getSchemaName(), tableName.getTableName(), pks, depth, false);
                             writer.write('\n');
                             txn.commit();
                             writer.close();
@@ -170,10 +169,9 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
-    public Response insert(final HttpServletRequest request, final String schemaName, final String tableName, JsonNode node)  {
-        if (!securityService.isAccessible(request, schemaName))
+    public Response insert(final HttpServletRequest request, final TableName rootTable, JsonNode node)  {
+        if (!securityService.isAccessible(request, rootTable.getSchemaName()))
             return Response.status(Response.Status.FORBIDDEN).build();
-        TableName rootTable = new TableName (schemaName, tableName);
         try (Session session = sessionService.createSession();
             CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
             AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
@@ -190,11 +188,9 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
-    public Response delete(final HttpServletRequest request, final String schema, final String table, final String identifier) {
-        if (!securityService.isAccessible(request, schema))
+    public Response delete(final HttpServletRequest request, final TableName tableName, final String identifier) {
+        if (!securityService.isAccessible(request, tableName.getSchemaName()))
             return Response.status(Response.Status.FORBIDDEN).build();
-        final TableName tableName = new TableName (schema, table);
-        
         try (Session session = sessionService.createSession();
                 CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
             AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
