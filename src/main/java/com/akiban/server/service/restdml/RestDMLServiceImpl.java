@@ -36,6 +36,7 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.WrongExpressionArityException;
+import com.akiban.server.explain.format.JsonFormatter;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
@@ -66,7 +67,6 @@ import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ParameterMetaData;
 import java.sql.SQLException;
@@ -225,7 +225,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                 .entity(new StreamingOutput() {
                     @Override
                     public void write(OutputStream output) throws IOException, WebApplicationException {
-                        try (Connection conn = jdbcService.newConnection(new Properties(), request.getUserPrincipal());
+                        try (Connection conn = jdbcConnection(request);
                              Statement s = conn.createStatement()) {
                             PrintWriter writer = new PrintWriter(output);
                             AkibanAppender appender = AkibanAppender.of(writer);
@@ -258,6 +258,25 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
+    public Response explainSQL(final HttpServletRequest request, final String sql) {
+        return Response
+                .status(Response.Status.OK)
+                .entity(new StreamingOutput() {
+                    @Override
+                    public void write(OutputStream output) throws IOException, WebApplicationException {
+                        try (JDBCConnection conn = jdbcConnection(request)) {
+                            new JsonFormatter().format(conn.explain(sql), output);
+                        } catch(SQLException e) {
+                            throw wrapException(e);
+                        } catch(InvalidOperationException e) {
+                            throw wrapException(e);
+                        }
+                    }
+                })
+                .build();
+    }
+
+    @Override
     public Response callProcedure(final HttpServletRequest request, 
                                   final String schema, final String proc, 
                                   final Map<String,List<String>> params) {
@@ -269,8 +288,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                 .entity(new StreamingOutput() {
                     @Override
                     public void write(OutputStream output) throws IOException, WebApplicationException {
-                        try (Connection conn = jdbcService.newConnection(new Properties(), request.getUserPrincipal());
-                             JDBCCallableStatement call = ((JDBCConnection)conn).prepareCall(procName)) {
+                        try (JDBCConnection conn = jdbcConnection(request);
+                             JDBCCallableStatement call = conn.prepareCall(procName)) {
                             for (Map.Entry<String,List<String>> entry : params.entrySet()) {
                                 if ("jsoncallback".equals(entry.getKey()))
                                     continue;
@@ -333,6 +352,12 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                     }
                 })
                 .build();
+    }
+
+    private JDBCConnection jdbcConnection(HttpServletRequest request) 
+            throws SQLException {
+        return (JDBCConnection)jdbcService.newConnection(new Properties(), 
+                                                         request.getUserPrincipal());
     }
 
     private WebApplicationException wrapException(Exception e) {

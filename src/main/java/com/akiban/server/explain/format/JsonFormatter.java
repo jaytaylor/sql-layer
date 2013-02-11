@@ -46,12 +46,13 @@ import java.io.StringWriter;
 public class JsonFormatter
 {
     private final JsonFactory factory = new JsonFactory();
+    private final boolean pretty = true;
 
     public String format(Explainer explainer) {
         StringWriter str = new StringWriter();
         try {
             JsonGenerator generator = factory.createJsonGenerator(str);
-            if (true) {
+            if (pretty) {
                 generator.useDefaultPrettyPrinter();
             }
             generate(generator, explainer);
@@ -65,7 +66,7 @@ public class JsonFormatter
 
     public void format(Explainer explainer, OutputStream stream) throws IOException {
         JsonGenerator generator = factory.createJsonGenerator(stream, JsonEncoding.UTF8);
-        if (true) {
+        if (pretty) {
             generator.useDefaultPrettyPrinter();
         }
         generate(generator, explainer);
