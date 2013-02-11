@@ -207,9 +207,9 @@ public class AlterTableDDL {
                     if (oldCol == null)
                         throw new NoSuchColumnException(oldColName);
                     final UserTable tableCopy = copyTable(table, columnChanges);
-                    final Column newCol = tableCopy.getColumn(newColName);
-                    if (newCol == null)
+                    if (tableCopy.getColumn(newColName) == null)
                         throw new AkibanInternalException("New column in RENAME not created successfully: " + newColName);
+                    
                     copyTableIndexes(table, tableCopy, columnChanges, indexChanges);
 
                     // TODO: (Similar to AT_RENAME_NODE, )this breaks
