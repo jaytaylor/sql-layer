@@ -42,11 +42,11 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 
 /**
- * Allows free-form SQL execution via semi-colon separated statements in the POST body.
- * The entire body is executed under a single transaction.
+ * Provides multi-statement SQL execution via semi-colon separated statements in the POST body of the request.
+ * All statements are executed under a single transaction.
  */
 @Path("/execute")
-public class SqlExecutionResource {
+public class SqlExecuteResource {
     @Inject
     private RestDMLService restDMLService;
 

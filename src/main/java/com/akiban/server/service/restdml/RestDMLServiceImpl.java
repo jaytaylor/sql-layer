@@ -234,9 +234,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                     public void write(OutputStream output) throws IOException, WebApplicationException {
                         try (JDBCConnection conn = jdbcConnection(request)) {
                             new JsonFormatter().format(conn.explain(sql), output);
-                        } catch(SQLException e) {
-                            throw wrapException(e);
-                        } catch(InvalidOperationException e) {
+                        } catch(SQLException | InvalidOperationException e) {
                             throw wrapException(e);
                         }
                     }
@@ -290,30 +288,17 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                                 }
                             }
                             int nresults = 0;
-                            while (results) {
-                                String name = (nresults++ > 0) ? String.format("result_set_%d", nresults) : "result_set";
-                                if (first)
-                                    first = false;
-                                else
-                                    appender.append(',');
-                                appender.append('"');
-                                appender.append(name);
-                                appender.append("\":[");
-                                JDBCResultSet resultSet = (JDBCResultSet)call.getResultSet();
-                                SQLOutputCursor cursor = new SQLOutputCursor(resultSet);
-                                JsonRowWriter jsonRowWriter = new JsonRowWriter(cursor);
-                                if(jsonRowWriter.writeRows(cursor, appender, "\n", cursor)) {
-                                    appender.append('\n');
-                                }
-                                appender.append(']');
+                            while(results) {
+                                beginResultSetArray(appender, first, nresults++);
+                                first = false;
+                                collectResults((JDBCResultSet) call.getResultSet(), appender);
+                                endResultSetArray(appender);
                                 results = call.getMoreResults();
                             }
                             appender.append('}');
                             writer.write('\n');
                             writer.close();
-                        } catch(SQLException e) {
-                            throw wrapException(e);
-                        } catch(InvalidOperationException e) {
+                        } catch(SQLException | InvalidOperationException e) {
                             throw wrapException(e);
                         }
                     }
@@ -342,25 +327,11 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                                     continue;
                                 }
                                 if(useSubArrays) {
-                                    final String name;
-                                    if(nresults > 0) {
-                                        appender.append(",");
-                                        name = String.format("result_set_%d", nresults);
-                                    } else {
-                                        name = "result_set";
-                                    }
-                                    appender.append('"');
-                                    appender.append(name);
-                                    appender.append("\":[");
+                                    beginResultSetArray(appender, nresults == 0, nresults);
                                 }
                                 boolean res = s.execute(trimmed);
                                 if(res) {
-                                    JDBCResultSet resultSet = (JDBCResultSet) s.getResultSet();
-                                    SQLOutputCursor cursor = new SQLOutputCursor(resultSet);
-                                    JsonRowWriter jsonRowWriter = new JsonRowWriter(cursor);
-                                    if(jsonRowWriter.writeRows(cursor, appender, "\n", cursor)) {
-                                        appender.append('\n');
-                                    }
+                                    collectResults((JDBCResultSet)s.getResultSet(), appender);
                                 } else {
                                     int updateCount = s.getUpdateCount();
                                     appender.append("\n{\"update_count\":");
@@ -368,7 +339,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                                     appender.append("}\n");
                                 }
                                 if(useSubArrays) {
-                                    appender.append("]");
+                                    endResultSetArray(appender);
                                 }
                                 ++nresults;
                             }
@@ -384,10 +355,32 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                 .build();
     }
 
+    private static void beginResultSetArray(AkibanAppender appender, boolean first, int resultOffset) {
+        final String name = (resultOffset == 0) ? "result_set" : String.format("result_set_%d", resultOffset);
+        if(!first) {
+            appender.append(",");
+        }
+        appender.append('"');
+        appender.append(name);
+        appender.append("\":[");
+    }
+
+    private static void endResultSetArray(AkibanAppender appender) {
+        appender.append(']');
+    }
+
+    private static void collectResults(JDBCResultSet resultSet, AkibanAppender appender) throws SQLException, IOException {
+        SQLOutputCursor cursor = new SQLOutputCursor(resultSet);
+        JsonRowWriter jsonRowWriter = new JsonRowWriter(cursor);
+        if(jsonRowWriter.writeRows(cursor, appender, "\n", cursor)) {
+            appender.append('\n');
+        }
+    }
+
     private JDBCConnection jdbcConnection(HttpServletRequest request)
             throws SQLException {
-        return (JDBCConnection)jdbcService.newConnection(new Properties(),
-                                                         request.getUserPrincipal());
+        return (JDBCConnection) jdbcService.newConnection(new Properties(),
+                                                          request.getUserPrincipal());
     }
 
     private WebApplicationException wrapException(Exception e) {
