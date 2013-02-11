@@ -71,6 +71,7 @@ import java.sql.Connection;
 import java.sql.ParameterMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.Map;
 import java.util.List;
 import java.util.Properties;
@@ -215,101 +216,13 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
-    public Response runSQL(final HttpServletRequest request, final String sql) {
-        return Response
-                .status(Response.Status.OK)
-                .entity(new StreamingOutput() {
-                    @Override
-                    public void write(OutputStream output) throws IOException, WebApplicationException {
-                        try (Connection conn = jdbcConnection(request);
-                             Statement s = conn.createStatement()) {
-                            PrintWriter writer = new PrintWriter(output);
-                            AkibanAppender appender = AkibanAppender.of(writer);
-                            appender.append('[');
-                            boolean res = s.execute(sql);
-                            if(res) {
-                                JDBCResultSet resultSet = (JDBCResultSet)s.getResultSet();
-                                SQLOutputCursor cursor = new SQLOutputCursor(resultSet);
-                                JsonRowWriter jsonRowWriter = new JsonRowWriter(cursor);
-                                if(jsonRowWriter.writeRows(cursor, appender, "\n", cursor)) {
-                                    appender.append('\n');
-                                }
-                            } else {
-                                int updateCount = s.getUpdateCount();
-                                appender.append("{\"update_count\":");
-                                appender.append(updateCount);
-                                appender.append('}');
-                            }
-                            appender.append(']');
-                            writer.write('\n');
-                            writer.close();
-                        } catch(SQLException e) {
-                            throw wrapException(e);
-                        } catch(InvalidOperationException e) {
-                            throw wrapException(e);
-                        }
-                    }
-                })
-                .build();
+    public Response runSQL(HttpServletRequest request, String sql) {
+        return runSQLInternal(request, Collections.singletonList(sql), OutputType.ARRAY, CommitMode.AUTO);
     }
 
     @Override
-    public Response runSQL(final HttpServletRequest request, final List<String> sqlList) {
-        return Response
-                .status(Response.Status.OK)
-                .entity(new StreamingOutput() {
-                    @Override
-                    public void write(OutputStream output) throws IOException, WebApplicationException {
-                        try (Connection conn = jdbcConnection(request)) {
-                            PrintWriter writer = new PrintWriter(output);
-                            AkibanAppender appender = AkibanAppender.of(writer);
-                            int nresults = 0;
-                            appender.append('{');
-                            conn.setAutoCommit(false);
-                            for(String sql : sqlList) {
-                                String trimmed = sql.trim();
-                                if(trimmed.isEmpty()) {
-                                    continue;
-                                }
-                                try(Statement s = conn.createStatement()) {
-                                    final String name;
-                                    if(nresults > 0) {
-                                        appender.append(",");
-                                        name = String.format("result_set_%d", nresults);
-                                    } else {
-                                        name = "result_set";
-                                    }
-                                    appender.append('"');
-                                    appender.append(name);
-                                    appender.append("\":[");
-                                    boolean res = s.execute(trimmed);
-                                    if(res) {
-                                        JDBCResultSet resultSet = (JDBCResultSet) s.getResultSet();
-                                        SQLOutputCursor cursor = new SQLOutputCursor(resultSet);
-                                        JsonRowWriter jsonRowWriter = new JsonRowWriter(cursor);
-                                        if(jsonRowWriter.writeRows(cursor, appender, "\n", cursor)) {
-                                            appender.append('\n');
-                                        }
-                                    } else {
-                                        int updateCount = s.getUpdateCount();
-                                        appender.append("\n{\"update_count\":");
-                                        appender.append(updateCount);
-                                        appender.append("}\n");
-                                    }
-                                    appender.append("]");
-                                    ++nresults;
-                                }
-                            }
-                            conn.commit();
-                            appender.append("\n}");
-                            writer.write('\n');
-                            writer.close();
-                        } catch(SQLException | InvalidOperationException e) {
-                            throw wrapException(e);
-                        }
-                    }
-                })
-                .build();
+    public Response runSQL(HttpServletRequest request, List<String> sql) {
+        return runSQLInternal(request, sql, OutputType.OBJECT, CommitMode.MANUAL);
     }
 
     @Override
@@ -408,9 +321,72 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                 .build();
     }
 
-    private JDBCConnection jdbcConnection(HttpServletRequest request) 
+    private Response runSQLInternal(final HttpServletRequest request, final List<String> sqlList,
+                                    final OutputType outputType, final CommitMode commitMode) {
+        return Response
+                .status(Response.Status.OK)
+                .entity(new StreamingOutput() {
+                    @Override
+                    public void write(OutputStream output) throws IOException, WebApplicationException {
+                        boolean useSubArrays = (outputType == OutputType.OBJECT);
+                        try (Connection conn = jdbcConnection(request);
+                             Statement s = conn.createStatement()) {
+                            PrintWriter writer = new PrintWriter(output);
+                            AkibanAppender appender = AkibanAppender.of(writer);
+                            int nresults = 0;
+                            commitMode.begin(conn);
+                            outputType.begin(appender);
+                            for(String sql : sqlList) {
+                                String trimmed = sql.trim();
+                                if(trimmed.isEmpty()) {
+                                    continue;
+                                }
+                                if(useSubArrays) {
+                                    final String name;
+                                    if(nresults > 0) {
+                                        appender.append(",");
+                                        name = String.format("result_set_%d", nresults);
+                                    } else {
+                                        name = "result_set";
+                                    }
+                                    appender.append('"');
+                                    appender.append(name);
+                                    appender.append("\":[");
+                                }
+                                boolean res = s.execute(trimmed);
+                                if(res) {
+                                    JDBCResultSet resultSet = (JDBCResultSet) s.getResultSet();
+                                    SQLOutputCursor cursor = new SQLOutputCursor(resultSet);
+                                    JsonRowWriter jsonRowWriter = new JsonRowWriter(cursor);
+                                    if(jsonRowWriter.writeRows(cursor, appender, "\n", cursor)) {
+                                        appender.append('\n');
+                                    }
+                                } else {
+                                    int updateCount = s.getUpdateCount();
+                                    appender.append("\n{\"update_count\":");
+                                    appender.append(updateCount);
+                                    appender.append("}\n");
+                                }
+                                if(useSubArrays) {
+                                    appender.append("]");
+                                }
+                                ++nresults;
+                            }
+                            commitMode.end(conn);
+                            outputType.end(appender);
+                            writer.write('\n');
+                            writer.close();
+                        } catch(SQLException | InvalidOperationException e) {
+                            throw wrapException(e);
+                        }
+                    }
+                })
+                .build();
+    }
+
+    private JDBCConnection jdbcConnection(HttpServletRequest request)
             throws SQLException {
-        return (JDBCConnection)jdbcService.newConnection(new Properties(), 
+        return (JDBCConnection)jdbcService.newConnection(new Properties(),
                                                          request.getUserPrincipal());
     }
 
@@ -432,9 +408,9 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         // TODO: Map various IOEs to other codes?
         final Response.Status status;
         if((e instanceof NoSuchTableException) ||
-           (e instanceof NoSuchRoutineException)) {
+                (e instanceof NoSuchRoutineException)) {
             status = Response.Status.NOT_FOUND;
-         } else {
+        } else {
             status = Response.Status.CONFLICT;
         }
         return new WebApplicationException(
@@ -442,5 +418,42 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                         .entity(err.toString())
                         .build()
         );
+    }
+
+
+    private static enum OutputType {
+        ARRAY('[', ']'),
+        OBJECT('{', '}');
+
+        public void begin(AkibanAppender appender) {
+            appender.append(beginChar);
+        }
+
+        public void end(AkibanAppender appender) {
+            appender.append(endChar);
+        }
+
+        private OutputType(char beginChar, char endChar) {
+            this.beginChar = beginChar;
+            this.endChar = endChar;
+        }
+
+        public final char beginChar;
+        public final char endChar;
+    }
+
+    private static enum CommitMode {
+        AUTO,
+        MANUAL;
+
+        public void begin(Connection conn) throws SQLException {
+            conn.setAutoCommit(this == AUTO);
+        }
+
+        public void end(Connection conn) throws SQLException {
+            if(this == MANUAL) {
+                conn.commit();
+            }
+        }
     }
 }

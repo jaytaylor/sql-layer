@@ -1,0 +1,22 @@
+{
+    "result_set": [
+        {
+            "c_cnt": 2
+        }
+    ],
+    "result_set_1": [
+        {
+            "a_cnt": 2
+        }
+    ],
+    "result_set_2": [
+        {
+            "o_cnt": 3
+        }
+    ],
+    "result_set_3": [
+        {
+            "i_cnt": 3
+        }
+    ]
+}
