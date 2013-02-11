@@ -36,6 +36,7 @@ import com.akiban.server.test.it.ITBase;
 import com.akiban.sql.RegexFilenameFilter;
 import com.akiban.util.Strings;
 import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -261,12 +262,24 @@ public class RestServiceFilesIT extends ITBase {
     
     private void compareExpected(String assertMsg, String expected, String actual) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
-        JsonNode expectedNode = expected != null ? mapper.readTree(expected) : null;
-        JsonNode actualNode = actual != null ? mapper.readTree(actual) : null;
-        // Try manual for pretty print
+        JsonNode expectedNode = null;
+        JsonNode actualNode = null;
+        boolean skipNodeCheck = false;
+        try {
+            if(expected != null) {
+                expectedNode = mapper.readTree(expected);
+            }
+            if(actual != null) {
+                actualNode = mapper.readTree(actual);
+            }
+        } catch(JsonParseException e) {
+            assertEquals(assertMsg, expected, actual);
+            skipNodeCheck = true;
+        }
+        // Try manual equals and then assert strings for pretty print
         if(expectedNode != null && actualNode != null && !expectedNode.equals(actualNode)) {
             assertEquals(assertMsg, expectedNode.toString(), actualNode.toString());
-        } else {
+        } else if(!skipNodeCheck) {
             assertEquals(assertMsg, expectedNode, actualNode);
         }
     }
