@@ -345,7 +345,6 @@ public class AlterTableDDL {
         tableCopy.getGroup().removeIndexes(tableCopy.getGroup().getIndexes());
 
         int colPos = 0;
-        //String columnName[] = new String[1];
         for(Column origColumn : origTable.getColumns()) {
             
             String newName = getNewName(columnChanges, origColumn.getName());
