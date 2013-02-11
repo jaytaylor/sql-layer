@@ -41,8 +41,8 @@
 - Statement: INSERT INTO t VALUES (1, 2), (3, 4)
 ---
 - Statement: ALTER TABLE  t RENAME COLUMN c to a
----
-- Statement: \d t
+#--- # take a look at the table's structure just to be sure?
+#- Statement: \d t
 ---
 - DropTable: t
 ...

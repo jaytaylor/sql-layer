@@ -197,48 +197,20 @@ public class AlterTableDDL {
                     return ChangeLevel.METADATA;
                     
                 case NodeTypes.AT_RENAME_COLUMN_NODE:
-                    
+
                     AlterTableRenameColumnNode alterRenameCol = (AlterTableRenameColumnNode) node;
                     String oldColName = alterRenameCol.getName();
                     String newColName = alterRenameCol.newName();
-            
-                    final AkibanInformationSchema aisCopy = AISCloner.clone(ddl.getAIS(session));
-                    final TableName tableName = table.getName();
-                    final UserTable tableCopy = aisCopy.getUserTable(tableName);
-
-                    if (tableCopy == null)
-                        throw new NoSuchTableException(table.getName());
+                    columnChanges.add(TableChange.createModify(oldColName, newColName));
                     
-                    Column oldCol = tableCopy.getColumn(oldColName);
+                    final Column oldCol = table.getColumn(oldColName); //{table.getColumn(oldColName)};
                     if (oldCol == null)
                         throw new NoSuchColumnException(oldColName);
-                    
-                    List<Column> cols = new ArrayList<>(tableCopy.getColumns());
-                    tableCopy.dropColumns();
-                    for (Column col : cols)
-                        Column.create(tableCopy, col, col == oldCol ? newColName : null, null);
-                     
-                    Column newCol = tableCopy.getColumn(newColName);
+                    final UserTable tableCopy = copyTable(table, columnChanges);
+                    final Column newCol = tableCopy.getColumn(newColName);
                     if (newCol == null)
-                        throw new AkibanInternalException("new column not created successfully: " + newColName);
-
-                    List<TableIndex> indexes = new ArrayList<>(tableCopy.getIndexes());
-                    for (TableIndex index : indexes)
-                        if (index.containsTableColumn(tableName, oldColName))
-                        {
-                            tableCopy.removeIndexes(Collections.singleton(index));
-                            TableIndex indexCopy = TableIndex.create(tableCopy, index);
-                            for (IndexColumn iCol : index.getKeyColumns())
-                                IndexColumn.create(indexCopy,
-                                                   iCol.getColumn() == oldCol 
-                                                        ? newCol
-                                                        : iCol.getColumn(),
-                                                   iCol, 
-                                                   iCol.getPosition());
-                        }
-
-                    columnChanges.add(TableChange.createModify(alterRenameCol.getName(),
-                                                               alterRenameCol.newName()));
+                        throw new AkibanInternalException("New column in RENAME not created successfully: " + newColName);
+                    copyTableIndexes(table, tableCopy, columnChanges, indexChanges);
 
                     // TODO: (Similar to AT_RENAME_NODE, )this breaks
                     //        the general flow, ie., explicitly does not support
@@ -352,6 +324,19 @@ public class AlterTableDDL {
         return null;
     }
 
+    private static ChangeType getChangeType(List<TableChange> changes, String oldName[])
+    {
+        for (TableChange change : changes)
+            if (oldName[0].equals(change.getOldName()))
+            {
+                // This must be a RENAME - COLUMN
+                if (!oldName[0].equals(change.getNewName()))
+                    oldName[0] = change.getNewName();
+                return change.getChangeType();
+            }
+       return null;
+    }
+
     private static UserTable copyTable(UserTable origTable, List<TableChange> columnChanges) {
         for(TableChange change : columnChanges) {
             if(change.getChangeType() != ChangeType.ADD) {
@@ -368,16 +353,17 @@ public class AlterTableDDL {
         tableCopy.getGroup().removeIndexes(tableCopy.getGroup().getIndexes());
 
         int colPos = 0;
+        String columnName[] = new String[1];
         for(Column origColumn : origTable.getColumns()) {
-            String columnName = origColumn.getName();
-            if(findOldName(columnChanges, columnName) != ChangeType.DROP) {
-                Column.create(tableCopy, origColumn, columnName, colPos++);
+            columnName[0] = origColumn.getName();
+            if(getChangeType(columnChanges, columnName) != ChangeType.DROP) {
+                Column.create(tableCopy, origColumn, columnName[0], colPos++);
             }
         }
 
         return tableCopy;
     }
-
+    
     private static void copyTableIndexes(UserTable origTable, UserTable tableCopy,
                                          List<TableChange> columnChanges, List<TableChange> indexChanges) {
         for(TableChange change : indexChanges) {
@@ -393,10 +379,12 @@ public class AlterTableDDL {
             TableIndex indexCopy = TableIndex.create(tableCopy, origIndex);
             boolean didModify = false;
             int pos = 0;
+            String colName[] = new String[1];
             for(IndexColumn indexColumn : origIndex.getKeyColumns()) {
-                ChangeType change = findOldName(columnChanges, indexColumn.getColumn().getName());
+                colName[0] = indexColumn.getColumn().getName();
+                ChangeType change = getChangeType(columnChanges, colName);
                 if(change != ChangeType.DROP) {
-                    IndexColumn.create(indexCopy, tableCopy.getColumn(indexColumn.getColumn().getName()), indexColumn, pos++);
+                    IndexColumn.create(indexCopy, tableCopy.getColumn(colName[0]), indexColumn, pos++);
                 } else {
                     didModify = true;
                 }
