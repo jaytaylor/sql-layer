@@ -24,29 +24,38 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service.restdml;
+package com.akiban.rest.resources;
 
 import com.akiban.ais.model.TableName;
+import com.akiban.server.service.restdml.RestDMLService;
+import com.google.inject.Inject;
 
 import javax.servlet.http.HttpServletRequest;
-
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
-import org.codehaus.jackson.JsonNode;
+/**
+ * Allows calling stored procedures directly.
+ */
+@Path("/call/{proc}")
+public class ProcedureCallResource {
+    @Inject
+    private RestDMLService restDMLService;
 
-import java.util.List;
-import java.util.Map;
-
-public interface RestDMLService {
-    public Response getAllEntities(HttpServletRequest request, 
-                                   TableName tableName, Integer depth);
-    public Response getEntities(HttpServletRequest request, 
-                                TableName tableName, Integer depth, String pks);
-    public Response insert(HttpServletRequest request, 
-                           TableName tableName, JsonNode node);
-    public Response delete(HttpServletRequest request, 
-                           TableName tableName, String pks);
-    public Response runSQL(HttpServletRequest request, String sql);
-    public Response callProcedure(HttpServletRequest request, 
-                                  TableName procName, Map<String,List<String>> params);
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getQueryResults(@Context HttpServletRequest request,
+                                    @PathParam("proc") String proc,
+                                    @QueryParam("jsoncallback") String jsonp,
+                                    @Context UriInfo uri) throws Exception {
+        TableName procName = DataAccessOperationsResource.parseTableName(request, proc);
+        return restDMLService.callProcedure(request, procName, uri.getQueryParameters());
+    }
 }

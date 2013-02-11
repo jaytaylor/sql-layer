@@ -789,6 +789,9 @@ public class ApiTestBase {
             if (!indexes.isEmpty())
                 ddl().createIndexes(session(), indexes);
         }
+        for (Routine routine : ais.getRoutines().values()) {
+            ddl().createRoutine(session(), routine);
+        }
         updateAISGeneration();
         return ddl().getTableId(session(), tables.get(0).getName());
     }

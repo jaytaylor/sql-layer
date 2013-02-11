@@ -30,8 +30,12 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.Quote;
+import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
@@ -45,6 +49,9 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.sql.embedded.EmbeddedJDBCService;
+import com.akiban.sql.embedded.JDBCCallableStatement;
+import com.akiban.sql.embedded.JDBCConnection;
+import com.akiban.sql.embedded.JDBCParameterMetaData;
 import com.akiban.sql.embedded.JDBCResultSet;
 import com.akiban.util.AkibanAppender;
 import com.google.inject.Inject;
@@ -59,9 +66,12 @@ import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.ParameterMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Map;
 import java.util.List;
 import java.util.Properties;
 
@@ -133,7 +143,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                             writer.write('\n');
                             writer.close();
                         } catch(InvalidOperationException e) {
-                            throw wrapIOE(e);
+                            throw wrapException(e);
                         }
                     }
                 })
@@ -161,7 +171,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                             txn.commit();
                             writer.close();
                         } catch(InvalidOperationException e) {
-                            throw wrapIOE(e);
+                            throw wrapException(e);
                         }
                     }
                 })
@@ -183,7 +193,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         } catch (IOException e) {
             throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
         } catch (InvalidOperationException e) {
-            throw wrapIOE(e);
+            throw wrapException(e);
         }
     }
 
@@ -200,7 +210,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                     .entity("")
                     .build();
         } catch (InvalidOperationException e) {
-            throw wrapIOE(e);
+            throw wrapException(e);
         }
     }
 
@@ -234,25 +244,111 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                             writer.write('\n');
                             writer.close();
                         } catch(SQLException e) {
-                            throw new WebApplicationException(e);
+                            throw wrapException(e);
                         } catch(InvalidOperationException e) {
-                            throw wrapIOE(e);
+                            throw wrapException(e);
                         }
                     }
                 })
                 .build();
     }
 
-    private WebApplicationException wrapIOE(InvalidOperationException e) {
+    @Override
+    public Response callProcedure(final HttpServletRequest request, 
+                                  final TableName procName, 
+                                  final Map<String,List<String>> params) {
+        if (!securityService.isAccessible(request, procName.getSchemaName()))
+            return Response.status(Response.Status.FORBIDDEN).build();
+        return Response
+                .status(Response.Status.OK)
+                .entity(new StreamingOutput() {
+                    @Override
+                    public void write(OutputStream output) throws IOException, WebApplicationException {
+                        try (Connection conn = jdbcService.newConnection(new Properties(), request.getUserPrincipal());
+                             JDBCCallableStatement call = ((JDBCConnection)conn).prepareCall(procName)) {
+                            for (Map.Entry<String,List<String>> entry : params.entrySet()) {
+                                if ("jsoncallback".equals(entry.getKey()))
+                                    continue;
+                                if (entry.getValue().size() != 1)
+                                    throw new WrongExpressionArityException(1, entry.getValue().size());
+                                call.setString(entry.getKey(), entry.getValue().get(0));
+                            }
+                            boolean results = call.execute();
+                            PrintWriter writer = new PrintWriter(output);
+                            AkibanAppender appender = AkibanAppender.of(writer);
+                            appender.append('{');
+                            boolean first = true;
+                            JDBCParameterMetaData md = (JDBCParameterMetaData)call.getParameterMetaData();
+                            for (int i = 1; i <= md.getParameterCount(); i++) {
+                                String name;
+                                switch (md.getParameterMode(i)) {
+                                case ParameterMetaData.parameterModeOut:
+                                case ParameterMetaData.parameterModeInOut:
+                                    name = md.getParameterName(i);
+                                    if (name == null)
+                                        name = String.format("arg%d", i);
+                                    if (first)
+                                        first = false;
+                                    else
+                                        appender.append(',');
+                                    appender.append('"');
+                                    Quote.DOUBLE_QUOTE.append(appender, name);
+                                    appender.append("\":");
+                                    call.formatAsJson(i, appender);
+                                    break;
+                                }
+                            }
+                            int nresults = 0;
+                            while (results) {
+                                String name = (nresults++ > 0) ? String.format("result_set_%d", nresults) : "result_set";
+                                if (first)
+                                    first = false;
+                                else
+                                    appender.append(',');
+                                appender.append('"');
+                                appender.append(name);
+                                appender.append("\":[");
+                                JDBCResultSet resultSet = (JDBCResultSet)call.getResultSet();
+                                SQLOutputCursor cursor = new SQLOutputCursor(resultSet);
+                                JsonRowWriter jsonRowWriter = new JsonRowWriter(cursor);
+                                if(jsonRowWriter.writeRows(cursor, appender, "\n", cursor)) {
+                                    appender.append('\n');
+                                }
+                                appender.append(']');
+                                results = call.getMoreResults();
+                            }
+                            appender.append('}');
+                            writer.write('\n');
+                            writer.close();
+                        } catch(SQLException e) {
+                            throw wrapException(e);
+                        } catch(InvalidOperationException e) {
+                            throw wrapException(e);
+                        }
+                    }
+                })
+                .build();
+    }
+
+    private WebApplicationException wrapException(Exception e) {
         StringBuilder err = new StringBuilder(100);
         err.append("[{\"code\":\"");
-        err.append(e.getCode().getFormattedValue());
+        String code;
+        if (e instanceof InvalidOperationException) {
+            code = ((InvalidOperationException)e).getCode().getFormattedValue();
+        } else if (e instanceof SQLException) {
+            code = ((SQLException)e).getSQLState();
+        } else {
+            code = ErrorCode.UNEXPECTED_EXCEPTION.getFormattedValue();
+        }
+        err.append(code);
         err.append("\",\"message\":\"");
         err.append(e.getMessage());
         err.append("\"}]\n");
         // TODO: Map various IOEs to other codes?
         final Response.Status status;
-        if(e instanceof NoSuchTableException) {
+        if((e instanceof NoSuchTableException) ||
+           (e instanceof NoSuchRoutineException)) {
             status = Response.Status.NOT_FOUND;
          } else {
             status = Response.Status.CONFLICT;
