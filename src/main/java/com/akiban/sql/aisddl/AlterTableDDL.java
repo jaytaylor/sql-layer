@@ -131,7 +131,8 @@ public class AlterTableDDL {
         List<ColumnDefinitionNode> columnDefNodes = new ArrayList<ColumnDefinitionNode>();
         List<FKConstraintDefinitionNode> fkDefNodes= new ArrayList<FKConstraintDefinitionNode>();
         List<ConstraintDefinitionNode> conDefNodes = new ArrayList<ConstraintDefinitionNode>();
-
+        List<String> newCols = null;
+        
         for(TableElementNode node : elements) {
             switch(node.getNodeType()) {
                 case NodeTypes.COLUMN_DEFINITION_NODE: {
@@ -201,16 +202,12 @@ public class AlterTableDDL {
                     AlterTableRenameColumnNode alterRenameCol = (AlterTableRenameColumnNode) node;
                     String oldColName = alterRenameCol.getName();
                     String newColName = alterRenameCol.newName();
-                    columnChanges.add(TableChange.createModify(oldColName, newColName));
                     
                     final Column oldCol = table.getColumn(oldColName);
                     if (oldCol == null)
                         throw new NoSuchColumnException(oldColName);
-                    final UserTable tableCopy = copyTable(table, columnChanges);
-                    if (tableCopy.getColumn(newColName) == null)
-                        throw new AkibanInternalException("New column in RENAME not created successfully: " + newColName);
-                    
-                    copyTableIndexes(table, tableCopy, columnChanges, indexChanges);
+                    newCols = new ArrayList<>();
+                    newCols.add(newColName);
                     break;
 
                 default:
@@ -255,6 +252,10 @@ public class AlterTableDDL {
                 TableDDL.addColumn(builder, cdn, table.getName().getSchemaName(), table.getName().getTableName(), pos++);
             }
         }
+        if (newCols != null)
+            for (String name : newCols)
+                if (tableCopy.getColumn(name) == null)
+                    throw new AkibanInternalException("New Columns " + newCols + " not created successfully");
         copyTableIndexes(table, tableCopy, columnChanges, indexChanges);
 
         IndexNameGenerator indexNamer = DefaultIndexNameGenerator.forTable(tableCopy);
@@ -323,9 +324,7 @@ public class AlterTableDDL {
             if (oldName.equals(change.getOldName()))
                 return change.getChangeType() == ChangeType.DROP
                             ? null
-                            : change.getNewName().equals(change.getOldName())
-                                ? oldName
-                                : change.getNewName();
+                            : change.getNewName();
         return oldName;
     }
 
