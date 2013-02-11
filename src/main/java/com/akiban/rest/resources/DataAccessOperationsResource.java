@@ -94,7 +94,6 @@ public class DataAccessOperationsResource {
                                  final byte[] entityBytes) throws Exception {
         ObjectMapper m = new ObjectMapper();
         JsonNode node = m.readTree(entityBytes);
-        
         return dmlService.insert(schema, table, node);
     }
 
@@ -105,7 +104,11 @@ public class DataAccessOperationsResource {
                                  @PathParam("table") final String table,
                                  final byte[] entityBytes,
                                  @Context final UriInfo uri) throws Exception {
-        return ResponseHelper.buildNotYetImplemented();
+        ObjectMapper m = new ObjectMapper();
+        JsonNode node = m.readTree(entityBytes);
+        String[] pks = uri.getPath(false).split("/");
+        assert pks.length > 0 : uri;
+        return dmlService.update(schema, table, pks[pks.length-1], node);
     }
 
     @DELETE
@@ -113,10 +116,9 @@ public class DataAccessOperationsResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteEntity(@PathParam("schema") String schema,
                                  @PathParam("table") String table,
-                                 @QueryParam("depth") Integer depth,
                                  @Context UriInfo uri) throws Exception {
         String[] pks = uri.getPath(false).split("/");
         assert pks.length > 0 : uri;
-        return dmlService.delete(schema, table, pks[pks.length-1], depth);
+        return dmlService.delete(schema, table, pks[pks.length-1]);
     }
 }

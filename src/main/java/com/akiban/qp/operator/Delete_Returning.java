@@ -121,6 +121,7 @@ public class Delete_Returning extends Operator {
         this.usePValues = usePVals;
         this.cascadeDelete = cascadeDelete; 
     }
+
     // Class state
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: DeleteReturning open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: DeleteReturning next");

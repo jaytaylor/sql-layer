@@ -68,7 +68,7 @@ public class DeleteProcessor extends DMLProcessor {
                 }
             };
 
-    public void processDelete (Session session, AkibanInformationSchema ais, TableName tableName, String identifiers, Integer depth) {
+    public void processDelete (Session session, AkibanInformationSchema ais, TableName tableName, String identifiers) {
         setAIS (ais);
         deleteGenerator = getGenerator (CACHED_DELETE_GENERATOR);
 

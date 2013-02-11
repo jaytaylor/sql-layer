@@ -27,44 +27,20 @@
 package com.akiban.server.service.externaldata;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.NopVisitor;
-import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.expression.IndexBound;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.expression.RowBasedUnboundExpressions;
-import com.akiban.qp.operator.API.Ordering;
-import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.explain.ExplainContext;
-import com.akiban.server.explain.format.DefaultFormatter;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.server.types3.texpressions.TPreparedField;
-import com.akiban.server.types3.texpressions.TPreparedParameter;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-
-import static com.akiban.util.Strings.join;
 
 public class PlanGenerator
 {
     private Schema schema;
     private Map<UserTable,Operator> scanPlans = new HashMap<>();
     private Map<UserTable,Operator> branchPlans = new HashMap<>();
-
-    private static final Logger logger = LoggerFactory.getLogger(PlanGenerator.class);
 
     public PlanGenerator(AkibanInformationSchema ais) {
         this.schema = SchemaCache.globalSchema(ais);
@@ -80,22 +56,8 @@ public class PlanGenerator
         Operator plan = scanPlans.get(table);
         if (plan != null) return plan;
 
-        plan = API.groupScan_Default(table.getGroup());
-        final List<RowType> keepTypes = new ArrayList<>();
-        table.traverseTableAndDescendants(new NopVisitor() {
-            @Override
-            public void visitUserTable(UserTable table) {
-                keepTypes.add(schema.userTableRowType(table));
-            }
-        });
-        plan = API.filter_Default(plan, keepTypes);
-
-        if (logger.isDebugEnabled()) {
-            DefaultFormatter formatter = new DefaultFormatter(table.getName().getSchemaName());
-            logger.debug("Scan Plan for {}:\n{}", table, join(formatter.format(plan.getExplainer(new ExplainContext()))));
-
-        }
-
+        plan =  com.akiban.sql.optimizer.rule.PlanGenerator.generateScanPlan(schema.ais(), table);
+        
         scanPlans.put(table, plan);
         return plan;
     }
@@ -103,45 +65,8 @@ public class PlanGenerator
     public synchronized Operator generateBranchPlan(UserTable table) {
         Operator plan = branchPlans.get(table);
         if (plan != null) return plan;
-
-        PrimaryKey pkey = table.getPrimaryKey();
-        final int nkeys = pkey.getColumns().size();
-        UserTableRowType tableType = schema.userTableRowType(table);
-        IndexRowType indexType = schema.indexRowType(pkey.getIndex());
-
-        List<TPreparedExpression> pexprs = new ArrayList<TPreparedExpression>(nkeys);
-        for (int i = 0; i < nkeys; i++) {
-            pexprs.add(new TPreparedParameter(i, indexType.typeInstanceAt(i)));
-        }
-        IndexBound bound = 
-            new IndexBound(new RowBasedUnboundExpressions(indexType, null, pexprs),
-                           new ColumnSelector() {
-                               @Override
-                               public boolean includesColumn(int columnPosition) {
-                                   return columnPosition < nkeys;
-                               }
-                           });
-        IndexKeyRange indexRange = IndexKeyRange.bounded(indexType,
-                                                         bound, true,
-                                                         bound, true);
-
-        Ordering ordering = API.ordering(true);
-        for (int i = 0; i < nkeys; i++) {
-            ordering.append(null, 
-                            new TPreparedField(indexType.typeInstanceAt(i), i), 
-                            false);
-        }
-
-        Operator indexScan = API.indexScan_Default(indexType, indexRange, ordering,
-                                                   true);
-        plan = API.branchLookup_Default(indexScan, table.getGroup(), indexType,
-                                        tableType, 
-                                        API.InputPreservationOption.DISCARD_INPUT);
-                                        
-        if (logger.isDebugEnabled()) {
-            logger.debug("Branch Plan for {}:\n{}", table,
-                         com.akiban.util.Strings.join(new com.akiban.server.explain.format.DefaultFormatter(table.getName().getSchemaName()).format(plan.getExplainer(new com.akiban.server.explain.ExplainContext()))));
-        }
+        
+        plan =  com.akiban.sql.optimizer.rule.PlanGenerator.generateBranchPlan(schema.ais(), table);
 
         branchPlans.put(table, plan);
         return plan;

@@ -220,13 +220,13 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
-    public Response delete(String schema, String table, String identifier, Integer depth) {
+    public Response delete(String schema, String table, String identifier) {
         final TableName tableName = new TableName (schema, table);
         
         try (Session session = sessionService.createSession();
                 CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
             AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-            deleteProcessor.processDelete(session, ais, tableName, identifier, depth);
+            deleteProcessor.processDelete(session, ais, tableName, identifier);
             txn.commit();
             return Response.status(Response.Status.OK)
                     .entity("")

@@ -56,7 +56,7 @@ public class UpdateProcessor extends DMLProcessor {
     public String processUpdate (Session session, AkibanInformationSchema ais, TableName tableName, String values, JsonNode node) 
             throws JsonParseException, IOException {
         setAIS (ais);
-        deleteProcessor.processDelete(session, ais, tableName, values, -1);
+        deleteProcessor.processDelete(session, ais, tableName, values);
         return insertProcessor.processInsert(session, ais, tableName, node);
         
     }
