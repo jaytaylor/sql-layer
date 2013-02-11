@@ -317,17 +317,16 @@ public class AlterTableDDL {
         return null;
     }
 
-    private static ChangeType getChangeType(List<TableChange> changes, String oldName[])
+    private static String getNewName(List<TableChange> changes, String oldName)
     {
         for (TableChange change : changes)
-            if (oldName[0].equals(change.getOldName()))
-            {
-                // This must be a RENAME - COLUMN
-                if (!oldName[0].equals(change.getNewName()))
-                    oldName[0] = change.getNewName();
-                return change.getChangeType();
-            }
-       return null;
+            if (oldName.equals(change.getOldName()))
+                return change.getChangeType() == ChangeType.DROP
+                            ? null
+                            : change.getNewName().equals(change.getOldName())
+                                ? oldName
+                                : change.getNewName();
+        return oldName;
     }
 
     private static UserTable copyTable(UserTable origTable, List<TableChange> columnChanges) {
@@ -346,12 +345,12 @@ public class AlterTableDDL {
         tableCopy.getGroup().removeIndexes(tableCopy.getGroup().getIndexes());
 
         int colPos = 0;
-        String columnName[] = new String[1];
+        //String columnName[] = new String[1];
         for(Column origColumn : origTable.getColumns()) {
-            columnName[0] = origColumn.getName();
-            if(getChangeType(columnChanges, columnName) != ChangeType.DROP) {
-                Column.create(tableCopy, origColumn, columnName[0], colPos++);
-            }
+            
+            String newName = getNewName(columnChanges, origColumn.getName());
+            if (newName != null)
+                Column.create(tableCopy, origColumn, newName, colPos++);
         }
 
         return tableCopy;
@@ -372,15 +371,14 @@ public class AlterTableDDL {
             TableIndex indexCopy = TableIndex.create(tableCopy, origIndex);
             boolean didModify = false;
             int pos = 0;
-            String colName[] = new String[1];
+            
             for(IndexColumn indexColumn : origIndex.getKeyColumns()) {
-                colName[0] = indexColumn.getColumn().getName();
-                ChangeType change = getChangeType(columnChanges, colName);
-                if(change != ChangeType.DROP) {
-                    IndexColumn.create(indexCopy, tableCopy.getColumn(colName[0]), indexColumn, pos++);
-                } else {
+                
+                String newName = getNewName(columnChanges, indexColumn.getColumn().getName());
+                if (newName != null)
+                    IndexColumn.create(indexCopy, tableCopy.getColumn(newName), indexColumn, pos++);
+                else
                     didModify = true;
-                }
             }
 
             // Automatically mark indexes for drop or modification
