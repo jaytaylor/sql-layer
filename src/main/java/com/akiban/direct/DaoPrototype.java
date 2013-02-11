@@ -26,7 +26,7 @@
 
 package com.akiban.direct;
 
-import com.akiban.server.types3.TInstance;
+import com.akiban.qp.row.Row;
 
 /**
  * Prototype for what an Akiban Direct object might look like. 
@@ -36,31 +36,7 @@ import com.akiban.server.types3.TInstance;
  */
 public interface DaoPrototype {
 
-    /**
-     * @return a deep copy of this instance that is unaffected by subsequent changes in the state of this instance.
-     */
-    DaoPrototype copy();
-
-    /**
-     * @param name field name
-     * @return its type
-     */
-    TInstance getFieldType(String name);
-    /**
-     * @param name field name
-     * @return its value
-     */
-    Object getFieldValue(String name);
-    /**
-     * @param name field name
-     * @param value value to set
-     */
-    void setFieldValue(String name, Object value);
-    /**
-     * 
-     * @param name
-     * @return
-     */
-    DaoRelation<? extends DaoPrototype> getRelation(String name);
+    void row(Row row);
+    Row row();
     
 }

@@ -26,24 +26,40 @@
 
 package com.akiban.sql.embedded;
 
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.row.Row;
-import com.akiban.sql.server.ServerJavaValues;
-import com.akiban.sql.server.ServerQueryContext;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PValueSource;
-
-import java.sql.*;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
+import java.sql.Array;
+import java.sql.Blob;
+import java.sql.Clob;
+import java.sql.Date;
+import java.sql.NClob;
+import java.sql.Ref;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.RowId;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.SQLWarning;
+import java.sql.SQLXML;
+import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Map;
+
+import com.akiban.direct.DaoPrototype;
+import com.akiban.direct.Direct;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.row.Row;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.sql.server.ServerJavaValues;
+import com.akiban.sql.server.ServerQueryContext;
 
 public class JDBCResultSet implements ResultSet
 {
@@ -1518,5 +1534,14 @@ public class JDBCResultSet implements ResultSet
     //@Override // JDK 1.7
     public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
         return getObject(findColumn(columnLabel), type);
+    }
+    
+    public DaoPrototype getEntity() throws SQLException {
+        DaoPrototype o = Direct.objectForRow(row);
+        if (o != null) {
+            o.row(row);
+            return o;
+        }
+        throw new JDBCException("No entity class for row");
     }
 }

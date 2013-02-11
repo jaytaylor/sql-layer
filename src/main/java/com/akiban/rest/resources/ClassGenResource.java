@@ -43,7 +43,8 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
-import com.akiban.direct.ClassGenHelper;
+import com.akiban.direct.ClassBuilder;
+import com.akiban.direct.ClassSourceWriter;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.dxl.DXLService;
@@ -74,11 +75,9 @@ public class ClassGenResource {
                 try (Session session = sessionService.createSession()) {
                     // Do not auto-close writer as that prevents an exception
                     // from propagating to the client
-                    ClassGenHelper helper = new ClassGenHelper(new PrintWriter(output), "com.akiban.direct.schema",
-                            schema);
+                    ClassBuilder helper = new ClassSourceWriter(new PrintWriter(output), "com.akiban.direct.schema",
+                            schema, false, true);
                     generateSchema(helper, schema);
-                    helper.newLine();
-                    helper.close();
                 } catch (InvalidOperationException e) {
                     throwToClient(e);
                 }
@@ -86,41 +85,51 @@ public class ClassGenResource {
         }).build();
     }
 
-    private void generateSchema(ClassGenHelper helper, String schema) {
+    private void generateSchema(ClassBuilder helper, String schema) {
         final AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(sessionService.createSession());
-        helper.preamble(NONE);
-        helper.startInterface(ClassGenHelper.asJavaName(schema, true));
+        helper.preamble(new String[] {"java.util.Date", "java.util.List"});
+        helper.startClass(ClassSourceWriter.asJavaName(schema, true));
         for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
             generateInterface(helper, table);
         }
         helper.end();
     }
 
-    private void generateInterface(ClassGenHelper helper, UserTable table) {
+    private void generateInterface(ClassBuilder helper, UserTable table) {
         table.getName().getTableName();
-        helper.newLine();
-        helper.startInterface(ClassGenHelper.asJavaName(table.getName().getTableName(), true));
+        String typeName = ClassSourceWriter.asJavaName(table.getName().getTableName(), true);
+        helper.startClass(typeName);
         /*
          * Add a property per column
          */
         for (final Column column : table.getColumns()) {
-            helper.newLine();
             Class<?> javaClass = column.getType().akType().javaClass();
-            helper.property(column.getName(), javaClass.getSimpleName());
-        }
-        Join parentJoin = table.getParentJoin();
-        if (parentJoin != null) {
-            helper.newLine();
-            String parentTypeName = parentJoin.getParent().getName().getTableName();
-            helper.method("get" + ClassGenHelper.asJavaName(parentTypeName, true),
-                    ClassGenHelper.asJavaName(parentTypeName, true), NONE);
+            helper.addProperty(column.getName(), javaClass.getSimpleName(), null, null, null);
         }
         
-        for (final Join join : table.getChildJoins()) {
-            helper.newLine();
-            String childTypeName = join.getChild().getName().getTableName();
-            helper.method("get" + ClassGenHelper.asJavaName(childTypeName, true), "Iterable<" + ClassGenHelper.asJavaName(childTypeName, true) + ">", NONE);
+        /*
+         * Add an accessor for the parent row if there is one 
+         */
+        Join parentJoin = table.getParentJoin();
+        if (parentJoin != null) {
+            String parentTypeName = parentJoin.getParent().getName().getTableName();
+            helper.addMethod("get" + ClassSourceWriter.asJavaName(parentTypeName, true),
+                    ClassSourceWriter.asJavaName(parentTypeName, true), NONE, null, null);
         }
+        
+        /*
+         * Add an accessor for each child table.
+         */
+        for (final Join join : table.getChildJoins()) {
+            String childTypeName = join.getChild().getName().getTableName();
+            helper.addMethod("get" + ClassSourceWriter.asJavaName(childTypeName, true), "List<" + ClassSourceWriter.asJavaName(childTypeName, true) + ">", NONE, null, null);
+        }
+        /*
+         * Add boilerplate methods
+         */
+        helper.addMethod("copy", typeName, NONE, null, null);
+        helper.addMethod("save", "void", NONE, null, null);
+        
         helper.end();
     }
 
@@ -140,4 +149,5 @@ public class ClassGenResource {
         }
         throw new WebApplicationException(Response.status(status).entity(err.toString()).build());
     }
+    
 }

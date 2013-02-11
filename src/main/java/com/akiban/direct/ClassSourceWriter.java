@@ -33,19 +33,27 @@ import java.io.PrintWriter;
  * @author peter
  *
  */
-public class ClassGenHelper {
+public class ClassSourceWriter extends ClassBuilder {
 
     final PrintWriter writer;
     final String packageName;
     final String className;
+    final boolean isAbstract;
+    final boolean isInterface;
     int indentation = 0;
     
-    public ClassGenHelper(final PrintWriter writer, final String packageName, final String className) {
+    public ClassSourceWriter(final PrintWriter writer, final String packageName, final String className, boolean isAbstract, boolean isInterface) {
         this.writer = writer;
         this.packageName = packageName;
         this.className = className;
+        this.isAbstract = isAbstract;
+        this.isInterface = isInterface;
     }
     
+    /* (non-Javadoc)
+     * @see com.akiban.direct.ClassBuilder#preamble(java.lang.String[])
+     */
+    @Override
     public void preamble(final String[] imports) {
         println("package " + packageName + ";");
         newLine();
@@ -54,12 +62,19 @@ public class ClassGenHelper {
         }
     }
     
-    public void startInterface(final String name) {
-        println("interface " + name + " {");
+    /* (non-Javadoc)
+     * @see com.akiban.direct.ClassBuilder#startInterface(java.lang.String)
+     */
+    @Override
+    public void startClass(final String name) {
+        newLine();
+        println(publicModifier() + (isAbstract ? "abstract ": "")  + (isInterface ? "interface " : "class ") + name + " {");
         indentation++;
     }
     
-    public void method(final String name, final String returnType, final String[] argumentTypes) {
+    @Override
+    public void addMethod(final String name, final String returnType, final String[] argumentTypes, final String[] argumentNames, final String[] body) {
+        newLine();
         print(returnType, " ", name, "(");
         boolean first  = true;
         int counter = 0;
@@ -67,24 +82,42 @@ public class ClassGenHelper {
             if (!first) {
                 append(", ");
             }
-            append(s, " z" + ++counter);
+            String argName;
+            if (argumentTypes != null) {
+                argName = argumentNames[counter];
+                counter++;
+            } else {
+                argName = "z" + ++counter;
+            }
+            append(s, " ", argName);
         }
-        append(");");
+        append(")");
+        if (body == null) {
+            append(";");
+        } else {
+            append(" {");
+            newLine();
+            indentation++;
+            for (String s : body) {
+                println(s);
+            }
+            indentation--;
+            println("}");
+        }
         newLine();
     }
+ 
     
-    public void property(final String name, final String type) {
-        String caseConverted = asJavaName(name, true);
-        boolean b = "boolean".equals(type);
-        method((b ? "is" : "get") + caseConverted, type, new String[0]);
-        method("set" + caseConverted, "void", new String[]{type});
-    }
-    
-    
+    /* (non-Javadoc)
+     * @see com.akiban.direct.ClassBuilder#end()
+     */
+    @Override
     public void end() {
         indentation--;
         println("}");
-        writer.flush();
+        if (indentation == 0) {
+            writer.close();
+        }
     }
     
     private void print(String... strings) {
@@ -105,36 +138,12 @@ public class ClassGenHelper {
         newLine();
     }
 
-    public void newLine() {
+    private void newLine() {
         writer.println();
     }
     
-    public void close() {
-        writer.close();
+    private String publicModifier() {
+        return isInterface ? "" : "public ";
     }
     
-    /*
-     * Complete demo hack for now.  Remove file s from table name (because we
-     * want a singular name in the generated code). Make other assumptions
-     * about uniqueness, etc.
-     */
-    public static String asJavaName(final String name, final boolean toUpper) {
-        StringBuilder sb = new StringBuilder(name);
-        if (sb.length() > 1 && name.charAt(sb.length() - 1) == 's') {
-            if (sb.length() > 2 && name.charAt(sb.length()  -2) == 'e') {
-                sb.setLength(sb.length() - 2);
-            } else {
-                sb.setLength(sb.length() - 1);
-            }
-        }
-        boolean isUpper = Character.isUpperCase(sb.charAt(0));
-        if (toUpper && !isUpper) {
-            sb.setCharAt(0, Character.toUpperCase(sb.charAt(0)));
-        }
-        if (!toUpper && isUpper) {
-            sb.setCharAt(0, Character.toLowerCase(sb.charAt(0)));
-        }
-        return sb.toString();
-        
-    }
 }
