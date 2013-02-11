@@ -254,6 +254,65 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
+    public Response runSQL(final HttpServletRequest request, final List<String> sqlList) {
+        return Response
+                .status(Response.Status.OK)
+                .entity(new StreamingOutput() {
+                    @Override
+                    public void write(OutputStream output) throws IOException, WebApplicationException {
+                        try (Connection conn = jdbcConnection(request)) {
+                            PrintWriter writer = new PrintWriter(output);
+                            AkibanAppender appender = AkibanAppender.of(writer);
+                            int nresults = 0;
+                            appender.append('{');
+                            conn.setAutoCommit(false);
+                            for(String sql : sqlList) {
+                                String trimmed = sql.trim();
+                                if(trimmed.isEmpty()) {
+                                    continue;
+                                }
+                                try(Statement s = conn.createStatement()) {
+                                    final String name;
+                                    if(nresults > 0) {
+                                        appender.append(",");
+                                        name = String.format("result_set_%d", nresults);
+                                    } else {
+                                        name = "result_set";
+                                    }
+                                    appender.append('"');
+                                    appender.append(name);
+                                    appender.append("\":[");
+                                    boolean res = s.execute(trimmed);
+                                    if(res) {
+                                        JDBCResultSet resultSet = (JDBCResultSet) s.getResultSet();
+                                        SQLOutputCursor cursor = new SQLOutputCursor(resultSet);
+                                        JsonRowWriter jsonRowWriter = new JsonRowWriter(cursor);
+                                        if(jsonRowWriter.writeRows(cursor, appender, "\n", cursor)) {
+                                            appender.append('\n');
+                                        }
+                                    } else {
+                                        int updateCount = s.getUpdateCount();
+                                        appender.append("\n{\"update_count\":");
+                                        appender.append(updateCount);
+                                        appender.append("}\n");
+                                    }
+                                    appender.append("]");
+                                    ++nresults;
+                                }
+                            }
+                            conn.commit();
+                            appender.append("\n}");
+                            writer.write('\n');
+                            writer.close();
+                        } catch(SQLException | InvalidOperationException e) {
+                            throw wrapException(e);
+                        }
+                    }
+                })
+                .build();
+    }
+
+    @Override
     public Response explainSQL(final HttpServletRequest request, final String sql) {
         return Response
                 .status(Response.Status.OK)

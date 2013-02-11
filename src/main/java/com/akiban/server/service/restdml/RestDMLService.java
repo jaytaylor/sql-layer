@@ -47,6 +47,7 @@ public interface RestDMLService {
     public Response delete(HttpServletRequest request, 
                            TableName tableName, String pks);
     public Response runSQL(HttpServletRequest request, String sql);
+    public Response runSQL(HttpServletRequest request, List<String> sql);
     public Response explainSQL(HttpServletRequest request, String sql);
     public Response callProcedure(HttpServletRequest request, 
                                   TableName procName, Map<String,List<String>> params);

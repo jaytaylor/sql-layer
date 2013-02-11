@@ -26,6 +26,9 @@
 
 package com.akiban.rest.resources;
 
+import com.akiban.server.service.restdml.RestDMLService;
+import com.google.inject.Inject;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -35,21 +38,26 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.util.Arrays;
 
 /**
- * Allows free-form SQL execution using line-per-statement SQL in the post body.
+ * Allows free-form SQL execution via semi-colon separated statements in the POST body.
+ * The entire body is executed under a single transaction.
  */
 @Path("/execute")
 public class SqlExecutionResource {
+    @Inject
+    private RestDMLService restDMLService;
+
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     public Response execute(@Context HttpServletRequest request,
                             @QueryParam("format") String format,
                             @QueryParam("jsoncallback") String jsonp,
-                            final InputStream entityLines) throws Exception {
-        return Response
-                .status(Response.Status.OK)
-                .entity("Not yet implemented")
-                .build();
+                            final byte[] postBytes) throws Exception {
+        String input = new String(postBytes, "UTF-8");
+        String[] statements = input.split(";");
+        return restDMLService.runSQL(request, Arrays.asList(statements));
     }
 }
