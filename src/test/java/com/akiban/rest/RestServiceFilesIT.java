@@ -114,7 +114,7 @@ public class RestServiceFilesIT extends ITBase {
     }
 
     public static File[] gatherRequestFiles(File dir) {
-        File[] result = dir.listFiles(new RegexFilenameFilter(".*\\.(get|put|post|delete|query)"));
+        File[] result = dir.listFiles(new RegexFilenameFilter(".*\\.(get|put|post|delete|query|explain)"));
         Arrays.sort(result, new Comparator<File>() {
             public int compare(File f1, File f2) {
                 return f1.getName().compareTo(f2.getName());
@@ -165,6 +165,9 @@ public class RestServiceFilesIT extends ITBase {
                 if("QUERY".equals(method)) {
                     method = "GET";
                     uri = "/query?q=" + trimAndURLEncode(uri);
+                } else if("EXPLAIN".equals(method)) {
+                    method = "GET";
+                    uri = "/explain?q=" + trimAndURLEncode(uri);
                 }
 
                 result.add(Parameterization.create(
