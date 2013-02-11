@@ -33,8 +33,8 @@ import org.codehaus.jackson.JsonNode;
 public interface RestDMLService {
     public Response runSQL(String sql);
     public Response insert(String schema, String table, JsonNode node);
-    public Response getAllEntities(String schema, String table);
+    public Response getAllEntities(String schema, String table, Integer depth);
     public Response getEntities(String schema, String table, Integer depth, String pks);
-    public Response delete(String schema, String table, String pks, Integer depth);
+    public Response delete(String schema, String table, String pks);
     public Response update(String schema, String table, String values, JsonNode node);
 }
