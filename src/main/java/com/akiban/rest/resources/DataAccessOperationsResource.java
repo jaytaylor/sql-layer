@@ -27,6 +27,7 @@
 package com.akiban.rest.resources;
 
 
+import com.akiban.ais.model.TableName;
 import com.akiban.rest.ResponseHelper;
 import com.akiban.server.service.restdml.RestDMLService;
 import com.google.inject.Inject;
@@ -73,8 +74,8 @@ public class DataAccessOperationsResource {
                                    @QueryParam("depth") Integer depth,
                                    @QueryParam("offset") Integer offset,
                                    @QueryParam("limit") Integer limit) throws Exception {
-        String[] names = parseTableName(request, table);
-        return dmlService.getAllEntities(request, names[0], names[1], depth);
+        TableName tableName = parseTableName(request, table);
+        return dmlService.getAllEntities(request, tableName, depth);
     }
 
     @GET
@@ -86,10 +87,10 @@ public class DataAccessOperationsResource {
                                    @PathParam("table") String table,
                                    @QueryParam("depth") Integer depth,
                                    @Context UriInfo uri) throws Exception {
-        String[] names = parseTableName(request, table);
+        TableName tableName = parseTableName(request, table);
         String[] pks = uri.getPath(false).split("/");
         assert pks.length > 0 : uri;
-        return dmlService.getEntities(request, names[0], names[1], depth, pks[pks.length-1]);
+        return dmlService.getEntities(request, tableName, depth, pks[pks.length-1]);
     }
 
     @POST
@@ -98,10 +99,10 @@ public class DataAccessOperationsResource {
     public Response createEntity(@Context HttpServletRequest request,
                                  @PathParam("table") String table,
                                  byte[] entityBytes) throws Exception {
-        String[] names = parseTableName(request, table);
+        TableName tableName = parseTableName(request, table);
         ObjectMapper m = new ObjectMapper();
         JsonNode node = m.readTree(entityBytes);
-        return dmlService.insert(request, names[0], names[1], node);
+        return dmlService.insert(request, tableName, node);
     }
 
     @PUT
@@ -111,7 +112,7 @@ public class DataAccessOperationsResource {
                                  @PathParam("table") String table,
                                  byte[] entityBytes,
                                  @Context UriInfo uri) throws Exception {
-        String[] names = parseTableName(request, table);
+        TableName tableName = parseTableName(request, table);
         return ResponseHelper.buildNotYetImplemented();
     }
 
@@ -121,13 +122,13 @@ public class DataAccessOperationsResource {
     public Response deleteEntity(@Context HttpServletRequest request,
                                  @PathParam("table") String table,
                                  @Context UriInfo uri) throws Exception {
-        String[] names = parseTableName(request, table);
+        TableName tableName = parseTableName(request, table);
         String[] pks = uri.getPath(false).split("/");
         assert pks.length > 0 : uri;
-        return dmlService.delete(request, names[0], names[1], pks[pks.length-1]);
+        return dmlService.delete(request, tableName, pks[pks.length-1]);
     }
 
-    protected String[] parseTableName(HttpServletRequest request, String name) {
+    protected TableName parseTableName(HttpServletRequest request, String name) {
         String schema, table;
         int idx = name.indexOf('.');
         if (idx >= 0) {
@@ -139,6 +140,6 @@ public class DataAccessOperationsResource {
             schema = (user == null) ? "" : user.getName();
             table = name;
         }
-        return new String[] { schema, table };
+        return new TableName(schema, table);
     }
 }
