@@ -202,13 +202,13 @@ public class AlterTableDDL {
                     AlterTableRenameColumnNode alterRenameCol = (AlterTableRenameColumnNode) node;
                     String oldColName = alterRenameCol.getName();
                     String newColName = alterRenameCol.newName();
-                    
                     final Column oldCol = table.getColumn(oldColName);
                     if (oldCol == null)
                         throw new NoSuchColumnException(oldColName);
                     if (newCols == null)
                         newCols = new ArrayList<>();
                     newCols.add(newColName);
+                    columnChanges.add(TableChange.createModify(oldColName, newColName));
                     break;
 
                 default:
