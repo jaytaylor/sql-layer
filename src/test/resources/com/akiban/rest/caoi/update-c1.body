@@ -1,0 +1,12 @@
+[{
+    "cid": 1,
+    "first_name": "John",
+    "last_name": "Smith",
+    "test.addresses": [
+        {
+            "aid": 104,
+            "state": "MA",
+            "city": "Boston"
+        }
+    ]
+}]
