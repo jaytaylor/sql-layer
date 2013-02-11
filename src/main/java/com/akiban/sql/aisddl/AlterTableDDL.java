@@ -211,14 +211,7 @@ public class AlterTableDDL {
                         throw new AkibanInternalException("New column in RENAME not created successfully: " + newColName);
                     
                     copyTableIndexes(table, tableCopy, columnChanges, indexChanges);
-
-                    // TODO: (Similar to AT_RENAME_NODE, )this breaks
-                    //        the general flow, ie., explicitly does not support
-                    //        multiple-action ALTER
-                    //        But we do not support multiple-action ALTER even at the
-                    //        parser level anyways.
-                    return ddl.alterTable(session, table.getName(), tableCopy,
-                                          columnChanges, indexChanges, context);
+                    break;
 
                 default:
                     return null; // Something unsupported
