@@ -6,7 +6,7 @@ schemas {
     columns {
       columnName: "id"
       typeName: "int"
-      isNullable: true
+      isNullable: false
       position: 0
       charColl {
         characterSetName: "utf8"
@@ -17,7 +17,7 @@ schemas {
     columns {
       columnName: "name"
       typeName: "text"
-      isNullable: true
+      isNullable: false
       position: 1
       charColl {
         characterSetName: "utf8"
@@ -44,5 +44,9 @@ schemas {
       indexMethod: NORMAL
     }
     uuid: "2a57b59e-e1b7-4377-996e-a5c04e0abf29"
+  }
+  groups {
+    rootTableName: "customer"
+    treeName: "test.customer"
   }
 }

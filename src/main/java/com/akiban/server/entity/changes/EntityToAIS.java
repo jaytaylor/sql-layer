@@ -30,6 +30,7 @@ import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.entity.model.AbstractEntityVisitor;
@@ -52,12 +53,13 @@ import java.util.UUID;
 public class EntityToAIS extends AbstractEntityVisitor {
     private static final Logger LOG = LoggerFactory.getLogger(EntityToAIS.class);
 
-    private static final boolean ATTR_REQUIRED_DEFAULT = false;
+    private static final boolean ATTR_REQUIRED_DEFAULT = true;
     private static final Index.JoinType GI_JOIN_TYPE_DEFAULT = Index.JoinType.LEFT;
 
     private final String schemaName;
     private final AISBuilder builder = new AISBuilder();
     private final List<TableInfo> tableInfoStack = new ArrayList<>();
+    private TableName groupName = null;
     private TableInfo curTable = null;
 
     public EntityToAIS(String schemaName) {
@@ -70,12 +72,17 @@ public class EntityToAIS extends AbstractEntityVisitor {
 
     @Override
     public void visitEntity(String name, Entity entity) {
+        builder.createGroup(name, schemaName);
+        groupName = new TableName(schemaName, name);
         beginTable(name, entity.uuid());
     }
 
     @Override
     public void leaveEntity() {
         endTable();
+        groupName = null;
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
     }
 
     @Override
@@ -106,7 +113,7 @@ public class EntityToAIS extends AbstractEntityVisitor {
         visitScalarValidations(column, scalar.getValidation());
 
         if(scalar.isSpinal()) {
-            addSpinalColumn(name);
+            addSpinalColumn(name, scalar.getSpinePos());
         }
     }
 
@@ -123,6 +130,7 @@ public class EntityToAIS extends AbstractEntityVisitor {
 
     @Override
     public void visitCollection(String name, Attribute collection) {
+        curTable.childTables.add(name);
         beginTable(name, collection.getUUID());
     }
 
@@ -133,14 +141,7 @@ public class EntityToAIS extends AbstractEntityVisitor {
 
     @Override
     public void leaveEntityAttributes() {
-        // Create PRIMARY
-        if(!curTable.spinalCols.isEmpty()) {
-            builder.index(schemaName, curTableName(), Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-            int pos = 0;
-            for(String column : curTable.spinalCols) {
-                builder.indexColumn(schemaName, curTableName(), Index.PRIMARY_KEY_CONSTRAINT, column, pos++, true, null);
-            }
-        }
+        // None
     }
 
     @Override
@@ -206,15 +207,56 @@ public class EntityToAIS extends AbstractEntityVisitor {
 
     private void beginTable(String name, UUID uuid) {
         curTable = new TableInfo(name);
-        tableInfoStack.add(curTable);
         UserTable table = builder.userTable(schemaName, name);
         table.setUuid(uuid);
+        builder.addTableToGroup(groupName, schemaName, name);
+        tableInfoStack.add(curTable);
     }
 
     private void endTable() {
+        // Create PRIMARY
+        if(!curTable.spinalCols.isEmpty()) {
+            builder.index(schemaName, curTableName(), Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+            int pos = 0;
+            for(String column : curTable.spinalCols) {
+                builder.indexColumn(schemaName, curTableName(), Index.PRIMARY_KEY_CONSTRAINT, column, pos++, true, null);
+            }
+        }
+
+        // Create joins to children
+        List<IndexColumn> parentPK = getPKCols(curTableName());
+        if(parentPK == null) {
+            throw new IllegalArgumentException("Table has children but no PK: " + curTableName());
+        }
+        for(String childName : curTable.childTables) {
+            List<IndexColumn> childPK = getPKCols(childName);
+            if(childPK == null) {
+                throw new IllegalArgumentException("Child has no PK: " + childName);
+            }
+
+            String joinName = childName + "_" + curTableName();
+            builder.joinTables(joinName, schemaName, curTableName(), schemaName, childName);
+            builder.addJoinToGroup(groupName, joinName, 0);
+
+            int max = Math.min(parentPK.size(), childPK.size());
+            for(int i = 0; i < max; ++i) {
+                builder.joinColumns(joinName,
+                                    schemaName, curTableName(), parentPK.get(i).getColumn().getName(),
+                                    schemaName, childName, childPK.get(i).getColumn().getName());
+            }
+        }
+
         // Reset current
         tableInfoStack.remove(tableInfoStack.size() - 1);
         curTable = tableInfoStack.isEmpty() ? null : tableInfoStack.get(tableInfoStack.size() - 1);
+    }
+
+    private List<IndexColumn> getPKCols(String tableName) {
+        UserTable table = builder.akibanInformationSchema().getUserTable(schemaName, tableName);
+        if(table.getPrimaryKey() == null) {
+            return null;
+        }
+        return table.getPrimaryKey().getIndex().getKeyColumns();
     }
 
     private int nextColPos() {
@@ -225,18 +267,23 @@ public class EntityToAIS extends AbstractEntityVisitor {
         return curTable.name;
     }
 
-    private void addSpinalColumn(String name) {
-        curTable.spinalCols.add(name);
+    private void addSpinalColumn(String name, int spinePos) {
+        while(curTable.spinalCols.size() <= spinePos) {
+            curTable.spinalCols.add(null);
+        }
+        curTable.spinalCols.set(spinePos, name);
     }
 
     private static class TableInfo {
         public final String name;
         public final List<String> spinalCols;
+        public final List<String> childTables;
         public int nextColPos;
 
         public TableInfo(String name) {
             this.name = name;
-            this.spinalCols = new ArrayList<>(1);
+            this.spinalCols = new ArrayList<>();
+            this.childTables = new ArrayList<>();
         }
     }
 }

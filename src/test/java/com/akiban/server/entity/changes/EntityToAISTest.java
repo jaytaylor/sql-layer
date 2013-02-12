@@ -61,7 +61,7 @@ public final class EntityToAISTest {
         return Collections2.transform(Arrays.asList(testNames), new Function<String, Parameterization>() {
             @Override
             public Parameterization apply(String testName) {
-                String shortName = testName.substring(0, testName.length() - "-orig.json".length());
+                String shortName = testName.substring(0, testName.length() - ".json".length());
                 return new Parameterization(shortName, true, shortName);
             }
         });
@@ -70,7 +70,7 @@ public final class EntityToAISTest {
     @Test
     @OnlyIf("expectedFileExists()")
     public void test() throws IOException {
-        Space spaceDef = Space.readSpace(testName + "-orig.json", EntityToAISTest.class);
+        Space spaceDef = Space.readSpace(testName + ".json", EntityToAISTest.class);
         EntityToAIS eToAIS = new EntityToAIS(SCHEMA);
         spaceDef.visit(eToAIS);
 
@@ -88,7 +88,7 @@ public final class EntityToAISTest {
 
     public EntityToAISTest(String testName) {
         this.testName = testName;
-        this.expectedFile = new File(dir, testName + "-orig.ais");
+        this.expectedFile = new File(dir, testName + ".ais");
     }
 
     private final String testName;
