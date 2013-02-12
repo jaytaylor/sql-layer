@@ -29,6 +29,7 @@ package com.akiban.server.entity.changes;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.entity.model.AbstractEntityVisitor;
 import com.akiban.server.entity.model.Attribute;
@@ -45,12 +46,12 @@ import java.util.UUID;
 
 public class EntityToAIS extends AbstractEntityVisitor {
     private final String schemaName;
-    private final AISBuilder builder;
+    private final AISBuilder builder = new AISBuilder();
     private final List<TableInfo> tableInfoStack = new ArrayList<>();
+    private TableInfo curTable = null;
 
     public EntityToAIS(String schemaName) {
         this.schemaName = schemaName;
-        this.builder = new AISBuilder();
     }
 
     //
@@ -91,6 +92,10 @@ public class EntityToAIS extends AbstractEntityVisitor {
                                        collation
                                        /*,default*/);
         column.setUuid(scalar.getUUID());
+
+        if(scalar.isSpinal()) {
+            addSpinalColumn(name);
+        }
     }
 
     @Override
@@ -127,29 +132,46 @@ public class EntityToAIS extends AbstractEntityVisitor {
     }
 
     private void beginTable(String name, UUID uuid) {
-        tableInfoStack.add(new TableInfo(name));
+        curTable = new TableInfo(name);
+        tableInfoStack.add(curTable);
         UserTable table = builder.userTable(schemaName, name);
         table.setUuid(uuid);
     }
 
     private void endTable() {
+        // Create PRIMARY
+        if(!curTable.spinalCols.isEmpty()) {
+            builder.index(schemaName, curTableName(), Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+            int pos = 0;
+            for(String column : curTable.spinalCols) {
+                builder.indexColumn(schemaName, curTableName(), Index.PRIMARY_KEY_CONSTRAINT, column, pos++, true, null);
+            }
+        }
+        // Reset current
         tableInfoStack.remove(tableInfoStack.size() - 1);
+        curTable = tableInfoStack.isEmpty() ? null : tableInfoStack.get(tableInfoStack.size() - 1);
     }
 
     private int nextColPos() {
-        return tableInfoStack.get(tableInfoStack.size() - 1).nextColPos++;
+        return curTable.nextColPos++;
     }
 
     private String curTableName() {
-        return tableInfoStack.get(tableInfoStack.size() - 1).name;
+        return curTable.name;
+    }
+
+    private void addSpinalColumn(String name) {
+        curTable.spinalCols.add(name);
     }
 
     private static class TableInfo {
         public final String name;
+        public final List<String> spinalCols;
         public int nextColPos;
 
         public TableInfo(String name) {
             this.name = name;
+            this.spinalCols = new ArrayList<>(1);
         }
     }
 }
