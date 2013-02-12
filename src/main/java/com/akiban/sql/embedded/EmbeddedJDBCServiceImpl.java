@@ -105,6 +105,9 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
             properties.put("user", user.getName());
             properties.put("database", user.getName());
         }
+        else if (!properties.containsKey("user")) {
+            properties.put("user", ""); // Avoid NPE.
+        }
         Connection conn = driver.connect(JDBCDriver.URL, properties);
         if (user != null) {
             ((JDBCConnection)conn).getSession().put(SecurityService.SESSION_KEY, user);

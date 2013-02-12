@@ -29,6 +29,7 @@ package com.akiban.sql.embedded;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.AkServerInterface;
+import com.akiban.sql.optimizer.rule.ExplainPlanContext;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerSessionBase;
 import com.akiban.sql.server.ServerSessionMonitor;
@@ -54,6 +55,8 @@ import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.SQLParseException;
 import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
+import com.akiban.server.explain.Explainable;
+import com.akiban.server.explain.Explainer;
 import com.akiban.server.service.monitor.MonitorStage;
 import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
@@ -164,6 +167,43 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             if (sqlStmt instanceof CallStatementNode)
                 return ExecutableCallStatement.executableStatement((CallStatementNode)sqlStmt, parser.getParameterList(), context);
             throw new UnsupportedSQLException("Statement not recognized", sqlStmt);
+        }
+        finally {
+            sessionMonitor.leaveStage();
+            if (localTransaction != null)
+                localTransaction.rollback();
+        }
+    }
+
+    public Explainer explain(String sql) {
+        logger.debug("Explain: {}", sql);
+        sessionMonitor.startStatement(sql);
+        updateAIS(new EmbeddedQueryContext(this));
+        ServerTransaction localTransaction = null;
+        sessionMonitor.enterStage(MonitorStage.PARSE);
+        try {
+            StatementNode sqlStmt;
+            SQLParser parser = getParser();
+            try {
+                sqlStmt = parser.parseStatement(sql);
+            } 
+            catch (SQLParserException ex) {
+                throw new SQLParseException(ex);
+            }
+            catch (StandardException ex) {
+                throw new SQLParserInternalException(ex);
+            }
+            sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
+            if (transaction == null)
+                localTransaction = new ServerTransaction(this, true);
+            ExplainPlanContext context = new ExplainPlanContext(compiler);
+            Explainable explainable;
+            if ((sqlStmt instanceof DMLStatementNode) && 
+                !(sqlStmt instanceof CallStatementNode))
+                explainable = compiler.compile((DMLStatementNode)sqlStmt, parser.getParameterList(), context).getPlannable();
+            else
+                throw new UnsupportedSQLException("Statement not supported for EXPLAIN", sqlStmt);
+            return explainable.getExplainer(context.getExplainContext());
         }
         finally {
             sessionMonitor.leaveStage();
