@@ -79,10 +79,8 @@ public class EntityToAIS extends AbstractEntityVisitor {
 
     @Override
     public void leaveEntity() {
-        endTable();
+        curTable = null;
         groupName = null;
-        builder.basicSchemaIsComplete();
-        builder.groupingIsComplete();
     }
 
     @Override
@@ -130,8 +128,9 @@ public class EntityToAIS extends AbstractEntityVisitor {
 
     @Override
     public void visitCollection(String name, Attribute collection) {
-        curTable.childTables.add(name);
+        TableInfo parent = curTable;
         beginTable(name, collection.getUUID());
+        parent.childTables.add(curTable);
     }
 
     @Override
@@ -141,7 +140,11 @@ public class EntityToAIS extends AbstractEntityVisitor {
 
     @Override
     public void leaveEntityAttributes() {
-        // None
+        TableInfo root = curTable;
+        endTable();
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
+        curTable = root;
     }
 
     @Override
@@ -172,7 +175,6 @@ public class EntityToAIS extends AbstractEntityVisitor {
             List<EntityColumn> columns = entry.getValue().getColumns();
             boolean isGI = isGroupIndex(columns);
             if(isGI) {
-                TableName groupName = new TableName(schemaName, tableInfoStack.get(0).name);
                 builder.groupIndex(groupName, indexName, false, GI_JOIN_TYPE_DEFAULT);
                 int pos = 0;
                 for(EntityColumn col : columns) {
@@ -224,39 +226,28 @@ public class EntityToAIS extends AbstractEntityVisitor {
         }
 
         // Create joins to children
-        List<IndexColumn> parentPK = getPKCols(curTableName());
-        if(parentPK == null) {
-            throw new IllegalArgumentException("Table has children but no PK: " + curTableName());
-        }
-        for(String childName : curTable.childTables) {
-            List<IndexColumn> childPK = getPKCols(childName);
-            if(childPK == null) {
-                throw new IllegalArgumentException("Child has no PK: " + childName);
-            }
+        List<String> parentSpine = curTable.spinalCols;
+        for(TableInfo child : curTable.childTables) {
+            List<String> childSpine = child.spinalCols;
 
-            String joinName = childName + "_" + curTableName();
-            builder.joinTables(joinName, schemaName, curTableName(), schemaName, childName);
+            // Adding the join re-adds the table, which hits an assert
+            builder.removeTableFromGroup(groupName, schemaName, child.name);
+
+            String joinName = child.name + "_" + curTableName();
+            builder.joinTables(joinName, schemaName, curTableName(), schemaName, child.name);
             builder.addJoinToGroup(groupName, joinName, 0);
 
-            int max = Math.min(parentPK.size(), childPK.size());
+            // Later validations will catch invalid joins, may want to do it sooner?
+            int max = Math.min(parentSpine.size(), childSpine.size());
             for(int i = 0; i < max; ++i) {
                 builder.joinColumns(joinName,
-                                    schemaName, curTableName(), parentPK.get(i).getColumn().getName(),
-                                    schemaName, childName, childPK.get(i).getColumn().getName());
+                                    schemaName, curTableName(), parentSpine.get(i),
+                                    schemaName, child.name, childSpine.get(i));
             }
         }
 
-        // Reset current
         tableInfoStack.remove(tableInfoStack.size() - 1);
         curTable = tableInfoStack.isEmpty() ? null : tableInfoStack.get(tableInfoStack.size() - 1);
-    }
-
-    private List<IndexColumn> getPKCols(String tableName) {
-        UserTable table = builder.akibanInformationSchema().getUserTable(schemaName, tableName);
-        if(table.getPrimaryKey() == null) {
-            return null;
-        }
-        return table.getPrimaryKey().getIndex().getKeyColumns();
     }
 
     private int nextColPos() {
@@ -277,13 +268,18 @@ public class EntityToAIS extends AbstractEntityVisitor {
     private static class TableInfo {
         public final String name;
         public final List<String> spinalCols;
-        public final List<String> childTables;
+        public final List<TableInfo> childTables;
         public int nextColPos;
 
         public TableInfo(String name) {
             this.name = name;
             this.spinalCols = new ArrayList<>();
             this.childTables = new ArrayList<>();
+        }
+
+        @Override
+        public String toString() {
+            return name;
         }
     }
 }

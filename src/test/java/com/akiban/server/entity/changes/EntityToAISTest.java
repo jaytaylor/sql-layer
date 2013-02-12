@@ -48,33 +48,40 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(NamedParameterizedRunner.class)
 public final class EntityToAISTest {
-    private final String SCHEMA = "test";
+    private static final String SCHEMA = "test";
+    private static final String TEST_NAME_SUFFIX = "-orig";
+    private static final String INPUT_EXTENSION = ".json";
+    private static final String EXPECTED_EXTENSION = ".ais";
 
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params() throws IOException {
-        String[] testNames = JUnitUtils.getContainingFile(SpaceDiffTest.class).list(new FilenameFilter() {
+        final String fullSuffix = TEST_NAME_SUFFIX + INPUT_EXTENSION;
+        String[] testNames = JUnitUtils.getContainingFile(EntityToAISTest.class).list(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
-                return name.endsWith("-orig.json");
+                if(name.endsWith(fullSuffix)) {
+                    String shortName = name.substring(0, name.length() - fullSuffix.length());
+                    return new File(dir, shortName + TEST_NAME_SUFFIX + EXPECTED_EXTENSION).exists();
+                }
+                return false;
             }
         });
         return Collections2.transform(Arrays.asList(testNames), new Function<String, Parameterization>() {
             @Override
             public Parameterization apply(String testName) {
-                String shortName = testName.substring(0, testName.length() - ".json".length());
+                String shortName = testName.substring(0, testName.length() - fullSuffix.length());
                 return new Parameterization(shortName, true, shortName);
             }
         });
     }
 
     @Test
-    @OnlyIf("expectedFileExists()")
     public void test() throws IOException {
-        Space spaceDef = Space.readSpace(testName + ".json", EntityToAISTest.class);
+        Space spaceDef = Space.readSpace(testName + TEST_NAME_SUFFIX + ".json", EntityToAISTest.class);
         EntityToAIS eToAIS = new EntityToAIS(SCHEMA);
         spaceDef.visit(eToAIS);
 
-        String expected = Strings.dumpFileToString(expectedFile);
+        String expected = Strings.dumpFileToString(new File(dir, testName + TEST_NAME_SUFFIX + ".ais"));
 
         ProtobufWriter writer = new ProtobufWriter(new ProtobufWriter.SingleSchemaSelector(SCHEMA));
         String actual = writer.save(eToAIS.getAIS()).toString();
@@ -82,16 +89,10 @@ public final class EntityToAISTest {
         assertEquals("Generated AIS", expected.trim(), actual.trim());
     }
 
-    public boolean expectedFileExists() {
-        return expectedFile.exists();
-    }
-
     public EntityToAISTest(String testName) {
         this.testName = testName;
-        this.expectedFile = new File(dir, testName + ".ais");
     }
 
     private final String testName;
-    private final File expectedFile;
     private static final File dir = JUnitUtils.getContainingFile(EntityToAISTest.class);
 }
