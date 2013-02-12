@@ -39,12 +39,15 @@ import com.akiban.server.entity.model.Validation;
 import com.google.common.collect.BiMap;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
 public class EntityToAIS extends AbstractEntityVisitor {
+    private final boolean ATTR_REQUIRED_DEFAULT = false;
+
     private final String schemaName;
     private final AISBuilder builder = new AISBuilder();
     private final List<TableInfo> tableInfoStack = new ArrayList<>();
@@ -86,15 +89,28 @@ public class EntityToAIS extends AbstractEntityVisitor {
                                        scalar.getType(),
                                        param1,
                                        param2,
-                                       true  /*nullable*/,
-                                       false /*autoinc*/,
+                                       !ATTR_REQUIRED_DEFAULT, /*nullable*/
+                                       false, /*autoinc*/
                                        charset,
                                        collation
                                        /*,default*/);
         column.setUuid(scalar.getUUID());
 
+        visitScalarValidations(column, scalar.getValidation());
+
         if(scalar.isSpinal()) {
             addSpinalColumn(name);
+        }
+    }
+
+    private void visitScalarValidations(Column column, Collection<Validation> validations) {
+        for(Validation v : validations) {
+            if("required".equals(v.getName())) {
+                boolean isRequired = (Boolean)v.getValue();
+                column.setNullable(!isRequired);
+            } else {
+                throw new IllegalArgumentException("Unknown validation: " + v.getName());
+            }
         }
     }
 
@@ -110,12 +126,35 @@ public class EntityToAIS extends AbstractEntityVisitor {
 
     @Override
     public void leaveEntityAttributes() {
-        // None
+        // Create PRIMARY
+        if(!curTable.spinalCols.isEmpty()) {
+            builder.index(schemaName, curTableName(), Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+            int pos = 0;
+            for(String column : curTable.spinalCols) {
+                builder.indexColumn(schemaName, curTableName(), Index.PRIMARY_KEY_CONSTRAINT, column, pos++, true, null);
+            }
+        }
     }
 
     @Override
     public void visitEntityValidations(Set<Validation> validations) {
-        // TODO
+        for(Validation v : validations) {
+            if("unique".equals(v.getName())) {
+                List<List<String>> colNames = (List<List<String>>)v.getValue();
+                String firstTable = colNames.get(0).get(0);
+                String indexName = colNames.get(0).get(1); // TODO: Generate as required
+                builder.index(schemaName, firstTable, indexName, true, Index.UNIQUE_KEY_CONSTRAINT);
+                for(int i = 0; i < colNames.size(); ++i) {
+                    List<String> pair = colNames.get(i);
+                    if(!pair.get(0).equals(firstTable)) {
+                        throw new IllegalArgumentException("Multi-table unique index");
+                    }
+                    builder.indexColumn(schemaName, pair.get(0), indexName, pair.get(1), i, true, null);
+                }
+            } else {
+                throw new IllegalArgumentException("Unknown validation: " + v.getName());
+            }
+        }
     }
 
     @Override
@@ -139,14 +178,6 @@ public class EntityToAIS extends AbstractEntityVisitor {
     }
 
     private void endTable() {
-        // Create PRIMARY
-        if(!curTable.spinalCols.isEmpty()) {
-            builder.index(schemaName, curTableName(), Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-            int pos = 0;
-            for(String column : curTable.spinalCols) {
-                builder.indexColumn(schemaName, curTableName(), Index.PRIMARY_KEY_CONSTRAINT, column, pos++, true, null);
-            }
-        }
         // Reset current
         tableInfoStack.remove(tableInfoStack.size() - 1);
         curTable = tableInfoStack.isEmpty() ? null : tableInfoStack.get(tableInfoStack.size() - 1);
