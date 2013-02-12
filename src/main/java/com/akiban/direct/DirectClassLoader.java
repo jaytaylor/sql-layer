@@ -25,6 +25,10 @@
  */
 package com.akiban.direct;
 
+import java.util.List;
+
+import com.akiban.ais.model.AkibanInformationSchema;
+
 /**
  * ClassLoader that delegates selectively. This loader is used to
  * 
@@ -38,7 +42,7 @@ public class DirectClassLoader extends ClassLoader {
     private final static String[] DIRECT_INTERFACES = { "com.akiban.DirectContext", "com.akiban.DirectModule",
             "com.akiban.DaoPrototype" };
 
-    protected DirectClassLoader(ClassLoader bootstrap, ClassLoader parent) {
+    public DirectClassLoader(ClassLoader bootstrap, ClassLoader parent) {
         super(bootstrap);
         this.parent = parent;
     }
@@ -84,5 +88,10 @@ public class DirectClassLoader extends ClassLoader {
 
     private Class<?> compileSpecialClass(final String name) throws ClassNotFoundException {
         throw new ClassNotFoundException(name);
+    }
+    
+    
+    public Class<? extends DirectModule> loadModule(AkibanInformationSchema ais, String moduleName, List<String> urls) throws Exception {
+        throw new UnsupportedOperationException("hi there");
     }
 }

@@ -24,19 +24,23 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
- package com.akiban.direct;
+package com.akiban.direct;
 
 import java.sql.ResultSet;
+
+import javax.ws.rs.core.MultivaluedMap;
 
 public interface DirectModule {
 
     void setContext(DirectContext context);
-    
+
     DirectContext getContext();
-    
+
     void start() throws Exception;
-    
+
     void stop() throws Exception;
-    
-    ResultSet exec(Object...  params) throws Exception;
+
+    boolean isIdempotent();
+
+    ResultSet exec(MultivaluedMap<String, String> params) throws Exception;
 }

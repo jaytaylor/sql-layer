@@ -26,6 +26,9 @@
 
 package com.akiban.rest;
 
+import java.util.Iterator;
+import java.util.List;
+
 import com.akiban.rest.resources.DataAccessOperationsResource;
 import com.akiban.rest.resources.DirectResource;
 import com.akiban.rest.resources.FaviconResource;
@@ -35,7 +38,13 @@ import com.akiban.rest.resources.SqlQueryResource;
 import com.akiban.rest.resources.SqlSchemataResource;
 import com.akiban.rest.resources.SqlTablesResource;
 import com.akiban.rest.resources.VersionResource;
+import com.google.inject.Binding;
+import com.google.inject.Key;
+import com.google.inject.Module;
 import com.google.inject.servlet.ServletModule;
+import com.google.inject.spi.DefaultElementVisitor;
+import com.google.inject.spi.Element;
+import com.google.inject.spi.Elements;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 
 /**
@@ -59,4 +68,35 @@ public class RestServiceModule extends ServletModule {
         serve("*").with(GuiceContainer.class);
         filter("*").through(ConnectionCloseFilter.class);
     }
+    
+    
+    public void addBinding(final Class<?> clazz) {
+        bind(clazz).asEagerSingleton();
+    }
+
+    /**
+     * From "magic code" at
+     * 
+     * http://stackoverflow.com/questions/2854494/how-do-i-subtract-a-binding-using-a-guice-module-override
+     * 
+     * @param toSubtract
+     */
+    public void subtractBinding(final Class<?> clazz) {
+        final Key<?> key = Key.get(clazz);
+        List<Element> elements = Elements.getElements(this);
+        for (Iterator<Element> i = elements.iterator(); i.hasNext(); ) {
+          Element element = i.next();
+          boolean remove = element.acceptVisitor(new DefaultElementVisitor<Boolean>() { 
+            @Override public <T> Boolean visit(Binding<T> binding) { 
+              return binding.getKey().equals(key);
+            }
+            @Override public Boolean visitOther(Element other) {
+              return false;
+            }
+          }); 
+          if (remove) {
+            i.remove();
+          }
+        }
+      }
 }
