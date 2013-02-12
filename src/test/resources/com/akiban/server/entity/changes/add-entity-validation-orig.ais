@@ -41,7 +41,6 @@ schemas {
         isAscending: true
         position: 0
       }
-      joinType: LEFT_OUTER_JOIN
       indexMethod: NORMAL
     }
     indexes {
@@ -56,7 +55,6 @@ schemas {
         isAscending: true
         position: 0
       }
-      joinType: LEFT_OUTER_JOIN
       indexMethod: NORMAL
     }
     uuid: "2a57b59e-e1b7-4377-996e-a5c04e0abf29"

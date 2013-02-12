@@ -30,10 +30,12 @@ import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.entity.model.AbstractEntityVisitor;
 import com.akiban.server.entity.model.Attribute;
 import com.akiban.server.entity.model.Entity;
+import com.akiban.server.entity.model.EntityColumn;
 import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Validation;
 import com.google.common.collect.BiMap;
@@ -47,6 +49,7 @@ import java.util.UUID;
 
 public class EntityToAIS extends AbstractEntityVisitor {
     private final boolean ATTR_REQUIRED_DEFAULT = false;
+    private final Index.JoinType GI_JOIN_TYPE_DEFAULT = Index.JoinType.LEFT;
 
     private final String schemaName;
     private final AISBuilder builder = new AISBuilder();
@@ -159,7 +162,34 @@ public class EntityToAIS extends AbstractEntityVisitor {
 
     @Override
     public void visitIndexes(BiMap<String, EntityIndex> indexes) {
-        // TODO
+        for(Map.Entry<String,EntityIndex> entry : indexes.entrySet()) {
+            String indexName = entry.getKey();
+            List<EntityColumn> columns = entry.getValue().getColumns();
+            boolean isGI = isGroupIndex(columns);
+            if(isGI) {
+                TableName groupName = new TableName(schemaName, tableInfoStack.get(0).name);
+                builder.groupIndex(groupName, indexName, false, GI_JOIN_TYPE_DEFAULT);
+                int pos = 0;
+                for(EntityColumn col : columns) {
+                    builder.groupIndexColumn(groupName, indexName, schemaName, col.getTable(), col.getColumn(), pos++);
+                }
+            } else {
+                builder.index(schemaName, columns.get(0).getTable(), indexName, false, Index.KEY_CONSTRAINT);
+                int pos = 0;
+                for(EntityColumn col : columns) {
+                    builder.indexColumn(schemaName, col.getTable(), indexName, col.getColumn(), pos++, true, null);
+                }
+            }
+        }
+    }
+
+    private boolean isGroupIndex(List<EntityColumn> columns) {
+        for(int i = 1; i < columns.size(); ++i) {
+            if(!columns.get(0).getTable().equals(columns.get(i).getTable())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     //

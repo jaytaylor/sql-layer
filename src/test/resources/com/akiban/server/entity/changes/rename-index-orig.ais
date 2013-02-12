@@ -14,9 +14,34 @@ schemas {
       }
       uuid: "8644c36b-f881-4369-a06b-59e3fc580309"
     }
+    columns {
+      columnName: "name"
+      typeName: "text"
+      isNullable: true
+      position: 1
+      charColl {
+        characterSetName: "utf8"
+        collationOrderName: "utf8_bin"
+      }
+      uuid: "d160a748-03ca-4497-b906-4bf0efb32618"
+    }
     charColl {
       characterSetName: "utf8"
       collationOrderName: "utf8_bin"
+    }
+    indexes {
+      indexName: "name"
+      treeName: "test.customer.name"
+      indexId: 2
+      isPK: false
+      isUnique: false
+      isAkFK: false
+      columns {
+        columnName: "name"
+        isAscending: true
+        position: 0
+      }
+      indexMethod: NORMAL
     }
     indexes {
       indexName: "PRIMARY"

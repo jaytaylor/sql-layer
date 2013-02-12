@@ -483,9 +483,11 @@ public class ProtobufWriter {
                 setIsPK(index.isPrimaryKey()).
                 setIsUnique(index.isUnique()).
                 setIsAkFK(index.isAkibanForeignKey()).
-                setJoinType(convertJoinType(index.getJoinType())).
                 setIndexMethod(convertIndexMethod(index.getIndexMethod()));
                 // Not yet in AIS: description
+        if(index.isGroupIndex()) {
+            indexBuilder.setJoinType(convertJoinType(index.getJoinType()));
+        }
         if(index.getTreeName() != null) {
             indexBuilder.setTreeName(index.getTreeName());
         }
