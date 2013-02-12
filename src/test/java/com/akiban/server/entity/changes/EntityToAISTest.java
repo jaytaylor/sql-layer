@@ -88,7 +88,7 @@ public final class EntityToAISTest {
 
     public EntityToAISTest(String testName) {
         this.testName = testName;
-        this.expectedFile = new File(dir, testName + "-ais.txt");
+        this.expectedFile = new File(dir, testName + "-orig.ais");
     }
 
     private final String testName;
