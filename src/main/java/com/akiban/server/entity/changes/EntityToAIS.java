@@ -39,6 +39,8 @@ import com.akiban.server.entity.model.EntityColumn;
 import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Validation;
 import com.google.common.collect.BiMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,8 +50,10 @@ import java.util.Set;
 import java.util.UUID;
 
 public class EntityToAIS extends AbstractEntityVisitor {
-    private final boolean ATTR_REQUIRED_DEFAULT = false;
-    private final Index.JoinType GI_JOIN_TYPE_DEFAULT = Index.JoinType.LEFT;
+    private static final Logger LOG = LoggerFactory.getLogger(EntityToAIS.class);
+
+    private static final boolean ATTR_REQUIRED_DEFAULT = false;
+    private static final Index.JoinType GI_JOIN_TYPE_DEFAULT = Index.JoinType.LEFT;
 
     private final String schemaName;
     private final AISBuilder builder = new AISBuilder();
@@ -112,7 +116,7 @@ public class EntityToAIS extends AbstractEntityVisitor {
                 boolean isRequired = (Boolean)v.getValue();
                 column.setNullable(!isRequired);
             } else {
-                throw new IllegalArgumentException("Unknown validation: " + v.getName());
+                LOG.warn("Ignored scalar validation on table {}: {}", curTable, v);
             }
         }
     }
