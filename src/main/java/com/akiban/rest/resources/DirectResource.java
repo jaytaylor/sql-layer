@@ -59,8 +59,8 @@ import com.google.inject.Inject;
 /**
  * Easy access to the server version
  */
-@Path("/classgen")
-public class ClassGenResource {
+@Path("/direct")
+public class DirectResource {
 
     private final static String[] NONE = new String[0];
     private final static String PACKAGE = "com.akiban.direct.entity";
@@ -72,16 +72,14 @@ public class ClassGenResource {
     SessionService sessionService;
 
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
     public Response getVersion(@QueryParam("schema") final String schema) throws Exception {
         return Response.status(Response.Status.OK).entity(new StreamingOutput() {
             @Override
             public void write(OutputStream output) throws IOException {
                 try (Session session = sessionService.createSession()) {
-                    // Do not auto-close writer as that prevents an exception
-                    // from propagating to the client
-                    ClassBuilder helper = new ClassSourceWriter(new PrintWriter(output), PACKAGE, schema, false, true);
                     final AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(sessionService.createSession());
+                    ClassBuilder helper = new ClassSourceWriter(new PrintWriter(output), PACKAGE, schema, false, true);
                     new DaoInterfaceBuilder().generateSchema(helper, ais, schema);
                 } catch (InvalidOperationException e) {
                     throwToClient(e);

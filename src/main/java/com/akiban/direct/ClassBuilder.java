@@ -2,11 +2,20 @@ package com.akiban.direct;
 
 public abstract class ClassBuilder {
 
+    protected final String packageName;
+    protected String schema;
+
+    
     public abstract void preamble(String[] imports);
 
     public abstract void startClass(String name);
     
     public abstract void addMethod(String name, String returnTuype, String[] argumentTypes, String[] argumentNames, String[] body);
+    
+    protected ClassBuilder(String packageName, String schema) {
+        this.packageName = packageName;
+        this.schema = schema;
+    }
 
     /* (non-Javadoc)
      * @see com.akiban.direct.ClassBuilder#property(java.lang.String, java.lang.String)
@@ -43,7 +52,7 @@ public abstract class ClassBuilder {
             sb.setCharAt(0, Character.toLowerCase(sb.charAt(0)));
         }
         return sb.toString();
-        
     }
-
+    
+    
 }
