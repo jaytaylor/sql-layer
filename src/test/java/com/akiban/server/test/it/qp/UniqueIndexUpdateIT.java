@@ -157,17 +157,17 @@ public class UniqueIndexUpdateIT extends OperatorITBase
         dml().writeRow(session(), createNewRow(t, 6L, 999L, null));
         checkIndex(1, 2, 3, 4, 5, 6);
         // Delete each row
-        dml().deleteRow(session(), createNewRow(t, 3L, 999L, null));
+        dml().deleteRow(session(), createNewRow(t, 3L, 999L, null), false);
         checkIndex(1, 2, 4, 5, 6);
-        dml().deleteRow(session(), createNewRow(t, 6L, 999L, null));
+        dml().deleteRow(session(), createNewRow(t, 6L, 999L, null), false);
         checkIndex(1, 2, 4, 5);
-        dml().deleteRow(session(), createNewRow(t, 2L, 999L, null));
+        dml().deleteRow(session(), createNewRow(t, 2L, 999L, null), false);
         checkIndex(1, 4, 5);
-        dml().deleteRow(session(), createNewRow(t, 4L, 999L, null));
+        dml().deleteRow(session(), createNewRow(t, 4L, 999L, null), false);
         checkIndex(1, 5);
-        dml().deleteRow(session(), createNewRow(t, 1L, 999L, null));
+        dml().deleteRow(session(), createNewRow(t, 1L, 999L, null), false);
         checkIndex(5);
-        dml().deleteRow(session(), createNewRow(t, 5L, 999L, null));
+        dml().deleteRow(session(), createNewRow(t, 5L, 999L, null), false);
         checkIndex();
     }
 

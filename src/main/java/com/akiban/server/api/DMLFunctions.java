@@ -242,15 +242,6 @@ public interface DMLFunctions {
     void writeRows(Session session, List<RowData> rows);
 
     /**
-     * <p>Deletes a row</p>
-     * @param row the row to delete
-     * @throws PersistitException 
-     * @throws Exception 
-     * @throws NullPointerException if either the given table ID or row are null
-     */
-    void deleteRow(Session session, NewRow row);
-    
-    /**
      * Deletes a row, possibly cascading the delete to the child rows
      * @param session current execution session 
      * @param row row to delete

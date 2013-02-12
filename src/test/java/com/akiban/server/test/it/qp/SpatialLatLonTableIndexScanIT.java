@@ -156,7 +156,8 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                                                             before(id),
                                                             after(id),
                                                              lats.get(id),
-                                                            lons.get(id)));
+                                                            lons.get(id)),
+                                    false);
                 }
             }
         }
