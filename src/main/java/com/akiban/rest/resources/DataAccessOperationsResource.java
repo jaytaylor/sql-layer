@@ -107,10 +107,9 @@ public class DataAccessOperationsResource {
     @Path("{identifiers:.*}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateEntity(@Context HttpServletRequest request,
-                                 @PathParam("schema") final String schema,
-                                 @PathParam("table") final String table,
-                                 final byte[] entityBytes,
-                                 @Context final UriInfo uri) throws Exception {
+                                 @PathParam("table") String table,
+                                 byte[] entityBytes,
+                                 @Context UriInfo uri) throws Exception {
         TableName tableName = parseTableName(request, table);
         ObjectMapper m = new ObjectMapper();
         JsonNode node = m.readTree(entityBytes);
@@ -132,17 +131,9 @@ public class DataAccessOperationsResource {
     }
 
     protected static TableName parseTableName(HttpServletRequest request, String name) {
-        String schema, table;
-        int idx = name.indexOf('.');
-        if (idx >= 0) {
-            schema = name.substring(0, idx);
-            table = name.substring(idx+1);
-        }
-        else {
-            Principal user = request.getUserPrincipal();
-            schema = (user == null) ? "" : user.getName();
-            table = name;
-        }
-        return new TableName(schema, table);
+        Principal user = request.getUserPrincipal();
+        String schema = (user == null) ? "" : user.getName();
+
+        return TableName.parse(schema, name);
     }
 }
