@@ -30,7 +30,6 @@ import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.entity.model.AbstractEntityVisitor;
@@ -142,9 +141,10 @@ public class EntityToAIS extends AbstractEntityVisitor {
     public void leaveEntityAttributes() {
         TableInfo root = curTable;
         endTable();
+        curTable = root;
+        createPK(builder, schemaName, root);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
-        curTable = root;
     }
 
     @Override
@@ -215,16 +215,20 @@ public class EntityToAIS extends AbstractEntityVisitor {
         tableInfoStack.add(curTable);
     }
 
-    private void endTable() {
-        // Create PRIMARY
-        if(!curTable.spinalCols.isEmpty()) {
-            builder.index(schemaName, curTableName(), Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+    private static void createPK(AISBuilder builder, String schemaName, TableInfo table) {
+        if(!table.spinalCols.isEmpty()) {
+            builder.index(schemaName, table.name, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
             int pos = 0;
-            for(String column : curTable.spinalCols) {
-                builder.indexColumn(schemaName, curTableName(), Index.PRIMARY_KEY_CONSTRAINT, column, pos++, true, null);
+            for(String column : table.spinalCols) {
+                builder.indexColumn(schemaName, table.name, Index.PRIMARY_KEY_CONSTRAINT, column, pos++, true, null);
             }
         }
+        for(TableInfo child : table.childTables) {
+            createPK(builder, schemaName, child);
+        }
+    }
 
+    private void endTable() {
         // Create joins to children
         List<String> parentSpine = curTable.spinalCols;
         for(TableInfo child : curTable.childTables) {

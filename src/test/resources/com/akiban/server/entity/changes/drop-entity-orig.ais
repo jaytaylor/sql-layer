@@ -62,7 +62,7 @@ schemas {
     indexes {
       indexName: "PRIMARY"
       treeName: "test.customer.PRIMARY"
-      indexId: 2
+      indexId: 1
       isPK: true
       isUnique: true
       isAkFK: false
@@ -121,7 +121,7 @@ schemas {
     indexes {
       indexName: "PRIMARY"
       treeName: "test.orders.PRIMARY"
-      indexId: 1
+      indexId: 2
       isPK: true
       isUnique: true
       isAkFK: false
