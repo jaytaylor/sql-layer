@@ -149,7 +149,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                     int cid = pid + c;
                     NewRow row = createNewRow(child, cid, pid, after(cid), clats.get(cid), clons.get(cid));
                     if (c <= nChildrenToDelete) {
-                        dml().deleteRow(session(), row);
+                        dml().deleteRow(session(), row, false);
                     } else {
                         remainingRows.add(row);
                     }

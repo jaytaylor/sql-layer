@@ -898,9 +898,9 @@ public class API
         return new Delete_Default(inputOperator, usePValues);
     }
 
-    public static Operator delete_Returning (Operator inputOperator, boolean usePValues)
+    public static Operator delete_Returning (Operator inputOperator, boolean usePValues, boolean cascadeDelete)
     {
-        return new Delete_Returning(inputOperator, usePValues);
+        return new Delete_Returning(inputOperator, usePValues, cascadeDelete);
     }
 
     // Execution interface

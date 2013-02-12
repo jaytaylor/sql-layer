@@ -46,6 +46,8 @@ public interface RestDMLService {
                            TableName tableName, JsonNode node);
     public Response delete(HttpServletRequest request, 
                            TableName tableName, String pks);
+    public Response update(HttpServletRequest request, 
+                        TableName tableName, String pks, JsonNode node);
     public Response runSQL(HttpServletRequest request, String sql);
     public Response explainSQL(HttpServletRequest request, String sql);
     public Response callProcedure(HttpServletRequest request, 

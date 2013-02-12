@@ -169,7 +169,7 @@ class Delete_Default implements UpdatePlannable {
                         LOG.debug("Delete_Default: deleting {}", oldRow);
                     }
                     ++seen;
-                    adapter().deleteRow(oldRow, usePValues);
+                    adapter().deleteRow(oldRow, usePValues, false);
                     ++modified;
                 }
             } finally {

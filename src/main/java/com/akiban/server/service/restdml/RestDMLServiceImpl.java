@@ -83,9 +83,10 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     private final TransactionService transactionService;
     private final SecurityService securityService;
     private final ExternalDataService extDataService;
+    private InsertProcessor insertProcessor;
+    private DeleteProcessor deleteProcessor;
+    private UpdateProcessor updateProcessor;
     private final EmbeddedJDBCService jdbcService;
-    private final InsertProcessor insertProcessor;
-    private final DeleteProcessor deleteProcessor;
     
     @Inject
     public RestDMLServiceImpl(SessionService sessionService,
@@ -106,6 +107,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         this.jdbcService = jdbcService;
         this.insertProcessor = new InsertProcessor (configService, treeService, store, registryService);
         this.deleteProcessor = new DeleteProcessor (configService, treeService, store, registryService);
+        this.updateProcessor = new UpdateProcessor (configService, treeService, store, registryService,
+                deleteProcessor, insertProcessor);
     }
     
     /* Service */
@@ -215,6 +218,27 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
+    public Response update(HttpServletRequest request, 
+            TableName tableName, String pks, JsonNode node) {
+        if (!securityService.isAccessible(request, tableName.getSchemaName()))
+            return Response.status(Response.Status.FORBIDDEN).build();
+        try (Session session = sessionService.createSession();
+                CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+            String pk = updateProcessor.processUpdate (session, ais, tableName, pks, node);
+            txn.commit();
+            return Response.status(Response.Status.OK)
+                    .entity(pk)
+                    .build();
+        } catch (JsonParseException ex) {
+            throw new WebApplicationException(ex, Response.Status.BAD_REQUEST);
+        } catch (IOException e) {
+            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
+        } catch (InvalidOperationException e) {
+            throw wrapException (e);
+        }
+    }
+    
     public Response runSQL(final HttpServletRequest request, final String sql) {
         return Response
                 .status(Response.Status.OK)

@@ -87,7 +87,12 @@ public abstract class GIUpdateITBase extends ITBase {
     }
 
     void deleteAndCheck(NewRow row, String... expectedGiEntries) {
-        dml().deleteRow(session(), row);
+        dml().deleteRow(session(), row, false);
+        checkIndex(groupIndexName, expectedGiEntries);
+    }
+
+    void deleteCascadeAndCheck(NewRow row, String... expectedGiEntries) {
+        dml().deleteRow(session(), row, true);
         checkIndex(groupIndexName, expectedGiEntries);
     }
 

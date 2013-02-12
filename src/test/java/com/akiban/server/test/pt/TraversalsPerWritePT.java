@@ -111,12 +111,12 @@ public final class TraversalsPerWritePT extends PTBase {
 
     @Test
     public void deleteOrderForCustomer0() {
-        dml().deleteRow(session(), ordersRow(0, ordersPerCustomer));
+        dml().deleteRow(session(), ordersRow(0, ordersPerCustomer), false);
     }
 
     @Test
     public void deleteOrderForCustomer1() {
-        dml().deleteRow(session(), ordersRow(1, ordersPerCustomer));
+        dml().deleteRow(session(), ordersRow(1, ordersPerCustomer), false);
     }
 
     @Test

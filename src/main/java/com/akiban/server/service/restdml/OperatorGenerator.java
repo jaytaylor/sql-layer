@@ -30,6 +30,7 @@ import java.util.Map;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
@@ -37,6 +38,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.sql.optimizer.rule.PlanGenerator;
 
 public abstract class OperatorGenerator {
     
@@ -58,7 +60,6 @@ public abstract class OperatorGenerator {
     public void setT3Registry(T3RegistryService registryService) {
         this.registryService = registryService;
     }
-    
     
     public Operator get (TableName tableName) {
         Operator plan = null;
@@ -92,5 +93,8 @@ public abstract class OperatorGenerator {
         RowType rowType;
     }
     
-
+    protected Operator indexAncestorLookup(TableName tableName) {
+        UserTable table = ais().getUserTable(tableName);
+        return PlanGenerator.generateAncestorPlan(ais(), table);
+    }
 }
