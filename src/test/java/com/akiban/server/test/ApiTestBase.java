@@ -884,7 +884,7 @@ public class ApiTestBase {
     }
 
     protected final void deleteRow(int tableId, Object... values) {
-        dml().deleteRow(session(), createNewRow(tableId, values));
+        dml().deleteRow(session(), createNewRow(tableId, values), false);
     }
 
     protected final void expectRows(ScanRequest request, NewRow... expectedRows) throws InvalidOperationException {
