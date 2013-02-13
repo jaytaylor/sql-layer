@@ -272,13 +272,14 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
-    public void addIndex(String name)
+    public void addIndex(UUID entityUuid, String name)
     {
         try
         {
             startObject();
             entry("action", "add_index");
             entry("destructive", false);
+            entry("uuid", entityUuid);
             entry("new_index", name);
             endObject();
         }

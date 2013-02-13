@@ -180,7 +180,7 @@ public final class SpaceDiff {
         }
         for (Map.Entry<EntityIndex, String> updatedIndex : updatedIndexes.entrySet()) {
             if (!originalIndexes.containsKey(updatedIndex.getKey()))
-                out.addIndex(updatedIndex.getValue());
+                out.addIndex(uuid, updatedIndex.getValue());
         }
     }
 

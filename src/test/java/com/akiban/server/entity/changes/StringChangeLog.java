@@ -92,8 +92,8 @@ public class StringChangeLog extends JUnitUtils.MessageTaker implements SpaceMod
     }
 
     @Override
-    public void addIndex(String name) {
-        message("add index", name);
+    public void addIndex(UUID entityUuid, String name) {
+        message("add index", entityUuid, name);
     }
 
     @Override
