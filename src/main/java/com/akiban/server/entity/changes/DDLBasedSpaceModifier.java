@@ -86,7 +86,8 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
 
     @Override
     public void renameEntity(UUID entityUuid, String oldName) {
-        throw new UnsupportedOperationException();
+        String newName = spaceLookups.getName(entityUuid);
+        ddlFunctions.renameTable(session, new TableName(schemaName, oldName), new TableName(schemaName, newName));
     }
 
     @Override

@@ -26,6 +26,10 @@
 
 package com.akiban.server.entity.changes;
 
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.NopVisitor;
+import com.akiban.ais.model.UserTable;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
 import com.akiban.server.entity.model.Space;
@@ -46,7 +50,7 @@ import java.util.Collection;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Load a space diff, execute the DDLBasedSpaceModifier, and compare the resulting AIS.
+ * Load an original space, load the diff, execute the DDLBasedSpaceModifier, and compare the resulting AIS.
  *
  * Input files: x-orig.json, x-update.json
  * Expected files: x-update.ais
@@ -68,7 +72,7 @@ public final class DDLBasedSpaceModifierIT extends ITBase {
             @Override
             public boolean accept(File dir, String name) {
                 return name.endsWith(ORIG_SUFFIX) &&
-                       new File(dir, getShortName(name) + EXPECTED_SUFFIX).exists();
+                        new File(dir, getShortName(name) + EXPECTED_SUFFIX).exists();
             }
         });
         return Collections2.transform(Arrays.asList(testNames), new Function<String, Parameterization>() {
@@ -83,6 +87,7 @@ public final class DDLBasedSpaceModifierIT extends ITBase {
     @Test
     public void test() throws IOException {
         Space origSpace = Space.readSpace(testName + ORIG_SUFFIX, DDLBasedSpaceModifierIT.class);
+        loadSpace(origSpace);
         Space updateSpace = Space.readSpace(testName + UPDATE_SUFFIX, DDLBasedSpaceModifierIT.class);
         SpaceDiff diff = new SpaceDiff(origSpace, updateSpace);
 
@@ -91,6 +96,24 @@ public final class DDLBasedSpaceModifierIT extends ITBase {
         String expected = Strings.dumpFileToString(new File(dir, testName + EXPECTED_SUFFIX));
         String actual = AISDumper.dumpDeterministicAIS(ais(), SCHEMA);
         assertEquals("Generated AIS", expected.trim(), actual.trim());
+    }
+
+    private void loadSpace(Space space) {
+        EntityToAIS eToAIS = new EntityToAIS(SCHEMA);
+        space.visit(eToAIS);
+        AkibanInformationSchema ais = eToAIS.getAIS();
+        for(Group group : ais.getGroups().values()) {
+            UserTable root = group.getRoot();
+            root.traverseTableAndDescendants(new NopVisitor() {
+                @Override
+                public void visitUserTable(UserTable table) {
+                    ddl().createTable(session(), table);
+                }
+            });
+            if(!group.getIndexes().isEmpty()) {
+                ddl().createIndexes(session(), group.getIndexes());
+            }
+        }
     }
 
     public DDLBasedSpaceModifierIT(String testName) {
