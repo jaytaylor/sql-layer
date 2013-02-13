@@ -62,6 +62,7 @@ import org.codehaus.jackson.JsonParseException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
@@ -392,7 +393,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         }
         err.append(code);
         err.append("\",\"message\":\"");
-        err.append(e.getMessage());
+        Quote.JSON_QUOTE.append(AkibanAppender.of(err), e.getMessage());
         err.append("\"}]\n");
         // TODO: Map various IOEs to other codes?
         final Response.Status status;
@@ -405,6 +406,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         return new WebApplicationException(
                 Response.status(status)
                         .entity(err.toString())
+                        .type(MediaType.APPLICATION_JSON)
                         .build()
         );
     }
