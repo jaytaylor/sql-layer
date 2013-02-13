@@ -136,34 +136,26 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     }
 
     @Override
-    public void addIndex(UUID entityUuid, final String name) {
+    public void addIndex(UUID entityUuid, String name) {
         EntityToAIS eToAIS = new EntityToAIS(schemaName);
         space.visit(eToAIS);
         String entityName = spaceLookups.getName(entityUuid);
         UserTable rootTable = eToAIS.getAIS().getUserTable(schemaName, entityName);
-        final List<Index> candidates = new ArrayList<>();
-        rootTable.traverseTableAndDescendants(new NopVisitor() {
-            @Override
-            public void visitUserTable(UserTable table) {
-                for(Index index : table.getIndexes()) {
-                    if(index.getIndexName().getName().equals(name)) {
-                        candidates.add(index);
-                    }
-                }
-            }
-        });
-        for(Index index : rootTable.getGroupIndexes()) {
-            if(index.getIndexName().getName().equals(name)) {
-                candidates.add(index);
-            }
-        }
-        assert candidates.size() == 1 : candidates;
-        ddlFunctions.createIndexes(session, candidates);
+        List<Index> candidate = findIndex(rootTable, name);
+        ddlFunctions.createIndexes(session, candidate);
     }
 
     @Override
-    public void dropIndex(String name, EntityIndex index) {
-        throw new UnsupportedOperationException();
+    public void dropIndex(UUID entityUuid, String name, EntityIndex index) {
+        String entityName = spaceLookups.getName(entityUuid);
+        UserTable root = ddlFunctions.getUserTable(session, new TableName(schemaName, entityName));
+        List<Index> candidate = findIndex(root, name);
+        Collection<String> dropList = Collections.singleton(name);
+        if(candidate.get(0).isGroupIndex()) {
+            ddlFunctions.dropGroupIndexes(session, root.getGroup().getName(), dropList);
+        } else {
+            ddlFunctions.dropTableIndexes(session, candidate.get(0).leafMostTable().getName(), dropList);
+        }
     }
 
     @Override
@@ -174,5 +166,28 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     @Override
     public void error(String message) {
         throw new UnsupportedOperationException();
+    }
+
+    private static List<Index> findIndex(UserTable root, final String indexName) {
+        final List<Index> candidates = new ArrayList<>();
+        root.traverseTableAndDescendants(new NopVisitor() {
+            @Override
+            public void visitUserTable(UserTable table) {
+                for(Index index : table.getIndexes()) {
+                    if(index.getIndexName().getName().equals(indexName)) {
+                        candidates.add(index);
+                    }
+                }
+            }
+        });
+        for(Index index : root.getGroupIndexes()) {
+            if(index.getIndexName().getName().equals(indexName)) {
+                candidates.add(index);
+            }
+        }
+        if(candidates.size() != 1) {
+            throw new IllegalStateException("Could not find exact index: " + candidates);
+        }
+        return candidates;
     }
 }
