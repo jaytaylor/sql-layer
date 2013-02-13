@@ -52,11 +52,14 @@ public class AISDumper {
             }
             for(Index index : table.getIndexes()) {
                 index.setIndexId(-1);
+                index.setTreeName(null);
             }
         }
         for(Group group : clone.getGroups().values()) {
+            group.setTreeName(null);
             for(Index index : group.getIndexes()) {
                 index.setIndexId(-1);
+                index.setTreeName(null);
             }
         }
         return new ProtobufWriter(selector).save(clone).toString();

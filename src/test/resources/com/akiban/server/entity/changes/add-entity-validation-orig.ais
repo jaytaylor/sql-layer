@@ -27,7 +27,6 @@ schemas {
     }
     indexes {
       indexName: "id"
-      treeName: "test.customer.id"
       indexId: -1
       isPK: false
       isUnique: false
@@ -41,7 +40,6 @@ schemas {
     }
     indexes {
       indexName: "name"
-      treeName: "test.customer.name"
       indexId: -1
       isPK: false
       isUnique: true
@@ -55,7 +53,6 @@ schemas {
     }
     indexes {
       indexName: "PRIMARY"
-      treeName: "test.customer.PRIMARY"
       indexId: -1
       isPK: true
       isUnique: true
@@ -71,6 +68,5 @@ schemas {
   }
   groups {
     rootTableName: "customer"
-    treeName: "test.customer"
   }
 }

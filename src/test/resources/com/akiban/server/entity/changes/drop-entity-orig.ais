@@ -40,7 +40,6 @@ schemas {
     }
     indexes {
       indexName: "last_first"
-      treeName: "test.customer.last_first"
       indexId: -1
       isPK: false
       isUnique: true
@@ -59,7 +58,6 @@ schemas {
     }
     indexes {
       indexName: "PRIMARY"
-      treeName: "test.customer.PRIMARY"
       indexId: -1
       isPK: true
       isUnique: true
@@ -102,7 +100,6 @@ schemas {
     }
     indexes {
       indexName: "placed"
-      treeName: "test.orders.placed"
       indexId: -1
       isPK: false
       isUnique: true
@@ -116,7 +113,6 @@ schemas {
     }
     indexes {
       indexName: "PRIMARY"
-      treeName: "test.orders.PRIMARY"
       indexId: -1
       isPK: true
       isUnique: true
@@ -143,10 +139,8 @@ schemas {
   }
   groups {
     rootTableName: "customer"
-    treeName: "test.customer"
     indexes {
       indexName: "orderplaced_lastname"
-      treeName: "test.customer.orderplaced_lastname"
       indexId: -1
       isPK: false
       isUnique: false
