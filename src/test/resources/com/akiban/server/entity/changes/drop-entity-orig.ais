@@ -37,9 +37,9 @@ schemas {
       collationOrderName: "utf8_bin"
     }
     indexes {
-      indexName: "last_name"
-      treeName: "test.customer.last_name"
-      indexId: 3
+      indexName: "last_first"
+      treeName: "test.customer.last_first"
+      indexId: 5
       isPK: false
       isUnique: true
       isAkFK: false
@@ -145,7 +145,7 @@ schemas {
     indexes {
       indexName: "orderplaced_lastname"
       treeName: "test.customer.orderplaced_lastname"
-      indexId: 5
+      indexId: 3
       isPK: false
       isUnique: false
       isAkFK: false

@@ -26,9 +26,23 @@ schemas {
       collationOrderName: "utf8_bin"
     }
     indexes {
+      indexName: "id"
+      treeName: "test.customer.id"
+      indexId: 2
+      isPK: false
+      isUnique: false
+      isAkFK: false
+      columns {
+        columnName: "id"
+        isAscending: true
+        position: 0
+      }
+      indexMethod: NORMAL
+    }
+    indexes {
       indexName: "name"
       treeName: "test.customer.name"
-      indexId: 2
+      indexId: 3
       isPK: false
       isUnique: true
       isAkFK: false

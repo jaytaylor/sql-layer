@@ -14,9 +14,13 @@
                 }
             },
             "validation" : [
-                { "unique" : [ ["customer", "id"] ] },
-                { "unique" : [ ["customer", "name"] ] }
-            ]
+                { "unique" : "id" },
+                { "unique" : "name" }
+            ],
+            "indexes" : {
+                "id" : [ ["customer", "id"] ],
+                "name" : [ ["customer", "name" ] ]
+            }
         }
     }
 }

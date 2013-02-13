@@ -31,6 +31,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
@@ -48,6 +49,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -64,6 +66,7 @@ public class EntityToAIS extends AbstractEntityVisitor {
     private final List<TableInfo> tableInfoStack = new ArrayList<>();
     private TableName groupName = null;
     private TableInfo curTable = null;
+    private Set<String> uniqueValidations = new HashSet<>();
 
     public EntityToAIS(String schemaName) {
         this.schemaName = schemaName;
@@ -85,6 +88,7 @@ public class EntityToAIS extends AbstractEntityVisitor {
     public void leaveEntity() {
         curTable = null;
         groupName = null;
+        uniqueValidations.clear();
     }
 
     @Override
@@ -131,19 +135,10 @@ public class EntityToAIS extends AbstractEntityVisitor {
     public void visitEntityValidations(Set<Validation> validations) {
         for(Validation v : validations) {
             if("unique".equals(v.getName())) {
-                List<List<String>> colNames = (List<List<String>>)v.getValue();
-                String firstTable = colNames.get(0).get(0);
-                String indexName = colNames.get(0).get(1); // TODO: Generate as required
-                builder.index(schemaName, firstTable, indexName, true, Index.UNIQUE_KEY_CONSTRAINT);
-                for(int i = 0; i < colNames.size(); ++i) {
-                    List<String> pair = colNames.get(i);
-                    if(!pair.get(0).equals(firstTable)) {
-                        throw new IllegalArgumentException("Multi-table unique index");
-                    }
-                    builder.indexColumn(schemaName, pair.get(0), indexName, pair.get(1), i, true, null);
-                }
+                String indexName = (String)v.getValue();
+                uniqueValidations.add(indexName);
             } else {
-                throw new IllegalArgumentException("Unknown validation: " + v.getName());
+                LOG.warn("Ignored entity validation on {}: {}", groupName, v);
             }
         }
     }
@@ -154,14 +149,18 @@ public class EntityToAIS extends AbstractEntityVisitor {
             String indexName = entry.getKey();
             List<EntityColumn> columns = entry.getValue().getColumns();
             boolean isGI = isGroupIndex(columns);
+            boolean isUnique = uniqueValidations.contains(indexName);
             if(isGI) {
+                if(isUnique) {
+                    throw new IllegalArgumentException("Unique group index not allowed");
+                }
                 builder.groupIndex(groupName, indexName, false, GI_JOIN_TYPE_DEFAULT);
                 int pos = 0;
                 for(EntityColumn col : columns) {
                     builder.groupIndexColumn(groupName, indexName, schemaName, col.getTable(), col.getColumn(), pos++);
                 }
             } else {
-                builder.index(schemaName, columns.get(0).getTable(), indexName, false, Index.KEY_CONSTRAINT);
+                builder.index(schemaName, columns.get(0).getTable(), indexName, isUnique, Index.KEY_CONSTRAINT);
                 int pos = 0;
                 for(EntityColumn col : columns) {
                     builder.indexColumn(schemaName, col.getTable(), indexName, col.getColumn(), pos++, true, null);
@@ -303,7 +302,6 @@ public class EntityToAIS extends AbstractEntityVisitor {
     }
 
     private static Long maybeLong(Object o) {
-        Number n = (Number)o;
         return (o != null) ? ((Number)o).longValue() : null;
     }
 

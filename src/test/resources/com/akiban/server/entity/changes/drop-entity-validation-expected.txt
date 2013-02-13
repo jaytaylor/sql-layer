@@ -1,1 +1,1 @@
-drop entity validation: [unique: [[customer, name]]]
+drop entity validation: [unique: name]
