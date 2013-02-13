@@ -42,6 +42,10 @@ public class User implements Principal
         this.roles = roles;
     }
 
+    public int getId() {
+        return id;
+    }
+
     @Override
     public String getName() {
         return name;
