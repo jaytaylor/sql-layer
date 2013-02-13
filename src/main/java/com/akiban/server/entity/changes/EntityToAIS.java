@@ -30,8 +30,6 @@ import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
@@ -103,7 +101,8 @@ public class EntityToAIS extends AbstractEntityVisitor {
             isNullable = false;
             addSpinalColumn(name, scalar.getSpinePos());
         }
-        Column column = builder.column(schemaName, curTable.name, name, nextColPos(),
+        Column column = builder.column(schemaName, curTable.name,
+                                       name, curTable.nextColPos++,
                                        typeName, params[0], params[1],
                                        isNullable, isAutoInc,
                                        charAndCol[0], charAndCol[1]);
@@ -125,7 +124,6 @@ public class EntityToAIS extends AbstractEntityVisitor {
 
     @Override
     public void leaveEntityAttributes() {
-        createPK(builder, schemaName, curTable);
         endTable();
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
@@ -148,7 +146,7 @@ public class EntityToAIS extends AbstractEntityVisitor {
         for(Map.Entry<String,EntityIndex> entry : indexes.entrySet()) {
             String indexName = entry.getKey();
             List<EntityColumn> columns = entry.getValue().getColumns();
-            boolean isGI = isGroupIndex(columns);
+            boolean isGI = isMultiTable(columns);
             boolean isUnique = uniqueValidations.contains(indexName);
             if(isGI) {
                 if(isUnique) {
@@ -217,14 +215,12 @@ public class EntityToAIS extends AbstractEntityVisitor {
             }
         }
         if(tableInfoStack.size() == 1) {
+            // Create PKs at the end (root to leaf) so IDs are ordered as such. Shouldn't matter but is safe.
+            createPrimaryKeys(builder, schemaName, curTable);
             addJoinsToGroup(builder, groupName, curTable);
         }
         tableInfoStack.remove(tableInfoStack.size() - 1);
         curTable = tableInfoStack.isEmpty() ? null : tableInfoStack.get(tableInfoStack.size() - 1);
-    }
-
-    private int nextColPos() {
-        return curTable.nextColPos++;
     }
 
     private void visitScalarValidations(Column column, Collection<Validation> validations) {
@@ -259,7 +255,7 @@ public class EntityToAIS extends AbstractEntityVisitor {
         return newName;
     }
 
-    private static void createPK(AISBuilder builder, String schemaName, TableInfo table) {
+    private static void createPrimaryKeys(AISBuilder builder, String schemaName, TableInfo table) {
         if(!table.spinalCols.isEmpty()) {
             builder.index(schemaName, table.name, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
             int pos = 0;
@@ -268,7 +264,7 @@ public class EntityToAIS extends AbstractEntityVisitor {
             }
         }
         for(TableInfo child : table.childTables) {
-            createPK(builder, schemaName, child);
+            createPrimaryKeys(builder, schemaName, child);
         }
     }
 
@@ -292,7 +288,7 @@ public class EntityToAIS extends AbstractEntityVisitor {
         return charAndCol;
     }
 
-    private static boolean isGroupIndex(List<EntityColumn> columns) {
+    private static boolean isMultiTable(List<EntityColumn> columns) {
         for(int i = 1; i < columns.size(); ++i) {
             if(!columns.get(0).getTable().equals(columns.get(i).getTable())) {
                 return true;
