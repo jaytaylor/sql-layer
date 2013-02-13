@@ -95,7 +95,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
-    public void dropEntity(Entity dropped)
+    public void dropEntity(Entity dropped, String oldName)
     {
         try
         {
@@ -103,6 +103,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
             entry("action", "drop_entity");
             entry("destructive", true);
             entry("uuid", dropped.uuid());
+            entry("name", oldName);
             entry("index_definition", dropped.getIndexes());
             endObject();
         }
