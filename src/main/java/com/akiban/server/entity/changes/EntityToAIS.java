@@ -92,22 +92,19 @@ public class EntityToAIS extends AbstractEntityVisitor {
     @Override
     public void visitScalar(String name, Attribute scalar) {
         String typeName = scalar.getType();
-        Type type = builder.akibanInformationSchema().getType(typeName);
-        Long params[] = getTypeParams(type, scalar.getProperties());
-        String charAndCol[] = getCharAndCol(type, scalar.getProperties());
-        boolean isNullable = !ATTR_REQUIRED_DEFAULT;
-        boolean isAutoInc = false;
+        ColumnInfo info = getColumnInfo(builder.akibanInformationSchema().getType(typeName),
+                                        scalar.getProperties(),
+                                        scalar.getValidation());
         if(scalar.isSpinal()) {
-            isNullable = false;
+            info.nullable = false;
             addSpinalColumn(name, scalar.getSpinePos());
         }
         Column column = builder.column(schemaName, curTable.name,
                                        name, curTable.nextColPos++,
-                                       typeName, params[0], params[1],
-                                       isNullable, isAutoInc,
-                                       charAndCol[0], charAndCol[1]);
+                                       scalar.getType(), info.param1, info.param2,
+                                       info.nullable, false /*isAutoInc*/,
+                                       info.charset, info.collation);
         column.setUuid(scalar.getUUID());
-        visitScalarValidations(column, scalar.getValidation());
     }
 
     @Override
@@ -223,17 +220,6 @@ public class EntityToAIS extends AbstractEntityVisitor {
         curTable = tableInfoStack.isEmpty() ? null : tableInfoStack.get(tableInfoStack.size() - 1);
     }
 
-    private void visitScalarValidations(Column column, Collection<Validation> validations) {
-        for(Validation v : validations) {
-            if("required".equals(v.getName())) {
-                boolean isRequired = (Boolean)v.getValue();
-                column.setNullable(!isRequired);
-            } else {
-                LOG.warn("Ignored scalar validation on table {}: {}", curTable, v);
-            }
-        }
-    }
-
     private static void addJoinsToGroup(AISBuilder builder, TableName groupName, TableInfo curTable) {
         for(TableInfo child : curTable.childTables) {
             List<Join> joins = child.table.getCandidateParentJoins();
@@ -268,24 +254,27 @@ public class EntityToAIS extends AbstractEntityVisitor {
         }
     }
 
-    private static Long[] getTypeParams(Type type, Map<String,Object> props) {
-        Long params[] = { null, null };
+    private static ColumnInfo getColumnInfo(Type type, Map<String,Object> props, Collection<Validation> validations) {
+        ColumnInfo info = new ColumnInfo();
         if(type == Types.DECIMAL || type == Types.U_DECIMAL) {
-            params[0] = maybeLong(props.get("precision"));
-            params[1] = maybeLong(props.get("scale"));
-        } else if(type == Types.CHAR || type == Types.VARCHAR || type == Types.BINARY || type == Types.VARBINARY) {
-            params[0] = maybeLong(props.get("max_length"));
+            info.param1 = maybeLong(props.get("precision"));
+            info.param2 = maybeLong(props.get("scale"));
         }
-        return params;
-    }
-
-    private static String[] getCharAndCol(Type type, Map<String,Object> props) {
-        String charAndCol[] = { null, null };
         if(Types.isTextType(type)) {
-            charAndCol[0] = maybeString(props.get("charset"));
-            charAndCol[1] = maybeString(props.get("collation"));
+            info.charset = maybeString(props.get("charset"));
+            info.collation = maybeString(props.get("collation"));
         }
-        return charAndCol;
+        for(Validation v : validations) {
+            if("required".equals(v.getName())) {
+                boolean isRequired = (Boolean)v.getValue();
+                info.nullable = !isRequired;
+            } else if("max_length".equals(v.getName())) {
+                info.param1 = maybeLong(v.getValue());
+            } else {
+                LOG.warn("Ignored scalar validation on table: {}", v);
+            }
+        }
+        return info;
     }
 
     private static boolean isMultiTable(List<EntityColumn> columns) {
@@ -324,5 +313,13 @@ public class EntityToAIS extends AbstractEntityVisitor {
         public String toString() {
             return name;
         }
+    }
+
+    private static class ColumnInfo {
+        public Long param1;
+        public Long param2;
+        public String charset;
+        public String collation;
+        public boolean nullable = !ATTR_REQUIRED_DEFAULT;
     }
 }

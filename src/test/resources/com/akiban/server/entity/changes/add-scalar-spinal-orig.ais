@@ -15,6 +15,7 @@ schemas {
       typeName: "varchar"
       isNullable: true
       position: 1
+      typeParam1: 64
       charColl {
         characterSetName: "utf8"
         collationOrderName: "utf8_bin"

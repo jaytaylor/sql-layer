@@ -8,6 +8,7 @@ schemas {
       typeName: "varchar"
       isNullable: true
       position: 0
+      typeParam1: 64
       charColl {
         characterSetName: "utf8"
         collationOrderName: "utf8_bin"
@@ -19,6 +20,7 @@ schemas {
       typeName: "varchar"
       isNullable: true
       position: 1
+      typeParam1: 64
       charColl {
         characterSetName: "utf8"
         collationOrderName: "utf8_bin"

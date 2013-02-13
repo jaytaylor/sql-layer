@@ -11,18 +11,20 @@
                 "varchar_1" : {
                     "scalar" : "8644c36b-f881-4369-a06b-59e3fc580309",
                     "type" : "varchar",
-                    "properties" : {
-                        "max_length" : 42
-                    }
+                    "validation" : [
+                        { "max_length" : 42 }
+                    ]
                 },
                 "varchar_2" : {
                     "scalar" : "1c433456-75fd-11e2-8144-7d727188419e",
                     "type" : "varchar",
                     "properties" : {
-                        "max_length" : 255,
                         "charset" : "utf16",
                         "collation" : "binary"
-                    }
+                    },
+                    "validation" : [
+                        { "max_length" : 255 }
+                    ]
                 }
             }
         }
