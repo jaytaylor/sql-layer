@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
@@ -74,6 +75,7 @@ import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.ais.protobuf.ProtobufReader;
 import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.ais.util.ChangedTableDescription;
+import com.akiban.ais.util.UuidAssigner;
 import com.akiban.qp.memoryadapter.BasicFactoryBase;
 import com.akiban.qp.memoryadapter.MemoryAdapter;
 import com.akiban.qp.memoryadapter.MemoryGroupCursor;
@@ -885,11 +887,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                         cleanupDelayedTrees(session);
 
                         SharedAIS sAIS = loadAISFromStorage(session, GenValue.SNAPSHOT, GenMap.PUT_NEW);
-                        if(!skipAISUpgrade) {
-                            // Upgrade goes here if we ever need another one
-                        } else {
-                            //LOG.warn("Skipping AIS upgrade");
-                        }
                         buildRowDefCache(sAIS.ais);
                         long startTimestamp = txnService.getTransactionStartTimestamp(session);
                         sAIS.acquire(); // So count while in cache is 1
@@ -925,6 +922,23 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 taskQueue.add(new ClearAISMapTask(0, 10000));
             }
         };
+        if (!skipAISUpgrade) {
+            final AkibanInformationSchema upgradeAIS = AISCloner.clone(newAIS);
+            UuidAssigner uuidAssigner = new UuidAssigner();
+            upgradeAIS.traversePostOrder(uuidAssigner);
+            if (uuidAssigner.assignedAny()) {
+                transactionally(sessionService.createSession(), new ThrowingCallable<Void>() {
+                    @Override
+                    public Void runAndReturn(Session session) throws PersistitException {
+                        saveAISChangeWithRowDefs(session, upgradeAIS, upgradeAIS.getSchemas().keySet());
+                        return null;
+                    }
+                });
+            }
+        }
+        else {
+            //LOG.warn("Skipping AIS upgrade");
+        }
 
         this.aisCacheMissCount = new AtomicInteger(0);
         this.loadAISFromStorageCount = new AtomicInteger(0);
@@ -1504,6 +1518,14 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         final TableName newName = newTable.getName();
         checkTableName(session, newName, false, isInternal);
         checkJoinTo(newTable.getParentJoin(), newName, isInternal);
+
+        if (newTable.getUuid() == null)
+            newTable.setUuid(UUID.randomUUID());
+        for (Column newColumn : newTable.getColumns()) {
+            if (newColumn.getUuid() == null)
+                newColumn.setUuid(UUID.randomUUID());
+        }
+
         AISMerge merge = AISMerge.newForAddTable(nameGenerator, getAis(session), newTable);
         merge.merge();
         AkibanInformationSchema newAIS = merge.getAIS();

@@ -218,7 +218,7 @@ public abstract class TString extends TClass
     }
 
     @Override
-    public Object attributeToObject(int attributeIndex, long value) {
+    public Object attributeToObject(int attributeIndex, int value) {
         StringAttribute attribute = StringAttribute.values()[attributeIndex];
         switch (attribute) {
         case LENGTH:
@@ -230,7 +230,7 @@ public abstract class TString extends TClass
                 return value;
             }
             else {
-                return charsets[(int)value];
+                return charsets[value].name();
             }
         case COLLATION:
             AkCollator collator = AkCollatorFactory.getAkCollator((int)value);
