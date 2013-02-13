@@ -26,9 +26,8 @@
 
 package com.akiban.direct;
 
-import java.sql.ResultSet;
-
-import javax.ws.rs.core.MultivaluedMap;
+import java.util.List;
+import java.util.Map;
 
 public interface DirectModule {
 
@@ -42,5 +41,5 @@ public interface DirectModule {
 
     boolean isIdempotent();
 
-    ResultSet exec(MultivaluedMap<String, String> params) throws Exception;
+    String exec(Map<String, List<String>> params) throws Exception;
 }

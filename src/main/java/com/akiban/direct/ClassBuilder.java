@@ -33,7 +33,7 @@ public abstract class ClassBuilder {
     
     public abstract void preamble(String[] imports);
 
-    public abstract void startClass(String name);
+    public abstract void startClass(String name, boolean isInterface);
     
     public abstract void addMethod(String name, String returnTuype, String[] argumentTypes, String[] argumentNames, String[] body);
     

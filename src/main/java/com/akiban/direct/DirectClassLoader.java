@@ -25,7 +25,13 @@
  */
 package com.akiban.direct;
 
+import java.io.FileOutputStream;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.List;
+
+import javassist.ClassPool;
+import javassist.CtClass;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 
@@ -35,16 +41,20 @@ import com.akiban.ais.model.AkibanInformationSchema;
  * @author peter
  * 
  */
-public class DirectClassLoader extends ClassLoader {
+public class DirectClassLoader extends URLClassLoader {
 
     final ClassLoader parent;
+    final ClassLoader bootstrap;
+    final ClassPool pool;
 
-    private final static String[] DIRECT_INTERFACES = { "com.akiban.DirectContext", "com.akiban.DirectModule",
-            "com.akiban.DaoPrototype" };
+    private final static String[] DIRECT_INTERFACES = { "com.akiban.direct.DirectContext",
+            "com.akiban.direct.DirectModule", "com.akiban.direct.DaoPrototype" };
 
-    public DirectClassLoader(ClassLoader bootstrap, ClassLoader parent) {
-        super(bootstrap);
+    public DirectClassLoader(ClassLoader bootstrap, ClassLoader parent, ClassPool pool) {
+        super(new URL[0], bootstrap);
+        this.bootstrap = bootstrap;
         this.parent = parent;
+        this.pool = pool;
     }
 
     @Override
@@ -59,6 +69,9 @@ public class DirectClassLoader extends ClassLoader {
          */
         synchronized (this) {
             Class<?> cl = findLoadedClass(name);
+            if (cl == null && name.startsWith("java")) {
+                cl = parent.loadClass(name);
+            }
             if (cl == null) {
                 for (final String special : DIRECT_INTERFACES) {
                     if (special.equals(name)) {
@@ -71,10 +84,14 @@ public class DirectClassLoader extends ClassLoader {
                 }
             }
             if (cl == null) {
-                cl = findClass(name);
+                cl = compileSpecialClass(name);
             }
             if (cl == null) {
-                cl = compileSpecialClass(name);
+                try {
+                    cl = findClass(name);
+                } catch (ClassNotFoundException e) {
+                    // fall through
+                }
             }
             if (cl == null) {
                 throw new ClassNotFoundException(name);
@@ -86,12 +103,38 @@ public class DirectClassLoader extends ClassLoader {
         }
     }
 
-    private Class<?> compileSpecialClass(final String name) throws ClassNotFoundException {
-        throw new ClassNotFoundException(name);
+    private Class<?> compileSpecialClass(final String name) {
+        /*
+         * First check whether this is a precompiled interface
+         */
+        try {
+            CtClass ctClass = pool.getOrNull(name);
+            if (ctClass != null) {
+                byte[] bytes = ctClass.toBytecode();
+                try {
+                    FileOutputStream os = new FileOutputStream("/tmp/" + name + ".class");
+                    os.write(bytes);
+                    os.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return defineClass(name, bytes, 0, bytes.length);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+        return null;
     }
-    
-    
-    public Class<? extends DirectModule> loadModule(AkibanInformationSchema ais, String moduleName, List<String> urls) throws Exception {
-        throw new UnsupportedOperationException("hi there");
+
+    public Class<? extends DirectModule> loadModule(AkibanInformationSchema ais, String moduleName, List<String> urls)
+            throws Exception {
+        for (final String u : urls) {
+            URL url = new URL(u);
+            addURL(url);
+        }
+        @SuppressWarnings("unchecked")
+        Class<? extends DirectModule> clazz = (Class<? extends DirectModule>) this.loadClass(moduleName);
+        return clazz;
     }
 }

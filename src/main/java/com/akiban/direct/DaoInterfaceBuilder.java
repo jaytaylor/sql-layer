@@ -39,7 +39,7 @@ public class DaoInterfaceBuilder {
     public void generateSchema(ClassBuilder helper, AkibanInformationSchema ais, String schema) {
         helper.preamble(new String[] { "java.util.Date", "java.util.List" });
         String schemaAsClassName = PACKAGE + "." + ClassBuilder.asJavaName(schema, true);
-        helper.startClass(schemaAsClassName);
+        helper.startClass(schemaAsClassName, true);
         for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
             generateInterface(helper, table, schemaAsClassName);
         }
@@ -49,7 +49,7 @@ public class DaoInterfaceBuilder {
     private void generateInterface(ClassBuilder helper, UserTable table, String schemaAsClassName) {
         table.getName().getTableName();
         String typeName = schemaAsClassName + "$" + ClassBuilder.asJavaName(table.getName().getTableName(), true);
-        helper.startClass(typeName);
+        helper.startClass(typeName, true);
         /*
          * Add a property per column
          */

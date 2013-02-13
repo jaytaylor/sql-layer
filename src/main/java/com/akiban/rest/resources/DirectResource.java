@@ -102,8 +102,7 @@ public class DirectResource {
                         if (ais.getSchema(schema) == null) {
                             throw new RuntimeException("No such schema: " + schema);
                         }
-                        ClassBuilder helper = new ClassSourceWriter(new PrintWriter(output), PACKAGE, schema, false,
-                                true);
+                        ClassBuilder helper = new ClassSourceWriter(new PrintWriter(output), PACKAGE, schemaClassName(schema), false);
                         new DaoInterfaceBuilder().generateSchema(helper, ais, schema);
                     } catch (InvalidOperationException e) {
                         throwToClient(e);
@@ -131,21 +130,35 @@ public class DirectResource {
             return Response.status(Response.Status.OK).entity(new StreamingOutput() {
                 @Override
                 public void write(OutputStream output) throws IOException {
+                    DirectClassLoader dcl = null;
                     try (Session session = sessionService.createSession()) {
                         final AkibanInformationSchema ais = dxlService.ddlFunctions()
                                 .getAIS(sessionService.createSession());
                         if (ais.getSchema(schema) == null) {
                             throw new RuntimeException("No such schema: " + schema);
                         }
-                        final DirectClassLoader dcl = new DirectClassLoader(getClass().getClassLoader(), getClass().getClassLoader());
+                        
+                        /*
+                         * Precompile the interfaces
+                         */
+                        ClassPool pool = new ClassPool(true);
+                        ClassObjectWriter helper = new ClassObjectWriter(pool, PACKAGE, schema);
+                        helper.preamble(new String[] { "java.util.Date", "java.util.List" });
+                        String scn = schemaClassName(schema);
+                        helper.startClass(scn, true);
+                        for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
+                            generateInterface(helper, table, scn);
+                        }
+                        helper.end();
+                        
+                        dcl = new DirectClassLoader(getClass().getClassLoader(), getClass().getClassLoader(), pool);
                         final Class<? extends DirectModule> serviceClass = dcl.loadModule(ais, moduleName, urls);
                         DirectModule module = serviceClass.newInstance();
-                        dispatch.put(moduleName, module);
-                        ClassBuilder helper = new ClassSourceWriter(new PrintWriter(output), PACKAGE, schema, false, true);
-                        new DaoInterfaceBuilder().generateSchema(helper, ais, schema);
+                        dispatch.put(serviceClass.getSimpleName(), module);
                     } catch (InvalidOperationException e) {
                         throwToClient(e);
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
+                        e.printStackTrace();
                         throw new RuntimeException(e);
                     }
                 }
@@ -160,29 +173,11 @@ public class DirectResource {
         throw new NullPointerException("Module named " + op + " not loaded");
     }
 
-    private void generateSchema(ClassBuilder helper, String schema) {
-        final AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(sessionService.createSession());
-        helper.preamble(new String[] { "java.util.Date", "java.util.List" });
-        String schemaAsClassName = PACKAGE + "." + ClassBuilder.asJavaName(schema, true);
-        helper.startClass(schemaAsClassName);
-        for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
-            generateInterface(helper, table, schemaAsClassName);
-        }
-        helper.end();
-        ClassPool pool = new ClassPool(true);
-        ClassObjectWriter helper2 = new ClassObjectWriter(pool, PACKAGE, schema);
-        helper2.preamble(new String[] { "java.util.Date", "java.util.List" });
-        helper2.startClass(schemaAsClassName);
-        for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
-            generateInterface(helper2, table, schemaAsClassName);
-        }
-        helper2.end();
-    }
 
     private void generateInterface(ClassBuilder helper, UserTable table, String schemaAsClassName) {
         table.getName().getTableName();
         String typeName = schemaAsClassName + "$" + ClassBuilder.asJavaName(table.getName().getTableName(), true);
-        helper.startClass(typeName);
+        helper.startClass(typeName, true);
         /*
          * Add a property per column
          */
@@ -207,7 +202,7 @@ public class DirectResource {
         for (final Join join : table.getChildJoins()) {
             String childTypeName = join.getChild().getName().getTableName();
             helper.addMethod("get" + ClassBuilder.asJavaName(childTypeName, true),
-                    "List<" + ClassBuilder.asJavaName(childTypeName, true) + ">", NONE, null, null);
+                    "java.util.List<" + ClassBuilder.asJavaName(childTypeName, true) + ">", NONE, null, null);
         }
         /*
          * Add boilerplate methods
@@ -234,5 +229,10 @@ public class DirectResource {
         }
         throw new WebApplicationException(Response.status(status).entity(err.toString()).build());
     }
+
+    private String schemaClassName(String schema) {
+        return PACKAGE + "." + ClassBuilder.asJavaName(schema, true);
+    }
+    
 
 }

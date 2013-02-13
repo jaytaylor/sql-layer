@@ -39,17 +39,15 @@ public class ClassSourceWriter extends ClassBuilder {
 
     private final PrintWriter writer;
     private final boolean isAbstract;
-    private final boolean isInterface;
     private final Stack<String> classNames = new Stack<String>();
     private String[] imports;
     private int indentation = 0;
 
     public ClassSourceWriter(final PrintWriter writer, final String packageName, final String schema,
-            boolean isAbstract, boolean isInterface) {
+            boolean isAbstract) {
         super(packageName, schema);
         this.writer = writer;
         this.isAbstract = isAbstract;
-        this.isInterface = isInterface;
     }
 
     /*
@@ -73,9 +71,9 @@ public class ClassSourceWriter extends ClassBuilder {
      * @see com.akiban.direct.ClassBuilder#startInterface(java.lang.String)
      */
     @Override
-    public void startClass(final String name) {
+    public void startClass(final String name, final boolean isInterface) {
         newLine();
-        println(publicModifier() + (isAbstract ? "abstract " : "") + (isInterface ? "interface " : "class ")
+        println("public " + (isAbstract ? "abstract " : "") + (isInterface ? "interface " : "class ")
                 + shortName(name) + " {");
         indentation++;
         classNames.push(name);
@@ -152,10 +150,6 @@ public class ClassSourceWriter extends ClassBuilder {
 
     private void newLine() {
         writer.println();
-    }
-
-    private String publicModifier() {
-        return isInterface ? "" : "public ";
     }
 
     private String localName(String fqn, String className) {

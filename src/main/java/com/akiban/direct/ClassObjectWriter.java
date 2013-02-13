@@ -25,10 +25,7 @@
  */
 package com.akiban.direct;
 
-import java.io.IOException;
 import java.util.Stack;
-
-import com.persistit.util.Util;
 
 import javassist.CannotCompileException;
 import javassist.ClassPool;
@@ -52,14 +49,21 @@ public class ClassObjectWriter extends ClassBuilder {
     }
 
     @Override
-    public void startClass(String name) {
-        currentCtClass = classPool.makeClass(name);
+    public void startClass(String name, boolean isInterface) {
+        if (isInterface) {
+            currentCtClass = classPool.makeInterface(name);
+        } else {
+            currentCtClass = classPool.makeClass(name);
+        }
         ctClasses.push(currentCtClass);
     }
 
     @Override
     public void addMethod(String name, String returnType, String[] argumentTypes, String[] argumentNames, String[] body) {
         try {
+            if (currentCtClass.isInterface()) {
+                assert body == null;
+            }
             CtClass returnClass = getCtClass(returnType);
             CtClass[] parameters = new CtClass[argumentTypes.length];
             for (int i = 0; i < argumentTypes.length; i++) {
@@ -82,13 +86,6 @@ public class ClassObjectWriter extends ClassBuilder {
 
     @Override
     public void end() {
-        try {
-            byte[] b = currentCtClass.toBytecode();
-            System.out.printf("\nClass %s\n%s\n", currentCtClass.getName(), Util.hexDump(b));
-        } catch (IOException | CannotCompileException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
         currentCtClass = ctClasses.pop();
     }
 
