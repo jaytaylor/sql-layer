@@ -50,7 +50,9 @@ public class UserTable extends Table
      * @return The new copy of the UserTable.
      */
     public static UserTable create(AkibanInformationSchema ais, UserTable userTable) {
-        return create(ais, userTable.tableName.getSchemaName(), userTable.tableName.getTableName(), userTable.getTableId());
+        UserTable copy = create(ais, userTable.tableName.getSchemaName(), userTable.tableName.getTableName(), userTable.getTableId());
+        copy.setUuid(userTable.getUuid());
+        return copy;
     }
 
     private UserTable(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)

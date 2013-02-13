@@ -92,6 +92,7 @@ public class Column implements ColumnContainer
             }
         }
         out.setDefaultValue(column.getDefaultValue());
+        out.setUuid(column.getUuid());
         return out;
     }
 
