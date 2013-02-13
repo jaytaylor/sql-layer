@@ -27,6 +27,7 @@
 package com.akiban.server.entity.changes;
 
 import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.NopVisitor;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -39,7 +40,11 @@ import com.akiban.server.entity.model.Validation;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.session.Session;
 
+import java.awt.dnd.InvalidDnDOperationException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 public class DDLBasedSpaceModifier implements SpaceModificationHandler {
@@ -131,8 +136,29 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     }
 
     @Override
-    public void addIndex(String name) {
-        throw new UnsupportedOperationException();
+    public void addIndex(UUID entityUuid, final String name) {
+        EntityToAIS eToAIS = new EntityToAIS(schemaName);
+        space.visit(eToAIS);
+        String entityName = spaceLookups.getName(entityUuid);
+        UserTable rootTable = eToAIS.getAIS().getUserTable(schemaName, entityName);
+        final List<Index> candidates = new ArrayList<>();
+        rootTable.traverseTableAndDescendants(new NopVisitor() {
+            @Override
+            public void visitUserTable(UserTable table) {
+                for(Index index : table.getIndexes()) {
+                    if(index.getIndexName().getName().equals(name)) {
+                        candidates.add(index);
+                    }
+                }
+            }
+        });
+        for(Index index : rootTable.getGroupIndexes()) {
+            if(index.getIndexName().getName().equals(name)) {
+                candidates.add(index);
+            }
+        }
+        assert candidates.size() == 1 : candidates;
+        ddlFunctions.createIndexes(session, candidates);
     }
 
     @Override

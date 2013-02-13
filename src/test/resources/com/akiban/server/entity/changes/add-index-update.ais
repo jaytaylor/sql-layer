@@ -22,6 +22,19 @@ schemas {
       collationOrderName: "utf8_bin"
     }
     indexes {
+      indexName: "name"
+      indexId: -1
+      isPK: false
+      isUnique: false
+      isAkFK: false
+      columns {
+        columnName: "name"
+        isAscending: true
+        position: 0
+      }
+      indexMethod: NORMAL
+    }
+    indexes {
       indexName: "PRIMARY"
       indexId: -1
       isPK: true
