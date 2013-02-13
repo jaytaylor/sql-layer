@@ -49,7 +49,7 @@ public interface SpaceModificationHandler {
     void dropEntityValidation(Validation validation);
 
     void addIndex(UUID entityUuid, String name);
-    void dropIndex(String name, EntityIndex index);
+    void dropIndex(UUID entityUuid, String name, EntityIndex index);
     void renameIndex(EntityIndex index, String oldName, String newName);
 
     void error(String message);

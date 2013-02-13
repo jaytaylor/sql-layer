@@ -174,7 +174,7 @@ public final class SpaceDiff {
             EntityIndex origIndex = origEntry.getKey();
             String origName = origEntry.getValue();
             if (!updatedIndexes.containsKey(origIndex))
-                out.dropIndex(origName, origIndex);
+                out.dropIndex(uuid, origName, origIndex);
             else if (!origName.equals(updatedIndexes.get(origIndex)))
                 out.renameIndex(origIndex, origName, updatedIndexes.get(origIndex));
         }

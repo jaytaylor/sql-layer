@@ -290,13 +290,14 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
-    public void dropIndex(String name, EntityIndex index)
+    public void dropIndex(UUID entityUuid, String name, EntityIndex index)
     {
         try
         {
             startObject();
             entry("action", "drop_index");
             entry("destructive", true);
+            entry("uuid", entityUuid.toString());
             entry("name", name);
             entry("index", index);
             endObject();
