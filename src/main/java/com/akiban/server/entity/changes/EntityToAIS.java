@@ -276,10 +276,10 @@ public class EntityToAIS extends AbstractEntityVisitor {
     private static Long[] getTypeParams(Type type, Map<String,Object> props) {
         Long params[] = { null, null };
         if(type == Types.DECIMAL || type == Types.U_DECIMAL) {
-            params[0] = (Long)props.get("precision");
-            params[1] = (Long)props.get("scale");
+            params[0] = maybeLong(props.get("precision"));
+            params[1] = maybeLong(props.get("scale"));
         } else if(type == Types.CHAR || type == Types.VARCHAR || type == Types.BINARY || type == Types.VARBINARY) {
-            params[0] = (Long)props.get("max_length");
+            params[0] = maybeLong(props.get("max_length"));
         }
         return params;
     }
@@ -287,8 +287,8 @@ public class EntityToAIS extends AbstractEntityVisitor {
     private static String[] getCharAndCol(Type type, Map<String,Object> props) {
         String charAndCol[] = { null, null };
         if(Types.isTextType(type)) {
-            charAndCol[0] = (String)props.get("charset");
-            charAndCol[1] = (String)props.get("collation");
+            charAndCol[0] = maybeString(props.get("charset"));
+            charAndCol[1] = maybeString(props.get("collation"));
         }
         return charAndCol;
     }
@@ -300,6 +300,15 @@ public class EntityToAIS extends AbstractEntityVisitor {
             }
         }
         return false;
+    }
+
+    private static Long maybeLong(Object o) {
+        Number n = (Number)o;
+        return (o != null) ? ((Number)o).longValue() : null;
+    }
+
+    private static String maybeString(Object o) {
+        return (o != null) ? o.toString() : null;
     }
 
 
