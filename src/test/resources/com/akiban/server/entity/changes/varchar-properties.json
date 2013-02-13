@@ -1,0 +1,30 @@
+{
+    "entities" : {
+        "customer" : {
+            "entity" : "2a57b59e-e1b7-4377-996e-a5c04e0abf29",
+            "attributes" : {
+                "cid" : {
+                    "scalar" : "b272974c-75fc-11e2-80a8-7d727188419e",
+                    "type" : "int",
+                    "spinal_pos" : 0
+                },
+                "varchar_1" : {
+                    "scalar" : "8644c36b-f881-4369-a06b-59e3fc580309",
+                    "type" : "varchar",
+                    "properties" : {
+                        "max_length" : 42
+                    }
+                },
+                "varchar_2" : {
+                    "scalar" : "1c433456-75fd-11e2-8144-7d727188419e",
+                    "type" : "varchar",
+                    "properties" : {
+                        "max_length" : 255,
+                        "charset" : "utf16",
+                        "collation" : "binary"
+                    }
+                }
+            }
+        }
+    }
+}
