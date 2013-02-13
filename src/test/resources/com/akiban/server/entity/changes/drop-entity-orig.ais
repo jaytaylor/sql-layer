@@ -30,10 +30,6 @@ schemas {
       typeName: "int"
       isNullable: false
       position: 2
-      charColl {
-        characterSetName: "utf8"
-        collationOrderName: "utf8_bin"
-      }
       uuid: "8644c36b-f881-4369-a06b-59e3fc580309"
     }
     charColl {
@@ -83,10 +79,6 @@ schemas {
       typeName: "datetime"
       isNullable: false
       position: 0
-      charColl {
-        characterSetName: "utf8"
-        collationOrderName: "utf8_bin"
-      }
       uuid: "d427b7a0-756b-11e2-9a31-7d727188419e"
     }
     columns {
@@ -94,11 +86,13 @@ schemas {
       typeName: "int"
       isNullable: false
       position: 1
-      charColl {
-        characterSetName: "utf8"
-        collationOrderName: "utf8_bin"
-      }
       uuid: "58dd53b7-e8a1-488b-a751-c83f9beca04c"
+    }
+    columns {
+      columnName: "spine_ref"
+      typeName: "int"
+      isNullable: false
+      position: 2
     }
     charColl {
       characterSetName: "utf8"
@@ -139,7 +133,7 @@ schemas {
       }
       columns {
         parentColumn: "spine"
-        childColumn: "spine"
+        childColumn: "spine_ref"
         position: 0
       }
     }

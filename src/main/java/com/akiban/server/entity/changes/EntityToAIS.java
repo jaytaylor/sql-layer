@@ -30,7 +30,11 @@ import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.Type;
+import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.entity.model.AbstractEntityVisitor;
 import com.akiban.server.entity.model.Attribute;
@@ -74,6 +78,7 @@ public class EntityToAIS extends AbstractEntityVisitor {
         builder.createGroup(name, schemaName);
         groupName = new TableName(schemaName, name);
         beginTable(name, entity.uuid());
+        builder.addTableToGroup(groupName, schemaName, name);
     }
 
     @Override
@@ -84,45 +89,22 @@ public class EntityToAIS extends AbstractEntityVisitor {
 
     @Override
     public void visitScalar(String name, Attribute scalar) {
-        // TODO: Lookup properties based on type
-        Map<String,Object> props = scalar.getProperties();
-        String charset = (String)props.get("charset");
-        String collation = (String)props.get("collation");
-        Long param1 = (Long)props.get("max_length");
-        if(param1 == null) {
-            param1 = (Long)props.get("precision");
-        }
-        Long param2 = (Long)props.get("scale");
-        Column column = builder.column(schemaName,
-                                       curTableName(),
-                                       name,
-                                       nextColPos(),
-                                       scalar.getType(),
-                                       param1,
-                                       param2,
-                                       !ATTR_REQUIRED_DEFAULT, /*nullable*/
-                                       false, /*autoinc*/
-                                       charset,
-                                       collation
-                                       /*,default*/);
-        column.setUuid(scalar.getUUID());
-
-        visitScalarValidations(column, scalar.getValidation());
-
+        String typeName = scalar.getType();
+        Type type = builder.akibanInformationSchema().getType(typeName);
+        Long params[] = getTypeParams(type, scalar.getProperties());
+        String charAndCol[] = getCharAndCol(type, scalar.getProperties());
+        boolean isNullable = !ATTR_REQUIRED_DEFAULT;
+        boolean isAutoInc = false;
         if(scalar.isSpinal()) {
+            isNullable = false;
             addSpinalColumn(name, scalar.getSpinePos());
         }
-    }
-
-    private void visitScalarValidations(Column column, Collection<Validation> validations) {
-        for(Validation v : validations) {
-            if("required".equals(v.getName())) {
-                boolean isRequired = (Boolean)v.getValue();
-                column.setNullable(!isRequired);
-            } else {
-                LOG.warn("Ignored scalar validation on table {}: {}", curTable, v);
-            }
-        }
+        Column column = builder.column(schemaName, curTable.name, name, nextColPos(),
+                                       typeName, params[0], params[1],
+                                       isNullable, isAutoInc,
+                                       charAndCol[0], charAndCol[1]);
+        column.setUuid(scalar.getUUID());
+        visitScalarValidations(column, scalar.getValidation());
     }
 
     @Override
@@ -139,10 +121,8 @@ public class EntityToAIS extends AbstractEntityVisitor {
 
     @Override
     public void leaveEntityAttributes() {
-        TableInfo root = curTable;
+        createPK(builder, schemaName, curTable);
         endTable();
-        curTable = root;
-        createPK(builder, schemaName, root);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
     }
@@ -190,29 +170,94 @@ public class EntityToAIS extends AbstractEntityVisitor {
         }
     }
 
-    private boolean isGroupIndex(List<EntityColumn> columns) {
-        for(int i = 1; i < columns.size(); ++i) {
-            if(!columns.get(0).getTable().equals(columns.get(i).getTable())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     //
-    // AISBuilderVisitor
+    // EntityToAIS
     //
 
     public AkibanInformationSchema getAIS() {
         return builder.akibanInformationSchema();
     }
 
+    //
+    // Helpers
+    //
+
+    private void addSpinalColumn(String name, int spinePos) {
+        while(curTable.spinalCols.size() <= spinePos) {
+            curTable.spinalCols.add(null);
+        }
+        curTable.spinalCols.set(spinePos, name);
+    }
+
     private void beginTable(String name, UUID uuid) {
-        curTable = new TableInfo(name);
         UserTable table = builder.userTable(schemaName, name);
         table.setUuid(uuid);
-        builder.addTableToGroup(groupName, schemaName, name);
+        curTable = new TableInfo(name, table);
         tableInfoStack.add(curTable);
+    }
+
+    private void endTable() {
+        // Create joins to children.
+        // Parent spinal columns are automatically propagated to each child.
+        if(curTable.spinalCols.isEmpty() && !curTable.childTables.isEmpty()) {
+            throw new IllegalArgumentException("Has collections but no spine: " + curTable.name);
+        }
+        for(TableInfo child : curTable.childTables) {
+            String joinName = child.name + "_" + curTable.name;
+            builder.joinTables(joinName, schemaName, curTable.name, schemaName, child.name);
+
+            for(String parentColName : curTable.spinalCols) {
+                Column parentCol = curTable.table.getColumn(parentColName);
+                String childColName = createColumnName(child.table.getColumns(), parentColName + "_ref");
+                Column newCol = Column.create(child.table, parentCol, childColName, child.nextColPos++);
+                // Should be exactly the same *except* UUID
+                newCol.setUuid(null);
+                builder.joinColumns(joinName,
+                                    schemaName, curTable.name, parentColName,
+                                    schemaName, child.name, childColName);
+            }
+        }
+        if(tableInfoStack.size() == 1) {
+            addJoinsToGroup(builder, groupName, curTable);
+        }
+        tableInfoStack.remove(tableInfoStack.size() - 1);
+        curTable = tableInfoStack.isEmpty() ? null : tableInfoStack.get(tableInfoStack.size() - 1);
+    }
+
+    private int nextColPos() {
+        return curTable.nextColPos++;
+    }
+
+    private void visitScalarValidations(Column column, Collection<Validation> validations) {
+        for(Validation v : validations) {
+            if("required".equals(v.getName())) {
+                boolean isRequired = (Boolean)v.getValue();
+                column.setNullable(!isRequired);
+            } else {
+                LOG.warn("Ignored scalar validation on table {}: {}", curTable, v);
+            }
+        }
+    }
+
+    private static void addJoinsToGroup(AISBuilder builder, TableName groupName, TableInfo curTable) {
+        for(TableInfo child : curTable.childTables) {
+            List<Join> joins = child.table.getCandidateParentJoins();
+            assert joins.size() == 1 : joins;
+            builder.addJoinToGroup(groupName, joins.get(0).getName(), 0);
+            addJoinsToGroup(builder, groupName, child);
+        }
+    }
+
+    private static String createColumnName(List<Column> curColumns, String proposed) {
+        int offset = 1;
+        String newName = proposed;
+        for(int i = 0; i < curColumns.size(); ++i) {
+            if(curColumns.get(i).getName().equals(newName)) {
+                newName = proposed + "$" + offset++;
+                i = -1;
+            }
+        }
+        return newName;
     }
 
     private static void createPK(AISBuilder builder, String schemaName, TableInfo table) {
@@ -228,55 +273,46 @@ public class EntityToAIS extends AbstractEntityVisitor {
         }
     }
 
-    private void endTable() {
-        // Create joins to children
-        List<String> parentSpine = curTable.spinalCols;
-        for(TableInfo child : curTable.childTables) {
-            List<String> childSpine = child.spinalCols;
+    private static Long[] getTypeParams(Type type, Map<String,Object> props) {
+        Long params[] = { null, null };
+        if(type == Types.DECIMAL || type == Types.U_DECIMAL) {
+            params[0] = (Long)props.get("precision");
+            params[1] = (Long)props.get("scale");
+        } else if(type == Types.CHAR || type == Types.VARCHAR || type == Types.BINARY || type == Types.VARBINARY) {
+            params[0] = (Long)props.get("max_length");
+        }
+        return params;
+    }
 
-            // Adding the join re-adds the table, which hits an assert
-            builder.removeTableFromGroup(groupName, schemaName, child.name);
+    private static String[] getCharAndCol(Type type, Map<String,Object> props) {
+        String charAndCol[] = { null, null };
+        if(Types.isTextType(type)) {
+            charAndCol[0] = (String)props.get("charset");
+            charAndCol[1] = (String)props.get("collation");
+        }
+        return charAndCol;
+    }
 
-            String joinName = child.name + "_" + curTableName();
-            builder.joinTables(joinName, schemaName, curTableName(), schemaName, child.name);
-            builder.addJoinToGroup(groupName, joinName, 0);
-
-            // Later validations will catch invalid joins, may want to do it sooner?
-            int max = Math.min(parentSpine.size(), childSpine.size());
-            for(int i = 0; i < max; ++i) {
-                builder.joinColumns(joinName,
-                                    schemaName, curTableName(), parentSpine.get(i),
-                                    schemaName, child.name, childSpine.get(i));
+    private static boolean isGroupIndex(List<EntityColumn> columns) {
+        for(int i = 1; i < columns.size(); ++i) {
+            if(!columns.get(0).getTable().equals(columns.get(i).getTable())) {
+                return true;
             }
         }
-
-        tableInfoStack.remove(tableInfoStack.size() - 1);
-        curTable = tableInfoStack.isEmpty() ? null : tableInfoStack.get(tableInfoStack.size() - 1);
+        return false;
     }
 
-    private int nextColPos() {
-        return curTable.nextColPos++;
-    }
-
-    private String curTableName() {
-        return curTable.name;
-    }
-
-    private void addSpinalColumn(String name, int spinePos) {
-        while(curTable.spinalCols.size() <= spinePos) {
-            curTable.spinalCols.add(null);
-        }
-        curTable.spinalCols.set(spinePos, name);
-    }
 
     private static class TableInfo {
         public final String name;
+        public final UserTable table;
         public final List<String> spinalCols;
         public final List<TableInfo> childTables;
         public int nextColPos;
 
-        public TableInfo(String name) {
+        public TableInfo(String name, UserTable table) {
             this.name = name;
+            this.table = table;
             this.spinalCols = new ArrayList<>();
             this.childTables = new ArrayList<>();
         }

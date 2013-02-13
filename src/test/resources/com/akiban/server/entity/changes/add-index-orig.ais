@@ -8,10 +8,6 @@ schemas {
       typeName: "int"
       isNullable: false
       position: 0
-      charColl {
-        characterSetName: "utf8"
-        collationOrderName: "utf8_bin"
-      }
       uuid: "8644c36b-f881-4369-a06b-59e3fc580309"
     }
     columns {
