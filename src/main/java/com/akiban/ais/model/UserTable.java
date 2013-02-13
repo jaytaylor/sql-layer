@@ -486,7 +486,7 @@ public class UserTable extends Table
         return version;
     }
 
-    public void setVersion(int version) {
+    public void setVersion(Integer version) {
         this.version = version;
     }
     

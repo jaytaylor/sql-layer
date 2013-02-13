@@ -2,7 +2,7 @@ schemas {
   schemaName: "test"
   tables {
     tableName: "customer"
-    tableId: 1
+    tableId: -1
     columns {
       columnName: "cid"
       typeName: "int"
@@ -17,7 +17,7 @@ schemas {
     indexes {
       indexName: "PRIMARY"
       treeName: "test.customer.PRIMARY"
-      indexId: 1
+      indexId: -1
       isPK: true
       isUnique: true
       isAkFK: false
@@ -32,13 +32,12 @@ schemas {
   }
   tables {
     tableName: "orders"
-    tableId: 2
+    tableId: -1
     columns {
       columnName: "cid_ref"
       typeName: "int"
       isNullable: false
       position: 0
-      uuid: "9cd22ca8-75fd-11e2-a74b-d2dcf046605e"
     }
     columns {
       columnName: "oid"
@@ -60,7 +59,7 @@ schemas {
     indexes {
       indexName: "PRIMARY"
       treeName: "test.orders.PRIMARY"
-      indexId: 2
+      indexId: -1
       isPK: true
       isUnique: true
       isAkFK: false

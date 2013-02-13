@@ -421,6 +421,11 @@ public class Column implements ColumnContainer
         return prefixSize;
     }
 
+    public void clearMaxAndPrefixSize() {
+        maxStorageSize = null;
+        prefixSize = null;
+    }
+
     public UUID getUuid() {
         return uuid;
     }

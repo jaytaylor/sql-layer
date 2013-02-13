@@ -26,9 +26,7 @@
 
 package com.akiban.server.entity.changes;
 
-import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.junit.NamedParameterizedRunner;
-import com.akiban.junit.OnlyIf;
 import com.akiban.junit.Parameterization;
 import com.akiban.server.entity.model.Space;
 import com.akiban.util.JUnitUtils;
@@ -81,10 +79,7 @@ public final class EntityToAISTest {
         spaceDef.visit(eToAIS);
 
         String expected = Strings.dumpFileToString(new File(dir, testName + EXPECTED_SUFFIX));
-
-        ProtobufWriter writer = new ProtobufWriter(new ProtobufWriter.SingleSchemaSelector(SCHEMA));
-        String actual = writer.save(eToAIS.getAIS()).toString();
-
+        String actual = AISDumper.dumpDeterministicAIS(eToAIS.getAIS(), SCHEMA);
         assertEquals("Generated AIS", expected.trim(), actual.trim());
     }
 

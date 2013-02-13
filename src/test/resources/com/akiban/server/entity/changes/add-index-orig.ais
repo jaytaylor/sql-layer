@@ -2,7 +2,7 @@ schemas {
   schemaName: "test"
   tables {
     tableName: "customer"
-    tableId: 1
+    tableId: -1
     columns {
       columnName: "id"
       typeName: "int"
@@ -28,7 +28,7 @@ schemas {
     indexes {
       indexName: "PRIMARY"
       treeName: "test.customer.PRIMARY"
-      indexId: 1
+      indexId: -1
       isPK: true
       isUnique: true
       isAkFK: false

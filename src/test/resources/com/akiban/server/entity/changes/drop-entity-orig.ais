@@ -2,7 +2,7 @@ schemas {
   schemaName: "test"
   tables {
     tableName: "customer"
-    tableId: 1
+    tableId: -1
     columns {
       columnName: "first_name"
       typeName: "varchar"
@@ -41,7 +41,7 @@ schemas {
     indexes {
       indexName: "last_first"
       treeName: "test.customer.last_first"
-      indexId: 5
+      indexId: -1
       isPK: false
       isUnique: true
       isAkFK: false
@@ -60,7 +60,7 @@ schemas {
     indexes {
       indexName: "PRIMARY"
       treeName: "test.customer.PRIMARY"
-      indexId: 1
+      indexId: -1
       isPK: true
       isUnique: true
       isAkFK: false
@@ -75,7 +75,7 @@ schemas {
   }
   tables {
     tableName: "orders"
-    tableId: 2
+    tableId: -1
     columns {
       columnName: "placed"
       typeName: "datetime"
@@ -103,7 +103,7 @@ schemas {
     indexes {
       indexName: "placed"
       treeName: "test.orders.placed"
-      indexId: 4
+      indexId: -1
       isPK: false
       isUnique: true
       isAkFK: false
@@ -117,7 +117,7 @@ schemas {
     indexes {
       indexName: "PRIMARY"
       treeName: "test.orders.PRIMARY"
-      indexId: 2
+      indexId: -1
       isPK: true
       isUnique: true
       isAkFK: false
@@ -147,7 +147,7 @@ schemas {
     indexes {
       indexName: "orderplaced_lastname"
       treeName: "test.customer.orderplaced_lastname"
-      indexId: 3
+      indexId: -1
       isPK: false
       isUnique: false
       isAkFK: false
