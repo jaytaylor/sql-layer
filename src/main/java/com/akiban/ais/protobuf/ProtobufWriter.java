@@ -432,8 +432,11 @@ public class ProtobufWriter {
                 setColumnName(column.getName()).
                 setTypeName(column.getType().name()).
                 setIsNullable(column.getNullable()).
-                setPosition(column.getPosition()).
-                setCharColl(convertCharAndCol(column.getCharsetAndCollation()));
+                setPosition(column.getPosition());
+
+        if(Types.isTextType(column.getType())) {
+            columnBuilder.setCharColl(convertCharAndCol(column.getCharsetAndCollation()));
+        }
 
         UUID columnUuid = column.getUuid();
         if (columnUuid != null) {
