@@ -48,18 +48,27 @@ import static com.akiban.util.AssertUtils.assertCollectionEquals;
 
 @RunWith(NamedParameterizedRunner.class)
 public final class SpaceDiffTest {
+    private static final String ORIG_SUFFIX = "-orig.json";
+    private static final String UPDATE_SUFFIX = "-update.json";
+    private static final String EXPECTED_SUFFIX = "-expected.txt";
+
+    private static String getShortName(String testName) {
+        return testName.substring(0, testName.length() - ORIG_SUFFIX.length());
+    }
+
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params() throws IOException {
         String[] testNames = JUnitUtils.getContainingFile(SpaceDiffTest.class).list(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
-                return name.endsWith("-orig.json");
+                return name.endsWith(ORIG_SUFFIX) &&
+                       new File(dir, getShortName(name) + UPDATE_SUFFIX).exists();
             }
         });
         return Collections2.transform(Arrays.asList(testNames), new Function<String, Parameterization>() {
             @Override
             public Parameterization apply(String testName) {
-                String shortName = testName.substring(0, testName.length() - "-orig.json".length());
+                String shortName = getShortName(testName);
                 return new Parameterization(shortName, true, shortName);
             }
         });
@@ -67,9 +76,9 @@ public final class SpaceDiffTest {
 
     @Test
     public void test() throws IOException {
-        Space orig = Space.readSpace(testName + "-orig.json", SpaceDiffTest.class);
-        Space updated = Space.readSpace(testName + "-update.json", SpaceDiffTest.class);
-        List<String> expected = Strings.dumpFile(new File(dir, testName + "-expected.txt"));
+        Space orig = Space.readSpace(testName + ORIG_SUFFIX, SpaceDiffTest.class);
+        Space updated = Space.readSpace(testName + UPDATE_SUFFIX, SpaceDiffTest.class);
+        List<String> expected = Strings.dumpFile(new File(dir, testName + EXPECTED_SUFFIX));
         Collections.sort(expected);
         StringChangeLog log = new StringChangeLog();
         new SpaceDiff(orig, updated).apply(log);

@@ -49,27 +49,26 @@ import static org.junit.Assert.assertEquals;
 @RunWith(NamedParameterizedRunner.class)
 public final class EntityToAISTest {
     private static final String SCHEMA = "test";
-    private static final String TEST_NAME_SUFFIX = "-orig";
-    private static final String INPUT_EXTENSION = ".json";
-    private static final String EXPECTED_EXTENSION = ".ais";
+    private static final String ORIG_SUFFIX = ".json";
+    private static final String EXPECTED_SUFFIX = ".ais";
+
+    private static String getShortName(String testName) {
+        return testName.substring(0, testName.length() - ORIG_SUFFIX.length());
+    }
 
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params() throws IOException {
-        final String fullSuffix = TEST_NAME_SUFFIX + INPUT_EXTENSION;
         String[] testNames = JUnitUtils.getContainingFile(EntityToAISTest.class).list(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
-                if(name.endsWith(fullSuffix)) {
-                    String shortName = name.substring(0, name.length() - fullSuffix.length());
-                    return new File(dir, shortName + TEST_NAME_SUFFIX + EXPECTED_EXTENSION).exists();
-                }
-                return false;
+                return name.endsWith(ORIG_SUFFIX) &&
+                       new File(dir, getShortName(name) + EXPECTED_SUFFIX).exists();
             }
         });
         return Collections2.transform(Arrays.asList(testNames), new Function<String, Parameterization>() {
             @Override
             public Parameterization apply(String testName) {
-                String shortName = testName.substring(0, testName.length() - fullSuffix.length());
+                String shortName = getShortName(testName);
                 return new Parameterization(shortName, true, shortName);
             }
         });
@@ -77,11 +76,11 @@ public final class EntityToAISTest {
 
     @Test
     public void test() throws IOException {
-        Space spaceDef = Space.readSpace(testName + TEST_NAME_SUFFIX + ".json", EntityToAISTest.class);
+        Space spaceDef = Space.readSpace(testName + ORIG_SUFFIX, EntityToAISTest.class);
         EntityToAIS eToAIS = new EntityToAIS(SCHEMA);
         spaceDef.visit(eToAIS);
 
-        String expected = Strings.dumpFileToString(new File(dir, testName + TEST_NAME_SUFFIX + ".ais"));
+        String expected = Strings.dumpFileToString(new File(dir, testName + EXPECTED_SUFFIX));
 
         ProtobufWriter writer = new ProtobufWriter(new ProtobufWriter.SingleSchemaSelector(SCHEMA));
         String actual = writer.save(eToAIS.getAIS()).toString();
