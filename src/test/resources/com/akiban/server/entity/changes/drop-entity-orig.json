@@ -19,6 +19,17 @@
                         { "required" : false }
                     ]
                 },
+                "first_name" : {
+                    "scalar" : "b2fe7776-756b-11e2-a08b-d2dcf046605f",
+                    "type" : "varchar",
+                    "properties" : {
+                        "charset" : "utf8"
+                    },
+                    "validation" : [
+                        { "max_length" : 64 },
+                        { "required" : false }
+                    ]
+                },
                 "orders" : {
                     "collection" : "c5cedd91-9751-41c2-9417-8c29117ca2c9",
                     "attributes" : {
@@ -26,15 +37,21 @@
                             "scalar" : "58dd53b7-e8a1-488b-a751-c83f9beca04c",
                             "type" : "int",
                             "spinal_pos" : 0
+                        },
+                        "placed" : {
+                            "scalar" : "d427b7a0-756b-11e2-9a31-7d727188419e",
+                            "type" : "datetime"
                         }
                     }
                 }
             },
             "validation" : [
-                { "unique" : [ ["customer", "last_name"], ["customer", "first_name"] ] },
-                { "unique" : [ ["orders", "placed"] ] }
+                { "unique" : "last_first" },
+                { "unique" : "placed" }
             ],
             "indexes" : {
+                "last_first" : [ ["customer", "last_name"], ["customer", "first_name"] ],
+                "placed" : [ ["orders", "placed"] ],
                 "orderplaced_lastname" : [ ["orders", "placed"], ["customer", "last_name"] ]
             }
         }

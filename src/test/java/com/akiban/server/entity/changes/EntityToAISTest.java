@@ -41,16 +41,14 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
-import static com.akiban.util.AssertUtils.assertCollectionEquals;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(NamedParameterizedRunner.class)
-public final class SpaceDiffTest {
-    private static final String ORIG_SUFFIX = "-orig.json";
-    private static final String UPDATE_SUFFIX = "-update.json";
-    private static final String EXPECTED_SUFFIX = "-expected.txt";
+public final class EntityToAISTest {
+    private static final String SCHEMA = "test";
+    private static final String ORIG_SUFFIX = ".json";
+    private static final String EXPECTED_SUFFIX = ".ais";
 
     private static String getShortName(String testName) {
         return testName.substring(0, testName.length() - ORIG_SUFFIX.length());
@@ -58,11 +56,11 @@ public final class SpaceDiffTest {
 
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params() throws IOException {
-        String[] testNames = JUnitUtils.getContainingFile(SpaceDiffTest.class).list(new FilenameFilter() {
+        String[] testNames = JUnitUtils.getContainingFile(EntityToAISTest.class).list(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
                 return name.endsWith(ORIG_SUFFIX) &&
-                       new File(dir, getShortName(name) + UPDATE_SUFFIX).exists();
+                       new File(dir, getShortName(name) + EXPECTED_SUFFIX).exists();
             }
         });
         return Collections2.transform(Arrays.asList(testNames), new Function<String, Parameterization>() {
@@ -76,20 +74,19 @@ public final class SpaceDiffTest {
 
     @Test
     public void test() throws IOException {
-        Space orig = Space.readSpace(testName + ORIG_SUFFIX, SpaceDiffTest.class);
-        Space updated = Space.readSpace(testName + UPDATE_SUFFIX, SpaceDiffTest.class);
-        List<String> expected = Strings.dumpFile(new File(dir, testName + EXPECTED_SUFFIX));
-        Collections.sort(expected);
-        StringChangeLog log = new StringChangeLog();
-        new SpaceDiff(orig, updated).apply(log);
-        Collections.sort(log.getMessages());
-        assertCollectionEquals("changes", expected, log.getMessages());
+        Space spaceDef = Space.readSpace(testName + ORIG_SUFFIX, EntityToAISTest.class);
+        EntityToAIS eToAIS = new EntityToAIS(SCHEMA);
+        spaceDef.visit(eToAIS);
+
+        String expected = Strings.dumpFileToString(new File(dir, testName + EXPECTED_SUFFIX));
+        String actual = AISDumper.dumpDeterministicAIS(eToAIS.getAIS(), SCHEMA);
+        assertEquals("Generated AIS", expected.trim(), actual.trim());
     }
 
-    public SpaceDiffTest(String testName) {
+    public EntityToAISTest(String testName) {
         this.testName = testName;
     }
 
     private final String testName;
-    private static final File dir = JUnitUtils.getContainingFile(SpaceDiffTest.class);
+    private static final File dir = JUnitUtils.getContainingFile(EntityToAISTest.class);
 }

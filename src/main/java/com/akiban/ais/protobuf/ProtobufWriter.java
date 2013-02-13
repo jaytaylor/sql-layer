@@ -432,8 +432,11 @@ public class ProtobufWriter {
                 setColumnName(column.getName()).
                 setTypeName(column.getType().name()).
                 setIsNullable(column.getNullable()).
-                setPosition(column.getPosition()).
-                setCharColl(convertCharAndCol(column.getCharsetAndCollation()));
+                setPosition(column.getPosition());
+
+        if(Types.isTextType(column.getType())) {
+            columnBuilder.setCharColl(convertCharAndCol(column.getCharsetAndCollation()));
+        }
 
         UUID columnUuid = column.getUuid();
         if (columnUuid != null) {
@@ -483,9 +486,11 @@ public class ProtobufWriter {
                 setIsPK(index.isPrimaryKey()).
                 setIsUnique(index.isUnique()).
                 setIsAkFK(index.isAkibanForeignKey()).
-                setJoinType(convertJoinType(index.getJoinType())).
                 setIndexMethod(convertIndexMethod(index.getIndexMethod()));
                 // Not yet in AIS: description
+        if(index.isGroupIndex()) {
+            indexBuilder.setJoinType(convertJoinType(index.getJoinType()));
+        }
         if(index.getTreeName() != null) {
             indexBuilder.setTreeName(index.getTreeName());
         }

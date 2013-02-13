@@ -92,6 +92,7 @@ public class Column implements ColumnContainer
             }
         }
         out.setDefaultValue(column.getDefaultValue());
+        out.setUuid(column.getUuid());
         return out;
     }
 
@@ -418,6 +419,11 @@ public class Column implements ColumnContainer
             prefixSize = 0;
         }
         return prefixSize;
+    }
+
+    public void clearMaxAndPrefixSize() {
+        maxStorageSize = null;
+        prefixSize = null;
     }
 
     public UUID getUuid() {

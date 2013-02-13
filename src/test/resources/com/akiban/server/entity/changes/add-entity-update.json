@@ -31,10 +31,12 @@
                 }
             },
             "validation" : [
-                { "unique" : [ ["customer", "last_name"], ["customer", "first_name"] ] },
-                { "unique" : [ ["orders", "placed"] ] }
+                { "unique" : "last_first" },
+                { "unique" : "placed" }
             ],
             "indexes" : {
+                "last_first" : [ ["customer", "last_name"], ["customer", "first_name"] ],
+                "placed" : [ ["orders", "placed" ] ],
                 "orderplaced_lastname" : [ ["orders", "placed"], ["customer", "last_name"] ]
             }
         }
