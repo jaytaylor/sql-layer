@@ -80,8 +80,8 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     }
 
     @Override
-    public void dropEntity(Entity dropped) {
-        throw new UnsupportedOperationException();
+    public void dropEntity(Entity dropped, String oldName) {
+        ddlFunctions.dropGroup(session, new TableName(schemaName, oldName));
     }
 
     @Override
