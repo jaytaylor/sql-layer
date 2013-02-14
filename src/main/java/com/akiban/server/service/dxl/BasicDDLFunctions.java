@@ -388,7 +388,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     }
                     pProjections.add(new TPreparedLiteral(newInst, defaultValueSource));
                 } else {
-                    Column oldCol = origTable.getColumn(oldPosition);
+                    Column oldCol = origTable.getColumnsIncludingInternal().get(oldPosition);
                     TInstance oldInst = oldCol.tInstance();
                     TPreparedExpression pExp = new TPreparedField(oldInst, oldPosition);
                     if(!oldInst.equalsExcludingNullable(newInst)) {

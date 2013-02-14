@@ -207,20 +207,17 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
 
     @Override
     public void changeScalarType(UUID scalarUuid, Attribute afterChange) {
-        UUID parent = newLookups.getParentAttribute(scalarUuid);
-        String parentName = (parent == null) ? getCurEntityName() : newLookups.nameFor(parent);
-        String name = newLookups.nameFor(scalarUuid);
-        trackColumnChange(parentName, TableChange.createModify(name, name));
+        handleColumnChange(scalarUuid);
     }
 
     @Override
     public void changeScalarValidations(UUID scalarUuid, Attribute afterChange) {
-        throw new UnsupportedOperationException();
+        handleColumnChange(scalarUuid);
     }
 
     @Override
     public void changeScalarProperties(UUID scalarUuid, Attribute afterChange) {
-        throw new UnsupportedOperationException();
+        handleColumnChange(scalarUuid);
     }
 
     @Override
@@ -273,6 +270,13 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     @Override
     public void error(String message) {
         throw new UnsupportedOperationException();
+    }
+
+    private void handleColumnChange(UUID columnUuid) {
+        UUID parent = newLookups.getParentAttribute(columnUuid);
+        String parentName = (parent == null) ? getCurEntityName() : newLookups.nameFor(parent);
+        String name = newLookups.nameFor(columnUuid);
+        trackColumnChange(parentName, TableChange.createModify(name, name));
     }
 
     private static Index findIndex(UserTable root, final String indexName) {
