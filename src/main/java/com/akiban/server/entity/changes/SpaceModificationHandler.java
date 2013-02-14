@@ -36,9 +36,9 @@ import java.util.UUID;
 public interface SpaceModificationHandler {
     void addEntity(UUID entityUuid);
     void dropEntity(Entity dropped, String oldName);
-    void renameEntity(UUID entityUuid, String oldName);
 
     void beginEntity(UUID entityUUID);
+    void renameEntity(UUID entityUuid, String oldName);
 
     void beginAttributes(AttributeLookups oldLookups, AttributeLookups newLookups);
     void addAttribute(UUID parentAttributeUuid, UUID attributeUuid);
