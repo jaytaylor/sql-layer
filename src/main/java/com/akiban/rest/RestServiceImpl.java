@@ -33,6 +33,9 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.restdml.RestDMLService;
 import com.akiban.server.service.restdml.RestDMLServiceImpl;
 import com.akiban.server.service.security.SecurityService;
+import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.transaction.TransactionService;
+import com.akiban.server.store.SchemaManager;
 import com.google.inject.Inject;
 import com.google.inject.servlet.GuiceFilter;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -45,6 +48,8 @@ public class RestServiceImpl implements RestService, Service {
 	private final HttpConductor http;
     // Used by various resources
     private final RestDMLService restDMLService;
+    private final SessionService sessionService;
+    private final TransactionService transactionService;
     private final SecurityService securityService;
     private final DXLService dxlService;
 
@@ -52,11 +57,18 @@ public class RestServiceImpl implements RestService, Service {
 	
 
 	@Inject
-    public RestServiceImpl(ConfigurationService configService, HttpConductor http,
-                           RestDMLService restDMLService, SecurityService securityService, DXLService dxlService) {
+    public RestServiceImpl(ConfigurationService configService,
+                           HttpConductor http,
+                           RestDMLService restDMLService,
+                           SessionService sessionService,
+                           TransactionService transactionService,
+                           SecurityService securityService,
+                           DXLService dxlService) {
         this.configService = configService;
 		this.http = http;
         this.restDMLService = restDMLService;
+        this.sessionService = sessionService;
+        this.transactionService = transactionService;
         this.securityService = securityService;
         this.dxlService = dxlService;
     }

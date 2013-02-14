@@ -65,7 +65,6 @@ import static com.akiban.server.service.transaction.TransactionService.Closeable
 public final class EntityResource {
     private static final Response FORBIDDEN = Response.status(Response.Status.FORBIDDEN).build();
 
-    @Inject private SchemaManager schemaManager;
     @Inject private SessionService sessionService;
     @Inject private TransactionService transactionService;
     @Inject private SecurityService securityService;
@@ -84,7 +83,7 @@ public final class EntityResource {
         try (Session session = sessionService.createSession()) {
             transactionService.beginTransaction(session);
             try {
-                AkibanInformationSchema ais = schemaManager.getAis(session);
+                AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
                 ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
                 Space space = AisToSpace.create(ais);
                 String json = space.toJson();
@@ -140,7 +139,7 @@ public final class EntityResource {
         }
         try (Session session = sessionService.createSession();
              CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
-            AkibanInformationSchema ais = schemaManager.getAis(session);
+            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
             ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
             Space curSpace = AisToSpace.create(ais);
             Space newSpace = Space.create(new InputStreamReader(postInput));
