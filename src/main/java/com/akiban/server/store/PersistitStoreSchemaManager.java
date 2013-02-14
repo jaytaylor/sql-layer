@@ -922,6 +922,11 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                 taskQueue.add(new ClearAISMapTask(0, 10000));
             }
         };
+
+        this.aisCacheMissCount = new AtomicInteger(0);
+        this.loadAISFromStorageCount = new AtomicInteger(0);
+        this.delayedTreeCount = new AtomicInteger(0);
+
         if (!skipAISUpgrade) {
             final AkibanInformationSchema upgradeAIS = AISCloner.clone(newAIS);
             UuidAssigner uuidAssigner = new UuidAssigner();
@@ -939,10 +944,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         else {
             //LOG.warn("Skipping AIS upgrade");
         }
-
-        this.aisCacheMissCount = new AtomicInteger(0);
-        this.loadAISFromStorageCount = new AtomicInteger(0);
-        this.delayedTreeCount = new AtomicInteger(0);
 
         registerSummaryTable();
     }
