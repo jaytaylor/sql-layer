@@ -144,7 +144,7 @@ public class PrimaryKeyParserTest {
         test("1,2", pk, asList(asList("1", "2")));
     }
 
-    @Test(expected=NoSuchColumnException.class)
+    @Test(expected=KeyColumnMismatchException.class)
     public void columnNotInIndex() {
         Index pk = createIndex(1);
         test("z=1", pk, llist("1"));

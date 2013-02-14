@@ -120,6 +120,6 @@ public class PrimaryKeyParser {
                 return iCol.getPosition();
             }
         }
-        throw new NoSuchColumnException (columnName);
+        throw new KeyColumnMismatchException ("Column `" + columnName + "` is not a primary key column");
     }
 }
