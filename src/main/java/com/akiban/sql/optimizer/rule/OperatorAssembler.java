@@ -967,7 +967,7 @@ public class OperatorAssembler extends BaseRule
             //stream = assembleDeleteProjectTable (stream, projectFields, delete);
             UserTableRowType targetRowType = tableRowType(delete.getTargetTable());
             
-            stream.operator = API.delete_Returning(stream.operator, usePValues);
+            stream.operator = API.delete_Returning(stream.operator, usePValues, false);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(delete.getTable(), targetRowType);
             
             if (explainContext != null)

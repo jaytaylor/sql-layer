@@ -1,0 +1,1 @@
+SELECT COUNT(*) AS customer_count FROM test.customers

@@ -27,10 +27,13 @@
 package com.akiban.rest.resources;
 
 
+import com.akiban.ais.model.TableName;
 import com.akiban.rest.ResponseHelper;
 import com.akiban.server.service.restdml.RestDMLService;
 import com.google.inject.Inject;
 
+import java.security.Principal;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -47,14 +50,13 @@ import javax.ws.rs.core.UriInfo;
 
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
 
 /**
  * Implementation of REST-oriented Get, Multi-Get, Create, Update, Delete and
  * Multi-Delete.
  */
-@Path("/{schema}.{table}")
+@Path("/{table}")
 public class DataAccessOperationsResource {
     
     @Inject
@@ -64,58 +66,79 @@ public class DataAccessOperationsResource {
     
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response retrieveEntity(@QueryParam("format") String format,
+    public Response retrieveEntity(@Context HttpServletRequest request,
+                                   @QueryParam("format") String format,
                                    @QueryParam("jsoncallback") String jsonp,
-                                   @PathParam("schema") String schema,
                                    @PathParam("table") String table,
                                    @QueryParam("depth") Integer depth,
                                    @QueryParam("offset") Integer offset,
                                    @QueryParam("limit") Integer limit) throws Exception {
-        return dmlService.getAllEntities(schema, table, depth);
+        TableName tableName = parseTableName(request, table);
+        return dmlService.getAllEntities(request, tableName, depth);
     }
 
     @GET
     @Path("{identifiers:.*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response retrieveEntity(@QueryParam("format") String format,
+    public Response retrieveEntity(@Context HttpServletRequest request,
+                                   @QueryParam("format") String format,
                                    @QueryParam("jsoncallback") String jsonp,
-                                   @PathParam("schema") String schema,
                                    @PathParam("table") String table,
                                    @QueryParam("depth") Integer depth,
                                    @Context UriInfo uri) throws Exception {
+        TableName tableName = parseTableName(request, table);
         String[] pks = uri.getPath(false).split("/");
         assert pks.length > 0 : uri;
-        return dmlService.getEntities(schema, table, depth, pks[pks.length-1]);
+        return dmlService.getEntities(request, tableName, depth, pks[pks.length-1]);
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createEntity(@PathParam("schema") final String schema,
-                                 @PathParam("table") final String table,
-                                 final byte[] entityBytes) throws Exception {
+    public Response createEntity(@Context HttpServletRequest request,
+                                 @PathParam("table") String table,
+                                 byte[] entityBytes) throws Exception {
+        TableName tableName = parseTableName(request, table);
         ObjectMapper m = new ObjectMapper();
         JsonNode node = m.readTree(entityBytes);
-        
-        return dmlService.insert(schema, table, node);
+        return dmlService.insert(request, tableName, node);
     }
 
     @PUT
     @Path("{identifiers:.*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateEntity(@PathParam("schema") final String schema,
-                                 @PathParam("table") final String table,
-                                 final byte[] entityBytes,
-                                 @Context final UriInfo uri) throws Exception {
+    public Response updateEntity(@Context HttpServletRequest request,
+                                 @PathParam("table") String table,
+                                 byte[] entityBytes,
+                                 @Context UriInfo uri) throws Exception {
+        TableName tableName = parseTableName(request, table);
         return ResponseHelper.buildNotYetImplemented();
     }
 
     @DELETE
     @Path("{identifiers:.*}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteEntity(@PathParam("schema") String schema,
+    public Response deleteEntity(@Context HttpServletRequest request,
                                  @PathParam("table") String table,
                                  @Context UriInfo uri) throws Exception {
-        return ResponseHelper.buildNotYetImplemented();
+        TableName tableName = parseTableName(request, table);
+        String[] pks = uri.getPath(false).split("/");
+        assert pks.length > 0 : uri;
+        return dmlService.delete(request, tableName, pks[pks.length-1]);
+    }
+
+    protected static TableName parseTableName(HttpServletRequest request, String name) {
+        String schema, table;
+        int idx = name.indexOf('.');
+        if (idx >= 0) {
+            schema = name.substring(0, idx);
+            table = name.substring(idx+1);
+        }
+        else {
+            Principal user = request.getUserPrincipal();
+            schema = (user == null) ? "" : user.getName();
+            table = name;
+        }
+        return new TableName(schema, table);
     }
 }

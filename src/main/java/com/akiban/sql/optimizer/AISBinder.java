@@ -442,7 +442,10 @@ public class AISBinder implements Visitor
         Columnar table = null;
         View view = ais.getView(schemaName, tableName);
         if (view != null) {
-            if (expandViews) {
+            if (!context.isAccessible(view.getName())) {
+                view = null;
+            }
+            else if (expandViews) {
                 ViewDefinition viewdef = context.getViewDefinition(view);
                 FromSubquery viewSubquery;
                 try {
@@ -684,7 +687,8 @@ public class AISBinder implements Visitor
 
     protected Table lookupTableName(TableName origName, String schemaName, String tableName) {
         Table result = ais.getUserTable(schemaName, tableName);
-        if (result == null)
+        if ((result == null) || 
+            ((context != null) && !context.isAccessible(result.getName())))
             throw new NoSuchTableException(schemaName, tableName, origName);
         return result;
     }
@@ -1200,13 +1204,16 @@ public class AISBinder implements Visitor
                 // Qualified name is always a routine and an immediate error if not.
                 routine = ais.getRoutine(methodCall.getProcedureName().getSchemaName(),
                                          methodCall.getProcedureName().getTableName());
-                if (routine == null) {
+                if ((routine == null) || !context.isAccessible(routine.getName())) {
                     throw new NoSuchFunctionException(methodCall.getProcedureName().toString());
                 }
             }
             else if (!functionDefined.isDefined(methodCall.getMethodName())) {
                 // Unqualified only if not a built-in function and error deferred.
                 routine = ais.getRoutine(defaultSchemaName, methodCall.getMethodName());
+                if ((routine != null) && !context.isAccessible(routine.getName())) {
+                    routine = null;
+                }
             }
             if (routine != null) {
                 if (routine.getReturnValue() == null) {

@@ -390,7 +390,6 @@ final class OperatorStoreMaintenance {
     private static final PointTap EXTRA_STORE_ROW_TAP = Tap.createCount("GI maintenance: extra store");
     private static final PointTap EXTRA_DELETE_ROW_TAP = Tap.createCount("GI maintenance: extra delete");
     private static final PointTap EXTRA_OTHER_ROW_TAP = Tap.createCount("GI maintenance: extra other");
-
     // nested classes
 
     static class BranchTables {

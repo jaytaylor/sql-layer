@@ -504,12 +504,12 @@ public final class CBasicIT extends ITBase {
                 createNewRow(tableId, 0L, "doomed row"),
                 createNewRow(tableId, 1L, "also doomed"));
 
-        dml().deleteRow(session(), createNewRow(tableId, 0L, "doomed row") );
+        dml().deleteRow(session(), createNewRow(tableId, 0L, "doomed row"), false );
         expectRowCount(tableId, 1);
         expectRows(request,
                 createNewRow(tableId, 1L, "also doomed"));
 
-        dml().deleteRow(session(), createNewRow(tableId, 1L) );
+        dml().deleteRow(session(), createNewRow(tableId, 1L), false );
         expectRowCount(tableId, 0);
         expectRows(request);
     }
@@ -533,7 +533,7 @@ public final class CBasicIT extends ITBase {
         try {
             NewRow deleteAttempt = createNewRow(tableId);
             deleteAttempt.put(1, "the customer's name");
-            dml().deleteRow(session(), deleteAttempt);
+            dml().deleteRow(session(), deleteAttempt, false);
         } catch (NoSuchRowException e) {
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
             expectRows(request, createNewRow(tableId, 0L, "the customer's name"));
@@ -553,7 +553,7 @@ public final class CBasicIT extends ITBase {
         try {
             NewRow deleteAttempt = createNewRow(tableId);
             deleteAttempt.put(1, "the customer's name");
-            dml().deleteRow(session(), createNewRow(tableId, 0, "this row doesn't exist"));
+            dml().deleteRow(session(), createNewRow(tableId, 0, "this row doesn't exist"), false);
         } catch (NoSuchRowException e) {
             ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1));
             expectRows(request);

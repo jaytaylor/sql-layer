@@ -34,6 +34,7 @@ import com.akiban.sql.parser.StaticMethodCallNode;
 import com.akiban.sql.parser.ValueNode;
 
 import com.akiban.ais.model.Routine;
+import com.akiban.ais.model.TableName;
 import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.types.AkType;
@@ -102,6 +103,19 @@ public class ServerCallInvocation extends ServerRoutineInvocation
                 throw new UnsupportedSQLException("CALL parameter must be constant",
                                                   marg);
             }
+        }
+        return new ServerCallInvocation(routine, constantArgs, parameterArgs);
+    }
+
+    public static ServerCallInvocation of(ServerSession server, TableName routineName) {
+        Routine routine = server.getAIS().getRoutine(routineName);
+        if (routine == null) 
+            throw new NoSuchRoutineException(routineName);
+        int nparams = routine.getParameters().size();
+        Object[] constantArgs = new Object[nparams];
+        int[] parameterArgs = new int[nparams];
+        for (int i = 0; i < nparams; i++) {
+            parameterArgs[i] = i;
         }
         return new ServerCallInvocation(routine, constantArgs, parameterArgs);
     }

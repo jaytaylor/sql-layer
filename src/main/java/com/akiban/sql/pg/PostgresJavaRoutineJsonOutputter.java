@@ -99,10 +99,10 @@ public class PostgresJavaRoutineJsonOutputter extends PostgresOutputter<ServerJa
             outputValue("return", value, appender, first);
             first = false;
         }
-        int i = 0;
+        int nresults = 0;
         while (!resultSets.isEmpty()) {
-            outputValue(String.format("result%d", ++i), resultSets.remove(),
-                        appender, first);
+            String name = (nresults++ > 0) ? String.format("result_set_%d", nresults) : "result_set";
+            outputValue(name, resultSets.remove(), appender, first);
             first = false;
         }
         encoder.appendString("}");

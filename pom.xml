@@ -165,6 +165,12 @@
             <artifactId>jersey-guice</artifactId>
             <version>1.13</version>
         </dependency>
+        <dependency>
+	    <groupId>org.apache.httpcomponents</groupId>
+	    <artifactId>httpclient</artifactId>
+	    <version>4.2.3</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <resources>
@@ -352,10 +358,6 @@
                         <exclude>**/*.test</exclude>
                         <exclude>**/*.yaml</exclude>
                         <exclude>**/*.yml</exclude>
-                        <exclude>**/*.get</exclude>
-                        <exclude>**/*.put</exclude>
-                        <exclude>**/*.post</exclude>
-                        <exclude>**/*.body</exclude>
                         <exclude>src/test/bin/*.sh</exclude>
                         <exclude>src/test/bin/*.cmd</exclude>
                         <exclude>.idea/**</exclude>
@@ -378,10 +380,14 @@
                         <exclude>src/test/resources/com/akiban/**/README*</exclude>
                         <exclude>src/test/resources/com/akiban/**/*.properties</exclude>
                         <exclude>src/test/resources/com/akiban/ais/model/staticgrouping/*</exclude>
+                        <exclude>src/test/resources/com/akiban/rest/**</exclude>
                         <exclude>src/main/resources/com/akiban/server/service/functions/functionpath.txt</exclude>
                         <exclude>src/test/resources/com/akiban/server/service/functions/testfunctionpath.txt</exclude>
                         <exclude>src/test/resources/com/akiban/server/service/servicemanager/configuration/yaml/test-composite.yaml.1</exclude>
                         <exclude>src/main/resources/com/akiban/server/types3/service/t3s.txt</exclude>
+			<exclude>src/test/resources/com/akiban/server/entity/changes/*.*</exclude>
+			<exclude>src/test/resources/com/akiban/server/entity/fromais/*.*</exclude>
+			<exclude>src/test/resources/com/akiban/server/entity/model/*.*</exclude>
                     </excludes>
                     <mapping>
                         <g>JAVADOC_STYLE</g>

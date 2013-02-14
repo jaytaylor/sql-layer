@@ -23,28 +23,24 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.server.service.restdml;
 
-package com.akiban.rest.resources;
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.TableName;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.Operator;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+public class DeleteGenerator extends OperatorGenerator {
 
-/**
- * Easy access to database schemata
- */
-@Path("/schemata")
-public class SqlSchemataResource {
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getSchemata(@QueryParam("format") String format,
-                                @QueryParam("jsoncallback") String jsonp) throws Exception {
-        return Response
-                .status(Response.Status.OK)
-                .entity("Not yet implemented")
-                .build();
+    public DeleteGenerator (AkibanInformationSchema ais) {
+        super(ais);
     }
+    
+    @Override
+    protected Operator create(TableName tableName) {
+        Operator lookup = indexAncestorLookup(tableName); 
+        // build delete operator.
+        return API.delete_Returning(lookup, true, true);
+    }       
+    
 }

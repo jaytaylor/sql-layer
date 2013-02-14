@@ -24,30 +24,15 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.rest.resources;
+package com.akiban.server.error;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+public class SecurityException extends InvalidOperationException {
+    public SecurityException(String message) {
+        super(ErrorCode.SECURITY, message);
+    }
 
-/**
- * Easy access to all tables within a schema, or a specific table
- */
-@Path("/tables")
-public class SqlTablesResource {
-    @GET
-    @Path("/{schemaObject}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getTableDetails(@PathParam("schemaObject") String schemaObject,
-                                    @QueryParam("format") String format,
-                                    @QueryParam("jsoncallback") String jsonp) throws Exception {
-        return Response
-                .status(Response.Status.OK)
-                .entity("Not yet implemented")
-                .build();
+    public SecurityException(String message, Throwable cause) {
+        super(ErrorCode.SECURITY, message);
+        initCause(cause);
     }
 }

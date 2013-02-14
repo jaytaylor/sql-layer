@@ -83,19 +83,18 @@ final class EntityBuilder {
         }
 
         for (Column column : table.getColumns()) {
-            if (parentJoinColumns.contains(column))
-                continue;
             TInstance tInstance = column.tInstance();
             TClass tClass = tInstance.typeClass();
             String type = tClass.name().unqualifiedName().toLowerCase();
-
             Attribute scalar = Attribute.modifiableScalar(uuidOrCreate(column), type);
-
             if (pkColumns != null) {
                 int pkPos = pkColumns.indexOf(column);
                 if (pkPos >= 0)
                     scalar.setSpinalPos(pkPos);
             }
+            if ((!scalar.isSpinal()) && parentJoinColumns.contains(column))
+                continue;
+
             Map<String, Object> properties = scalar.getProperties();
             Collection<Validation> validations = scalar.getValidation();
             if (!tInstance.nullability())
@@ -153,6 +152,8 @@ final class EntityBuilder {
         Set<String> uniques = new HashSet<>(out.size());
         StringBuilder scratch = new StringBuilder();
         for (Index index : indexes) {
+            if (index.getIndexName().getName().startsWith("__akiban"))
+                continue;
             scratch.setLength(0);
             scratch.append(index.leafMostTable().getName().getTableName());
             scratch.append('_');

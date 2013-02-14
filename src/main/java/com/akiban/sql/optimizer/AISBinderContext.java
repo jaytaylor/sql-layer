@@ -261,4 +261,12 @@ public class AISBinderContext
         return view;
     }
 
+    public boolean isAccessible(TableName object) {
+        return isSchemaAccessible(object.getSchemaName());
+    }
+
+    public boolean isSchemaAccessible(String schemaName) {
+        return true;
+    }
+
 }
