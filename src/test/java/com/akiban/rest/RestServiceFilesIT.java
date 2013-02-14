@@ -103,9 +103,7 @@ public class RestServiceFilesIT extends ITBase {
 
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
-        return super.serviceBindingsProvider()
-            .bindAndRequire(RestService.class, RestServiceImpl.class)
-            .bindAndRequire(RestDMLService.class, RestDMLServiceImpl.class);
+        return super.serviceBindingsProvider().bindAndRequire(RestService.class, RestServiceImpl.class);
     }
 
     @Override
