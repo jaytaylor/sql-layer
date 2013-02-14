@@ -28,6 +28,7 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.*;
 import com.akiban.qp.operator.*;
+import com.akiban.qp.persistitadapter.OperatorStoreGIHandler.Action;
 import com.akiban.qp.row.FlattenedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.FlattenedRowType;
@@ -48,8 +49,11 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 
-final class OperatorStoreMaintenance {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+final class OperatorStoreMaintenance {
+    
     public void run(OperatorStoreGIHandler.Action action,
                     PersistitHKey hKey,
                     RowData forRow,
@@ -100,14 +104,16 @@ final class OperatorStoreMaintenance {
                     Index.JoinType giJoin = groupIndex.getJoinType();
                     switch (giJoin) {
                     case LEFT:
-                        if (row.rowType().equals(storePlan.leftHalf) && useInvertType(action, context)) {
+                        if (row.rowType().equals(storePlan.leftHalf) && useInvertType(action, context) &&
+                                !skipCascadeRow(action, row, handler)) {
                             Row outerRow = new FlattenedRow(storePlan.topLevelFlattenType, row, null, row.hKey());
                             doAction(invert(action), handler, outerRow);
                             actioned = true;
                         }
                         break;
                     case RIGHT:
-                        if (row.rowType().equals(storePlan.rightHalf) && useInvertType(action, context)) {
+                        if (row.rowType().equals(storePlan.rightHalf) && useInvertType(action, context) &&
+                                !skipCascadeRow(action, row, handler)) {
                             Row outerRow = new FlattenedRow(storePlan.topLevelFlattenType, null, row, row.hKey());
                             doAction(invert(action), handler, outerRow);
                             actioned = true;
@@ -118,11 +124,10 @@ final class OperatorStoreMaintenance {
                 }
                 else {
                     // Hkey cleanup. Look for the right half.
-                    if (row.rowType().equals(storePlan.rightHalf)) {
+                    if (row.rowType().equals(storePlan.rightHalf) && !skipCascadeRow(action, row, handler)) {
                         Row outerRow = new FlattenedRow(storePlan.topLevelFlattenType, null, row, row.hKey());
                         doAction(invert(action), handler, outerRow);
                         actioned = true;
-
                     }
                 }
                 if (!actioned) {
@@ -140,12 +145,19 @@ final class OperatorStoreMaintenance {
         }
     }
 
+    private boolean skipCascadeRow(OperatorStoreGIHandler.Action action, Row row, OperatorStoreGIHandler handler) {
+        return action == Action.CASCADE &&
+                row.rowType().typeComposition().tables().contains(handler.getSourceTable());
+    }
+    
     private boolean useInvertType(OperatorStoreGIHandler.Action action, QueryContext context) {
         switch (groupIndex.getJoinType()) {
         case LEFT:
             switch (action) {
+            case CASCADE_STORE:
             case STORE:
                 return true;
+            case CASCADE:
             case DELETE:
                 if (siblingsLookup == null)
                     return false;
@@ -190,6 +202,8 @@ final class OperatorStoreMaintenance {
         switch (action) {
         case STORE:     return OperatorStoreGIHandler.Action.DELETE;
         case DELETE:    return OperatorStoreGIHandler.Action.STORE;
+        case CASCADE:   return OperatorStoreGIHandler.Action.CASCADE_STORE;
+        case CASCADE_STORE:   return OperatorStoreGIHandler.Action.CASCADE_STORE;
         default: throw new AssertionError(action.name());
         }
     }
@@ -232,6 +246,7 @@ final class OperatorStoreMaintenance {
     private final Operator siblingsLookup;
     private final GroupIndex groupIndex;
     private final UserTableRowType rowType;
+    
 
     // for use in this class
 
@@ -378,7 +393,7 @@ final class OperatorStoreMaintenance {
     }
 
     // package consts
-
+    private static final Logger LOG = LoggerFactory.getLogger(OperatorStoreMaintenance.class);
     private static final int HKEY_BINDING_POSITION = 0;
     private static final InOutTap ALL_TAP = Tap.createTimer("GI maintenance: all");
     private static final InOutTap RUN_TAP = Tap.createTimer("GI maintenance: run");

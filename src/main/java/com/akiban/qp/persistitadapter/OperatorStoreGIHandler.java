@@ -32,6 +32,8 @@ import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.FlattenedRowType;
+import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.geophile.Space;
@@ -62,6 +64,7 @@ class OperatorStoreGIHandler {
         if (sourceRowPosition.equals(GroupIndexPosition.BELOW_SEGMENT)) { // asserts sourceRowPosition != null :-)
             return; // nothing to do
         }
+        
         int firstSpatialColumn = groupIndex.isSpatial() ? groupIndex.firstSpatialArgument() : -1;
         Exchange exchange = adapter.takeExchange(groupIndex);
         try {
@@ -82,9 +85,11 @@ class OperatorStoreGIHandler {
             indexRow.close(action == Action.STORE);
             indexRow.tableBitmap(tableBitmap(groupIndex, row));
             switch (action) {
+            case CASCADE_STORE:
             case STORE:
                 storeExchange(groupIndex, exchange);
                 break;
+            case CASCADE:
             case DELETE:
                 removeExchange(groupIndex, exchange);
                 break;
@@ -96,6 +101,9 @@ class OperatorStoreGIHandler {
         }
     }
 
+    public UserTable getSourceTable () {
+        return sourceTable;
+    }
     // class interface
 
     public static OperatorStoreGIHandler forTable(PersistitAdapter adapter, UserTable userTable) {
@@ -257,5 +265,5 @@ class OperatorStoreGIHandler {
         WITHIN_SEGMENT
     }
 
-    static enum Action {STORE, DELETE }
+    static enum Action {STORE, DELETE, CASCADE, CASCADE_STORE}
 }
