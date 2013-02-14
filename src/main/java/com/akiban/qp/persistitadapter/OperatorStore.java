@@ -43,8 +43,6 @@ import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.NoRowsUpdatedException;
 import com.akiban.server.error.TooManyRowsUpdatedException;
-import com.akiban.server.explain.ExplainContext;
-import com.akiban.server.explain.format.DefaultFormatter;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDataExtractor;
 import com.akiban.server.rowdata.RowDataPValueSource;
@@ -69,9 +67,6 @@ import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 
 import java.util.*;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static com.akiban.qp.operator.API.*;
 
@@ -486,7 +481,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     private static final InOutTap UPDATE_MAINTENANCE = Tap.createTimer("write: update_maintenance");
     private static final InOutTap DELETE_MAINTENANCE = Tap.createTimer("write: delete_maintenance");
     private static final PointTap SKIP_MAINTENANCE = Tap.createCount("write: skip_maintenance");
-    private static final Logger LOG = LoggerFactory.getLogger(OperatorStore.class);
 
 
     // nested classes

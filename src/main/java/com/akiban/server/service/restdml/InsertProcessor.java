@@ -48,8 +48,6 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.FKValueMismatchException;
-import com.akiban.server.explain.ExplainContext;
-import com.akiban.server.explain.format.DefaultFormatter;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.externaldata.JsonRowWriter;
 import com.akiban.server.service.externaldata.JsonRowWriter.WriteCapturePKRow;
@@ -58,8 +56,6 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -241,36 +237,10 @@ public class InsertProcessor extends DMLProcessor {
         if (value == null) {
             pvalue = new PValue(Column.generateTInstance(null, Types.VARCHAR, 65535L, null, true));
             pvalue.putNull();
-/*            
-        else if (column.getType().equals(Types.DATETIME)) {
-            //pvalue = new PValue (column.tInstance(), value);
-            pvalue = new PValue(column.tInstance(), MDatetimes.parseDatetime(value));
-        } else if (column.getType().equals(Types.DATE)) {
-            int date = MDatetimes.parseDate(value, new TExecutionContext(null, null, queryContext));
-            pvalue = new PValue(column.tInstance(), date);
-        } else if (column.getType().equals(Types.TIME)) {
-            int time = MDatetimes.parseTime(value,  new TExecutionContext(null, null, queryContext));
-            pvalue = new PValue(column.tInstance(), time);
-*/            
         } else {
             pvalue = new PValue(Column.generateTInstance(null, Types.VARCHAR, 65535L, null, true), value);
         }
         queryContext.setPValue(column.getPosition(), pvalue);
     }
     
-    private void setValue (QueryContext queryContext,Column column, int value) {
-        queryContext.setPValue(column.getPosition(), new PValue (column.tInstance(), value));
-    }
-    
-    private void setValue (QueryContext queryContext, Column column, long value) {
-        queryContext.setPValue(column.getPosition(),  new PValue (column.tInstance(), value));
-    }
-    
-    private void setValue (QueryContext queryContext, Column column, boolean value) {
-        queryContext.setPValue(column.getPosition(), new PValue(column.tInstance(), value));
-    }
-    
-    private void setValue (QueryContext queryContext, Column column, double value) {
-        queryContext.setPValue(column.getPosition(), new PValue(column.tInstance(), value));
-    }
 }

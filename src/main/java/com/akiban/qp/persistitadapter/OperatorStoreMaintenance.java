@@ -49,9 +49,6 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 final class OperatorStoreMaintenance {
     
     public void run(OperatorStoreGIHandler.Action action,
@@ -393,7 +390,6 @@ final class OperatorStoreMaintenance {
     }
 
     // package consts
-    private static final Logger LOG = LoggerFactory.getLogger(OperatorStoreMaintenance.class);
     private static final int HKEY_BINDING_POSITION = 0;
     private static final InOutTap ALL_TAP = Tap.createTimer("GI maintenance: all");
     private static final InOutTap RUN_TAP = Tap.createTimer("GI maintenance: run");

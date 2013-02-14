@@ -43,7 +43,6 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.t3expressions.OverloadResolver;
-import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TCast;

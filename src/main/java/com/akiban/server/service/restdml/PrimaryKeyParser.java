@@ -29,7 +29,6 @@ package com.akiban.server.service.restdml;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.error.KeyColumnMismatchException;
-import com.akiban.server.error.NoSuchColumnException;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;

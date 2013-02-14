@@ -32,8 +32,6 @@ import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.FlattenedRowType;
-import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.geophile.Space;
