@@ -178,10 +178,10 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
         switch(dropped.getAttributeType()) {
             case SCALAR:
                 trackColumnChange(parentName, TableChange.createDrop(oldName));
-                break;
+            break;
             case COLLECTION:
                 dropTables.add(oldName);
-                break;
+            break;
             default:
                 assert false : dropped;
         }
@@ -228,11 +228,13 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
 
     @Override
     public void addEntityValidation(Validation validation) {
+        // TODO: No way to drop UNIQUE from an existing index
         throw new UnsupportedOperationException();
     }
 
     @Override
     public void dropEntityValidation(Validation validation) {
+        // TODO: No way to add UNIQUE to an existing index
         throw new UnsupportedOperationException();
     }
 
@@ -264,12 +266,13 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
 
     @Override
     public void renameIndex(EntityIndex index, String oldName, String newName) {
-        throw new UnsupportedOperationException();
+        // TODO: Index renaming might work for tables but no exposed way for GIs, defer for now
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public void error(String message) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(message);
     }
 
     private void handleColumnChange(UUID columnUuid) {
