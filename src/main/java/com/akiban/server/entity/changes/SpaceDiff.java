@@ -56,7 +56,6 @@ public final class SpaceDiff {
                 out.addEntity(uuid);
         }
         for (UUID uuid : inBoth) {
-            out.beginEntity(uuid);
             if (!originalEntities.getName(uuid).equals(updatedEntities.getName(uuid)))
                 out.renameEntity(uuid, originalEntities.getName(uuid));
             attributeActions(uuid, out);
@@ -69,6 +68,7 @@ public final class SpaceDiff {
     private void attributeActions(UUID entityUUID, SpaceModificationHandler out) {
         AttributeLookups origLookups = new AttributeLookups(originalEntities.getEntity(entityUUID));
         AttributeLookups updateLookups = new AttributeLookups(updatedEntities.getEntity(entityUUID));
+        out.beginEntity(entityUUID, origLookups, updateLookups);
 
         // added attributes
         Set<UUID> inBoth = new HashSet<>();

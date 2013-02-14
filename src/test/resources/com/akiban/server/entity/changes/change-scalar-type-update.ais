@@ -10,6 +10,13 @@ schemas {
       position: 0
       uuid: "8644c36b-f881-4369-a06b-59e3fc580309"
     }
+    columns {
+      columnName: "name"
+      typeName: "blob"
+      isNullable: false
+      position: 1
+      uuid: "d160a748-03ca-4497-b906-4bf0efb32618"
+    }
     charColl {
       characterSetName: "utf8"
       collationOrderName: "utf8_bin"

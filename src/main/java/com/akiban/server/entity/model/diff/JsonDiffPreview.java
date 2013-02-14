@@ -26,6 +26,7 @@
 
 package com.akiban.server.entity.model.diff;
 
+import com.akiban.server.entity.changes.AttributeLookups;
 import com.akiban.server.entity.changes.SpaceModificationHandler;
 import com.akiban.server.entity.model.Attribute;
 import com.akiban.server.entity.model.Entity;
@@ -78,7 +79,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
-    public void beginEntity(UUID entityUUID) {
+    public void beginEntity(UUID entityUUID, AttributeLookups oldLookups, AttributeLookups newLookups) {
         // None
     }
 

@@ -34,7 +34,7 @@ import com.akiban.server.entity.model.Validation;
 import java.util.UUID;
 
 public interface SpaceModificationHandler {
-    void beginEntity(UUID entityUUID);
+    void beginEntity(UUID entityUUID, AttributeLookups oldLookups, AttributeLookups newLookups);
     void endEntity();
 
     void addEntity(UUID entityUuid);

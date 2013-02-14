@@ -36,7 +36,7 @@ import java.util.UUID;
 
 public class StringChangeLog extends JUnitUtils.MessageTaker implements SpaceModificationHandler {
     @Override
-    public void beginEntity(UUID entityUUID) {
+    public void beginEntity(UUID entityUUID, AttributeLookups oldLookups, AttributeLookups newLookups) {
         // None
     }
 

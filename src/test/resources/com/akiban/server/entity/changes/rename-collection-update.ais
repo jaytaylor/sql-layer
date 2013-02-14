@@ -10,6 +10,17 @@ schemas {
       position: 0
       uuid: "8644c36b-f881-4369-a06b-59e3fc580309"
     }
+    columns {
+      columnName: "name"
+      typeName: "text"
+      isNullable: false
+      position: 1
+      charColl {
+        characterSetName: "utf8"
+        collationOrderName: "utf8_bin"
+      }
+      uuid: "d160a748-03ca-4497-b906-4bf0efb32618"
+    }
     charColl {
       characterSetName: "utf8"
       collationOrderName: "utf8_bin"
@@ -30,7 +41,7 @@ schemas {
     uuid: "2a57b59e-e1b7-4377-996e-a5c04e0abf29"
   }
   tables {
-    tableName: "orders"
+    tableName: "orders_foo"
     tableId: -1
     columns {
       columnName: "whatever"

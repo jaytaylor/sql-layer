@@ -50,7 +50,7 @@ public class AISDumper {
                     column.setUuid(null);
                 }
             }
-            for(Index index : table.getIndexes()) {
+            for(Index index : table.getIndexesIncludingInternal()) {
                 index.setIndexId(-1);
                 index.setTreeName(null);
             }
