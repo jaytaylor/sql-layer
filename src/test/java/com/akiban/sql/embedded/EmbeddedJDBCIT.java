@@ -36,6 +36,7 @@ import static junit.framework.Assert.*;
 import java.sql.*;
 
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import java.math.BigDecimal;
 import java.util.Map;
 
 public class EmbeddedJDBCIT extends ITBase
@@ -231,6 +232,21 @@ public class EmbeddedJDBCIT extends ITBase
         assertFalse("script results 2 more", rs.next());
         rs.close();
         assertFalse("call returned more results", cstmt.getMoreResults());
+    }
+
+    @Test
+    public void testMoreTypes() throws Exception {
+        Connection conn = DriverManager.getConnection(CONNECTION_URL, SCHEMA_NAME, "");
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("SELECT CURRENT_DATE, 3.14, 1.0e6");
+        assertTrue("has first row", rs.next());
+        assertEquals("date value", new Date(System.currentTimeMillis()).toString(), rs.getDate(1).toString());
+        assertEquals("decimal value", new BigDecimal("3.14"), rs.getBigDecimal(2));
+        assertEquals("double value", 1.0e6, rs.getDouble(3));
+        assertFalse("has more rows", rs.next());
+        rs.close();
+        stmt.close();
+        conn.close();
     }
 
 }
