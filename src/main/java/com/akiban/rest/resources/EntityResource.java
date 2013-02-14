@@ -29,20 +29,33 @@ package com.akiban.rest.resources;
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.protobuf.ProtobufWriter;
+import com.akiban.server.entity.changes.SpaceDiff;
 import com.akiban.server.entity.fromais.AisToSpace;
 import com.akiban.server.entity.model.Space;
+import com.akiban.server.entity.model.diff.JsonDiffPreview;
+import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.store.SchemaManager;
 import com.google.inject.Inject;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+
+import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 
 @Path("/entity")
 public final class EntityResource {
@@ -55,9 +68,12 @@ public final class EntityResource {
     @Inject
     private TransactionService transactionService;
 
+    @Inject
+    private SecurityService securityService;
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getSpace(@QueryParam("space") String schema) throws Exception {
+    public Response getSpace(@QueryParam("space") String schema) {
         try (Session session = sessionService.createSession()) {
             transactionService.beginTransaction(session);
             try {
@@ -71,5 +87,36 @@ public final class EntityResource {
                 transactionService.commitTransaction(session);
             }
         }
+    }
+
+    @POST
+    @Path("/preview/{schema}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response preview(@PathParam("schema") String schema,
+                            final InputStream postInput) throws IOException {
+        try (Session session = sessionService.createSession();
+             CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+            AkibanInformationSchema ais = schemaManager.getAis(session);
+            ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
+            Space curSpace = AisToSpace.create(ais);
+            Space newSpace = Space.create(new InputStreamReader(postInput));
+            SpaceDiff diff = new SpaceDiff(curSpace, newSpace);
+            JsonDiffPreview preview = new JsonDiffPreview();
+            diff.apply(preview);
+            String json = preview.toJSON().toString();
+            txn.commit();
+            return Response.status(Response.Status.OK).entity(json).build();
+        }
+    }
+
+    @POST
+    @Path("/apply/{schema}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response apply(@Context HttpServletRequest request,
+                          @PathParam("schema") String schema,
+                          final byte[] postBytes[]) {
+        return null;
     }
 }

@@ -29,6 +29,9 @@ package com.akiban.rest;
 import com.akiban.http.HttpConductor;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.restdml.RestDMLService;
+import com.akiban.server.service.restdml.RestDMLServiceImpl;
+import com.akiban.server.service.security.SecurityService;
 import com.google.inject.Inject;
 import com.google.inject.servlet.GuiceFilter;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -39,14 +42,21 @@ import java.util.EnumSet;
 public class RestServiceImpl implements RestService, Service {
     private final ConfigurationService configService;
 	private final HttpConductor http;
+    // Used by various resources
+    private final RestDMLService restDMLService;
+    private final SecurityService securityService;
+
 	private volatile ServletContextHandler handler;
 	
 
 	@Inject
-	public RestServiceImpl(ConfigurationService configService, HttpConductor http) {
+    public RestServiceImpl(ConfigurationService configService, HttpConductor http,
+                           RestDMLService restDMLService, SecurityService securityService) {
         this.configService = configService;
 		this.http = http;
-	}
+        this.restDMLService = restDMLService;
+        this.securityService = securityService;
+    }
 
     @Override
     public String getContextPath() {
