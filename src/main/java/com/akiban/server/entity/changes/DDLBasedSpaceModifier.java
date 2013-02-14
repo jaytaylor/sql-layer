@@ -41,6 +41,8 @@ import com.akiban.server.entity.model.Validation;
 import com.akiban.server.service.session.Session;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +57,7 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     private final AkibanInformationSchema newAIS;
 
     private final List<UserTable> newTables = new ArrayList<>();
+    private final List<String> dropTables = new ArrayList<>();
     private final List<Index> newGroupIndex = new ArrayList<>();
     private final List<String> dropGroupIndex = new ArrayList<>();
     private final Map<String,TableChangeSet> tableChanges = new HashMap<>();
@@ -82,6 +85,20 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
 
     @Override
     public void endEntity() {
+        Collections.sort(dropTables, new Comparator<String>() {
+            final AkibanInformationSchema oldAIS = ddlFunctions.getAIS(session);
+            @Override
+            public int compare(String o1, String o2) {
+                UserTable t1 = oldAIS.getUserTable(schemaName, o1);
+                UserTable t2 = oldAIS.getUserTable(schemaName, o2);
+                return t1.getDepth().compareTo(t2.getDepth());
+            }
+        });
+
+        for(String name : dropTables) {
+            ddlFunctions.dropTable(session, new TableName(schemaName, name));
+        }
+
         for(UserTable table : newTables) {
             createTableRecursively(table);
         }
@@ -104,6 +121,7 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
         curEntity = null;
         curEntityLookups = null;
         newTables.clear();
+        dropTables.clear();
         newGroupIndex.clear();
         dropGroupIndex.clear();
 
@@ -132,9 +150,9 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     }
 
     @Override
-    public void addAttribute(UUID parentAttribute, UUID attributeUuid) {
+    public void addAttribute(UUID parentAttributeUuid, UUID attributeUuid) {
         Attribute attr = curEntityLookups.attributeFor(attributeUuid);
-        String parentName = (parentAttribute == null) ? getCurEntityName() : curEntityLookups.nameFor(parentAttribute);
+        String parentName = (parentAttributeUuid == null) ? getCurEntityName() : curEntityLookups.nameFor(parentAttributeUuid);
         String attrName = curEntityLookups.nameFor(attributeUuid);
         switch(attr.getAttributeType()) {
             case SCALAR:
@@ -149,8 +167,18 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     }
 
     @Override
-    public void dropAttribute(Attribute dropped) {
-        throw new UnsupportedOperationException();
+    public void dropAttribute(UUID parentAttributeUuid, String oldName, Attribute dropped) {
+        String parentName = (parentAttributeUuid == null) ? getCurEntityName() : curEntityLookups.nameFor(parentAttributeUuid);
+        switch(dropped.getAttributeType()) {
+            case SCALAR:
+                trackColumnChange(parentName, TableChange.createDrop(oldName));
+                break;
+            case COLLECTION:
+                dropTables.add(oldName);
+                break;
+            default:
+                assert false : dropped;
+        }
     }
 
     @Override

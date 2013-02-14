@@ -142,14 +142,14 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
-    public void addAttribute(UUID parentAttribute, UUID attributeUuid)
+    public void addAttribute(UUID parentAttributeUuid, UUID attributeUuid)
     {
         try
         {
             startObject();
             entry("action", "add_attribute");
             entry("destructive", false);
-            entry("parent", parentAttribute);
+            entry("parent", parentAttributeUuid);
             entry("uuid", attributeUuid);
             endObject();
         }
@@ -160,7 +160,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
-    public void dropAttribute(Attribute dropped)
+    public void dropAttribute(UUID parentAttributeUuid, String oldName, Attribute dropped)
     {
         try
         {

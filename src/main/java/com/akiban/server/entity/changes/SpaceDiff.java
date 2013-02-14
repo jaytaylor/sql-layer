@@ -84,7 +84,7 @@ public final class SpaceDiff {
                     if (droppedAttribute.isSpinal())
                         out.error("Can't drop spinal attribute");
                     else
-                        out.dropAttribute(droppedAttribute);
+                        out.dropAttribute(parent, origLookups.nameFor(uuid), droppedAttribute);
                 }
             }
         }

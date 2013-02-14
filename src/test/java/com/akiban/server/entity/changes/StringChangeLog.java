@@ -61,12 +61,12 @@ public class StringChangeLog extends JUnitUtils.MessageTaker implements SpaceMod
     }
 
     @Override
-    public void addAttribute(UUID parentAttribute, UUID attributeUuid) {
+    public void addAttribute(UUID parentAttributeUuid, UUID attributeUuid) {
         message("add attribute", attributeUuid);
     }
 
     @Override
-    public void dropAttribute(Attribute dropped) {
+    public void dropAttribute(UUID parentAttributeUuid, String oldName, Attribute dropped) {
         message("drop attribute", dropped.getUUID());
     }
 
