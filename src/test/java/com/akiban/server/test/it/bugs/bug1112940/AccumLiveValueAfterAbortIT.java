@@ -84,7 +84,7 @@ public class AccumLiveValueAfterAbortIT extends ITBase {
         if(op == Op.ON_DUP_KEY_UPDATE) {
             dml().updateRow(session(), oldRow, newRow, ConstantColumnSelector.ALL_ON);
         } else if(op == Op.REPLACE) {
-            dml().deleteRow(session(), oldRow);
+            dml().deleteRow(session(), oldRow, false);
             dml().writeRow(session(), newRow);
         } else {
             fail("Unknown op: " + op);
