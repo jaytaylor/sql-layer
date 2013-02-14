@@ -29,10 +29,12 @@ package com.akiban.rest.resources;
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.protobuf.ProtobufWriter;
+import com.akiban.server.entity.changes.DDLBasedSpaceModifier;
 import com.akiban.server.entity.changes.SpaceDiff;
 import com.akiban.server.entity.fromais.AisToSpace;
 import com.akiban.server.entity.model.Space;
 import com.akiban.server.entity.model.diff.JsonDiffPreview;
+import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
@@ -54,26 +56,30 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.security.Principal;
 
 import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 
 @Path("/entity")
 public final class EntityResource {
-    @Inject
-    private SchemaManager schemaManager;
+    private static final Response FORBIDDEN = Response.status(Response.Status.FORBIDDEN).build();
 
-    @Inject
-    private SessionService sessionService;
-
-    @Inject
-    private TransactionService transactionService;
-
-    @Inject
-    private SecurityService securityService;
+    @Inject private SchemaManager schemaManager;
+    @Inject private SessionService sessionService;
+    @Inject private TransactionService transactionService;
+    @Inject private SecurityService securityService;
+    @Inject private DXLService dxlService;
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getSpace(@QueryParam("space") String schema) {
+    public Response getSpace(@Context HttpServletRequest request,
+                             @QueryParam("space") String schema) {
+        if(schema == null) {
+            schema = getUserSchema(request);
+        }
+        if (schema == null || !securityService.isAccessible(request, schema)) {
+            return FORBIDDEN;
+        }
         try (Session session = sessionService.createSession()) {
             transactionService.beginTransaction(session);
             try {
@@ -90,24 +96,31 @@ public final class EntityResource {
     }
 
     @POST
+    @Path("/preview")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response preview(@Context HttpServletRequest request,
+                            final InputStream postInput) throws IOException {
+        return preview(request, getUserSchema(request), postInput);
+    }
+
+    @POST
     @Path("/preview/{schema}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response preview(@PathParam("schema") String schema,
+    public Response preview(@Context HttpServletRequest request,
+                            @PathParam("schema") String schema,
                             final InputStream postInput) throws IOException {
-        try (Session session = sessionService.createSession();
-             CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
-            AkibanInformationSchema ais = schemaManager.getAis(session);
-            ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
-            Space curSpace = AisToSpace.create(ais);
-            Space newSpace = Space.create(new InputStreamReader(postInput));
-            SpaceDiff diff = new SpaceDiff(curSpace, newSpace);
-            JsonDiffPreview preview = new JsonDiffPreview();
-            diff.apply(preview);
-            String json = preview.toJSON().toString();
-            txn.commit();
-            return Response.status(Response.Status.OK).entity(json).build();
-        }
+        return previewOrApply(request, schema, postInput, false);
+    }
+
+    @POST
+    @Path("/apply")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response apply(@Context HttpServletRequest request,
+                          final InputStream postInput) throws IOException {
+        return apply(request, getUserSchema(request), postInput);
     }
 
     @POST
@@ -116,7 +129,36 @@ public final class EntityResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response apply(@Context HttpServletRequest request,
                           @PathParam("schema") String schema,
-                          final byte[] postBytes[]) {
-        return null;
+                          final InputStream postInput) throws IOException {
+        return previewOrApply(request, schema, postInput, true);
+    }
+
+    private Response previewOrApply(HttpServletRequest request, String schema, InputStream postInput, boolean doApply) throws IOException {
+        if (schema == null || !securityService.isAccessible(request, schema)) {
+            return FORBIDDEN;
+        }
+        try (Session session = sessionService.createSession();
+             CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+            AkibanInformationSchema ais = schemaManager.getAis(session);
+            ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
+            Space curSpace = AisToSpace.create(ais);
+            Space newSpace = Space.create(new InputStreamReader(postInput));
+            SpaceDiff diff = new SpaceDiff(curSpace, newSpace);
+            if(doApply) {
+                DDLBasedSpaceModifier modifier = new DDLBasedSpaceModifier(dxlService.ddlFunctions(), session, schema, newSpace);
+                diff.apply(modifier);
+            }
+            // Successfully applied, generate output
+            JsonDiffPreview preview = new JsonDiffPreview();
+            diff.apply(preview);
+            String json = preview.toJSON().toString();
+            txn.commit();
+            return Response.status(Response.Status.OK).entity(json).build();
+        }
+    }
+
+    private String getUserSchema(HttpServletRequest request) {
+        Principal user = request.getUserPrincipal();
+        return (user == null) ? null : user.getName();
     }
 }

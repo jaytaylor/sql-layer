@@ -29,6 +29,7 @@ package com.akiban.rest;
 import com.akiban.http.HttpConductor;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.restdml.RestDMLService;
 import com.akiban.server.service.restdml.RestDMLServiceImpl;
 import com.akiban.server.service.security.SecurityService;
@@ -45,17 +46,19 @@ public class RestServiceImpl implements RestService, Service {
     // Used by various resources
     private final RestDMLService restDMLService;
     private final SecurityService securityService;
+    private final DXLService dxlService;
 
 	private volatile ServletContextHandler handler;
 	
 
 	@Inject
     public RestServiceImpl(ConfigurationService configService, HttpConductor http,
-                           RestDMLService restDMLService, SecurityService securityService) {
+                           RestDMLService restDMLService, SecurityService securityService, DXLService dxlService) {
         this.configService = configService;
 		this.http = http;
         this.restDMLService = restDMLService;
         this.securityService = securityService;
+        this.dxlService = dxlService;
     }
 
     @Override
