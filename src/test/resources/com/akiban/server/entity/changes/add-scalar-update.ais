@@ -11,11 +11,16 @@ schemas {
       uuid: "8644c36b-f881-4369-a06b-59e3fc580309"
     }
     columns {
-      columnName: "name"
-      typeName: "int"
+      columnName: "last_name"
+      typeName: "varchar"
       isNullable: true
       position: 1
-      uuid: "d160a748-03ca-4497-b906-4bf0efb32618"
+      typeParam1: 64
+      charColl {
+        characterSetName: "utf8"
+        collationOrderName: "utf8_bin"
+      }
+      uuid: "257e9b59-e77f-4a4d-a5da-00c7c2261875"
     }
     charColl {
       characterSetName: "utf8"

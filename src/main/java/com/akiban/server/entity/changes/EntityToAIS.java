@@ -56,7 +56,7 @@ import java.util.UUID;
 public class EntityToAIS extends AbstractEntityVisitor {
     private static final Logger LOG = LoggerFactory.getLogger(EntityToAIS.class);
 
-    private static final boolean ATTR_REQUIRED_DEFAULT = true;
+    private static final boolean ATTR_REQUIRED_DEFAULT = false;
     private static final Index.JoinType GI_JOIN_TYPE_DEFAULT = Index.JoinType.LEFT;
 
     private final String schemaName;

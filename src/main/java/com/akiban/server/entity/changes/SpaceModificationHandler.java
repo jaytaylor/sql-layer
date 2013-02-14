@@ -35,15 +35,19 @@ import java.util.UUID;
 
 public interface SpaceModificationHandler {
     void addEntity(UUID entityUuid);
-    void dropEntity(Entity dropped);
+    void dropEntity(Entity dropped, String oldName);
+
+    void beginEntity(UUID entityUUID);
     void renameEntity(UUID entityUuid, String oldName);
 
+    void beginAttributes(AttributeLookups oldLookups, AttributeLookups newLookups);
     void addAttribute(UUID attributeUuid);
     void dropAttribute(Attribute dropped);
     void renameAttribute(UUID attributeUuid, String oldName);
     void changeScalarType(UUID scalarUuid, Attribute afterChange);
     void changeScalarValidations(UUID scalarUuid, Attribute afterChange);
     void changeScalarProperties(UUID scalarUuid, Attribute afterChange);
+    void endAttributes();
 
     void addEntityValidation(Validation validation);
     void dropEntityValidation(Validation validation);
@@ -51,6 +55,8 @@ public interface SpaceModificationHandler {
     void addIndex(String name);
     void dropIndex(String name, EntityIndex index);
     void renameIndex(EntityIndex index, String oldName, String newName);
+
+    void endEntity();
 
     void error(String message);
 }

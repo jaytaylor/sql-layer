@@ -26,6 +26,7 @@
 
 package com.akiban.server.entity.model.diff;
 
+import com.akiban.server.entity.changes.AttributeLookups;
 import com.akiban.server.entity.changes.SpaceModificationHandler;
 import com.akiban.server.entity.model.Attribute;
 import com.akiban.server.entity.model.Entity;
@@ -76,8 +77,13 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         return stringWriter;
     }
-    
-    @Override 
+
+    @Override
+    public void beginEntity(UUID entityUUID) {
+        // None
+    }
+
+    @Override
     public void addEntity(UUID entityUuid)
     {
         try
@@ -95,7 +101,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
-    public void dropEntity(Entity dropped)
+    public void dropEntity(Entity dropped, String oldName)
     {
         try
         {
@@ -103,6 +109,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
             entry("action", "drop_entity");
             entry("destructive", true);
             entry("uuid", dropped.uuid());
+            entry("name", oldName);
             entry("index_definition", dropped.getIndexes());
             endObject();
         }
@@ -128,6 +135,11 @@ public class JsonDiffPreview implements SpaceModificationHandler
         {
             throw new DiffIOException(ex);
         }
+    }
+
+    @Override
+    public void beginAttributes(AttributeLookups oldLookups, AttributeLookups newLookups) {
+        // None
     }
 
     @Override
@@ -237,6 +249,11 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
+    public void endAttributes() {
+        // None
+    }
+
+    @Override
     public void addEntityValidation(Validation validation)
     {
         try
@@ -322,6 +339,11 @@ public class JsonDiffPreview implements SpaceModificationHandler
         {
             throw new DiffIOException(ex);
         }
+    }
+
+    @Override
+    public void endEntity() {
+        // None
     }
 
     @Override

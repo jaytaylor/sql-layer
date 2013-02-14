@@ -44,13 +44,13 @@ public class AISDumper {
         for(UserTable table : clone.getUserTables().values()) {
             table.setTableId(-1);
             table.setVersion(null);
-            for(Column column : table.getColumns()) {
+            for(Column column : table.getColumnsIncludingInternal()) {
                 column.clearMaxAndPrefixSize();
                 if(column.getName().endsWith("_ref") || column.getName().endsWith("_ref$1")) {
                     column.setUuid(null);
                 }
             }
-            for(Index index : table.getIndexes()) {
+            for(Index index : table.getIndexesIncludingInternal()) {
                 index.setIndexId(-1);
                 index.setTreeName(null);
             }

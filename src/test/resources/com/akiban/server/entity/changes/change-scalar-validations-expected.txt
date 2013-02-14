@@ -1,2 +1,2 @@
 change scalar validation: [8644c36b-f881-4369-a06b-59e3fc580309, [max: 987]]
-change scalar validation: [d160a748-03ca-4497-b906-4bf0efb32618, [max_length: 128]]
+change scalar validation: [d160a748-03ca-4497-b906-4bf0efb32618, [max_length: 256]]

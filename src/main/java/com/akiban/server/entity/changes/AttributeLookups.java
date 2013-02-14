@@ -39,7 +39,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-final class AttributeLookups {
+public final class AttributeLookups {
 
     public Map<UUID, Attribute> getAttributesByUuid() {
         return attributesByUuid;

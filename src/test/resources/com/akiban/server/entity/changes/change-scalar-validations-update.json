@@ -13,9 +13,9 @@
                 },
                 "name" : {
                     "scalar" : "d160a748-03ca-4497-b906-4bf0efb32618",
-                    "type" : "text",
+                    "type" : "varchar",
                     "validation" : [
-                        { "max_length" : 128 }
+                        { "max_length" : 256 }
                     ]
                 },
                 "orders" : {

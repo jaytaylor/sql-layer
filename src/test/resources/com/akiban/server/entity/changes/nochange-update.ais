@@ -13,7 +13,7 @@ schemas {
         characterSetName: "utf8"
         collationOrderName: "utf8_bin"
       }
-      uuid: "b2fe7776-756b-11e2-a08b-d2dcf046605f"
+      uuid: "177400c6-7662-11e2-8057-2afbf046605f"
     }
     columns {
       columnName: "last_name"
@@ -79,7 +79,7 @@ schemas {
       typeName: "datetime"
       isNullable: true
       position: 0
-      uuid: "d427b7a0-756b-11e2-9a31-7d727188419e"
+      uuid: "ff49b16c-7661-11e2-a7bf-525b7188419e"
     }
     columns {
       columnName: "spine"

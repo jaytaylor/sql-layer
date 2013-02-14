@@ -13,7 +13,7 @@ schemas {
     columns {
       columnName: "varchar_1"
       typeName: "varchar"
-      isNullable: false
+      isNullable: true
       position: 1
       typeParam1: 42
       charColl {
@@ -25,7 +25,7 @@ schemas {
     columns {
       columnName: "varchar_2"
       typeName: "varchar"
-      isNullable: false
+      isNullable: true
       position: 2
       typeParam1: 255
       charColl {

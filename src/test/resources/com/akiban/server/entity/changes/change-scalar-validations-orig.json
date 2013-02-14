@@ -13,7 +13,10 @@
                 },
                 "name" : {
                     "scalar" : "d160a748-03ca-4497-b906-4bf0efb32618",
-                    "type" : "text"
+                    "type" : "varchar",
+                    "validation" : [
+                        { "max_length" : 128 }
+                    ]
                 },
                 "orders" : {
                     "collection" : "3a528882-0ac4-41b2-b8f0-38474c026fce",

@@ -13,7 +13,7 @@ schemas {
     columns {
       columnName: "decimal_val"
       typeName: "decimal"
-      isNullable: false
+      isNullable: true
       position: 1
       typeParam1: 4
       typeParam2: 2

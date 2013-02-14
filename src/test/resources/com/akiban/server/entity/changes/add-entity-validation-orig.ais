@@ -13,7 +13,7 @@ schemas {
     columns {
       columnName: "name"
       typeName: "text"
-      isNullable: false
+      isNullable: true
       position: 1
       charColl {
         characterSetName: "utf8"
