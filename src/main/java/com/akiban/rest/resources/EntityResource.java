@@ -151,15 +151,12 @@ public final class EntityResource {
             }
             // Successfully applied, generate output
             JsonDiffPreview preview = new JsonDiffPreview();
+            preview.toJSON().append('[');
             diff.apply(preview);
-            StringWriter json = preview.toJSON();
-            if(json.getBuffer().length() == 0) {
-                json.write("{}\n");
-            } else {
-                json.append('\n');
-            }
+            preview.toJSON().append("]\n");
+            String json = preview.toJSON().toString();
             txn.commit();
-            return Response.status(Response.Status.OK).entity(json.toString()).build();
+            return Response.status(Response.Status.OK).entity(json).build();
         }
     }
 

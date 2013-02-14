@@ -49,6 +49,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
     
     private final JsonGenerator jsonGen;
     private final StringWriter stringWriter;
+    private boolean hadObject = false;
     
     public JsonDiffPreview()
     {
@@ -364,12 +365,16 @@ public class JsonDiffPreview implements SpaceModificationHandler
     
     private void startObject() throws IOException
     {
+        if(hadObject) {
+            jsonGen.writeRaw(",\n");
+        }
         jsonGen.writeStartObject();
     }
     
     private void endObject() throws IOException
     {
         jsonGen.writeEndObject();
+        hadObject = true;
     }
     
     private void entry(String name, UUID uuid) throws IOException
