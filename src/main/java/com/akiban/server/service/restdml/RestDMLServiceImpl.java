@@ -197,6 +197,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             throw wrapException(e);
         } catch (InvalidOperationException e) {
             throw wrapException(e);
+        } catch (RuntimeException e) {
+            throw wrapException(e);
         }
     }
 

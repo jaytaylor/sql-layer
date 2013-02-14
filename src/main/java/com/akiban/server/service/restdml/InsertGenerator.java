@@ -36,12 +36,14 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.t3expressions.OverloadResolver;
+import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TCast;
@@ -101,12 +103,11 @@ public class InsertGenerator extends OperatorGenerator{
         
         int nfields = table.getColumns().size();
         TInstance[] types = new TInstance[nfields];
-        int index = 0;
+        TInstance varchar = Column.generateTInstance(null, Types.VARCHAR, 65535L, null, false);
         List<TPreparedExpression> tExprs = new ArrayList<TPreparedExpression>();
-        for (Column column : table.getColumns()) {
-            tExprs.add(index, new TPreparedParameter(index, column.tInstance()));
-            types[index] = column.tInstance();
-            index++;
+        for (int index = 0; index < table.getColumns().size(); index++) {
+            tExprs.add(index, new TPreparedParameter(index, varchar));
+            types[index] = varchar;
         }
         stream.rowType =  schema().newValuesType(types);
         bindableRows.add(BindableRow.of(stream.rowType, null, tExprs, queryContext()));
@@ -132,6 +133,18 @@ public class InsertGenerator extends OperatorGenerator{
         // Insert the sequence generator and column default values
         for (int i = 0, len = targetRowType.nFields(); i < len; ++i) {
             Column column = table.getColumnsIncludingInternal().get(i);
+
+            if (row[i] == null) {
+                TInstance tinst = targetRowType.typeInstanceAt(i);
+                final PValue defaultValueSource = new PValue(tinst);
+                defaultValueSource.putNull();
+                row[i] = new TPreparedLiteral(tinst, defaultValueSource);
+            } else if (!column.tInstance().equals(row[i].resultType())) {
+                TCast cast = registryService().getCastsResolver().cast(row[i].resultType().typeClass(), 
+                        column.tInstance().typeClass()); 
+                row[i] = new TCastExpression(row[i], cast, column.tInstance(), queryContext());
+            }
+            
             if (column.getIdentityGenerator() != null) {
                 Sequence sequence = table.getColumn(i).getIdentityGenerator();
                 row[i] = sequenceGenerator(sequence, column, row[i]);
@@ -153,11 +166,6 @@ public class InsertGenerator extends OperatorGenerator{
                     defaultValueSource = new PValue (tinst, defaultValue);
                 }
                 row[i] = generateIfNull (insertsP.get(i), new TPreparedLiteral(tinst, defaultValueSource));
-            } else if (row[i] == null) {
-                TInstance tinst = targetRowType.typeInstanceAt(i);
-                final PValue defaultValueSource = new PValue(tinst);
-                defaultValueSource.putNull();
-                row[i] = new TPreparedLiteral(tinst, defaultValueSource);
             }
         }
         insertsP = Arrays.asList(row);
@@ -217,5 +225,4 @@ public class InsertGenerator extends OperatorGenerator{
                 ifNullArgs, queryContext());
         
     }
-
 }

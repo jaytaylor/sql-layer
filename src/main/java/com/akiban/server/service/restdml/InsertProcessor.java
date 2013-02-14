@@ -48,6 +48,8 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.FKValueMismatchException;
+import com.akiban.server.explain.ExplainContext;
+import com.akiban.server.explain.format.DefaultFormatter;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.externaldata.JsonRowWriter;
 import com.akiban.server.service.externaldata.JsonRowWriter.WriteCapturePKRow;
@@ -58,6 +60,7 @@ import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.AkibanAppender;
@@ -179,7 +182,8 @@ public class InsertProcessor extends DMLProcessor {
     
     private void setValue (String field, JsonNode node, InsertContext context) {
         Column column = getColumn (context.table, field);
-        
+        setValue (context.queryContext, column, node.asText());
+/*        
         if (node.isBoolean()) {
             setValue (context.queryContext, column, node.asBoolean());
         } else if (node.isInt()) {
@@ -192,12 +196,12 @@ public class InsertProcessor extends DMLProcessor {
             // Also handles NULLs 
             setValue (context.queryContext, column, node.asText());
         }
-        
+*/        
     }
 
     private void runUpdate (InsertContext context, AkibanAppender appender) throws IOException { 
         assert context != null : "Bad Json format";
-        LOG.trace("Insert row into: {}", context.tableName);
+        LOG.trace("Insert row into: {}, values {}", context.tableName, context.queryContext.toString());
         Operator insert = insertGenerator.create(context.table.getName());
         // If Child table, write the parent group column values into the 
         // child table join key. 
@@ -206,13 +210,14 @@ public class InsertProcessor extends DMLProcessor {
             for (Entry<Column, PValueSource> entry : context.pkValues.entrySet()) {
                 
                 int pos = join.getMatchingChild(entry.getKey()).getPosition();
+                PValue fkValue = getFKPvalue (entry.getValue());
                 
                 if (context.queryContext.getPValue(pos).isNull()) {
-                    context.queryContext.setPValue(join.getMatchingChild(entry.getKey()).getPosition(), entry.getValue());
+                    context.queryContext.setPValue(join.getMatchingChild(entry.getKey()).getPosition(), fkValue);
                 } else if (TClass.compare (context.queryContext.getPValue(pos).tInstance(), 
                                 context.queryContext.getPValue(pos),
-                                entry.getValue().tInstance(),
-                                entry.getValue()) != 0) {
+                                fkValue.tInstance(),
+                                fkValue) != 0) {
                     throw new FKValueMismatchException (join.getMatchingChild(entry.getKey()).getName());
                 }
             }
@@ -224,12 +229,21 @@ public class InsertProcessor extends DMLProcessor {
         context.pkValues = rowWriter.getPKValues();
     }
     
+    private PValue getFKPvalue (PValueSource pval) {
+        AkibanAppender appender = AkibanAppender.of(new StringBuilder());
+        pval.tInstance().format(pval, appender);
+        PValue result = new PValue(MString.varcharFor(appender.toString()), appender.toString());
+        return result;
+    }
+    
     private void setValue (QueryContext queryContext, Column column, String value) {
         PValue pvalue = null;
         if (value == null) {
-            pvalue = new PValue(column.tInstance());
+            pvalue = new PValue(Column.generateTInstance(null, Types.VARCHAR, 65535L, null, true));
             pvalue.putNull();
-        } else if (column.getType().equals(Types.DATETIME)) {
+/*            
+        else if (column.getType().equals(Types.DATETIME)) {
+            //pvalue = new PValue (column.tInstance(), value);
             pvalue = new PValue(column.tInstance(), MDatetimes.parseDatetime(value));
         } else if (column.getType().equals(Types.DATE)) {
             int date = MDatetimes.parseDate(value, new TExecutionContext(null, null, queryContext));
@@ -237,8 +251,9 @@ public class InsertProcessor extends DMLProcessor {
         } else if (column.getType().equals(Types.TIME)) {
             int time = MDatetimes.parseTime(value,  new TExecutionContext(null, null, queryContext));
             pvalue = new PValue(column.tInstance(), time);
+*/            
         } else {
-            pvalue = new PValue(column.tInstance(), value);
+            pvalue = new PValue(Column.generateTInstance(null, Types.VARCHAR, 65535L, null, true), value);
         }
         queryContext.setPValue(column.getPosition(), pvalue);
     }
