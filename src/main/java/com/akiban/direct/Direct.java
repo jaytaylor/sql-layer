@@ -67,25 +67,29 @@ public class Direct {
     public static DirectObject objectForRow(final Row row) {
         if (row.rowType().hasUserTable()) {
             final int tableId = row.rowType().typeId();
-            DirectObject o = instanceMap.get().get(tableId);
-            if (o != null) {
-                return o;
-            }
-            Class<? extends DirectObject> c = classMap.get(tableId);
-            if (c != null) {
-                try {
-                    o = c.newInstance();
-                } catch (InstantiationException | IllegalAccessException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            if (o != null) {
-                instanceMap.get().put(tableId, o);
-            }
-            return o;
+            return objectForTableId(tableId);
         } else {
             return null;
         }
+    }
+    
+    public static DirectObject objectForTableId(final int tableId) {
+        DirectObject o = instanceMap.get().get(tableId);
+        if (o != null) {
+            return o;
+        }
+        Class<? extends DirectObject> c = classMap.get(tableId);
+        if (c != null) {
+            try {
+                o = c.newInstance();
+            } catch (InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        if (o != null) {
+            instanceMap.get().put(tableId, o);
+        }
+        return o;
     }
 
 }

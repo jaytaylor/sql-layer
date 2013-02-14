@@ -25,6 +25,7 @@
  */
 package com.akiban.direct;
 
+import java.lang.reflect.Modifier;
 import java.util.Stack;
 
 import javassist.CannotCompileException;
@@ -45,7 +46,8 @@ public class ClassObjectWriter extends ClassBuilder {
     }
 
     @Override
-    public void startClass(String name, boolean isInterface, String extendsClass, String[] implementsClasses, String[] imports) throws CannotCompileException, NotFoundException {
+    public void startClass(String name, boolean isInterface, String extendsClass, String[] implementsClasses,
+            String[] imports) throws CannotCompileException, NotFoundException {
         if (isInterface) {
             currentCtClass = classPool.makeInterface(name);
         } else {
@@ -80,9 +82,12 @@ public class ClassObjectWriter extends ClassBuilder {
                 StringBuilder sb = new StringBuilder("{");
                 for (final String s : body) {
                     sb.append(s);
+                    sb.append(";");
+                    sb.append('\n');
                 }
                 sb.append("}");
-                method.insertAfter(sb.toString());
+                method.setBody(sb.toString());
+                method.setModifiers(method.getModifiers() & ~Modifier.ABSTRACT);
             }
             currentCtClass.addMethod(method);
         } catch (CannotCompileException e) {
@@ -93,6 +98,10 @@ public class ClassObjectWriter extends ClassBuilder {
     @Override
     public void end() {
         currentCtClass = ctClasses.pop();
+    }
+
+    CtClass getCurrentClasse() {
+        return currentCtClass;
     }
 
     private CtClass getCtClass(final String name) {

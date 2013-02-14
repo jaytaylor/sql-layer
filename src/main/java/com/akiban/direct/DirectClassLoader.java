@@ -28,15 +28,15 @@ package com.akiban.direct;
 import java.io.FileOutputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javassist.ClassPool;
 import javassist.CtClass;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.UserTable;
 
 /**
  * ClassLoader that delegates selectively. This loader is used to
@@ -45,14 +45,16 @@ import com.akiban.ais.model.UserTable;
  * 
  */
 public class DirectClassLoader extends URLClassLoader {
-    
 
     final ClassPool pool;
+
     int depth = 0;
+
+    final Set<String> generated = new HashSet<String>();
 
     private final static String[] DIRECT_INTERFACES = { com.akiban.direct.DirectContext.class.getName(),
             com.akiban.direct.DirectModule.class.getName(), com.akiban.direct.DirectObject.class.getName(),
-            com.akiban.direct.DirectList.class.getName(), };
+            com.akiban.direct.DirectList.class.getName(), com.akiban.direct.AbstractDirectObject.class.getName(),};
 
     public DirectClassLoader(ClassLoader baseLoader) {
         super(new URL[0], baseLoader);
@@ -119,36 +121,38 @@ public class DirectClassLoader extends URLClassLoader {
     }
 
     private Class<?> compileSpecialClass(final String name, final boolean resolve) {
-        depth++;
-        try {
-            /*
-             * First check whether this is a precompiled interface
-             */
-            CtClass ctClass = pool.getOrNull(name);
-            if (ctClass != null) {
-                byte[] bytes = ctClass.toBytecode();
-                try {
-                    FileOutputStream os = new FileOutputStream("/tmp/" + name + ".class");
-                    os.write(bytes);
-                    os.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
+        if (generated.contains(name)) {
+            depth++;
+            try {
+                /*
+                 * First check whether this is a precompiled interface
+                 */
+                CtClass ctClass = pool.getOrNull(name);
+                if (ctClass != null) {
+                    byte[] bytes = ctClass.toBytecode();
+                    try {
+                        FileOutputStream os = new FileOutputStream("/tmp/" + name + ".class");
+                        os.write(bytes);
+                        os.close();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    final Class<?> c = defineClass(name, bytes, 0, bytes.length);
+                    if (c != null && !c.isInterface() && resolve) {
+                        /*
+                         * Resolve here within nested depth so that
+                         */
+                        resolveClass(c);
+                    }
+                    return c;
                 }
-                final Class<?> c = defineClass(name, bytes, 0, bytes.length);
-                if (c != null && !c.isInterface() && resolve) {
-                    /*
-                     * Resolve here within nested depth so that 
-                     */
-                    resolveClass(c);
-                }
-                return c;
-            }
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        } finally {
-            depth--;
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new RuntimeException(e);
+            } finally {
+                depth--;
+            }
         }
         return null;
     }
@@ -163,6 +167,23 @@ public class DirectClassLoader extends URLClassLoader {
         Class<? extends DirectModule> clazz = (Class<? extends DirectModule>) this.loadClass(moduleName);
         return clazz;
     }
-    
+
+    public void registerDirectObjectClasses(Map<Integer, CtClass> implClasses) throws Exception {
+        try { // TODO
+            for (final Map.Entry<Integer, CtClass> entry : implClasses.entrySet()) {
+                CtClass c = entry.getValue();
+                int tableId = entry.getKey();
+                generated.add(c.getName());
+                byte[] b = c.toBytecode();
+                @SuppressWarnings("unchecked")
+                Class<? extends DirectObject> cl = (Class<? extends DirectObject>) defineClass(c.getName(), b, 0,
+                        b.length);
+                resolveClass(cl);
+                Direct.registerEntityDaoPrototype(tableId, cl);
+            }
+        } catch (Exception e) {
+            throw e;
+        }
+    }
 
 }

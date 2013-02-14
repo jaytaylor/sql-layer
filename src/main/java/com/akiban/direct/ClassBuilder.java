@@ -25,8 +25,12 @@
  */
 package com.akiban.direct;
 
+import java.util.Map;
+import java.util.TreeMap;
+
 import javassist.CannotCompileException;
 import javassist.ClassPool;
+import javassist.CtClass;
 import javassist.NotFoundException;
 
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -100,8 +104,8 @@ public abstract class ClassBuilder {
         return PACKAGE + "." + asJavaName(schema, true);
     }
 
-    public static void compileGeneratedInterfacesAndClasses(final AkibanInformationSchema ais, final String schema)
-            throws CannotCompileException, NotFoundException {
+    public static Map<Integer, CtClass> compileGeneratedInterfacesAndClasses(final AkibanInformationSchema ais,
+            final String schema) throws CannotCompileException, NotFoundException {
         /*
          * Precompile the interfaces
          */
@@ -113,13 +117,17 @@ public abstract class ClassBuilder {
             helper.generateInterfaceClass(table, scn);
         }
         helper.end();
-        
+
         /*
          * Precompile the implementation classes
          */
+
+        Map<Integer, CtClass> implClassMap = new TreeMap<Integer, CtClass>();
         for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
             helper.generateImplementationClass(table, schema);
+            implClassMap.put(table.getTableId(), helper.getCurrentClasse());
         }
+        return implClassMap;
     }
 
     public void writeGeneratedInterfaces(final AkibanInformationSchema ais, final String schema)
@@ -183,8 +191,7 @@ public abstract class ClassBuilder {
         String typeName = scn + "$" + asJavaName(table.getName().getTableName(), true);
         String className = packageName + "._" + asJavaName(schema, true) + "_"
                 + asJavaName(table.getName().getTableName(), true);
-        startClass(className, false, "com.akiban.direct.AbstractDirectObject",
-                new String[] { typeName }, IMPORTS);
+        startClass(className, false, "com.akiban.direct.AbstractDirectObject", new String[] { typeName }, IMPORTS);
 
         /*
          * Add a property per column

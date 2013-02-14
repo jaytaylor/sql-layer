@@ -33,6 +33,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javassist.CtClass;
+
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
@@ -50,6 +52,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.direct.ClassBuilder;
 import com.akiban.direct.ClassSourceWriter;
 import com.akiban.direct.DirectClassLoader;
+import com.akiban.direct.DirectContextImpl;
 import com.akiban.direct.DirectModule;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.session.Session;
@@ -71,14 +74,14 @@ public class DirectResource {
 
     @Inject
     SessionService sessionService;
-
+    
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getInterfaceText(@PathParam("op") final String op, @PathParam("schema") final String schema,
             @Context final UriInfo uri) throws Exception {
 
         final MultivaluedMap<String, String> params = uri.getQueryParameters();
-        if ("interface".equals(op)) {
+        if ("igen".equals(op)) {
             /*
              * Generate Java interfaces in text form
              */
@@ -102,7 +105,7 @@ public class DirectResource {
             }).build();
         }
         
-        if ("class".equals(op)) {
+        if ("cgen".equals(op)) {
             /*
              * Generate Java interfaces in text form
              */
@@ -153,10 +156,12 @@ public class DirectResource {
                         if (ais.getSchema(schema) == null) {
                             throw new RuntimeException("No such schema: " + schema);
                         }
-                        ClassBuilder.compileGeneratedInterfacesAndClasses(ais, schema);
+                        Map<Integer, CtClass> generated = ClassBuilder.compileGeneratedInterfacesAndClasses(ais, schema);
                         final DirectClassLoader dcl = new DirectClassLoader(systemClassLoader());
                         final Class<? extends DirectModule> serviceClass = dcl.loadModule(ais, moduleName, urls);
+                        dcl.registerDirectObjectClasses(generated);
                         DirectModule module = serviceClass.newInstance();
+                        module.setContext(new DirectContextImpl());
                         DirectModule replaced = dispatch.put(serviceClass.getSimpleName(), module);
                         if (replaced != null) {
                             ClassLoader cl  = replaced.getClass().getClassLoader();

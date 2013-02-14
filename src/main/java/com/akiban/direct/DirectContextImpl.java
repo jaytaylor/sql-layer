@@ -27,12 +27,27 @@
 package com.akiban.direct;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
-public interface DirectContext {
+import com.akiban.sql.embedded.EmbeddedJDBCService;
 
-    Connection getConnection();
-    
+public class DirectContextImpl implements DirectContext {
+    public static final String SCHEMA_NAME = "test";
+    public static final String CONNECTION_URL = "jdbc:default:connection";
+
+    public Connection getConnection() {
+        try {
+            return DriverManager.getConnection(CONNECTION_URL, SCHEMA_NAME, "");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+
     // TODO - temporary, remove
-    DirectObject getDirectObject(final int tableId);
-    
+    public DirectObject getDirectObject(final int tableId) {
+        return Direct.objectForTableId(tableId);
+    }
+
 }
