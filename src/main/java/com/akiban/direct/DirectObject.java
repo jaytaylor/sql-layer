@@ -34,7 +34,7 @@ import com.akiban.qp.row.Row;
  * @author peter
  *
  */
-public interface DaoPrototype {
+public interface DirectObject {
 
     void row(Row row);
     Row row();

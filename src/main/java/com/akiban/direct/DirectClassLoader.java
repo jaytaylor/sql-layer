@@ -34,6 +34,9 @@ import javassist.ClassPool;
 import javassist.CtClass;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.UserTable;
 
 /**
  * ClassLoader that delegates selectively. This loader is used to
@@ -42,19 +45,18 @@ import com.akiban.ais.model.AkibanInformationSchema;
  * 
  */
 public class DirectClassLoader extends URLClassLoader {
+    
 
-    final ClassLoader parent;
-    final ClassLoader bootstrap;
     final ClassPool pool;
+    int depth = 0;
 
-    private final static String[] DIRECT_INTERFACES = { "com.akiban.direct.DirectContext",
-            "com.akiban.direct.DirectModule", "com.akiban.direct.DaoPrototype" };
+    private final static String[] DIRECT_INTERFACES = { com.akiban.direct.DirectContext.class.getName(),
+            com.akiban.direct.DirectModule.class.getName(), com.akiban.direct.DirectObject.class.getName(),
+            com.akiban.direct.DirectList.class.getName(), };
 
-    public DirectClassLoader(ClassLoader bootstrap, ClassLoader parent, ClassPool pool) {
-        super(new URL[0], bootstrap);
-        this.bootstrap = bootstrap;
-        this.parent = parent;
-        this.pool = pool;
+    public DirectClassLoader(ClassLoader baseLoader) {
+        super(new URL[0], baseLoader);
+        this.pool = new ClassPool(true);
     }
 
     @Override
@@ -70,12 +72,25 @@ public class DirectClassLoader extends URLClassLoader {
         synchronized (this) {
             Class<?> cl = findLoadedClass(name);
             if (cl == null && name.startsWith("java")) {
-                cl = parent.loadClass(name);
+                cl = getParent().loadClass(name);
             }
+
+            /*
+             * If we are loading a generated classes then any of its references
+             * are resolve by the server's ClassLoader
+             */
+            if (depth > 0) {
+                getClass().getClassLoader().loadClass(name);
+            }
+
+            /*
+             * Load some classes selected carefully by name from the server's
+             * ClassLoader as
+             */
             if (cl == null) {
                 for (final String special : DIRECT_INTERFACES) {
                     if (special.equals(name)) {
-                        cl = parent.loadClass(name);
+                        cl = getClass().getClassLoader().loadClass(name);
                         if (cl == null) {
                             throw new ClassNotFoundException(name);
                         }
@@ -84,7 +99,7 @@ public class DirectClassLoader extends URLClassLoader {
                 }
             }
             if (cl == null) {
-                cl = compileSpecialClass(name);
+                cl = compileSpecialClass(name, resolve);
             }
             if (cl == null) {
                 try {
@@ -103,11 +118,12 @@ public class DirectClassLoader extends URLClassLoader {
         }
     }
 
-    private Class<?> compileSpecialClass(final String name) {
-        /*
-         * First check whether this is a precompiled interface
-         */
+    private Class<?> compileSpecialClass(final String name, final boolean resolve) {
+        depth++;
         try {
+            /*
+             * First check whether this is a precompiled interface
+             */
             CtClass ctClass = pool.getOrNull(name);
             if (ctClass != null) {
                 byte[] bytes = ctClass.toBytecode();
@@ -118,11 +134,21 @@ public class DirectClassLoader extends URLClassLoader {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                return defineClass(name, bytes, 0, bytes.length);
+                final Class<?> c = defineClass(name, bytes, 0, bytes.length);
+                if (c != null && !c.isInterface() && resolve) {
+                    /*
+                     * Resolve here within nested depth so that 
+                     */
+                    resolveClass(c);
+                }
+                return c;
             }
+
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);
+        } finally {
+            depth--;
         }
         return null;
     }
@@ -137,4 +163,6 @@ public class DirectClassLoader extends URLClassLoader {
         Class<? extends DirectModule> clazz = (Class<? extends DirectModule>) this.loadClass(moduleName);
         return clazz;
     }
+    
+
 }

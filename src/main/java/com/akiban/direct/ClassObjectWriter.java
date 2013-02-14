@@ -31,6 +31,7 @@ import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtMethod;
+import javassist.NotFoundException;
 
 public class ClassObjectWriter extends ClassBuilder {
 
@@ -44,16 +45,21 @@ public class ClassObjectWriter extends ClassBuilder {
     }
 
     @Override
-    public void preamble(String[] imports) {
-        // Nothing to do. All names are fully qualified.
-    }
-
-    @Override
-    public void startClass(String name, boolean isInterface) {
+    public void startClass(String name, boolean isInterface, String extendsClass, String[] implementsClasses, String[] imports) throws CannotCompileException, NotFoundException {
         if (isInterface) {
             currentCtClass = classPool.makeInterface(name);
         } else {
             currentCtClass = classPool.makeClass(name);
+        }
+        if (extendsClass != null) {
+            currentCtClass.setSuperclass(classPool.get(extendsClass));
+        }
+        if (implementsClasses != null) {
+            for (final String interfaceClassName : implementsClasses) {
+                final CtClass interfaceClass = classPool.get(interfaceClassName);
+                assert interfaceClass.isInterface();
+                currentCtClass.addInterface(interfaceClass);
+            }
         }
         ctClasses.push(currentCtClass);
     }

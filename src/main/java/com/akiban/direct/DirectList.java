@@ -26,26 +26,15 @@
 
 package com.akiban.direct;
 
-import java.util.Iterator;
+import java.util.List;
 
 /**
- * A relationship between two DaoPrototype instance.
+ * A List expanded to accept selection, limit and sort capabilities.
+ * 
  * @author peter
  *
  */
-public interface DaoRelation<T extends DaoPrototype> extends Iterable<T> {
+public interface DirectList<T extends DirectObject> extends List<T> {
 
-    enum Cardinality {
-        ONE,
-        ZERO_OR_ONE,
-        ONE_OR_MORE,
-        ZERO_OR_MORE,
-    }
-    
-    long getMaximumSize();
-    
-    Cardinality getCardinality();
-    
-    Iterator<T> iterator();
     
 }

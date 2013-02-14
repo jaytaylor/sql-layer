@@ -50,7 +50,7 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Map;
 
-import com.akiban.direct.DaoPrototype;
+import com.akiban.direct.DirectObject;
 import com.akiban.direct.Direct;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
@@ -1536,8 +1536,8 @@ public class JDBCResultSet implements ResultSet
         return getObject(findColumn(columnLabel), type);
     }
     
-    public DaoPrototype getEntity() throws SQLException {
-        DaoPrototype o = Direct.objectForRow(row);
+    public DirectObject getEntity() throws SQLException {
+        DirectObject o = Direct.objectForRow(row);
         if (o != null) {
             o.row(row);
             return o;

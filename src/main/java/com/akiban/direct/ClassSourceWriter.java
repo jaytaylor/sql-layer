@@ -43,8 +43,7 @@ public class ClassSourceWriter extends ClassBuilder {
     private String[] imports;
     private int indentation = 0;
 
-    public ClassSourceWriter(final PrintWriter writer, final String packageName, final String schema,
-            boolean isAbstract) {
+    public ClassSourceWriter(final PrintWriter writer, final String packageName, final String schema, boolean isAbstract) {
         super(packageName, schema);
         this.writer = writer;
         this.isAbstract = isAbstract;
@@ -53,29 +52,54 @@ public class ClassSourceWriter extends ClassBuilder {
     /*
      * (non-Javadoc)
      * 
-     * @see com.akiban.direct.ClassBuilder#preamble(java.lang.String[])
-     */
-    @Override
-    public void preamble(final String[] imports) {
-        println("package " + packageName + ";");
-        newLine();
-        for (final String s : imports) {
-            println("import " + s + ";");
-        }
-        this.imports = imports;
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
      * @see com.akiban.direct.ClassBuilder#startInterface(java.lang.String)
      */
     @Override
-    public void startClass(final String name, final boolean isInterface) {
+    public void startClass(final String name, final boolean isInterface, String extendsClass,
+            String[] implementsInterfaces, String[] imports) {
+        if (name.indexOf('$') == -1) {
+            /*
+             * Only for non-inner classes
+             */
+            println("package " + packageName + ";");
+            newLine();
+            if (imports != null) {
+                for (final String s : imports) {
+                    println("import " + s + ";");
+                }
+                this.imports = imports;
+            }
+        }
         newLine();
-        println("public " + (isAbstract ? "abstract " : "") + (isInterface ? "interface " : "class ")
-                + shortName(name) + " {");
+        print("public ", (isAbstract ? "abstract " : ""), (isInterface ? "interface " : "class "), shortName(name));
         indentation++;
+        if (extendsClass != null || implementsInterfaces != null && implementsInterfaces.length > 0) {
+            newLine();
+            if (extendsClass != null) {
+                print("extends ", externalName(localName(extendsClass, name)));
+            }
+            if (isInterface) {
+                if (implementsInterfaces != null) {
+                    for (final String s : implementsInterfaces) {
+                        append(", ", externalName(localName(s, name)));
+                    }
+                    append(" ");
+                }
+            } else {
+                if (implementsInterfaces != null) {
+                    boolean first = true;
+                    for (final String s : implementsInterfaces) {
+                        append(first ? " implements " : ", ", externalName(localName(s, name)));
+                        first = false;
+                    }
+                    append(" ");
+                }
+            }
+        } else {
+            append(" ");
+        }
+        append("{");
+        newLine();
         classNames.push(name);
     }
 
@@ -83,7 +107,7 @@ public class ClassSourceWriter extends ClassBuilder {
     public void addMethod(final String name, final String returnType, final String[] argumentTypes,
             final String[] argumentNames, final String[] body) {
         newLine();
-        print(localName(returnType, classNames.peek()), " ", name, "(");
+        print("public ", localName(externalName(returnType), classNames.firstElement()), " ", name, "(");
         boolean first = true;
         int counter = 0;
         for (final String s : argumentTypes) {
@@ -97,7 +121,7 @@ public class ClassSourceWriter extends ClassBuilder {
             } else {
                 argName = "z" + ++counter;
             }
-            append(s, " ", argName);
+            append(localName(externalName(s), classNames.firstElement()), " ", argName);
         }
         append(")");
         if (body == null) {
@@ -107,7 +131,7 @@ public class ClassSourceWriter extends ClassBuilder {
             newLine();
             indentation++;
             for (String s : body) {
-                println(s);
+                println(s, ";");
             }
             indentation--;
             println("}");
@@ -153,22 +177,33 @@ public class ClassSourceWriter extends ClassBuilder {
     }
 
     private String localName(String fqn, String className) {
-        final int index = Math.max(fqn.lastIndexOf('$'), fqn.lastIndexOf('.'));
-        if (index < 0) {
+        int ltIndex = fqn.indexOf('<');
+        int gtIndex = fqn.lastIndexOf('>');
+        if (ltIndex != -1) {
+            assert gtIndex > ltIndex && gtIndex == fqn.length() - 1;
+            return localName(fqn.substring(0, ltIndex), className) + "<" + localName(fqn.substring(ltIndex + 1, gtIndex), className) + ">";
+        }
+        final int dotIndex = Math.max(fqn.lastIndexOf('$'), fqn.lastIndexOf('.'));
+
+        if (dotIndex < 1) {
             return fqn;
         }
-        boolean shorten = false;
-        for (final String s : imports) {
-            if (s.equals(fqn)) {
-                shorten = true;
-                break;
+        boolean shorten = "java.lang.".equals(fqn.substring(0, dotIndex + 1));
+
+        if (!shorten) {
+            for (final String s : imports) {
+                if (s.equals(fqn)) {
+                    shorten = true;
+                    break;
+                }
             }
         }
-        if (!shorten && (className.equals(fqn) || className.equals(fqn.substring(0, index - 1)))) {
+
+        if (!shorten && (className.equals(fqn) || className.equals(fqn.substring(0, dotIndex)))) {
             shorten = true;
         }
         if (shorten) {
-            return fqn.substring(index + 1);
+            return fqn.substring(dotIndex + 1);
         } else {
             return fqn;
         }
@@ -181,5 +216,9 @@ public class ClassSourceWriter extends ClassBuilder {
         } else {
             return fqn.substring(index + 1);
         }
+    }
+    
+    private String externalName(String fqn) {
+        return fqn.replace('$', '.');
     }
 }

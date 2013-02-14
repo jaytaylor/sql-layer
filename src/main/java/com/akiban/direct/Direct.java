@@ -39,12 +39,12 @@ import com.akiban.qp.row.Row;
  */
 public class Direct {
 
-    static Map<Integer, Class<? extends DaoPrototype>> classMap = new HashMap<>();
-    static ThreadLocal<Map<Integer, DaoPrototype>> instanceMap = new ThreadLocal<Map<Integer, DaoPrototype>>() {
+    static Map<Integer, Class<? extends DirectObject>> classMap = new HashMap<>();
+    static ThreadLocal<Map<Integer, DirectObject>> instanceMap = new ThreadLocal<Map<Integer, DirectObject>>() {
 
         @Override
-        protected Map<Integer, DaoPrototype> initialValue() {
-            return new HashMap<Integer, DaoPrototype>();
+        protected Map<Integer, DirectObject> initialValue() {
+            return new HashMap<Integer, DirectObject>();
         }
     };
 
@@ -55,7 +55,7 @@ public class Direct {
      * @param tableId
      * @param c
      */
-    public static void registerEntityDaoPrototype(final int tableId, final Class<? extends DaoPrototype> c) {
+    public static void registerEntityDaoPrototype(final int tableId, final Class<? extends DirectObject> c) {
         classMap.put(tableId, c);
     }
 
@@ -64,14 +64,14 @@ public class Direct {
      * for a given Row, or null if there is none.
      * 
      */
-    public static DaoPrototype objectForRow(final Row row) {
+    public static DirectObject objectForRow(final Row row) {
         if (row.rowType().hasUserTable()) {
             final int tableId = row.rowType().typeId();
-            DaoPrototype o = instanceMap.get().get(tableId);
+            DirectObject o = instanceMap.get().get(tableId);
             if (o != null) {
                 return o;
             }
-            Class<? extends DaoPrototype> c = classMap.get(tableId);
+            Class<? extends DirectObject> c = classMap.get(tableId);
             if (c != null) {
                 try {
                     o = c.newInstance();
