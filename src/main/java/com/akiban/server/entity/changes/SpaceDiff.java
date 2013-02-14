@@ -85,7 +85,7 @@ public final class SpaceDiff {
                     if (droppedAttribute.isSpinal())
                         out.error("Can't drop spinal attribute");
                     else
-                        out.dropAttribute(parent, origLookups.nameFor(uuid), droppedAttribute);
+                        out.dropAttribute(droppedAttribute);
                 }
             }
         }
@@ -98,7 +98,7 @@ public final class SpaceDiff {
                     if (updated.getValue().isSpinal())
                         out.error("Can't add spinal attributes to entities or collections");
                     else
-                        out.addAttribute(parent, uuid);
+                        out.addAttribute(uuid);
                 }
             }
         }

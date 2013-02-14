@@ -120,12 +120,13 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     }
 
     @Override
-    public void addAttribute(UUID parentAttributeUuid, UUID attributeUuid) {
+    public void addAttribute(UUID attributeUuid) {
+        UUID parent = newLookups.getParentAttribute(attributeUuid);
         Attribute attr = newLookups.attributeFor(attributeUuid);
         String attrName = newLookups.nameFor(attributeUuid);
         switch(attr.getAttributeType()) {
             case SCALAR:
-                trackColumnChange(getParentName(parentAttributeUuid), TableChange.createAdd(attrName));
+                trackColumnChange(getParentName(parent), TableChange.createAdd(attrName));
             break;
             case COLLECTION:
                 newTables.add(newAIS.getUserTable(schemaName, attrName));
@@ -136,10 +137,12 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     }
 
     @Override
-    public void dropAttribute(UUID parentAttributeUuid, String oldName, Attribute dropped) {
+    public void dropAttribute(Attribute dropped) {
+        UUID parent = oldLookups.getParentAttribute(dropped.getUUID());
+        String oldName = oldLookups.nameFor(dropped.getUUID());
         switch(dropped.getAttributeType()) {
             case SCALAR:
-                trackColumnChange(getParentName(parentAttributeUuid), TableChange.createDrop(oldName));
+                trackColumnChange(getParentName(parent), TableChange.createDrop(oldName));
             break;
             case COLLECTION:
                 dropTables.add(ddlFunctions.getUserTable(session, new TableName(schemaName, oldName)));
