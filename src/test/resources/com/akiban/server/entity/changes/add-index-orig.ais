@@ -13,7 +13,7 @@ schemas {
     columns {
       columnName: "name"
       typeName: "int"
-      isNullable: false
+      isNullable: true
       position: 1
       uuid: "d160a748-03ca-4497-b906-4bf0efb32618"
     }

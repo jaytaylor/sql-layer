@@ -77,7 +77,7 @@ schemas {
     columns {
       columnName: "placed"
       typeName: "datetime"
-      isNullable: false
+      isNullable: true
       position: 0
       uuid: "595db45e-7618-11e2-aeb1-42f9f046605f"
     }
