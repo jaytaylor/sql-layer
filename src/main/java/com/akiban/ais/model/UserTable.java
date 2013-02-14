@@ -50,7 +50,9 @@ public class UserTable extends Table
      * @return The new copy of the UserTable.
      */
     public static UserTable create(AkibanInformationSchema ais, UserTable userTable) {
-        return create(ais, userTable.tableName.getSchemaName(), userTable.tableName.getTableName(), userTable.getTableId());
+        UserTable copy = create(ais, userTable.tableName.getSchemaName(), userTable.tableName.getTableName(), userTable.getTableId());
+        copy.setUuid(userTable.getUuid());
+        return copy;
     }
 
     private UserTable(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
@@ -432,6 +434,14 @@ public class UserTable extends Table
         return join == null ? null : join.getParent();
     }
 
+    public UUID getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(UUID uuid) {
+        this.uuid = uuid;
+    }
+
     // Descendent tables whose hkeys are affected by a change to this table's PK or FK.
     public List<UserTable> hKeyDependentTables()
     {
@@ -476,7 +486,7 @@ public class UserTable extends Table
         return version;
     }
 
-    public void setVersion(int version) {
+    public void setVersion(Integer version) {
         this.version = version;
     }
     
@@ -571,6 +581,7 @@ public class UserTable extends Table
     private final List<Join> candidateChildJoins = new ArrayList<Join>();
     private final Object lazyEvaluationLock = new Object();
 
+    private UUID uuid;
     private PrimaryKey primaryKey;
     private HKey hKey;
     private boolean containsOwnHKey;

@@ -367,7 +367,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             projections = null;
             pProjections = new ArrayList<TPreparedExpression>(newColumns.size());
             for(Column newCol : newColumns) {
-                Column oldCol = origTable.getColumn(newCol.getName());
                 Integer oldPosition = helper.findOldPosition(origTable, newCol);
                 TInstance newInst = newCol.tInstance();
                 if(oldPosition == null) {
@@ -389,6 +388,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     }
                     pProjections.add(new TPreparedLiteral(newInst, defaultValueSource));
                 } else {
+                    Column oldCol = origTable.getColumnsIncludingInternal().get(oldPosition);
                     TInstance oldInst = oldCol.tInstance();
                     TPreparedExpression pExp = new TPreparedField(oldInst, oldPosition);
                     if(!oldInst.equalsExcludingNullable(newInst)) {

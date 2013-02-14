@@ -65,6 +65,13 @@ public abstract class Strings {
            LEGAL_HEX.add(ch); 
     }
 
+    public static List<String> entriesToString(Map<?, ?> map) {
+        List<String> result = new ArrayList<>(map.size());
+        for (Map.Entry<?, ?> entry : map.entrySet())
+            result.add(entry.toString());
+        return result;
+    }
+
     private static class ListAppendable implements Appendable {
         private final List<String> list;
 

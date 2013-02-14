@@ -35,8 +35,11 @@ import com.akiban.sql.embedded.EmbeddedJDBCServiceImpl;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.junit.After;
@@ -90,6 +93,7 @@ public class SecurityServiceIT extends ITBase
         securityService.addRole("rest-user");
         securityService.addRole("admin");
         securityService.addUser("user1", "password", Arrays.asList("rest-user"));
+        securityService.addUser("akiban", "topsecret", Arrays.asList("rest-user", "admin"));
     }
 
     @After
@@ -113,17 +117,20 @@ public class SecurityServiceIT extends ITBase
 
     private int openRestURL(String request, String query, String userInfo)
             throws Exception {
-        int port = serviceManager().getServiceByClass(com.akiban.http.HttpConductor.class).getPort();
-        String context = serviceManager().getServiceByClass(com.akiban.rest.RestService.class).getContextPath();
-        URI uri = new URI("http", userInfo, "localhost", port, context + request, query, null);
-        HttpGet get = new HttpGet(uri);
         HttpClient client = new DefaultHttpClient();
+        HttpGet get = new HttpGet(getRestURL(request, query, userInfo));
         HttpResponse response = client.execute(get);
-        System.out.println("*** " + response);
         int code = response.getStatusLine().getStatusCode();
         EntityUtils.consume(response.getEntity());
         client.getConnectionManager().shutdown();
         return code;
+    }
+
+    private URI getRestURL(String request, String query, String userInfo)
+            throws Exception {
+        int port = serviceManager().getServiceByClass(com.akiban.http.HttpConductor.class).getPort();
+        String context = serviceManager().getServiceByClass(com.akiban.rest.RestService.class).getContextPath();
+        return new URI("http", userInfo, "localhost", port, context + request, query, null);
     }
 
     @Test
@@ -166,6 +173,23 @@ public class SecurityServiceIT extends ITBase
     public void restQueryWrongSchema() throws Exception {
         assertEquals(HttpStatus.SC_NOT_FOUND,
                      openRestURL("/query", "q=SELECT+*+FROM+user2.utable", "user1:password"));
+    }
+
+    static final String ADD_USER = "{\"user\":\"user3\", \"password\":\"pass\", \"roles\": [\"rest-user\"]}";
+
+    @Test
+    public void restAddUser() throws Exception {
+        SecurityService securityService = securityService();
+        assertNull(securityService.getUser("user3"));
+        HttpClient client = new DefaultHttpClient();
+        HttpPost post = new HttpPost(getRestURL("/security/users", null, "akiban:topsecret"));
+        post.setEntity(new StringEntity(ADD_USER, ContentType.APPLICATION_JSON));
+        HttpResponse response = client.execute(post);
+        int code = response.getStatusLine().getStatusCode();
+        EntityUtils.consume(response.getEntity());
+        client.getConnectionManager().shutdown();
+        assertEquals(HttpStatus.SC_OK, code);
+        assertNotNull(securityService.getUser("user3"));
     }
 
     private Connection openPostgresConnection(String user, String password) 

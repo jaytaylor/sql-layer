@@ -1,0 +1,67 @@
+{
+    "entities" : {
+        "customers" : {
+            "entity" : "4d4ed75f-2b78-4316-a054-b0dde3eaa10e",
+            "attributes" : {
+                "id" : {
+                    "scalar" : "21bc729e-495f-499c-b78e-87cb2c2c68ae",
+                    "type" : "integer",
+                    "spinal_pos" : 0,
+                    "validation" : [
+                        { "required" : true },
+                        { "width" : 11 }
+                    ]
+                },
+                "name" : {
+                    "scalar" : "b8b960ab-d169-44b8-8ee1-e9babfb92409",
+                    "type" : "varchar",
+                    "validation" : [
+                        { "length" : 32 }
+                    ],
+                    "properties" : {
+                        "charset" : "UTF8",
+                        "collation" : "UCS_BINARY"
+                    }
+                },
+                "orders" : {
+                    "collection" : "03aace2a-657c-47a6-a7cc-8f5b39a5b286",
+                    "attributes" : {
+                        "oid_1" : {
+                            "scalar" : "06aa086a-77a7-469b-bfc7-dc838edffce5",
+                            "type" : "integer",
+                            "spinal_pos" : 0,
+                            "validation" : [
+                                { "required" : true },
+                                { "width" : 11 }
+                            ]
+                        },
+                        "oid_2" : {
+                            "scalar" : "49682ecc-c476-45f7-8073-89f9a82b14cb",
+                            "type" : "varchar",
+                            "spinal_pos" : 1,
+                            "validation" : [
+                                { "required" : true },
+                                { "length" : 56 }
+                            ],
+                            "properties" : {
+                                "charset" : "UTF8",
+                                "collation" : "UCS_BINARY"
+                            }
+                        },
+                        "placed" : {
+                            "scalar" : "6b52abfa-d1e8-48dd-8e7e-1cd473e7cd72",
+                            "type" : "date"
+                        }
+                    }
+                }
+            },
+            "indexes" : {
+                "customers_idx_n" : [ ["customers", "name"] ],
+                "orders_idx_p" : [ ["orders", "placed"], ["customers", "name"] ]
+            },
+            "validation" : [
+                { "unique" : "customers_idx_n" }
+            ]
+        }
+    }
+}

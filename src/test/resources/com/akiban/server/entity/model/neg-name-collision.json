@@ -1,0 +1,19 @@
+{
+    "entities" : {
+        "customer" : {
+            "entity" : "2a57b59e-e1b7-4377-996e-a5c04e0abf29",
+            "attributes" : {
+                "customer" : {
+                    "collection" : "c5cedd91-9751-41c2-9417-8c29117ca2c9",
+                    "attributes" : {
+                        "id" : {
+                            "scalar" : "58dd53b7-e8a1-488b-a751-c83f9beca04c",
+                            "type" : "int",
+                            "spinal_pos" : 0
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
