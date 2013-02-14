@@ -5,7 +5,7 @@
             "attributes" : {
                 "spine" : {
                     "scalar" : "8644c36b-f881-4369-a06b-59e3fc580309",
-                    "type" : "int",
+                    "type" : "integer",
                     "spinal_pos" : 0
                 },
                 "first_name" : {
@@ -32,7 +32,7 @@
                     "attributes" : {
                         "spine" : {
                             "scalar" : "58dd53b7-e8a1-488b-a751-c83f9beca04c",
-                            "type" : "int",
+                            "type" : "integer",
                             "spinal_pos" : 0
                         },
                         "placed_old" : {
@@ -44,7 +44,7 @@
                             "attributes" : {
                                 "spine" : {
                                     "scalar" : "a006a1b4-7662-11e2-81f0-525b7188419e",
-                                    "type" : "int",
+                                    "type" : "integer",
                                     "spinal_pos" : 0
                                 },
                                 "sku_new" : {
