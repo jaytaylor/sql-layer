@@ -56,6 +56,7 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.StringWriter;
 import java.security.Principal;
 
 import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
@@ -151,9 +152,14 @@ public final class EntityResource {
             // Successfully applied, generate output
             JsonDiffPreview preview = new JsonDiffPreview();
             diff.apply(preview);
-            String json = preview.toJSON().toString();
+            StringWriter json = preview.toJSON();
+            if(json.getBuffer().length() == 0) {
+                json.write("{}\n");
+            } else {
+                json.append('\n');
+            }
             txn.commit();
-            return Response.status(Response.Status.OK).entity(json).build();
+            return Response.status(Response.Status.OK).entity(json.toString()).build();
         }
     }
 
