@@ -79,10 +79,8 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     }
 
     @Override
-    public void beginEntity(UUID entityUUID, AttributeLookups oldLookups, AttributeLookups newLookups) {
+    public void beginEntity(UUID entityUUID) {
         entity = spaceLookups.getEntity(entityUUID);
-        this.oldLookups = oldLookups;
-        this.newLookups = newLookups;
     }
 
     @Override
@@ -152,6 +150,12 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     }
 
     @Override
+    public void beginAttributes(AttributeLookups oldLookups, AttributeLookups newLookups) {
+        this.oldLookups = oldLookups;
+        this.newLookups = newLookups;
+    }
+
+    @Override
     public void addAttribute(UUID parentAttributeUuid, UUID attributeUuid) {
         Attribute attr = newLookups.attributeFor(attributeUuid);
         String parentName = (parentAttributeUuid == null) ? getCurEntityName() : newLookups.nameFor(parentAttributeUuid);
@@ -217,6 +221,12 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     @Override
     public void changeScalarProperties(UUID scalarUuid, Attribute afterChange) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void endAttributes() {
+        oldLookups = null;
+        newLookups = null;
     }
 
     @Override

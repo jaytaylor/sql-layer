@@ -34,19 +34,21 @@ import com.akiban.server.entity.model.Validation;
 import java.util.UUID;
 
 public interface SpaceModificationHandler {
-    void beginEntity(UUID entityUUID, AttributeLookups oldLookups, AttributeLookups newLookups);
+    void beginEntity(UUID entityUUID);
     void endEntity();
 
     void addEntity(UUID entityUuid);
     void dropEntity(Entity dropped, String oldName);
     void renameEntity(UUID entityUuid, String oldName);
 
+    void beginAttributes(AttributeLookups oldLookups, AttributeLookups newLookups);
     void addAttribute(UUID parentAttributeUuid, UUID attributeUuid);
     void dropAttribute(UUID parentAttributeUuid, String oldName, Attribute dropped);
     void renameAttribute(UUID attributeUuid, String oldName);
     void changeScalarType(UUID scalarUuid, Attribute afterChange);
     void changeScalarValidations(UUID scalarUuid, Attribute afterChange);
     void changeScalarProperties(UUID scalarUuid, Attribute afterChange);
+    void endAttributes();
 
     void addEntityValidation(Validation validation);
     void dropEntityValidation(Validation validation);

@@ -36,7 +36,7 @@ import java.util.UUID;
 
 public class StringChangeLog extends JUnitUtils.MessageTaker implements SpaceModificationHandler {
     @Override
-    public void beginEntity(UUID entityUUID, AttributeLookups oldLookups, AttributeLookups newLookups) {
+    public void beginEntity(UUID entityUUID) {
         // None
     }
 
@@ -58,6 +58,11 @@ public class StringChangeLog extends JUnitUtils.MessageTaker implements SpaceMod
     @Override
     public void renameEntity(UUID entityUuid, String oldName) {
         message("rename entity", entityUuid, oldName);
+    }
+
+    @Override
+    public void beginAttributes(AttributeLookups oldLookups, AttributeLookups newLookups) {
+        // None
     }
 
     @Override
@@ -88,6 +93,11 @@ public class StringChangeLog extends JUnitUtils.MessageTaker implements SpaceMod
     @Override
     public void changeScalarProperties(UUID scalarUuid, Attribute afterChange) {
         message("change scalar properties", scalarUuid, afterChange.getProperties());
+    }
+
+    @Override
+    public void endAttributes() {
+        // None
     }
 
     @Override

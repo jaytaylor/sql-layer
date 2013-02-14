@@ -79,7 +79,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
-    public void beginEntity(UUID entityUUID, AttributeLookups oldLookups, AttributeLookups newLookups) {
+    public void beginEntity(UUID entityUUID) {
         // None
     }
 
@@ -140,6 +140,11 @@ public class JsonDiffPreview implements SpaceModificationHandler
         {
             throw new DiffIOException(ex);
         }
+    }
+
+    @Override
+    public void beginAttributes(AttributeLookups oldLookups, AttributeLookups newLookups) {
+        // None
     }
 
     @Override
@@ -247,6 +252,11 @@ public class JsonDiffPreview implements SpaceModificationHandler
         {
             throw new DiffIOException(ex);
         }
+    }
+
+    @Override
+    public void endAttributes() {
+        // None
     }
 
     @Override
