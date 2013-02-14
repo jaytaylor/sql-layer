@@ -84,11 +84,6 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
-    public void endEntity() {
-        // None
-    }
-
-    @Override
     public void addEntity(UUID entityUuid)
     {
         try
@@ -345,6 +340,11 @@ public class JsonDiffPreview implements SpaceModificationHandler
         {
             throw new DiffIOException(ex);
         }
+    }
+
+    @Override
+    public void endEntity() {
+        // None
     }
 
     @Override

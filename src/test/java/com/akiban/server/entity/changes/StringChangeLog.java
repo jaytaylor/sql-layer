@@ -41,11 +41,6 @@ public class StringChangeLog extends JUnitUtils.MessageTaker implements SpaceMod
     }
 
     @Override
-    public void endEntity() {
-        // None
-    }
-
-    @Override
     public void addEntity(UUID entityUuid) {
         message("add entity", entityUuid);
     }
@@ -123,6 +118,11 @@ public class StringChangeLog extends JUnitUtils.MessageTaker implements SpaceMod
     @Override
     public void renameIndex(EntityIndex index, String oldName, String newName) {
         message("rename index", oldName, newName);
+    }
+
+    @Override
+    public void endEntity() {
+        // None
     }
 
     @Override

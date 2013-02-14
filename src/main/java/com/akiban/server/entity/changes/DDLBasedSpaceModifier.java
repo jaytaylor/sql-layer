@@ -28,6 +28,7 @@ package com.akiban.server.entity.changes;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Join;
 import com.akiban.ais.model.NopVisitor;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -41,8 +42,6 @@ import com.akiban.server.entity.model.Validation;
 import com.akiban.server.service.session.Session;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,89 +51,50 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     private final DDLFunctions ddlFunctions;
     private final Session session;
     private final String schemaName;
-    private final Space space;
-    private final SpaceLookups spaceLookups;
+    private final SpaceLookups newSpaceLookup;
+    private final AkibanInformationSchema oldAIS;
     private final AkibanInformationSchema newAIS;
 
+    // Per entity change information. Tracked after beginEntity() and executed in endEntity()
+    private final List<UserTable> dropTables = new ArrayList<>();
+    private final List<String> dropGroupIndexes = new ArrayList<>();
     private final List<UserTable> newTables = new ArrayList<>();
-    private final List<String> dropTables = new ArrayList<>();
-    private final List<Index> newGroupIndex = new ArrayList<>();
-    private final List<String> dropGroupIndex = new ArrayList<>();
-    private final Map<String,TableChangeSet> tableChanges = new HashMap<>();
+    private final List<Index> newGroupIndexes = new ArrayList<>();
+    private final Map<String,TableChangeInfo> tableChanges = new HashMap<>();
 
+    // Current entity being visited.
     private Entity entity;
     private AttributeLookups oldLookups;
     private AttributeLookups newLookups;
 
 
-    public DDLBasedSpaceModifier(DDLFunctions ddlFunctions, Session session, String schemaName, Space space) {
+    public DDLBasedSpaceModifier(DDLFunctions ddlFunctions, Session session, String schemaName, Space newSpace) {
         this.ddlFunctions = ddlFunctions;
         this.session = session;
         this.schemaName = schemaName;
-        this.space = space;
-        this.spaceLookups = new SpaceLookups(space);
+        this.newSpaceLookup = new SpaceLookups(newSpace);
+        this.oldAIS = ddlFunctions.getAIS(session);
         EntityToAIS eToAIS = new EntityToAIS(schemaName);
-        space.visit(eToAIS);
+        newSpace.visit(eToAIS);
         this.newAIS = eToAIS.getAIS();
     }
 
+    //
+    // SpaceModificationHandler
+    //
+
     @Override
     public void beginEntity(UUID entityUUID) {
-        entity = spaceLookups.getEntity(entityUUID);
-    }
-
-    @Override
-    public void endEntity() {
-        Collections.sort(dropTables, new Comparator<String>() {
-            final AkibanInformationSchema oldAIS = ddlFunctions.getAIS(session);
-            @Override
-            public int compare(String o1, String o2) {
-                UserTable t1 = oldAIS.getUserTable(schemaName, o1);
-                UserTable t2 = oldAIS.getUserTable(schemaName, o2);
-                return t1.getDepth().compareTo(t2.getDepth());
-            }
-        });
-
-        for(String name : dropTables) {
-            ddlFunctions.dropTable(session, new TableName(schemaName, name));
-        }
-
-        for(UserTable table : newTables) {
-            createTableRecursively(table);
-        }
-
-        for(Map.Entry<String,TableChangeSet> entry : tableChanges.entrySet()) {
-            TableName oldName = new TableName(schemaName, entry.getKey());
-            UserTable newDef = newAIS.getUserTable(new TableName(schemaName, entry.getValue().newName));
-            ddlFunctions.alterTable(session, oldName, newDef, entry.getValue().columnChanges, entry.getValue().indexChanges, null);
-        }
-
-        if(!newGroupIndex.isEmpty()) {
-            ddlFunctions.createIndexes(session, newGroupIndex);
-        }
-
-        if(!dropGroupIndex.isEmpty()) {
-            TableName groupName = new TableName(schemaName, spaceLookups.getName(entity.uuid()));
-            ddlFunctions.dropGroupIndexes(session, groupName, dropGroupIndex);
-        }
-
-        entity = null;
-        newLookups = null;
-        newTables.clear();
-        dropTables.clear();
-        newGroupIndex.clear();
-        dropGroupIndex.clear();
-
-        tableChanges.clear();
+        entity = newSpaceLookup.getEntity(entityUUID);
     }
 
     @Override
     public void addEntity(UUID entityUuid) {
-        String entityName = spaceLookups.getName(entityUuid);
-        UserTable root = newAIS.getUserTable(schemaName, entityName);
-        createTableRecursively(root);
-        if(!root.getGroup().getIndexes().isEmpty()) {
-            ddlFunctions.createIndexes(session, root.getGroup().getIndexes());
+        String entityName = newSpaceLookup.getName(entityUuid);
+        UserTable newRoot = newAIS.getUserTable(schemaName, entityName);
+        createTableRecursively(newRoot);
+        if(!newRoot.getGroup().getIndexes().isEmpty()) {
+            ddlFunctions.createIndexes(session, newRoot.getGroup().getIndexes());
         }
     }
 
@@ -145,7 +105,7 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
 
     @Override
     public void renameEntity(UUID entityUuid, String oldName) {
-        String newName = spaceLookups.getName(entityUuid);
+        String newName = newSpaceLookup.getName(entityUuid);
         ddlFunctions.renameTable(session, new TableName(schemaName, oldName), new TableName(schemaName, newName));
     }
 
@@ -158,32 +118,30 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     @Override
     public void addAttribute(UUID parentAttributeUuid, UUID attributeUuid) {
         Attribute attr = newLookups.attributeFor(attributeUuid);
-        String parentName = (parentAttributeUuid == null) ? getCurEntityName() : newLookups.nameFor(parentAttributeUuid);
         String attrName = newLookups.nameFor(attributeUuid);
         switch(attr.getAttributeType()) {
             case SCALAR:
-                trackColumnChange(parentName, TableChange.createAdd(attrName));
+                trackColumnChange(getParentName(parentAttributeUuid), TableChange.createAdd(attrName));
             break;
             case COLLECTION:
                 newTables.add(newAIS.getUserTable(schemaName, attrName));
             break;
             default:
-                assert false : attr;
+                unknownAttributeType(attr);
         }
     }
 
     @Override
     public void dropAttribute(UUID parentAttributeUuid, String oldName, Attribute dropped) {
-        String parentName = (parentAttributeUuid == null) ? getCurEntityName() : newLookups.nameFor(parentAttributeUuid);
         switch(dropped.getAttributeType()) {
             case SCALAR:
-                trackColumnChange(parentName, TableChange.createDrop(oldName));
+                trackColumnChange(getParentName(parentAttributeUuid), TableChange.createDrop(oldName));
             break;
             case COLLECTION:
-                dropTables.add(oldName);
+                dropTables.add(ddlFunctions.getUserTable(session, new TableName(schemaName, oldName)));
             break;
             default:
-                assert false : dropped;
+                unknownAttributeType(dropped);
         }
     }
 
@@ -191,33 +149,32 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     public void renameAttribute(UUID attributeUuid, String oldName) {
         UUID parent = newLookups.getParentAttribute(attributeUuid);
         Attribute attr = newLookups.attributeFor(attributeUuid);
-        String parentName = (parent == null) ? getCurEntityName() : oldLookups.nameFor(parent);
         String newName = newLookups.nameFor(attributeUuid);
         switch(attr.getAttributeType()) {
             case SCALAR:
-                trackColumnChange(parentName, TableChange.createModify(oldName, newName));
+                trackColumnChange(getParentName(parent), TableChange.createModify(oldName, newName));
             break;
             case COLLECTION:
                 trackTableRename(oldName, newName);
             break;
             default:
-                assert false : attr;
+                unknownAttributeType(attr);
         }
     }
 
     @Override
     public void changeScalarType(UUID scalarUuid, Attribute afterChange) {
-        handleColumnChange(scalarUuid);
+        trackColumnModify(scalarUuid);
     }
 
     @Override
     public void changeScalarValidations(UUID scalarUuid, Attribute afterChange) {
-        handleColumnChange(scalarUuid);
+        trackColumnModify(scalarUuid);
     }
 
     @Override
     public void changeScalarProperties(UUID scalarUuid, Attribute afterChange) {
-        handleColumnChange(scalarUuid);
+        trackColumnModify(scalarUuid);
     }
 
     @Override
@@ -240,11 +197,11 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
 
     @Override
     public void addIndex(String name) {
-        String entityName = spaceLookups.getName(entity.uuid());
+        String entityName = newSpaceLookup.getName(entity.uuid());
         UserTable rootTable = newAIS.getUserTable(schemaName, entityName);
-        Index candidate = findIndex(rootTable, name);
+        Index candidate = findOneIndex(rootTable, name);
         if(candidate.isGroupIndex()) {
-            newGroupIndex.add(candidate);
+            newGroupIndexes.add(candidate);
         } else {
             String table = candidate.leafMostTable().getName().getTableName();
             trackIndexChange(table, TableChange.createAdd(candidate.getIndexName().getName()));
@@ -253,11 +210,11 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
 
     @Override
     public void dropIndex(String name, EntityIndex index) {
-        String entityName = spaceLookups.getName(entity.uuid());
-        UserTable rootTable = ddlFunctions.getAIS(session).getUserTable(schemaName, entityName);
-        Index candidate = findIndex(rootTable, name);
+        String entityName = newSpaceLookup.getName(entity.uuid());
+        UserTable oldTable = oldAIS.getUserTable(schemaName, entityName);
+        Index candidate = findOneIndex(oldTable, name);
         if(candidate.isGroupIndex()) {
-            dropGroupIndex.add(name);
+            dropGroupIndexes.add(name);
         } else {
             String table = candidate.leafMostTable().getName().getTableName();
             trackIndexChange(table, TableChange.createDrop(candidate.getIndexName().getName()));
@@ -271,18 +228,91 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     }
 
     @Override
+    public void endEntity() {
+        if(!dropGroupIndexes.isEmpty()) {
+            TableName groupName = new TableName(schemaName, newSpaceLookup.getName(entity.uuid()));
+            ddlFunctions.dropGroupIndexes(session, groupName, dropGroupIndexes);
+        }
+        for(UserTable table : dropTables) {
+            dropTableRecursively(table);
+        }
+        for(UserTable table : newTables) {
+            createTableRecursively(table);
+        }
+        for(Map.Entry<String,TableChangeInfo> entry : tableChanges.entrySet()) {
+            TableChangeInfo changeInfo = entry.getValue();
+            TableName oldName = new TableName(schemaName, entry.getKey());
+            UserTable newDef = newAIS.getUserTable(new TableName(schemaName, changeInfo.newName));
+            ddlFunctions.alterTable(session, oldName, newDef, changeInfo.columnChanges, changeInfo.indexChanges, null);
+        }
+        if(!newGroupIndexes.isEmpty()) {
+            ddlFunctions.createIndexes(session, newGroupIndexes);
+        }
+        entity = null;
+        newLookups = null;
+        dropTables.clear();
+        dropGroupIndexes.clear();
+        newTables.clear();
+        newGroupIndexes.clear();
+        tableChanges.clear();
+    }
+
+    @Override
     public void error(String message) {
         throw new UnsupportedOperationException(message);
     }
 
-    private void handleColumnChange(UUID columnUuid) {
-        UUID parent = newLookups.getParentAttribute(columnUuid);
-        String parentName = (parent == null) ? getCurEntityName() : newLookups.nameFor(parent);
-        String name = newLookups.nameFor(columnUuid);
-        trackColumnChange(parentName, TableChange.createModify(name, name));
+    //
+    // Helpers
+    //
+
+    private void createTableRecursively(UserTable startTable) {
+        ddlFunctions.createTable(session, startTable);
+        for(Join child : startTable.getChildJoins()) {
+            createTableRecursively(child.getChild());
+        }
     }
 
-    private static Index findIndex(UserTable root, final String indexName) {
+    private void dropTableRecursively(UserTable startTable) {
+        for(Join child : startTable.getChildJoins()) {
+            dropTableRecursively(child.getChild());
+        }
+        ddlFunctions.dropTable(session, startTable.getName());
+    }
+
+    private TableChangeInfo getChangeSet(String tableName) {
+        TableChangeInfo changeSet = tableChanges.get(tableName);
+        if(changeSet == null) {
+            changeSet = new TableChangeInfo(tableName);
+            tableChanges.put(tableName, changeSet);
+        }
+        return changeSet;
+    }
+
+    private String getParentName(UUID parentUuid) {
+        return (parentUuid == null) ? newSpaceLookup.getName(entity.uuid()) : oldLookups.nameFor(parentUuid);
+    }
+
+    private void trackColumnChange(String tableName, TableChange columnChange) {
+        getChangeSet(tableName).columnChanges.add(columnChange);
+    }
+
+    private void trackColumnModify(UUID columnUuid) {
+        UUID parent = newLookups.getParentAttribute(columnUuid);
+        String name = newLookups.nameFor(columnUuid);
+        trackColumnChange(getParentName(parent), TableChange.createModify(name, name));
+    }
+
+    private void trackIndexChange(String tableName, TableChange indexChange) {
+        getChangeSet(tableName).indexChanges.add(indexChange);
+    }
+
+    private void trackTableRename(String oldTableName, String newTableName) {
+        getChangeSet(oldTableName).newName = newTableName;
+    }
+
+
+    private static Index findOneIndex(UserTable root, final String indexName) {
         final List<Index> candidates = new ArrayList<>();
         root.traverseTableAndDescendants(new NopVisitor() {
             @Override
@@ -305,46 +335,17 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
         return candidates.get(0);
     }
 
-    private String getCurEntityName() {
-        return spaceLookups.getName(entity.uuid());
+    private static void unknownAttributeType(Attribute a) {
+        throw new IllegalStateException("Unknown attribute type: " + a);
     }
 
-    private TableChangeSet getChangeSet(String tableName) {
-        TableChangeSet changeSet = tableChanges.get(tableName);
-        if(changeSet == null) {
-            changeSet = new TableChangeSet(tableName);
-            tableChanges.put(tableName, changeSet);
-        }
-        return changeSet;
-    }
 
-    private void trackTableRename(String oldTableName, String newTableName) {
-        getChangeSet(oldTableName).newName = newTableName;
-    }
-
-    private void trackColumnChange(String tableName, TableChange columnChange) {
-        getChangeSet(tableName).columnChanges.add(columnChange);
-    }
-
-    private void trackIndexChange(String tableName, TableChange indexChange) {
-        getChangeSet(tableName).indexChanges.add(indexChange);
-    }
-
-    private void createTableRecursively(UserTable root) {
-        root.traverseTableAndDescendants(new NopVisitor() {
-            @Override
-            public void visitUserTable(UserTable table) {
-                ddlFunctions.createTable(session, table);
-            }
-        });
-    }
-
-    private static class TableChangeSet {
+    private static class TableChangeInfo {
         public String newName;
         public final List<TableChange> columnChanges = new ArrayList<>();
         public final List<TableChange> indexChanges = new ArrayList<>();
 
-        public TableChangeSet(String name) {
+        public TableChangeInfo(String name) {
             newName = name;
         }
     }
