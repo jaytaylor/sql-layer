@@ -76,8 +76,18 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
         return stringWriter;
     }
-    
-    @Override 
+
+    @Override
+    public void beginEntity(UUID entityUUID) {
+        // None
+    }
+
+    @Override
+    public void endEntity() {
+        // None
+    }
+
+    @Override
     public void addEntity(UUID entityUuid)
     {
         try
@@ -132,13 +142,14 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
-    public void addAttribute(UUID attributeUuid)
+    public void addAttribute(UUID parentAttribute, UUID attributeUuid)
     {
         try
         {
             startObject();
             entry("action", "add_attribute");
             entry("destructive", false);
+            entry("parent", parentAttribute);
             entry("uuid", attributeUuid);
             endObject();
         }
@@ -272,14 +283,13 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
-    public void addIndex(UUID entityUuid, String name)
+    public void addIndex(String name)
     {
         try
         {
             startObject();
             entry("action", "add_index");
             entry("destructive", false);
-            entry("uuid", entityUuid);
             entry("new_index", name);
             endObject();
         }
@@ -290,14 +300,13 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
-    public void dropIndex(UUID entityUuid, String name, EntityIndex index)
+    public void dropIndex(String name, EntityIndex index)
     {
         try
         {
             startObject();
             entry("action", "drop_index");
             entry("destructive", true);
-            entry("uuid", entityUuid.toString());
             entry("name", name);
             entry("index", index);
             endObject();

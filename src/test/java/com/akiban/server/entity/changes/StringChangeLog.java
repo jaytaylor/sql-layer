@@ -35,6 +35,15 @@ import com.akiban.util.JUnitUtils;
 import java.util.UUID;
 
 public class StringChangeLog extends JUnitUtils.MessageTaker implements SpaceModificationHandler {
+    @Override
+    public void beginEntity(UUID entityUUID) {
+        // None
+    }
+
+    @Override
+    public void endEntity() {
+        // None
+    }
 
     @Override
     public void addEntity(UUID entityUuid) {
@@ -52,7 +61,7 @@ public class StringChangeLog extends JUnitUtils.MessageTaker implements SpaceMod
     }
 
     @Override
-    public void addAttribute(UUID attributeUuid) {
+    public void addAttribute(UUID parentAttribute, UUID attributeUuid) {
         message("add attribute", attributeUuid);
     }
 
@@ -92,13 +101,13 @@ public class StringChangeLog extends JUnitUtils.MessageTaker implements SpaceMod
     }
 
     @Override
-    public void addIndex(UUID entityUuid, String name) {
-        message("add index", entityUuid, name);
+    public void addIndex(String name) {
+        message("add index", name);
     }
 
     @Override
-    public void dropIndex(UUID entityUuid, String name, EntityIndex index) {
-        message("drop index", entityUuid, name, index);
+    public void dropIndex(String name, EntityIndex index) {
+        message("drop index", name, index);
     }
 
     @Override

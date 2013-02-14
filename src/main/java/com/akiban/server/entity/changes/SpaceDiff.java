@@ -56,11 +56,13 @@ public final class SpaceDiff {
                 out.addEntity(uuid);
         }
         for (UUID uuid : inBoth) {
+            out.beginEntity(uuid);
             if (!originalEntities.getName(uuid).equals(updatedEntities.getName(uuid)))
                 out.renameEntity(uuid, originalEntities.getName(uuid));
             attributeActions(uuid, out);
             validationActions(uuid, out);
             indexActions(uuid, out);
+            out.endEntity();
         }
     }
 
@@ -95,7 +97,7 @@ public final class SpaceDiff {
                     if (updated.getValue().isSpinal())
                         out.error("Can't add spinal attributes to entities or collections");
                     else
-                        out.addAttribute(uuid);
+                        out.addAttribute(parent, uuid);
                 }
             }
         }
@@ -174,13 +176,13 @@ public final class SpaceDiff {
             EntityIndex origIndex = origEntry.getKey();
             String origName = origEntry.getValue();
             if (!updatedIndexes.containsKey(origIndex))
-                out.dropIndex(uuid, origName, origIndex);
+                out.dropIndex(origName, origIndex);
             else if (!origName.equals(updatedIndexes.get(origIndex)))
                 out.renameIndex(origIndex, origName, updatedIndexes.get(origIndex));
         }
         for (Map.Entry<EntityIndex, String> updatedIndex : updatedIndexes.entrySet()) {
             if (!originalIndexes.containsKey(updatedIndex.getKey()))
-                out.addIndex(uuid, updatedIndex.getValue());
+                out.addIndex(updatedIndex.getValue());
         }
     }
 

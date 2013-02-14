@@ -44,7 +44,7 @@ public class AISDumper {
         for(UserTable table : clone.getUserTables().values()) {
             table.setTableId(-1);
             table.setVersion(null);
-            for(Column column : table.getColumns()) {
+            for(Column column : table.getColumnsIncludingInternal()) {
                 column.clearMaxAndPrefixSize();
                 if(column.getName().endsWith("_ref") || column.getName().endsWith("_ref$1")) {
                     column.setUuid(null);
