@@ -8,6 +8,17 @@
                     "type" : "int",
                     "spinal_pos" : 0
                 },
+                "first_name" : {
+                    "scalar" : "177400c6-7662-11e2-8057-2afbf046605f",
+                    "type" : "varchar",
+                    "properties" : {
+                        "charset" : "utf8"
+                    },
+                    "validation" : [
+                        { "max_length" : 64 },
+                        { "required" : false }
+                    ]
+                },
                 "last_name" : {
                     "scalar" : "257e9b59-e77f-4a4d-a5da-00c7c2261875",
                     "type" : "varchar",
@@ -26,6 +37,10 @@
                             "scalar" : "58dd53b7-e8a1-488b-a751-c83f9beca04c",
                             "type" : "int",
                             "spinal_pos" : 0
+                        },
+                        "placed" : {
+                            "scalar" : "ff49b16c-7661-11e2-a7bf-525b7188419e",
+                            "type" : "datetime"
                         }
                     }
                 }
