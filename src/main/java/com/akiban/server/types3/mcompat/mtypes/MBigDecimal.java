@@ -293,4 +293,17 @@ public class MBigDecimal extends TClassBase {
             out.putObject(wrapper);
         }
     };
+
+    @Override
+    protected boolean tryFromObject(TExecutionContext context, PValueSource in, PValueTarget out) {
+        // If the incoming PValueSource is a DECIMAL, *and* it has a cache value (ie an BigDecimalWrapper), then
+        // we can just copy the wrapper into the output. If the incoming is a DECIMAL with bytes (its raw form), we
+        // can only copy those bytes if the TInstance match -- and super.tryFromObject already makes that check.
+        if (in.tInstance().typeClass() instanceof MBigDecimal && in.hasCacheValue()) {
+            BigDecimalWrapper cached = (BigDecimalWrapper) in.getObject();
+            out.putObject(new MBigDecimalWrapper(cached.asBigDecimal()));
+            return true;
+        }
+        return super.tryFromObject(context, in, out);
+    }
 }

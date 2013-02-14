@@ -27,9 +27,7 @@
 package com.akiban.server.types3;
 
 import com.akiban.server.error.InvalidDateFormatException;
-import com.akiban.server.types3.common.types.TString;
 import com.akiban.server.types3.mcompat.mcasts.CastUtils;
-import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -215,19 +213,9 @@ public class TParsers
         @Override
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            TInstance tInstance = source.tInstance();
-            if (tInstance.typeClass() instanceof TString) {
-                CastUtils.doCastDecimal(
-                        context, CastUtils.parseDecimalString(source.getString(),context), target);
-            }
-            else if (tInstance.typeClass() instanceof MBigDecimal) {
-                if (source.hasCacheValue())
-                    target.putObject(source.getObject());
-                else
-                    target.putBytes(source.getBytes());
-            }
-            else
-                throw new AssertionError("wrong class for DECIMAL type: " + tInstance);
+            CastUtils.doCastDecimal(context,
+                                    CastUtils.parseDecimalString(source.getString(),context),
+                                    target);
         }   
     };
 

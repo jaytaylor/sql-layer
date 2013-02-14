@@ -255,20 +255,17 @@ public class EmbeddedJDBCIT extends ITBase
 
     @Test
     public void prepareUsingObjects() throws Exception {
-        createTable("schm", "t", "i int, j bigint, d double, s varchar(16), b boolean, ts timestamp, n decimal(8,3)");
-
-        long epoch = new SimpleDateFormat("YYYY-mm-dd HH:mm:ss").parse("2012-09-01 12:59:59").getTime();
+        createTable("schm", "t", "i int, j bigint, d double, s varchar(16), b boolean, n decimal(8,3)");
 
         try (Connection connection = DriverManager.getConnection(CONNECTION_URL, SCHEMA_NAME, "")) {
-            final String insert = "INSERT INTO schm.t(i, j, d, s, b, ts, n) VALUES(?, ?, ?, ?, ?, ?, ?)";
+            final String insert = "INSERT INTO schm.t(i, j, d, s, b, n) VALUES(?, ?, ?, ?, ?, ?)";
             try (PreparedStatement s = connection.prepareStatement(insert)) {
                 s.setInt(1, 111);
                 s.setLong(2, 12345);
                 s.setDouble(3, 3.14159265);
                 s.setString(4, "hello");
                 s.setBoolean(5, true);
-                s.setTimestamp(6, new Timestamp(epoch));
-                s.setBigDecimal(7, new BigDecimal("9876.543"));
+                s.setBigDecimal(6, new BigDecimal("9876.543"));
                 s.execute();
             }
             try (Statement s = connection.createStatement()) {
@@ -279,8 +276,7 @@ public class EmbeddedJDBCIT extends ITBase
                 assertEquals("row[3]", 3.14159265, rs.getDouble(3), 0.01);
                 assertEquals("row[4]", "hello", rs.getString(4));
                 assertEquals("row[5]", true, rs.getBoolean(5));
-                assertEquals("row[6]", new Timestamp(epoch), rs.getTimestamp(6));
-                assertEquals("row[7]", new BigDecimal("9876.543"), rs.getBigDecimal(7));
+                assertEquals("row[6]", new BigDecimal("9876.543"), rs.getBigDecimal(6));
                 assertFalse("too many rs rows", rs.next());
             }
         }
