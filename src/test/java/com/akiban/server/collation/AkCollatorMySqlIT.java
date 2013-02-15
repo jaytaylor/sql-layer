@@ -141,7 +141,7 @@ public class AkCollatorMySqlIT extends ITBase {
     private void verifySequence(final String collation, final Integer[] expected) {
         final AkCollator collator = AkCollatorFactory.getAkCollator(collation);
         final Key key = new Key(getDb());
-        final Map<KeyState, Integer> map = new TreeMap<KeyState, Integer>();
+        final Map<KeyState, Integer> map = new TreeMap<>();
         for (int i = 0; i < 256; i++) {
             final String s = new String(new char[] { (char) i });
             collator.append(key.clear(), s);
@@ -161,13 +161,13 @@ public class AkCollatorMySqlIT extends ITBase {
     private void testRandomStringSequence(final String collation, final int count, final Integer[] table)
             throws Exception {
         final AkCollator collator = AkCollatorFactory.getAkCollator(collation);
-        final Map<String, Integer> map1 = new TreeMap<String, Integer>(new Comparator<String>() {
+        final Map<String, Integer> map1 = new TreeMap<>(new Comparator<String>() {
             @Override
             public int compare(String source, String target) {
                 return collator.compare(source, target);
             }
         });
-        final Map<KeyState, Integer> map2 = new TreeMap<KeyState, Integer>();
+        final Map<KeyState, Integer> map2 = new TreeMap<>();
         Random random = new Random();
         StringBuilder sb = new StringBuilder();
         final Key key = new Key(getDb());

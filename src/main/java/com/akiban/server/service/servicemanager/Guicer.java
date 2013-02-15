@@ -117,11 +117,11 @@ public final class Guicer {
      * @throws CircularDependencyException if a circular dependency is found
      */
     public List<?> dependenciesFor(Class<?> rootClass) {
-        LinkedHashMap<Class<?>,Object> result = new LinkedHashMap<Class<?>,Object>(16, .75f, true);
-        Deque<Object> dependents = new ArrayDeque<Object>();
+        LinkedHashMap<Class<?>,Object> result = new LinkedHashMap<>(16, .75f, true);
+        Deque<Object> dependents = new ArrayDeque<>();
         buildDependencies(rootClass, result, dependents);
         assert dependents.isEmpty() : dependents;
-        return new ArrayList<Object>(result.values());
+        return new ArrayList<>(result.values());
     }
 
     public void graph(String filename, Collection<Class<?>> roots) {
@@ -205,8 +205,8 @@ public final class Guicer {
     {
         this.serviceManagerInterfaceClass = serviceManagerInterfaceClass;
         
-        List<Class<?>> localDirectlyRequiredClasses = new ArrayList<Class<?>>();
-        List<ResolvedServiceBinding> resolvedServiceBindings = new ArrayList<ResolvedServiceBinding>();
+        List<Class<?>> localDirectlyRequiredClasses = new ArrayList<>();
+        List<ResolvedServiceBinding> resolvedServiceBindings = new ArrayList<>();
 
         for (ServiceBinding serviceBinding : serviceBindings) {
             ResolvedServiceBinding resolvedServiceBinding = new ResolvedServiceBinding(serviceBinding);
@@ -228,11 +228,11 @@ public final class Guicer {
         }
         directlyRequiredClasses = Collections.unmodifiableCollection(localDirectlyRequiredClasses);
 
-        this.services = Collections.synchronizedSet(new LinkedHashSet<Object>());
+        this.services = Collections.synchronizedSet(new LinkedHashSet<>());
 
         AbstractModule module = new ServiceBindingsModule(serviceManagerInterfaceClass, serviceManager,
                                                           resolvedServiceBindings);
-        List<Module> modulesList = new ArrayList<Module>(modules.size() + 1);
+        List<Module> modulesList = new ArrayList<>(modules.size() + 1);
         modulesList.add(module);
         modulesList.addAll(modules);
         _injector = Guice.createInjector(modulesList.toArray(new Module[modulesList.size()]));
@@ -254,7 +254,7 @@ public final class Guicer {
         }
 
         // Build the dependency list
-        List<Class<?>> dependencyClasses = new ArrayList<Class<?>>();
+        List<Class<?>> dependencyClasses = new ArrayList<>();
         for (Dependency<?> dependency : InjectionPoint.forConstructorOf(actualClass).getDependencies()) {
             dependencyClasses.add(dependency.getKey().getTypeLiteral().getRawType());
         }
@@ -285,7 +285,7 @@ public final class Guicer {
 
     private CircularDependencyException circularDependencyInjection(Class<?> forClass, Object instance, Deque<Object> dependents) {
         String forClassName = forClass.getSimpleName();
-        List<String> classNames = new ArrayList<String>();
+        List<String> classNames = new ArrayList<>();
         for (Object o : dependents) {
             classNames.add(o.getClass().getSimpleName());
         }
@@ -352,9 +352,9 @@ public final class Guicer {
     private <S> List<Throwable> tryStopServices(ServiceLifecycleActions<S> withActions, Exception initialCause) {
         ListIterator<?> reverseIter;
         synchronized (services) {
-            reverseIter = new ArrayList<Object>(services).listIterator(services.size());
+            reverseIter = new ArrayList<>(services).listIterator(services.size());
         }
-        List<Throwable> exceptions = new ArrayList<Throwable>();
+        List<Throwable> exceptions = new ArrayList<>();
         if (initialCause != null) {
             exceptions.add(initialCause);
         }
@@ -400,7 +400,7 @@ public final class Guicer {
     };
 
     public List<Class<?>> servicesClassesInStartupOrder() {
-        List<Class<?>> result = new ArrayList<Class<?>>(services.size());
+        List<Class<?>> result = new ArrayList<>(services.size());
         for (Object service : services) {
             result.add(service.getClass());
         }

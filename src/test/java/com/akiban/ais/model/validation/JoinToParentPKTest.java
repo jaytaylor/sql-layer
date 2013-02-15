@@ -44,7 +44,7 @@ public class JoinToParentPKTest {
 
     @Before 
     public void createValidations () {
-        validations = new LinkedList<AISValidation>();
+        validations = new LinkedList<>();
         validations.add(AISValidations.JOIN_TO_PARENT_PK);
         validations.add(AISValidations.JOIN_COLUMN_TYPES_MATCH);
 

@@ -43,7 +43,7 @@ class Decomposer extends Space
             region.up();
         }
         // Split breadth-first, allowing up to maxElements elements.
-        Queue<Region> queue = new ArrayDeque<Region>(maxRegions);
+        Queue<Region> queue = new ArrayDeque<>(maxRegions);
         queue.add(region);
         while (!queue.isEmpty()) {
             region = queue.poll();

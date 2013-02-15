@@ -837,7 +837,7 @@ public class AISBuilder {
     private Map<String, ForwardTableReference> forwardReferences = // join name
                                                                    // ->
                                                                    // ForwardTableReference
-    new LinkedHashMap<String, ForwardTableReference>();
+    new LinkedHashMap<>();
     private NameGenerator nameGenerator;
 
     // Inner classes
@@ -875,7 +875,7 @@ public class AISBuilder {
         private final String joinName;
         private final UserTable childTable;
         private final TableName parentTableName;
-        private final List<ForwardColumnReference> forwardColumnReferences = new ArrayList<ForwardColumnReference>();
+        private final List<ForwardColumnReference> forwardColumnReferences = new ArrayList<>();
     }
 
     private class ForwardColumnReference {

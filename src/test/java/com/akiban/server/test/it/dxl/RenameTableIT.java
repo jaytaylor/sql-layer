@@ -111,13 +111,13 @@ public class RenameTableIT extends ITBase {
     }
     
     private void expectTablesInSchema(String schemaName, String... tableNames) {
-        Set<String> actualInSchema = new TreeSet<String>();
+        Set<String> actualInSchema = new TreeSet<>();
         for(UserTable table : ddl().getAIS(session()).getUserTables().values()) {
             if(table.getName().getSchemaName().equals(schemaName)) {
                 actualInSchema.add(table.getName().getTableName());
             }
         }
-        Set<String> expectedInSchema = new TreeSet<String>();
+        Set<String> expectedInSchema = new TreeSet<>();
         expectedInSchema.addAll(Arrays.asList(tableNames));
 
         assertEquals("Tables in schema " + schemaName,

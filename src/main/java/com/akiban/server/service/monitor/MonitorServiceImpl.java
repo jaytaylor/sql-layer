@@ -77,10 +77,10 @@ public class MonitorServiceImpl implements Service, MonitorService, MonitorMXBea
 
     @Override
     public void start() {
-        servers = new ConcurrentHashMap<String,ServerMonitor>();
+        servers = new ConcurrentHashMap<>();
 
         sessionAllocator = new AtomicInteger();
-        sessions = new ConcurrentHashMap<Integer,SessionMonitor>();
+        sessions = new ConcurrentHashMap<>();
 
         String enableLog = config.getProperty(QUERY_LOG_PROPERTY);
         this.queryLogEnabled = new AtomicBoolean(Boolean.parseBoolean(enableLog));

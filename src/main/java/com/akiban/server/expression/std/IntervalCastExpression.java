@@ -75,7 +75,7 @@ public class IntervalCastExpression extends AbstractUnaryExpression
         final AkType type;
     }
     
-    private static final HashMap<TypeId,EndPoint> ID_MAP = new HashMap<TypeId,EndPoint>();
+    private static final HashMap<TypeId,EndPoint> ID_MAP = new HashMap<>();
     static
     {
         ID_MAP.put(TypeId.INTERVAL_YEAR_ID, EndPoint.YEAR);

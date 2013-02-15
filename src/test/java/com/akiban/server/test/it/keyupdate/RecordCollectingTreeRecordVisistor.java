@@ -45,5 +45,5 @@ class RecordCollectingTreeRecordVisistor extends TreeRecordVisitor
         return records;
     }
 
-    private final List<TreeRecord> records = new ArrayList<TreeRecord>();
+    private final List<TreeRecord> records = new ArrayList<>();
 }

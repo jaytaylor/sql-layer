@@ -42,7 +42,7 @@ public abstract class PTBase extends ApiTestBase {
 
     protected PTBase() {
         super("PT");
-        tapsRegexes = new ArrayList<String>();
+        tapsRegexes = new ArrayList<>();
     }
     
     protected void registerTaps() {
@@ -87,7 +87,7 @@ public abstract class PTBase extends ApiTestBase {
         log("Total elapsed: %dms", testEndMS - testStartMS);
         // have to filter specifically, otherwise we'd have multiple TapReport[]s that we'd need to merge
         TapReport[] reportsArray = Tap.getReport(".*");
-        List<TapReport> reports = new ArrayList<TapReport>(reportsArray.length);
+        List<TapReport> reports = new ArrayList<>(reportsArray.length);
         for (TapReport report : reportsArray) {
             String name = report.getName();
             boolean include = false;

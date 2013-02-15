@@ -109,9 +109,9 @@ public final class FunctionsRegistryImpl implements FunctionsRegistry, Service, 
     // for use in this package
 
     FunctionsRegistryImpl(FunctionsClassFinder finder) {
-        Map<String,Map<AkType,AggregatorFactory>> aggregators = new HashMap<String, Map<AkType, AggregatorFactory>>();
-        Map<String,ExpressionComposer> composers = new HashMap<String, ExpressionComposer>();
-        Set<String> names = new HashSet<String>();
+        Map<String,Map<AkType,AggregatorFactory>> aggregators = new HashMap<>();
+        Map<String,ExpressionComposer> composers = new HashMap<>();
+        Set<String> names = new HashSet<>();
         for (Class<?> cls : finder.findClasses()) {
             if (!Modifier.isPublic(cls.getModifiers()))
                 continue;
@@ -141,7 +141,7 @@ public final class FunctionsRegistryImpl implements FunctionsRegistry, Service, 
             Aggregate annotation = method.getAnnotation(Aggregate.class);
             if (annotation != null) {
                 validateAggregator(method);
-                Map<AkType, AggregatorFactory> innerMap = new EnumMap<AkType, AggregatorFactory>(AkType.class);
+                Map<AkType, AggregatorFactory> innerMap = new EnumMap<>(AkType.class);
                 String name = nameIsAvailable(names, annotation.value());
                 Map<AkType, AggregatorFactory> old = composers.put(name, innerMap);
                 assert old == null : old; // nameIsAvailable did actual error check
@@ -262,7 +262,7 @@ public final class FunctionsRegistryImpl implements FunctionsRegistry, Service, 
         @Override
         public Map<String, Set<AkType>> getAggregatesWithTypes() {
             Map<String,Map<AkType,AggregatorFactory>> aggregators = roAggregators;
-            Map<String,Set<AkType>> result = new TreeMap<String, Set<AkType>>();
+            Map<String,Set<AkType>> result = new TreeMap<>();
             for (Map.Entry<String,Map<AkType,AggregatorFactory>> entry : aggregators.entrySet()) {
                 result.put(entry.getKey(), entry.getValue().keySet());
             }
@@ -270,7 +270,7 @@ public final class FunctionsRegistryImpl implements FunctionsRegistry, Service, 
         }
 
         private <T extends Comparable<T>> List<T> sortedList(Collection<? extends T> collection) {
-            List<T> result = new ArrayList<T>(collection);
+            List<T> result = new ArrayList<>(collection);
             Collections.sort(result);
             return result;
         }

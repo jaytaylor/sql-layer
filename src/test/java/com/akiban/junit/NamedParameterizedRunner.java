@@ -170,7 +170,7 @@ public final class NamedParameterizedRunner extends Suite
             if (children == null) {
                 return "null";
             }
-            List<String> descriptions = new ArrayList<String>(children.size());
+            List<String> descriptions = new ArrayList<>(children.size());
             for (FrameworkMethod method : children) {
                 descriptions.add( method.getName() );
             }
@@ -393,7 +393,7 @@ public final class NamedParameterizedRunner extends Suite
             return;
         }
 
-        List<Runner> localRunners = new LinkedList<Runner>();
+        List<Runner> localRunners = new LinkedList<>();
 
         Collection<Parameterization> parameterizations = getParameterizations();
         checkFailingParameterizations(parameterizations);
@@ -480,8 +480,8 @@ public final class NamedParameterizedRunner extends Suite
         {
             throw new Exception("parameterizations collection may not return null");
         }
-        Set<String> duplicates = new HashSet<String>();
-        Set<Parameterization> checkSet = new HashSet<Parameterization>();
+        Set<String> duplicates = new HashSet<>();
+        Set<Parameterization> checkSet = new HashSet<>();
         for (Parameterization param : collection)
         {
             if (param == null)
@@ -509,14 +509,14 @@ public final class NamedParameterizedRunner extends Suite
      */
     private void checkFailingParameterizations(Collection<Parameterization> parameterizations) throws InitializationError
     {
-        Collection<String> paramNames = new HashSet<String>();
+        Collection<String> paramNames = new HashSet<>();
         for (Parameterization param : parameterizations)
         {
             boolean added = paramNames.add(param.getName());
             assert added : "uncaught duplicate: " + param;
         }
 
-        Set<String> duplicatesChecker = new HashSet<String>();
+        Set<String> duplicatesChecker = new HashSet<>();
         for(FrameworkMethod method : super.getTestClass().getAnnotatedMethods(Failing.class))
         {
             String[] failing = method.getAnnotation(Failing.class).value();

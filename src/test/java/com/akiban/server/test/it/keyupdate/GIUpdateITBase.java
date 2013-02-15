@@ -131,7 +131,7 @@ public abstract class GIUpdateITBase extends ITBase {
     }
 
     String containing(String indexName, int firstTableId, int... tableIds) {
-        Set<UserTable> containingTables = new HashSet<UserTable>();
+        Set<UserTable> containingTables = new HashSet<>();
         AkibanInformationSchema ais = ddl().getAIS(session());
         containingTables.add(ais.getUserTable(firstTableId));
         for (int tableId : tableIds) {
@@ -228,6 +228,6 @@ public abstract class GIUpdateITBase extends ITBase {
 
         // object state
 
-        private final List<String> _strings = new ArrayList<String>();
+        private final List<String> _strings = new ArrayList<>();
     }
 }

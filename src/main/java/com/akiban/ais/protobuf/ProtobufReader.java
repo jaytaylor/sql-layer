@@ -149,7 +149,7 @@ public class ProtobufReader {
     }
 
     private void loadSchemas(Collection<AISProtobuf.Schema> pbSchemas) {
-        List<List<NewGroupInfo>> allNewGroups = new ArrayList<List<NewGroupInfo>>();
+        List<List<NewGroupInfo>> allNewGroups = new ArrayList<>();
 
         for(AISProtobuf.Schema pbSchema : pbSchemas) {
             hasRequiredFields(pbSchema);
@@ -179,7 +179,7 @@ public class ProtobufReader {
     }
     
     private List<NewGroupInfo> loadGroups(String schema, Collection<AISProtobuf.Group> pbGroups) {
-        List<NewGroupInfo> newGroups = new ArrayList<NewGroupInfo>();
+        List<NewGroupInfo> newGroups = new ArrayList<>();
         for(AISProtobuf.Group pbGroup : pbGroups) {
             hasRequiredFields(pbGroup);
             String rootTableName = pbGroup.getRootTableName();
@@ -191,7 +191,7 @@ public class ProtobufReader {
     }
 
     private void hookUpGroupAndCreateGroupIndexes(List<NewGroupInfo> newGroups) {
-        List<Join> joinsNeedingGroup = new ArrayList<Join>();
+        List<Join> joinsNeedingGroup = new ArrayList<>();
         
         for(NewGroupInfo newGroupInfo : newGroups) {
             String rootTableName = newGroupInfo.pbGroup.getRootTableName();
@@ -288,8 +288,8 @@ public class ProtobufReader {
                     );
                 }
 
-                List<String> parentColNames = new ArrayList<String>();
-                List<String> childColNames = new ArrayList<String>();
+                List<String> parentColNames = new ArrayList<>();
+                List<String> childColNames = new ArrayList<>();
                 for(AISProtobuf.JoinColumn pbJoinColumn : pbJoin.getColumnsList()) {
                     hasRequiredFields(pbJoinColumn);
                     parentColNames.add(pbJoinColumn.getParentColumn());
@@ -313,13 +313,13 @@ public class ProtobufReader {
         for(AISProtobuf.View pbView : pbViews) {
             hasRequiredFields(pbView);
             Map<TableName,Collection<String>> refs = 
-                new HashMap<TableName,Collection<String>>();
+                new HashMap<>();
             for(AISProtobuf.ColumnReference pbReference : pbView.getReferencesList()) {
                 hasRequiredFields(pbReference);
                 AISProtobuf.TableName pbTableName = pbReference.getTable();
                 hasRequiredFields(pbTableName);
                 TableName tableName = TableName.create(pbTableName.getSchemaName(), pbTableName.getTableName());
-                Collection<String> columns = new HashSet<String>();
+                Collection<String> columns = new HashSet<>();
                 Collection<String> old = refs.put(tableName, columns);
                 assert (old == null);
                 for(String colname : pbReference.getColumnsList()) {
@@ -621,9 +621,9 @@ public class ProtobufReader {
 
     private PendingOSC loadPendingOSC(AISProtobuf.PendingOSC pbPendingOSC) {
         hasRequiredFields(pbPendingOSC);
-        List<TableChange> columnChanges = new ArrayList<TableChange>();
+        List<TableChange> columnChanges = new ArrayList<>();
         loadPendingOSChanges(columnChanges, pbPendingOSC.getColumnChangesList());
-        List<TableChange> indexChanges = new ArrayList<TableChange>();
+        List<TableChange> indexChanges = new ArrayList<>();
         loadPendingOSChanges(indexChanges, pbPendingOSC.getIndexChangesList());
         PendingOSC osc = new PendingOSC(pbPendingOSC.getOriginalName(), columnChanges, indexChanges);
         if (pbPendingOSC.hasCurrentName())
@@ -858,7 +858,7 @@ public class ProtobufReader {
     }
 
     private static void requireAllFieldsExcept(AbstractMessage message, int... fieldNumbersNotRequired) {
-        Collection<Descriptors.FieldDescriptor> required = new ArrayList<Descriptors.FieldDescriptor>(message.getDescriptorForType().getFields());
+        Collection<Descriptors.FieldDescriptor> required = new ArrayList<>(message.getDescriptorForType().getFields());
         Collection<Descriptors.FieldDescriptor> actual = message.getAllFields().keySet();
         required.removeAll(actual);
         if(fieldNumbersNotRequired != null) {
@@ -867,7 +867,7 @@ public class ProtobufReader {
             }
         }
         if(!required.isEmpty()) {
-            Collection<String> names = new ArrayList<String>(required.size());
+            Collection<String> names = new ArrayList<>(required.size());
             for(Descriptors.FieldDescriptor desc : required) {
                 names.add(desc.getName());
             }

@@ -38,7 +38,7 @@ class GroupTreeNamesUnique implements AISValidation {
 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        Map<String,Group> treeNameMap = new HashMap<String,Group>();
+        Map<String,Group> treeNameMap = new HashMap<>();
 
         for(Group group : ais.getGroups().values()) {
             String treeName = group.getTreeName();

@@ -46,7 +46,7 @@ public final class CompositeHookTest {
 
     @Before
     public void setUp() {
-        output = new ArrayList<String>();
+        output = new ArrayList<>();
         session = TestSessionFactory.get().createSession();
     }
 
@@ -230,7 +230,7 @@ public final class CompositeHookTest {
     }
 
     DXLFunctionsHook compose(List<String> output, String... messages) {
-        List<DXLFunctionsHook> hooks = new ArrayList<DXLFunctionsHook>();
+        List<DXLFunctionsHook> hooks = new ArrayList<>();
         for (String message : messages) {
             hooks.add( new ToListHook(message, output) );
         }

@@ -51,12 +51,12 @@ public final class TransactionalTimedCallable<T> extends TimedCallable<T> {
     public static <T> TransactionalTimedCallable<T> withRunnable(TimedCallable<? extends T> wrapped,
                                                                  int retryCount, long retryDelay)
     {
-        return new TransactionalTimedCallable<T>(wrapped, retryCount, retryDelay);
+        return new TransactionalTimedCallable<>(wrapped, retryCount, retryDelay);
     }
 
     @SuppressWarnings("unused")
     public static <T> TransactionalTimedCallable<T> withoutRunnable(TimedCallable<? extends T> wrapped) {
-        return new TransactionalTimedCallable<T>(wrapped);
+        return new TransactionalTimedCallable<>(wrapped);
     }
 
     private TransactionalTimedCallable(TimedCallable<? extends T> wrapped) {
@@ -95,7 +95,7 @@ public final class TransactionalTimedCallable<T> extends TimedCallable<T> {
     }
 
     private T withRunnable(final TimePoints timePoints, final Session session, Transaction transaction) throws Exception {
-        final AtomicReference<T> resultReference = new AtomicReference<T>();
+        final AtomicReference<T> resultReference = new AtomicReference<>();
         transaction.run(
                 new TransactionRunnable() {
                     @Override

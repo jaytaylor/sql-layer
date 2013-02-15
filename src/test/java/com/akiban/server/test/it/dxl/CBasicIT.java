@@ -79,7 +79,7 @@ public final class CBasicIT extends ITBase {
         dml().closeCursor(session(), cursorId);
         assertEquals("cursors", cursorSet(), dml().getCursors(session()));
 
-        List<NewRow> expectedRows = new ArrayList<NewRow>();
+        List<NewRow> expectedRows = new ArrayList<>();
         expectedRows.add( createNewRow(tableId, 0L, "hello world") );
         assertEquals("rows scanned", expectedRows, output.getRows());
     }
@@ -109,7 +109,7 @@ public final class CBasicIT extends ITBase {
         dml().closeCursor(session(), cursorId);
         assertEquals("cursors", cursorSet(), dml().getCursors(session()));
 
-        List<NewRow> expectedRows = new ArrayList<NewRow>();
+        List<NewRow> expectedRows = new ArrayList<>();
         expectedRows.add( createNewRow(tableId, 0L, "hello world") );
         expectedRows.add( createNewRow(tableId, 1L, "foo bear") );
         assertEquals("rows scanned", expectedRows, output.getRows());
@@ -136,7 +136,7 @@ public final class CBasicIT extends ITBase {
         List<NewRow> rows = scanAll(new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 7, 8)));
         assertEquals("rows scanned", 3, rows.size());
 
-        List<NewRow> expectedRows = new ArrayList<NewRow>();
+        List<NewRow> expectedRows = new ArrayList<>();
         NewRow r;
         r = createNewRow(tableId); r.put(0, 11L); r.put(7, 18L); r.put(8, 19L); expectedRows.add(r);
         r = createNewRow(tableId); r.put(0, 21L); r.put(7, 28L); r.put(8, 29L); expectedRows.add(r);
@@ -159,7 +159,7 @@ public final class CBasicIT extends ITBase {
         List<NewRow> rows = scanAll(new ScanAllRequest(tableId, ColumnSet.ofPositions(1), indexId, null));
         assertEquals("rows scanned", 3, rows.size());
 
-        List<NewRow> expectedRows = new ArrayList<NewRow>();
+        List<NewRow> expectedRows = new ArrayList<>();
         expectedRows.add(createNewRow(tableId, 2L, "bar"));
         expectedRows.add(createNewRow(tableId, 1L, "foo"));
         expectedRows.add(createNewRow(tableId, 3L, "zap"));
@@ -206,7 +206,7 @@ public final class CBasicIT extends ITBase {
         assertEquals("rows read", 1, output.getRowsCount());
         dml().closeCursor(session(), cursorId);
 
-        List<NewRow> expectedRows = new ArrayList<NewRow>();
+        List<NewRow> expectedRows = new ArrayList<>();
         expectedRows.add( createNewRow(tableId, 0L, "hello world") ); // full scan expected
         RowData rowData = new RowData(output.getOutputBuffer().array(), 0, output.getOutputBuffer().position());
         rowData.prepareRow(0);
@@ -620,7 +620,7 @@ public final class CBasicIT extends ITBase {
         AkibanInformationSchema ais = ddl().getAIS(session());
         Group group = ais.getGroup("t1");
         assertNotNull("Found group", group);
-        List<TableName> tablesInGroup = new ArrayList<TableName>();
+        List<TableName> tablesInGroup = new ArrayList<>();
         for(UserTable table : ais.getUserTables().values()) {
             if(table.getGroup() == group) {
                 tablesInGroup.add(table.getName());

@@ -47,8 +47,8 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
     protected abstract List<Column> getComparisonColumns(N first, N second);
 
     // becomes null when we start enumerating
-    private List<L> leaves = new ArrayList<L>();
-    private Set<C> conditions = new HashSet<C>();
+    private List<L> leaves = new ArrayList<>();
+    private Set<C> conditions = new HashSet<>();
     
     public void addLeaf(L leaf) {
         leaves.add(leaf);
@@ -61,14 +61,14 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
     private class ComboIterator implements Iterator<N> {
         
         private boolean done = false;
-        private List<N> current = new ArrayList<N>();
+        private List<N> current = new ArrayList<>();
         private Iterator<N> currentIter;
 
         // These are only used in advancePhase, but we cache them to save on allocations
-        private List<N> previous = new ArrayList<N>();
-        private ConditionsCounter<C> outerCounter = new ConditionsCounter<C>(conditions.size());
-        private ConditionsCounter<C> innerCounter = new ConditionsCounter<C>(conditions.size());
-        private ConditionsCount<C> bothCount = new OverlayedConditionsCount<C>(outerCounter, innerCounter);
+        private List<N> previous = new ArrayList<>();
+        private ConditionsCounter<C> outerCounter = new ConditionsCounter<>(conditions.size());
+        private ConditionsCounter<C> innerCounter = new ConditionsCounter<>(conditions.size());
+        private ConditionsCount<C> bothCount = new OverlayedConditionsCount<>(outerCounter, innerCounter);
 
         private ComboIterator() {
             current.addAll(leaves);

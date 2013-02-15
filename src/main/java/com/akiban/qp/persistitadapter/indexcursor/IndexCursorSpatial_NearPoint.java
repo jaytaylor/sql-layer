@@ -219,24 +219,24 @@ class IndexCursorSpatial_NearPoint extends IndexCursor
             downOrdering.append(Expressions.field(physicalIndexRowType, 0), false);
         }
         if (Types3Switch.ON) {
-            geCursor = new IndexCursorUnidirectional<PValueSource>(context,
+            geCursor = new IndexCursorUnidirectional<>(context,
                                                                    geRowState,
                                                                    geKeyRange,
                                                                    upOrdering,
                                                                    PValueSortKeyAdapter.INSTANCE);
-            ltCursor = new IndexCursorUnidirectional<PValueSource>(context,
+            ltCursor = new IndexCursorUnidirectional<>(context,
                                                                    ltRowState,
                                                                    ltKeyRange,
                                                                    downOrdering,
                                                                    PValueSortKeyAdapter.INSTANCE);
         }
         else {
-            geCursor = new IndexCursorUnidirectional<ValueSource>(context,
+            geCursor = new IndexCursorUnidirectional<>(context,
                                                                   geRowState,
                                                                   geKeyRange,
                                                                   upOrdering,
                                                                   OldExpressionsSortKeyAdapter.INSTANCE);
-            ltCursor = new IndexCursorUnidirectional<ValueSource>(context,
+            ltCursor = new IndexCursorUnidirectional<>(context,
                                                                   ltRowState,
                                                                   ltKeyRange,
                                                                   downOrdering,

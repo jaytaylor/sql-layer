@@ -390,10 +390,10 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     @Override
     public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexesToAdd, boolean keepTree) {
         AISMerge merge = AISMerge.newForAddIndex(nameGenerator, getAis(session));
-        Set<String> schemas = new HashSet<String>();
+        Set<String> schemas = new HashSet<>();
 
-        Collection<Integer> tableIDs = new ArrayList<Integer>(indexesToAdd.size());
-        Collection<Index> newIndexes = new ArrayList<Index>(indexesToAdd.size());
+        Collection<Integer> tableIDs = new ArrayList<>(indexesToAdd.size());
+        Collection<Index> newIndexes = new ArrayList<>(indexesToAdd.size());
         for(Index proposed : indexesToAdd) {
             Index newIndex = merge.mergeIndex(proposed);
             if(keepTree) {
@@ -427,13 +427,13 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                     }
         });
 
-        Collection<Integer> tableIDs = new ArrayList<Integer>(indexesToDrop.size());
+        Collection<Integer> tableIDs = new ArrayList<>(indexesToDrop.size());
         for(Index index : indexesToDrop) {
             tableIDs.addAll(index.getAllTableIDs());
         }
         bumpTableVersions(newAIS, tableIDs);
 
-        final Set<String> schemas = new HashSet<String>();
+        final Set<String> schemas = new HashSet<>();
         for(Index index : indexesToDrop) {
             schemas.add(DefaultNameGenerator.schemaNameForIndex(index));
         }
@@ -451,8 +451,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         ArgumentValidation.isTrue("Altered list is not empty", !alteredTables.isEmpty());
 
         AkibanInformationSchema oldAIS = getAis(session);
-        Set<String> schemas = new HashSet<String>();
-        List<Integer> tableIDs = new ArrayList<Integer>(alteredTables.size());
+        Set<String> schemas = new HashSet<>();
+        List<Integer> tableIDs = new ArrayList<>(alteredTables.size());
         for(ChangedTableDescription desc : alteredTables) {
             TableName oldName = desc.getOldName();
             TableName newName = desc.getNewName();
@@ -497,10 +497,10 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         checkTableName(session, tableName, true, isInternal);
         final UserTable table = getAis(session).getUserTable(tableName);
 
-        final List<TableName> tables = new ArrayList<TableName>();
-        final Set<String> schemas = new HashSet<String>();
-        final List<Integer> tableIDs = new ArrayList<Integer>();
-        final Set<TableName> sequences = new HashSet<TableName>();
+        final List<TableName> tables = new ArrayList<>();
+        final Set<String> schemas = new HashSet<>();
+        final List<Integer> tableIDs = new ArrayList<>();
+        final Set<TableName> sequences = new HashSet<>();
 
         // Collect all tables in branch below this point
         table.traverseTableAndDescendants(new NopVisitor() {
@@ -556,7 +556,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     @Override
     public SortedMap<String, TableDefinition> getTableDefinitions(Session session, String schemaName) {
-        final SortedMap<String, TableDefinition> result = new TreeMap<String, TableDefinition>();
+        final SortedMap<String, TableDefinition> result = new TreeMap<>();
         final DDLGenerator gen = new DDLGenerator();
         for(UserTable table : getAis(session).getUserTables().values()) {
             final TableName name = table.getName();
@@ -792,7 +792,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     public List<String> schemaStrings(Session session, boolean withISTables) {
         final AkibanInformationSchema ais = getAis(session);
         final DDLGenerator generator = new DDLGenerator();
-        final List<String> ddlList = new ArrayList<String>();
+        final List<String> ddlList = new ArrayList<>();
         for(Schema schema : ais.getSchemas().values()) {
             if(!withISTables && 
                (TableName.INFORMATION_SCHEMA.equals(schema.getName()) ||
@@ -827,7 +827,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     @Override
     public void dropSequence(Session session, Sequence sequence) {
         checkSequenceName(session, sequence.getSequenceName(), true);
-        List<TableName> emptyList = new ArrayList<TableName>(0);
+        List<TableName> emptyList = new ArrayList<>(0);
         final AkibanInformationSchema newAIS = removeTablesFromAIS(session, emptyList, Collections.singleton(sequence.getSequenceName()));
         saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(sequence.getSchemaName()));
     }
@@ -876,7 +876,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                                                               config.getProperty(DEFAULT_COLLATION));
 
         this.aisMap = ReadWriteMap.wrapNonFair(new HashMap<Long,SharedAIS>());
-        this.memoryTableFactories = new HashMap<TableName,MemoryTableFactory>();
+        this.memoryTableFactories = new HashMap<>();
 
         AkibanInformationSchema newAIS = transactionally(
                 sessionService.createSession(),
@@ -905,7 +905,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             tableVersionMap.put(table.getTableId(), table.getVersion());
         }
 
-        this.taskQueue = new DelayQueue<QueueTask>();
+        this.taskQueue = new DelayQueue<>();
         this.queueConsumer = new Thread(new QueueConsumer(this.taskQueue), "PSSM_QUEUE");
         this.queueConsumer.start();
 

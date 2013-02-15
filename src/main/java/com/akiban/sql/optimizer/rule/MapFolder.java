@@ -53,7 +53,7 @@ public class MapFolder extends BaseRule
         List<MapJoin> result;
 
         public List<MapJoin> find(PlanNode root) {
-            result = new ArrayList<MapJoin>();
+            result = new ArrayList<>();
             root.accept(this);
             return result;
         }
@@ -96,7 +96,7 @@ public class MapFolder extends BaseRule
         Set<ColumnSource> result;
 
         public Set<ColumnSource> find(PlanNode root) {
-            result = new HashSet<ColumnSource>();
+            result = new HashSet<>();
             root.accept(this);
             return result;
         }
@@ -127,7 +127,7 @@ public class MapFolder extends BaseRule
     public void apply(PlanContext planContext) {
         BaseQuery query = (BaseQuery)planContext.getPlan();
         List<MapJoin> maps = new MapJoinsFinder().find(query);
-        List<MapJoinProject> mapJoinProjects = new ArrayList<MapJoinProject>(0);
+        List<MapJoinProject> mapJoinProjects = new ArrayList<>(0);
         if (maps.isEmpty()) return;
         if (query instanceof DMLStatement) {
             DMLStatement update = (DMLStatement)query;
@@ -279,7 +279,7 @@ public class MapFolder extends BaseRule
         }
         
         public boolean find() {
-            columns = new ArrayList<ColumnExpression>();
+            columns = new ArrayList<>();
             for (MapJoinProject loop = this; loop != null; loop = loop.nested) {
                 if (loop.parentMap != null) {
                     // Check context within the bindings of any nested loops.
@@ -290,7 +290,7 @@ public class MapFolder extends BaseRule
         }
 
         public void install() {
-            Set<ColumnExpression> seen = new HashSet<ColumnExpression>();
+            Set<ColumnExpression> seen = new HashSet<>();
             for (ColumnExpression column : columns) {
                 if (seen.add(column)) {
                     project.getFields().add(column);

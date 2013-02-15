@@ -97,7 +97,7 @@ public class AlterTableHelper {
     }
 
     public List<Index> findNewIndexesToBuild(UserTable newTable) {
-        List<Index> indexes = new ArrayList<Index>();
+        List<Index> indexes = new ArrayList<>();
         for(TableChange change : indexChanges) {
             switch(change.getChangeType()) {
                 case ADD:
@@ -114,7 +114,7 @@ public class AlterTableHelper {
         if(affectedGroupIndexes.isEmpty()) {
             return;
         }
-        List<GroupIndex> groupIndexes = new ArrayList<GroupIndex>();
+        List<GroupIndex> groupIndexes = new ArrayList<>();
         for(IndexName name : affectedGroupIndexes.keySet()) {
             groupIndexes.add(origTable.getGroup().getIndex(name.getName()));
         }
@@ -126,7 +126,7 @@ public class AlterTableHelper {
         // by looking up the new name, index creation in PSSM requires index.getName().getTableName() match the actual.
         AkibanInformationSchema tempAIS = AISCloner.clone(newTable.getAIS());
 
-        List<Index> indexesToBuild = new ArrayList<Index>();
+        List<Index> indexesToBuild = new ArrayList<>();
         Group origGroup = origTable.getGroup();
         Group tempGroup = tempAIS.getGroup(newTable.getGroup().getName());
         for(Map.Entry<IndexName, List<TableColumnNames>> entry : affectedGroupIndexes.entrySet()) {

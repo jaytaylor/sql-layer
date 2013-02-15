@@ -36,7 +36,7 @@ public final class Session implements AutoCloseable
 
     private final static AtomicLong idGenerator = new AtomicLong(0);
 
-    private final Map<Key<?>,Object> map = new HashMap<Key<?>, Object>();
+    private final Map<Key<?>,Object> map = new HashMap<>();
     private final SessionEventListener listener;
     private final long sessionId = idGenerator.getAndIncrement();
     private volatile boolean cancelCurrentQuery = false;
@@ -79,7 +79,7 @@ public final class Session implements AutoCloseable
     public <K,V> V put(MapKey<K,V> mapKey, K key, V value) {
         Map<K,V> map = get( mapKey.asKey() );
         if (map == null) {
-            map = new HashMap<K, V>();
+            map = new HashMap<>();
             put(mapKey.asKey(), map);
         }
         return map.put(key, value);
@@ -96,7 +96,7 @@ public final class Session implements AutoCloseable
     public <T> void push(StackKey<T> key, T item) {
         Deque<T> deque = get( key.asKey() );
         if (deque == null) {
-            deque = new ArrayDeque<T>();
+            deque = new ArrayDeque<>();
             put(key.asKey(), deque);
         }
         deque.offerLast(item);
@@ -178,7 +178,7 @@ public final class Session implements AutoCloseable
         private final String name;
 
         public static <T> Key<T> named(String name) {
-            return new Key<T>(name, 1);
+            return new Key<>(name, 1);
         }
 
         private Key(String name, int stackFramesToOwner) {
@@ -203,7 +203,7 @@ public final class Session implements AutoCloseable
     public static final class MapKey<K,V> extends Key<Map<K,V>> {
 
         public static <K,V> MapKey<K,V> mapNamed(String name) {
-            return new MapKey<K,V>(name);
+            return new MapKey<>(name);
         }
 
         private MapKey(String name) {
@@ -218,7 +218,7 @@ public final class Session implements AutoCloseable
     public static final class StackKey<T> extends Key<Deque<T>> {
 
         public static <K> StackKey<K> stackNamed(String name) {
-            return new StackKey<K>(name);
+            return new StackKey<>(name);
         }
 
         private StackKey(String name) {

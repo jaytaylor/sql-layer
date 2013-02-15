@@ -153,7 +153,7 @@ public final class Matchers
         
         public Index(String st)
         {
-            Map<Character, Integer> map = new HashMap<Character, Integer>();
+            Map<Character, Integer> map = new HashMap<>();
             int n;
             for ( n = 0; n < st.length(); ++n)
                 map.put(st.charAt(n), n);
@@ -237,7 +237,7 @@ public final class Matchers
         
         private void doComputePos(int start)
         {
-            tokens = new LinkedList<Token>();
+            tokens = new LinkedList<>();
             
             tokens = computePos(escape, pattern, start, ignoreCase);
         }
@@ -362,7 +362,7 @@ public final class Matchers
         Map<Character, Integer> shift;
         
         // list of all tokens (each separated by '%'s
-        List<Token> ret = new LinkedList<Token>();
+        List<Token> ret = new LinkedList<>();
         
         while (n < patLength)
         {
@@ -370,7 +370,7 @@ public final class Matchers
             pt = new char[patLength - start];
             length = 0;
             hasLetter = false;
-            shift = new HashMap<Character, Integer>();
+            shift = new HashMap<>();
             
             For:
             for (; n < patLength; ++n)

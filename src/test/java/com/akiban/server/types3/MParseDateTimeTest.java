@@ -113,7 +113,7 @@ public class MParseDateTimeTest
     
     private static List<Long> toList(long...exp)
     {
-        List<Long> list = new ArrayList<Long>(exp.length);
+        List<Long> list = new ArrayList<>(exp.length);
         
         for (long val : exp)
             list.add(val);

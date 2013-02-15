@@ -367,7 +367,7 @@ final class UnionAll_Default extends Operator {
             return cursors[i];
         }
 
-        private final ShareHolder<MasqueradingRow> rowHolder = new ShareHolder<MasqueradingRow>();
+        private final ShareHolder<MasqueradingRow> rowHolder = new ShareHolder<>();
         private int inputOperatorsIndex = -1; // right before the first operator
         private Cursor[] cursors;
         private Cursor currentCursor;

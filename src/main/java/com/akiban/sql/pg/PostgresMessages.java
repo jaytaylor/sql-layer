@@ -120,8 +120,8 @@ public enum PostgresMessages {
     }
     
     static {
-        readMessages = new HashMap<Integer,PostgresMessages>();
-        writeMessages = new HashMap<Integer, PostgresMessages>();
+        readMessages = new HashMap<>();
+        writeMessages = new HashMap<>();
         for (PostgresMessages msg : PostgresMessages.values()) {
             if (msg.readType) {
                 readMessages.put(msg.code, msg);

@@ -855,7 +855,7 @@ public abstract class MArithmetic extends TArithmetic {
                                             {MDatetimes.YEAR, AkInterval.SECONDS}
                                            };
         
-        List<TScalar> ret = new ArrayList<TScalar>(types.length);
+        List<TScalar> ret = new ArrayList<>(types.length);
         
         for (int n = 0, limit = assos.length; n < limit; ++n)
             generateReflexive(ret, names[n][0], names[n][1], assos[n],types);

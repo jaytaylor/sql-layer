@@ -52,7 +52,7 @@ public class BufferedLegacyOutputRouter extends WrappingRowOutput {
 
     private int lastPosition;
     private final boolean resetPosition;
-    private final List<Handler> handlers = new ArrayList<Handler>();
+    private final List<Handler> handlers = new ArrayList<>();
 
     public BufferedLegacyOutputRouter(int capacity, boolean resetPosition) {
         this( GrowableByteBuffer(capacity), resetPosition);

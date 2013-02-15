@@ -76,7 +76,7 @@ public class Flatten extends BasePlanWithInput
         if (leftmostLeft < 0)
             leftmostLeft = joinTypes.size();
         assert (rightmostRight < leftmostLeft);
-        return new HashSet<TableSource>(tableSources.subList(rightmostRight + 1,
+        return new HashSet<>(tableSources.subList(rightmostRight + 1,
                                                              leftmostLeft + 1));
     }
 
@@ -102,9 +102,9 @@ public class Flatten extends BasePlanWithInput
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
-        tableNodes = new ArrayList<TableNode>(tableNodes);
+        tableNodes = new ArrayList<>(tableNodes);
         tableSources = duplicateList(tableSources, map);
-        joinTypes = new ArrayList<JoinType>(joinTypes);
+        joinTypes = new ArrayList<>(joinTypes);
     }
 
 }

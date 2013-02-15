@@ -79,12 +79,12 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     private boolean listening = false;
     private int nconnections = 0;
     private Map<Integer,PostgresServerConnection> connections =
-        new HashMap<Integer,PostgresServerConnection>();
+        new HashMap<>();
     private Thread thread;
     // AIS-dependent state
     private volatile int statementCacheCapacity;
     private final Map<ObjectLongPair,ServerStatementCache<PostgresStatement>> statementCaches =
-        new HashMap<ObjectLongPair,ServerStatementCache<PostgresStatement>>(); // key and aisGeneration
+        new HashMap<>(); // key and aisGeneration
     // end AIS-dependent state
     private volatile Date overrideCurrentTime;
     private final CacheCounters cacheCounters = new CacheCounters();
@@ -144,7 +144,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         Collection<PostgresServerConnection> conns;
         synchronized (this) {
             // Get a copy so they can remove themselves from stop().
-            conns = new ArrayList<PostgresServerConnection>(connections.values());
+            conns = new ArrayList<>(connections.values());
         }
         for (PostgresServerConnection connection : conns) {
             connection.stop();
@@ -216,7 +216,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     }
     
     public synchronized Collection<PostgresServerConnection> getConnections() {
-        return new ArrayList<PostgresServerConnection>(connections.values());
+        return new ArrayList<>(connections.values());
     }
 
     @Override
@@ -264,7 +264,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
             if (statementCache == null) {
                 // No cache => recent DDL, reasonable time to do a little cleaning
                 cleanStatementCaches();
-                statementCache = new ServerStatementCache<PostgresStatement>(cacheCounters, statementCacheCapacity);
+                statementCache = new ServerStatementCache<>(cacheCounters, statementCacheCapacity);
                 statementCaches.put(fullKey, statementCache);
             }
         }
@@ -311,7 +311,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
 
     @Override
     public Set<Integer> getCurrentSessions() {
-        return new HashSet<Integer>(connections.keySet());
+        return new HashSet<>(connections.keySet());
 
     }
 

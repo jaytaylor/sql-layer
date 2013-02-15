@@ -54,7 +54,7 @@ public class ExpressionCompactor extends BaseRule
     }
 
     static class Compactor implements PlanVisitor, ExpressionRewriteVisitor {
-        Collection<BasePlanWithInput> toRemove = new ArrayList<BasePlanWithInput>();
+        Collection<BasePlanWithInput> toRemove = new ArrayList<>();
 
         public void compact(PlanContext plan) {
             plan.accept(this);
@@ -105,7 +105,7 @@ public class ExpressionCompactor extends BaseRule
             return;
         
         Map<ColumnSource,List<ConditionExpression>> byTable = 
-            new HashMap<ColumnSource,List<ConditionExpression>>();
+            new HashMap<>();
         if (node != null) {
             ConditionDependencyAnalyzer dependencies = 
                 new ConditionDependencyAnalyzer(node);
@@ -113,17 +113,17 @@ public class ExpressionCompactor extends BaseRule
                 ColumnSource table = dependencies.analyze(condition);
                 List<ConditionExpression> entry = byTable.get(table);
                 if (entry == null) {
-                    entry = new ArrayList<ConditionExpression>();
+                    entry = new ArrayList<>();
                     byTable.put(table, entry);
                 }
                 entry.add(condition);
             }
         }
         else {
-            byTable.put(null, new ArrayList<ConditionExpression>(conditions));
+            byTable.put(null, new ArrayList<>(conditions));
         }
         conditions.clear();
-        List<ColumnSource> tables = new ArrayList<ColumnSource>(byTable.keySet());
+        List<ColumnSource> tables = new ArrayList<>(byTable.keySet());
         Collections.sort(tables, tableSourceById);
         for (ColumnSource table : tables) {
             List<ConditionExpression> entry = byTable.get(table);
@@ -226,7 +226,7 @@ public class ExpressionCompactor extends BaseRule
               (((ColumnExpression)comp.getRight()).getTable() == esource)))
             return any;
         List<List<ExpressionNode>> rows = esource.getExpressions();
-        List<ExpressionNode> expressions = new ArrayList<ExpressionNode>(rows.size());
+        List<ExpressionNode> expressions = new ArrayList<>(rows.size());
         for (List<ExpressionNode> row : rows) {
             if (row.size() != 1)
                 return any;

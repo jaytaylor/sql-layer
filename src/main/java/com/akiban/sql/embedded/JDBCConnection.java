@@ -75,7 +75,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     private Properties clientInfo = new Properties();
     private String schema;
     private EmbeddedOperatorCompiler compiler;
-    private List<JDBCResultSet> openResultSets = new ArrayList<JDBCResultSet>();
+    private List<JDBCResultSet> openResultSets = new ArrayList<>();
 
     private static final Logger logger = LoggerFactory.getLogger(JDBCConnection.class);
     protected static final String SERVER_TYPE = "JDBC";

@@ -61,7 +61,7 @@ public class HalloweenRecognizer extends BaseRule
             DMLStatement stmt = (DMLStatement)plan.getPlan();
             TableNode targetTable = stmt.getTargetTable();
             boolean requireStepIsolation = false;
-            Set<Column> updateColumns = new HashSet<Column>();
+            Set<Column> updateColumns = new HashSet<>();
             
             if (stmt.getType() == BaseUpdateStatement.StatementType.UPDATE) {
                 BasePlanWithInput node = stmt;

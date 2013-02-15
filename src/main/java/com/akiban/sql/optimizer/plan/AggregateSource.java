@@ -65,8 +65,8 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
         nGroupBy = groupBy.size();
         if (!hasGroupBy())
             implementation = Implementation.UNGROUPED;
-        aggregates = new ArrayList<AggregateFunctionExpression>();
-        options = new ArrayList<Object>();
+        aggregates = new ArrayList<>();
+        options = new ArrayList<>();
     }
 
     public boolean isProjectSplitOff() {
@@ -163,11 +163,11 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
     }
 
     public List<ExpressionNode> splitOffProject() {
-        List<ExpressionNode> result = new ArrayList<ExpressionNode>(groupBy);
+        List<ExpressionNode> result = new ArrayList<>(groupBy);
         nGroupBy = groupBy.size();
         groupBy = null;
-        aggregateFunctions = new ArrayList<String>(aggregates.size());
-        resolvedFunctions = new ArrayList<ResolvableExpression<TValidatedAggregator>>(aggregates.size());
+        aggregateFunctions = new ArrayList<>(aggregates.size());
+        resolvedFunctions = new ArrayList<>(aggregates.size());
         for (AggregateFunctionExpression aggregate : aggregates) {
             String function = aggregate.getFunction();
             ExpressionNode operand = aggregate.getOperand();

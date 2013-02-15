@@ -210,7 +210,7 @@ public class Routine
     // State
     protected final AkibanInformationSchema ais;
     protected final TableName name;
-    protected final List<Parameter> parameters = new ArrayList<Parameter>();
+    protected final List<Parameter> parameters = new ArrayList<>();
     protected Parameter returnValue = null;
     protected String language;
     protected CallingConvention callingConvention;

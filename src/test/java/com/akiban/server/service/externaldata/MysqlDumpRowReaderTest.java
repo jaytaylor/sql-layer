@@ -64,7 +64,7 @@ public final class MysqlDumpRowReaderTest {
         MysqlDumpRowReader reader = new MysqlDumpRowReader(t1, t1.getColumns(), 
                                                            istr, "UTF-8",
                                                            null);
-        List<NewRow> rows = new ArrayList<NewRow>();
+        List<NewRow> rows = new ArrayList<>();
         NewRow row;
         while ((row = reader.nextRow()) != null)
             rows.add(row);

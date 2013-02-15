@@ -38,7 +38,7 @@ import com.akiban.util.ArgumentValidation;
 public final class ColumnSet {
 
     public static Set<Integer> ofPositions(int... positions) {
-        Set<Integer> asSet = new HashSet<Integer>();
+        Set<Integer> asSet = new HashSet<>();
         for(int pos : positions) {
             asSet.add(pos);
         }
@@ -62,7 +62,7 @@ public final class ColumnSet {
         if (columns.length == 0) {
             return Collections.emptySet();
         }
-        Set<Integer> retval = new HashSet<Integer>();
+        Set<Integer> retval = new HashSet<>();
         for (int byteNum=0; byteNum < columns.length; ++byteNum) {
             int added = unpackByteFromLegacy(columns[byteNum], byteNum, retval);
             assert added >= 0 : String.format("bytes[%d] added %d: %s", byteNum, added, retval);

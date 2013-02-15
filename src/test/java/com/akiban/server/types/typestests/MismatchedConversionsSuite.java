@@ -46,13 +46,13 @@ import static com.akiban.server.types.AkType.*;
 public final class MismatchedConversionsSuite {
 
     static ConversionSuite<?> basedOn(LinkedConversion<?> baseConversion) {
-        List<AkType> validTypes = new ArrayList<AkType>();
+        List<AkType> validTypes = new ArrayList<>();
         Collections.addAll(validTypes, AkType.values());
         validTypes.removeAll(invalidTypes);
         validTypes.removeAll(baseConversion.unsupportedTypes());
         validTypes = Collections.unmodifiableList(validTypes); // sanity check
 
-        List<AkType> scratchPad = new ArrayList<AkType>(validTypes);
+        List<AkType> scratchPad = new ArrayList<>(validTypes);
         ConversionSuite.SuiteBuilder<Switcher> suiteBuilder
                 = ConversionSuite.build(new DelegateLinkedConversion(baseConversion));
 
@@ -95,7 +95,7 @@ public final class MismatchedConversionsSuite {
     }
 
     private static Map<AkType,TestCase<?>> createGettersAndPutters() {
-        EnumMap<AkType,TestCase<?>> map = new EnumMap<AkType, TestCase<?>>(AkType.class);
+        EnumMap<AkType,TestCase<?>> map = new EnumMap<>(AkType.class);
         
         map.put(DATE, TestCase.forDate(0, NO_STATE));
         map.put(DATETIME, TestCase.forDateTime(0, NO_STATE));

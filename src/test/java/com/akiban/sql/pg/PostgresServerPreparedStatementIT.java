@@ -98,9 +98,9 @@ public class PostgresServerPreparedStatementIT extends PostgresServerITBase {
     }
 
     private static List<List<Object>> listRows(ResultSet rs, int ncols) throws SQLException {
-        List<List<Object>> rows = new ArrayList<List<Object>>();
+        List<List<Object>> rows = new ArrayList<>();
         while (rs.next()) {
-            List<Object> row = new ArrayList<Object>(ncols);
+            List<Object> row = new ArrayList<>(ncols);
             for (int i = 0; i < ncols; i++) {
                 row.add(rs.getObject(i+1));
             }

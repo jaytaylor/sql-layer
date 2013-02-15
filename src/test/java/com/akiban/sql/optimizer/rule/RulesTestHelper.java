@@ -57,7 +57,7 @@ public class RulesTestHelper
     }
 
     public static List<BaseRule> parseRules(List<Object> list) throws Exception {
-        List<BaseRule> result = new ArrayList<BaseRule>();
+        List<BaseRule> result = new ArrayList<>();
         for (Object obj : list) {
             if (obj instanceof String) {
                 String cname = (String)obj;

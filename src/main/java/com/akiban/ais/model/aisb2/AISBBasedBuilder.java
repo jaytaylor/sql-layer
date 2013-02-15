@@ -420,7 +420,7 @@ public class AISBBasedBuilder
             TableName tableName = TableName.create(schema, table);
             Collection<String> entry = view.getTableColumnReferences().get(tableName);
             if (entry == null) {
-                entry = new HashSet<String>();
+                entry = new HashSet<>();
                 view.getTableColumnReferences().put(tableName, entry);
             }
             for (String colname : columns) {
@@ -575,7 +575,7 @@ public class AISBBasedBuilder
         public ActualBuilder() {
             aisb = new AISBuilder();
             usable = true;
-            tablesToGroups = new HashMap<TableName, TableName>();
+            tablesToGroups = new HashMap<>();
         }
 
         // private

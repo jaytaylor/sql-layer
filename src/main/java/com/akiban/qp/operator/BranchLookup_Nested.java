@@ -414,7 +414,7 @@ public class BranchLookup_Nested extends Operator
 
         private final GroupCursor cursor;
         private final HKey hKey;
-        private ShareHolder<Row> inputRow = new ShareHolder<Row>();
+        private ShareHolder<Row> inputRow = new ShareHolder<>();
         private boolean idle = true;
     }
 }

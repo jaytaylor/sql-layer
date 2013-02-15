@@ -105,16 +105,16 @@ public final class TCastsRegistry {
 
     static Map<TClass, Map<TClass, TCast>> createCasts(Collection<? extends TClass> tClasses,
                                                        InstanceFinder finder) {
-        Map<TClass, Map<TClass, TCast>> localCastsMap = new HashMap<TClass, Map<TClass, TCast>>(tClasses.size());
+        Map<TClass, Map<TClass, TCast>> localCastsMap = new HashMap<>(tClasses.size());
 
         // First, define the self casts
         for (TClass tClass : tClasses) {
-            Map<TClass, TCast> map = new HashMap<TClass, TCast>();
+            Map<TClass, TCast> map = new HashMap<>();
             map.put(tClass, new SelfCast(tClass));
             localCastsMap.put(tClass, map);
         }
 
-        Set<TCastIdentifier> duplicates = new TreeSet<TCastIdentifier>(tcastIdentifierComparator);
+        Set<TCastIdentifier> duplicates = new TreeSet<>(tcastIdentifierComparator);
 
         // Next, to/from varchar
         for (TClass tClass : tClasses) {
@@ -134,7 +134,7 @@ public final class TCastsRegistry {
 
     static Map<TClass, Map<TClass, TCast>> createStrongCastsMap(Map<TClass, Map<TClass, TCast>> castsBySource,
                                                                 final Set<TCastIdentifier> strongCasts) {
-        Map<TClass,Map<TClass,TCast>> result = new HashMap<TClass, Map<TClass, TCast>>();
+        Map<TClass,Map<TClass,TCast>> result = new HashMap<>();
         for (Map.Entry<TClass, Map<TClass,TCast>> origEntry : castsBySource.entrySet()) {
             final TClass source = origEntry.getKey();
             Map<TClass, TCast> filteredView = Maps.filterKeys(origEntry.getValue(), new Predicate<TClass>() {
@@ -144,7 +144,7 @@ public final class TCastsRegistry {
                 }
             });
             assert ! filteredView.isEmpty() : "no strong casts (including self casts) found for " + source;
-            result.put(source, new HashMap<TClass, TCast>(filteredView));
+            result.put(source, new HashMap<>(filteredView));
         }
         return result;
     }
@@ -168,7 +168,7 @@ public final class TCastsRegistry {
 
             @Override
             protected Set<? extends TClass> nodesFrom(TClass starting) {
-                Set<TClass> result = new HashSet<TClass>(castsBySource.get(starting).keySet());
+                Set<TClass> result = new HashSet<>(castsBySource.get(starting).keySet());
                 result.remove(starting);
                 return result;
             }
@@ -177,7 +177,7 @@ public final class TCastsRegistry {
             List<TClass> badPath = checker.getBadNodePath();
             // create a List<String> where everything is lowercase except for the first and last instances
             // of the offending node
-            List<String> names = new ArrayList<String>(badPath.size());
+            List<String> names = new ArrayList<>(badPath.size());
             for (TClass tClass : badPath)
                 names.add(tClass.toString().toLowerCase());
             String lastName = names.get(names.size() - 1);
@@ -213,7 +213,7 @@ public final class TCastsRegistry {
                                                                       InstanceFinder finder)
     {
         Collection<? extends TStrongCasts> strongCastIds = finder.find(TStrongCasts.class);
-        Set<TCastIdentifier> strongCasts = new HashSet<TCastIdentifier>(strongCastIds.size()); // rough guess
+        Set<TCastIdentifier> strongCasts = new HashSet<>(strongCastIds.size()); // rough guess
         for (TStrongCasts strongCastGenerator : strongCastIds) {
             for (TCastIdentifier castId : strongCastGenerator.get()) {
                 TCast cast = cast(castsBySource, castId.getSource(), castId.getTarget());

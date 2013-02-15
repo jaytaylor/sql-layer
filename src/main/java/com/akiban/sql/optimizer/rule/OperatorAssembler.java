@@ -272,7 +272,7 @@ public class OperatorAssembler extends BaseRule
             @Override
             public List<T> assembleExpressions(List<ExpressionNode> expressions,
                                                            ColumnExpressionToIndex fieldOffsets) {
-                List<T> result = new ArrayList<T>(expressions.size());
+                List<T> result = new ArrayList<>(expressions.size());
                 for (ExpressionNode expr : expressions) {
                     result.add(assembleExpression(expr, fieldOffsets));
                 }
@@ -290,7 +290,7 @@ public class OperatorAssembler extends BaseRule
             @Override
             public List<T> assembleExpressionsA(List<? extends AnnotatedExpression> expressions,
                                                             ColumnExpressionToIndex fieldOffsets) {
-                List<T> result = new ArrayList<T>(expressions.size());
+                List<T> result = new ArrayList<>(expressions.size());
                 for (AnnotatedExpression aexpr : expressions) {
                     result.add(assembleExpression(aexpr.getExpression(), fieldOffsets));
                 }
@@ -332,7 +332,7 @@ public class OperatorAssembler extends BaseRule
 
             protected List<? extends T> createNulls(RowType rowType) {
                 int nfields = rowType.nFields();
-                List<T> result = new ArrayList<T>(nfields);
+                List<T> result = new ArrayList<>(nfields);
                 for (int i = 0; i < nfields; ++i)
                     result.add(nullExpression(rowType, i));
                 return result;
@@ -469,7 +469,7 @@ public class OperatorAssembler extends BaseRule
                 if (expression != null && 
                         column.getDefaultIdentity() != null &&
                         column.getDefaultIdentity().booleanValue()) { 
-                    List<Expression> expr = new ArrayList<Expression>(2);
+                    List<Expression> expr = new ArrayList<>(2);
                     expr.add(expression);
                     expr.add(seqExpr);
                     seqExpr = new IfNullExpression (expr);
@@ -619,13 +619,13 @@ public class OperatorAssembler extends BaseRule
                 OverloadResolver<TValidatedScalar> resolver = registry.getScalarsResolver();
                 TInstance instance = column.tInstance();
                 
-                List<TPreptimeValue> input = new ArrayList<TPreptimeValue>(2);
+                List<TPreptimeValue> input = new ArrayList<>(2);
                 input.add(PValueSources.fromObject(sequence.getSequenceName().getSchemaName(), AkType.VARCHAR));
                 input.add(PValueSources.fromObject(sequence.getSequenceName().getTableName(), AkType.VARCHAR));
 
                 TValidatedScalar overload = resolver.get("NEXTVAL", input).getOverload();
 
-                List<TPreparedExpression> arguments = new ArrayList<TPreparedExpression>(2);
+                List<TPreparedExpression> arguments = new ArrayList<>(2);
                 arguments.add(new TPreparedLiteral(input.get(0).instance(), input.get(0).value()));
                 arguments.add(new TPreparedLiteral(input.get(1).instance(), input.get(1).value()));
 
@@ -644,13 +644,13 @@ public class OperatorAssembler extends BaseRule
                 if (expression != null && 
                         column.getDefaultIdentity() != null &&
                         column.getDefaultIdentity().booleanValue()) { 
-                    List<TPreptimeValue> ifNullInput = new ArrayList<TPreptimeValue>(2);
+                    List<TPreptimeValue> ifNullInput = new ArrayList<>(2);
                     ifNullInput.add(new TNullExpression(expression.resultType()).evaluateConstant(planContext.getQueryContext()));
                     ifNullInput.add(new TNullExpression(seqExpr.resultType()).evaluateConstant(planContext.getQueryContext()));
 
                     OverloadResult<TValidatedScalar> ifNullResult = resolver.get("IFNULL", ifNullInput);
                     TValidatedScalar ifNullOverload = ifNullResult.getOverload();
-                    List<TPreparedExpression> ifNullArgs = new ArrayList<TPreparedExpression>(2);
+                    List<TPreparedExpression> ifNullArgs = new ArrayList<>(2);
                     ifNullArgs.add(expression);
                     ifNullArgs.add(seqExpr);
                     seqExpr = new TPreparedFunction(ifNullOverload, ifNullResult.getPickedInstance(),
@@ -797,13 +797,13 @@ public class OperatorAssembler extends BaseRule
                 // VALUES just needs each field, which will get rearranged below.
                 int nfields = input.rowType.nFields();
                 if (usePValues) {
-                    insertsP = new ArrayList<TPreparedExpression>(nfields);
+                    insertsP = new ArrayList<>(nfields);
                     for (int i = 0; i < nfields; ++i) {
                         insertsP.add(new TPreparedField(input.rowType.typeInstanceAt(i), i));
                     }
                 }
                 else {
-                    inserts = new ArrayList<Expression>(nfields);
+                    inserts = new ArrayList<>(nfields);
                     for (int i = 0; i < nfields; i++) {
                         inserts.add(Expressions.field(input.rowType, i));
                     }
@@ -1271,7 +1271,7 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleExpressionsSource(ExpressionsSource expressionsSource) {
             RowStream stream = new RowStream();
             stream.rowType = partialAssembler.valuesRowType(expressionsSource);
-            List<BindableRow> bindableRows = new ArrayList<BindableRow>();
+            List<BindableRow> bindableRows = new ArrayList<>();
             for (List<ExpressionNode> exprs : expressionsSource.getExpressions()) {
                 List<Expression> expressions = oldPartialAssembler.assembleExpressions(exprs, stream.fieldOffsets);
                 List<TPreparedExpression> tExprs = newPartialAssembler.assembleExpressions(exprs, stream.fieldOffsets);
@@ -1390,7 +1390,7 @@ public class OperatorAssembler extends BaseRule
             RowStream stream;
             Group group = ancestorLookup.getDescendant().getGroup();
             List<UserTableRowType> ancestorTypes =
-                new ArrayList<UserTableRowType>(ancestorLookup.getAncestors().size());
+                new ArrayList<>(ancestorLookup.getAncestors().size());
             for (TableNode table : ancestorLookup.getAncestors()) {
                 ancestorTypes.add(tableRowType(table));
             }
@@ -1636,14 +1636,14 @@ public class OperatorAssembler extends BaseRule
             } else if (node instanceof MapJoin) {
                 return findCollators(((MapJoin)node).getInner());
             } else if (node instanceof Project) {
-                List<AkCollator> collators = new ArrayList<AkCollator>();
+                List<AkCollator> collators = new ArrayList<>();
                 Project project = (Project) node;
                 for (ExpressionNode expressionNode : project.getFields()) {
                     collators.add(expressionNode.getCollator());
                 }
                 return collators;
             } else if (node instanceof IndexScan) {
-                List<AkCollator> collators = new ArrayList<AkCollator>();
+                List<AkCollator> collators = new ArrayList<>();
                 IndexScan indexScan = (IndexScan) node;
                 for (IndexColumn indexColumn : indexScan.getIndexColumns()) {
                     collators.add(indexColumn.getColumn().getCollator());
@@ -1750,7 +1750,7 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = assembleStream(usingBloomFilter.getInput());
             List<AkCollator> collators = null;
             if (usingBloomFilter.getLoader() instanceof IndexScan) {
-                collators = new ArrayList<AkCollator>();
+                collators = new ArrayList<>();
                 IndexScan indexScan = (IndexScan) usingBloomFilter.getLoader();
                 for (IndexColumn indexColumn : indexScan.getIndexColumns()) {
                     collators.add(indexColumn.getColumn().getCollator());
@@ -1778,7 +1778,7 @@ public class OperatorAssembler extends BaseRule
                     stream.fieldOffsets);
             List<TPreparedExpression> tFields = newPartialAssembler.assembleExpressions(bloomFilterFilter.getLookupExpressions(),
                     stream.fieldOffsets);
-            List<AkCollator> collators = new ArrayList<AkCollator>();
+            List<AkCollator> collators = new ArrayList<>();
             for (ExpressionNode expressionNode : bloomFilterFilter.getLookupExpressions()) {
                 collators.add(expressionNode.getCollator());
             }
@@ -1816,7 +1816,7 @@ public class OperatorAssembler extends BaseRule
         // Get a list of result columns based on ResultSet expression names.
         protected List<PhysicalResultColumn> getResultColumns(List<ResultField> fields) {
             List<PhysicalResultColumn> columns = 
-                new ArrayList<PhysicalResultColumn>(fields.size());
+                new ArrayList<>(fields.size());
             for (ResultField field : fields) {
                 columns.add(rulesContext.getResultColumn(field));
             }
@@ -1828,7 +1828,7 @@ public class OperatorAssembler extends BaseRule
         // does not currently support.
         protected List<PhysicalResultColumn> getResultColumns(int ncols) {
             List<PhysicalResultColumn> columns = 
-                new ArrayList<PhysicalResultColumn>(ncols);
+                new ArrayList<>(ncols);
             for (int i = 0; i < ncols; i++) {
                 columns.add(rulesContext.getResultColumn(new ResultField("column" + (i+1))));
             }
@@ -2146,8 +2146,8 @@ public class OperatorAssembler extends BaseRule
         /* Bindings-related state */
 
         protected int expressionBindingsOffset, loopBindingsOffset;
-        protected Stack<ColumnExpressionToIndex> boundRows = new Stack<ColumnExpressionToIndex>(); // Needs to be List<>.
-        protected Map<BaseHashTable,Integer> hashTablePositions = new HashMap<BaseHashTable,Integer>();
+        protected Stack<ColumnExpressionToIndex> boundRows = new Stack<>(); // Needs to be List<>.
+        protected Map<BaseHashTable,Integer> hashTablePositions = new HashMap<>();
 
         protected void computeBindingsOffsets() {
             expressionBindingsOffset = 0;
@@ -2330,7 +2330,7 @@ public class OperatorAssembler extends BaseRule
 
     // Flattened row.
     static class Flattened extends BaseColumnExpressionToIndex {
-        Map<TableSource,Integer> tableOffsets = new HashMap<TableSource,Integer>();
+        Map<TableSource,Integer> tableOffsets = new HashMap<>();
         int nfields;
             
         Flattened() {
@@ -2358,7 +2358,7 @@ public class OperatorAssembler extends BaseRule
         // Tack on another flattened using product rules.
         public void product(final Flattened other) {
             List<TableSource> otherTables = 
-                new ArrayList<TableSource>(other.tableOffsets.keySet());
+                new ArrayList<>(other.tableOffsets.keySet());
             Collections.sort(otherTables,
                              new Comparator<TableSource>() {
                                  @Override

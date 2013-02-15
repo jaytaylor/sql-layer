@@ -157,7 +157,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
     
     public void setJoinConditions(Collection<JoinOperator> queryJoins, Collection<JoinOperator> joins, ConditionList extraConditions) {
-        conditionSources = new ArrayList<ConditionList>();
+        conditionSources = new ArrayList<>();
         if ((queryGoal.getWhereConditions() != null) && !hasOuterJoin(queryJoins)) {
             conditionSources.add(queryGoal.getWhereConditions());
         }
@@ -177,7 +177,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             conditions = conditionSources.get(0);
             break;
         default:
-            conditions = new ArrayList<ConditionExpression>();
+            conditions = new ArrayList<>();
             for (ConditionList conditionSource : conditionSources) {
                 conditions.addAll(conditionSource);
             }
@@ -255,7 +255,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
 
     public static InListCondition semiJoinToInList(ExpressionsSource values,
                                                    ComparisonCondition ccond) {
-        List<ExpressionNode> expressions = new ArrayList<ExpressionNode>(values.getExpressions().size());
+        List<ExpressionNode> expressions = new ArrayList<>(values.getExpressions().size());
         for (List<ExpressionNode> row : values.getExpressions()) {
             expressions.add(row.get(0));
         }
@@ -392,14 +392,14 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             dimensions = 0;
             spatialFunction = null;
         }
-        List<OrderByExpression> orderBy = new ArrayList<OrderByExpression>(ncols);
-        List<ExpressionNode> indexExpressions = new ArrayList<ExpressionNode>(ncols);
+        List<OrderByExpression> orderBy = new ArrayList<>(ncols);
+        List<ExpressionNode> indexExpressions = new ArrayList<>(ncols);
         int i = 0;
         while (i < ncols) {
             ExpressionNode indexExpression;
             boolean ascending;
             if (i == firstSpatialColumn) {
-                List<ExpressionNode> operands = new ArrayList<ExpressionNode>(dimensions);
+                List<ExpressionNode> operands = new ArrayList<>(dimensions);
                 for (int j = 0; j < dimensions; j++) {
                     operands.add(getIndexExpression(index, indexColumns.get(i++)));
                 }
@@ -793,9 +793,9 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         if (isAncestor(scan.getOutputIndexScan().getLeafMostTable(),
                        scan.getSelectorIndexScan().getLeafMostTable())) {
             // More conditions up the same branch are safely implied by the output row.
-            ConditionsCounter<ConditionExpression> counter = new ConditionsCounter<ConditionExpression>(conditions.size());
+            ConditionsCounter<ConditionExpression> counter = new ConditionsCounter<>(conditions.size());
             scan.incrementConditionsCounter(counter);
-            scan.setConditions(new ArrayList<ConditionExpression>(counter.getCountedConditions()));
+            scan.setConditions(new ArrayList<>(counter.getCountedConditions()));
         }
         else {
             // Otherwise only those for the output row are safe and
@@ -837,7 +837,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             List<ExpressionNode> firstOrdering = orderingCols(first);
             List<ExpressionNode> secondOrdering = orderingCols(second);
             int ncols = Math.min(firstOrdering.size(), secondOrdering.size());
-            List<Column> result = new ArrayList<Column>(ncols);
+            List<Column> result = new ArrayList<>(ncols);
             for (int i=0; i < ncols; ++i) {
                 ExpressionNode firstCol = firstOrdering.get(i);
                 ExpressionNode secondCol = secondOrdering.get(i);
@@ -984,7 +984,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     private GroupLoopScan pickBestGroupLoop() {
         GroupLoopScan bestScan = null;
         
-        Set<TableSource> outsideSameGroup = new HashSet<TableSource>(tables.getGroup().getTables());
+        Set<TableSource> outsideSameGroup = new HashSet<>(tables.getGroup().getTables());
         outsideSameGroup.retainAll(boundTables);
 
         for (TableGroupJoin join : tables.getGroup().getRejectedJoins()) {
@@ -1076,7 +1076,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         // since may not use it that way.
         {
             Collection<TableSource> joined = index.getTables();
-            Set<TableSource> required = new HashSet<TableSource>();
+            Set<TableSource> required = new HashSet<>();
             boolean moreTables = false;
             for (TableSource table : requiredAfter.getTables()) {
                 if (!joined.contains(table)) {
@@ -1138,7 +1138,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         }
         // The only table we can exclude is the one initially joined to, in the case
         // where all the data comes from elsewhere on that branch.
-        Set<TableSource> required = new HashSet<TableSource>(requiredAfter.getTables());
+        Set<TableSource> required = new HashSet<>(requiredAfter.getTables());
         if (!requiredAfter.hasColumns(scan.getInsideTable()))
             required.remove(scan.getInsideTable());
         scan.setRequiredTables(required);
@@ -1161,7 +1161,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         }
 
         Collection<ConditionExpression> unhandledConditions = 
-            new HashSet<ConditionExpression>(conditions);
+            new HashSet<>(conditions);
         if (index.getConditions() != null)
             unhandledConditions.removeAll(index.getConditions());
         if (!unhandledConditions.isEmpty()) {
@@ -1219,7 +1219,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         estimator.groupLoop(scan, tables, requiredTables);
 
         Collection<ConditionExpression> unhandledConditions = 
-            new HashSet<ConditionExpression>(conditions);
+            new HashSet<>(conditions);
         unhandledConditions.removeAll(scan.getJoinConditions());
         if (!unhandledConditions.isEmpty()) {
             estimator.select(unhandledConditions,
@@ -1302,7 +1302,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             return true;
         if (index.isGroupIndex())
             return false;
-        Set<Column> equalityColumns = new HashSet<Column>(nequals);
+        Set<Column> equalityColumns = new HashSet<>(nequals);
         for (int i = 0; i < nequals; i++) {
             ExpressionNode equalityExpr = indexScan.getColumns().get(i);
             if (equalityExpr instanceof ColumnExpression) {
@@ -1396,7 +1396,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     protected ColumnRanges rangeForIndex(ExpressionNode expressionNode) {
         if (expressionNode instanceof ColumnExpression) {
             if (columnsToRanges == null) {
-                columnsToRanges = new HashMap<ColumnExpression, ColumnRanges>();
+                columnsToRanges = new HashMap<>();
                 for (ConditionExpression condition : conditions) {
                     ColumnRanges range = ColumnRanges.rangeAtNode(condition);
                     if (range != null) {
@@ -1432,16 +1432,16 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         private Map<TableSource,Set<ColumnExpression>> map;
         
         public RequiredColumns(TableGroupJoinTree tables) {
-            map = new HashMap<TableSource,Set<ColumnExpression>>();
+            map = new HashMap<>();
             for (TableGroupJoinNode table : tables) {
                 map.put(table.getTable(), new HashSet<ColumnExpression>());
             }
         }
 
         public RequiredColumns(RequiredColumns other) {
-            map = new HashMap<TableSource,Set<ColumnExpression>>(other.map.size());
+            map = new HashMap<>(other.map.size());
             for (Map.Entry<TableSource,Set<ColumnExpression>> entry : other.map.entrySet()) {
-                map.put(entry.getKey(), new HashSet<ColumnExpression>(entry.getValue()));
+                map.put(entry.getKey(), new HashSet<>(entry.getValue()));
             }
         }
 
@@ -1488,7 +1488,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         private RequiredColumns requiredColumns;
         private Map<PlanNode,Void> excludedPlanNodes, includedPlanNodes;
         private Map<ExpressionNode,Void> excludedExpressions;
-        private Deque<Boolean> excludeNodeStack = new ArrayDeque<Boolean>();
+        private Deque<Boolean> excludeNodeStack = new ArrayDeque<>();
         private boolean excludeNode = false;
         private int excludeDepth = 0;
         private int subqueryDepth = 0;
@@ -1501,16 +1501,16 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                                      Collection<PlanNode> excludedPlanNodes,
                                      Collection<ConditionExpression> excludedExpressions) {
             this.requiredColumns = requiredColumns;
-            this.excludedPlanNodes = new IdentityHashMap<PlanNode,Void>();
+            this.excludedPlanNodes = new IdentityHashMap<>();
             for (PlanNode planNode : excludedPlanNodes)
                 this.excludedPlanNodes.put(planNode, null);
-            this.excludedExpressions = new IdentityHashMap<ExpressionNode,Void>();
+            this.excludedExpressions = new IdentityHashMap<>();
             for (ConditionExpression condition : excludedExpressions)
                 this.excludedExpressions.put(condition, null);
         }
 
         public void setIncludedPlanNodes(Collection<PlanNode> includedPlanNodes) {
-            this.includedPlanNodes = new IdentityHashMap<PlanNode,Void>();
+            this.includedPlanNodes = new IdentityHashMap<>();
             for (PlanNode planNode : includedPlanNodes)
                 this.includedPlanNodes.put(planNode, null);
         }
@@ -1737,7 +1737,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             estimator.flatten(tables, index.getLeafMostTable(), requiredTables);
         }
 
-        Collection<ConditionExpression> unhandledConditions = new HashSet<ConditionExpression>(conditions);
+        Collection<ConditionExpression> unhandledConditions = new HashSet<>(conditions);
         if (index.getConditions() != null)
             unhandledConditions.removeAll(index.getConditions());
         if (!unhandledConditions.isEmpty()) {

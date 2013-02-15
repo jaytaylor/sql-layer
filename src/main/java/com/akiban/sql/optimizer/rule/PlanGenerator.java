@@ -170,7 +170,7 @@ public class PlanGenerator {
         UserTableRowType tableType = schema.userTableRowType(table);
         IndexRowType indexType = schema.indexRowType(pkey.getIndex());
 
-        List<TPreparedExpression> pexprs = new ArrayList<TPreparedExpression>(nkeys);
+        List<TPreparedExpression> pexprs = new ArrayList<>(nkeys);
         for (int i = 0; i < nkeys; i++) {
             pexprs.add(new TPreparedParameter(i, indexType.typeInstanceAt(i)));
         }

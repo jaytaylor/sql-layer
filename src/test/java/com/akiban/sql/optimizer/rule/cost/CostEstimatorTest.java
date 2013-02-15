@@ -305,13 +305,13 @@ public class CostEstimatorTest
                                      Collection<TableSource> requiredTables) {
         TableGroup tableGroup = new TableGroup(indexTable.getTable().getTable().getGroup());
         indexTable.setGroup(tableGroup);
-        Map<UserTable,TableSource> tableSources = new HashMap<UserTable,TableSource>();
+        Map<UserTable,TableSource> tableSources = new HashMap<>();
         tableSources.put(indexTable.getTable().getTable(), indexTable);
         for (TableSource table : requiredTables) {
             tableSources.put(table.getTable().getTable(), table);
             table.setGroup(tableGroup);
         }
-        for (UserTable childTable : new ArrayList<UserTable>(tableSources.keySet())) {
+        for (UserTable childTable : new ArrayList<>(tableSources.keySet())) {
             TableSource childSource = tableSources.get(childTable);
             while (true) {
                 Join parentJoin = childTable.getParentJoin();
@@ -331,10 +331,10 @@ public class CostEstimatorTest
                 childSource = parentSource;
             }
         }
-        List<TableSource> orderedSources = new ArrayList<TableSource>(tableSources.values());
+        List<TableSource> orderedSources = new ArrayList<>(tableSources.values());
         Collections.sort(orderedSources, tableSourceById);
         Map<TableSource,TableGroupJoinNode> nodes =
-            new HashMap<TableSource,TableGroupJoinNode>();
+            new HashMap<>();
         TableGroupJoinNode root = null;
         for (TableSource tableSource : orderedSources) {
             nodes.put(tableSource, new TableGroupJoinNode(tableSource));
@@ -353,7 +353,7 @@ public class CostEstimatorTest
         }
         TableGroupJoinTree joinTree = new TableGroupJoinTree(root);
         return costEstimator.costFlatten(joinTree, indexTable, 
-                                         new HashSet<TableSource>(requiredTables));
+                                         new HashSet<>(requiredTables));
     }
 
     static final Comparator<TableSource> tableSourceById = new Comparator<TableSource>() {

@@ -136,7 +136,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     }
 
     public static final WhiteboardMarker<ExpressionRewriteVisitor> RESOLVER_MARKER = 
-        new DefaultWhiteboardMarker<ExpressionRewriteVisitor>();
+        new DefaultWhiteboardMarker<>();
 
     public static ExpressionRewriteVisitor getResolver(PlanContext plan) {
         return plan.getWhiteboard(RESOLVER_MARKER);
@@ -387,7 +387,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 OverloadResolver<V> resolver,
                 boolean createPreptimeContext)
         {
-            List<TPreptimeValue> operandClasses = new ArrayList<TPreptimeValue>(operands.size());
+            List<TPreptimeValue> operandClasses = new ArrayList<>(operands.size());
             for (ExpressionNode operand : operands)
                 operandClasses.add(operand.getPreptimeValue());
 
@@ -405,8 +405,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             V overload = resolutionResult.getOverload();
             expression.setResolved(overload);
 
-            final List<TPreptimeValue> operandValues = new ArrayList<TPreptimeValue>(operands.size());
-            List<TInstance> operandInstances = new ArrayList<TInstance>(operands.size());
+            final List<TPreptimeValue> operandValues = new ArrayList<>(operands.size());
+            List<TInstance> operandInstances = new ArrayList<>(operands.size());
             boolean anyOperandsNullable = false;
             for (ExpressionNode operand : operands) {
                 TPreptimeValue preptimeValue = operand.getPreptimeValue();
@@ -487,7 +487,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             TValidatedScalar overload = expression.getResolved();
             TPreptimeContext context = expression.getPreptimeContext();
 
-            final List<TPreptimeValue> operandValues = new ArrayList<TPreptimeValue>(operands.size());
+            final List<TPreptimeValue> operandValues = new ArrayList<>(operands.size());
             for (ExpressionNode operand : operands) {
                 TPreptimeValue preptimeValue = operand.getPreptimeValue();
                 operandValues.add(preptimeValue);
@@ -549,7 +549,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleAggregateFunctionExpression(AggregateFunctionExpression expression) {
-            List<ExpressionNode> operands = new ArrayList<ExpressionNode>();
+            List<ExpressionNode> operands = new ArrayList<>();
             ExpressionNode operand = expression.getOperand();
             if (operand != null)
                 operands.add(operand);
@@ -1083,7 +1083,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         private ParametersSync(TCastResolver resolver) {
             this.resolver = resolver;
-            this.instancesMap = new SparseArray<List<ExpressionNode>>();
+            this.instancesMap = new SparseArray<>();
         }
 
         public void uninferred(ParameterExpression parameterExpression) {
@@ -1103,7 +1103,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             int pos = parameterNode.getPosition();
             List<ExpressionNode> siblings = instancesMap.get(pos);
             if (siblings == null) {
-                siblings = new ArrayList<ExpressionNode>(4); // guess at capacity. this should be plenty
+                siblings = new ArrayList<>(4); // guess at capacity. this should be plenty
                 instancesMap.set(pos, siblings);
             }
             return siblings;

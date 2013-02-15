@@ -231,8 +231,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     @Override
     public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) {
-        List<TableIndex> tableIndexes = new ArrayList<TableIndex>();
-        List<GroupIndex> groupIndexes = new ArrayList<GroupIndex>();
+        List<TableIndex> tableIndexes = new ArrayList<>();
+        List<GroupIndex> groupIndexes = new ArrayList<>();
         for(Index index : indexes) {
             if(index.isTableIndex()) {
                 tableIndexes.add((TableIndex)index);

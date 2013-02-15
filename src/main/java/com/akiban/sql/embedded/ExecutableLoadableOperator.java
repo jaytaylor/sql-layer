@@ -84,7 +84,7 @@ class ExecutableLoadableOperator extends ExecutableQueryOperatorStatement
     protected static JDBCResultSetMetaData resultSetMetaData(LoadablePlan<?> plan) {
         List<String> columnNames = plan.columnNames();
         int[] jdbcTypes = plan.jdbcTypes();
-        List<ResultColumn> columns = new ArrayList<ResultColumn>(jdbcTypes.length);
+        List<ResultColumn> columns = new ArrayList<>(jdbcTypes.length);
         for (int i = 0; i < jdbcTypes.length; i++) {
             String name = columnNames.get(i);
             int jdbcType = jdbcTypes[i];

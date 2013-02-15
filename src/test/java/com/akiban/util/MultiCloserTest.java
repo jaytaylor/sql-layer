@@ -214,7 +214,7 @@ public final class MultiCloserTest
         }
 
         MultiCloser closer = new MultiCloser();
-        List<MyCloser> closeables = new LinkedList<MyCloser>();
+        List<MyCloser> closeables = new LinkedList<>();
         closer.registerIterable( closeables );
 
         closer.close();

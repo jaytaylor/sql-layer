@@ -71,7 +71,7 @@ public abstract class Index implements Traversable
         this.constraint = constraint;
         this.joinType = joinType;
         this.isValid = isValid;
-        keyColumns = new ArrayList<IndexColumn>();
+        keyColumns = new ArrayList<>();
     }
 
     protected Index(TableName tableName, String indexName, Integer idAndFlags, Boolean isUnique, String constraint) {
@@ -318,8 +318,8 @@ public abstract class Index implements Traversable
             return array;
         }
 
-        private List<Integer> list1 = new ArrayList<Integer>();
-        private List<Integer> list2 = new ArrayList<Integer>();
+        private List<Integer> list1 = new ArrayList<>();
+        private List<Integer> list2 = new ArrayList<>();
     }
     
     private static JoinType extractJoinType(Integer idAndFlags) {

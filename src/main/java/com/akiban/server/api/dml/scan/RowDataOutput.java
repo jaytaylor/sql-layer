@@ -41,7 +41,7 @@ import java.util.List;
 public class RowDataOutput implements LegacyRowOutput {
     private final static Logger LOG = LoggerFactory.getLogger(RowDataOutput.class);
 
-    private final List<RowData> rowDatas = new ArrayList<RowData>();
+    private final List<RowData> rowDatas = new ArrayList<>();
     private int markedRows = 0;
 
     public List<RowData> getRowDatas() {

@@ -188,8 +188,8 @@ public class CostModel
 
     private List<UserTableRowType> groupTableRowTypes(UserTableRowType rootTableRowType)
     {
-        List<UserTableRowType> rowTypes = new ArrayList<UserTableRowType>();
-        List<UserTable> groupTables = new ArrayList<UserTable>();
+        List<UserTableRowType> rowTypes = new ArrayList<>();
+        List<UserTable> groupTables = new ArrayList<>();
         findGroupTables(rootTableRowType.userTable(), groupTables);
         for (UserTable table : groupTables) {
             rowTypes.add(schema.userTableRowType(table));
@@ -226,5 +226,5 @@ public class CostModel
 
     private final Schema schema;
     private final TableRowCounts tableRowCounts;
-    private final Map<Integer, TreeStatistics> statisticsMap = new HashMap<Integer, TreeStatistics>();
+    private final Map<Integer, TreeStatistics> statisticsMap = new HashMap<>();
 }

@@ -61,7 +61,7 @@ public abstract class TStrongCasts {
 
         @Override
         public Iterable<TCastIdentifier> get() {
-            Set<TCastIdentifier> results = new HashSet<TCastIdentifier>(targets.length * sources.length);
+            Set<TCastIdentifier> results = new HashSet<>(targets.length * sources.length);
             for (TClass source :sources) {
                 for (TClass target : targets) {
                     TCastIdentifier identifier = new TCastIdentifier(source, target);

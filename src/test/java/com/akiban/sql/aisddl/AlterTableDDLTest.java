@@ -1166,8 +1166,8 @@ public class AlterTableDDLTest {
 
     private static class DDLFunctionsMock extends DDLFunctionsMockBase {
         final AkibanInformationSchema ais;
-        final List<String> columnChangeDesc = new ArrayList<String>();
-        final List<String> indexChangeDesc = new ArrayList<String>();
+        final List<String> columnChangeDesc = new ArrayList<>();
+        final List<String> indexChangeDesc = new ArrayList<>();
         String newTableDesc = "";
 
         public DDLFunctionsMock(AkibanInformationSchema ais) {

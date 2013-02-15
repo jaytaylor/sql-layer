@@ -152,7 +152,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
 
     @TestParameters
     public static Collection<Parameterization> statements() throws Exception {
-        Collection<Object[]> result = new ArrayList<Object[]>();
+        Collection<Object[]> result = new ArrayList<>();
         for (File subdir : RESOURCE_DIR.listFiles(new FileFilter() {
                 public boolean accept(File file) {
                     return file.isDirectory();

@@ -33,7 +33,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MemoryOnlyTableStatusCache implements TableStatusCache {
-    private final Map<Integer, InternalTableStatus> tableStatusMap = new HashMap<Integer, InternalTableStatus>();
+    private final Map<Integer, InternalTableStatus> tableStatusMap = new HashMap<>();
             
     @Override
     public synchronized TableStatus createTableStatus(int tableID) {

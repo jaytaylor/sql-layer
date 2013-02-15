@@ -66,7 +66,7 @@ public final class IsCandidatePredicates {
 
     public static Predicate<List<? extends TPreptimeValue>> containsOnly(Collection<? extends TClass> tClasses) {
 
-        final Collection<TClass> asSet = new HashSet<TClass>(tClasses.size());
+        final Collection<TClass> asSet = new HashSet<>(tClasses.size());
         asSet.addAll(tClasses);
         return new Predicate<List<? extends TPreptimeValue>>() {
             @Override

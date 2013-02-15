@@ -266,7 +266,7 @@ public class OperatorITBase extends ITBase
         List<String> searchIndexColumnNames = Arrays.asList(columnNamesArray);
         UserTable userTable = userTable(userTableId);
         for (Index index : userTable.getIndexesIncludingInternal()) {
-            List<String> indexColumnNames = new ArrayList<String>();
+            List<String> indexColumnNames = new ArrayList<>();
             for (IndexColumn indexColumn : index.getKeyColumns()) {
                 indexColumnNames.add(indexColumn.getColumn().getName());
             }
@@ -281,7 +281,7 @@ public class OperatorITBase extends ITBase
     {
         List<String> searchIndexColumnNames = Arrays.asList(columnNamesArray);
         for (Index index : ais().getGroup(groupName).getIndexes()) {
-            List<String> indexColumnNames = new ArrayList<String>();
+            List<String> indexColumnNames = new ArrayList<>();
             for (IndexColumn indexColumn : index.getKeyColumns()) {
                 Column column = indexColumn.getColumn();
                 indexColumnNames.add(String.format("%s.%s",
@@ -417,7 +417,7 @@ public class OperatorITBase extends ITBase
     // Useful when scanning is expected to throw an exception
     protected void scan(Cursor cursor)
     {
-        List<RowBase> actualRows = new ArrayList<RowBase>(); // So that result is viewable in debugger
+        List<RowBase> actualRows = new ArrayList<>(); // So that result is viewable in debugger
         try {
             cursor.open();
             RowBase actualRow;
@@ -432,7 +432,7 @@ public class OperatorITBase extends ITBase
     @SuppressWarnings("unused") // useful for debugging
     protected void dumpToAssertion(Cursor cursor)
     {
-        List<String> strings = new ArrayList<String>();
+        List<String> strings = new ArrayList<>();
         try {
             cursor.open();
             Row row;
@@ -475,7 +475,7 @@ public class OperatorITBase extends ITBase
         try {
             cursor.open();
             count = 0;
-            List<RowBase> actualRows = new ArrayList<RowBase>(); // So that result is viewable in debugger
+            List<RowBase> actualRows = new ArrayList<>(); // So that result is viewable in debugger
             RowBase actualRow;
             while ((actualRow = cursor.next()) != null) {
                 assertEquals(expected[count], actualRow.hKey().toString());
@@ -495,7 +495,7 @@ public class OperatorITBase extends ITBase
 
 
     public Operator rowsToValueScan(Row... rows) {
-        List<BindableRow> bindableRows = new ArrayList<BindableRow>();
+        List<BindableRow> bindableRows = new ArrayList<>();
         RowType type = null;
         for(Row row : rows) {
             RowType newType = row.rowType();

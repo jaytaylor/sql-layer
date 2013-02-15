@@ -40,7 +40,7 @@ public final class CompositeHook implements DXLFunctionsHook {
     private final List<DXLFunctionsHook> hooks;
 
     public CompositeHook(List<DXLFunctionsHook> hooks) {
-        this.hooks = Collections.unmodifiableList(new ArrayList<DXLFunctionsHook>(hooks));
+        this.hooks = Collections.unmodifiableList(new ArrayList<>(hooks));
     }
 
     @Override

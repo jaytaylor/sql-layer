@@ -90,7 +90,7 @@ abstract class PerThread extends Tap
     @Override
     public void appendReport(String unused, StringBuilder buffer)
     {
-        Map<Thread, Tap> threadMap = new TreeMap<Thread, Tap>(THREAD_COMPARATOR);
+        Map<Thread, Tap> threadMap = new TreeMap<>(THREAD_COMPARATOR);
         threadMap.putAll(this.threadMap);
         // TODO - fix this: thread names not necessarily unique. putAll could lose threads!
         assert this.threadMap.size() == threadMap.size();
@@ -103,7 +103,7 @@ abstract class PerThread extends Tap
     @Override
     public TapReport[] getReports()
     {
-        Map<String, TapReport> cumulativeReports = new HashMap<String, TapReport>();
+        Map<String, TapReport> cumulativeReports = new HashMap<>();
         for (Tap tap : threadMap.values()) {
             TapReport[] tapReports = tap.getReports();
             assert tapReports != null; // because tap is not a Dispatch or Null.
@@ -173,7 +173,7 @@ abstract class PerThread extends Tap
     
     // Object state
 
-    final Map<Thread, Tap> threadMap = new ConcurrentHashMap<Thread, Tap>();
+    final Map<Thread, Tap> threadMap = new ConcurrentHashMap<>();
     boolean enabled = false;
 
     // Inner classes

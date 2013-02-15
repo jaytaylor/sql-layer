@@ -65,7 +65,7 @@ public class AggregateMapper extends BaseRule
     }
 
     static class AggregateSourceFinder implements PlanVisitor, ExpressionVisitor {
-        List<AggregateSource> result = new ArrayList<AggregateSource>();
+        List<AggregateSource> result = new ArrayList<>();
 
         public List<AggregateSource> find(PlanNode root) {
             root.accept(this);
@@ -104,9 +104,9 @@ public class AggregateMapper extends BaseRule
     static class Mapper implements ExpressionRewriteVisitor {
         private RulesContext rulesContext;
         private AggregateSource source;
-        private Set<ColumnSource> aggregated = new HashSet<ColumnSource>();
+        private Set<ColumnSource> aggregated = new HashSet<>();
         private Map<ExpressionNode,ExpressionNode> map = 
-            new HashMap<ExpressionNode,ExpressionNode>();
+            new HashMap<>();
         private enum ImplicitAggregateSetting {
             ERROR, FIRST, FIRST_IF_UNIQUE
         };
@@ -216,7 +216,7 @@ public class AggregateMapper extends BaseRule
             String function = expr.getFunction();
             if ("AVG".equals(function)) {
                 ExpressionNode operand = expr.getOperand();
-                List<ExpressionNode> noperands = new ArrayList<ExpressionNode>(2);
+                List<ExpressionNode> noperands = new ArrayList<>(2);
                 noperands.add(new AggregateFunctionExpression("SUM", operand, expr.isDistinct(),
                                                               operand.getSQLtype(), null, null, null));
                 noperands.add(new AggregateFunctionExpression("COUNT", operand, expr.isDistinct(),
@@ -258,10 +258,10 @@ public class AggregateMapper extends BaseRule
                 return false;
             TableSource table = (TableSource)columnSource;
             if (uniqueGroupedTables == null)
-                uniqueGroupedTables = new HashSet<TableSource>();
+                uniqueGroupedTables = new HashSet<>();
             if (uniqueGroupedTables.contains(table))
                 return true;
-            Set<Column> columns = new HashSet<Column>();
+            Set<Column> columns = new HashSet<>();
             for (ExpressionNode groupBy : source.getGroupBy()) {
                 if (groupBy instanceof ColumnExpression) {
                     ColumnExpression groupColumn = (ColumnExpression)groupBy;

@@ -48,7 +48,7 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
         this.index = index;
         this.indexRowCount = indexRowCount;
         this.multiColumnVisitor = new MultiColumnIndexStatisticsVisitor(index, keyCreator);
-        this.singleColumnVisitors = new ArrayList<SingleColumnIndexStatisticsVisitor>();
+        this.singleColumnVisitors = new ArrayList<>();
         this.nIndexColumns = index.getKeyColumns().size();
         for (int f = 0; f < nIndexColumns; f++) {
             SingleColumnIndexStatisticsVisitor singleColumnVisitor =

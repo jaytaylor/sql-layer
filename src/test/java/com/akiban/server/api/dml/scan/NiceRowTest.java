@@ -128,8 +128,8 @@ public final class NiceRowTest {
 
     @Test
     public void testEquality() {
-        TreeMap<Integer,NiceRow> mapOne = new TreeMap<Integer, NiceRow>();
-        TreeMap<Integer,NiceRow> mapTwo = new TreeMap<Integer, NiceRow>();
+        TreeMap<Integer,NiceRow> mapOne = new TreeMap<>();
+        TreeMap<Integer,NiceRow> mapTwo = new TreeMap<>();
         NiceRow rowOne = new NiceRow(1, (RowDef)null);
         rowOne.put(0, Long.valueOf(0l));
         rowOne.put(1, "hello world");
@@ -236,7 +236,7 @@ public final class NiceRowTest {
         assertTrue("start < 0: " + rowData.getRowStart(), rowData.getRowStart() >= 0);
         assertTrue("end out of range: " + rowData.getRowEnd(), rowData.getRowEnd() <= bytes.length);
 
-        List<Byte> bytesList = new ArrayList<Byte>();
+        List<Byte> bytesList = new ArrayList<>();
         for (int i=rowData.getBufferStart(), MAX=rowData.getRowEnd(); i < MAX; ++i) {
             bytesList.add(bytes[i]);
         }

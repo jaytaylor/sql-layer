@@ -55,11 +55,11 @@ public final class GroupsBuilder
      * which have not yet reported in. Each of those is an error, and getGrouping() will throw an exception if it
      * sees this.</p>
      */
-    private final Set<JoinDescriptionBuilder> unfinishedJoins = new HashSet<JoinDescriptionBuilder>();
+    private final Set<JoinDescriptionBuilder> unfinishedJoins = new HashSet<>();
 
     private JoinDescriptionBuilder lastJoinBuilder;
 
-    private final List<TableName> parentTables = new ArrayList<TableName>();
+    private final List<TableName> parentTables = new ArrayList<>();
 
     private final JoinDescriptionBuilder.Callback joinBuilderCallback = new JoinDescriptionBuilder.Callback() {
         @Override
@@ -242,8 +242,8 @@ public final class GroupsBuilder
             if (join.getGroup() == null) {
                 continue;
             }
-            List<String> childColumns = new ArrayList<String>();
-            List<String> parentColumns = new ArrayList<String>();
+            List<String> childColumns = new ArrayList<>();
+            List<String> parentColumns = new ArrayList<>();
             for (JoinColumn joinCol : join.getJoinColumns()) {
                 childColumns.add(joinCol.getChild().getName());
                 parentColumns.add(joinCol.getParent().getName());

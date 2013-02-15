@@ -259,7 +259,7 @@ public abstract class Command
                 return output;
             }
 
-            private final List<String> output = new ArrayList<String>();
+            private final List<String> output = new ArrayList<>();
         }
     }
 

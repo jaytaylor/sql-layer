@@ -250,7 +250,7 @@ public class MultiScanUpdateIT extends ITBase {
             router = new BufferedLegacyOutputRouter(bufferSize, false);
             LegacyOutputConverter converter = new LegacyOutputConverter(dml);
             output = new ListRowOutput();
-            converter.reset(session, output, new HashSet<Integer>(Arrays.asList(0, 1, 2)));
+            converter.reset(session, output, new HashSet<>(Arrays.asList(0, 1, 2)));
             router.addHandler(converter);
             hasMore = true;
             cursorId = dml.openCursor(session(), aisGeneration, request);

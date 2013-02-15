@@ -45,7 +45,7 @@ import java.util.Date;
 
 public abstract class QueryContextBase implements QueryContext
 {
-    private SparseArray<Object> bindings = new SparseArray<Object>();
+    private SparseArray<Object> bindings = new SparseArray<>();
     // startTimeMsec is used to control query timeouts.
     private final long startTimeMsec = System.currentTimeMillis();
     private long queryTimeoutMsec = Long.MAX_VALUE;

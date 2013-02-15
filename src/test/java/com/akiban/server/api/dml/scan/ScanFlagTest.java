@@ -63,7 +63,7 @@ public final class ScanFlagTest {
     }
 
     private static Map<Integer,ScanFlag> flagsByPosition() {
-        Map<Integer,ScanFlag> ret = new TreeMap<Integer, ScanFlag>();
+        Map<Integer,ScanFlag> ret = new TreeMap<>();
         for (ScanFlag flag : ScanFlag.values()) {
             ScanFlag old = ret.put(flag.getPosition(), flag);
             assertNull("conflict between " + old + " and " + flag, old);
@@ -76,12 +76,12 @@ public final class ScanFlagTest {
      */
     @Test
     public void testPositions() {
-        Set<Integer> expected = new TreeSet<Integer>();
+        Set<Integer> expected = new TreeSet<>();
         for (int i=0; i < ScanFlag.values().length; ++i) {
             expected.add(i);
         }
 
-        Set<Integer> actual = new TreeSet<Integer>(flagsByPosition().keySet());
+        Set<Integer> actual = new TreeSet<>(flagsByPosition().keySet());
 
         assertEquals("positions not consecutive", expected, actual);
     }

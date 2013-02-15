@@ -39,7 +39,7 @@ import static org.junit.Assert.assertEquals;
 public class TreeServiceImplInvalidIT extends ITBase {
     @Override
     protected Map<String, String> startupConfigProperties() {
-        final Map<String, String> properties = new HashMap<String, String>();
+        final Map<String, String> properties = new HashMap<>();
         properties.put("akserver.treespace.a", "drupal*");
         properties.put("akserver.treespace.b", "liveops*");
         return properties;

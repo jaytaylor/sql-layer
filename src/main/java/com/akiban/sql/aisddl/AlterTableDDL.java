@@ -126,11 +126,11 @@ public class AlterTableDDL {
             return null;
         }
 
-        List<TableChange> columnChanges = new ArrayList<TableChange>();
-        List<TableChange> indexChanges = new ArrayList<TableChange>();
-        List<ColumnDefinitionNode> columnDefNodes = new ArrayList<ColumnDefinitionNode>();
-        List<FKConstraintDefinitionNode> fkDefNodes= new ArrayList<FKConstraintDefinitionNode>();
-        List<ConstraintDefinitionNode> conDefNodes = new ArrayList<ConstraintDefinitionNode>();
+        List<TableChange> columnChanges = new ArrayList<>();
+        List<TableChange> indexChanges = new ArrayList<>();
+        List<ColumnDefinitionNode> columnDefNodes = new ArrayList<>();
+        List<FKConstraintDefinitionNode> fkDefNodes= new ArrayList<>();
+        List<ConstraintDefinitionNode> conDefNodes = new ArrayList<>();
         List<String> newCols = null;
         
         for(TableElementNode node : elements) {
@@ -361,7 +361,7 @@ public class AlterTableDDL {
             checkIndexChange(origTable, change.getOldName(), change.getChangeType() == ChangeType.ADD);
         }
 
-        Collection<TableIndex> indexesToDrop = new ArrayList<TableIndex>();
+        Collection<TableIndex> indexesToDrop = new ArrayList<>();
         for(TableIndex origIndex : origTable.getIndexes()) {
             ChangeType indexChange = findOldName(indexChanges, origIndex.getIndexName().getName());
             if(indexChange == ChangeType.DROP) {

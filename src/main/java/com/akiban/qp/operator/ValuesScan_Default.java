@@ -97,7 +97,7 @@ public class ValuesScan_Default extends Operator
     }
 
     public ValuesScan_Default (Collection<? extends BindableRow> bindableRows, RowType rowType) {
-        this.rows = new ArrayList<BindableRow>(bindableRows);
+        this.rows = new ArrayList<>(bindableRows);
         this.rowType = rowType;
     }
 

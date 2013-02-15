@@ -98,7 +98,7 @@ class AbstractValuesHolderRow extends AbstractRow {
         this.rowType = rowType;
         int nfields = rowType.nFields();
         if (!usePValues) {
-            values = new ArrayList<ValueHolder>();
+            values = new ArrayList<>();
             for (int i=0; i < nfields; ++i) {
                 values.add(new ValueHolder());
             }
@@ -106,7 +106,7 @@ class AbstractValuesHolderRow extends AbstractRow {
         }
         else {
             values = null;
-            pValues = new ArrayList<PValue>(nfields);
+            pValues = new ArrayList<>(nfields);
             for (int i = 0; i < nfields; ++i) {
                 TInstance tinst = rowType.typeInstanceAt(i);
                 pValues.add(new PValue(tinst));

@@ -224,7 +224,7 @@ public class OverloadResolverTest {
         }
 
         private InstanceFinderBuilder finder = new InstanceFinderBuilder();
-        private Set<TCastIdentifier> castIdentifiers = new HashSet<TCastIdentifier>();
+        private Set<TCastIdentifier> castIdentifiers = new HashSet<>();
     }
 
     private static TPreptimeValue prepVal(TClass tClass) {

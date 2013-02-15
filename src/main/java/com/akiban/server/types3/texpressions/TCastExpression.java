@@ -55,7 +55,7 @@ public final class TCastExpression implements TPreparedExpression {
             value = new PValue(targetInstance);
 
             TExecutionContext context = new TExecutionContext(
-                    new SparseArray<Object>(),
+                    new SparseArray<>(),
                     Collections.singletonList(input.resultType()),
                     targetInstance,
                     queryContext,

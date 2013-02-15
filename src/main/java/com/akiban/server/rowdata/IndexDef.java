@@ -38,7 +38,7 @@ public class IndexDef implements TreeLink {
     // Identifies fields within the row that form the key part of the index entry.
     private final int[] fields;
     private final RowDef rowDef;
-    private AtomicReference<TreeCache> treeCache = new AtomicReference<TreeCache>();
+    private AtomicReference<TreeCache> treeCache = new AtomicReference<>();
 
 
     public IndexDef(RowDef rowDef, Index index)

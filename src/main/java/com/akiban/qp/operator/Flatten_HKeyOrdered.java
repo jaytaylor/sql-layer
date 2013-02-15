@@ -209,7 +209,7 @@ class Flatten_HKeyOrdered extends Operator
     @Override
     public List<Operator> getInputOperators()
     {
-        List<Operator> result = new ArrayList<Operator>(1);
+        List<Operator> result = new ArrayList<>(1);
         result.add(inputOperator);
         return result;
     }
@@ -513,7 +513,7 @@ class Flatten_HKeyOrdered extends Operator
         // Object state
 
         private final Cursor input;
-        private final ShareHolder<Row> parent = new ShareHolder<Row>();
+        private final ShareHolder<Row> parent = new ShareHolder<>();
         private final PendingRows pending = new PendingRows(MAX_PENDING);
         private final HKey leftJoinHKey;
         private boolean childlessParent;

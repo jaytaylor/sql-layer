@@ -37,7 +37,7 @@ import static org.junit.Assert.fail;
 public final class ConversionSuite<T> {
 
     public static <T> SuiteBuilder<T> build(LinkedConversion<? super T> converters) {
-        return new SuiteBuilder<T>(converters);
+        return new SuiteBuilder<>(converters);
     }
 
     public TestCase<?> testCaseAt(int index) {
@@ -45,7 +45,7 @@ public final class ConversionSuite<T> {
     }
 
     public ConversionSuite(LinkedConversion<? super T> converters, List<TestCase<? extends T>> testCases) {
-        this.testCases = new ArrayList<TestCase<? extends T>>(testCases);
+        this.testCases = new ArrayList<>(testCases);
         this.converters = converters;
     }
 
@@ -138,7 +138,7 @@ public final class ConversionSuite<T> {
     }
 
     List<String> testCaseNames() {
-        List<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         for (TestCase<? extends T> testCase : testCases) {
             names.add(testCase.toString());
         }
@@ -159,7 +159,7 @@ public final class ConversionSuite<T> {
     public static class SuiteBuilder<T> {
 
         public ConversionSuite<?> suite() {
-            return new ConversionSuite<T>(converters, testCases);
+            return new ConversionSuite<>(converters, testCases);
         }
 
         public SuiteBuilder<T> add(TestCase<? extends T> testCase) {
@@ -169,7 +169,7 @@ public final class ConversionSuite<T> {
 
         public SuiteBuilder(LinkedConversion<? super T> converters) {
             this.converters = converters;
-            this.testCases = new ArrayList<TestCase<? extends T>>();
+            this.testCases = new ArrayList<>();
         }
 
         private final LinkedConversion<? super T> converters;

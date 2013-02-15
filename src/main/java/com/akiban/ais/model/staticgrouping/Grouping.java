@@ -92,7 +92,7 @@ public final class Grouping
                 "$dummy value$"
         );
         private final JoinDescription node;
-        private final List<GroupTreeNode> children = new ArrayList<GroupTreeNode>();
+        private final List<GroupTreeNode> children = new ArrayList<>();
         private GroupTreeNode parent = null;
 
         static GroupTreeNode forRoot(TableName rootTable) {
@@ -139,8 +139,8 @@ public final class Grouping
     }
 
     private String defaultSchema;
-    private final Set<TableName> knownTables = new HashSet<TableName>();
-    private final Map<Group,GroupTreeNode> groups = new LinkedHashMap<Group,GroupTreeNode>();
+    private final Set<TableName> knownTables = new HashSet<>();
+    private final Map<Group,GroupTreeNode> groups = new LinkedHashMap<>();
 
     private final VoidGroupingVisitorStub tableForgettingVisitor = new VoidGroupingVisitorStub() {
         @Override
@@ -408,14 +408,14 @@ public final class Grouping
     }
 
     public List<Group> getGroups() {
-        return new ArrayList<Group>(groups.keySet());
+        return new ArrayList<>(groups.keySet());
     }
 
     public List<TableName> getTables() {
         // We don't have the individual GroupTreeNodes cached in one map, so we have to traverse the tree.
         // This is a point of optimization for later.
         return traverse( new GroupingVisitorStub<List<TableName>>(){
-            List<TableName> ret = new ArrayList<TableName>();
+            List<TableName> ret = new ArrayList<>();
 
             @Override
             public void visitGroup(Group group, TableName rootTable) {
@@ -573,7 +573,7 @@ public final class Grouping
      * @return this instance, so that you can call this method in a streamlined way.
      */
     Grouping checkIntegrity() {
-        List<String> errors = new ArrayList<String>();
+        List<String> errors = new ArrayList<>();
         checkGroupNames(errors);
         Set<TableName> checkKnownTables = checkGroupsTree(errors);
         if (checkKnownTables.size() != knownTables.size() || ! knownTables.containsAll(checkKnownTables)) {
@@ -596,7 +596,7 @@ public final class Grouping
     }
 
     private Set<TableName> checkGroupsTree(List<String> errors) {
-        Set<TableName> seenTables = new HashSet<TableName>();
+        Set<TableName> seenTables = new HashSet<>();
         for (GroupTreeNode root : groups.values()) {
             if (!seenTables.add(root.node.getChildTableName())) {
                 errors.add("duplicate table name: " + root);

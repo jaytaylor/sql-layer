@@ -55,5 +55,5 @@ public class HKeyCache<HKEY extends HKey>
     }
 
     private final StoreAdapter adapter;
-    private final SparseArray<HKEY> ordinalToHKey = new SparseArray<HKEY>();
+    private final SparseArray<HKEY> ordinalToHKey = new SparseArray<>();
 }

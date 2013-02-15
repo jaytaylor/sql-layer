@@ -50,7 +50,7 @@ public class NiceRow extends NewRow {
     {
         super(rowDef);
         ArgumentValidation.notNull("tableId", tableId);
-        fields = new TreeMap<Integer, Object>();
+        fields = new TreeMap<>();
         this.tableId = tableId;
     }
 
@@ -91,7 +91,7 @@ public class NiceRow extends NewRow {
 
     public static NewRow fromRowData(RowData origData, RowDef rowDef)
     {
-        Set<Integer> activeColumns = new HashSet<Integer>();
+        Set<Integer> activeColumns = new HashSet<>();
         for(int fieldIndex=0, fieldsCount=rowDef.getFieldCount(); fieldIndex < fieldsCount; ++fieldIndex) {
             final long location = rowDef.fieldLocation(origData, fieldIndex);
             // Null != not specified. NewRow, NiceRow, RowData all need the concept of specified vs not-specified

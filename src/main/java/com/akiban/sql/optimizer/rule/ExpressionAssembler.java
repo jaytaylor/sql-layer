@@ -175,7 +175,7 @@ abstract class ExpressionAssembler<T extends Explainable> {
     protected List<T> assembleExpressions(List<ExpressionNode> expressions,
                                                    ColumnExpressionContext columnContext,
                                                    SubqueryOperatorAssembler<T> subqueryAssembler) {
-        List<T> result = new ArrayList<T>(expressions.size());
+        List<T> result = new ArrayList<>(expressions.size());
         for (ExpressionNode expr : expressions) {
             result.add(assembleExpression(expr, columnContext, subqueryAssembler));
         }

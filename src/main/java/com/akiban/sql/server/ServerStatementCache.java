@@ -61,7 +61,7 @@ public class ServerStatementCache<T extends ServerStatement>
 
     public ServerStatementCache(CacheCounters counters, int size) {
         this.counters = counters;
-        this.cache = new Cache<T>(size);
+        this.cache = new Cache<>(size);
     }
 
     public int getCapacity() {

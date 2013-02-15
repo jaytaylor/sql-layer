@@ -177,7 +177,7 @@ final class Aggregate_Partial extends Operator
     protected Cursor cursor(QueryContext context) {
         final List<Aggregator> aggregators;
         if (aggregatorFactories != null) {
-            aggregators = new ArrayList<Aggregator>();
+            aggregators = new ArrayList<>();
             int limit = aggregatorFactories.size();
             for (int n = 0; n < limit; ++n)
             {
@@ -656,7 +656,7 @@ final class Aggregate_Partial extends Operator
             this.inputCursor = inputOperator.cursor(context);
             this.aggregators = aggregators;
             if (aggregators != null) {
-                keyValues = new ArrayList<ValueHolder>();
+                keyValues = new ArrayList<>();
                 for (int i = 0; i < inputsIndex; ++i) {
                     keyValues.add(new ValueHolder());
                 }
@@ -665,12 +665,12 @@ final class Aggregate_Partial extends Operator
             }
             else {
                 keyValues = null;
-                keyPValues = new ArrayList<PValue>(inputsIndex);
+                keyPValues = new ArrayList<>(inputsIndex);
                 for (int i = 0; i < inputsIndex; ++i) {
                     keyPValues.add(new PValue(outputType.typeInstanceAt(i)));
                 }
                 int nAggrs = pAggrs.size();
-                pAggrsStates = new ArrayList<PValue>(nAggrs);
+                pAggrsStates = new ArrayList<>(nAggrs);
                 for (int i = 0; i < nAggrs; i++) {
                     PValue state = new PValue(pAggrTypes.get(i));
                     pAggrsStates.add(state);
@@ -687,7 +687,7 @@ final class Aggregate_Partial extends Operator
         private final List<PValue> keyPValues;
         private final List<PValue> pAggrsStates;
         private final ValueHolder scratchValueHolder = new ValueHolder();
-        private final ShareHolder<Row> holder = new ShareHolder<Row>();
+        private final ShareHolder<Row> holder = new ShareHolder<>();
         private CursorState cursorState = CursorState.CLOSED;
         private boolean everSawInput = false;
     }

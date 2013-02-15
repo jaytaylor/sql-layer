@@ -310,7 +310,7 @@ public final class ColumnRangesTest {
     }
 
     private <T> Set<T> set(T... args) {
-        Set<T> result = new HashSet<T>();
+        Set<T> result = new HashSet<>();
         Collections.addAll(result, args);
         return result;
     }

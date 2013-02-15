@@ -65,8 +65,8 @@ public class BindingNodeFactory extends NodeFactory
             throws StandardException {
         boolean newMap = false;
         if (nodeMap == null) {
-            nodeMap = new HashMap<QueryTreeNode,QueryTreeNode>();
-            bindingsToCopy = new ArrayList<QueryTreeNode>();
+            nodeMap = new HashMap<>();
+            bindingsToCopy = new ArrayList<>();
             newMap = true;
         }
         try {

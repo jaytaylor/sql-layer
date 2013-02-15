@@ -57,7 +57,7 @@ public final class MBeanServerProxy {
 
     private static class MBeanServerHandler implements InvocationHandler {
 
-        private final Map<ObjectName,Object> objects = new HashMap<ObjectName,Object>();
+        private final Map<ObjectName,Object> objects = new HashMap<>();
 
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {

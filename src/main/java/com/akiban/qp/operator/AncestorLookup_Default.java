@@ -148,7 +148,7 @@ class AncestorLookup_Default extends Operator
     @Override
     public List<Operator> getInputOperators()
     {
-        List<Operator> result = new ArrayList<Operator>(1);
+        List<Operator> result = new ArrayList<>(1);
         result.add(inputOperator);
         return result;
     }
@@ -173,7 +173,7 @@ class AncestorLookup_Default extends Operator
         this.rowType = rowType;
         this.keepInput = flag == API.InputPreservationOption.KEEP_INPUT;
         // Sort ancestor types by depth
-        this.ancestors = new ArrayList<UserTable>(ancestorTypes.size());
+        this.ancestors = new ArrayList<>(ancestorTypes.size());
         for (UserTableRowType ancestorType : ancestorTypes) {
             this.ancestors.add(ancestorType.userTable());
         }
@@ -401,9 +401,9 @@ class AncestorLookup_Default extends Operator
         // Object state
 
         private final Cursor input;
-        private final ShareHolder<Row> inputRow = new ShareHolder<Row>();
+        private final ShareHolder<Row> inputRow = new ShareHolder<>();
         private final GroupCursor ancestorCursor;
-        private final ShareHolder<Row> ancestorRow = new ShareHolder<Row>();
+        private final ShareHolder<Row> ancestorRow = new ShareHolder<>();
         private final PendingRows pending;
     }
 }

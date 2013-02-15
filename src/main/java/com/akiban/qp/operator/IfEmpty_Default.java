@@ -139,7 +139,7 @@ class IfEmpty_Default extends Operator
     @Override
     public List<Operator> getInputOperators()
     {
-        ArrayList<Operator> inputOperators = new ArrayList<Operator>(1);
+        ArrayList<Operator> inputOperators = new ArrayList<>(1);
         inputOperators.add(inputOperator);
         return inputOperators;
     }
@@ -166,13 +166,13 @@ class IfEmpty_Default extends Operator
         List<?> validateExprs;
         if (pExpressions != null) {
             assert expressions == null : " expressions and pexpressions can't both be non-null";
-            this.pExpressions = new ArrayList<TPreparedExpression>(pExpressions);
+            this.pExpressions = new ArrayList<>(pExpressions);
             this.oExpressions = null;
             validateExprs = pExpressions;
         }
         else if (expressions != null) {
             this.pExpressions = null;
-            this.oExpressions = new ArrayList<Expression>(expressions);
+            this.oExpressions = new ArrayList<>(expressions);
             validateExprs = expressions;
         }
         else {
@@ -333,13 +333,13 @@ class IfEmpty_Default extends Operator
             this.input = inputOperator.cursor(context);
             if (pExpressions != null) {
                 this.oEvaluations = null;
-                this.pEvaluations = new ArrayList<TEvaluatableExpression>(pExpressions.size());
+                this.pEvaluations = new ArrayList<>(pExpressions.size());
                 for (TPreparedExpression outerJoinRowExpressions : pExpressions) {
                     TEvaluatableExpression eval = outerJoinRowExpressions.build();
                     pEvaluations.add(eval);
                 }
             } else {
-                this.oEvaluations = new ArrayList<ExpressionEvaluation>();
+                this.oEvaluations = new ArrayList<>();
                 for (Expression outerJoinRowExpression : oExpressions) {
                     ExpressionEvaluation eval = outerJoinRowExpression.evaluation();
                     oEvaluations.add(eval);
@@ -388,7 +388,7 @@ class IfEmpty_Default extends Operator
         private final Cursor input;
         private final List<ExpressionEvaluation> oEvaluations;
         private final List<TEvaluatableExpression> pEvaluations;
-        private final ShareHolder<ValuesHolderRow> emptySubstitute = new ShareHolder<ValuesHolderRow>();
+        private final ShareHolder<ValuesHolderRow> emptySubstitute = new ShareHolder<>();
         private boolean closed = true;
         private InputState inputState;
     }

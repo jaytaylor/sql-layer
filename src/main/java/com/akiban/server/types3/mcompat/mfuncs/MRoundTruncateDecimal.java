@@ -121,7 +121,7 @@ public class MRoundTruncateDecimal extends TScalarBase {
     }
 
     private static Collection<TScalar> createAll() {
-        List<TScalar> results = new ArrayList<TScalar>();
+        List<TScalar> results = new ArrayList<>();
         for (RoundingOverloadSignature signature : RoundingOverloadSignature.values()) {
             for (RoundingStrategy rounding : RoundingStrategy.values()) {
                 results.add(new MRoundTruncateDecimal(signature, rounding));

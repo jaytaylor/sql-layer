@@ -240,8 +240,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
 
-        Map<Table, Integer> ordinalMap = new HashMap<Table, Integer>();
-        List<UserTable> remainingTables = new ArrayList<UserTable>();
+        Map<Table, Integer> ordinalMap = new HashMap<>();
+        List<UserTable> remainingTables = new ArrayList<>();
         // Add all roots
         for(UserTable userTable : ais.getUserTables().values()) {
             if(userTable.isRoot()) {
@@ -271,7 +271,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         {
         String schema = "test";
         String view = "voo";
-        Map<TableName,Collection<String>> refs = new HashMap<TableName,Collection<String>>();
+        Map<TableName,Collection<String>> refs = new HashMap<>();
         refs.put(TableName.create(schema, "foo"), Arrays.asList("c1", "c2"));
         builder.view(schema, view,
                      "CREATE VIEW voo(c1,c2) AS SELECT c2,c1 FROM foo", new Properties(),

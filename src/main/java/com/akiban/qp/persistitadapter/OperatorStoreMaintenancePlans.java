@@ -115,7 +115,7 @@ final class OperatorStoreMaintenancePlans {
             Collection<Group> groups)
     {
         Map<GroupIndex,Map<UserTableRowType, OperatorStoreMaintenance>> giToMap
-                 = new HashMap<GroupIndex, Map<UserTableRowType, OperatorStoreMaintenance>>();
+                 = new HashMap<>();
         for (Group group : groups) {
             for (GroupIndex groupIndex : group.getIndexes()) {
                 Map<UserTableRowType, OperatorStoreMaintenance> map = generateGIPlans(schema, groupIndex);
@@ -128,7 +128,7 @@ final class OperatorStoreMaintenancePlans {
     private static Map<UserTableRowType, OperatorStoreMaintenance> generateGIPlans(Schema schema, GroupIndex groupIndex) {
         OperatorStoreMaintenance.BranchTables branchTables = new OperatorStoreMaintenance.BranchTables(schema, groupIndex);
         Map<UserTableRowType, OperatorStoreMaintenance> plansPerType
-                = new HashMap<UserTableRowType, OperatorStoreMaintenance>();
+                = new HashMap<>();
         for(UserTable table = groupIndex.leafMostTable(); table != null; table = table.parentTable()) {
             UserTableRowType rowType = schema.userTableRowType(table);
             OperatorStoreMaintenance plan = new OperatorStoreMaintenance(branchTables, groupIndex, rowType);
