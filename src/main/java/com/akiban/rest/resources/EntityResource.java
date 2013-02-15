@@ -50,6 +50,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -86,7 +87,7 @@ public final class EntityResource {
                 AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
                 ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
                 Space space = AisToSpace.create(ais);
-                String json = space.toJson();
+                String json = space.toJson() + "\n";
                 return Response.status(Response.Status.OK).entity(json).build();
             }
             finally {
@@ -137,25 +138,40 @@ public final class EntityResource {
         if (schema == null || !securityService.isAccessible(request, schema)) {
             return FORBIDDEN;
         }
-        try (Session session = sessionService.createSession();
-             CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+        try (Session session = sessionService.createSession()) {
+            // Cannot have transaction when attempting to perform DDL
             AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
             ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
             Space curSpace = AisToSpace.create(ais);
             Space newSpace = Space.create(new InputStreamReader(postInput));
             SpaceDiff diff = new SpaceDiff(curSpace, newSpace);
+
+            boolean success = true;
+            JsonDiffPreview jsonSummary = new JsonDiffPreview();
             if(doApply) {
                 DDLBasedSpaceModifier modifier = new DDLBasedSpaceModifier(dxlService.ddlFunctions(), session, schema, newSpace);
                 diff.apply(modifier);
+                if(modifier.hadError()) {
+                    success = false;
+                    for(String err : modifier.getErrors()) {
+                        jsonSummary.error(err);
+                    }
+                }
             }
-            // Successfully applied, generate output
-            JsonDiffPreview preview = new JsonDiffPreview();
-            preview.toJSON().append('[');
-            diff.apply(preview);
-            preview.toJSON().append("]\n");
-            String json = preview.toJSON().toString();
-            txn.commit();
+            if(success) {
+                diff.apply(jsonSummary);
+            }
+
+            String json = jsonSummary.getJSON();
             return Response.status(Response.Status.OK).entity(json).build();
+        } catch (Exception e) {
+            // TODO: Cleanup and make consistent with other REST
+            // While errors are still common, make them obvious.
+            throw new WebApplicationException(
+                    Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                            .entity(e.getMessage())
+                            .build()
+            );
         }
     }
 

@@ -1,0 +1,70 @@
+{
+    "entities": {
+        "customer": {
+            "entity": "2a57b59e-e1b7-4377-996e-a5c04e0abf29",
+            "attributes": {
+                "cid": {
+                    "scalar": "ce7d3e22-75ef-11e2-947c-d2dcf046605f",
+                    "type": "double",
+                    "validation": [
+                        {
+                            "required": true
+                        },
+                        {
+                            "width": 11
+                        }
+                    ],
+                    "spinal_pos": 0
+                },
+                "first_name": {
+                    "scalar": "33563d56-7737-11e2-a970-980e7188419e",
+                    "type": "integer",
+                    "validation": [
+                        {
+                            "width": 11
+                        }
+                    ]
+                },
+                "orders": {
+                    "collection": "c5cedd91-9751-41c2-9417-8c29117ca2c9",
+                    "attributes": {
+                        "items": {
+                            "collection": "378d22b2-acf0-45d3-8f8a-2c09188a1cf3",
+                            "attributes": {
+                                "iid": {
+                                    "scalar": "6345d586-75f6-11e2-9d6c-7d727188419e",
+                                    "type": "integer",
+                                    "validation": [
+                                        {
+                                            "required": true
+                                        },
+                                        {
+                                            "width": 11
+                                        }
+                                    ],
+                                    "spinal_pos": 0
+                                }
+                            }
+                        },
+                        "oid": {
+                            "scalar": "e32f6dea-75ef-11e2-b48e-7d727188419e",
+                            "type": "integer",
+                            "validation": [
+                                {
+                                    "required": true
+                                },
+                                {
+                                    "width": 11
+                                }
+                            ],
+                            "spinal_pos": 0
+                        }
+                    }
+                }
+            },
+            "indexes" : {
+                "first_name" : [ ["customer", "first_name"] ]
+            }
+        }
+    }
+}

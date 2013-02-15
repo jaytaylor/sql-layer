@@ -49,8 +49,9 @@ public class JsonDiffPreview implements SpaceModificationHandler
     
     private final JsonGenerator jsonGen;
     private final StringWriter stringWriter;
+    private boolean finished = false;
     private boolean hadObject = false;
-    
+
     public JsonDiffPreview()
     {
         stringWriter = new StringWriter();
@@ -59,6 +60,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
             jsonGen = factory.createJsonGenerator(stringWriter);
             if (useDefaultPrettyPrinter)
                 jsonGen.useDefaultPrettyPrinter();
+            jsonGen.writeStartArray();
         }
         catch (IOException ex)
         {
@@ -66,17 +68,29 @@ public class JsonDiffPreview implements SpaceModificationHandler
         }
     }
 
-    public StringWriter toJSON()
+    public void finish() {
+        if(!finished) {
+            try
+            {
+                if (hadObject)
+                    jsonGen.writeRaw('\n');
+                jsonGen.writeEndArray();
+                jsonGen.flush();
+            }
+            catch (IOException ex)
+            {
+                throw new DiffIOException(ex);
+            }
+            finished = true;
+        }
+    }
+
+    public String getJSON()
     {
-        try
-        {
-            jsonGen.flush();
+        if(!finished) {
+            finish();
         }
-        catch (IOException ex)
-        {
-            throw new DiffIOException(ex);
-        }
-        return stringWriter;
+        return stringWriter.toString();
     }
 
     @Override
@@ -365,18 +379,16 @@ public class JsonDiffPreview implements SpaceModificationHandler
     
     private void startObject() throws IOException
     {
-        if(hadObject) {
-            jsonGen.writeRaw(",\n");
-        }
+        hadObject = true;
+        jsonGen.writeRaw('\n');
         jsonGen.writeStartObject();
     }
     
     private void endObject() throws IOException
     {
         jsonGen.writeEndObject();
-        hadObject = true;
     }
-    
+
     private void entry(String name, UUID uuid) throws IOException
     {
         entry(name, uuid.toString());
@@ -385,6 +397,12 @@ public class JsonDiffPreview implements SpaceModificationHandler
     private void entry(String name, Object value) throws IOException
     {
         jsonGen.writeFieldName(name);
-        jsonGen.writeObject(value);
+        try {
+            jsonGen.writeObject(value);
+        } catch(IllegalStateException e) {
+            // writeObject throws if it doesn't know how to serialize the type.
+            // This isn't ideal but without repeating a bunch of instanceofs, no other way to know success.
+            jsonGen.writeObject(value.toString());
+        }
     }
 }

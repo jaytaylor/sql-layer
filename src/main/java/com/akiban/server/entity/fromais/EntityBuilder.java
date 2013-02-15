@@ -30,7 +30,6 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.PrimaryKey;
@@ -150,15 +149,10 @@ final class EntityBuilder {
      */
     private Set<String> buildIndexes(BiMap<String, EntityIndex> out) {
         Set<String> uniques = new HashSet<>(out.size());
-        StringBuilder scratch = new StringBuilder();
         for (Index index : indexes) {
             if (index.getIndexName().getName().startsWith("__akiban"))
                 continue;
-            scratch.setLength(0);
-            scratch.append(index.leafMostTable().getName().getTableName());
-            scratch.append('_');
-            scratch.append(index.getIndexName().getName());
-            String jsonName = scratch.toString();
+            String jsonName = index.getIndexName().getName();
             EntityIndex entityIndex = new EntityIndex(Lists.transform(index.getKeyColumns(), toEntityColumn));
             EntityIndex old = out.put(jsonName, entityIndex);
             if (old != null)
