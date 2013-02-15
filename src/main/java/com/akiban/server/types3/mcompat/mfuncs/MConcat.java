@@ -35,7 +35,6 @@ import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.common.types.StringAttribute;
-import com.akiban.server.types3.common.types.TString;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -83,7 +82,7 @@ public class MConcat extends TScalarBase {
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
                 int length = 0;
                 for (TPreptimeValue ptv : inputs) {
-                    length += ptv.instance().attribute(StringAttribute.LENGTH);
+                    length += ptv.instance().attribute(StringAttribute.MAX_LENGTH);
                 }
                 return MString.VARCHAR.instance(length, anyContaminatingNulls(inputs));
             }

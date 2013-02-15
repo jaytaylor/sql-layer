@@ -92,12 +92,12 @@ public class AISBuilder {
         identityGenerator.setTreeName(nameGenerator.generateSequenceTreeName(identityGenerator));
     }
     
-    public void userTable(String schemaName, String tableName) {
+    public UserTable userTable(String schemaName, String tableName) {
         LOG.trace("userTable: " + schemaName + "." + tableName);
-        UserTable.create(ais, schemaName, tableName, nameGenerator.generateTableID(new TableName(schemaName, tableName)));
+        return UserTable.create(ais, schemaName, tableName, nameGenerator.generateTableID(new TableName(schemaName, tableName)));
     }
 
-    public void userTableInitialAutoIncrement(String schemaName,
+    public UserTable userTableInitialAutoIncrement(String schemaName,
             String tableName, Long initialAutoIncrementValue) {
         LOG.trace("userTableInitialAutoIncrement: " + schemaName + "."
                 + tableName + " = " + initialAutoIncrementValue);
@@ -105,6 +105,7 @@ public class AISBuilder {
         checkFound(table, "setting initial autoincrement value", "user table",
                 concat(schemaName, tableName));
         table.setInitialAutoIncrementValue(initialAutoIncrementValue);
+        return table;
     }
 
     public void view(String schemaName, String tableName,
@@ -115,15 +116,15 @@ public class AISBuilder {
                     definition, definitionProperties, tableColumnReferences);
     }
 
-    public void column(String schemaName, String tableName, String columnName,
+    public Column column(String schemaName, String tableName, String columnName,
             Integer position, String typeName, Long typeParameter1,
             Long typeParameter2, Boolean nullable, Boolean autoIncrement,
             String charset, String collation) {
-        column(schemaName, tableName, columnName, position, typeName, typeParameter1, typeParameter2, nullable,
+        return column(schemaName, tableName, columnName, position, typeName, typeParameter1, typeParameter2, nullable,
                autoIncrement, charset, collation, null);
     }
 
-    public void column(String schemaName, String tableName, String columnName,
+    public Column column(String schemaName, String tableName, String columnName,
                 Integer position, String typeName, Long typeParameter1,
                 Long typeParameter2, Boolean nullable, Boolean autoIncrement,
                 String charset, String collation, String defaultValue) {
@@ -142,6 +143,7 @@ public class AISBuilder {
         column.setCollation(collation);
         column.setDefaultValue(defaultValue);
         column.finishCreating();
+        return column;
     }
 
     public void columnAsIdentity (String schemaName, String tableName, String columnName,

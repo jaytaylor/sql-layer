@@ -29,6 +29,7 @@ package com.akiban.server.types3.mcompat.mtypes;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.*;
 import com.akiban.server.types3.aksql.AkCategory;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.common.types.NumericAttribute;
 import com.akiban.server.types3.common.NumericFormatter;
 import com.akiban.server.types3.common.types.SimpleDtdTClass;
@@ -96,6 +97,33 @@ public class MNumeric extends SimpleDtdTClass {
         int leftWidth = left.attribute(NumericAttribute.WIDTH);
         int rightWidth = right.attribute(NumericAttribute.WIDTH);
         return instance(Math.max(leftWidth, rightWidth), suggestedNullability);
+    }
+
+    @Override
+    protected boolean tryFromObject(TExecutionContext context, PValueSource in, PValueTarget out) {
+        if (in.tInstance().typeClass() == AkBool.INSTANCE) {
+            byte asInt = (byte)(in.getBoolean() ? 1 : 0);
+            switch (out.tInstance().typeClass().underlyingType()) {
+            case INT_8:
+                out.putInt8(asInt);
+                return true;
+            case INT_16:
+                out.putInt16(asInt);
+                return true;
+            case UINT_16:
+                out.putUInt16((char)asInt);
+                return true;
+            case INT_32:
+                out.putInt32(asInt);
+                return true;
+            case INT_64:
+                out.putInt64(asInt);
+                return true;
+            default:
+                // fall through and keep trying the standard ways
+            }
+        }
+        return super.tryFromObject(context, in, out);
     }
 
     public boolean isUnsigned() {

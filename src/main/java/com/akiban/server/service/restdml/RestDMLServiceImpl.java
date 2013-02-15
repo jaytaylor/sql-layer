@@ -62,6 +62,7 @@ import org.codehaus.jackson.JsonParseException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
@@ -84,9 +85,10 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     private final TransactionService transactionService;
     private final SecurityService securityService;
     private final ExternalDataService extDataService;
+    private InsertProcessor insertProcessor;
+    private DeleteProcessor deleteProcessor;
+    private UpdateProcessor updateProcessor;
     private final EmbeddedJDBCService jdbcService;
-    private final InsertProcessor insertProcessor;
-    private final DeleteProcessor deleteProcessor;
     
     @Inject
     public RestDMLServiceImpl(SessionService sessionService,
@@ -107,6 +109,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         this.jdbcService = jdbcService;
         this.insertProcessor = new InsertProcessor (configService, treeService, store, registryService);
         this.deleteProcessor = new DeleteProcessor (configService, treeService, store, registryService);
+        this.updateProcessor = new UpdateProcessor (configService, treeService, store, registryService,
+                deleteProcessor, insertProcessor);
     }
     
     /* Service */
@@ -189,12 +193,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             String pk = insertProcessor.processInsert(session, ais, rootTable, node);
             txn.commit();
             return Response.status(Response.Status.OK).entity(pk).build();
-        } catch (JsonParseException ex) {
-            throw new WebApplicationException(ex, Response.Status.BAD_REQUEST);
-        } catch (IOException e) {
-            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
-        } catch (InvalidOperationException e) {
-            throw wrapException(e);
+        } catch (RuntimeException | IOException ex) {
+            throw wrapException(ex);
         }
     }
 
@@ -216,6 +216,24 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
+    public Response update(HttpServletRequest request, 
+            TableName tableName, String pks, JsonNode node) {
+        if (!securityService.isAccessible(request, tableName.getSchemaName()))
+            return Response.status(Response.Status.FORBIDDEN).build();
+        try (Session session = sessionService.createSession();
+                CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+            String pk = updateProcessor.processUpdate (session, ais, tableName, pks, node);
+            txn.commit();
+            return Response.status(Response.Status.OK)
+                    .entity(pk)
+                    .build();
+        } catch (IOException | InvalidOperationException e) {
+            throw wrapException(e);
+        }
+    }
+
+    @Override
     public Response runSQL(HttpServletRequest request, String sql) {
         return runSQLInternal(request, Collections.singletonList(sql), OutputType.ARRAY, CommitMode.AUTO);
     }
@@ -223,6 +241,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     @Override
     public Response runSQL(HttpServletRequest request, List<String> sql) {
         return runSQLInternal(request, sql, OutputType.OBJECT, CommitMode.MANUAL);
+
     }
 
     @Override
@@ -396,19 +415,22 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         }
         err.append(code);
         err.append("\",\"message\":\"");
-        err.append(e.getMessage());
+        Quote.JSON_QUOTE.append(AkibanAppender.of(err), e.getMessage());
         err.append("\"}]\n");
         // TODO: Map various IOEs to other codes?
         final Response.Status status;
         if((e instanceof NoSuchTableException) ||
-                (e instanceof NoSuchRoutineException)) {
+           (e instanceof NoSuchRoutineException)) {
             status = Response.Status.NOT_FOUND;
+        } else if (e instanceof JsonParseException) {
+            status = Response.Status.BAD_REQUEST;
         } else {
             status = Response.Status.CONFLICT;
         }
         return new WebApplicationException(
                 Response.status(status)
                         .entity(err.toString())
+                        .type(MediaType.APPLICATION_JSON)
                         .build()
         );
     }

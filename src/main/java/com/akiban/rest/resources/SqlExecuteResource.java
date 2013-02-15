@@ -37,8 +37,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.util.Arrays;
 
 /**
@@ -56,7 +54,7 @@ public class SqlExecuteResource {
                             @QueryParam("format") String format,
                             @QueryParam("jsoncallback") String jsonp,
                             final byte[] postBytes) throws Exception {
-        String input = new String(postBytes, "UTF-8");
+        String input = new String(postBytes);
         String[] statements = input.split(";");
         return restDMLService.runSQL(request, Arrays.asList(statements));
     }

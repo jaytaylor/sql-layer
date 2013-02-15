@@ -391,8 +391,9 @@ public class TableChangeValidator {
             }
         }
 
-        if(doAutoChanges) {
+        if(doAutoChanges && !autoChanges.isEmpty()) {
             changeList.addAll(autoChanges);
+            updateFinalChangeLevel(level);
         }
     }
 

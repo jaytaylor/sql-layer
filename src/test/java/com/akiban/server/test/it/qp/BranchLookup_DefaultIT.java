@@ -31,6 +31,7 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
@@ -386,6 +387,23 @@ public class BranchLookup_DefaultIT extends OperatorITBase
         testCursorLifecycle(plan, testCase);
     }
 
+    @Test
+    public void testPKAccess() {
+        Operator plan = 
+                branchLookup_Default(
+                        indexScan_Default(indexType(order, "oid"), false, orderIdEQ(11L)),
+                        coi,
+                        indexType(order, "oid"),
+                        orderRowType,
+                        InputPreservationOption.DISCARD_INPUT);
+        Cursor cursor = cursor(plan, queryContext);
+        RowBase[] expected = new RowBase[]{
+                row(orderRowType, 11L, 1L, "ori"),
+                row(itemRowType, 111L, 11L),
+                row(itemRowType, 112L, 11L),
+        };
+        compareRows(expected, cursor);
+    }
     // For use by this class
 
     private Operator customerNameToCustomerPlan(String customerName)
@@ -492,6 +510,13 @@ public class BranchLookup_DefaultIT extends OperatorITBase
         return IndexKeyRange.bounded(orderSalesmanIndexRowType, bound, true, bound, true);
     }
 
+    private IndexKeyRange orderIdEQ(long oid) 
+    {
+        IndexRowType indexRowType = indexType(order, "oid");
+        IndexBound bound = new IndexBound(row(indexRowType, oid), new SetColumnSelector(0));
+        return IndexKeyRange.bounded(indexRowType, bound, true, bound, true);
+        
+    }
     private IndexKeyRange itemIidEQ(long iid)
     {
         IndexBound bound = itemIidIndexBound(iid);
