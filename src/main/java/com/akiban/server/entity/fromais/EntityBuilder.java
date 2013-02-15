@@ -150,15 +150,10 @@ final class EntityBuilder {
      */
     private Set<String> buildIndexes(BiMap<String, EntityIndex> out) {
         Set<String> uniques = new HashSet<>(out.size());
-        StringBuilder scratch = new StringBuilder();
         for (Index index : indexes) {
             if (index.getIndexName().getName().startsWith("__akiban"))
                 continue;
-            scratch.setLength(0);
-            scratch.append(index.leafMostTable().getName().getTableName());
-            scratch.append('_');
-            scratch.append(index.getIndexName().getName());
-            String jsonName = scratch.toString();
+            String jsonName = index.getIndexName().getName();
             EntityIndex entityIndex = new EntityIndex(Lists.transform(index.getKeyColumns(), toEntityColumn));
             EntityIndex old = out.put(jsonName, entityIndex);
             if (old != null)
