@@ -1,0 +1,14 @@
+
+
+# Load a DirectModule
+
+curl -X PUT "localhost:9000/api/direct/module/test?name=com.akiban.direct.DemoModule&url=file:/Users/peter/workspace/sandbox/bin/"
+
+# Invoke
+
+curl localhost:9000/api/direct/DemoModule/test
+
+# Remove a DirectModule
+
+curl -X DELETE "localhost:9000/api/direct/module/test?name=DemoModule&url=file:/Users/peter/workspace/sandbox/bin/"
+
