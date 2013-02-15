@@ -988,8 +988,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         if (target.typeClass() instanceof TString) {
             // Operations between strings do not require that the
             // charsets / collations be the same.
-            return (target.attribute(StringAttribute.LENGTH) == 
-                    source.attribute(StringAttribute.LENGTH));
+            return (target.attribute(StringAttribute.MAX_LENGTH) ==
+                    source.attribute(StringAttribute.MAX_LENGTH));
         }
         return target.equalsExcludingNullable(source);
     }

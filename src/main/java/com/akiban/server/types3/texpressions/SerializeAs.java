@@ -24,14 +24,12 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.common.types;
+package com.akiban.server.types3.texpressions;
 
-import com.akiban.server.types3.Attribute;
-import com.akiban.server.types3.texpressions.Serialization;
-import com.akiban.server.types3.texpressions.SerializeAs;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
-public enum DoubleAttribute implements Attribute
-{
-    @SerializeAs(Serialization.LONG_1) PRECISION,
-    @SerializeAs(Serialization.LONG_2) SCALE
+@Retention(RetentionPolicy.RUNTIME)
+public @interface SerializeAs {
+    Serialization value();
 }
