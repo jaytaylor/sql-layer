@@ -316,6 +316,9 @@ public class EntityToAIS extends AbstractEntityVisitor {
                 }
             }
         }
+        if (!fullProps.isEmpty()) {
+            LOG.warn("unused properties or validations for column of type {}: {}", type.tClass, fullProps);
+        }
         return info;
     }
 
@@ -331,7 +334,7 @@ public class EntityToAIS extends AbstractEntityVisitor {
     private static Long maybeLong(Map<String, Object> props, com.akiban.server.types3.Attribute attribute, Type type, int defaultsIndex) {
         Object o;
         if (props.containsKey(attribute.name().toUpperCase())) {
-            o = props.get(attribute.name());
+            o = props.remove(attribute.name());
         }
         else {
             Long[] defaults = Types.defaultParams().get(type);
@@ -347,7 +350,7 @@ public class EntityToAIS extends AbstractEntityVisitor {
 
     private static String maybeString(Map<String, Object> props, com.akiban.server.types3.Attribute attribute, String defaultValue) {
         Object o = props.containsKey(attribute.name().toUpperCase())
-                ? props.get(attribute.name())
+                ? props.remove(attribute.name())
                 : defaultValue;
         return (o != null) ? o.toString() : null;
     }
