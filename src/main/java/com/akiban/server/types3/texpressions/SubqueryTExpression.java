@@ -43,8 +43,12 @@ abstract class SubqueryTExpression implements TPreparedExpression {
     public CompoundExplainer getExplainer(ExplainContext context) {
         Attributes states = new Attributes();
         states.put(Label.OPERAND, subquery.getExplainer(context)); 
-        states.put(Label.OUTER_TYPE, outerRowType.getExplainer(context));
-        states.put(Label.INNER_TYPE, innerRowType.getExplainer(context));
+        states.put(Label.OUTER_TYPE, outerRowType == null
+                                        ? PrimitiveExplainer.getInstance("<EMPTY>")  
+                                        :outerRowType.getExplainer(context));
+        states.put(Label.INNER_TYPE, innerRowType == null
+                                        ? PrimitiveExplainer.getInstance("<EMPTY>") 
+                                        : innerRowType.getExplainer(context));
         states.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(bindingPosition));
         return new CompoundExplainer(Type.SUBQUERY, states);
     }
