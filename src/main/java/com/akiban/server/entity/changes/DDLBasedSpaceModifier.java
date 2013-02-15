@@ -54,6 +54,7 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     private final SpaceLookups newSpaceLookup;
     private final AkibanInformationSchema oldAIS;
     private final AkibanInformationSchema newAIS;
+    private final List<String> errors = new ArrayList();
 
     // Per entity change information. Tracked after beginEntity() and executed in endEntity()
     private final List<UserTable> dropTables = new ArrayList<>();
@@ -78,6 +79,18 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
         EntityToAIS eToAIS = new EntityToAIS(schemaName);
         newSpace.visit(eToAIS);
         this.newAIS = eToAIS.getAIS();
+    }
+
+    //
+    // DDLBasedSpaceModifier
+    //
+
+    public boolean hadError() {
+        return !errors.isEmpty();
+    }
+
+    public List<String> getErrors() {
+        return errors;
     }
 
     //
@@ -192,14 +205,12 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
 
     @Override
     public void addEntityValidation(Validation validation) {
-        // TODO: No way to drop UNIQUE from an existing index
-        throw new UnsupportedOperationException();
+        errors.add("Adding entity validations is not yet supported: " + validation);
     }
 
     @Override
     public void dropEntityValidation(Validation validation) {
-        // TODO: No way to add UNIQUE to an existing index
-        throw new UnsupportedOperationException();
+        errors.add("Dropping entity validations is not yet supported: " + validation);
     }
 
     @Override
@@ -229,12 +240,16 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
 
     @Override
     public void renameIndex(EntityIndex index, String oldName, String newName) {
-        // TODO: Index renaming might work for tables but no exposed way for GIs, defer for now
-        throw new UnsupportedOperationException("Not yet implemented");
+        errors.add("Renaming index is note yet supported: " + oldName + "," + newName);
     }
 
     @Override
     public void endEntity() {
+        if(!errors.isEmpty()) {
+            resetPerEntityData();
+            return;
+        }
+
         if(!dropGroupIndexes.isEmpty()) {
             TableName oldGroupName = new TableName(schemaName, entityOldName);
             ddlFunctions.dropGroupIndexes(session, oldGroupName, dropGroupIndexes);
@@ -260,19 +275,12 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
         if(!newGroupIndexes.isEmpty()) {
             ddlFunctions.createIndexes(session, newGroupIndexes);
         }
-        entity = null;
-        entityOldName = null;
-        newLookups = null;
-        dropTables.clear();
-        dropGroupIndexes.clear();
-        newTables.clear();
-        newGroupIndexes.clear();
-        tableChanges.clear();
+        resetPerEntityData();
     }
 
     @Override
     public void error(String message) {
-        throw new UnsupportedOperationException(message);
+        errors.add(message);
     }
 
     //
@@ -306,6 +314,17 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
         return (parentUuid == null) ? entityOldName : oldLookups.nameFor(parentUuid);
     }
 
+    private void resetPerEntityData() {
+        entity = null;
+        entityOldName = null;
+        newLookups = null;
+        dropTables.clear();
+        dropGroupIndexes.clear();
+        newTables.clear();
+        newGroupIndexes.clear();
+        tableChanges.clear();
+    }
+
     private void trackColumnChange(String tableName, TableChange columnChange) {
         getChangeSet(tableName).columnChanges.add(columnChange);
     }
@@ -324,7 +343,6 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     private void trackTableRename(String oldTableName, String newTableName) {
         getChangeSet(oldTableName).newName = newTableName;
     }
-
 
     private static Index findOneIndex(UserTable root, final String indexName) {
         final List<Index> candidates = new ArrayList<>();

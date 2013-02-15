@@ -144,16 +144,24 @@ public final class EntityResource {
             Space curSpace = AisToSpace.create(ais);
             Space newSpace = Space.create(new InputStreamReader(postInput));
             SpaceDiff diff = new SpaceDiff(curSpace, newSpace);
+
+            boolean success = true;
+            JsonDiffPreview jsonSummary = new JsonDiffPreview();
             if(doApply) {
                 DDLBasedSpaceModifier modifier = new DDLBasedSpaceModifier(dxlService.ddlFunctions(), session, schema, newSpace);
                 diff.apply(modifier);
+                if(modifier.hadError()) {
+                    success = false;
+                    for(String err : modifier.getErrors()) {
+                        jsonSummary.error(err);
+                    }
+                }
             }
-            // Successfully applied, generate output
-            JsonDiffPreview preview = new JsonDiffPreview();
-            preview.toJSON().append('[');
-            diff.apply(preview);
-            preview.toJSON().append("]\n");
-            String json = preview.toJSON().toString();
+            if(success) {
+                diff.apply(jsonSummary);
+            }
+
+            String json = jsonSummary.getJSON();
             txn.commit();
             return Response.status(Response.Status.OK).entity(json).build();
         }

@@ -189,6 +189,19 @@ public class RestServiceFilesIT extends ITBase {
         if(schemaFile.exists()) {
             loadSchemaFile(SCHEMA_NAME, schemaFile);
         }
+        File spaceFile = new File(subDir, "space.json");
+        if(spaceFile.exists()) {
+            HttpURLConnection httpConn = openConnection(getRestURL("/entity/apply/" + SCHEMA_NAME), "POST");
+            postContents(httpConn, Strings.dumpFileToString(spaceFile).getBytes());
+            StringBuilder builder = new StringBuilder();
+            try {
+                Strings.readStreamTo(httpConn.getInputStream(), builder, true);
+            } catch(Exception e) {
+                Strings.readStreamTo(httpConn.getErrorStream(), builder, true);
+                throw new RuntimeException("Failing creating initial space: " + builder.toString(), e);
+            }
+            httpConn.disconnect();
+        }
         for (File data : subDir.listFiles(new RegexFilenameFilter(".*\\.dat"))) {
             loadDataFile(SCHEMA_NAME, data);
         }
@@ -206,6 +219,14 @@ public class RestServiceFilesIT extends ITBase {
         }
     }
 
+    private static void postContents(HttpURLConnection httpConn, byte[] request) throws IOException {
+        httpConn.setDoInput(true);
+        httpConn.setFixedLengthStreamingMode(request.length);
+        httpConn.setRequestProperty("Content-Type", "application/json");
+        httpConn.setRequestProperty("Accept", "application/json");
+        httpConn.getOutputStream().write(request);
+    }
+
     @Test
     public void testRequest() throws Exception {
         loadDatabase(caseParams.subDir);
@@ -219,13 +240,8 @@ public class RestServiceFilesIT extends ITBase {
                     throw new UnsupportedOperationException ("PUT/POST expects request body (<test>.body)");
                 }
                 LOG.debug(caseParams.requestBody);
-                byte[] request = caseParams.requestBody.getBytes();
-                httpConn.setDoInput(true);
-                httpConn.setFixedLengthStreamingMode(request.length);
-                httpConn.setRequestProperty("Content-Type", "application/json");
-                httpConn.setRequestProperty("Accept", "application/json");
-                httpConn.getOutputStream().write(request);
-            } // else GET || DELETE 
+                postContents(httpConn, caseParams.requestBody.getBytes());
+            } // else GET || DELETE
 
             // Response
             String actual = getOutput(httpConn);
