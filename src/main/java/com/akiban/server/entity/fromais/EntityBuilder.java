@@ -100,7 +100,7 @@ final class EntityBuilder {
             if (!tInstance.nullability())
                 validations.add(new Validation("required", Boolean.TRUE));
             for (com.akiban.server.types3.Attribute t3Attr : tClass.attributes()) {
-                String attrName = t3Attr.name();
+                String attrName = t3Attr.name().toLowerCase();
                 Object attrValue = tInstance.attributeToObject(t3Attr);
                 if (tClass.attributeIsPhysical(t3Attr))
                     properties.put(attrName, attrValue);
