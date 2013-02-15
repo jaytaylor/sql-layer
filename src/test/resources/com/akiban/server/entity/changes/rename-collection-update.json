@@ -5,7 +5,7 @@
             "attributes" : {
                 "id" : {
                     "scalar" : "8644c36b-f881-4369-a06b-59e3fc580309",
-                    "type" : "int",
+                    "type" : "integer",
                     "spinal_pos" : 0
                 },
                 "name" : {
@@ -17,7 +17,7 @@
                     "attributes" : {
                          "whatever" : {
                              "scalar" : "17181af5-7e07-41fc-9a05-78e77cdabe13",
-                             "type" : "int"
+                             "type" : "integer"
                          }
                     }
                 }

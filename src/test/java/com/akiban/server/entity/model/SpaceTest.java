@@ -81,7 +81,7 @@ public final class SpaceTest {
         Attribute customerId = customer.getAttributes().get("id");
         assertEquals("id class", Attribute.AttributeType.SCALAR, customerId.getAttributeType());
         assertEquals("id uuid", UUID.fromString("8644c36b-f881-4369-a06b-59e3fc580309"), customerId.getUUID());
-        assertEquals("id type", "int", customerId.getType());
+        assertEquals("id type", "integer", customerId.getType());
         assertEquals("id properties", Collections.<String, Object>emptyMap(), customerId.getProperties());
         assertEquals("id validations", Collections.<Validation>emptySet(), set(customerId.getValidation()));
         assertEquals("id spine position", 0, customerId.getSpinePos());
@@ -112,7 +112,7 @@ public final class SpaceTest {
         Attribute orderId = orders.getAttributes().get("id");
         assertEquals("id class", Attribute.AttributeType.SCALAR, orderId.getAttributeType());
         assertEquals("id uuid", UUID.fromString("58dd53b7-e8a1-488b-a751-c83f9beca04c"), orderId.getUUID());
-        assertEquals("id type", "int", orderId.getType());
+        assertEquals("id type", "integer", orderId.getType());
         assertEquals("id properties", Collections.<String, Object>emptyMap(), orderId.getProperties());
         assertEquals("id validations", Collections.<Validation>emptySet(), set(orderId.getValidation()));
         assertEquals("id spine pos", 0, orderId.getSpinePos());

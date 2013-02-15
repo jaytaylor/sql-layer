@@ -19,7 +19,7 @@
                             "attributes" : {
                                 "sku" : {
                                     "scalar" : "24b0cf4f-6a33-43c4-bd15-db3a7b06d963",
-                                    "type" : "int"
+                                    "type" : "integer"
                                 }
                             }
                         }
