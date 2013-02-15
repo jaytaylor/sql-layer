@@ -26,6 +26,7 @@
 package com.akiban.direct;
 
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashSet;
@@ -185,6 +186,11 @@ public class DirectClassLoader extends URLClassLoader {
         } catch (Exception e) {
             throw e;
         }
+    }
+    
+    public void close() throws IOException  {
+        super.close();
+        Direct.unregisterDirectObjectClasses();
     }
 
 }

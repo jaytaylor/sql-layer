@@ -49,6 +49,16 @@ public class Direct {
     public static void registerDirectObjectClass(final Class<?> iface, final Class<? extends DirectObject> impl) {
         classMap.put(iface, impl);
     }
+    
+    /**
+     * TODO - for now this clears everything!
+     */
+    
+    public static void unregisterDirectObjectClasses() {
+        classMap.clear();
+        instanceMap.set(null);
+        
+    }
 
     /**
      * Return a thread-private instance of an entity object of the registered
