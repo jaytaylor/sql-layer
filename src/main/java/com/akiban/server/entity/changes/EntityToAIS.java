@@ -41,6 +41,7 @@ import com.akiban.server.entity.model.Entity;
 import com.akiban.server.entity.model.EntityColumn;
 import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Validation;
+import com.google.common.base.Function;
 import com.google.common.collect.BiMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,12 +63,14 @@ public class EntityToAIS extends AbstractEntityVisitor {
     private final String schemaName;
     private final AISBuilder builder = new AISBuilder();
     private final List<TableInfo> tableInfoStack = new ArrayList<>();
+    private final Function<String, Type> typeNameResolver;
     private TableName groupName = null;
     private TableInfo curTable = null;
     private Set<String> uniqueValidations = new HashSet<>();
 
-    public EntityToAIS(String schemaName) {
+    public EntityToAIS(String schemaName, Function<String, Type> typeNameResolver) {
         this.schemaName = schemaName;
+        this.typeNameResolver = typeNameResolver;
     }
 
     //
@@ -91,8 +94,9 @@ public class EntityToAIS extends AbstractEntityVisitor {
 
     @Override
     public void visitScalar(String name, Attribute scalar) {
-        String typeName = scalar.getType();
-        ColumnInfo info = getColumnInfo(builder.akibanInformationSchema().getType(typeName),
+        Type scalarType = typeNameResolver.apply(scalar.getType());
+        assert scalarType != null : name;
+        ColumnInfo info = getColumnInfo(scalarType,
                                         scalar.getProperties(),
                                         scalar.getValidation());
         if(scalar.isSpinal()) {
@@ -101,7 +105,7 @@ public class EntityToAIS extends AbstractEntityVisitor {
         }
         Column column = builder.column(schemaName, curTable.name,
                                        name, curTable.nextColPos++,
-                                       scalar.getType(), info.param1, info.param2,
+                                       scalarType.name(), info.param1, info.param2,
                                        info.nullable, false /*isAutoInc*/,
                                        info.charset, info.collation);
         column.setUuid(scalar.getUUID());

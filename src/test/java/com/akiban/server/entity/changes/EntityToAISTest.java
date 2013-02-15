@@ -75,7 +75,7 @@ public final class EntityToAISTest {
     @Test
     public void test() throws IOException {
         Space spaceDef = Space.readSpace(testName + ORIG_SUFFIX, EntityToAISTest.class);
-        EntityToAIS eToAIS = new EntityToAIS(SCHEMA);
+        EntityToAIS eToAIS = new EntityToAIS(SCHEMA, DDLBasedSpaceModifier.typeNameResolver);
         spaceDef.visit(eToAIS);
 
         String expected = Strings.dumpFileToString(new File(dir, testName + EXPECTED_SUFFIX));

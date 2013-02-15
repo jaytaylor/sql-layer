@@ -99,7 +99,7 @@ public final class DDLBasedSpaceModifierIT extends ITBase {
     }
 
     private void loadSpace(Space space) {
-        EntityToAIS eToAIS = new EntityToAIS(SCHEMA);
+        EntityToAIS eToAIS = new EntityToAIS(SCHEMA, DDLBasedSpaceModifier.typeNameResolver);
         space.visit(eToAIS);
         AkibanInformationSchema ais = eToAIS.getAIS();
         for(Group group : ais.getGroups().values()) {
