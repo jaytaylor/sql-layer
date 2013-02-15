@@ -211,6 +211,66 @@ public class InsertGeneratorIT extends ITBase {
                 "        ValuesScan_Default([$1, $2, $3])");
     }
 
+    @Test
+    public void testOrdersTable() {
+        createTable(SCHEMA, "customers",
+                "cid int not null",
+                "first_name varchar(32)",
+                "primary key (cid)");
+        createTable (SCHEMA, "orders",
+                "oid int not null",
+                "cid int not null",
+                "odate datetime",
+                "primary key (oid)",
+                "grouping foreign key (cid) references customers(cid)");
+        TableName table = new TableName (SCHEMA, "orders");
+        this.insertGenerator = new InsertGenerator (this.ais());
+        insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(T3RegistryService.class));
+        Operator insert = insertGenerator.create(table);
+        assertEquals(
+                getExplain(insert, table.getSchemaName()),
+                "\n  Project_Default(Field(0))\n" +
+                "    Insert_Returning(INTO orders)\n" +
+                "      Project_Default(Field(0), Field(1), Field(2))\n" +
+                "        ValuesScan_Default([$1, $2, $3])");
+
+    }
+    
+    @Test
+    public void testAllTypes() {
+        createTable (SCHEMA, "all_types",
+                "year_field year",
+                "bigint_field bigint",
+                "bigint_unsigned_field bigint unsigned",
+                "blob_field blob",
+                "boolean_field boolean",
+                "char_field char",
+                "char_multi_field char(32)",
+                "clob_field clob",
+                "date_field date",
+                "decimal_field decimal(10,0)",
+                "double_field double",
+                "float_field float",
+                "integer_field integer",
+                "numeric_field numeric(10,0)",
+                "real_field real",
+                "smallint_field smallint",
+                "time_field time",
+                "timestamp_field timestamp",
+                "varchar_field varchar(32)",
+                "datetime_field datetime");
+        TableName table = new TableName (SCHEMA, "all_types");
+        this.insertGenerator = new InsertGenerator (this.ais());
+        insertGenerator.setT3Registry(this.serviceManager().getServiceByClass(T3RegistryService.class));
+        Operator insert = insertGenerator.create(table);
+        assertEquals(
+                getExplain(insert, table.getSchemaName()),
+                "\n  Insert_Returning(INTO all_types)\n" + 
+                "    Project_Default(Field(0), Field(1), Field(2), Field(3), Field(4), Field(5), Field(6), Field(7), Field(8), Field(9), Field(10), Field(11), Field(12), Field(13), Field(14), Field(15), Field(16), Field(17), Field(18), Field(19), NULL)\n" +
+                "      ValuesScan_Default([$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20])");                
+    }
+    
+    
     protected String getExplain (Operator plannable, String defaultSchemaName) {
         StringBuilder str = new StringBuilder();
         ExplainContext context = new ExplainContext(); // Empty

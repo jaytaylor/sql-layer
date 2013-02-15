@@ -26,7 +26,6 @@
 
 package com.akiban.rest.resources;
 
-
 import com.akiban.ais.model.TableName;
 import com.akiban.rest.ResponseHelper;
 import com.akiban.server.service.restdml.RestDMLService;
@@ -112,7 +111,11 @@ public class DataAccessOperationsResource {
                                  byte[] entityBytes,
                                  @Context UriInfo uri) throws Exception {
         TableName tableName = parseTableName(request, table);
-        return ResponseHelper.buildNotYetImplemented();
+        ObjectMapper m = new ObjectMapper();
+        JsonNode node = m.readTree(entityBytes);
+        String[] pks = uri.getPath(false).split("/");
+        assert pks.length > 0 : uri;
+        return dmlService.update(request, tableName, pks[pks.length-1], node);
     }
 
     @DELETE
@@ -128,17 +131,9 @@ public class DataAccessOperationsResource {
     }
 
     protected static TableName parseTableName(HttpServletRequest request, String name) {
-        String schema, table;
-        int idx = name.indexOf('.');
-        if (idx >= 0) {
-            schema = name.substring(0, idx);
-            table = name.substring(idx+1);
-        }
-        else {
-            Principal user = request.getUserPrincipal();
-            schema = (user == null) ? "" : user.getName();
-            table = name;
-        }
-        return new TableName(schema, table);
+        Principal user = request.getUserPrincipal();
+        String schema = (user == null) ? "" : user.getName();
+
+        return TableName.parse(schema, name);
     }
 }

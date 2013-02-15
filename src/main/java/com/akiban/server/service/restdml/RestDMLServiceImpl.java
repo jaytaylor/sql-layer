@@ -193,10 +193,12 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             txn.commit();
             return Response.status(Response.Status.OK).entity(pk).build();
         } catch (JsonParseException ex) {
-            throw new WebApplicationException(ex, Response.Status.BAD_REQUEST);
+            throw wrapException(ex);
         } catch (IOException e) {
-            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
+            throw wrapException(e);
         } catch (InvalidOperationException e) {
+            throw wrapException(e);
+        } catch (RuntimeException e) {
             throw wrapException(e);
         }
     }
@@ -232,9 +234,9 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                     .entity(pk)
                     .build();
         } catch (JsonParseException ex) {
-            throw new WebApplicationException(ex, Response.Status.BAD_REQUEST);
+            throw wrapException(ex);
         } catch (IOException e) {
-            throw new WebApplicationException(e, Response.Status.INTERNAL_SERVER_ERROR);
+            throw wrapException(e);
         } catch (InvalidOperationException e) {
             throw wrapException (e);
         }
@@ -400,7 +402,9 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         if((e instanceof NoSuchTableException) ||
            (e instanceof NoSuchRoutineException)) {
             status = Response.Status.NOT_FOUND;
-         } else {
+        } else if (e instanceof JsonParseException) {
+            status = Response.Status.BAD_REQUEST;
+        } else {
             status = Response.Status.CONFLICT;
         }
         return new WebApplicationException(

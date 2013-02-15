@@ -385,7 +385,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         try {
             Row row;
             cursor.open();
-             while ((row = cursor.next()) != null) {
+            while ((row = cursor.next()) != null) {
                 UserTable table = row.rowType().userTable();
                 RowData data = rowData(adapter, table.rowDef(), row, new PValueRowDataCreator());
                 maintainGroupIndexes(session,
@@ -393,14 +393,14 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                         adapter,
                         data,
                         null,
-                        OperatorStoreGIHandler.forTable(adapter, table),
-                        OperatorStoreGIHandler.Action.DELETE);
-                super.deleteRow(session, data, true, false);
+                        OperatorStoreGIHandler.forTable(adapter, uTable),
+                        OperatorStoreGIHandler.Action.CASCADE);
             }
             cursor.close();
         } finally {
             cursor.destroy();
         }
+        super.deleteRow(session, rowData, true, true);
     }
 
     private <S> RowData rowData (PersistitAdapter adapter, RowDef rowDef, RowBase row, RowDataCreator<S> creator) {

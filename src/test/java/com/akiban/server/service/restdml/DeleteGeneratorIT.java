@@ -135,6 +135,4 @@ public class DeleteGeneratorIT extends ITBase {
         }
         return str.toString();
     }
-    
-    
 }

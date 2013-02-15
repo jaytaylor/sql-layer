@@ -70,13 +70,13 @@ public class GroupIndexCascadeUpdateIT extends GIUpdateITBase {
     public void deleteFromRoot() {
         String indexName = groupIndex("c.name, o.when, i.sku");
         writeRows(
-                createNewRow(c, 1L, "Horton"),
-                createNewRow(o, 11L, 1L, "01-01-2001"),
-                createNewRow(i, 101L, 11L, 1111),
-                createNewRow(h, 1001L, 101L, "handle with care")
+                createNewRow(c, 2L, "David"),
+                createNewRow(o, 12L, 2L, "01-01-2001"),
+                createNewRow(i, 102L, 12L, 1111),
+                createNewRow(h, 1002L, 102L, "handle with 2 care")
         );
-        checkIndex(indexName, "Horton, 01-01-2001, 1111, 1, 11, 101 => " + containing(c, o, i));
-        dml().deleteRow(session(), createNewRow(c, 1L, "Horton"), true);
+        checkIndex(indexName, "David, 01-01-2001, 1111, 2, 12, 102 => " + containing(c, o, i));
+        dml().deleteRow(session(), createNewRow(c, 2L, "David"), true);
         checkIndex(indexName);
     }
     
@@ -118,15 +118,15 @@ public class GroupIndexCascadeUpdateIT extends GIUpdateITBase {
         createGroupIndex(groupName, "gi1", "c.name, o.when", Index.JoinType.LEFT);
         createGroupIndex(groupName, "gi2", "c.name, a.street", Index.JoinType.LEFT);
         writeRows(
-                createNewRow(c, 1L, "Horton"),
-                createNewRow(o, 11L, 1L, "01-01-2001"),
-                createNewRow(i, 101L, 11L, 1111),
-                createNewRow(h, 1001L, 101L, "handle with care"),
-                createNewRow(a, 21L, 1L, "street with no name")
+                createNewRow(c, 4L, "Fred"),
+                createNewRow(o, 14L, 4L, "01-01-2004"),
+                createNewRow(i, 104L, 14L, 1111),
+                createNewRow(h, 1004L, 104L, "handle with 4 care"),
+                createNewRow(a, 21L, 4L, "street with no name")
         );
-        checkIndex("gi1", "Horton, 01-01-2001, 1, 11 => " + containing("gi1", c, o));
-        checkIndex("gi2", "Horton, street with no name, 1, 21 => " + containing("gi2", c, a));
-        dml().deleteRow(session(), createNewRow(c, 1L, "Horton"), true);
+        checkIndex("gi1", "Fred, 01-01-2004, 4, 14 => " + containing("gi1", c, o));
+        checkIndex("gi2", "Fred, street with no name, 4, 21 => " + containing("gi2", c, a));
+        dml().deleteRow(session(), createNewRow(c, 4L, "Fred"), true);
         checkIndex("gi1");
         checkIndex("gi2");
     }
@@ -135,14 +135,14 @@ public class GroupIndexCascadeUpdateIT extends GIUpdateITBase {
     public void testPartial1Level() {
         String indexName = groupIndex("c.name, o.when, i.sku");
         writeRows(
-                createNewRow(c, 1L, "Horton"),
-                createNewRow(o, 11L, 1L, "01-01-2001"),
-                createNewRow(i, 101L, 11L, 1111),
-                createNewRow(h, 1001L, 101L, "handle with care")
+                createNewRow(c, 5L, "James"),
+                createNewRow(o, 15L, 5L, "01-01-2005"),
+                createNewRow(i, 105L, 15L, 1111),
+                createNewRow(h, 1005L, 105L, "handle with 5 care")
         );
-        checkIndex(indexName, "Horton, 01-01-2001, 1111, 1, 11, 101 => " + containing(c, o, i));
-        dml().deleteRow(session(), createNewRow(i, 101L, 11L, 1111), true);
-        checkIndex(indexName, "Horton, 01-01-2001, null, 1, 11, null => " + containing(c, o));
+        checkIndex(indexName, "James, 01-01-2005, 1111, 5, 15, 105 => " + containing(c, o, i));
+        dml().deleteRow(session(), createNewRow(i, 105L, 15L, 1111), true);
+        checkIndex(indexName, "James, 01-01-2005, null, 5, 15, null => " + containing(c, o));
         
     }
 
@@ -150,14 +150,14 @@ public class GroupIndexCascadeUpdateIT extends GIUpdateITBase {
     public void testPartial2Level() {
         String indexName = groupIndex("c.name, o.when, i.sku");
         writeRows(
-                createNewRow(c, 1L, "Horton"),
-                createNewRow(o, 11L, 1L, "01-01-2001"),
-                createNewRow(i, 101L, 11L, 1111),
-                createNewRow(h, 1001L, 101L, "handle with care")
+                createNewRow(c, 6L, "Larry"),
+                createNewRow(o, 16L, 6L, "01-01-2006"),
+                createNewRow(i, 106L, 16L, 1111),
+                createNewRow(h, 1006L, 106L, "handle with 6 care")
         );
-        checkIndex(indexName, "Horton, 01-01-2001, 1111, 1, 11, 101 => " + containing(c, o, i));
-        dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"), true);
-        checkIndex(indexName, "Horton, null, null, 1, null, null => " + containing(c));
+        checkIndex(indexName, "Larry, 01-01-2006, 1111, 6, 16, 106 => " + containing(c, o, i));
+        dml().deleteRow(session(), createNewRow(o, 16L, 6L, "01-01-2006"), true);
+        checkIndex(indexName, "Larry, null, null, 6, null, null => " + containing(c));
         
     }
 

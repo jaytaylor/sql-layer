@@ -35,7 +35,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Group;
 import com.akiban.ais.model.NopVisitor;
 import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.UserTable;
