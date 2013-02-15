@@ -74,7 +74,7 @@ public class AISTypeComputer extends TypeComputer
         if (targetColumns != null) {
             if (ncols > targetColumns.size())
                 ncols = targetColumns.size();
-            columns = new ArrayList<Column>(ncols);
+            columns = new ArrayList<>(ncols);
             for (int i = 0; i < ncols; i++) {
                 ColumnBinding cb = (ColumnBinding)
                     targetColumns.get(i).getReference().getUserData();
@@ -85,7 +85,7 @@ public class AISTypeComputer extends TypeComputer
             List<Column> allColumns = table.getColumns();
             if (ncols > allColumns.size())
                 ncols = allColumns.size();
-            columns = new ArrayList<Column>(ncols);
+            columns = new ArrayList<>(ncols);
             for (int i = 0; i < ncols; i++) {
                 columns.add(allColumns.get(i));
             }

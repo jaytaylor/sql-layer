@@ -81,8 +81,8 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
     private int t;
     private RowType tRowType;
     private IndexRowType idxRowType;
-    private Map<Long, TestRow> indexRowMap = new HashMap<Long, TestRow>();
-    private Map<Long, TestRow> indexRowWithIdMap = new HashMap<Long, TestRow>(); // use for jumping
+    private Map<Long, TestRow> indexRowMap = new HashMap<>();
+    private Map<Long, TestRow> indexRowWithIdMap = new HashMap<>(); // use for jumping
 
     @Override
     protected void setupCreateSchema()
@@ -1651,19 +1651,19 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
         cursor.jump(indexRowWithId(targetId), INDEX_ROW_SELECTOR);
 
         Row row;
-        List<Row> actualRows = new ArrayList<Row>();
-        List<ShareHolder<Row>> rowHolders = new ArrayList<ShareHolder<Row>>();
+        List<Row> actualRows = new ArrayList<>();
+        List<ShareHolder<Row>> rowHolders = new ArrayList<>();
         
         while ((row = cursor.next()) != null)
         {
             // Prevent sharing of rows since verification accumulates them
             actualRows.add(row);
-            rowHolders.add(new ShareHolder<Row>(row));
+            rowHolders.add(new ShareHolder<>(row));
         }
         cursor.close();
 
         // find the row with given id
-        List<Row> expectedRows = new ArrayList<Row>(expected.length);
+        List<Row> expectedRows = new ArrayList<>(expected.length);
         for (long val : expected)
             expectedRows.add(indexRowWithId(val));
 
@@ -1681,11 +1681,11 @@ public class UniqueIndexScanJumpBoundedUnboundedWithNulls2IT extends OperatorITB
 
     private List<List<Long>> toListOfLong(List<Row> rows)
     {
-        List<List<Long>> ret = new ArrayList<List<Long>>();
+        List<List<Long>> ret = new ArrayList<>();
         for (Row row : rows)
         {
             // nulls are allowed
-            ArrayList<Long> toLong = new ArrayList<Long>();
+            ArrayList<Long> toLong = new ArrayList<>();
             for (int n = 0; n < INDEX_COLUMN_COUNT; ++n) {
                 toLong.add(getLong(row, n));
             }

@@ -475,7 +475,7 @@ public class BasicInfoSchemaTablesServiceImpl
         list.add(new RootPathTable(root, builder.toString(), branch));
 
         // For tables at the same depth, comparing table IDs is currently synonymous with ordinals
-        List<UserTable> children = new ArrayList<UserTable>();
+        List<UserTable> children = new ArrayList<>();
         for(Join join : branch.getChildJoins()) {
             children.add(join.getChild());
         }
@@ -513,8 +513,8 @@ public class BasicInfoSchemaTablesServiceImpl
 
                 // Desired output: groups together, ordered by branch (ordinal), then ordered by depth
                 // Highest level sorting will be by schema.root, which seems as good as any
-                rootPathTables = new ArrayList<RootPathTable>();
-                Collection<UserTable> allTables = new ArrayList<UserTable>();
+                rootPathTables = new ArrayList<>();
+                Collection<UserTable> allTables = new ArrayList<>();
                 for(UserTable table : ais.getUserTables().values()) {
                     if(isAccessible(session, table.getName())) {
                         allTables.add(table);

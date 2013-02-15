@@ -170,7 +170,7 @@ public final class TInstance {
             return null;
         }
         int n = pExpressions.size();
-        List<TInstance> tInstances = new ArrayList<TInstance>(n);
+        List<TInstance> tInstances = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
             tInstances.add(pExpressions.get(i).resultType());
         }

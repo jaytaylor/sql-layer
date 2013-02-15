@@ -46,7 +46,7 @@ public final class TestOperator extends ValuesScan_Default {
     }
 
     private static Collection<? extends BindableRow> bindableRows(Collection<? extends Row> rows) {
-        Collection<BindableRow> result = new ArrayList<BindableRow>();
+        Collection<BindableRow> result = new ArrayList<>();
         for (Row row : rows) {
             result.add(BindableRow.of(row, Types3Switch.ON));
         }

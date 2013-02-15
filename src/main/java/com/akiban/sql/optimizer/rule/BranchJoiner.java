@@ -54,7 +54,7 @@ public class BranchJoiner extends BaseRule
     }
 
     static class TableGroupsFinder implements PlanVisitor, ExpressionVisitor {
-        List<TableGroupJoinTree> result = new ArrayList<TableGroupJoinTree>();
+        List<TableGroupJoinTree> result = new ArrayList<>();
 
         public List<TableGroupJoinTree> find(PlanNode root) {
             root.accept(this);
@@ -124,12 +124,12 @@ public class BranchJoiner extends BaseRule
             TableSource indexTable = indexScan.getLeafMostTable();
             TableGroupJoinNode leafTable = rootTable.findTable(indexTable);
             assert (leafTable != null) : indexScan;
-            List<TableSource> ancestors = new ArrayList<TableSource>();
+            List<TableSource> ancestors = new ArrayList<>();
             pendingTableSources(leafTable, rootTable, ancestors);
             if (isParent(leafTable)) {
                 if (ancestors.remove(indexTable))
                     setPending(leafTable); // Changed from ancestor to branch.
-                List<TableSource> tables = new ArrayList<TableSource>();
+                List<TableSource> tables = new ArrayList<>();
                 scan = new BranchLookup(scan, indexTable.getTable(), tables);
                 leafTable = singleBranchPending(leafTable, tables);
             }
@@ -151,7 +151,7 @@ public class BranchJoiner extends BaseRule
         }
         else if (scan instanceof GroupScan) {
             GroupScan groupScan = (GroupScan)scan;
-            List<TableSource> tables = new ArrayList<TableSource>();
+            List<TableSource> tables = new ArrayList<>();
             groupScan.setTables(tables);
             scan = fillBranch(scan, tables, rootTable, rootTable, rootTable);
         }
@@ -162,7 +162,7 @@ public class BranchJoiner extends BaseRule
             if (groupLoop.isInsideParent()) {
                 TableGroupJoinNode parent = rootTable.findTable(groupLoop.getInsideTable());
                 assert (parent != null) : groupLoop;
-                List<TableSource> ancestors = new ArrayList<TableSource>();
+                List<TableSource> ancestors = new ArrayList<>();
                 pendingTableSources(parent, rootTable, ancestors);
                 scan = new AncestorLookup(scan, outsideTable, ancestors);
                 scan = flatten(scan, parent, rootTable);
@@ -170,7 +170,7 @@ public class BranchJoiner extends BaseRule
             }
             else {
                 assert (groupLoop.getInsideTable() == rootTable.getTable());
-                List<TableSource> tables = new ArrayList<TableSource>();
+                List<TableSource> tables = new ArrayList<>();
                 scan = new BranchLookup(scan, outsideTable.getTable(), insideTable.getTable(), tables);
                 scan = fillBranch(scan, tables, rootTable, rootTable, rootTable);
             }
@@ -232,7 +232,7 @@ public class BranchJoiner extends BaseRule
         }
         if (sideBranch == null)
             return null;
-        List<TableSource> tables = new ArrayList<TableSource>();
+        List<TableSource> tables = new ArrayList<>();
         // If both AncestorLookup and BranchLookup are needed, the
         // same index row cannot be used for both, as such a
         // heterogeneous rowtype stream is not allowed.
@@ -287,9 +287,9 @@ public class BranchJoiner extends BaseRule
     protected PlanNode flatten(PlanNode input, 
                                TableGroupJoinNode leafTable,
                                TableGroupJoinNode rootTable) {
-        List<TableSource> tableSources = new ArrayList<TableSource>();
-        List<TableNode> tableNodes = new ArrayList<TableNode>();
-        List<JoinType> joinTypes = new ArrayList<JoinType>();
+        List<TableSource> tableSources = new ArrayList<>();
+        List<TableNode> tableNodes = new ArrayList<>();
+        List<JoinType> joinTypes = new ArrayList<>();
         JoinType joinType = null;
         ConditionList joinConditions = new ConditionList(0);
         TableGroupJoinNode table = leafTable;
@@ -333,21 +333,21 @@ public class BranchJoiner extends BaseRule
         while (branchTable != rootTable) {
             TableGroupJoinNode parent = branchTable.getParent();
             if (isBranchpoint(parent)) {
-                List<PlanNode> subplans = new ArrayList<PlanNode>(2);
+                List<PlanNode> subplans = new ArrayList<>(2);
                 subplans.add(input);
                 for (TableGroupJoinNode sibling = parent.getFirstChild();
                      sibling != null; sibling = sibling.getNextSibling()) {
                     if ((sibling == branchTable) ||
                         (leafLeftMostPending(sibling) == null))
                         continue;
-                    List<TableSource> tables = new ArrayList<TableSource>();
+                    List<TableSource> tables = new ArrayList<>();
                     PlanNode subplan = new BranchLookup(null, // no input means _Nested.
                                                         parent.getTable().getTable(),
                                                         sibling.getTable().getTable(), 
                                                         tables);
                     subplan = fillBranch(subplan, tables, sibling, parent, sibling);
                     if (subplans == null)
-                        subplans = new ArrayList<PlanNode>();
+                        subplans = new ArrayList<>();
                     subplans.add(subplan);
                 }
                 if (subplans.size() > 1)
@@ -370,7 +370,7 @@ public class BranchJoiner extends BaseRule
             // Also has children within the group tree. Take one for
             // in-stream branch.
             leafTable = parentTable.getFirstChild();
-            List<TableSource> tables = new ArrayList<TableSource>();
+            List<TableSource> tables = new ArrayList<>();
             input = new BranchLookup(input,
                                      parentTable.getTable().getTable(),
                                      leafTable.getTable().getTable(), 

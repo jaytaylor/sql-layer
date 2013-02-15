@@ -49,7 +49,7 @@ public abstract class IndexRecordVisitor extends IndexVisitor {
     private List<?> key(Key key, Value value)
     {
         // Key traversal
-        List<Object> keyList = new ArrayList<Object>();
+        List<Object> keyList = new ArrayList<>();
         extractKeySegments(key, keyList);
         // Value traversal. If the value is defined, then it contains more fields encoded like a key.
         // TODO: What about group indexes?

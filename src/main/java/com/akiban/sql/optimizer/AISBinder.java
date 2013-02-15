@@ -113,9 +113,9 @@ public class AISBinder implements Visitor
 
     public void bind(QueryTreeNode node, boolean expandViews) throws StandardException {
         this.expandViews = expandViews;
-        visited = new HashSet<QueryTreeNode>();
-        bindingContexts = new ArrayDeque<BindingContext>();
-        havingClauses = new HashSet<ValueNode>();
+        visited = new HashSet<>();
+        bindingContexts = new ArrayDeque<>();
+        havingClauses = new HashSet<>();
         try {
             node.accept(this);
         }
@@ -572,9 +572,9 @@ public class AISBinder implements Visitor
                 }
             }
             else if (joinNode.isNaturalJoin()) {
-                Map<String,ColumnBinding> leftCols = new HashMap<String,ColumnBinding>();
+                Map<String,ColumnBinding> leftCols = new HashMap<>();
                 getUniqueColumnBindings(fromLeft, leftCols);
-                Map<String,ColumnBinding> rightCols = new HashMap<String,ColumnBinding>();
+                Map<String,ColumnBinding> rightCols = new HashMap<>();
                 getUniqueColumnBindings(fromRight, rightCols);
                 for (String columnName : leftCols.keySet()) {
                     ColumnBinding rightBinding = rightCols.get(columnName);
@@ -1225,8 +1225,8 @@ public class AISBinder implements Visitor
     }
 
     protected static class BindingContext {
-        Collection<FromTable> tables = new ArrayList<FromTable>();
-        Map<String,FromTable> correlationNames = new HashMap<String,FromTable>();
+        Collection<FromTable> tables = new ArrayList<>();
+        Map<String,FromTable> correlationNames = new HashMap<>();
         ResultColumnList resultColumns;
         boolean resultColumnsAvailable;
     }

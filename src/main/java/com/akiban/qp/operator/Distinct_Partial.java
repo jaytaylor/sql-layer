@@ -356,7 +356,7 @@ class Distinct_Partial extends Operator
         // Object state
 
         private final Cursor input;
-        private final ShareHolder<Row> currentRow = new ShareHolder<Row>();
+        private final ShareHolder<Row> currentRow = new ShareHolder<>();
         private final int nfields;
         // currentValues contains copies of the first nvalid of currentRow's fields,
         // filled as needed.

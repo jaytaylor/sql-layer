@@ -44,7 +44,7 @@ class IndexCursorUnidirectionalLexicographic<S> extends IndexCursorUnidirectiona
                                                                API.Ordering ordering,
                                                                SortKeyAdapter<S, ?> sortKeyAdapter)
     {
-        return new IndexCursorUnidirectionalLexicographic<S>(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
+        return new IndexCursorUnidirectionalLexicographic<>(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
     }
 
     // For use by this class

@@ -122,5 +122,5 @@ public class SingleBranchTypeComposition extends TypeComposition
 
     // Object state
 
-    private final Map<RowType, Boolean> ancestorOf = new HashMap<RowType, Boolean>();
+    private final Map<RowType, Boolean> ancestorOf = new HashMap<>();
 }

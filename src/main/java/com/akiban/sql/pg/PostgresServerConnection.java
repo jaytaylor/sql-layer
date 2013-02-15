@@ -99,9 +99,9 @@ public class PostgresServerConnection extends ServerSessionBase
     private int sessionId, secret;
     private int version;
     private Map<String,PostgresPreparedStatement> preparedStatements =
-        new HashMap<String,PostgresPreparedStatement>();
+        new HashMap<>();
     private Map<String,PostgresBoundQueryContext> boundPortals =
-        new HashMap<String,PostgresBoundQueryContext>();
+        new HashMap<>();
 
     private ServerStatementCache<PostgresStatement> statementCache;
     private PostgresStatementParser[] unparsedGenerators;
@@ -124,7 +124,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 @Override
                 public List<PreparedStatementMonitor> getPreparedStatements() {
                     List<PreparedStatementMonitor> result = 
-                        new ArrayList<PreparedStatementMonitor>(preparedStatements.size());
+                        new ArrayList<>(preparedStatements.size());
                     synchronized (preparedStatements) {
                         result.addAll(preparedStatements.values());
                     }
@@ -134,7 +134,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 @Override
                 public List<CursorMonitor> getCursors() {
                     List<CursorMonitor> result = 
-                        new ArrayList<CursorMonitor>(boundPortals.size());
+                        new ArrayList<>(boundPortals.size());
                     synchronized (boundPortals) {
                         result.addAll(boundPortals.values());
                     }

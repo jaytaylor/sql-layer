@@ -65,9 +65,9 @@ public abstract class AbstractScanBase extends ITBase {
 
     protected final static boolean VERBOSE = false;
     
-    protected static SortedMap<TableName, UserTable> tableMap = new TreeMap<TableName, UserTable>();
+    protected static SortedMap<TableName, UserTable> tableMap = new TreeMap<>();
 
-    protected List<RowData> result = new ArrayList<RowData>();
+    protected List<RowData> result = new ArrayList<>();
 
     @Before
     public void baseSetUpSuite() throws Exception {
@@ -92,7 +92,7 @@ public abstract class AbstractScanBase extends ITBase {
         final BufferedReader reader = new BufferedReader(new InputStreamReader(
                 AkServer.class.getClassLoader().getResourceAsStream(resourceName)));
 
-        List<String> allStatements = new ArrayList<String>();
+        List<String> allStatements = new ArrayList<>();
 
         DDLFunctions ddl = ddl();
         for (String statement : new MySqlStatementSplitter(reader)) {
@@ -103,7 +103,7 @@ public abstract class AbstractScanBase extends ITBase {
 
         SchemaFactory schemaFactory = new SchemaFactory(schema);
         AkibanInformationSchema tempAIS = schemaFactory.ais(allStatements.toArray(new String[allStatements.size()]));
-        Set<TableName> created = new HashSet<TableName>();
+        Set<TableName> created = new HashSet<>();
         for(UserTable table : tempAIS.getUserTables().values()) {
             ddl.createTable(session(), table);
             created.add(table.getName());

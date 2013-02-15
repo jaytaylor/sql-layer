@@ -80,7 +80,7 @@ public class CatchingCloserTest {
     @Test
     public void nothingThrown() throws IOException {
         MyStream real = new MyStream(false, false);
-        CatchingCloser<MyStream> s = new CatchingCloser<MyStream>(real);
+        CatchingCloser<MyStream> s = new CatchingCloser<>(real);
         s.getCloseable().read();
         s.close();
         Assert.assertFalse(real.isOpen());
@@ -89,7 +89,7 @@ public class CatchingCloserTest {
 
     @Test(expected = ThrowItException.class)
     public void throwOrigException_NoExceptionOnClose() throws IOException {
-        CatchingCloser<MyStream> s = new CatchingCloser<MyStream>(new MyStream(
+        CatchingCloser<MyStream> s = new CatchingCloser<>(new MyStream(
                 false, false));
         try {
             s.getCloseable().throwIt();
@@ -102,7 +102,7 @@ public class CatchingCloserTest {
 
     @Test(expected = ThrowItException.class)
     public void throwOrigException_WithExceptionOnClose() throws IOException {
-        CatchingCloser<MyStream> s = new CatchingCloser<MyStream>(new MyStream(
+        CatchingCloser<MyStream> s = new CatchingCloser<>(new MyStream(
                 false, true));
         try {
             s.getCloseable().throwIt();
@@ -115,7 +115,7 @@ public class CatchingCloserTest {
 
     @Test(expected = ClosingException.class)
     public void throwClosingException_WithExceptionOnClose() throws IOException {
-        CatchingCloser<MyStream> s = new CatchingCloser<MyStream>(new MyStream(
+        CatchingCloser<MyStream> s = new CatchingCloser<>(new MyStream(
                 false, true));
         try {
             s.getCloseable().throwIt();
@@ -128,7 +128,7 @@ public class CatchingCloserTest {
 
     @Test(expected = ThrowItException.class)
     public void throwClosingException_NoExceptionOnClose() throws IOException {
-        CatchingCloser<MyStream> s = new CatchingCloser<MyStream>(new MyStream(
+        CatchingCloser<MyStream> s = new CatchingCloser<>(new MyStream(
                 false, false));
         try {
             s.getCloseable().throwIt();
@@ -141,7 +141,7 @@ public class CatchingCloserTest {
 
     @Test(expected = CtorException.class)
     public void throwExceptionInCtor_OrigException() throws IOException {
-        CatchingCloser<MyStream> s = new CatchingCloser<MyStream>();
+        CatchingCloser<MyStream> s = new CatchingCloser<>();
         try {
             s.set(new MyStream(true, true));
         } catch (IOException e) {
@@ -159,7 +159,7 @@ public class CatchingCloserTest {
      */
     @Test(expected = CtorException.class)
     public void throwExceptionInCtor_ClosingException() throws IOException {
-        CatchingCloser<MyStream> s = new CatchingCloser<MyStream>();
+        CatchingCloser<MyStream> s = new CatchingCloser<>();
         try {
             s.set(new MyStream(true, true));
         } catch (IOException e) {
@@ -172,9 +172,9 @@ public class CatchingCloserTest {
     @Test
     public void catchGenericException() {
         boolean caughtIndexOutOfBounds = false;
-        CatchingCloser<InputStream> c = new CatchingCloser<InputStream>();
+        CatchingCloser<InputStream> c = new CatchingCloser<>();
         try {
-            new LinkedList<Object>().get(50);
+            new LinkedList<>().get(50);
         } catch (IndexOutOfBoundsException indexException) {
             c.caught(indexException);
             caughtIndexOutOfBounds = true;
@@ -193,7 +193,7 @@ public class CatchingCloserTest {
 
     @Test(expected = ThrowItException.class)
     public void catchGenericIOException() throws Exception {
-        CatchingCloser<MyStream> c = new CatchingCloser<MyStream>();
+        CatchingCloser<MyStream> c = new CatchingCloser<>();
         try {
             c.set(new MyStream(false, false));
             c.getCloseable().throwIt();
@@ -231,14 +231,14 @@ public class CatchingCloserTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void setCalledTwice() throws IOException {
-        CatchingCloser<InputStream> c = new CatchingCloser<InputStream>();
+        CatchingCloser<InputStream> c = new CatchingCloser<>();
         c.set(new MyStream(false, false));
         c.set(new MyStream(false, false));
     }
 
     @Test
     public void setCalledTwiceButClosed() throws IOException {
-        CatchingCloser<InputStream> c = new CatchingCloser<InputStream>();
+        CatchingCloser<InputStream> c = new CatchingCloser<>();
         c.set(new MyStream(false, false));
         c.close();
         c.set(new MyStream(false, false));
@@ -246,7 +246,7 @@ public class CatchingCloserTest {
 
     @Test(expected = NullPointerException.class)
     public void passingNullToClose() throws IOException {
-        CatchingCloser<MyStream> s = new CatchingCloser<MyStream>(new MyStream(
+        CatchingCloser<MyStream> s = new CatchingCloser<>(new MyStream(
                 false, false));
         s.getCloseable().read();
         s.close(null);

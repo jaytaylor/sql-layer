@@ -319,7 +319,7 @@ public final class OverloadResolver<V extends TValidatedOverload> {
         while (iter.hasNext()) {
             scalarsGroup = iter.next();
             Collection<? extends V> namedOverloads = scalarsGroup.getOverloads();
-            List<V> candidates = new ArrayList<V>(namedOverloads.size());
+            List<V> candidates = new ArrayList<>(namedOverloads.size());
             for (V overload : namedOverloads) {
                 if (!overload.coversNInputs(inputs.size()))
                     continue;
@@ -469,7 +469,7 @@ public final class OverloadResolver<V extends TValidatedOverload> {
 
     private OverloadResult<V> buildResult(V overload, List<? extends TPreptimeValue> inputs)
     {
-        return new OverloadResult<V>(overload, inputs, castsResolver);
+        return new OverloadResult<>(overload, inputs, castsResolver);
     }
 
     /*
@@ -485,7 +485,7 @@ public final class OverloadResolver<V extends TValidatedOverload> {
         // NOTE:
         // This method shares some concepts with #commonTClass. See that method for a note about possible refactoring
         // opportunities (tl;dr is the two methods don't share code right now, but they might be able to.)
-        List<List<V>> castGroups = new ArrayList<List<V>>();
+        List<List<V>> castGroups = new ArrayList<>();
 
         for(V B : candidates) {
             final int nInputSets = B.inputSets().size();
@@ -535,7 +535,7 @@ public final class OverloadResolver<V extends TValidatedOverload> {
                 }
             } else {
                 // No matching group, must be in a new group
-                castGroup = new ArrayList<V>(1);
+                castGroup = new ArrayList<>(1);
                 castGroup.add(B);
                 castGroups.add(castGroup);
             }

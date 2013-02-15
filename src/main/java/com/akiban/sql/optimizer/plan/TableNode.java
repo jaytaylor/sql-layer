@@ -42,7 +42,7 @@ public class TableNode extends TableTreeBase.TableNodeBase<TableNode>
     public TableNode(UserTable table, TableTree tree) {
         super(table);
         this.tree = tree;
-        uses = new ArrayList<TableSource>();
+        uses = new ArrayList<>();
     }
 
     public TableTree getTree() {

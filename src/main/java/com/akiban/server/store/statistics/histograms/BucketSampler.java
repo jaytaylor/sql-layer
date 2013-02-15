@@ -120,7 +120,7 @@ final class BucketSampler<T> {
             throw new IllegalArgumentException("expectedInputs must be non-negative: " + expectedInputs);
         this.maxSize = maxSize;
         this.expectedCount = expectedInputs;
-        this.buckets = new ArrayList<Bucket<T>>(maxSize + 1);
+        this.buckets = new ArrayList<>(maxSize + 1);
         this.stdDev = calculateStandardDeviation ? new StandardDeviation() : null;
         computeMedianPointBoundaries(maxSize);
     }

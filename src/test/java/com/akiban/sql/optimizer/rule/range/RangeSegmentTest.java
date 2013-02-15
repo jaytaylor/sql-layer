@@ -55,7 +55,7 @@ public final class RangeSegmentTest {
                 segment(exclusive("apple"), exclusive("orange")),
                 segment(exclusive("orange"), RangeEndpoint.UPPER_WILD)
         );
-        List<RangeSegment> copy = new ArrayList<RangeSegment>(original);
+        List<RangeSegment> copy = new ArrayList<>(original);
         sacAndCheck(original, copy);
     }
 
@@ -284,7 +284,7 @@ public final class RangeSegmentTest {
                 segment(inclusive("aardvark"), inclusive("person")),
                 segment(inclusive(1L), exclusive("zebra"))
         );
-        List<RangeSegment> copy = new ArrayList<RangeSegment>(original);
+        List<RangeSegment> copy = new ArrayList<>(original);
         List<RangeSegment> sorted = RangeSegment.sortAndCombine(copy);
         assertCollectionEquals(original, copy);
         assertNull("sorted list should be null", sorted);
@@ -296,7 +296,7 @@ public final class RangeSegmentTest {
                 segment(inclusive("aardvark"), inclusive(1L)),
                 segment(inclusive("cat"), exclusive(1L))
         );
-        List<RangeSegment> copy = new ArrayList<RangeSegment>(original);
+        List<RangeSegment> copy = new ArrayList<>(original);
         List<RangeSegment> sorted = RangeSegment.sortAndCombine(copy);
         assertCollectionEquals(original, copy);
         assertNull("sorted list should be null", sorted);
@@ -319,14 +319,14 @@ public final class RangeSegmentTest {
      * @param expectedList the expected RangeSegments
      */
     private static void sacAndCheck(List<? extends RangeSegment> list, List<? extends RangeSegment> expectedList) {
-        List<RangeSegment> copy = new ArrayList<RangeSegment>(list);
+        List<RangeSegment> copy = new ArrayList<>(list);
         List<RangeSegment> sorted = RangeSegment.sortAndCombine(copy);
         assertSame(copy, sorted);
-        assertCollectionEquals(expectedList, new ArrayList<RangeSegment>(sorted));
+        assertCollectionEquals(expectedList, new ArrayList<>(sorted));
     }
 
     private static void sacAndCheck(List<RangeSegment> list, RangeSegment first, RangeSegment... expecteds) {
-        List<RangeSegment> expectedsList = new ArrayList<RangeSegment>();
+        List<RangeSegment> expectedsList = new ArrayList<>();
         expectedsList.add(first);
         Collections.addAll(expectedsList, expecteds);
         sacAndCheck(list, expectedsList);

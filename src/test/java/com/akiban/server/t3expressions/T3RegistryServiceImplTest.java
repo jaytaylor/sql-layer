@@ -154,7 +154,7 @@ public final class T3RegistryServiceImplTest {
 
         // create the full expected list, which includes VARCHAR -> VARCHAR and VARCHAR <-> T for each type
         // in the actuals keys
-        List<CastCheck> allExpected = new ArrayList<CastCheck>();
+        List<CastCheck> allExpected = new ArrayList<>();
         Collections.addAll(allExpected, expected);
         for (TClass src : actual.keySet()) {
             if (src != MString.VARCHAR) {
@@ -208,7 +208,7 @@ public final class T3RegistryServiceImplTest {
     }
 
     private <V> TreeMap<TClass, V> tClassMap() {
-        return new TreeMap<TClass, V>(tClassComparator);
+        return new TreeMap<>(tClassComparator);
     }
 
     private static class CastCheck {

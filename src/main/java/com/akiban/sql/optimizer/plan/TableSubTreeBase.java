@@ -149,6 +149,6 @@ public class TableSubTreeBase<T extends TableSubTreeBase.TableNodeBase<T>>
     }
     
     public Iterator<T> iterator() {
-        return new NodeIterator<T>(root);
+        return new NodeIterator<>(root);
     }
 }

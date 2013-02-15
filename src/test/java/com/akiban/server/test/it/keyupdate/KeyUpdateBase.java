@@ -47,7 +47,7 @@ public abstract class KeyUpdateBase extends ITBase {
     public final void before() throws Exception
     {
         testStore = new TestStore(store(), persistitStore());
-        rowDefsToCounts = new TreeMap<Integer, Integer>();
+        rowDefsToCounts = new TreeMap<>();
         createSchema();
         confirmColumns();
         populateTables();
@@ -77,8 +77,8 @@ public abstract class KeyUpdateBase extends ITBase {
         Map<Integer,Object> expectedFields = expected.getFields();
         Map<Integer,Object> actualFields = actual.getFields();
         if (!expectedFields.equals(actualFields)) {
-            TreeMap<Integer,Object> expectedSorted = new TreeMap<Integer, Object>(expectedFields);
-            TreeMap<Integer,Object> actualSorted = new TreeMap<Integer, Object>(actualFields);
+            TreeMap<Integer,Object> expectedSorted = new TreeMap<>(expectedFields);
+            TreeMap<Integer,Object> actualSorted = new TreeMap<>(actualFields);
             assertEquals(expectedSorted, actualSorted);
             fail("if they're not equal, we shouldn't have gotten here!");
         }
@@ -199,12 +199,12 @@ public abstract class KeyUpdateBase extends ITBase {
                 testStore.traverse(session(), group, testVisitor, realVisitor);
                 Iterator<TreeRecord> expectedIterator = testVisitor.records().iterator();
                 Iterator<TreeRecord> actualIterator = realVisitor.records().iterator();
-                Map<Integer, Integer> expectedCounts = new HashMap<Integer, Integer>();
+                Map<Integer, Integer> expectedCounts = new HashMap<>();
                 expectedCounts.put(vendorRD.getRowDefId(), 0);
                 expectedCounts.put(customerRD.getRowDefId(), 0);
                 expectedCounts.put(orderRD.getRowDefId(), 0);
                 expectedCounts.put(itemRD.getRowDefId(), 0);
-                Map<Integer, Integer> actualCounts = new HashMap<Integer, Integer>();
+                Map<Integer, Integer> actualCounts = new HashMap<>();
                 actualCounts.put(customerRD.getRowDefId(), 0);
                 actualCounts.put(vendorRD.getRowDefId(), 0);
                 actualCounts.put(orderRD.getRowDefId(), 0);
@@ -259,10 +259,10 @@ public abstract class KeyUpdateBase extends ITBase {
      * @return a list representing indexes of these records
      */
     protected final List<List<Object>> indexFromRecords(List<TreeRecord> records, RowDef rowDef, Object... columns) {
-        List<List<Object>> indexEntries = new ArrayList<List<Object>>();
+        List<List<Object>> indexEntries = new ArrayList<>();
         for (TreeRecord record : records) {
             if (record.row().getRowDef() == rowDef) {
-                List<Object> indexEntry = new ArrayList<Object>(columns.length);
+                List<Object> indexEntry = new ArrayList<>(columns.length);
                 for (Object column : columns) {
                     final Object indexEntryElement;
                     if (column instanceof Integer) {

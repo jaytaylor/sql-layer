@@ -48,7 +48,7 @@ public class SQLClient implements Runnable
         sql = args[argi++];
         int repeat = 0, nthreads = 0;
         boolean printAllTimes = false;
-        params = new ArrayList<String>();
+        params = new ArrayList<>();
         while (argi < args.length) {
             if ("--repeat".equals(args[argi])) {
                 repeat = Integer.valueOf(args[argi+1]);

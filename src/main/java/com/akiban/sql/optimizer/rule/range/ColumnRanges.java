@@ -86,7 +86,7 @@ public final class ColumnRanges {
         List<RangeSegment> combinedSegments = combineBool(left, right, true);
         if (combinedSegments == null)
             return null;
-        Set<ConditionExpression> combinedConditions = new HashSet<ConditionExpression>(left.getConditions());
+        Set<ConditionExpression> combinedConditions = new HashSet<>(left.getConditions());
         combinedConditions.addAll(right.getConditions());
         return new ColumnRanges(left.getColumnExpression(), combinedConditions, combinedSegments);
     }
@@ -233,7 +233,7 @@ public final class ColumnRanges {
             return null;
         }
         List<ExpressionNode> expressions = inListCondition.getExpressions();
-        List<RangeSegment> rangeSegments = new ArrayList<RangeSegment>(expressions.size());
+        List<RangeSegment> rangeSegments = new ArrayList<>(expressions.size());
         for (ExpressionNode expr : expressions) {
             if (expr instanceof ConstantExpression) {
                 rangeSegments.addAll(RangeSegment.fromComparison(Comparison.EQ, 

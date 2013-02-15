@@ -140,5 +140,5 @@ public class Parameter
     private final Type type;
     private final Long typeParameter1;
     private final Long typeParameter2;
-    private final AtomicReference<TInstance> tInstanceRef = new AtomicReference<TInstance>();
+    private final AtomicReference<TInstance> tInstanceRef = new AtomicReference<>();
 }

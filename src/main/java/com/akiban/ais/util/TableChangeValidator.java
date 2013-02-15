@@ -111,10 +111,10 @@ public class TableChangeValidator {
         this.newTable = newTable;
         this.columnChanges = columnChanges;
         this.indexChanges = indexChanges;
-        this.unmodifiedChanges = new ArrayList<RuntimeException>();
-        this.errors = new ArrayList<RuntimeException>();
-        this.changedTables = new ArrayList<ChangedTableDescription>();
-        this.affectedGroupIndexes = new TreeMap<IndexName, List<TableColumnNames>>();
+        this.unmodifiedChanges = new ArrayList<>();
+        this.errors = new ArrayList<>();
+        this.changedTables = new ArrayList<>();
+        this.affectedGroupIndexes = new TreeMap<>();
         this.automaticIndexChanges = automaticIndexChanges;
         this.finalChangeLevel = ChangeLevel.NONE;
         this.parentChange = ParentChange.NONE;
@@ -192,8 +192,8 @@ public class TableChangeValidator {
     }
 
     private void compareColumns() {
-        Map<String,Column> oldColumns = new HashMap<String,Column>();
-        Map<String,Column> newColumns = new HashMap<String,Column>();
+        Map<String,Column> oldColumns = new HashMap<>();
+        Map<String,Column> newColumns = new HashMap<>();
         for(Column column : oldTable.getColumns()) {
             oldColumns.put(column.getName(), column);
         }
@@ -213,8 +213,8 @@ public class TableChangeValidator {
     }
 
     private void compareIndexes(boolean autoChanges) {
-        Map<String,TableIndex> oldIndexes = new HashMap<String,TableIndex>();
-        Map<String,TableIndex> newIndexes = new HashMap<String,TableIndex>();
+        Map<String,TableIndex> oldIndexes = new HashMap<>();
+        Map<String,TableIndex> newIndexes = new HashMap<>();
         for(TableIndex index : oldTable.getIndexes()) {
             oldIndexes.put(index.getIndexName().getName(), index);
         }
@@ -238,7 +238,7 @@ public class TableChangeValidator {
     }
 
     private void compareGroupIndexes() {
-        final Set<UserTable> keepTables = new HashSet<UserTable>();
+        final Set<UserTable> keepTables = new HashSet<>();
         final UserTable traverseStart;
         if(parentChange == ParentChange.DROP) {
             traverseStart = oldTable;
@@ -255,7 +255,7 @@ public class TableChangeValidator {
 
         for(GroupIndex index : oldTable.getGroupIndexes()) {
             boolean hadChange = (finalChangeLevel == ChangeLevel.GROUP);
-            List<TableColumnNames> remainingCols = new ArrayList<TableColumnNames>();
+            List<TableColumnNames> remainingCols = new ArrayList<>();
             for(IndexColumn iCol : index.getKeyColumns()) {
                 Column column = iCol.getColumn();
                 if(!keepTables.contains(column.getUserTable())) {
@@ -295,8 +295,8 @@ public class TableChangeValidator {
 
     private <T> void checkChanges(ChangeLevel level, List<TableChange> changeList, Map<String,T> oldMap, Map<String,T> newMap, boolean doAutoChanges) {
         final boolean isIndex = (level == ChangeLevel.INDEX);
-        Set<String> oldExcludes = new HashSet<String>();
-        Set<String> newExcludes = new HashSet<String>();
+        Set<String> oldExcludes = new HashSet<>();
+        Set<String> newExcludes = new HashSet<>();
 
         List<TableChange> autoChanges = doAutoChanges ? new ArrayList<TableChange>() : null;
 
@@ -401,8 +401,8 @@ public class TableChangeValidator {
         parentChange = compareParentJoin(columnChanges, oldTable.getParentJoin(), newTable.getParentJoin());
         primaryKeyChanged = containsOldOrNew(indexChanges, Index.PRIMARY_KEY_CONSTRAINT);
 
-        List<TableName> droppedSequences = new ArrayList<TableName>();
-        Map<String,String> renamedColumns = new HashMap<String, String>();
+        List<TableName> droppedSequences = new ArrayList<>();
+        Map<String,String> renamedColumns = new HashMap<>();
         for(TableChange change : columnChanges) {
             Sequence seqToDrop = null;
             switch(change.getChangeType()) {
@@ -430,7 +430,7 @@ public class TableChangeValidator {
 
         boolean renamed = !oldTable.getName().equals(newTable.getName()) || !renamedColumns.isEmpty();
 
-        Map<String,String> preserveIndexes = new TreeMap<String,String>();
+        Map<String,String> preserveIndexes = new TreeMap<>();
         TableName parentName = (newTable.getParentJoin() != null) ? newTable.getParentJoin().getParent().getName() : null;
         changedTables.add(new ChangedTableDescription(oldTable.getName(), newTable, renamedColumns,
                                                       parentChange, parentName, EMPTY_STRING_MAP, preserveIndexes,
@@ -446,7 +446,7 @@ public class TableChangeValidator {
             }
         }
 
-        Collection<Join> oldChildJoins = new ArrayList<Join>(oldTable.getCandidateChildJoins());
+        Collection<Join> oldChildJoins = new ArrayList<>(oldTable.getCandidateChildJoins());
         for(Join join : oldChildJoins) {
             UserTable oldChildTable = join.getChild();
 
@@ -507,7 +507,7 @@ public class TableChangeValidator {
 
     private void trackChangedTable(UserTable table, ParentChange parentChange, TableName parentName,
                                    Map<String, String> parentRenames, boolean doPreserve) {
-        Map<String,String> preserved = new HashMap<String, String>();
+        Map<String,String> preserved = new HashMap<>();
         if(doPreserve) {
             for(Index index : table.getIndexesIncludingInternal()) {
                 preserved.put(index.getIndexName().getName(), index.getIndexName().getName());

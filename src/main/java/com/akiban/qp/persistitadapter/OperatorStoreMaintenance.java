@@ -273,7 +273,7 @@ final class OperatorStoreMaintenance {
     }
 
     private static List<UserTableRowType> ancestors(RowType rowType, List<UserTableRowType> branchTables) {
-        List<UserTableRowType> ancestors = new ArrayList<UserTableRowType>();
+        List<UserTableRowType> ancestors = new ArrayList<>();
         for(UserTableRowType ancestor : branchTables) {
             if (ancestor.equals(rowType)) {
                 return ancestors;
@@ -445,7 +445,7 @@ final class OperatorStoreMaintenance {
         }
 
         public BranchTables(Schema schema, GroupIndex groupIndex) {
-            List<UserTableRowType> localTables = new ArrayList<UserTableRowType>();
+            List<UserTableRowType> localTables = new ArrayList<>();
             UserTable rootmost = groupIndex.rootMostTable();
             int branchRootmostIndex = -1;
             for (UserTable table = groupIndex.leafMostTable(); table != null; table = table.parentTable()) {

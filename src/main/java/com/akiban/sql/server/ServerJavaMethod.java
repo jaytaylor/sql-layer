@@ -111,7 +111,7 @@ public class ServerJavaMethod extends ServerJavaRoutine
     
     @Override
     public Queue<ResultSet> getDynamicResultSets() {
-        Queue<ResultSet> result = new ArrayDeque<ResultSet>();
+        Queue<ResultSet> result = new ArrayDeque<>();
         for (int i = 0; i < parameterTypes.length; i++) {
             Class<?> outputType = parameterTypes[i].getComponentType();
             if ((outputType != null) && ResultSet.class.isAssignableFrom(outputType)) {

@@ -65,7 +65,7 @@ public class AISTableNameChanger {
         }
         // Join names too. Copy the joins because ais.getJoins() will be updated inside the loop
         NameGenerator nameGenerator = new DefaultNameGenerator();
-        for (Join join : new ArrayList<Join>(ais.getJoins().values())) {
+        for (Join join : new ArrayList<>(ais.getJoins().values())) {
             if (join.getParent().getName().equals(table.getName())) {
                 String newJoinName = nameGenerator.generateJoinName(newName,
                                                                     join.getChild().getName(),

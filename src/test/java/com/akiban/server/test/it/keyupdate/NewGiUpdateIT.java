@@ -1324,7 +1324,7 @@ public final class NewGiUpdateIT extends ITBase {
 
     private void init_coih_COIH(int... which) {
         init_coih();
-        Set<Integer> whichSet = new HashSet<Integer>();
+        Set<Integer> whichSet = new HashSet<>();
         for (int whichInt : which)
             whichSet.add(whichInt);
         assertFalse("no COIH tables provided", whichSet.isEmpty());
@@ -1953,7 +1953,7 @@ public final class NewGiUpdateIT extends ITBase {
 
     private static Map<String, Long> reportsByName() {
         TapReport[] reports = Tap.getReport(TAP_PATTERN);
-        Map<String,Long> reportsByName = new TreeMap<String, Long>();
+        Map<String,Long> reportsByName = new TreeMap<>();
         Pattern pattern = Pattern.compile(TAP_PATTERN);
         for (TapReport report : reports) {
             Matcher matcher = pattern.matcher(report.getName());
@@ -1991,7 +1991,7 @@ public final class NewGiUpdateIT extends ITBase {
     private Integer i;
     private Integer h;
     private Integer a;
-    private final Set<GisCheckBuilder> unfinishedCheckBuilders = new HashSet<GisCheckBuilder>();
+    private final Set<GisCheckBuilder> unfinishedCheckBuilders = new HashSet<>();
 
     private static final String SCHEMA = "coia";
     private static final String ___LEFT_name_when___________ = "name_when_LEFT";
@@ -2049,7 +2049,7 @@ public final class NewGiUpdateIT extends ITBase {
             assertTrue(scratchString, scratchString.endsWith(" => "));
             assertNotNull(giToCheck);
 
-            Set<UserTable> containingTables = new HashSet<UserTable>();
+            Set<UserTable> containingTables = new HashSet<>();
             AkibanInformationSchema ais = ddl().getAIS(session());
             containingTables.add(ais.getUserTable(firstTableId));
             for (int tableId : tableIds) {
@@ -2101,7 +2101,7 @@ public final class NewGiUpdateIT extends ITBase {
         private GiCheckBuilderImpl(StackTraceElement frame) {
             this.frame = frame;
             this.scratch = new StringBuilder();
-            this.expectedStrings = new HashMap<GroupIndex, List<String>>();
+            this.expectedStrings = new HashMap<>();
         }
 
         private final StackTraceElement frame;
@@ -2115,7 +2115,7 @@ public final class NewGiUpdateIT extends ITBase {
         @Override
         public void check() {
             Collection<GroupIndex> gis = group().getIndexes();
-            Set<GroupIndex> uncheckedGis = new HashSet<GroupIndex>(gis);
+            Set<GroupIndex> uncheckedGis = new HashSet<>(gis);
             if (gis.size() != uncheckedGis.size())
                 fail(gis + ".size() != " + uncheckedGis + ".size()");
 
@@ -2127,7 +2127,7 @@ public final class NewGiUpdateIT extends ITBase {
             }
 
             if (!uncheckedGis.isEmpty()) {
-                List<String> uncheckedGiNames = new ArrayList<String>();
+                List<String> uncheckedGiNames = new ArrayList<>();
                 for (GroupIndex gi : uncheckedGis) {
                     uncheckedGiNames.add(gi.getIndexName().getName());
                 }
@@ -2160,7 +2160,7 @@ public final class NewGiUpdateIT extends ITBase {
         }
 
         private GisCheckerImpl(Map<GroupIndex, List<String>> expectedStrings) {
-            this.expectedStrings = new HashMap<GroupIndex, List<String>>(expectedStrings);
+            this.expectedStrings = new HashMap<>(expectedStrings);
         }
 
         private final Map<GroupIndex,List<String>> expectedStrings;
@@ -2207,6 +2207,6 @@ public final class NewGiUpdateIT extends ITBase {
 
         // object state
 
-        private final List<String> _strings = new ArrayList<String>();
+        private final List<String> _strings = new ArrayList<>();
     }
 }

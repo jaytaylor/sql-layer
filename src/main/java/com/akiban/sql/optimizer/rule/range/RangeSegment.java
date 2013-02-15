@@ -68,7 +68,7 @@ public final class RangeSegment {
             endPoint = RangeEndpoint.UPPER_WILD;
             break;
         case NE:
-            List<RangeSegment> result = new ArrayList<RangeSegment>(2);
+            List<RangeSegment> result = new ArrayList<>(2);
             result.add(fromComparison(Comparison.LT, constantExpression).get(0));
             result.add(fromComparison(Comparison.GT, constantExpression).get(0));
             return result;
@@ -176,13 +176,13 @@ public final class RangeSegment {
     }
 
     static List<RangeSegment> orRanges(List<RangeSegment> leftRanges, List<RangeSegment> rightRanges) {
-        List<RangeSegment> bothSegments = new ArrayList<RangeSegment>(leftRanges);
+        List<RangeSegment> bothSegments = new ArrayList<>(leftRanges);
         bothSegments.addAll(rightRanges);
         return bothSegments;
     }
 
     static List<RangeSegment> andRanges(List<RangeSegment> leftRanges, List<RangeSegment> rightRanges) {
-        List<RangeSegment> results = new ArrayList<RangeSegment>();
+        List<RangeSegment> results = new ArrayList<>();
         for (RangeSegment leftSegment : leftRanges) {
             for (RangeSegment rightSegment : rightRanges) {
                 RangeSegment result = andRangeSegment(leftSegment, rightSegment);

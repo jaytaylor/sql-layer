@@ -154,7 +154,7 @@ class Product_NestedLoops extends Operator
     @Override
     public List<Operator> getInputOperators()
     {
-        List<Operator> result = new ArrayList<Operator>(2);
+        List<Operator> result = new ArrayList<>(2);
         result.add(outerInputOperator);
         result.add(innerInputOperator);
         return result;
@@ -350,8 +350,8 @@ class Product_NestedLoops extends Operator
         // Object state
 
         private final Cursor outerInput;
-        private final ShareHolder<Row> outerRow = new ShareHolder<Row>();
-        private final ShareHolder<Row> outerBranchRow = new ShareHolder<Row>();
+        private final ShareHolder<Row> outerRow = new ShareHolder<>();
+        private final ShareHolder<Row> outerBranchRow = new ShareHolder<>();
         private final InnerRows innerRows;
         private boolean closed = true;
 

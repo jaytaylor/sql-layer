@@ -96,7 +96,7 @@ public class ServerSessionITBase extends ITBase {
         @Override
         public void notifyClient(QueryContext.NotificationLevel level, ErrorCode errorCode, String message) {
             if (warnings == null)
-                warnings = new ArrayList<String>();
+                warnings = new ArrayList<>();
             warnings.add(message);
         }
     }

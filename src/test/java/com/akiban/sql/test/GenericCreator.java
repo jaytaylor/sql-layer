@@ -184,7 +184,7 @@ public abstract class GenericCreator {
     }
 
     protected ArrayList<String> filterFunctionList(String filter) {
-        ArrayList<String> retVal = new ArrayList<String>();
+        ArrayList<String> retVal = new ArrayList<>();
         for (int x = 0; x < FUNCTION_LIST.length; x++) {
             if (FUNCTION_LIST[x].startsWith(filter)) {
                 retVal.add(FUNCTION_LIST[x].substring(4));

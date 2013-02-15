@@ -727,7 +727,7 @@ public class Column implements ColumnContainer
     private Long typeParameter2;
     private Long initialAutoIncrementValue;
     private CharsetAndCollation charsetAndCollation;
-    private final AtomicReference<TInstance> tInstanceRef = new AtomicReference<TInstance>();
+    private final AtomicReference<TInstance> tInstanceRef = new AtomicReference<>();
 
     // TODO: Should be final, but the multi-part construction of a valid Column needs to be cleaned up
     private Long maxStorageSize;

@@ -42,11 +42,11 @@ import static org.junit.Assert.assertEquals;
 public final class TimePointsComparisonTest {
     @Test
     public void noTimestampConflicts() {
-        Map<Long,List<String>> alpha = new HashMap<Long, List<String>>();
+        Map<Long,List<String>> alpha = new HashMap<>();
         alpha.put(1L, Arrays.asList("one"));
         alpha.put(3L, Arrays.asList("three"));
 
-        Map<Long,List<String>> beta = new HashMap<Long, List<String>>();
+        Map<Long,List<String>> beta = new HashMap<>();
         beta.put(2L, Arrays.asList("two"));
 
         test("[[one], [two], [three]]", alpha, beta);
@@ -54,10 +54,10 @@ public final class TimePointsComparisonTest {
 
     @Test
     public void conflictsWithinOne() {
-        Map<Long,List<String>> alpha = new HashMap<Long, List<String>>();
+        Map<Long,List<String>> alpha = new HashMap<>();
         alpha.put(1L, Arrays.asList("oneA", "oneB"));
 
-        Map<Long,List<String>> beta = new HashMap<Long, List<String>>();
+        Map<Long,List<String>> beta = new HashMap<>();
         beta.put(2L, Arrays.asList("two"));
 
         test("[[oneA], [oneB], [two]]", alpha, beta);
@@ -65,11 +65,11 @@ public final class TimePointsComparisonTest {
 
     @Test
     public void conflictsAcrossTwo() {
-        Map<Long,List<String>> alpha = new HashMap<Long, List<String>>();
+        Map<Long,List<String>> alpha = new HashMap<>();
         alpha.put(1L, Arrays.asList("one"));
         alpha.put(2L, Arrays.asList("twoA"));
 
-        Map<Long,List<String>> beta = new HashMap<Long, List<String>>();
+        Map<Long,List<String>> beta = new HashMap<>();
         beta.put(2L, Arrays.asList("twoB"));
 
         List<Collection<String>> marks = marks(alpha, beta);
@@ -80,10 +80,10 @@ public final class TimePointsComparisonTest {
 
     @Test
     public void multipleConflicts() {
-        Map<Long,List<String>> alpha = new HashMap<Long, List<String>>();
+        Map<Long,List<String>> alpha = new HashMap<>();
         alpha.put(1L, Arrays.asList("oneA", "oneB"));
 
-        Map<Long,List<String>> beta = new HashMap<Long, List<String>>();
+        Map<Long,List<String>> beta = new HashMap<>();
         beta.put(1L, Arrays.asList("twoA", "twoB"));
 
         List<Collection<String>> marks = marks(alpha, beta);
@@ -93,7 +93,7 @@ public final class TimePointsComparisonTest {
     }
 
     private static List<Collection<String>> marks(Map<Long,List<String>>... markMaps) {
-        List<TimedResult.TimeMarks> timeMarks = new ArrayList<TimedResult.TimeMarks>();
+        List<TimedResult.TimeMarks> timeMarks = new ArrayList<>();
         for (Map<Long,List<String>> marksMap : markMaps) {
             timeMarks.add(new TimedResult.TimeMarks(marksMap));
         }
@@ -106,7 +106,7 @@ public final class TimePointsComparisonTest {
     }
 
     private static Set<String> set(Collection<String> strings) {
-        Set<String> set = new HashSet<String>(strings);
+        Set<String> set = new HashSet<>(strings);
         assertEquals("set size", strings.size(), set.size());
         return set;
     }

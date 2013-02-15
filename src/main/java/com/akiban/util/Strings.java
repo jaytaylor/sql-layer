@@ -56,7 +56,7 @@ public abstract class Strings {
     
     public static final String NL = nl();
     private static final int BASE_CHAR = 10 -'a';
-    private static final Set<Character> LEGAL_HEX = new HashSet<Character>();
+    private static final Set<Character> LEGAL_HEX = new HashSet<>();
     static
     {
        for (char ch = 'a'; ch <= 'f'; ++ch)
@@ -150,7 +150,7 @@ public abstract class Strings {
     }
 
     public static List<String> stringAndSort(Collection<?> inputs) {
-        List<String> results = new ArrayList<String>(inputs.size());
+        List<String> results = new ArrayList<>(inputs.size());
         
         for (Object item : inputs) {
             String asString = stringAndSort(item);
@@ -171,7 +171,7 @@ public abstract class Strings {
             multiMap.put(keyString, valueString);
         }
         // step 2: Flatten the multimap into a Map<String,String>, sorting by keys as you go.
-        Map<String,String> sortedAndFlattened = new TreeMap<String,String>();
+        Map<String,String> sortedAndFlattened = new TreeMap<>();
         for (Entry<String,Collection<String>> multiMapEntry : multiMap.asMap().entrySet()) {
             String keyString = multiMapEntry.getKey();
             String valueString = stringAndSort(multiMapEntry.getValue()).toString();
@@ -180,7 +180,7 @@ public abstract class Strings {
         }
 
         // step 3: Flatten the map into a List<String>
-        List<String> results = new ArrayList<String>(inputs.size());
+        List<String> results = new ArrayList<>(inputs.size());
         for (Entry<String,String> entry : sortedAndFlattened.entrySet()) {
             results.add(entry.toString());
         }
@@ -218,7 +218,7 @@ public abstract class Strings {
     }
 
     public static List<String> dumpURLs(Enumeration<URL> urls) throws IOException {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         while (urls.hasMoreElements()) {
             URL next = urls.nextElement();
             LOG.debug("reading URL: {}", next);
@@ -338,7 +338,7 @@ public abstract class Strings {
     }
 
     public static List<String> readStream(InputStream is) throws IOException {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         readStreamTo(is, new ListAppendable(result), false);
         return result;
     }
@@ -412,7 +412,7 @@ public abstract class Strings {
     
     public static List<String> mapToString(Collection<?> collection) {
         // are lambdas here yet?!
-        List<String> strings = new ArrayList<String>(collection.size());
+        List<String> strings = new ArrayList<>(collection.size());
         for (Object o : collection)
             strings.add(String.valueOf(o));
         return strings;

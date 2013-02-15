@@ -185,7 +185,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
                                               API.Ordering ordering,
                                               SortKeyAdapter<S, E> sortKeyAdapter)
     {
-        return new IndexCursorMixedOrder<S, E>(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
+        return new IndexCursorMixedOrder<>(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
     }
 
     public void initializeScanStates() throws PersistitException
@@ -239,7 +239,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
                 singleValue = false;
             }
             MixedOrderScanStateSingleSegment<S,E> scanState =
-                new MixedOrderScanStateSingleSegment<S, E> (this,
+                new MixedOrderScanStateSingleSegment<>(this,
                                                      f,
                                                      loSource,
                                                      loInclusive,
@@ -253,7 +253,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
         }
         while (f < min(orderingColumns(), maxSegments)) {
             MixedOrderScanStateSingleSegment<S, E> scanState =
-                new MixedOrderScanStateSingleSegment<S, E>(this, f, ordering.ascending(f), sortKeyAdapter);
+                new MixedOrderScanStateSingleSegment<>(this, f, ordering.ascending(f), sortKeyAdapter);
             scanStates.add(scanState);
             f++;
         }
@@ -262,12 +262,12 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
             // if there is none).
             boolean ascending = f >= orderingColumns() || ordering.ascending(f);
             MixedOrderScanStateNullSeparator<S, E> scanState =
-                new MixedOrderScanStateNullSeparator<S, E>(this, f, ascending, sortKeyAdapter);
+                new MixedOrderScanStateNullSeparator<>(this, f, ascending, sortKeyAdapter);
             scanStates.add(scanState);
         }
         if (f < min(keyColumns(), maxSegments)) {
             MixedOrderScanStateRemainingSegments<S> scanState =
-                new MixedOrderScanStateRemainingSegments<S>(this, orderingColumns());
+                new MixedOrderScanStateRemainingSegments<>(this, orderingColumns());
             scanStates.add(scanState);
         }
     }
@@ -456,7 +456,7 @@ class IndexCursorMixedOrder<S,E> extends IndexCursor
 
     protected final IndexKeyRange keyRange;
     protected final API.Ordering ordering;
-    protected final List<MixedOrderScanState<S>> scanStates = new ArrayList<MixedOrderScanState<S>>();
+    protected final List<MixedOrderScanState<S>> scanStates = new ArrayList<>();
     private final SortKeyAdapter<S, E> sortKeyAdapter;
     private final int keyColumns; // Number of columns in the key. keyFields >= orderingColumns.
     private int loBoundColumns;

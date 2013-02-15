@@ -77,7 +77,7 @@ public final class MultiIndexEnumeratorTestRules {
         }
 
         private PlanNode useHooks(final PlanNode plan, IntersectionViewer intersections) {
-            List<String> scanDescriptions = new ArrayList<String>(intersections.indexScans.size());
+            List<String> scanDescriptions = new ArrayList<>(intersections.indexScans.size());
             for (IndexScan intersection : intersections.indexScans) {
                 String str = intersection.summaryString(true);
                 scanDescriptions.add(str);
@@ -119,7 +119,7 @@ public final class MultiIndexEnumeratorTestRules {
     }
     
     private static class IntersectionViewer implements Function<IndexScan,Void> {
-        private List<IndexScan> indexScans = new ArrayList<IndexScan>();
+        private List<IndexScan> indexScans = new ArrayList<>();
         @Override
         public Void apply(IndexScan input) {
             indexScans.add(input);

@@ -109,7 +109,7 @@ class EmitBoundRow_Nested extends Operator
     @Override
     public List<Operator> getInputOperators()
     {
-        List<Operator> result = new ArrayList<Operator>(1);
+        List<Operator> result = new ArrayList<>(1);
         result.add(inputOperator);
         return result;
     }

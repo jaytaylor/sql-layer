@@ -209,7 +209,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
     }
 
     protected User getUser(ResultSet rs) throws SQLException {
-        List<String> roles = new ArrayList<String>();
+        List<String> roles = new ArrayList<>();
         ResultSet rs1 = (ResultSet)rs.getObject(6);
         while (rs1.next()) {
             roles.add(rs1.getString(2));
@@ -261,7 +261,7 @@ public class SecurityServiceImpl implements SecurityService, Service {
         finally {
             cleanup(conn, stmt);
         }
-        return new User(id, name, new ArrayList<String>(roles));
+        return new User(id, name, new ArrayList<>(roles));
     }
 
     @Override

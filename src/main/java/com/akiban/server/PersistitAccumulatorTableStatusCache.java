@@ -40,7 +40,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
-    private Map<Integer, MemoryStatus> memoryStatuses = new HashMap<Integer, MemoryStatus>();
+    private Map<Integer, MemoryStatus> memoryStatuses = new HashMap<>();
     private TreeService treeService;
 
     public PersistitAccumulatorTableStatusCache(TreeService treeService) {

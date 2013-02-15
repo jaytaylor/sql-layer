@@ -75,8 +75,8 @@ import java.util.List;
  */
 public final class MultiCloser implements Closeable
 {
-    private final List<Closeable> closeables = new LinkedList<Closeable>();
-    private final List<Iterable<? extends Closeable>> iterables = new LinkedList<Iterable<? extends Closeable>>();
+    private final List<Closeable> closeables = new LinkedList<>();
+    private final List<Iterable<? extends Closeable>> iterables = new LinkedList<>();
     private Throwable explicitThrow = null;
     private boolean printExtraThrowables = true;
 
@@ -188,9 +188,9 @@ public final class MultiCloser implements Closeable
         Throwable thrown = explicitThrow;
         int thrownCount = thrown == null ? 0 : 1;
         boolean ioExceptionCaught = false;
-        List<Throwable> extras = new LinkedList<Throwable>();
+        List<Throwable> extras = new LinkedList<>();
 
-        List<Closeable> localCloseables = new LinkedList<Closeable>(closeables);
+        List<Closeable> localCloseables = new LinkedList<>(closeables);
         for (Iterable<? extends Closeable> iterator : iterables)
         {
             for(Closeable closeable : iterator)

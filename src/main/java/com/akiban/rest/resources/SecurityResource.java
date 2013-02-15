@@ -84,7 +84,7 @@ public class SecurityResource {
         }
         String user = userNode.getValueAsText();
         String password = passwordNode.getValueAsText();
-        List<String> roles = new ArrayList<String>();
+        List<String> roles = new ArrayList<>();
         for (JsonNode elem : rolesNode) {
             roles.add(elem.getValueAsText());
         }

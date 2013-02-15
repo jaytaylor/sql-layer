@@ -124,5 +124,5 @@ class Dispatch extends Tap
     private Tap currentTap;
     private Tap enabledTap;
     // For recursive taps
-    private List<Dispatch> subsidiaryDispatches = new ArrayList<Dispatch>();
+    private List<Dispatch> subsidiaryDispatches = new ArrayList<>();
 }

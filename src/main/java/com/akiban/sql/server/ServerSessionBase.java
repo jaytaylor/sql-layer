@@ -61,11 +61,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
 
     protected final ServerServiceRequirements reqs;
     protected Properties compilerProperties;
-    protected Map<String,Object> attributes = new HashMap<String,Object>();
+    protected Map<String,Object> attributes = new HashMap<>();
     
     protected Session session;
     protected Map<StoreAdapter.AdapterType, StoreAdapter> adapters = 
-        new HashMap<StoreAdapter.AdapterType, StoreAdapter>();
+        new HashMap<>();
     protected ServerTransaction transaction;
     protected boolean transactionDefaultReadOnly = false;
     protected ServerSessionMonitor sessionMonitor;

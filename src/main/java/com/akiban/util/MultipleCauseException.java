@@ -33,7 +33,7 @@ import java.util.Collections;
 import java.util.List;
 
 public final class MultipleCauseException extends RuntimeException {
-    private final List<Throwable> causes = new ArrayList<Throwable>();
+    private final List<Throwable> causes = new ArrayList<>();
 
     public void addCause(Throwable cause) {
         causes.add(cause);

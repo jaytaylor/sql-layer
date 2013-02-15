@@ -144,7 +144,7 @@ public final class OperatorTestHelper {
     }
 
     public static List<Row> execute(Operator plan) {
-        List<Row> rows = new ArrayList<Row>();
+        List<Row> rows = new ArrayList<>();
         Cursor cursor = open(plan);
         try {
             for(Row row = cursor.next(); row != null; row = cursor.next()) {

@@ -122,7 +122,7 @@ public class LeftRightExpressionTest extends ComposedExpressionTestBase
     @Test(expected = WrongExpressionArityException.class)
     public void testFunctionArity()
     {
-        List<Expression> args = new ArrayList<Expression>();
+        List<Expression> args = new ArrayList<>();
         for (int n = 0; n < argc; ++n)
             args.add(LiteralExpression.forNull());
         compose(composer, args);

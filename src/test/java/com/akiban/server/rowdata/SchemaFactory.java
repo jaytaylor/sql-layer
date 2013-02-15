@@ -147,7 +147,7 @@ public class SchemaFactory {
         @Override
         protected Map<Table,Integer> fixUpOrdinals() throws PersistitInterruptedException {
             Map<Group,List<RowDef>> groupToRowDefs = getRowDefsByGroup();
-            Map<Table,Integer> ordinalMap = new HashMap<Table,Integer>();
+            Map<Table,Integer> ordinalMap = new HashMap<>();
             for(List<RowDef> allRowDefs  : groupToRowDefs.values()) {
                 int userTableOrdinal = 1;
                 for(RowDef userRowDef : allRowDefs) {

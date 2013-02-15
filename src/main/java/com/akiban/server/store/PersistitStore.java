@@ -133,7 +133,7 @@ public class PersistitStore implements Store, Service {
 
     private volatile IndexStatisticsService indexStatistics;
 
-    private final Map<Tree, SortedSet<KeyState>> deferredIndexKeys = new HashMap<Tree, SortedSet<KeyState>>();
+    private final Map<Tree, SortedSet<KeyState>> deferredIndexKeys = new HashMap<>();
 
     private int deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
 
@@ -903,7 +903,7 @@ public class PersistitStore implements Store, Service {
 
     @Override
     public void truncateGroup(final Session session, final Group group) throws PersistitException {
-        List<Index> indexes = new ArrayList<Index>();
+        List<Index> indexes = new ArrayList<>();
         // Collect indexes, truncate table statuses
         for(UserTable table : group.getRoot().getAIS().getUserTables().values()) {
             if(table.getGroup() == group) {
@@ -999,7 +999,7 @@ public class PersistitStore implements Store, Service {
             final int tableId) {
         List<RowCollector> list = session.get(COLLECTORS, tableId);
         if (list == null) {
-            list = new ArrayList<RowCollector>();
+            list = new ArrayList<>();
             session.put(COLLECTORS, tableId, list);
         }
         return list;
@@ -1228,7 +1228,7 @@ public class PersistitStore implements Store, Service {
             synchronized (deferredIndexKeys) {
                 SortedSet<KeyState> keySet = deferredIndexKeys.get(iEx.getTree());
                 if (keySet == null) {
-                    keySet = new TreeSet<KeyState>();
+                    keySet = new TreeSet<>();
                     deferredIndexKeys.put(iEx.getTree(), keySet);
                 }
                 KeyState ks = new KeyState(iEx.getKey());
@@ -1446,9 +1446,9 @@ public class PersistitStore implements Store, Service {
 
     public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) {
         flushIndexes(session);
-        Set<Group> groups = new HashSet<Group>();
-        Map<Integer,RowDef> userRowDefs = new HashMap<Integer,RowDef>();
-        Set<Index> indexesToBuild = new HashSet<Index>();
+        Set<Group> groups = new HashSet<>();
+        Map<Integer,RowDef> userRowDefs = new HashMap<>();
+        Set<Index> indexesToBuild = new HashSet<>();
         for(Index index : indexes) {
             IndexDef indexDef = index.indexDef();
             if(indexDef == null) {
@@ -1510,7 +1510,7 @@ public class PersistitStore implements Store, Service {
 
     @Override
     public void removeTrees(Session session, Table table) {
-        Collection<TreeLink> treeLinks = new ArrayList<TreeLink>();
+        Collection<TreeLink> treeLinks = new ArrayList<>();
         // Add all index trees
         final Collection<TableIndex> tableIndexes = table.isUserTable() ? ((UserTable)table).getIndexesIncludingInternal() : table.getIndexes();
         final Collection<GroupIndex> groupIndexes = table.getGroupIndexes();
@@ -1550,7 +1550,7 @@ public class PersistitStore implements Store, Service {
     }
 
     public void deleteIndexes(final Session session, final Collection<? extends Index> indexes) {
-        List<TreeLink> links = new ArrayList<TreeLink>(indexes.size());
+        List<TreeLink> links = new ArrayList<>(indexes.size());
         for(Index index : indexes) {
             final IndexDef indexDef = index.indexDef();
             if(indexDef == null) {
@@ -1789,7 +1789,7 @@ public class PersistitStore implements Store, Service {
         public final AkibanInformationSchema ais;
         public final ThreadLocal<Key> groupTableKey;
         public final ThreadLocal<Value> groupTableValue;
-        public final Set<RowDef> seenTables = new HashSet<RowDef>();
+        public final Set<RowDef> seenTables = new HashSet<>();
         public final Map<RowDef, AtomicLong> rowsByRowDef =
                 Collections.synchronizedMap(new HashMap<RowDef, AtomicLong>());
         public final Map<RowDef, AtomicLong> hiddenPks =

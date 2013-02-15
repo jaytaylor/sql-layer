@@ -88,7 +88,7 @@ public class JMXCancelationIT extends PostgresServerITBase
                                  "com.akiban:type=PostgresServer",
                                  "CurrentSessions", null, "get");
             List<Integer> after = Arrays.asList(sessions);
-            after = new ArrayList<Integer>(after);
+            after = new ArrayList<>(after);
             after.removeAll(before);
 
             assertEquals(1, after.size());

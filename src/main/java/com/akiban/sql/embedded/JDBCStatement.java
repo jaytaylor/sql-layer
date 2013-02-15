@@ -121,7 +121,7 @@ public class JDBCStatement implements Statement
 
     protected void secondaryResultSet(JDBCResultSet resultSet) {
         if (secondaryResultSets == null)
-            secondaryResultSets = new ArrayList<ResultSet>();
+            secondaryResultSets = new ArrayList<>();
         secondaryResultSets.add(resultSet);
         connection.openingResultSet(resultSet);
     }

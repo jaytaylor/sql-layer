@@ -56,7 +56,7 @@ public class ExpressionRow extends AbstractRow
         this.pExpressions = pExpressions;
         if (pExpressions != null) {
             assert expressions == null : "can't have both types be non-null";
-            this.pEvaluations = new ArrayList<TEvaluatableExpression>(pExpressions.size());
+            this.pEvaluations = new ArrayList<>(pExpressions.size());
             for (TPreparedExpression expression : pExpressions) {
                 TEvaluatableExpression evaluation = expression.build();
                 evaluation.with(context);
@@ -64,7 +64,7 @@ public class ExpressionRow extends AbstractRow
             }
         }
         else if (expressions != null) {
-            this.evaluations = new ArrayList<ExpressionEvaluation>(expressions.size());
+            this.evaluations = new ArrayList<>(expressions.size());
             for (Expression expression : expressions) {
                 if (expression.needsRow()) {
                     throw new AkibanInternalException("expression needed a row: " + expression + " in " + expressions);

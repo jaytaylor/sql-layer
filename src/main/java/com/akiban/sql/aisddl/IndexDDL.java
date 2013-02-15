@@ -160,7 +160,7 @@ public class IndexDDL
                                    CreateIndexNode createIndex)  {
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         
-        Collection<Index> indexesToAdd = new LinkedList<Index>();
+        Collection<Index> indexesToAdd = new LinkedList<>();
 
         indexesToAdd.add(buildIndex(ais, defaultSchemaName, createIndex));
         

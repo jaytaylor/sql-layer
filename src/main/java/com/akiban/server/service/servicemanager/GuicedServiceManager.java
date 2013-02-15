@@ -263,7 +263,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         }
         CompositeConfigurationLoader compositeLoader = new CompositeConfigurationLoader();
         Collection<? extends Plugin> plugins = pluginsFinder.get();
-        List<URL> pluginUrls = new ArrayList<URL>(plugins.size());
+        List<URL> pluginUrls = new ArrayList<>(plugins.size());
         for (Plugin plugin : plugins)
             pluginUrls.add(plugin.getClassLoaderURL());
         ClassLoader pluginsClassloader = new URLClassLoader(pluginUrls.toArray(new URL[pluginUrls.size()]));
@@ -311,10 +311,10 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         @Override
         public List<String> getStartedDependencies() {
             boolean fullNames = isFullClassNames();
-            List<String> result = new ArrayList<String>();
+            List<String> result = new ArrayList<>();
             for (Class<?> requiredClass : guicer.directlyRequiredClasses()) {
                 List<?> dependencies = guicer.dependenciesFor(requiredClass);
-                List<String> dependenciesClasses = new ArrayList<String>();
+                List<String> dependenciesClasses = new ArrayList<>();
                 for (Object dependency : dependencies) {
                     Class<?> depClass = dependency.getClass();
                     dependenciesClasses.add(fullNames ? depClass.getName() : depClass.getSimpleName());
@@ -341,7 +341,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
         @Override
         public List<String> getServicesInStartupOrder() {
-            List<String> result = new ArrayList<String>();
+            List<String> result = new ArrayList<>();
             for (Class<?> serviceClass : guicer.servicesClassesInStartupOrder()) {
                 result.add(isFullClassNames() ? serviceClass.getName() : serviceClass.getSimpleName() );
             }
@@ -496,7 +496,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         // for use in this package
 
         public Collection<BindingsConfigurationLoader> loaders() {
-            List<BindingsConfigurationLoader> urls = new ArrayList<BindingsConfigurationLoader>(elements);
+            List<BindingsConfigurationLoader> urls = new ArrayList<>(elements);
             if (requires != null) {
                 urls.add(new YamlBindingsUrl(requires));
             }
@@ -506,7 +506,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
         // object state
 
-        private final List<BindingsConfigurationLoader> elements = new ArrayList<BindingsConfigurationLoader>();
+        private final List<BindingsConfigurationLoader> elements = new ArrayList<>();
         private URL requires = null;
     }
 
@@ -576,7 +576,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
                 loader.loadInto(config);
         }
 
-        private final List<BindingsConfigurationLoader> loaders = new ArrayList<BindingsConfigurationLoader>();
+        private final List<BindingsConfigurationLoader> loaders = new ArrayList<>();
     }
 
     private static class ManualServiceBinding implements BindingsConfigurationLoader {

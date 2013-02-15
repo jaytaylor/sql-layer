@@ -265,14 +265,14 @@ public abstract class DPhyp<P>
     // cross-product isn't going to do very well no matter what. Maybe
     // just break up the graph _before_ calling all this?
     public void init(Joinable root, ConditionList whereConditions) {
-        tables = new ArrayList<Joinable>();
+        tables = new ArrayList<>();
         addTables(root);
         int ntables = tables.size();
         if (ntables > 30)
             // TODO: Need to select some simpler algorithm that scales better.
             throw new UnsupportedSQLException("Too many tables in query: " + ntables, 
                                               null);
-        tableBitSets = new HashMap<Joinable,Long>(ntables);
+        tableBitSets = new HashMap<>(ntables);
         for (int i = 0; i < ntables; i++) {
             Joinable table = tables.get(i);
             Long bitset = JoinableBitSet.of(i);
@@ -293,7 +293,7 @@ public abstract class DPhyp<P>
         JoinOperator rootOp = initSES(root, visitor);
         if (whereConditions != null)
             noperators += whereConditions.size(); // Maximum possible addition.
-        operators = new ArrayList<JoinOperator>(noperators);
+        operators = new ArrayList<>(noperators);
         nedges = noperators * 2;
         edges = new long[nedges];
         calcTES(rootOp);
@@ -307,8 +307,8 @@ public abstract class DPhyp<P>
                                    JoinableBitSet.toString(edges[e^1], tables));
             }
         }
-        evaluateOperators = new ArrayList<JoinOperator>(noperators);
-        outsideOperators = new ArrayList<JoinOperator>(noperators);
+        evaluateOperators = new ArrayList<>(noperators);
+        outsideOperators = new ArrayList<>(noperators);
     }
 
     protected void addTables(Joinable n) {

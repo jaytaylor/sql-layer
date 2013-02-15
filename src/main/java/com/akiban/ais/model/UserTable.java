@@ -102,7 +102,7 @@ public class UserTable extends Table
     {
         // TODO: make this a AISValidation check
         ArgumentValidation.isTrue(column + " doesn't belong to " + getName(), column.getTable() == this);
-        List<Column> matchingColumns = new ArrayList<Column>();
+        List<Column> matchingColumns = new ArrayList<>();
         matchingColumns.add(column);
         findMatchingAncestorColumns(column, matchingColumns);
         findMatchingDescendantColumns(column, matchingColumns);
@@ -191,7 +191,7 @@ public class UserTable extends Table
 
     public List<Join> getChildJoins()
     {
-        List<Join> childJoins = new ArrayList<Join>();
+        List<Join> childJoins = new ArrayList<>();
         Group group = getGroup();
         if (group != null) {
             for (Join candidateChildJoin : candidateChildJoins) {
@@ -295,8 +295,8 @@ public class UserTable extends Table
     }
 
     public void traverseTableAndDescendants(Visitor visitor) {
-        List<UserTable> remainingTables = new ArrayList<UserTable>();
-        List<Join> remainingJoins = new ArrayList<Join>();
+        List<UserTable> remainingTables = new ArrayList<>();
+        List<Join> remainingJoins = new ArrayList<>();
         remainingTables.add(this);
         remainingJoins.addAll(getCandidateChildJoins());
         // Add before visit in-case visitor changes group or joins
@@ -411,7 +411,7 @@ public class UserTable extends Table
         assert getGroup() != null;
         assert getPrimaryKeyIncludingInternal() != null;
         if (allHKeyColumns == null) {
-            allHKeyColumns = new ArrayList<Column>();
+            allHKeyColumns = new ArrayList<>();
             for (HKeySegment segment : hKey().segments()) {
                 for (HKeyColumn hKeyColumn : segment.columns()) {
                     allHKeyColumns.add(hKeyColumn.column());
@@ -448,7 +448,7 @@ public class UserTable extends Table
         if (hKeyDependentTables == null) {
             synchronized (lazyEvaluationLock) {
                 if (hKeyDependentTables == null) {
-                    hKeyDependentTables = new ArrayList<UserTable>();
+                    hKeyDependentTables = new ArrayList<>();
                     for (Join join : getChildJoins()) {
                         UserTable child = join.getChild();
                         if (!child.containsOwnHKey()) {
@@ -501,7 +501,7 @@ public class UserTable extends Table
     private void computeHKey()
     {
         hKey = new HKey(this);
-        List<Column> hKeyColumns = new ArrayList<Column>();
+        List<Column> hKeyColumns = new ArrayList<>();
         if (!isRoot()) {
             // Start with the parent's hkey
             Join join = getParentJoin();
@@ -556,7 +556,7 @@ public class UserTable extends Table
 
     private static Collection<TableIndex> removeInternalColumnIndexes(Collection<TableIndex> indexes)
     {
-        Collection<TableIndex> declaredIndexes = new ArrayList<TableIndex>(indexes);
+        Collection<TableIndex> declaredIndexes = new ArrayList<>(indexes);
         for (Iterator<TableIndex> iterator = declaredIndexes.iterator(); iterator.hasNext();) {
             TableIndex index = iterator.next();
             List<IndexColumn> indexColumns = index.getKeyColumns();
@@ -577,8 +577,8 @@ public class UserTable extends Table
 
     // State
 
-    private final List<Join> candidateParentJoins = new ArrayList<Join>();
-    private final List<Join> candidateChildJoins = new ArrayList<Join>();
+    private final List<Join> candidateParentJoins = new ArrayList<>();
+    private final List<Join> candidateChildJoins = new ArrayList<>();
     private final Object lazyEvaluationLock = new Object();
 
     private UUID uuid;

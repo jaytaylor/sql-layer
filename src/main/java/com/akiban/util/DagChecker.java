@@ -44,12 +44,12 @@ public abstract class DagChecker<T> {
     protected abstract Set<? extends T> nodesFrom(T starting);
 
     public boolean isDag() {
-        DirectedGraph<T, Pair> graph = new DefaultDirectedGraph<T, Pair>(Pair.class);
+        DirectedGraph<T, Pair> graph = new DefaultDirectedGraph<>(Pair.class);
 
         Set<? extends T> initialNodes = initialNodes();
-        Set<T> knownNodes = new HashSet<T>(initialNodes.size() * 10); // just a guess
-        Deque<T> nodePath = new ArrayDeque<T>(20); // should be plenty
-        boolean isDag = tryAdd(initialNodes, graph, knownNodes, new CycleDetector<T, Pair>(graph), nodePath);
+        Set<T> knownNodes = new HashSet<>(initialNodes.size() * 10); // just a guess
+        Deque<T> nodePath = new ArrayDeque<>(20); // should be plenty
+        boolean isDag = tryAdd(initialNodes, graph, knownNodes, new CycleDetector<>(graph), nodePath);
         if (!isDag) {
             this.badNodes = nodePath;
         }
@@ -82,7 +82,7 @@ public abstract class DagChecker<T> {
     }
 
     public List<T> getBadNodePath() {
-        return badNodes == null ? null : new ArrayList<T>(badNodes);
+        return badNodes == null ? null : new ArrayList<>(badNodes);
     }
 
     private Deque<T> badNodes = null;

@@ -226,7 +226,7 @@ public class FilterIT extends OperatorITBase
     @Test
     public void testExtractSiblings()
     {
-        Set<RowType> keepTypes = new HashSet<RowType>();
+        Set<RowType> keepTypes = new HashSet<>();
         keepTypes.addAll(typeAndDescendents(addressRowType));
         keepTypes.addAll(typeAndDescendents(orderRowType));
         Operator plan = filter_Default(groupScan_Default(coi), keepTypes);
@@ -264,7 +264,7 @@ public class FilterIT extends OperatorITBase
 
     private Set<RowType> typeAndDescendents(RowType type)
     {
-        Set<RowType> keepTypes= new HashSet<RowType>();
+        Set<RowType> keepTypes= new HashSet<>();
         keepTypes.addAll(Schema.descendentTypes(type, schema.userTableTypes()));
         keepTypes.add(type);
         return keepTypes;

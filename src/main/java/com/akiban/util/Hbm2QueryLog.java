@@ -63,7 +63,7 @@ public class Hbm2QueryLog {
 
     private List<Query> extractQueries(final Document document)
             throws Exception {
-        final List<Query> queries = new ArrayList<Query>();
+        final List<Query> queries = new ArrayList<>();
         final XPath xpath = XPathFactory.newInstance().newXPath();
         final XPathExpression expr = xpath
                 .compile("//hibernate-mapping/sql-query");

@@ -47,7 +47,7 @@ public class NestedLoopMapper extends BaseRule
     }
 
     static class NestedLoopsJoinsFinder implements PlanVisitor, ExpressionVisitor {
-        List<JoinNode> result = new ArrayList<JoinNode>();
+        List<JoinNode> result = new ArrayList<>();
 
         public List<JoinNode> find(PlanNode root) {
             root.accept(this);

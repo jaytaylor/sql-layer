@@ -980,7 +980,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
 
     private void testJump(Cursor cursor, long idOrdering[], int nudge, long expectedsAr[][])
     {
-        List<List<Long>> expecteds = new ArrayList<List<Long>>(expectedsAr.length);
+        List<List<Long>> expecteds = new ArrayList<>(expectedsAr.length);
         
         for (long expectedAr[] : expectedsAr)
         {
@@ -995,12 +995,12 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
 
     private void testJump(Cursor cursor, long idOrdering[], int nudge)
     {
-        List<List<Long>> expecteds = new ArrayList<List<Long>>();
+        List<List<Long>> expecteds = new ArrayList<>();
         
         
         for (int idIndex = 0; idIndex < idOrdering.length; ++idIndex)
         {
-            List<Long> expected = new ArrayList<Long>();
+            List<Long> expected = new ArrayList<>();
             for (int i = idIndex; i < idOrdering.length; i++)
                 expected.add(idOrdering[i]);
             expecteds.add(expected);
@@ -1018,7 +1018,7 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
             nudgedTarget.overlay(3, target.eval(3).getLong() + nudge);
             cursor.jump(nudgedTarget, INDEX_ROW_SELECTOR);
             Row row;
-            List<Long> actualIds = new ArrayList<Long>();
+            List<Long> actualIds = new ArrayList<>();
             while ((row = cursor.next()) != null) {
                 if (usingPValues()) {
                     actualIds.add((long)row.pvalue(3).getInt32());
@@ -1094,5 +1094,5 @@ public class IndexScanJumpBoundedIT extends OperatorITBase
     private int t;
     private RowType tRowType;
     private IndexRowType idxRowType;
-    private Map<Long, TestRow> indexRowMap = new HashMap<Long, TestRow>();
+    private Map<Long, TestRow> indexRowMap = new HashMap<>();
 }

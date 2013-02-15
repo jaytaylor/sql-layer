@@ -106,7 +106,7 @@ public class ProductRowType extends CompoundRowType
 
     private static RowType leafmostCommonType(RowType leftType, RowType rightType)
     {
-        Set<UserTable> common = new HashSet<UserTable>(leftType.typeComposition().tables());
+        Set<UserTable> common = new HashSet<>(leftType.typeComposition().tables());
         common.retainAll(rightType.typeComposition().tables());
         UserTable leafmostCommon = null;
         for (UserTable table : common) {

@@ -562,7 +562,7 @@ public class AkibanInformationSchema implements Traversable
      */
     public void checkIntegrity()
     {
-        List<String> problems = new LinkedList<String>();
+        List<String> problems = new LinkedList<>();
         try
         {
             checkIntegrity(problems);
@@ -587,7 +587,7 @@ public class AkibanInformationSchema implements Traversable
     public void checkIntegrity(List<String> out) throws IllegalStateException
     {
         checkGroups(out);
-        Set<TableName> seenTables = new HashSet<TableName>(userTables.size(), 1.0f);
+        Set<TableName> seenTables = new HashSet<>(userTables.size(), 1.0f);
         checkTables(out, userTables, true, seenTables);
         checkJoins(out);
         checkTypesNames(out);
@@ -635,7 +635,7 @@ public class AkibanInformationSchema implements Traversable
     private void ensureTableIdLookup()
     {
         if (userTablesById == null) {
-            userTablesById = new HashMap<Integer, UserTable>();
+            userTablesById = new HashMap<>();
             for (UserTable userTable : userTables.values()) {
                 userTablesById.put(userTable.getTableId(), userTable);
             }
@@ -718,15 +718,15 @@ public class AkibanInformationSchema implements Traversable
     private static String defaultCharset = "utf8";
     private static String defaultCollation = "utf8_bin";
 
-    private final Map<TableName, Group> groups = new TreeMap<TableName, Group>();
-    private final Map<TableName, UserTable> userTables = new TreeMap<TableName, UserTable>();
-    private final Map<TableName, Sequence> sequences = new TreeMap<TableName, Sequence>();
-    private final Map<TableName, View> views = new TreeMap<TableName, View>();
-    private final Map<TableName, Routine> routines = new TreeMap<TableName, Routine>();
-    private final Map<TableName, SQLJJar> sqljJars = new TreeMap<TableName, SQLJJar>();
-    private final Map<String, Join> joins = new TreeMap<String, Join>();
-    private final Map<String, Type> types = new TreeMap<String, Type>();
-    private final Map<String, Schema> schemas = new TreeMap<String, Schema>();
+    private final Map<TableName, Group> groups = new TreeMap<>();
+    private final Map<TableName, UserTable> userTables = new TreeMap<>();
+    private final Map<TableName, Sequence> sequences = new TreeMap<>();
+    private final Map<TableName, View> views = new TreeMap<>();
+    private final Map<TableName, Routine> routines = new TreeMap<>();
+    private final Map<TableName, SQLJJar> sqljJars = new TreeMap<>();
+    private final Map<String, Join> joins = new TreeMap<>();
+    private final Map<String, Type> types = new TreeMap<>();
+    private final Map<String, Schema> schemas = new TreeMap<>();
     private final CharsetAndCollation charsetAndCollation;
     private final ConcurrentMap cachedValues = new ConcurrentHashMap(4,0.75f,4); // Very few, write-once entries expected
     private long generation = -1;
@@ -743,7 +743,7 @@ public class AkibanInformationSchema implements Traversable
             }
         }
         public AISFailureList() {
-            failureList = new LinkedList<AISValidationFailure>();
+            failureList = new LinkedList<>();
         }
     }
 }

@@ -120,7 +120,7 @@ public class HKey
             synchronized (this) {
                 if (columns == null) {
                     // columns
-                    List<Column> columnList = new ArrayList<Column>();
+                    List<Column> columnList = new ArrayList<>();
                     for (HKeySegment segment : segments) {
                         for (HKeyColumn hKeyColumn : segment.columns()) {
                             columnList.add(hKeyColumn.column());
@@ -154,7 +154,7 @@ public class HKey
     // State
 
     private final Table table;
-    private final List<HKeySegment> segments = new ArrayList<HKeySegment>();
+    private final List<HKeySegment> segments = new ArrayList<>();
     // keyDepth[n] is the number of key segments (ordinals + key values) comprising an hkey of n parts.
     // E.g. keyDepth[1] for the hkey of the root segment.
     private int[] keyDepth;

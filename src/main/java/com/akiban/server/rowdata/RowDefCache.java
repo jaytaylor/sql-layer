@@ -85,7 +85,7 @@ public class RowDefCache {
     public synchronized void setAIS(final AkibanInformationSchema newAIS) throws PersistitInterruptedException {
         ais = newAIS;
 
-        Map<Integer, RowDef> newRowDefs = new TreeMap<Integer,RowDef>();
+        Map<Integer, RowDef> newRowDefs = new TreeMap<>();
         for (final UserTable table : ais.getUserTables().values()) {
             RowDef rowDef = createUserTableRowDef(table);
             Integer key = rowDef.getRowDefId();
@@ -120,10 +120,10 @@ public class RowDefCache {
      */
     protected Map<Table,Integer> fixUpOrdinals() throws PersistitInterruptedException {
         Map<Group,List<RowDef>> groupToRowDefs = getRowDefsByGroup();
-        Map<Table,Integer> ordinalMap = new HashMap<Table,Integer>();
+        Map<Table,Integer> ordinalMap = new HashMap<>();
         for(List<RowDef> rowDefs  : groupToRowDefs.values()) {
             // First pass: merge already assigned values
-            HashSet<Integer> assigned = new HashSet<Integer>();
+            HashSet<Integer> assigned = new HashSet<>();
             for(RowDef rowDef : rowDefs) {
                 int ordinal = rowDef.getTableStatus().getOrdinal();
                 if(ordinal != 0 && !assigned.add(ordinal)) {
@@ -189,7 +189,7 @@ public class RowDefCache {
         }
 
         // Secondary indexes
-        List<TableIndex> indexList = new ArrayList<TableIndex>();
+        List<TableIndex> indexList = new ArrayList<>();
         for (TableIndex index : table.getIndexesIncludingInternal()) {
             List<IndexColumn> indexColumns = index.getKeyColumns();
             if(!indexColumns.isEmpty()) {
@@ -204,7 +204,7 @@ public class RowDefCache {
         }
 
         // Group indexes
-        final List<GroupIndex> groupIndexList = new ArrayList<GroupIndex>();
+        final List<GroupIndex> groupIndexList = new ArrayList<>();
         for (GroupIndex index : table.getGroupIndexes()) {
             if(index.leafMostTable() == table) {
                 new IndexDef(rowDef, index); // Hooks itself to the index
@@ -240,12 +240,12 @@ public class RowDefCache {
     }
 
     protected synchronized Map<Group,List<RowDef>> getRowDefsByGroup() {
-        Map<Group,List<RowDef>> groupToRowDefs = new HashMap<Group, List<RowDef>>();
+        Map<Group,List<RowDef>> groupToRowDefs = new HashMap<>();
         for(Table table : ais.getUserTables().values()) {
             RowDef rowDef = table.rowDef();
             List<RowDef> list = groupToRowDefs.get(rowDef.getGroup());
             if(list == null) {
-                list = new ArrayList<RowDef>();
+                list = new ArrayList<>();
                 groupToRowDefs.put(rowDef.getGroup(), list);
             }
             list.add(rowDef);

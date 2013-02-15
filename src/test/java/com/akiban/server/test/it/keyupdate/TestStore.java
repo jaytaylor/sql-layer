@@ -132,7 +132,7 @@ public class TestStore
 
     // Object state
 
-    private final SortedMap<HKey, TestRow> map = new TreeMap<HKey, TestRow>();
+    private final SortedMap<HKey, TestRow> map = new TreeMap<>();
     private final Store mainDelegate;
     private final PersistitStore persistitStore;
 }

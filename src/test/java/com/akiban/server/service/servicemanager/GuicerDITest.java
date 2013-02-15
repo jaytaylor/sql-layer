@@ -137,7 +137,7 @@ public final class GuicerDITest {
 
         @Override
         public String toString() {
-            List<String> dependencyClasses = new ArrayList<String>();
+            List<String> dependencyClasses = new ArrayList<>();
             for (Object dependency : dependencies) {
                 dependencyClasses.add(dependency.getClass().getSimpleName());
             }

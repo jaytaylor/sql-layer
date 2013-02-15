@@ -105,5 +105,5 @@ public abstract class TreeRecordVisitor
     private Session session;
     private PersistitStore store;
     private Exchange exchange;
-    private final Map<Integer, UserTable> ordinalToTable = new HashMap<Integer, UserTable>();
+    private final Map<Integer, UserTable> ordinalToTable = new HashMap<>();
 }

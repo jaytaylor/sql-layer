@@ -57,11 +57,11 @@ public class AkCollatorFactory {
 
     public final static AkCollator UCS_BINARY_COLLATOR = new AkCollatorBinary();
 
-    private final static Map<String, Collator> sourceMap = new HashMap<String, Collator>();
+    private final static Map<String, Collator> sourceMap = new HashMap<>();
 
-    private final static Map<String, SoftReference<AkCollator>> collatorMap = new ConcurrentHashMap<String, SoftReference<AkCollator>>();
+    private final static Map<String, SoftReference<AkCollator>> collatorMap = new ConcurrentHashMap<>();
 
-    private final static Map<Integer, SoftReference<AkCollator>> collationIdMap = new ConcurrentHashMap<Integer, SoftReference<AkCollator>>();
+    private final static Map<Integer, SoftReference<AkCollator>> collationIdMap = new ConcurrentHashMap<>();
 
     private final static String DEFAULT_PROPERTIES_FILE_NAME = "collation_data.properties";
 
@@ -179,7 +179,7 @@ public class AkCollatorFactory {
                 akCollator = new AkCollatorICU(name, scheme, collationId);
             }
 
-            ref = new SoftReference<AkCollator>(akCollator);
+            ref = new SoftReference<>(akCollator);
             collatorMap.put(name, ref);
             collationIdMap.put(collationId, ref);
             return akCollator;
@@ -252,7 +252,7 @@ public class AkCollatorFactory {
     }
 
     private static AkCollator mapToBinary(final String name) {
-        collatorMap.put(name, new SoftReference<AkCollator>(UCS_BINARY_COLLATOR));
+        collatorMap.put(name, new SoftReference<>(UCS_BINARY_COLLATOR));
         return UCS_BINARY_COLLATOR;
     }
 

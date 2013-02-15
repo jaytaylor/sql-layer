@@ -145,7 +145,7 @@ public class SerializableEnumSetTest
     @Test
     public void testToIntAfterLoadInt()
     {
-        SerializableEnumSet<TestEnum> x = new SerializableEnumSet<TestEnum>(TestEnum.class);
+        SerializableEnumSet<TestEnum> x = new SerializableEnumSet<>(TestEnum.class);
         x.loadInt(0);
         Assert.assertEquals(0, x.toInt());
     }

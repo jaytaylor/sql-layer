@@ -82,7 +82,7 @@ public class InsertGenerator extends OperatorGenerator{
         if (table.getPrimaryKey() != null) {
             PrimaryKey key = table.getPrimaryKey();
             int size  = key.getIndex().getKeyColumns().size();
-            pExpressions = new ArrayList<TPreparedExpression>(size);
+            pExpressions = new ArrayList<>(size);
             for (IndexColumn column : key.getIndex().getKeyColumns()) {
                 int fieldIndex = column.getColumn().getPosition();
                 pExpressions.add (new TPreparedField(stream.rowType.typeInstanceAt(fieldIndex), fieldIndex));
@@ -98,12 +98,12 @@ public class InsertGenerator extends OperatorGenerator{
     
     protected RowStream assembleValueScan(UserTable table) {
         RowStream stream = new RowStream();
-        List<BindableRow> bindableRows = new ArrayList<BindableRow>();
+        List<BindableRow> bindableRows = new ArrayList<>();
         
         int nfields = table.getColumns().size();
         TInstance[] types = new TInstance[nfields];
         TInstance varchar = Column.generateTInstance(null, Types.VARCHAR, 65535L, null, false);
-        List<TPreparedExpression> tExprs = new ArrayList<TPreparedExpression>();
+        List<TPreparedExpression> tExprs = new ArrayList<>();
         for (int index = 0; index < table.getColumns().size(); index++) {
             tExprs.add(index, new TPreparedParameter(index, varchar));
             types[index] = varchar;
@@ -119,7 +119,7 @@ public class InsertGenerator extends OperatorGenerator{
         int nfields = input.rowType.nFields();
         List<TPreparedExpression> insertsP = null;
         UserTableRowType targetRowType = schema().userTableRowType(table);
-        insertsP = new ArrayList<TPreparedExpression>(targetRowType.nFields());
+        insertsP = new ArrayList<>(targetRowType.nFields());
         
         for (int i = 0; i < nfields; ++i) {
             insertsP.add(new TPreparedField(input.rowType.typeInstanceAt(i), i));
@@ -179,13 +179,13 @@ public class InsertGenerator extends OperatorGenerator{
         OverloadResolver<TValidatedScalar> resolver = registryService().getScalarsResolver();
         TInstance instance = column.tInstance();
         
-        List<TPreptimeValue> input = new ArrayList<TPreptimeValue>(2);
+        List<TPreptimeValue> input = new ArrayList<>(2);
         input.add(PValueSources.fromObject(sequence.getSequenceName().getSchemaName(), AkType.VARCHAR));
         input.add(PValueSources.fromObject(sequence.getSequenceName().getTableName(), AkType.VARCHAR));
     
         TValidatedScalar overload = resolver.get("NEXTVAL", input).getOverload();
     
-        List<TPreparedExpression> arguments = new ArrayList<TPreparedExpression>(2);
+        List<TPreparedExpression> arguments = new ArrayList<>(2);
         arguments.add(new TPreparedLiteral(input.get(0).instance(), input.get(0).value()));
         arguments.add(new TPreparedLiteral(input.get(1).instance(), input.get(1).value()));
     
@@ -211,13 +211,13 @@ public class InsertGenerator extends OperatorGenerator{
     }
     
     private TPreparedExpression generateIfNull(TPreparedExpression expr1, TPreparedExpression expr2 ) {
-        List<TPreptimeValue> ifNullInput = new ArrayList<TPreptimeValue>(2);
+        List<TPreptimeValue> ifNullInput = new ArrayList<>(2);
         ifNullInput.add(new TNullExpression(expr1.resultType()).evaluateConstant(queryContext()));
         ifNullInput.add(new TNullExpression(expr2.resultType()).evaluateConstant(queryContext()));
 
         OverloadResult<TValidatedScalar> ifNullResult = registryService().getScalarsResolver().get("IFNULL", ifNullInput);
         TValidatedScalar ifNullOverload = ifNullResult.getOverload();
-        List<TPreparedExpression> ifNullArgs = new ArrayList<TPreparedExpression>(2);
+        List<TPreparedExpression> ifNullArgs = new ArrayList<>(2);
         ifNullArgs.add(expr1);
         ifNullArgs.add(expr2);
         return new TPreparedFunction(ifNullOverload, ifNullResult.getPickedInstance(),

@@ -467,7 +467,7 @@ public class TableDDL
     private final static Map<TypeId, Type> typeMap  = typeMapping();
     
     private static Map<TypeId, Type> typeMapping() {
-        HashMap<TypeId, Type> types = new HashMap<TypeId, Type>();
+        HashMap<TypeId, Type> types = new HashMap<>();
         types.put(TypeId.BOOLEAN_ID, Types.TINYINT);
         types.put(TypeId.TINYINT_ID, Types.TINYINT);
         types.put(TypeId.SMALLINT_ID, Types.SMALLINT);

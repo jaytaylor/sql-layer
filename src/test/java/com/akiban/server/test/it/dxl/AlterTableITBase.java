@@ -72,7 +72,7 @@ public class AlterTableITBase extends ITBase {
     protected static final TableName I_NAME = new TableName(SCHEMA, I_TABLE);
     protected static final List<TableChange> NO_CHANGES = Collections.emptyList();
 
-    protected Map<Integer,List<String>> checkedIndexes = new HashMap<Integer, List<String>>();
+    protected Map<Integer,List<String>> checkedIndexes = new HashMap<>();
 
     // Workaround for bug1052594 (Persistit brings trees back to life, this deletes data dir)
     @Override
@@ -93,7 +93,7 @@ public class AlterTableITBase extends ITBase {
     @After
     public void lookForDanglingTrees() throws Exception {
         // Collect all trees Persistit currently has
-        Set<String> storageTrees = new TreeSet<String>();
+        Set<String> storageTrees = new TreeSet<>();
         storageTrees.addAll(Arrays.asList(treeService().getDb().getVolume(EXPECTED_VOLUME_NAME).getTreeNames()));
 
         // Collect all trees in AIS
@@ -102,7 +102,7 @@ public class AlterTableITBase extends ITBase {
 
         // Subtract knownTrees from storage trees instead of requiring exact. There may be allocated trees that
         // weren't materialized (yet), for example.
-        Set<String> difference = new TreeSet<String>(storageTrees);
+        Set<String> difference = new TreeSet<>(storageTrees);
         difference.removeAll(knownTrees);
 
         assertEquals("Found orphaned trees", "[]", difference.toString());
@@ -154,7 +154,7 @@ public class AlterTableITBase extends ITBase {
         assertNotNull("Found old column " + oldColName, oldColumn);
 
         // Have to do this manually as parser doesn't support it, duplicates much of the work in AlterTableDDL
-        List<Column> columns = new ArrayList<Column>(tableCopy.getColumns());
+        List<Column> columns = new ArrayList<>(tableCopy.getColumns());
         tableCopy.dropColumns();
         for(Column column : columns) {
             Column.create(tableCopy, column, (column == oldColumn) ? newColName : null, null);
@@ -163,7 +163,7 @@ public class AlterTableITBase extends ITBase {
         Column newColumn = tableCopy.getColumn(newColName);
         assertNotNull("Found new column " + newColName, newColumn);
 
-        List<TableIndex> indexes = new ArrayList<TableIndex>(tableCopy.getIndexes());
+        List<TableIndex> indexes = new ArrayList<>(tableCopy.getIndexes());
         for(TableIndex index : indexes) {
             if(index.containsTableColumn(tableName, oldColName)) {
                 tableCopy.removeIndexes(Collections.singleton(index));
@@ -232,7 +232,7 @@ public class AlterTableITBase extends ITBase {
         updateAISGeneration();
         AkibanInformationSchema ais = ddl().getAIS(session());
         UserTable table = ais.getUserTable(tableID);
-        List<NewRow> tableRows = new ArrayList<NewRow>(scanAll(scanAllRequest(tableID, true)));
+        List<NewRow> tableRows = new ArrayList<>(scanAll(scanAllRequest(tableID, true)));
 
         for(TableIndex index : table.getIndexesIncludingInternal()) {
             if(index.getKeyColumns().size() == 1) {

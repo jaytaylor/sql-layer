@@ -168,6 +168,6 @@ public final class PropertyBindingsTest {
             return messages;
         }
 
-        private final List<String> messages = new ArrayList<String>();
+        private final List<String> messages = new ArrayList<>();
     }
 }

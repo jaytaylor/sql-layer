@@ -40,7 +40,7 @@ import java.util.TreeMap;
 class IndexIDsUnique implements AISValidation {
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        Map<Group, Map<Integer, Index>> byGroup = new HashMap<Group, Map<Integer, Index>>();
+        Map<Group, Map<Integer, Index>> byGroup = new HashMap<>();
         for (UserTable table : ais.getUserTables().values()) {
             for (Index index : table.getIndexesIncludingInternal()) {
                 checkIndexID(byGroup, table.getGroup(), index, output);
@@ -56,7 +56,7 @@ class IndexIDsUnique implements AISValidation {
     private static void checkIndexID(Map<Group, Map<Integer, Index>> byGroup, Group group, Index index, AISValidationOutput failures) {
         Map<Integer, Index> forGroup = byGroup.get(group);
         if (forGroup == null) {
-            forGroup = new TreeMap<Integer, Index>();
+            forGroup = new TreeMap<>();
             byGroup.put(group, forGroup);
         }
         Index other = forGroup.put(index.getIndexId(), index);

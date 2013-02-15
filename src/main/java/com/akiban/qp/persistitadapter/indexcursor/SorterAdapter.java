@@ -71,7 +71,7 @@ abstract class SorterAdapter<S,E,V> {
         }
         
         int nsort = ordering.sortColumns();
-        this.evaluations = new ArrayList<V>(nsort);
+        this.evaluations = new ArrayList<>(nsort);
         this.oOrderingTypes = aktypes(nsort);
         this.tOrderingTypes = tinstances(nsort);
         this.orderingCollators = new AkCollator[nsort];

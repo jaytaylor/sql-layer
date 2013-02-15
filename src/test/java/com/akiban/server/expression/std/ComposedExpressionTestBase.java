@@ -96,8 +96,8 @@ public abstract class ComposedExpressionTestBase {
     @Test
     public void isNullSpecial() // make sure two two methods in ExpressionComposer and Expression match
     {        
-        List<Expression> children = new ArrayList<Expression>();
-        List<String> messages = new ArrayList<String>();
+        List<Expression> children = new ArrayList<>();
+        List<String> messages = new ArrayList<>();
         children.add(new DummyExpression(messages, getTestInfo().getChildrenType(), new ExpressionAttribute[]{IS_CONSTANT}));
         for (int i = 1; i < getTestInfo().getChildrenCount(); ++i)
             children.add(new DummyExpression(messages, getTestInfo().getChildrenType(), IS_CONSTANT));
@@ -225,7 +225,7 @@ public abstract class ComposedExpressionTestBase {
     }
 
     private void checkMessages(List<String> messages, String singleMessage) {
-        List<String> expected = new ArrayList<String>();
+        List<String> expected = new ArrayList<>();
         int children = getTestInfo().getChildrenCount();
         assert children > 0 : children;
         for (int i=0; i < children; ++i) {
@@ -243,8 +243,8 @@ public abstract class ComposedExpressionTestBase {
         int childrenCount = getTestInfo().getChildrenCount();
         if (childrenCount < 1)
             throw new UnsupportedOperationException("childrenCount() must be > 0");
-        List<String> messages = new ArrayList<String>();
-        List<Expression> children = new ArrayList<Expression>();
+        List<String> messages = new ArrayList<>();
+        List<Expression> children = new ArrayList<>();
         children.add(new DummyExpression(messages, getTestInfo().getChildrenType(), attributes));
         for (int i=1; i < childrenCount; ++i) {
             children.add(new DummyExpression(messages, getTestInfo().getChildrenType(),IS_CONSTANT));

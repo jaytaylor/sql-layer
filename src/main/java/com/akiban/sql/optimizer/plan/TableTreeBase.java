@@ -34,7 +34,7 @@ import java.util.Map;
 public abstract class TableTreeBase<T extends TableSubTreeBase.TableNodeBase<T>>
                         extends TableSubTreeBase<T>
 {
-    private Map<UserTable,T> map = new HashMap<UserTable,T>();
+    private Map<UserTable,T> map = new HashMap<>();
 
     public TableTreeBase() {
         super(null);

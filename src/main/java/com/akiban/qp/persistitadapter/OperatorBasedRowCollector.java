@@ -332,7 +332,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     private List<UserTableRowType> ancestorTypes()
     {
         UserTableRowType queryRootType = schema.userTableRowType(queryRootTable);
-        List<UserTableRowType> ancestorTypes = new ArrayList<UserTableRowType>();
+        List<UserTableRowType> ancestorTypes = new ArrayList<>();
         if (predicateType != null && queryRootType != predicateType) {
             UserTable ancestor = predicateType.userTable();
             do {
@@ -345,12 +345,12 @@ public abstract class OperatorBasedRowCollector implements RowCollector
 
     private Set<AisRowType> cutTypes(boolean deep)
     {
-        Set<AisRowType> cutTypes = new HashSet<AisRowType>();
+        Set<AisRowType> cutTypes = new HashSet<>();
         if (!deep) {
             // Find the leafmost tables in requiredUserTables and cut everything below those. It is possible
             // that a column bit map includes, for example, customer and item but not order. This case is NOT
             // handled -- we'll just include (i.e. not cut) customer, order and item.
-            Set<UserTable> leafmostRequiredUserTables = new HashSet<UserTable>(requiredUserTables);
+            Set<UserTable> leafmostRequiredUserTables = new HashSet<>(requiredUserTables);
             for (UserTable requiredUserTable : requiredUserTables) {
                 UserTable ancestor = requiredUserTable.parentTable();
                 while (ancestor != null) {
@@ -416,11 +416,11 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     // If we're querying a group table, it contains those user tables containing columns in the
     // columnBitMap.
     private Operator operator;
-    protected final Set<UserTable> requiredUserTables = new HashSet<UserTable>();
+    protected final Set<UserTable> requiredUserTables = new HashSet<>();
     protected IndexKeyRange indexKeyRange;
     private Cursor cursor;
     private int rowCount = 0;
-    private ShareHolder<Row> currentRow = new ShareHolder<Row>();
+    private ShareHolder<Row> currentRow = new ShareHolder<>();
     private boolean closed = true; // Not false, so that initial call to hasMore, prior to open, will proceed to call open.
     private boolean usePVals = Types3Switch.ON;
 

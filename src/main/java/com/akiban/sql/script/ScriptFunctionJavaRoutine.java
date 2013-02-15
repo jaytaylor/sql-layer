@@ -124,7 +124,7 @@ public class ScriptFunctionJavaRoutine extends ServerJavaRoutine
     
     @Override
     public Queue<ResultSet> getDynamicResultSets() {
-        Queue<ResultSet> result = new ArrayDeque<ResultSet>();
+        Queue<ResultSet> result = new ArrayDeque<>();
         for (int index = getInvocation().getRoutine().getParameters().size();
              index < functionArgs.length; index++) {
             ResultSet rs = (ResultSet)((Object[])functionArgs[index])[0];
