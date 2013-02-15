@@ -76,7 +76,7 @@ public class MUnhex extends TScalarBase {
             @Override
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
                 TPreptimeValue preptimeValue = inputs.get(0);
-                int stringLength = preptimeValue.instance().attribute(StringAttribute.LENGTH);
+                int stringLength = preptimeValue.instance().attribute(StringAttribute.MAX_LENGTH);
                 int varbinLength = stringLength / 2;
                 if (varbinLength > VARBINARY_MAX_LENGTH)
                     return MBinary.VARBINARY.instance(VARBINARY_MAX_LENGTH, preptimeValue.isNullable());
