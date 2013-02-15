@@ -143,7 +143,7 @@ public class DirectResource {
     public Response loadModule(@PathParam("op") final String op, @PathParam("schema") final String schema,
             @Context final UriInfo uri) throws Exception {
         final MultivaluedMap<String, String> params = uri.getQueryParameters();
-        if ("load".equals(op)) {
+        if ("module".equals(op)) {
             final String moduleName = params.getFirst("name");
             final List<String> urls = params.get("url");
             return Response.status(Response.Status.OK).entity(new StreamingOutput() {
@@ -189,7 +189,7 @@ public class DirectResource {
     public Response removeModule(@PathParam("op") final String op, @PathParam("schema") final String schema,
             @Context final UriInfo uri) throws Exception {
         final MultivaluedMap<String, String> params = uri.getQueryParameters();
-        if ("load".equals(op)) {
+        if ("module".equals(op)) {
             final String moduleName = params.getFirst("name");
             return Response.status(Response.Status.OK).entity(new StreamingOutput() {
                 @Override

@@ -38,6 +38,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.sql.parser.GetCurrentConnectionNode;
 
 public abstract class ClassBuilder {
     final static String PACKAGE = "com.akiban.direct.entity";
@@ -125,7 +126,7 @@ public abstract class ClassBuilder {
         Map<Integer, CtClass> implClassMap = new TreeMap<Integer, CtClass>();
         for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
             helper.generateImplementationClass(table, schema);
-            implClassMap.put(table.getTableId(), helper.getCurrentClasse());
+            implClassMap.put(table.getTableId(), helper.getCurrentClass());
         }
         return implClassMap;
     }

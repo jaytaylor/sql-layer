@@ -52,10 +52,9 @@ public class DirectClassLoader extends URLClassLoader {
 
     final Set<String> generated = new HashSet<String>();
 
-    private final static String[] DIRECT_INTERFACES = { DirectContext.class.getName(),
-            DirectModule.class.getName(), DirectObject.class.getName(),
-            DirectList.class.getName(), AbstractDirectObject.class.getName(),
-            DirectResultSet.class.getName(),};
+    private final static String[] DIRECT_INTERFACES = { DirectContext.class.getName(), DirectModule.class.getName(),
+            DirectObject.class.getName(), DirectList.class.getName(), AbstractDirectObject.class.getName(),
+            DirectResultSet.class.getName(), };
 
     public DirectClassLoader(ClassLoader baseLoader) {
         super(new URL[0], baseLoader);
@@ -169,16 +168,19 @@ public class DirectClassLoader extends URLClassLoader {
         return clazz;
     }
 
+    @SuppressWarnings("unchecked")
     public void registerDirectObjectClasses(Map<Integer, CtClass> implClasses) throws Exception {
         try { // TODO
-            for (final Map.Entry<Integer, CtClass> entry : implClasses.entrySet()) {
-                CtClass c = entry.getValue();
+            for (final CtClass c : implClasses.values()) {
                 generated.add(c.getName());
                 byte[] b = c.toBytecode();
-                @SuppressWarnings("unchecked")
                 Class<? extends DirectObject> cl = (Class<? extends DirectObject>) defineClass(c.getName(), b, 0,
                         b.length);
                 resolveClass(cl);
+                if (!cl.isInterface()) {
+                    Class<?> iface = cl.getInterfaces()[0];
+                    Direct.registerDirectObjectClass(iface, (Class<? extends DirectObject>) cl);
+                }
             }
         } catch (Exception e) {
             throw e;

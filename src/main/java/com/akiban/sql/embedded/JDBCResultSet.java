@@ -1537,12 +1537,10 @@ public class JDBCResultSet implements DirectResultSet
         return getObject(findColumn(columnLabel), type);
     }
     
-    public Object getEntity(final Class<?> c) throws SQLException {
-        Object o = Direct.objectForRow(c);
+    public DirectObject getEntity(final Class<?> c) throws SQLException {
+        DirectObject o = Direct.objectForRow(c);
         if (o != null) {
-            if (o instanceof DirectObject) {
-                ((DirectObject)o).row(row);
-            }
+            o.row(row);
             return o;
         }
         throw new JDBCException("No entity class for row");

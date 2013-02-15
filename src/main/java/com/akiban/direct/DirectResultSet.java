@@ -31,6 +31,6 @@ import java.sql.SQLException;
 
 public interface DirectResultSet extends ResultSet {
 
-    Object getEntity(Class<?> c) throws SQLException;
+    DirectObject getEntity(Class<?> c) throws SQLException;
     
 }

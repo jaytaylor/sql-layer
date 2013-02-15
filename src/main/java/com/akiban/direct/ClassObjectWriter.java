@@ -100,7 +100,7 @@ public class ClassObjectWriter extends ClassBuilder {
         currentCtClass = ctClasses.pop();
     }
 
-    CtClass getCurrentClasse() {
+    CtClass getCurrentClass() {
         return currentCtClass;
     }
 

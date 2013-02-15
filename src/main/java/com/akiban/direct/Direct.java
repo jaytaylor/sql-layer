@@ -37,33 +37,37 @@ import java.util.Map;
  */
 public class Direct {
 
-    private final static ThreadLocal<Map<Class<?>, Object>> instanceMap = new ThreadLocal<Map<Class<? >, Object>>() {
+    private final static Map<Class<?>, Class<? extends DirectObject>> classMap = new HashMap<>();
+    private final static ThreadLocal<Map<Class<?>, DirectObject>> instanceMap = new ThreadLocal<Map<Class<?>, DirectObject>>() {
 
         @Override
-        protected Map<Class<?>, Object> initialValue() {
-            return new HashMap<Class<?>, Object>();
+        protected Map<Class<?>, DirectObject> initialValue() {
+            return new HashMap<Class<?>, DirectObject>();
         }
     };
+    
+    public static void registerDirectObjectClass(final Class<?> iface, final Class<? extends DirectObject> impl) {
+        classMap.put(iface, impl);
+    }
 
     /**
      * Return a thread-private instance of an entity object of the registered
      * for a given Row, or null if there is none.
      * 
      */
-    public static Object objectForRow(final Class<?> c) {
-        Object o = instanceMap.get().get(c);
+    public static DirectObject objectForRow(final Class<?> c) {
+        DirectObject o = instanceMap.get().get(c);
         if (o == null) {
             try {
-                o = c.newInstance();
-            } catch (InstantiationException | IllegalAccessException e) {
+                Class<? extends DirectObject> cl = classMap.get(c);
+                o = cl.newInstance();
+            } catch (InstantiationException | IllegalAccessException | ClassCastException e) {
                 throw new RuntimeException(e);
             }
             if (o != null) {
                 instanceMap.get().put(c, o);
             }
-            return o;
-        } else {
-            return null;
         }
+        return o;
     }
 }
