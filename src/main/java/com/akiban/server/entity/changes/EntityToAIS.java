@@ -300,16 +300,16 @@ public class EntityToAIS extends AbstractEntityVisitor {
             if (serialization != null) {
                 switch (serialization) {
                 case CHARSET:
-                    info.charset = maybeString(fullProps, t3Attr.getKey(), AkibanInformationSchema.getDefaultCharset());
+                    info.charset = maybeString(fullProps, t3Attr.getKey());
                     break;
                 case COLLATION:
-                    info.collation = maybeString(fullProps, t3Attr.getKey(), AkibanInformationSchema.getDefaultCollation());
+                    info.collation = maybeString(fullProps, t3Attr.getKey());
                     break;
                 case LONG_1:
-                    info.param1 = maybeLong(fullProps, t3Attr.getKey(), type.type, 0);
+                    info.param1 = maybeLong(fullProps, t3Attr.getKey());
                     break;
                 case LONG_2:
-                    info.param2 = maybeLong(fullProps, t3Attr.getKey(), type.type, 1);
+                    info.param2 = maybeLong(fullProps, t3Attr.getKey());
                     break;
                 default:
                     throw new AssertionError(serialization + " for attribute " + t3Attr);
@@ -331,14 +331,10 @@ public class EntityToAIS extends AbstractEntityVisitor {
         return false;
     }
 
-    private static Long maybeLong(Map<String, Object> props, com.akiban.server.types3.Attribute attribute, Type type, int defaultsIndex) {
-        Object o;
+    private static Long maybeLong(Map<String, Object> props, com.akiban.server.types3.Attribute attribute) {
+        Object o = null;
         if (props.containsKey(attribute.name().toUpperCase())) {
             o = props.remove(attribute.name());
-        }
-        else {
-            Long[] defaults = Types.defaultParams().get(type);
-            o = (defaults == null) ? null : defaults[defaultsIndex];
         }
         if (o == null)
             return null;
@@ -348,10 +344,10 @@ public class EntityToAIS extends AbstractEntityVisitor {
             return ((Number)o).longValue();
     }
 
-    private static String maybeString(Map<String, Object> props, com.akiban.server.types3.Attribute attribute, String defaultValue) {
-        Object o = props.containsKey(attribute.name().toUpperCase())
-                ? props.remove(attribute.name())
-                : defaultValue;
+    private static String maybeString(Map<String, Object> props, com.akiban.server.types3.Attribute attribute) {
+        Object o = null;
+        if (props.containsKey(attribute.name().toUpperCase()))
+            o = props.remove(attribute.name());
         return (o != null) ? o.toString() : null;
     }
 
