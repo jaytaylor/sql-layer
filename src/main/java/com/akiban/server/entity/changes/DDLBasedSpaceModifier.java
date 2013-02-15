@@ -27,14 +27,10 @@
 package com.akiban.server.entity.changes;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.CharsetAndCollation;
-import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.NopVisitor;
 import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.Type;
-import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.TableChange;
 import com.akiban.server.api.DDLFunctions;
@@ -44,16 +40,11 @@ import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Space;
 import com.akiban.server.entity.model.Validation;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.types3.TInstance;
-import com.google.common.base.Function;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
 import java.util.UUID;
 
 public class DDLBasedSpaceModifier implements SpaceModificationHandler {
@@ -77,16 +68,14 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     private AttributeLookups oldLookups;
     private AttributeLookups newLookups;
 
-    static final Function<String, Type> typeNameResolver = createTypeNameResolver();
 
-    public DDLBasedSpaceModifier(DDLFunctions ddlFunctions, Session session, String schemaName, Space newSpace)
-    {
+    public DDLBasedSpaceModifier(DDLFunctions ddlFunctions, Session session, String schemaName, Space newSpace) {
         this.ddlFunctions = ddlFunctions;
         this.session = session;
         this.schemaName = schemaName;
         this.newSpaceLookup = new SpaceLookups(newSpace);
         this.oldAIS = ddlFunctions.getAIS(session);
-        EntityToAIS eToAIS = new EntityToAIS(schemaName, typeNameResolver);
+        EntityToAIS eToAIS = new EntityToAIS(schemaName);
         newSpace.visit(eToAIS);
         this.newAIS = eToAIS.getAIS();
     }
@@ -364,32 +353,6 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
         throw new IllegalStateException("Unknown attribute type: " + a);
     }
 
-    private static Function<String, Type> createTypeNameResolver() {
-        AkibanInformationSchema ais = new AkibanInformationSchema();
-        Collection<Type> aisTypes = ais.getTypes();
-        final Map<String, Type> types = new HashMap<>(aisTypes.size());
-        CharsetAndCollation dummyCharset = ais.getCharsetAndCollation();
-        Set<Type> unsupportedTypes = Types.unsupportedTypes();
-        for (Type type : aisTypes) {
-            if (unsupportedTypes.contains(type))
-                continue;
-            // We create a dummy instance using values we don't care about, but which will be valid for all types.
-            // All we need from it is the TClass's name
-            TInstance dummyInstance = Column.generateTInstance(dummyCharset, type, 3L, 3L, true);
-            String typeName = dummyInstance.typeClass().name().unqualifiedName();
-            if (null != types.put(typeName.toLowerCase(), type))
-                throw new RuntimeException("can't compute (name -> Type) map because of conflict: " + typeName);
-        }
-        return new Function<String, Type>() {
-            @Override
-            public Type apply(String input) {
-                Type type = types.get(input.toLowerCase());
-                if (type == null)
-                    throw new NoSuchElementException(input);
-                return type;
-            }
-        };
-    }
 
     private static class TableChangeInfo {
         public String newName;

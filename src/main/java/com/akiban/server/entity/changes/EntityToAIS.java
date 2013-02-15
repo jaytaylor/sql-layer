@@ -28,6 +28,7 @@ package com.akiban.server.entity.changes;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Join;
@@ -41,6 +42,7 @@ import com.akiban.server.entity.model.Entity;
 import com.akiban.server.entity.model.EntityColumn;
 import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Validation;
+import com.akiban.server.types3.TInstance;
 import com.google.common.base.Function;
 import com.google.common.collect.BiMap;
 import org.slf4j.Logger;
@@ -48,9 +50,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
 
@@ -63,14 +67,14 @@ public class EntityToAIS extends AbstractEntityVisitor {
     private final String schemaName;
     private final AISBuilder builder = new AISBuilder();
     private final List<TableInfo> tableInfoStack = new ArrayList<>();
-    private final Function<String, Type> typeNameResolver;
     private TableName groupName = null;
     private TableInfo curTable = null;
     private Set<String> uniqueValidations = new HashSet<>();
 
-    public EntityToAIS(String schemaName, Function<String, Type> typeNameResolver) {
+    private static final Function<String, Type> typeNameResolver = createTypeNameResolver();
+
+    public EntityToAIS(String schemaName) {
         this.schemaName = schemaName;
-        this.typeNameResolver = typeNameResolver;
     }
 
     //
@@ -317,6 +321,33 @@ public class EntityToAIS extends AbstractEntityVisitor {
         public String toString() {
             return name;
         }
+    }
+
+    private static Function<String, Type> createTypeNameResolver() {
+        AkibanInformationSchema ais = new AkibanInformationSchema();
+        Collection<Type> aisTypes = ais.getTypes();
+        final Map<String, Type> types = new HashMap<>(aisTypes.size());
+        CharsetAndCollation dummyCharset = ais.getCharsetAndCollation();
+        Set<Type> unsupportedTypes = Types.unsupportedTypes();
+        for (Type type : aisTypes) {
+            if (unsupportedTypes.contains(type))
+                continue;
+            // We create a dummy instance using values we don't care about, but which will be valid for all types.
+            // All we need from it is the TClass's name
+            TInstance dummyInstance = Column.generateTInstance(dummyCharset, type, 3L, 3L, true);
+            String typeName = dummyInstance.typeClass().name().unqualifiedName();
+            if (null != types.put(typeName.toLowerCase(), type))
+                throw new RuntimeException("can't compute (name -> Type) map because of conflict: " + typeName);
+        }
+        return new Function<String, Type>() {
+            @Override
+            public Type apply(String input) {
+                Type type = types.get(input.toLowerCase());
+                if (type == null)
+                    throw new NoSuchElementException(input);
+                return type;
+            }
+        };
     }
 
     private static class ColumnInfo {
