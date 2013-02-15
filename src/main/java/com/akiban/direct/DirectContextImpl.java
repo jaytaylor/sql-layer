@@ -30,8 +30,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-import com.akiban.sql.embedded.EmbeddedJDBCService;
-
 public class DirectContextImpl implements DirectContext {
     public static final String SCHEMA_NAME = "test";
     public static final String CONNECTION_URL = "jdbc:default:connection";
@@ -43,11 +41,6 @@ public class DirectContextImpl implements DirectContext {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
-    }
-
-    // TODO - temporary, remove
-    public DirectObject getDirectObject(final int tableId) {
-        return Direct.objectForTableId(tableId);
     }
 
 }

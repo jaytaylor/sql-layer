@@ -52,9 +52,10 @@ public class DirectClassLoader extends URLClassLoader {
 
     final Set<String> generated = new HashSet<String>();
 
-    private final static String[] DIRECT_INTERFACES = { com.akiban.direct.DirectContext.class.getName(),
-            com.akiban.direct.DirectModule.class.getName(), com.akiban.direct.DirectObject.class.getName(),
-            com.akiban.direct.DirectList.class.getName(), com.akiban.direct.AbstractDirectObject.class.getName(),};
+    private final static String[] DIRECT_INTERFACES = { DirectContext.class.getName(),
+            DirectModule.class.getName(), DirectObject.class.getName(),
+            DirectList.class.getName(), AbstractDirectObject.class.getName(),
+            DirectResultSet.class.getName(),};
 
     public DirectClassLoader(ClassLoader baseLoader) {
         super(new URL[0], baseLoader);
@@ -172,14 +173,12 @@ public class DirectClassLoader extends URLClassLoader {
         try { // TODO
             for (final Map.Entry<Integer, CtClass> entry : implClasses.entrySet()) {
                 CtClass c = entry.getValue();
-                int tableId = entry.getKey();
                 generated.add(c.getName());
                 byte[] b = c.toBytecode();
                 @SuppressWarnings("unchecked")
                 Class<? extends DirectObject> cl = (Class<? extends DirectObject>) defineClass(c.getName(), b, 0,
                         b.length);
                 resolveClass(cl);
-                Direct.registerEntityDaoPrototype(tableId, cl);
             }
         } catch (Exception e) {
             throw e;

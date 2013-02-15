@@ -28,8 +28,6 @@ package com.akiban.direct;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.akiban.qp.row.Row;
-
 /**
  * TODO - Total hack that this is current static - need to a way to get this
  * into the context for JDBCResultSet.
@@ -39,57 +37,33 @@ import com.akiban.qp.row.Row;
  */
 public class Direct {
 
-    static Map<Integer, Class<? extends DirectObject>> classMap = new HashMap<>();
-    static ThreadLocal<Map<Integer, DirectObject>> instanceMap = new ThreadLocal<Map<Integer, DirectObject>>() {
+    private final static ThreadLocal<Map<Class<?>, Object>> instanceMap = new ThreadLocal<Map<Class<? >, Object>>() {
 
         @Override
-        protected Map<Integer, DirectObject> initialValue() {
-            return new HashMap<Integer, DirectObject>();
+        protected Map<Class<?>, Object> initialValue() {
+            return new HashMap<Class<?>, Object>();
         }
     };
-
-    /**
-     * Register the class of an entity object with a tableId. Used by
-     * JDBCResultSet.getEntity().
-     * 
-     * @param tableId
-     * @param c
-     */
-    public static void registerEntityDaoPrototype(final int tableId, final Class<? extends DirectObject> c) {
-        classMap.put(tableId, c);
-    }
 
     /**
      * Return a thread-private instance of an entity object of the registered
      * for a given Row, or null if there is none.
      * 
      */
-    public static DirectObject objectForRow(final Row row) {
-        if (row.rowType().hasUserTable()) {
-            final int tableId = row.rowType().typeId();
-            return objectForTableId(tableId);
-        } else {
-            return null;
-        }
-    }
-    
-    public static DirectObject objectForTableId(final int tableId) {
-        DirectObject o = instanceMap.get().get(tableId);
-        if (o != null) {
-            return o;
-        }
-        Class<? extends DirectObject> c = classMap.get(tableId);
-        if (c != null) {
+    public static Object objectForRow(final Class<?> c) {
+        Object o = instanceMap.get().get(c);
+        if (o == null) {
             try {
                 o = c.newInstance();
             } catch (InstantiationException | IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
+            if (o != null) {
+                instanceMap.get().put(c, o);
+            }
+            return o;
+        } else {
+            return null;
         }
-        if (o != null) {
-            instanceMap.get().put(tableId, o);
-        }
-        return o;
     }
-
 }

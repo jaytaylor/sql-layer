@@ -26,10 +26,11 @@
 
 package com.akiban.direct;
 
-import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
-public interface DirectContext {
+public interface DirectResultSet extends ResultSet {
 
-    Connection getConnection();
+    Object getEntity(Class<?> c) throws SQLException;
     
 }

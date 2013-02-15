@@ -50,8 +50,9 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Map;
 
-import com.akiban.direct.DirectObject;
 import com.akiban.direct.Direct;
+import com.akiban.direct.DirectObject;
+import com.akiban.direct.DirectResultSet;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
 import com.akiban.server.types.AkType;
@@ -61,7 +62,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.sql.server.ServerJavaValues;
 import com.akiban.sql.server.ServerQueryContext;
 
-public class JDBCResultSet implements ResultSet
+public class JDBCResultSet implements DirectResultSet
 {
     protected final JDBCStatement statement;
     protected final JDBCResultSetMetaData metaData;
@@ -1536,10 +1537,12 @@ public class JDBCResultSet implements ResultSet
         return getObject(findColumn(columnLabel), type);
     }
     
-    public DirectObject getEntity() throws SQLException {
-        DirectObject o = Direct.objectForRow(row);
+    public Object getEntity(final Class<?> c) throws SQLException {
+        Object o = Direct.objectForRow(c);
         if (o != null) {
-            o.row(row);
+            if (o instanceof DirectObject) {
+                ((DirectObject)o).row(row);
+            }
             return o;
         }
         throw new JDBCException("No entity class for row");
