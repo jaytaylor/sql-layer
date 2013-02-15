@@ -87,7 +87,7 @@ public final class EntityResource {
                 AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
                 ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
                 Space space = AisToSpace.create(ais);
-                String json = space.toJson();
+                String json = space.toJson() + "\n";
                 return Response.status(Response.Status.OK).entity(json).build();
             }
             finally {
