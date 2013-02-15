@@ -99,10 +99,10 @@ final class EntityBuilder {
             Collection<Validation> validations = scalar.getValidation();
             if (!tInstance.nullability())
                 validations.add(new Validation("required", Boolean.TRUE));
-            for (int classAttr = 0, max = tClass.nAttributes(); classAttr < max; ++classAttr) {
-                String attrName = tClass.attributeName(classAttr);
-                Object attrValue = tInstance.attributeToObject(classAttr);
-                if (tClass.attributeIsPhysical(classAttr))
+            for (com.akiban.server.types3.Attribute t3Attr : tClass.attributes()) {
+                String attrName = t3Attr.name();
+                Object attrValue = tInstance.attributeToObject(t3Attr);
+                if (tClass.attributeIsPhysical(t3Attr))
                     properties.put(attrName, attrValue);
                 else
                     validations.add(new Validation(attrName, attrValue));

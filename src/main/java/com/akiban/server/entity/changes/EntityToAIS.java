@@ -42,7 +42,9 @@ import com.akiban.server.entity.model.Entity;
 import com.akiban.server.entity.model.EntityColumn;
 import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Validation;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.texpressions.Serialization;
 import com.google.common.base.Function;
 import com.google.common.collect.BiMap;
 import org.slf4j.Logger;
@@ -71,7 +73,18 @@ public class EntityToAIS extends AbstractEntityVisitor {
     private TableInfo curTable = null;
     private Set<String> uniqueValidations = new HashSet<>();
 
-    private static final Function<String, Type> typeNameResolver = createTypeNameResolver();
+    private static final Function<String, TypeInfo> typeNameResolver = createTypeNameResolver();
+
+    private static final class TypeInfo {
+
+        private TypeInfo(Type type, TClass tClass) {
+            this.type = type;
+            this.tClass = tClass;
+        }
+
+        private final Type type;
+        private final TClass tClass;
+    }
 
     public EntityToAIS(String schemaName) {
         this.schemaName = schemaName;
@@ -98,7 +111,7 @@ public class EntityToAIS extends AbstractEntityVisitor {
 
     @Override
     public void visitScalar(String name, Attribute scalar) {
-        Type scalarType = typeNameResolver.apply(scalar.getType());
+        TypeInfo scalarType = typeNameResolver.apply(scalar.getType());
         assert scalarType != null : name;
         ColumnInfo info = getColumnInfo(scalarType,
                                         scalar.getProperties(),
@@ -109,7 +122,7 @@ public class EntityToAIS extends AbstractEntityVisitor {
         }
         Column column = builder.column(schemaName, curTable.name,
                                        name, curTable.nextColPos++,
-                                       scalarType.name(), info.param1, info.param2,
+                                       scalarType.type.name(), info.param1, info.param2,
                                        info.nullable, false /*isAutoInc*/,
                                        info.charset, info.collation);
         column.setUuid(scalar.getUUID());
@@ -262,24 +275,45 @@ public class EntityToAIS extends AbstractEntityVisitor {
         }
     }
 
-    private static ColumnInfo getColumnInfo(Type type, Map<String,Object> props, Collection<Validation> validations) {
+    private static ColumnInfo getColumnInfo(TypeInfo type, Map<String,Object> props, Collection<Validation> validations)
+    {
         ColumnInfo info = new ColumnInfo();
-        if(type == Types.DECIMAL || type == Types.U_DECIMAL) {
-            info.param1 = maybeLong(props.get("precision"));
-            info.param2 = maybeLong(props.get("scale"));
-        }
-        if(Types.isTextType(type)) {
-            info.charset = maybeString(props.get("charset"));
-            info.collation = maybeString(props.get("collation"));
-        }
+
+        Map<String,Object> fullProps = new HashMap<>();
+        for (Map.Entry<String, Object> entry : props.entrySet())
+            fullProps.put(entry.getKey().toUpperCase(), entry.getValue());
+
         for(Validation v : validations) {
             if("required".equals(v.getName())) {
                 boolean isRequired = (Boolean)v.getValue();
                 info.nullable = !isRequired;
-            } else if("max_length".equals(v.getName())) {
-                info.param1 = maybeLong(v.getValue());
-            } else {
-                LOG.warn("Ignored scalar validation on table: {}", v);
+            }
+            else {
+                fullProps.put(v.getName().toUpperCase(), v.getValue());
+            }
+        }
+
+        for (Map.Entry<? extends com.akiban.server.types3.Attribute, ? extends Serialization> t3Attr
+                : type.tClass.attributeSerializations().entrySet())
+        {
+            Serialization serialization = t3Attr.getValue();
+            if (serialization != null) {
+                switch (serialization) {
+                case CHARSET:
+                    info.charset = maybeString(fullProps, t3Attr.getKey(), AkibanInformationSchema.getDefaultCharset());
+                    break;
+                case COLLATION:
+                    info.collation = maybeString(fullProps, t3Attr.getKey(), AkibanInformationSchema.getDefaultCollation());
+                    break;
+                case LONG_1:
+                    info.param1 = maybeLong(fullProps, t3Attr.getKey(), type.type, 0);
+                    break;
+                case LONG_2:
+                    info.param2 = maybeLong(fullProps, t3Attr.getKey(), type.type, 1);
+                    break;
+                default:
+                    throw new AssertionError(serialization + " for attribute " + t3Attr);
+                }
             }
         }
         return info;
@@ -294,11 +328,27 @@ public class EntityToAIS extends AbstractEntityVisitor {
         return false;
     }
 
-    private static Long maybeLong(Object o) {
-        return (o != null) ? ((Number)o).longValue() : null;
+    private static Long maybeLong(Map<String, Object> props, com.akiban.server.types3.Attribute attribute, Type type, int defaultsIndex) {
+        Object o;
+        if (props.containsKey(attribute.name().toUpperCase())) {
+            o = props.get(attribute.name());
+        }
+        else {
+            Long[] defaults = Types.defaultParams().get(type);
+            o = (defaults == null) ? null : defaults[defaultsIndex];
+        }
+        if (o == null)
+            return null;
+        else if (o.getClass() == Long.class)
+            return (Long) o;
+        else
+            return ((Number)o).longValue();
     }
 
-    private static String maybeString(Object o) {
+    private static String maybeString(Map<String, Object> props, com.akiban.server.types3.Attribute attribute, String defaultValue) {
+        Object o = props.containsKey(attribute.name().toUpperCase())
+                ? props.get(attribute.name())
+                : defaultValue;
         return (o != null) ? o.toString() : null;
     }
 
@@ -323,10 +373,10 @@ public class EntityToAIS extends AbstractEntityVisitor {
         }
     }
 
-    private static Function<String, Type> createTypeNameResolver() {
+    private static Function<String, TypeInfo> createTypeNameResolver() {
         AkibanInformationSchema ais = new AkibanInformationSchema();
         Collection<Type> aisTypes = ais.getTypes();
-        final Map<String, Type> types = new HashMap<>(aisTypes.size());
+        final Map<String, TypeInfo> types = new HashMap<>(aisTypes.size());
         CharsetAndCollation dummyCharset = ais.getCharsetAndCollation();
         Set<Type> unsupportedTypes = Types.unsupportedTypes();
         for (Type type : aisTypes) {
@@ -335,14 +385,15 @@ public class EntityToAIS extends AbstractEntityVisitor {
             // We create a dummy instance using values we don't care about, but which will be valid for all types.
             // All we need from it is the TClass's name
             TInstance dummyInstance = Column.generateTInstance(dummyCharset, type, 3L, 3L, true);
-            String typeName = dummyInstance.typeClass().name().unqualifiedName();
-            if (null != types.put(typeName.toLowerCase(), type))
+            TClass tClass = dummyInstance.typeClass();
+            String typeName = tClass.name().unqualifiedName();
+            if (null != types.put(typeName.toLowerCase(), new TypeInfo(type, tClass)))
                 throw new RuntimeException("can't compute (name -> Type) map because of conflict: " + typeName);
         }
-        return new Function<String, Type>() {
+        return new Function<String, TypeInfo>() {
             @Override
-            public Type apply(String input) {
-                Type type = types.get(input.toLowerCase());
+            public TypeInfo apply(String input) {
+                TypeInfo type = types.get(input.toLowerCase());
                 if (type == null)
                     throw new NoSuchElementException(input);
                 return type;
