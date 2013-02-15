@@ -9,9 +9,21 @@
                     "validation": [
                         {
                             "required": true
+                        },
+                        {
+                            "width": 11
                         }
                     ],
                     "spinal_pos": 0
+                },
+                "first_name": {
+                    "scalar": "33563d56-7737-11e2-a970-980e7188419e",
+                    "type": "integer",
+                    "validation": [
+                        {
+                            "width": 11
+                        }
+                    ]
                 },
                 "orders": {
                     "collection": "c5cedd91-9751-41c2-9417-8c29117ca2c9",
@@ -49,6 +61,9 @@
                         }
                     }
                 }
+            },
+            "indexes" : {
+                "first_name" : [ ["customer", "first_name"] ]
             }
         }
     }

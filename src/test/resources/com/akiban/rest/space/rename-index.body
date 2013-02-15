@@ -63,7 +63,7 @@
                 }
             },
             "indexes" : {
-                "first_name" : [ ["customer", "first_name"] ]
+                "customer_name" : [ ["customer", "first_name"] ]
             }
         }
     }

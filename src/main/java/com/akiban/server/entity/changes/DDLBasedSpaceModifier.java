@@ -240,7 +240,7 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
 
     @Override
     public void renameIndex(EntityIndex index, String oldName, String newName) {
-        errors.add("Renaming index is note yet supported: " + oldName + "," + newName);
+        errors.add("Renaming index is not yet supported: " + oldName + "=>" + newName);
     }
 
     @Override
