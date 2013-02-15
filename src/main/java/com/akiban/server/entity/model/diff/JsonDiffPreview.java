@@ -379,9 +379,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
     
     private void startObject() throws IOException
     {
-        if(hadObject) {
-            jsonGen.writeRaw(',');
-        }
+        hadObject = true;
         jsonGen.writeRaw('\n');
         jsonGen.writeStartObject();
     }
@@ -389,7 +387,6 @@ public class JsonDiffPreview implements SpaceModificationHandler
     private void endObject() throws IOException
     {
         jsonGen.writeEndObject();
-        hadObject = true;
     }
 
     private void entry(String name, UUID uuid) throws IOException
