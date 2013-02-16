@@ -1,5 +1,6 @@
 #
-# bug1127376 - akdump gave broken output for schema with long name (see queries below)
+# bug1127376 - akdump gave broken output for schema with long name (see queries below) as the generated
+#              constraint name was actually longer than the declared max.
 #
 ---
 - Statement: CREATE TABLE
@@ -47,6 +48,6 @@
 - output: [["child_column_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"]]
 
 ---
-- Statement: DROP SCHEMA 'schema_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' CASCADE
+- Statement: DROP SCHEMA schema_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx CASCADE
 
 ...

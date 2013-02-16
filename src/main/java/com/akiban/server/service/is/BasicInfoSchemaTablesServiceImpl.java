@@ -1343,6 +1343,9 @@ public class BasicInfoSchemaTablesServiceImpl
     //
 
     static AkibanInformationSchema createTablesToRegister() {
+        // bug1127376: Grouping constraint names are auto-generated and very long. Use a big value until that changes.
+        final int GROUPING_CONSTRAINT_MAX = PATH_MAX;
+
         NewAISBuilder builder = AISBBasedBuilder.create();
         builder.userTable(SCHEMATA)
                 .colString("schema_name", IDENT_MAX, false)
@@ -1392,8 +1395,8 @@ public class BasicInfoSchemaTablesServiceImpl
         builder.userTable(TABLE_CONSTRAINTS)
                 .colString("schema_name", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
-                .colString("constraint_name", IDENT_MAX, false)
-                .colString("constraint_type", 32, false);
+                .colString("constraint_name", GROUPING_CONSTRAINT_MAX, false)
+                .colString("constraint_type", DESCRIPTOR_MAX, false);
         //primary key (schema_name, table_name, constraint_name)
         //foreign key (schema_name, table_name) references TABLES
         builder.userTable(REFERENTIAL_CONSTRAINTS)
@@ -1414,16 +1417,16 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("constraint_table_name", IDENT_MAX, false)
                 .colString("path", IDENT_MAX, false)
                 .colBigInt("depth", false)
-                .colString("constraint_name", IDENT_MAX, true)
+                .colString("constraint_name", GROUPING_CONSTRAINT_MAX, true)
                 .colString("unique_schema_name", IDENT_MAX, true)
                 .colString("unique_table_name", IDENT_MAX, true)
-                .colString("unique_constraint_name", IDENT_MAX, true);                            
+                .colString("unique_constraint_name", GROUPING_CONSTRAINT_MAX, true);
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         builder.userTable(KEY_COLUMN_USAGE)
             .colString("schema_name", IDENT_MAX, false)
             .colString("table_name", IDENT_MAX, false)
-            .colString("constraint_name", IDENT_MAX, false)
+            .colString("constraint_name", GROUPING_CONSTRAINT_MAX, false)
             .colString("column_name", IDENT_MAX, false)
             .colBigInt("ordinal_position", false)
             .colBigInt("position_in_unique_constraint", true);
