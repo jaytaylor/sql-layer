@@ -49,6 +49,7 @@ public interface RestDMLService {
     public Response update(HttpServletRequest request, 
                             TableName tableName, String values, JsonNode node);
     public Response runSQL(HttpServletRequest request, String sql);
+    public Response runSQL(HttpServletRequest request, List<String> sql);
     public Response explainSQL(HttpServletRequest request, String sql);
     public Response callProcedure(HttpServletRequest request, 
                                   TableName procName, Map<String,List<String>> params);

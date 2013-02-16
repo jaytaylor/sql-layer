@@ -241,6 +241,9 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     // remains open when a until its read result set is closed.
     protected void beforeExecuteStatement(ExecutableStatement stmt) {
         sessionMonitor.enterStage(MonitorStage.EXECUTE);
+        // If there is already a transaction and not auto-commit, transaction mode needs to allow writes if appropriate
+        if (transaction != null && commitMode == CommitMode.MANUAL)
+            transaction.setReadOnly(transactionDefaultReadOnly);
         ServerTransaction localTransaction = super.beforeExecute(stmt);
         if (localTransaction != null) {
             logger.debug("Auto BEGIN TRANSACTION");

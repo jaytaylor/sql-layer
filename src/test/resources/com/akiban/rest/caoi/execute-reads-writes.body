@@ -1,0 +1,4 @@
+SELECT * FROM test.customers WHERE cid=1;
+DELETE FROM test.customers WHERE cid=1;
+INSERT INTO test.customers VALUES (1, 'Jimmy', 'Jones');
+SELECT ** FROM test.customers WHERE cid=1;

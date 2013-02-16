@@ -30,8 +30,8 @@ import com.akiban.rest.resources.DataAccessOperationsResource;
 import com.akiban.rest.resources.EntityResource;
 import com.akiban.rest.resources.FaviconResource;
 import com.akiban.rest.resources.ProcedureCallResource;
+import com.akiban.rest.resources.SqlExecuteResource;
 import com.akiban.rest.resources.SecurityResource;
-import com.akiban.rest.resources.SqlExecutionResource;
 import com.akiban.rest.resources.SqlExplainResource;
 import com.akiban.rest.resources.SqlQueryResource;
 import com.akiban.rest.resources.VersionResource;
@@ -59,7 +59,7 @@ public class RestServiceModule extends ServletModule {
         bind(FaviconResource.class).asEagerSingleton();
         bind(DataAccessOperationsResource.class).asEagerSingleton();
         bind(SqlQueryResource.class).asEagerSingleton();
-        bind(SqlExecutionResource.class).asEagerSingleton();
+        bind(SqlExecuteResource.class).asEagerSingleton();
         bind(SqlExplainResource.class).asEagerSingleton();
         bind(ProcedureCallResource.class).asEagerSingleton();
         bind(SecurityResource.class).asEagerSingleton();
