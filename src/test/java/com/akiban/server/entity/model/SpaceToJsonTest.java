@@ -32,6 +32,8 @@ import com.akiban.util.JUnitUtils;
 import com.akiban.util.Strings;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -66,9 +68,14 @@ public final class SpaceToJsonTest {
     @Test
     public void test() throws IOException {
         Space space = Space.readSpace(testName + ".json", SpaceToJsonTest.class);
-        Object actual = JUnitUtils.normalizeJson(space.toJson());
-        Object expected = JUnitUtils.normalizeJson(Strings.dumpFileToString(new File(testDir, testName + ".json")));
-        assertEquals("space to json", expected, actual);
+        String actual = space.toJson();
+        String expected = Strings.dumpFileToString(new File(testDir, testName + ".json"));
+
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode actualNode = mapper.readTree(actual);
+        JsonNode expectedNode = mapper.readTree(expected);
+
+        assertEquals("space to json", expectedNode, actualNode);
     }
 
     public SpaceToJsonTest(String testName) {
