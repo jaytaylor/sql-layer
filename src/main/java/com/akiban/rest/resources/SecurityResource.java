@@ -26,6 +26,7 @@
 
 package com.akiban.rest.resources;
 
+import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.security.User;
 import com.akiban.server.service.security.SecurityService;
@@ -69,17 +70,17 @@ public class SecurityResource {
         JsonNode rolesNode = node.get("roles");
         if ((userNode == null) || !userNode.isTextual()) {
             return Response.status(Response.Status.BAD_REQUEST)
-                .entity("user string required")
+                .entity(jsonError(ErrorCode.SECURITY, "user string required"))
                 .build();
         }
         if ((passwordNode == null) || !passwordNode.isTextual()) {
             return Response.status(Response.Status.BAD_REQUEST)
-                .entity("password string required")
+                .entity(jsonError(ErrorCode.SECURITY, "password string required"))
                 .build();
         }
         if ((rolesNode == null) || !rolesNode.isArray()) {
             return Response.status(Response.Status.BAD_REQUEST)
-                .entity("roles array required")
+                .entity(jsonError(ErrorCode.SECURITY, "roles array required"))
                 .build();
         }
         String user = userNode.getValueAsText();
@@ -94,11 +95,16 @@ public class SecurityResource {
         }
         catch (InvalidOperationException ex) {
             return Response.status(Response.Status.BAD_REQUEST)
-                .entity(ex.getMessage())
+                .entity(jsonError(ex.getCode(), ex.getMessage()))
                 .build();
         }
         return Response.status(Response.Status.OK)
             .entity(String.format("{\"id\":%d}", newUser.getId()))
             .build();
+    }
+
+    private String jsonError(ErrorCode code, String message) {
+        return String.format("{\"code\":\"%s\", \"message\":\"%s\"}",
+                             code.getFormattedValue(), message);
     }
 }
