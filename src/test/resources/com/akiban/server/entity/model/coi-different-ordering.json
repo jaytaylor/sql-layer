@@ -13,8 +13,8 @@
                     },
                     "type" : "varchar",
                     "validation" : [
-                        { "required" : false },
-                        { "max_length" : 64 }
+                        { "max_length" : 64 },
+                        { "required" : false }
                     ],
                     "scalar" : "257e9b59-e77f-4a4d-a5da-00c7c2261875"
                 },
@@ -34,8 +34,8 @@
             },
             "entity" : "2a57b59e-e1b7-4377-996e-a5c04e0abf29",
             "validation" : [
-                { "unique" : [ ["orders", "placed"] ] },
-                { "unique" : [ ["customer", "last_name"], ["customer", "first_name"] ] }
+                { "unique" : [ ["customer", "last_name"], ["customer", "first_name"] ] },
+                { "unique" : [ ["orders", "placed"] ] }
             ]
         }
     }
