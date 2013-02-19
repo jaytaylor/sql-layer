@@ -43,6 +43,7 @@ import static com.google.common.collect.Sets.newHashSet;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public final class SpaceTest {
     @Test()
@@ -102,8 +103,8 @@ public final class SpaceTest {
         assertEquals("orders class", Attribute.AttributeType.COLLECTION, orders.getAttributeType());
         assertEquals("orders uuid", UUID.fromString("c5cedd91-9751-41c2-9417-8c29117ca2c9"), orders.getUUID());
         assertNull("orders type", orders.getType());
-        assertNull("orders properties", orders.getProperties());
-        assertNull("orders validations", orders.getValidation());
+        assertEquals("orders properties empty", true, orders.getProperties().isEmpty());
+        assertEquals("orders validations empty", true, orders.getValidation().isEmpty());
         assertEquals("orders spine pos", -1, orders.getSpinePos());
         isUnmodifiable("orders attributes", orders.getAttributes());
         assertEquals("orders attributes key", set("id"), orders.getAttributes().keySet());
