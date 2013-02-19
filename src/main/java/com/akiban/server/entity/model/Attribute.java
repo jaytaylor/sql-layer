@@ -56,8 +56,6 @@ public final class Attribute {
             throw new IllegalEntityDefinition("'scalar' field not allowed; attribute is already a " + attributeType);
         this.uuid = Util.parseUUID(uuid);
         attributeType = AttributeType.SCALAR;
-        properties = Collections.emptyMap();
-        validations = Collections.emptySet();
     }
 
     @SuppressWarnings("unused")
@@ -139,8 +137,8 @@ public final class Attribute {
 
     // scalar fields
     private String type;
-    private Map<String, Object> properties;
-    private Set<Validation> validations;
+    private Map<String, Object> properties = Collections.emptyMap();
+    private Set<Validation> validations = Collections.emptySet();
     private int spine = -1;
 
     // collection fields
