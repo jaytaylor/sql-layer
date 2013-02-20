@@ -1,0 +1,1 @@
+explain insert into t values(2,(select max(n)+1 from t))
