@@ -49,14 +49,13 @@ import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 
 /**
- * Implementation of REST-oriented Get, Multi-Get, Create, Update, Delete and
- * Multi-Delete.
+ * Entity based access (GET), creation (PUT, POST), and modification (PUT, DELETE)
  */
-@Path("/{table}")
-public class DataAccessOperationsResource {
+@Path("entity/{entity}")
+public class EntityResource {
     private final ResourceRequirements reqs;
     
-    public DataAccessOperationsResource(ResourceRequirements reqs) {
+    public EntityResource(ResourceRequirements reqs) {
         this.reqs = reqs;
     }
 
@@ -65,11 +64,9 @@ public class DataAccessOperationsResource {
     public Response retrieveEntity(@Context HttpServletRequest request,
                                    @QueryParam("format") String format,
                                    @QueryParam("jsoncallback") String jsonp,
-                                   @PathParam("table") String table,
-                                   @QueryParam("depth") Integer depth,
-                                   @QueryParam("offset") Integer offset,
-                                   @QueryParam("limit") Integer limit) throws Exception {
-        TableName tableName = parseTableName(request, table);
+                                   @PathParam("entity") String entity,
+                                   @QueryParam("depth") Integer depth) throws Exception {
+        TableName tableName = parseTableName(request, entity);
         return reqs.restDMLService.getAllEntities(request, tableName, depth);
     }
 
@@ -79,10 +76,10 @@ public class DataAccessOperationsResource {
     public Response retrieveEntity(@Context HttpServletRequest request,
                                    @QueryParam("format") String format,
                                    @QueryParam("jsoncallback") String jsonp,
-                                   @PathParam("table") String table,
+                                   @PathParam("entity") String entity,
                                    @QueryParam("depth") Integer depth,
                                    @Context UriInfo uri) throws Exception {
-        TableName tableName = parseTableName(request, table);
+        TableName tableName = parseTableName(request, entity);
         String[] pks = uri.getPath(false).split("/");
         assert pks.length > 0 : uri;
         return reqs.restDMLService.getEntities(request, tableName, depth, pks[pks.length-1]);
@@ -92,9 +89,9 @@ public class DataAccessOperationsResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response createEntity(@Context HttpServletRequest request,
-                                 @PathParam("table") String table,
+                                 @PathParam("entity") String entity,
                                  byte[] entityBytes) throws Exception {
-        TableName tableName = parseTableName(request, table);
+        TableName tableName = parseTableName(request, entity);
         ObjectMapper m = new ObjectMapper();
         JsonNode node = m.readTree(entityBytes);
         return reqs.restDMLService.insert(request, tableName, node);
@@ -104,10 +101,10 @@ public class DataAccessOperationsResource {
     @Path("{identifiers:.*}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateEntity(@Context HttpServletRequest request,
-                                 @PathParam("table") String table,
+                                 @PathParam("entity") String entity,
                                  byte[] entityBytes,
                                  @Context UriInfo uri) throws Exception {
-        TableName tableName = parseTableName(request, table);
+        TableName tableName = parseTableName(request, entity);
         ObjectMapper m = new ObjectMapper();
         JsonNode node = m.readTree(entityBytes);
         String[] pks = uri.getPath(false).split("/");
@@ -119,9 +116,9 @@ public class DataAccessOperationsResource {
     @Path("{identifiers:.*}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteEntity(@Context HttpServletRequest request,
-                                 @PathParam("table") String table,
+                                 @PathParam("entity") String entity,
                                  @Context UriInfo uri) throws Exception {
-        TableName tableName = parseTableName(request, table);
+        TableName tableName = parseTableName(request, entity);
         String[] pks = uri.getPath(false).split("/");
         assert pks.length > 0 : uri;
         return reqs.restDMLService.delete(request, tableName, pks[pks.length-1]);
@@ -130,7 +127,6 @@ public class DataAccessOperationsResource {
     protected static TableName parseTableName(HttpServletRequest request, String name) {
         Principal user = request.getUserPrincipal();
         String schema = (user == null) ? "" : user.getName();
-
         return TableName.parse(schema, name);
     }
 }
