@@ -190,7 +190,7 @@ public class RestServiceFilesIT extends ITBase {
         }
         File spaceFile = new File(subDir, "space.json");
         if(spaceFile.exists()) {
-            HttpURLConnection httpConn = openConnection(getRestURL("/entity/apply/" + SCHEMA_NAME), "POST");
+            HttpURLConnection httpConn = openConnection(getRestURL("/model/apply/" + SCHEMA_NAME), "POST");
             postContents(httpConn, Strings.dumpFileToString(spaceFile).getBytes());
             StringBuilder builder = new StringBuilder();
             try {

@@ -44,7 +44,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -54,23 +53,31 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.Principal;
 
-@Path("/entity")
-public final class EntityResource {
+@Path("model")
+public final class ModelResource {
     private static final Response FORBIDDEN = Response.status(Response.Status.FORBIDDEN).build();
+    private static final String OPTIONAL_SCHEMA = "{schema: (/[^/]*)?}";
 
     private final ResourceRequirements reqs;
 
-    public EntityResource(ResourceRequirements reqs) {
+    public ModelResource(ResourceRequirements reqs) {
         this.reqs = reqs;
     }
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getSpace(@Context HttpServletRequest request,
-                             @QueryParam("space") String schema) {
-        if(schema == null) {
-            schema = getUserSchema(request);
+    private static String getSchemaName(HttpServletRequest request, String schemaParam) {
+        if(schemaParam == null || schemaParam.isEmpty()) {
+            Principal user = request.getUserPrincipal();
+            return (user == null) ? null : user.getName();
         }
+        return schemaParam.substring(1);
+    }
+
+    @GET
+    @Path("view" + OPTIONAL_SCHEMA)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response viewSpace(@Context HttpServletRequest request,
+                              @PathParam("schema") String schemaParam) {
+        String schema = getSchemaName(request, schemaParam);
         if (schema == null || !reqs.securityService.isAccessible(request, schema)) {
             return FORBIDDEN;
         }
@@ -90,41 +97,23 @@ public final class EntityResource {
     }
 
     @POST
-    @Path("/preview")
+    @Path("preview" + OPTIONAL_SCHEMA)
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response preview(@Context HttpServletRequest request,
-                            final InputStream postInput) throws IOException {
-        return preview(request, getUserSchema(request), postInput);
+    public Response previewChange(@Context HttpServletRequest request,
+                                  @PathParam("schema") String schemaParam,
+                                  final InputStream postInput) throws IOException {
+        return previewOrApply(request, getSchemaName(request, schemaParam), postInput, false);
     }
 
     @POST
-    @Path("/preview/{schema}")
+    @Path("apply" + OPTIONAL_SCHEMA)
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response preview(@Context HttpServletRequest request,
-                            @PathParam("schema") String schema,
-                            final InputStream postInput) throws IOException {
-        return previewOrApply(request, schema, postInput, false);
-    }
-
-    @POST
-    @Path("/apply")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response apply(@Context HttpServletRequest request,
-                          final InputStream postInput) throws IOException {
-        return apply(request, getUserSchema(request), postInput);
-    }
-
-    @POST
-    @Path("/apply/{schema}")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response apply(@Context HttpServletRequest request,
-                          @PathParam("schema") String schema,
-                          final InputStream postInput) throws IOException {
-        return previewOrApply(request, schema, postInput, true);
+    public Response applyChange(@Context HttpServletRequest request,
+                                @PathParam("schema") String schema,
+                                final InputStream postInput) throws IOException {
+        return previewOrApply(request, getSchemaName(request, schema), postInput, true);
     }
 
     private Response previewOrApply(HttpServletRequest request, String schema, InputStream postInput, boolean doApply) throws IOException {
@@ -166,10 +155,5 @@ public final class EntityResource {
                             .build()
             );
         }
-    }
-
-    private String getUserSchema(HttpServletRequest request) {
-        Principal user = request.getUserPrincipal();
-        return (user == null) ? null : user.getName();
     }
 }
