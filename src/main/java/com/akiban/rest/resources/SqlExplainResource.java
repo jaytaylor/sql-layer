@@ -26,8 +26,7 @@
 
 package com.akiban.rest.resources;
 
-import com.akiban.server.service.restdml.RestDMLService;
-import com.google.inject.Inject;
+import com.akiban.rest.ResourceRequirements;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -43,8 +42,11 @@ import javax.ws.rs.core.Response;
  */
 @Path("/explain")
 public class SqlExplainResource {
-    @Inject
-    private RestDMLService restDMLService;
+    private final ResourceRequirements reqs;
+
+    public SqlExplainResource(ResourceRequirements reqs) {
+        this.reqs = reqs;
+    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -52,6 +54,6 @@ public class SqlExplainResource {
                                     @QueryParam("format") String format,
                                     @QueryParam("jsoncallback") String jsonp,
                                     @QueryParam("q") String query) throws Exception {
-        return restDMLService.explainSQL(request, query);
+        return reqs.restDMLService.explainSQL(request, query);
     }
 }

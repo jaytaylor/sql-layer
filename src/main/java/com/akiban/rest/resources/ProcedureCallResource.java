@@ -27,8 +27,7 @@
 package com.akiban.rest.resources;
 
 import com.akiban.ais.model.TableName;
-import com.akiban.server.service.restdml.RestDMLService;
-import com.google.inject.Inject;
+import com.akiban.rest.ResourceRequirements;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -46,8 +45,11 @@ import javax.ws.rs.core.UriInfo;
  */
 @Path("/call/{proc}")
 public class ProcedureCallResource {
-    @Inject
-    private RestDMLService restDMLService;
+    private final ResourceRequirements reqs;
+
+    public ProcedureCallResource(ResourceRequirements reqs) {
+        this.reqs = reqs;
+    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -56,6 +58,6 @@ public class ProcedureCallResource {
                                     @QueryParam("jsoncallback") String jsonp,
                                     @Context UriInfo uri) throws Exception {
         TableName procName = DataAccessOperationsResource.parseTableName(request, proc);
-        return restDMLService.callProcedure(request, procName, uri.getQueryParameters());
+        return reqs.restDMLService.callProcedure(request, procName, uri.getQueryParameters());
     }
 }

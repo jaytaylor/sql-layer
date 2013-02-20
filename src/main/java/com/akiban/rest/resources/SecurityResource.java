@@ -26,14 +26,12 @@
 
 package com.akiban.rest.resources;
 
+import com.akiban.rest.ResourceRequirements;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.security.User;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionService;
-import com.google.inject.Inject;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -57,12 +55,11 @@ import java.util.List;
  */
 @Path("/security")
 public class SecurityResource {
-    @Inject
-    private SecurityService securityService;
-    @Inject
-    private SessionService sessionService;
-    @Inject
-    private DXLService dxlService;
+    private final ResourceRequirements reqs;
+
+    public SecurityResource(ResourceRequirements reqs) {
+        this.reqs = reqs;
+    }
 
     @Path("/users")
     @POST
@@ -100,7 +97,7 @@ public class SecurityResource {
         }
         User newUser;
         try {
-            newUser = securityService.addUser(user, password, roles);
+            newUser = reqs.securityService.addUser(user, password, roles);
         }
         catch (InvalidOperationException ex) {
             return Response.status(Response.Status.BAD_REQUEST)
@@ -121,9 +118,9 @@ public class SecurityResource {
         if (!request.isUserInRole(SecurityService.ADMIN_ROLE)) {
             return Response.status(Response.Status.FORBIDDEN).build();
         }
-        try (Session session = sessionService.createSession()) {
-            dxlService.ddlFunctions().dropSchema(session, user);
-            securityService.deleteUser(user);
+        try (Session session = reqs.sessionService.createSession()) {
+            reqs.dxlService.ddlFunctions().dropSchema(session, user);
+            reqs.securityService.deleteUser(user);
         }
         catch (InvalidOperationException ex) {
             return Response.status(Response.Status.BAD_REQUEST)
