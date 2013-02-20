@@ -24,40 +24,30 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.rest.resources;
+package com.akiban.rest;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.rest.ResourceRequirements;
+import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.restdml.RestDMLService;
+import com.akiban.server.service.security.SecurityService;
+import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.transaction.TransactionService;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+public class ResourceRequirements {
+    public final DXLService dxlService;
+    public final RestDMLService restDMLService;
+    public final SecurityService securityService;
+    public final SessionService sessionService;
+    public final TransactionService transactionService;
 
-/**
- * Allows calling stored procedures directly.
- */
-@Path("/call/{proc}")
-public class ProcedureCallResource {
-    private final ResourceRequirements reqs;
-
-    public ProcedureCallResource(ResourceRequirements reqs) {
-        this.reqs = reqs;
-    }
-
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getQueryResults(@Context HttpServletRequest request,
-                                    @PathParam("proc") String proc,
-                                    @QueryParam("jsoncallback") String jsonp,
-                                    @Context UriInfo uri) throws Exception {
-        TableName procName = DataAccessOperationsResource.parseTableName(request, proc);
-        return reqs.restDMLService.callProcedure(request, procName, uri.getQueryParameters());
+    public ResourceRequirements(DXLService dxlService,
+                                RestDMLService restDMLService,
+                                SecurityService securityService,
+                                SessionService sessionService,
+                                TransactionService transactionService) {
+        this.dxlService = dxlService;
+        this.restDMLService = restDMLService;
+        this.securityService = securityService;
+        this.sessionService = sessionService;
+        this.transactionService = transactionService;
     }
 }

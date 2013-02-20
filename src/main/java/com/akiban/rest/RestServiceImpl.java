@@ -27,21 +27,29 @@
 package com.akiban.rest;
 
 import com.akiban.http.HttpConductor;
+import com.akiban.rest.resources.DataAccessOperationsResource;
+import com.akiban.rest.resources.EntityResource;
+import com.akiban.rest.resources.ProcedureCallResource;
+import com.akiban.rest.resources.SecurityResource;
+import com.akiban.rest.resources.SqlExecuteResource;
+import com.akiban.rest.resources.SqlExplainResource;
+import com.akiban.rest.resources.SqlQueryResource;
+import com.akiban.rest.resources.VersionResource;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.restdml.RestDMLService;
-import com.akiban.server.service.restdml.RestDMLServiceImpl;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.store.SchemaManager;
 import com.google.inject.Inject;
-import com.google.inject.servlet.GuiceFilter;
+import com.sun.jersey.api.core.DefaultResourceConfig;
+import com.sun.jersey.api.core.ResourceConfig;
+import com.sun.jersey.spi.container.servlet.ServletContainer;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 
-import javax.servlet.DispatcherType;
-import java.util.EnumSet;
+import java.util.Arrays;
 
 public class RestServiceImpl implements RestService, Service {
     private final ConfigurationService configService;
@@ -95,12 +103,27 @@ public class RestServiceImpl implements RestService, Service {
 	}
 
 	private void registerConnector(HttpConductor http) {
-        ServletContextHandler context = new ServletContextHandler();
-        context.setContextPath(getContextPath());
-        context.addFilter(GuiceFilter.class, "/*", EnumSet.<DispatcherType>of(DispatcherType.REQUEST));
-        context.addServlet(EmptyServlet.class, "/*");
-
-        this.handler = context;
-		http.registerHandler(this.handler);
+        handler = new ServletContextHandler();
+        handler.setContextPath(getContextPath());
+        handler.addServlet(new ServletHolder(new ServletContainer(createResourceConfigV1())), "/*");
+		http.registerHandler(handler);
 	}
+
+    private ResourceConfig createResourceConfigV1() {
+        DefaultResourceConfig config = new DefaultResourceConfig();
+        ResourceRequirements reqs = new ResourceRequirements(
+                dxlService, restDMLService, securityService, sessionService, transactionService
+        );
+        config.getSingletons().addAll(Arrays.asList(
+                new DataAccessOperationsResource(reqs),
+                new EntityResource(reqs),
+                new ProcedureCallResource(reqs),
+                new SecurityResource(reqs),
+                new SqlExecuteResource(reqs),
+                new SqlExplainResource(reqs),
+                new SqlQueryResource(reqs),
+                new VersionResource(reqs)
+        ));
+        return config;
+    }
 }

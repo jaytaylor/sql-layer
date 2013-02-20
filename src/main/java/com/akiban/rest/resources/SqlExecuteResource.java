@@ -26,8 +26,7 @@
 
 package com.akiban.rest.resources;
 
-import com.akiban.server.service.restdml.RestDMLService;
-import com.google.inject.Inject;
+import com.akiban.rest.ResourceRequirements;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.POST;
@@ -45,8 +44,11 @@ import java.util.Arrays;
  */
 @Path("/execute")
 public class SqlExecuteResource {
-    @Inject
-    private RestDMLService restDMLService;
+    private final ResourceRequirements reqs;
+
+    public SqlExecuteResource(ResourceRequirements reqs) {
+        this.reqs = reqs;
+    }
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
@@ -56,6 +58,6 @@ public class SqlExecuteResource {
                             final byte[] postBytes) throws Exception {
         String input = new String(postBytes);
         String[] statements = input.split(";");
-        return restDMLService.runSQL(request, Arrays.asList(statements));
+        return reqs.restDMLService.runSQL(request, Arrays.asList(statements));
     }
 }
