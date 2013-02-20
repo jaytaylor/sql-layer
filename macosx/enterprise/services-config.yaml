@@ -18,7 +18,5 @@
     - com.akiban.server.service.is.ServerSchemaTablesService
     - com.akiban.server.service.ui.SwingConsoleService  # Presents a simple UI
     - com.akiban.rest.RestService
-- bind-modules:
-    - com.akiban.rest.RestServiceModule
 - prioritize:
     - com.akiban.server.service.ui.SwingConsoleService  # Show service progress ASAP
