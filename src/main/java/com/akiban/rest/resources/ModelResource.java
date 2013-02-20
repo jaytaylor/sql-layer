@@ -53,7 +53,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.Principal;
 
-@Path("model")
+@Path("/model")
 public final class ModelResource {
     private static final Response FORBIDDEN = Response.status(Response.Status.FORBIDDEN).build();
     private static final String OPTIONAL_SCHEMA = "{schema: (/[^/]*)?}";
@@ -73,7 +73,7 @@ public final class ModelResource {
     }
 
     @GET
-    @Path("view" + OPTIONAL_SCHEMA)
+    @Path("/view" + OPTIONAL_SCHEMA)
     @Produces(MediaType.APPLICATION_JSON)
     public Response viewSpace(@Context HttpServletRequest request,
                               @PathParam("schema") String schemaParam) {
@@ -97,7 +97,7 @@ public final class ModelResource {
     }
 
     @POST
-    @Path("preview" + OPTIONAL_SCHEMA)
+    @Path("/preview" + OPTIONAL_SCHEMA)
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response previewChange(@Context HttpServletRequest request,
@@ -107,7 +107,7 @@ public final class ModelResource {
     }
 
     @POST
-    @Path("apply" + OPTIONAL_SCHEMA)
+    @Path("/apply" + OPTIONAL_SCHEMA)
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response applyChange(@Context HttpServletRequest request,

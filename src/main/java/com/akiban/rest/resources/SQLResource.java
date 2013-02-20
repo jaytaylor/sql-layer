@@ -39,7 +39,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Arrays;
 
-@Path("sql")
+@Path("/sql")
 public class SQLResource {
     private final ResourceRequirements reqs;
 
@@ -49,7 +49,7 @@ public class SQLResource {
 
     /** Run a single SQL statement specified by the 'q' query parameter. */
     @GET
-    @Path("query")
+    @Path("/query")
     @Produces(MediaType.APPLICATION_JSON)
     public Response query(@Context HttpServletRequest request,
                           @QueryParam("format") String format,
@@ -60,7 +60,7 @@ public class SQLResource {
 
     /** Explain a single SQL statement specified by the 'q' query parameter. */
     @GET
-    @Path("explain")
+    @Path("/explain")
     @Produces(MediaType.APPLICATION_JSON)
     public Response explain(@Context HttpServletRequest request,
                             @QueryParam("format") String format,
@@ -71,7 +71,7 @@ public class SQLResource {
 
     /** Run multiple SQL statements (single transaction) specified by semi-colon separated strings in the POST body. */
     @POST
-    @Path("execute")
+    @Path("/execute")
     @Produces(MediaType.APPLICATION_JSON)
     public Response execute(@Context HttpServletRequest request,
                             @QueryParam("format") String format,

@@ -51,8 +51,9 @@ import org.codehaus.jackson.map.ObjectMapper;
 /**
  * Entity based access (GET), creation (PUT, POST), and modification (PUT, DELETE)
  */
-@Path("entity/{entity}")
+@Path("/entity/{entity}")
 public class EntityResource {
+    private static final String IDENTIFIERS_MULTI = "{identifiers:.*}";
     private final ResourceRequirements reqs;
     
     public EntityResource(ResourceRequirements reqs) {
@@ -71,7 +72,7 @@ public class EntityResource {
     }
 
     @GET
-    @Path("{identifiers:.*}")
+    @Path("/" + IDENTIFIERS_MULTI)
     @Produces(MediaType.APPLICATION_JSON)
     public Response retrieveEntity(@Context HttpServletRequest request,
                                    @QueryParam("format") String format,
@@ -98,7 +99,7 @@ public class EntityResource {
     }
 
     @PUT
-    @Path("{identifiers:.*}")
+    @Path("/" + IDENTIFIERS_MULTI)
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateEntity(@Context HttpServletRequest request,
                                  @PathParam("entity") String entity,
@@ -113,7 +114,7 @@ public class EntityResource {
     }
 
     @DELETE
-    @Path("{identifiers:.*}")
+    @Path("/" + IDENTIFIERS_MULTI)
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteEntity(@Context HttpServletRequest request,
                                  @PathParam("entity") String entity,
