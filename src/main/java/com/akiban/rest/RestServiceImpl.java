@@ -106,7 +106,7 @@ public class RestServiceImpl implements RestService, Service {
         handler = new ServletContextHandler();
         handler.setContextPath(getContextPath());
         handler.addServlet(new ServletHolder(new ServletContainer(createResourceConfigV1())), "/*");
-		http.registerHandler(handler);
+        http.registerHandler(handler);
 	}
 
     private ResourceConfig createResourceConfigV1() {
