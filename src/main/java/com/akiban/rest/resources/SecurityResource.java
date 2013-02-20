@@ -28,14 +28,19 @@ package com.akiban.rest.resources;
 
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.service.security.User;
+import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.security.SecurityService;
+import com.akiban.server.service.security.User;
+import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionService;
 import com.google.inject.Inject;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -54,6 +59,10 @@ import java.util.List;
 public class SecurityResource {
     @Inject
     private SecurityService securityService;
+    @Inject
+    private SessionService sessionService;
+    @Inject
+    private DXLService dxlService;
 
     @Path("/users")
     @POST
@@ -100,6 +109,28 @@ public class SecurityResource {
         }
         return Response.status(Response.Status.OK)
             .entity(String.format("{\"id\":%d}", newUser.getId()))
+            .build();
+    }
+
+    @Path("/users/{user}")
+    @DELETE
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response deleteUser(@Context HttpServletRequest request,
+                               @PathParam("user") String user) throws Exception {
+        if (!request.isUserInRole(SecurityService.ADMIN_ROLE)) {
+            return Response.status(Response.Status.FORBIDDEN).build();
+        }
+        try (Session session = sessionService.createSession()) {
+            dxlService.ddlFunctions().dropSchema(session, user);
+            securityService.deleteUser(user);
+        }
+        catch (InvalidOperationException ex) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                .entity(jsonError(ex.getCode(), ex.getMessage()))
+                .build();
+        }
+        return Response.status(Response.Status.OK)
             .build();
     }
 
