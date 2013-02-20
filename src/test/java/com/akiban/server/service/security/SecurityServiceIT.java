@@ -38,6 +38,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -178,7 +179,7 @@ public class SecurityServiceIT extends ITBase
     static final String ADD_USER = "{\"user\":\"user3\", \"password\":\"pass\", \"roles\": [\"rest-user\"]}";
 
     @Test
-    public void restAddUser() throws Exception {
+    public void restAddDropUser() throws Exception {
         SecurityService securityService = securityService();
         assertNull(securityService.getUser("user3"));
         HttpClient client = new DefaultHttpClient();
@@ -187,9 +188,16 @@ public class SecurityServiceIT extends ITBase
         HttpResponse response = client.execute(post);
         int code = response.getStatusLine().getStatusCode();
         EntityUtils.consume(response.getEntity());
-        client.getConnectionManager().shutdown();
         assertEquals(HttpStatus.SC_OK, code);
         assertNotNull(securityService.getUser("user3"));
+
+        HttpDelete delete = new HttpDelete(getRestURL("/security/users/user3", null, "akiban:topsecret"));
+        response = client.execute(delete);
+        code = response.getStatusLine().getStatusCode();
+        EntityUtils.consume(response.getEntity());
+        client.getConnectionManager().shutdown();
+        assertEquals(HttpStatus.SC_OK, code);
+        assertNull(securityService.getUser("user3"));
     }
 
     private Connection openPostgresConnection(String user, String password) 
