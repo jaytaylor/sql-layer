@@ -161,10 +161,10 @@ public class RestServiceFilesIT extends ITBase {
 
                 if("QUERY".equals(method)) {
                     method = "GET";
-                    uri = "/query?q=" + trimAndURLEncode(uri);
+                    uri = "/sql/query?q=" + trimAndURLEncode(uri);
                 } else if("EXPLAIN".equals(method)) {
                     method = "GET";
-                    uri = "/explain?q=" + trimAndURLEncode(uri);
+                    uri = "/sql/explain?q=" + trimAndURLEncode(uri);
                 }
 
                 result.add(Parameterization.create(
