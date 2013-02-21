@@ -27,13 +27,11 @@
 package com.akiban.rest;
 
 import com.akiban.http.HttpConductor;
-import com.akiban.rest.resources.DataAccessOperationsResource;
 import com.akiban.rest.resources.EntityResource;
+import com.akiban.rest.resources.ModelResource;
 import com.akiban.rest.resources.ProcedureCallResource;
+import com.akiban.rest.resources.SQLResource;
 import com.akiban.rest.resources.SecurityResource;
-import com.akiban.rest.resources.SqlExecuteResource;
-import com.akiban.rest.resources.SqlExplainResource;
-import com.akiban.rest.resources.SqlQueryResource;
 import com.akiban.rest.resources.VersionResource;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
@@ -115,13 +113,11 @@ public class RestServiceImpl implements RestService, Service {
                 dxlService, restDMLService, securityService, sessionService, transactionService
         );
         config.getSingletons().addAll(Arrays.asList(
-                new DataAccessOperationsResource(reqs),
                 new EntityResource(reqs),
+                new ModelResource(reqs),
                 new ProcedureCallResource(reqs),
                 new SecurityResource(reqs),
-                new SqlExecuteResource(reqs),
-                new SqlExplainResource(reqs),
-                new SqlQueryResource(reqs),
+                new SQLResource(reqs),
                 new VersionResource(reqs)
         ));
         return config;

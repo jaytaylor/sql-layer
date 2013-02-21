@@ -57,7 +57,7 @@ public class ProcedureCallResource {
                                     @PathParam("proc") String proc,
                                     @QueryParam("jsoncallback") String jsonp,
                                     @Context UriInfo uri) throws Exception {
-        TableName procName = DataAccessOperationsResource.parseTableName(request, proc);
+        TableName procName = EntityResource.parseTableName(request, proc);
         return reqs.restDMLService.callProcedure(request, procName, uri.getQueryParameters());
     }
 }

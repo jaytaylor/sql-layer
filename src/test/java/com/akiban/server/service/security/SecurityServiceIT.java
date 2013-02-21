@@ -143,7 +143,7 @@ public class SecurityServiceIT extends ITBase
     @Test
     public void restAuthenticated() throws Exception {
         assertEquals(HttpStatus.SC_OK,
-                     openRestURL("/user1.utable/1", null, "user1:password"));
+                     openRestURL("/entity/user1.utable/1", null, "user1:password"));
     }
 
     @Test
@@ -161,19 +161,19 @@ public class SecurityServiceIT extends ITBase
     @Test
     public void restAuthenticateWrongSchema() throws Exception {
         assertEquals(HttpStatus.SC_FORBIDDEN,
-                     openRestURL("/user2.utable/1", null, "user1:password"));
+                     openRestURL("/entity/user2.utable/1", null, "user1:password"));
     }
 
     @Test
     public void restQueryAuthenticated() throws Exception {
         assertEquals(HttpStatus.SC_OK,
-                     openRestURL("/query", "q=SELECT+*+FROM+utable", "user1:password"));
+                     openRestURL("/sql/query", "q=SELECT+*+FROM+utable", "user1:password"));
     }
 
     @Test
     public void restQueryWrongSchema() throws Exception {
         assertEquals(HttpStatus.SC_NOT_FOUND,
-                     openRestURL("/query", "q=SELECT+*+FROM+user2.utable", "user1:password"));
+                     openRestURL("/sql/query", "q=SELECT+*+FROM+user2.utable", "user1:password"));
     }
 
     static final String ADD_USER = "{\"user\":\"user3\", \"password\":\"pass\", \"roles\": [\"rest-user\"]}";
