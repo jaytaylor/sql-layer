@@ -27,8 +27,7 @@
 package com.akiban.rest.resources;
 
 import com.akiban.ais.model.TableName;
-import com.akiban.server.service.restdml.RestDMLService;
-import com.google.inject.Inject;
+import com.akiban.rest.ResourceRequirements;
 
 import java.security.Principal;
 import javax.servlet.http.HttpServletRequest;
@@ -46,7 +45,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -56,11 +54,12 @@ import org.codehaus.jackson.map.ObjectMapper;
  */
 @Path("/{table}")
 public class DataAccessOperationsResource {
+    private final ResourceRequirements reqs;
     
-    @Inject private RestDMLService dmlService;
-    
-    JsonFactory jsonFactory = new JsonFactory();
-    
+    public DataAccessOperationsResource(ResourceRequirements reqs) {
+        this.reqs = reqs;
+    }
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response retrieveEntity(@Context HttpServletRequest request,
@@ -71,7 +70,7 @@ public class DataAccessOperationsResource {
                                    @QueryParam("offset") Integer offset,
                                    @QueryParam("limit") Integer limit) throws Exception {
         TableName tableName = parseTableName(request, table);
-        return dmlService.getAllEntities(request, tableName, depth);
+        return reqs.restDMLService.getAllEntities(request, tableName, depth);
     }
 
     @GET
@@ -86,7 +85,7 @@ public class DataAccessOperationsResource {
         TableName tableName = parseTableName(request, table);
         String[] pks = uri.getPath(false).split("/");
         assert pks.length > 0 : uri;
-        return dmlService.getEntities(request, tableName, depth, pks[pks.length-1]);
+        return reqs.restDMLService.getEntities(request, tableName, depth, pks[pks.length-1]);
     }
 
     @POST
@@ -98,7 +97,7 @@ public class DataAccessOperationsResource {
         TableName tableName = parseTableName(request, table);
         ObjectMapper m = new ObjectMapper();
         JsonNode node = m.readTree(entityBytes);
-        return dmlService.insert(request, tableName, node);
+        return reqs.restDMLService.insert(request, tableName, node);
     }
 
     @PUT
@@ -113,7 +112,7 @@ public class DataAccessOperationsResource {
         JsonNode node = m.readTree(entityBytes);
         String[] pks = uri.getPath(false).split("/");
         assert pks.length > 0 : uri;
-        return dmlService.update(request, tableName, pks[pks.length-1], node);
+        return reqs.restDMLService.update(request, tableName, pks[pks.length-1], node);
     }
 
     @DELETE
@@ -125,7 +124,7 @@ public class DataAccessOperationsResource {
         TableName tableName = parseTableName(request, table);
         String[] pks = uri.getPath(false).split("/");
         assert pks.length > 0 : uri;
-        return dmlService.delete(request, tableName, pks[pks.length-1]);
+        return reqs.restDMLService.delete(request, tableName, pks[pks.length-1]);
     }
 
     protected static TableName parseTableName(HttpServletRequest request, String name) {

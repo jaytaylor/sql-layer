@@ -30,19 +30,14 @@ import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.protobuf.ProtobufWriter;
-import com.akiban.rest.ResponseHelper;
+import com.akiban.rest.ResourceRequirements;
 import com.akiban.server.entity.changes.DDLBasedSpaceModifier;
 import com.akiban.server.entity.changes.EntityParser;
 import com.akiban.server.entity.changes.SpaceDiff;
 import com.akiban.server.entity.fromais.AisToSpace;
 import com.akiban.server.entity.model.Space;
 import com.akiban.server.entity.model.diff.JsonDiffPreview;
-import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionService;
-import com.akiban.server.service.transaction.TransactionService;
-import com.google.inject.Inject;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -69,10 +64,11 @@ import java.security.Principal;
 public final class EntityResource {
     private static final Response FORBIDDEN = Response.status(Response.Status.FORBIDDEN).build();
 
-    @Inject private SessionService sessionService;
-    @Inject private TransactionService transactionService;
-    @Inject private SecurityService securityService;
-    @Inject private DXLService dxlService;
+    private final ResourceRequirements reqs;
+
+    public EntityResource(ResourceRequirements reqs) {
+        this.reqs = reqs;
+    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -81,20 +77,20 @@ public final class EntityResource {
         if(schema == null) {
             schema = getUserSchema(request);
         }
-        if (schema == null || !securityService.isAccessible(request, schema)) {
+        if (schema == null || !reqs.securityService.isAccessible(request, schema)) {
             return FORBIDDEN;
         }
-        try (Session session = sessionService.createSession()) {
-            transactionService.beginTransaction(session);
+        try (Session session = reqs.sessionService.createSession()) {
+            reqs.transactionService.beginTransaction(session);
             try {
-                AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+                AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(session);
                 ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
                 Space space = AisToSpace.create(ais);
                 String json = space.toJson() + "\n";
                 return Response.status(Response.Status.OK).entity(json).build();
             }
             finally {
-                transactionService.commitTransaction(session);
+                reqs.transactionService.commitTransaction(session);
             }
         }
     }
@@ -107,14 +103,13 @@ public final class EntityResource {
                            @PathParam("table") String table,
                            final InputStream postInput) throws IOException {
         TableName tableName = DataAccessOperationsResource.parseTableName(request, table);
-        if (tableName.getSchemaName().length() == 0 || !securityService.isAccessible(request, tableName.getSchemaName())) {
+        if (tableName.getSchemaName().length() == 0 || !reqs.securityService.isAccessible(request, tableName.getSchemaName())) {
             return FORBIDDEN;
         }
         ObjectMapper m = new ObjectMapper();
         JsonNode node = m.readTree(postInput);
-        //return ResponseHelper.buildNotYetImplemented();
-        EntityParser parser = new EntityParser (this.dxlService);
-        try (Session session = sessionService.createSession()) {
+        EntityParser parser = new EntityParser (reqs.dxlService);
+        try (Session session = reqs.sessionService.createSession()) {
             return parser.parse(session, tableName, node);
         } catch (Exception e) {
             // TODO: Cleanup and make consistent with other REST
@@ -166,12 +161,12 @@ public final class EntityResource {
     }
 
     private Response previewOrApply(HttpServletRequest request, String schema, InputStream postInput, boolean doApply) throws IOException {
-        if (schema == null || !securityService.isAccessible(request, schema)) {
+        if (schema == null || !reqs.securityService.isAccessible(request, schema)) {
             return FORBIDDEN;
         }
-        try (Session session = sessionService.createSession()) {
+        try (Session session = reqs.sessionService.createSession()) {
             // Cannot have transaction when attempting to perform DDL
-            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+            AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(session);
             ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
             Space curSpace = AisToSpace.create(ais);
             Space newSpace = Space.create(new InputStreamReader(postInput));
@@ -180,7 +175,7 @@ public final class EntityResource {
             boolean success = true;
             JsonDiffPreview jsonSummary = new JsonDiffPreview();
             if(doApply) {
-                DDLBasedSpaceModifier modifier = new DDLBasedSpaceModifier(dxlService.ddlFunctions(), session, schema, newSpace);
+                DDLBasedSpaceModifier modifier = new DDLBasedSpaceModifier(reqs.dxlService.ddlFunctions(), session, schema, newSpace);
                 diff.apply(modifier);
                 if(modifier.hadError()) {
                     success = false;

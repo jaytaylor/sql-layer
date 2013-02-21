@@ -26,13 +26,28 @@
 
 package com.akiban.rest;
 
-import javax.ws.rs.core.Response;
+import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.restdml.RestDMLService;
+import com.akiban.server.service.security.SecurityService;
+import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.transaction.TransactionService;
 
-public class ResponseHelper {
-    public static Response buildNotYetImplemented() {
-        return Response
-                .status(Response.Status.OK)
-                .entity("Not yet implemented")
-                .build();
+public class ResourceRequirements {
+    public final DXLService dxlService;
+    public final RestDMLService restDMLService;
+    public final SecurityService securityService;
+    public final SessionService sessionService;
+    public final TransactionService transactionService;
+
+    public ResourceRequirements(DXLService dxlService,
+                                RestDMLService restDMLService,
+                                SecurityService securityService,
+                                SessionService sessionService,
+                                TransactionService transactionService) {
+        this.dxlService = dxlService;
+        this.restDMLService = restDMLService;
+        this.securityService = securityService;
+        this.sessionService = sessionService;
+        this.transactionService = transactionService;
     }
 }

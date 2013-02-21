@@ -1,5 +1,7 @@
 explain-2: explain group joins
 
+explain-3: explain INSERT
+
 select-0: single column of primary key match
 
 select-1: all fields of single table
