@@ -146,4 +146,55 @@ public class EntityParserIT extends ITBase {
         assertTrue(c.getColumn(4).getName().equals("tax_rate"));
         assertTrue(c.getColumn(4).getType().equals(Types.DOUBLE));
     }
+    
+    @Test
+    public void testCAO() throws JsonProcessingException, IOException {
+        TableName tableName = new TableName ("test", "customers");
+        String postInput ="{\"cid\": 6, \"first_name\": \"John\",\"last_name\": \"Smith\"," +
+                "\"addresses\": {\"aid\": 104, \"cid\": 6, \"state\": \"MA\", \"city\": \"Boston\"}," +
+                "\"orders\": {\"oid\" : 103, \"cid\" : 2, \"odate\": \"2012-12-31 12:00:00\"}}";
+        ObjectMapper m = new ObjectMapper();
+        JsonNode node = m.readTree(postInput);
+        parser.parse(session(), tableName, node);
+        AkibanInformationSchema ais = dxl().ddlFunctions().getAIS(session());
+        
+        assertNotNull(ais.getTable(new TableName("test", "customers")));
+        UserTable c = ais.getUserTable(tableName);
+        
+        assertNotNull (ais.getTable(new TableName("test", "addresses")));
+        UserTable a = ais.getUserTable (new TableName ("test", "addresses"));
+        assertNotNull (ais.getTable(new TableName("test", "orders")));
+        UserTable o = ais.getUserTable(new TableName ("test", "orders"));
+        Join join = a.getParentJoin();
+        assertTrue (join.getParent() == c);
+        assertTrue (join.getChild() == a);
+
+        join = o.getParentJoin();
+        assertTrue (join.getParent() == c);
+        assertTrue (join.getChild() == o);
+        
+    }
+    
+    @Test
+    public void testCA_array() throws JsonProcessingException, IOException {
+        TableName tableName = new TableName ("test", "customers");
+        String postInput ="{\"cid\": 6, \"first_name\": \"John\",\"last_name\": \"Smith\"," +
+                "\"addresses\": [{\"aid\": 104, \"cid\": 6, \"state\": \"MA\", \"city\": \"Boston\"}, " +
+                "{\"aid\": 105, \"cid\": 6, \"state\": \"MA\", \"city\": \"Boston\"}]}";
+        ObjectMapper m = new ObjectMapper();
+        JsonNode node = m.readTree(postInput);
+        parser.parse(session(), tableName, node);
+        AkibanInformationSchema ais = dxl().ddlFunctions().getAIS(session());
+        
+        assertNotNull (ais.getTable(tableName));
+        UserTable c = ais.getUserTable(tableName);
+
+        tableName = new TableName ("test", "addresses");
+        assertNotNull (ais.getTable(tableName));
+        UserTable a = ais.getUserTable(tableName);
+        assertNotNull(a.getParentJoin());
+        Join join = a.getParentJoin();
+        assertTrue (join.getParent() == c);
+        assertTrue (join.getChild() == a);
+    }
 }

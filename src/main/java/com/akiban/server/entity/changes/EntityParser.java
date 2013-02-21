@@ -74,11 +74,20 @@ public final class EntityParser {
     }
     
     private void processContainer (JsonNode node, NewAISBuilder builder, TableName tableName) throws IOException {
+        boolean first = true;
         if (node.isObject()) {
             processTable (node, builder, tableName);
         } else if (node.isArray()) {
-            assert false: "JSON array not supported";
+            // For an array of elements, process the first one and discard the rest
+            for (JsonNode arrayElement : node) {
+                if (first && arrayElement.isObject()) { 
+                    processTable(arrayElement, builder, tableName);
+                    first = false;
+                }
+                // else throw Bad Json Format Exception
+            }
         }
+        // else throw Bad Json Format Exception
     }
 
     private void processTable (JsonNode node, NewAISBuilder builder, TableName tableName) throws IOException {
