@@ -93,7 +93,7 @@ public final class EntityResource {
                 reqs.transactionService.commitTransaction(session);
             }
         }
-    }
+    }   
 
     @POST
     @Path("/parse/{table}")
@@ -110,7 +110,12 @@ public final class EntityResource {
         JsonNode node = m.readTree(postInput);
         EntityParser parser = new EntityParser (reqs.dxlService);
         try (Session session = reqs.sessionService.createSession()) {
-            return parser.parse(session, tableName, node);
+            parser.parse(session, tableName, node);
+
+            AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(session);
+            ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(tableName.getSchemaName()));
+            Space currSpace = AisToSpace.create(ais);
+            return Response.status(Response.Status.OK).entity(currSpace.toJson()).build();
         } catch (Exception e) {
             // TODO: Cleanup and make consistent with other REST
             // While errors are still common, make them obvious.
