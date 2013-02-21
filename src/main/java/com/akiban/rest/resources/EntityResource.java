@@ -28,8 +28,11 @@ package com.akiban.rest.resources;
 
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.protobuf.ProtobufWriter;
+import com.akiban.rest.ResponseHelper;
 import com.akiban.server.entity.changes.DDLBasedSpaceModifier;
+import com.akiban.server.entity.changes.EntityParser;
 import com.akiban.server.entity.changes.SpaceDiff;
 import com.akiban.server.entity.fromais.AisToSpace;
 import com.akiban.server.entity.model.Space;
@@ -39,7 +42,6 @@ import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.store.SchemaManager;
 import com.google.inject.Inject;
 
 import javax.servlet.http.HttpServletRequest;
@@ -54,13 +56,14 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.StringWriter;
 import java.security.Principal;
-
-import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 
 @Path("/entity")
 public final class EntityResource {
@@ -96,6 +99,34 @@ public final class EntityResource {
         }
     }
 
+    @POST
+    @Path("/parse/{table}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response parse(@Context HttpServletRequest request,
+                           @PathParam("table") String table,
+                           final InputStream postInput) throws IOException {
+        TableName tableName = DataAccessOperationsResource.parseTableName(request, table);
+        if (tableName.getSchemaName().length() == 0 || !securityService.isAccessible(request, tableName.getSchemaName())) {
+            return FORBIDDEN;
+        }
+        ObjectMapper m = new ObjectMapper();
+        JsonNode node = m.readTree(postInput);
+        //return ResponseHelper.buildNotYetImplemented();
+        EntityParser parser = new EntityParser (this.dxlService);
+        try (Session session = sessionService.createSession()) {
+            return parser.parse(session, tableName, node);
+        } catch (Exception e) {
+            // TODO: Cleanup and make consistent with other REST
+            // While errors are still common, make them obvious.
+            throw new WebApplicationException(
+                    Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                            .entity(e.getMessage())
+                            .build()
+            );
+        }
+    }
+    
     @POST
     @Path("/preview")
     @Produces(MediaType.APPLICATION_JSON)

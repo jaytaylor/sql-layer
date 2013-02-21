@@ -27,7 +27,6 @@
 package com.akiban.rest.resources;
 
 import com.akiban.ais.model.TableName;
-import com.akiban.rest.ResponseHelper;
 import com.akiban.server.service.restdml.RestDMLService;
 import com.google.inject.Inject;
 
@@ -58,8 +57,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 @Path("/{table}")
 public class DataAccessOperationsResource {
     
-    @Inject
-    RestDMLService dmlService;
+    @Inject private RestDMLService dmlService;
     
     JsonFactory jsonFactory = new JsonFactory();
     
