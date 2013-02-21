@@ -109,7 +109,7 @@ public final class ModelResource {
     public Response parse(@Context HttpServletRequest request,
                            @PathParam("table") String table,
                            final InputStream postInput) throws IOException {
-        TableName tableName = DataAccessOperationsResource.parseTableName(request, table);
+        TableName tableName = EntityResource.parseTableName(request, table);
         if (tableName.getSchemaName().length() == 0 || !reqs.securityService.isAccessible(request, tableName.getSchemaName())) {
             return FORBIDDEN;
         }
@@ -124,8 +124,6 @@ public final class ModelResource {
             Space currSpace = AisToSpace.create(ais);
             return Response.status(Response.Status.OK).entity(currSpace.toJson()).build();
         } catch (Exception e) {
-            // TODO: Cleanup and make consistent with other REST
-            // While errors are still common, make them obvious.
             throw new WebApplicationException(
                     Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                             .entity(e.getMessage())
