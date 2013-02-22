@@ -29,8 +29,6 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import javax.ws.rs.core.Response;
-
 import org.codehaus.jackson.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +52,7 @@ public final class EntityParser {
         this.ddlFunctions = dxlService.ddlFunctions();
     }    
         
-    public Response parse (final Session session, TableName tableName, JsonNode node) throws IOException {
+    public void parse (final Session session, TableName tableName, JsonNode node) throws IOException {
 
         NewAISBuilder builder = AISBBasedBuilder.create(tableName.getSchemaName());
 
@@ -69,8 +67,6 @@ public final class EntityParser {
                 
             }
         });
-        
-        return null;
     }
     
     private void processContainer (JsonNode node, NewAISBuilder builder, TableName tableName) throws IOException {
@@ -99,7 +95,7 @@ public final class EntityParser {
             if (field.getValue().isValueNode()) {
                 
                 if (field.getValue().isTextual()) {
-                    int  len = Math.min(field.getValue().asText().length(), 128);
+                    int  len = Math.max(field.getValue().asText().length(), 128);
                     table.colString(field.getKey(), len, true);
                 } else if (field.getValue().isIntegralNumber()) {
                     table.colBigInt(field.getKey(), true);
