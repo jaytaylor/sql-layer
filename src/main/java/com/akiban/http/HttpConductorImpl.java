@@ -37,13 +37,11 @@ import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.JDBCLoginService;
 import org.eclipse.jetty.security.LoginService;
-import org.eclipse.jetty.security.SecurityHandler;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
 import org.eclipse.jetty.security.authentication.DigestAuthenticator;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandler;
-import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
@@ -69,7 +67,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     private final SecurityService securityService;
 
     private final Object lock = new Object();
-    private HandlerCollection handlerCollection;
+    private SimpleHandlerList handlerList;
     private Server server;
     private Set<String> registeredPaths;
     private volatile int port = -1;
@@ -95,7 +93,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                 registeredPaths = new HashSet<>();
             if (!registeredPaths.add(contextBase))
                 throw new IllegalPathRequest("context already reserved: " + contextBase);
-            handlerCollection.addHandler(handler);
+            handlerList.addHandler(handler);
             if (!handler.isStarted()) {
                 try {
                     handler.start();
@@ -120,11 +118,8 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                 logger.warn("Path not registered (for " + handler + "): " + contextBase);
             }
             else {
-                handlerCollection.removeHandler(handler);
+                handlerList.removeHandler(handler);
                 if (!handler.isStopped()) {
-                    // As of the current version of jetty, HandlerCollection#removeHandler stops the handler -- so
-                    // this block won't get executed. This is really here for future-proofing, in case that auto-stop
-                    // goes away for some reason.
                     try {
                         handler.stop();
                     }
@@ -192,11 +187,11 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         connector.setLowResourcesConnections(25000);
         localServer.setConnectors(new Connector[]{connector});
 
-        HandlerCollection localHandlerCollection = new HandlerCollection(true);
+        SimpleHandlerList localHandlerList = new SimpleHandlerList();
 
         try {
             if (login == AuthenticationType.NONE) {
-                localServer.setHandler(localHandlerCollection);
+                localServer.setHandler(localHandlerList);
             }
             else {
                 String resource;
@@ -232,7 +227,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                                                      HttpConductorImpl.class.getResource(resource).toString());
                 sh.setLoginService(loginService);
 
-                sh.setHandler(localHandlerCollection);
+                sh.setHandler(localHandlerList);
                 localServer.setHandler(sh);
             }
             localServer.start();
@@ -244,7 +239,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
 
         synchronized (lock) {
             this.server = localServer;
-            this.handlerCollection = localHandlerCollection;
+            this.handlerList = localHandlerList;
             this.registeredPaths = null;
             this.port = portLocal;
         }
@@ -256,7 +251,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         synchronized (lock) {
             localServer = server;
             server = null;
-            handlerCollection = null;
+            handlerList = null;
             registeredPaths = null;
             port = -1;
         }
