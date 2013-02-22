@@ -30,30 +30,55 @@ import com.akiban.rest.ResourceRequirements;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.Arrays;
 
-/**
- * Exposed JSON formatted EXPLAIN for SQL statement.
- */
-@Path("/explain")
-public class SqlExplainResource {
+@Path("/sql")
+public class SQLResource {
     private final ResourceRequirements reqs;
 
-    public SqlExplainResource(ResourceRequirements reqs) {
+    public SQLResource(ResourceRequirements reqs) {
         this.reqs = reqs;
     }
 
+    /** Run a single SQL statement specified by the 'q' query parameter. */
     @GET
+    @Path("/query")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getQueryResults(@Context HttpServletRequest request,
-                                    @QueryParam("format") String format,
-                                    @QueryParam("jsoncallback") String jsonp,
-                                    @QueryParam("q") String query) throws Exception {
+    public Response query(@Context HttpServletRequest request,
+                          @QueryParam("format") String format,
+                          @QueryParam("jsoncallback") String jsonp,
+                          @QueryParam("q") String query) throws Exception {
+        return reqs.restDMLService.runSQL(request, query);
+    }
+
+    /** Explain a single SQL statement specified by the 'q' query parameter. */
+    @GET
+    @Path("/explain")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response explain(@Context HttpServletRequest request,
+                            @QueryParam("format") String format,
+                            @QueryParam("jsoncallback") String jsonp,
+                            @QueryParam("q") String query) throws Exception {
         return reqs.restDMLService.explainSQL(request, query);
+    }
+
+    /** Run multiple SQL statements (single transaction) specified by semi-colon separated strings in the POST body. */
+    @POST
+    @Path("/execute")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response execute(@Context HttpServletRequest request,
+                            @QueryParam("format") String format,
+                            @QueryParam("jsoncallback") String jsonp,
+                            final byte[] postBytes) throws Exception {
+        String input = new String(postBytes);
+        String[] statements = input.split(";");
+        return reqs.restDMLService.runSQL(request, Arrays.asList(statements));
     }
 }
