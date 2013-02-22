@@ -52,6 +52,12 @@ public interface NewAISBuilder extends NewAISProvider {
     NewUserTableBuilder userTable(String schema, String table);
 
     NewUserTableBuilder userTable(TableName tableName);
+    
+    /**
+     * Returns the NewUserTableBuilder for the table being built 
+     * @return
+     */
+    NewUserTableBuilder getUserTable();
    
     /**
      * create a new sequence

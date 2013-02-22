@@ -28,9 +28,11 @@ package com.akiban.rest.resources;
 
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.server.entity.changes.DDLBasedSpaceModifier;
+import com.akiban.server.entity.changes.EntityParser;
 import com.akiban.server.entity.changes.SpaceDiff;
 import com.akiban.server.entity.fromais.AisToSpace;
 import com.akiban.server.entity.model.Space;
@@ -48,6 +50,10 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -93,6 +99,36 @@ public final class ModelResource {
             finally {
                 reqs.transactionService.commitTransaction(session);
             }
+        }
+    }   
+
+    @POST
+    @Path("/parse/{table}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response parse(@Context HttpServletRequest request,
+                           @PathParam("table") String table,
+                           final InputStream postInput) throws IOException {
+        TableName tableName = EntityResource.parseTableName(request, table);
+        if (tableName.getSchemaName().length() == 0 || !reqs.securityService.isAccessible(request, tableName.getSchemaName())) {
+            return FORBIDDEN;
+        }
+        ObjectMapper m = new ObjectMapper();
+        JsonNode node = m.readTree(postInput);
+        EntityParser parser = new EntityParser (reqs.dxlService);
+        try (Session session = reqs.sessionService.createSession()) {
+            parser.parse(session, tableName, node);
+
+            AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(session);
+            ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(tableName.getSchemaName()));
+            Space currSpace = AisToSpace.create(ais);
+            return Response.status(Response.Status.OK).entity(currSpace.toJson()).build();
+        } catch (Exception e) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                            .entity(e.getMessage())
+                            .build()
+            );
         }
     }
 
