@@ -97,8 +97,8 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
             List<String> testLines = Strings.dumpFile(testFile);
             Iterator<String> testLinesIter = testLines.iterator();
             String sql = testLinesIter.next();
-            Map<Set<Map<String,Boolean>>,Integer> tmp = new HashMap<Set<Map<String, Boolean>>, Integer>();
-            Set<Map<String,Boolean>> columnEquivalenceSets = new HashSet<Map<String, Boolean>>();
+            Map<Set<Map<String,Boolean>>,Integer> tmp = new HashMap<>();
+            Set<Map<String,Boolean>> columnEquivalenceSets = new HashSet<>();
             int depth = 0;
             while (testLinesIter.hasNext()) {
                 String columnEquivalenceLine = testLinesIter.next().trim();
@@ -106,10 +106,10 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
                 if (depthMatcher.matches()) {
                     tmp.put(columnEquivalenceSets, depth);
                     depth = Integer.parseInt(depthMatcher.group(1));
-                    columnEquivalenceSets = new HashSet<Map<String, Boolean>>();
+                    columnEquivalenceSets = new HashSet<>();
                     continue;
                 }
-                Map<String,Boolean> columnEquivalences = new HashMap<String, Boolean>();
+                Map<String,Boolean> columnEquivalences = new HashMap<>();
                 String[] columnNames = readEquivalences(columnEquivalenceLine);
                 for (String columnName : columnNames)
                     columnEquivalences.put(columnName, columnNames.length == 1);
@@ -161,7 +161,7 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
                         parser.getParameterList()));
         rules.applyRules(plan);
 
-        Map<Set<Map<String,Boolean>>,Integer> result = new HashMap<Set<Map<String, Boolean>>, Integer>();
+        Map<Set<Map<String,Boolean>>,Integer> result = new HashMap<>();
         Collection<EquivalenceScope> scopes = new ColumnFinder().find(plan.getPlan());
         for (EquivalenceScope scope : scopes) {
             Collection<ColumnExpression> columnExpressions = scope.columns;
@@ -170,8 +170,8 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
             Object old = result.put(byName, depth);
             assertNull("bumped: " + old, old);
             // anything in the equivs participants must also be in the scope's columns.
-            HashSet<ColumnExpression> columnsSet = new HashSet<ColumnExpression>(scope.columns);
-            assertEquals("columns in equivalencies", columnsSet, new HashSet<ColumnExpression>(scope.columns));
+            HashSet<ColumnExpression> columnsSet = new HashSet<>(scope.columns);
+            assertEquals("columns in equivalencies", columnsSet, new HashSet<>(scope.columns));
             Set<ColumnExpression> inScopeParticipants = Sets.intersection(scope.equivs.findParticipants(), columnsSet);
             assertCollectionEquals("columns in equivalencies", inScopeParticipants, scope.equivs.findParticipants());
         }
@@ -180,7 +180,7 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
 
     private Set<Map<String, Boolean>> collectEquivalentColumns(Collection<ColumnExpression> columnExpressions,
                                                                EquivalenceFinder<ColumnExpression> equivs) {
-        Set<Set<ColumnExpression>> set = new HashSet<Set<ColumnExpression>>();
+        Set<Set<ColumnExpression>> set = new HashSet<>();
         for (ColumnExpression columnExpression : columnExpressions) {
             Set<ColumnExpression> belongsToSet = null;
             for (Set<ColumnExpression> equivalentExpressions : set) {
@@ -203,15 +203,15 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
                 }
             }
             if (belongsToSet == null) {
-                belongsToSet = new HashSet<ColumnExpression>();
+                belongsToSet = new HashSet<>();
                 set.add(belongsToSet);
             }
             belongsToSet.add(columnExpression);
         }
 
-        Set<Map<String,Boolean>> byName = new HashSet<Map<String, Boolean>>();
+        Set<Map<String,Boolean>> byName = new HashSet<>();
         for (Set<ColumnExpression> equivalenceSet : set) {
-            Map<String,Boolean> nameAndNullability = new TreeMap<String, Boolean>();
+            Map<String,Boolean> nameAndNullability = new TreeMap<>();
             for (ColumnExpression columnExpression : equivalenceSet) {
                 nameAndNullability.put(String.valueOf(columnExpression), columnExpression.getSQLtype().isNullable());
             }
@@ -255,8 +255,8 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
     
     private static class ColumnFinder implements PlanVisitor, ExpressionVisitor {
         ColumnEquivalenceStack equivsStack = new ColumnEquivalenceStack();
-        Deque<List<ColumnExpression>> columnExpressionsStack = new ArrayDeque<List<ColumnExpression>>();
-        Collection<EquivalenceScope> results = new ArrayList<EquivalenceScope>();
+        Deque<List<ColumnExpression>> columnExpressionsStack = new ArrayDeque<>();
+        Collection<EquivalenceScope> results = new ArrayList<>();
 
         public Collection<EquivalenceScope> find(PlanNode root) {
             root.accept(this);

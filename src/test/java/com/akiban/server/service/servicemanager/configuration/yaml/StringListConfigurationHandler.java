@@ -100,6 +100,6 @@ final class StringListConfigurationHandler implements ServiceConfigurationHandle
     }
 
     // object state
-    private final List<String> strings = new ArrayList<String>();
+    private final List<String> strings = new ArrayList<>();
     private final List<String> unmodifiableStrings = Collections.unmodifiableList(strings);
 }

@@ -62,7 +62,7 @@ import java.util.regex.Pattern;
 class DXLMXBeanImpl implements DXLMXBean {
     private final DXLServiceImpl dxlService;
     private final Store store;
-    private final AtomicReference<String> usingSchema = new AtomicReference<String>("test");
+    private final AtomicReference<String> usingSchema = new AtomicReference<>("test");
     private final SessionService sessionService;
     private static final Logger LOG = LoggerFactory.getLogger(DXLMXBeanImpl.class);
     private static final String CREATE_GROUP_INDEX_LOG_FORMAT = "createGroupIndex failed: %s %s %s";
@@ -255,7 +255,7 @@ class DXLMXBeanImpl implements DXLMXBean {
     }
 
     static List<String> listGiDDLs(AkibanInformationSchema ais, String usingSchema) {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
         for (com.akiban.ais.model.Group group : ais.getGroups().values()) {
             for (GroupIndex gi : group.getIndexes()) {
@@ -291,7 +291,7 @@ class DXLMXBeanImpl implements DXLMXBean {
 
     private static void stripAISFromGrouping(Grouping grouping) {
         List<Group> groupsToRemove = grouping.traverse(new GroupingVisitorStub<List<Group>>() {
-            private final List<Group> ret = new ArrayList<Group>();
+            private final List<Group> ret = new ArrayList<>();
 
             @Override
             public void visitGroup(Group group, TableName rootTable) {

@@ -1,0 +1,29 @@
+{
+    "result_set": [
+        {
+            "update_count": 1
+        }
+    ],
+    "result_set_1": [
+        {
+            "update_count": 1
+        }
+    ],
+    "result_set_2": [
+        {
+            "cid": 2,
+            "first_name": "Willy",
+            "last_name": "Jones",
+            "o_info": [
+                {
+                    "oid": 201,
+                    "iid": [
+                        {
+                            "iid": 2011
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

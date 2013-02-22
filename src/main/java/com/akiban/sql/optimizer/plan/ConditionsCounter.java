@@ -66,7 +66,7 @@ public final class ConditionsCounter<C> implements ConditionsCount<C> {
     }
 
     public ConditionsCounter(int capacity) {
-        counter = new HashMap<C, HowMany>(capacity);
+        counter = new HashMap<>(capacity);
     }
 
     // mapping of C -> [0, 1, >1 ]

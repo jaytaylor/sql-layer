@@ -65,7 +65,7 @@ public final class CsvRowReaderTest {
                                                istr, new CsvFormat("UTF-8"), 
                                                null);
         reader.skipRows(1); // Header
-        List<NewRow> rows = new ArrayList<NewRow>();
+        List<NewRow> rows = new ArrayList<>();
         NewRow row;
         while ((row = reader.nextRow()) != null)
             rows.add(row);

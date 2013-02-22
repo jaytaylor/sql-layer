@@ -50,7 +50,7 @@ public final class IndexCheckSummary {
     }
 
     public List<IndexCheckResult> getAllResults() {
-        List<IndexCheckResult> results = new ArrayList<IndexCheckResult>();
+        List<IndexCheckResult> results = new ArrayList<>();
         results.addAll(okResults);
         results.addAll(fixedResults);
         results.addAll(brokenResults);
@@ -98,10 +98,10 @@ public final class IndexCheckSummary {
 
     public IndexCheckSummary(List<IndexCheckResult> results, long timeNs) {
         this.timeNs = timeNs;
-        this.okResults = new ArrayList<IndexCheckResult>();
-        this.fixedResults = new ArrayList<IndexCheckResult>();
-        this.brokenResults = new ArrayList<IndexCheckResult>();
-        this.otherResults = new ArrayList<IndexCheckResult>();
+        this.okResults = new ArrayList<>();
+        this.fixedResults = new ArrayList<>();
+        this.brokenResults = new ArrayList<>();
+        this.otherResults = new ArrayList<>();
         for (IndexCheckResult result : results) {
             List<IndexCheckResult> which;
             switch (result.getBottomLine()) {

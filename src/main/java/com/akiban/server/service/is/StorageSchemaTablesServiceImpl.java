@@ -172,7 +172,7 @@ public class StorageSchemaTablesServiceImpl
     
     private Object getJMXInvoke (ObjectName mbeanName, String methodName, Object[] parameters) {
         Object value = null;
-        Vector<String>signature = new Vector<String>(parameters.length);
+        Vector<String>signature = new Vector<>(parameters.length);
         String[] sig = new String[parameters.length];
         
         for (Object param : parameters) {
@@ -418,7 +418,7 @@ public class StorageSchemaTablesServiceImpl
             Vector<String> parameter;
             public Scan(RowType rowType) {
                 super(rowType, "IOMeter");
-                parameter = new Vector<String> (1);
+                parameter = new Vector<>(1);
                 parameter.add(IOMeterMXBean.OPERATIONS[0]);
             }
 

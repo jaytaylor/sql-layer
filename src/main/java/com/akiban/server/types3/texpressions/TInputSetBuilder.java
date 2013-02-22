@@ -102,7 +102,7 @@ public final class TInputSetBuilder {
     }
 
     List<TInputSet> toList() {
-        return new ArrayList<TInputSet>(inputSets);
+        return new ArrayList<>(inputSets);
     }
 
     private final InputSetFlags.Builder exactsBuilder = new InputSetFlags.Builder();
@@ -110,5 +110,5 @@ public final class TInputSetBuilder {
     private boolean exact = false;
     private TInputSet vararg = null;
 
-    private List<TInputSet> inputSets = new ArrayList<TInputSet>(4);
+    private List<TInputSet> inputSets = new ArrayList<>(4);
 }

@@ -54,7 +54,7 @@ public final class Aggregate_PartialTest extends OldExpressionTestBase {
 
     static List<Object> getList(int size)
     {
-        List<Object> ret = new ArrayList<Object>();
+        List<Object> ret = new ArrayList<>();
         while (size-- >= 0)
             ret.add(null);
         return ret;
@@ -226,7 +226,7 @@ public final class Aggregate_PartialTest extends OldExpressionTestBase {
                 .row(10L, "100, 101")
                 .row(20L, "200")
                 .rows();
-        List<Row> expectedFull = new ArrayList<Row>();
+        List<Row> expectedFull = new ArrayList<>();
         expectedFull.addAll(boringRows.rows());
         expectedFull.addAll(expected);
         Collections.swap(expectedFull, 2, 3);

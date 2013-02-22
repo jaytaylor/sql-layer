@@ -102,7 +102,7 @@ abstract class IndexStatisticsGenerator
     
     public void init(int bucketCount, long distinctCount) {
         this.keySampler =
-            new Sampler<Key>(new KeySplitter(columnCount, keysFlywheel),
+            new Sampler<>(new KeySplitter(columnCount, keysFlywheel),
                              bucketCount,
                              distinctCount,
                              keysFlywheel);
@@ -132,7 +132,7 @@ abstract class IndexStatisticsGenerator
         for (int colCountSegment = 0; colCountSegment < columnCount; colCountSegment++) {
             List<Bucket<Key>> segmentSamples = segmentBuckets.get(colCountSegment);
             int samplesCount = segmentSamples.size();
-            List<HistogramEntry> entries = new ArrayList<HistogramEntry>(samplesCount);
+            List<HistogramEntry> entries = new ArrayList<>(samplesCount);
             for (Bucket<Key> sample : segmentSamples) {
                 Key key = sample.value();
                 byte[] keyBytes = new byte[key.getEncodedSize()];

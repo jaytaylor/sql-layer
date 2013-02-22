@@ -208,7 +208,7 @@ public class TableGroupJoinTree extends BaseJoinable
     }
 
     public <V> Map<TableGroupJoinNode,V> findLeaves(LeafFinderPredicate<V> predicate) {
-        Map<TableGroupJoinNode,V> results = new HashMap<TableGroupJoinNode, V>();
+        Map<TableGroupJoinNode,V> results = new HashMap<>();
         if (predicate.includeAndContinue(root, this))
             buildLeaves(root, predicate, results);
         return results;

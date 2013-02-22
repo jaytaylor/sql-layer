@@ -44,7 +44,7 @@ public class JoinToOneParent implements AISValidation {
 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        Set<UserTable> childTables = new HashSet<UserTable>();
+        Set<UserTable> childTables = new HashSet<>();
         
         for (Join join : ais.getJoins().values()) {
             if (childTables.contains(join.getChild())) {

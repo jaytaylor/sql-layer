@@ -26,7 +26,6 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.*;
@@ -40,7 +39,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -111,7 +109,7 @@ class Map_NestedLoops extends Operator
     @Override
     public List<Operator> getInputOperators()
     {
-        List<Operator> result = new ArrayList<Operator>(2);
+        List<Operator> result = new ArrayList<>(2);
         result.add(outerInputOperator);
         result.add(innerInputOperator);
         return result;
@@ -181,9 +179,13 @@ class Map_NestedLoops extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 checkQueryCancelation();
                 Row outputRow = null;
                 while (!closed && outputRow == null) {
@@ -194,19 +196,21 @@ class Map_NestedLoops extends Operator
                             close();
                         } else {
                             outerRow.hold(row);
-                            if (LOG.isDebugEnabled()) {
+                            if (LOG_EXECUTION) {
                                 LOG.debug("Map_NestedLoops: restart inner loop using current branch row");
                             }
                             startNewInnerLoop(row);
                         }
                     }
                 }
-                if(LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("Map_NestedLoops: yield {}", outputRow);
                 }
                 return outputRow;
             } finally {
-                TAP_NEXT.out();
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
 
@@ -289,7 +293,7 @@ class Map_NestedLoops extends Operator
 
         private final Cursor outerInput;
         private final Cursor innerInput;
-        private final ShareHolder<Row> outerRow = new ShareHolder<Row>();
+        private final ShareHolder<Row> outerRow = new ShareHolder<>();
         private boolean closed = true;
     }
 }

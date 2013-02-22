@@ -49,7 +49,7 @@ public class TableStatistics {
 
     private long updateTime;
 
-    private List<Histogram> histograms = new ArrayList<Histogram>();
+    private List<Histogram> histograms = new ArrayList<>();
 
     public TableStatistics(final int rowDefId) {
         this.rowDefId = rowDefId;
@@ -123,7 +123,7 @@ public class TableStatistics {
 
         private final int indexId;
 
-        private List<HistogramSample> samples = new ArrayList<HistogramSample>();
+        private List<HistogramSample> samples = new ArrayList<>();
 
         public Histogram(final int indexId) {
             this.indexId = indexId;

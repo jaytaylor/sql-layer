@@ -32,14 +32,14 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class DefaultIndexNameGenerator implements IndexNameGenerator {
-    private final Set<String> indexNames = new HashSet<String>();
+    private final Set<String> indexNames = new HashSet<>();
 
     public DefaultIndexNameGenerator(Collection<String> initialIndexNames) {
         indexNames.addAll(initialIndexNames);
     }
 
     public static DefaultIndexNameGenerator forTable(UserTable table) {
-        Set<String> indexNames = new HashSet<String>();
+        Set<String> indexNames = new HashSet<>();
         for(Index index : table.getIndexesIncludingInternal()) {
             indexNames.add(index.getIndexName().getName());
         }

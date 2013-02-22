@@ -227,10 +227,16 @@ public class AISBBasedBuilder
             checkUsable();
             aisb.column(schema, userTable, name, uTableColumnPos++, "INT", 10L, null, nullable, autoIncrement, null, null);
             if (initialAutoInc != null) {
+                String sequenceName = "temp-seq-" + userTable + "-" + name;
+                long initValue = initialAutoInc.longValue();
+                aisb.sequence(schema, sequenceName, 
+                              initValue, 1L, Long.MIN_VALUE, Long.MAX_VALUE, 
+                              false);
+                aisb.columnAsIdentity(schema, userTable, name, sequenceName, true);
                 aisb.akibanInformationSchema().
                      getUserTable(schema, userTable).
                      getColumn(name).
-                     setInitialAutoIncrementValue(initialAutoInc.longValue());
+                     setInitialAutoIncrementValue(initValue);
             }
             return this;
         }
@@ -414,7 +420,7 @@ public class AISBBasedBuilder
             TableName tableName = TableName.create(schema, table);
             Collection<String> entry = view.getTableColumnReferences().get(tableName);
             if (entry == null) {
-                entry = new HashSet<String>();
+                entry = new HashSet<>();
                 view.getTableColumnReferences().put(tableName, entry);
             }
             for (String colname : columns) {
@@ -569,7 +575,7 @@ public class AISBBasedBuilder
         public ActualBuilder() {
             aisb = new AISBuilder();
             usable = true;
-            tablesToGroups = new HashMap<TableName, TableName>();
+            tablesToGroups = new HashMap<>();
         }
 
         // private

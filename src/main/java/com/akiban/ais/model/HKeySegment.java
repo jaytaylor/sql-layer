@@ -95,6 +95,6 @@ public class HKeySegment
 
     private final HKey hKey;
     private final UserTable table;
-    private final List<HKeyColumn> columns = new ArrayList<HKeyColumn>();
+    private final List<HKeyColumn> columns = new ArrayList<>();
     private final int positionInHKey;
 }

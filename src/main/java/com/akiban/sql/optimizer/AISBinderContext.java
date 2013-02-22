@@ -107,7 +107,7 @@ public class AISBinderContext
         parser = new SQLParser();
         parser.getFeatures().remove(SQLParserFeature.GEO_INDEX_DEF_FUNC); // Off by default.
 
-        Set<SQLParserFeature> parserFeatures = new HashSet<SQLParserFeature>();
+        Set<SQLParserFeature> parserFeatures = new HashSet<>();
         // TODO: Others that are on by defaults; could have override to turn them
         // off, but they are pretty harmless.
         if (getBooleanProperty("parserInfixBit", false))
@@ -188,7 +188,7 @@ public class AISBinderContext
         this.binder = binder;
         binder.setContext(this);
         this.typeComputer = typeComputer;
-        this.viewDefinitions = new HashMap<View,AISViewDefinition>();
+        this.viewDefinitions = new HashMap<>();
     }
 
     protected void initBinder() {
@@ -259,6 +259,14 @@ public class AISBinderContext
             throw new ViewHasBadSubqueryException(name, ex.getMessage());
         }
         return view;
+    }
+
+    public boolean isAccessible(TableName object) {
+        return isSchemaAccessible(object.getSchemaName());
+    }
+
+    public boolean isSchemaAccessible(String schemaName) {
+        return true;
     }
 
 }

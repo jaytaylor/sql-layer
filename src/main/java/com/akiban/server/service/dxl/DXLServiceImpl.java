@@ -145,9 +145,9 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
         try {
             DDLFunctions ddl = ddlFunctions();
             AkibanInformationSchema ais = ddl.getAIS(session);
-            Map<TableName,List<GroupIndex>> gisByGroup = new HashMap<TableName, List<GroupIndex>>();
+            Map<TableName,List<GroupIndex>> gisByGroup = new HashMap<>();
             for (com.akiban.ais.model.Group group : ais.getGroups().values()) {
-                ArrayList<GroupIndex> groupGis = new ArrayList<GroupIndex>(group.getIndexes());
+                ArrayList<GroupIndex> groupGis = new ArrayList<>(group.getIndexes());
                 for (Iterator<GroupIndex> iterator = groupGis.iterator(); iterator.hasNext(); ) {
                     GroupIndex gi = iterator.next();
                     boolean shouldRecreate = predicate.shouldRecreate(gi);
@@ -160,7 +160,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
             }
             for (Map.Entry<TableName,List<GroupIndex>> entry : gisByGroup.entrySet()) {
                 List<GroupIndex> gis = entry.getValue();
-                List<String> giNames = new ArrayList<String>(gis.size());
+                List<String> giNames = new ArrayList<>(gis.size());
                 for (Index gi : gis) {
                     giNames.add(gi.getIndexName().getName());
                 }
@@ -173,7 +173,7 @@ public class DXLServiceImpl implements DXLService, Service, JmxManageable {
     }
 
     protected List<DXLFunctionsHook> getHooks(boolean useGlobalLock) {
-        List<DXLFunctionsHook> hooks = new ArrayList<DXLFunctionsHook>();
+        List<DXLFunctionsHook> hooks = new ArrayList<>();
         if(useGlobalLock) {
             LOG.warn("Global DDL lock is enabled");
             hooks.add(DXLReadWriteLockHook.only());

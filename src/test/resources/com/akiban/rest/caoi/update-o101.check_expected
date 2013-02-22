@@ -1,0 +1,39 @@
+[
+    {
+        "cid": 1,
+        "first_name": "John",
+        "last_name": "Smith",
+        "test.addresses": [
+            {
+                "aid": 101,
+                "cid": 1,
+                "state": "MA",
+                "city": "Boston"
+            }
+        ],
+        "test.orders": [
+            {
+                "oid": 101,
+                "cid": 1,
+                "odate": "2012-03-01 00:00:00",
+                "test.items": [
+                {
+                    "iid": 1015,
+                    "oid": 101,
+                    "sku": 777
+                },
+                {
+                    "iid": 1016,
+                    "oid": 101,
+                    "sku": 9987
+                 }
+                 ]
+            },
+            {
+                "oid": 102,
+                "cid": 1,
+                "odate": "2011-03-02 00:00:00"
+            }
+        ]
+    }
+]

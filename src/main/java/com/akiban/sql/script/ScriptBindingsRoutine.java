@@ -138,7 +138,7 @@ public class ScriptBindingsRoutine extends ServerJavaRoutine
 
     @Override
     public Queue<ResultSet> getDynamicResultSets() {
-        Queue<ResultSet> result = new ArrayDeque<ResultSet>();
+        Queue<ResultSet> result = new ArrayDeque<>();
         if (evalResult instanceof ResultSet) {
             result.add((ResultSet)evalResult);
         }

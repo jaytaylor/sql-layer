@@ -78,7 +78,7 @@ public class FlattenedRowType extends CompoundRowType
     {
         super(schema, typeId, parent, child);
         // re-replace the type composition with the single branch type
-        List<UserTable> parentAndChildTables = new ArrayList<UserTable>(parent.typeComposition().tables());
+        List<UserTable> parentAndChildTables = new ArrayList<>(parent.typeComposition().tables());
         parentAndChildTables.addAll(child.typeComposition().tables());
         typeComposition(new SingleBranchTypeComposition(this, parentAndChildTables));
         

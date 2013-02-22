@@ -146,7 +146,7 @@ public class ManageMXBeanImpl implements ManageMXBean {
      */
     private Collection<Index> gatherIndexes(Session session, String arg) {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-        Collection<Index> indexes = new HashSet<Index>();
+        Collection<Index> indexes = new HashSet<>();
         for(UserTable table : ais.getUserTables().values()) {
             for(Index index : table.getIndexes()) {
                 if(isIndexSelected(index, arg)) {

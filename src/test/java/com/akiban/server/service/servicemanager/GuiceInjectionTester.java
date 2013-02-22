@@ -81,10 +81,10 @@ public final class GuiceInjectionTester {
         }
 
         // alternate method
-        List<Class<?>> allClassesExpected = new ArrayList<Class<?>>();
+        List<Class<?>> allClassesExpected = new ArrayList<>();
         allClassesExpected.add(aClass);
         Collections.addAll(allClassesExpected, itsDependencies);
-        List<Class<?>> allClassesActual = new ArrayList<Class<?>>();
+        List<Class<?>> allClassesActual = new ArrayList<>();
         for (Object instance : guicer.dependenciesFor(aClass)) {
             allClassesActual.add(instance.getClass());
         }
@@ -122,7 +122,7 @@ public final class GuiceInjectionTester {
     }
 
     private List<String> l(List<Class<?>> list) {
-        List<String> simpleNames = new ArrayList<String>();
+        List<String> simpleNames = new ArrayList<>();
         for (Class<?> aClass : list) {
             simpleNames.add(n(aClass));
         }
@@ -163,7 +163,7 @@ public final class GuiceInjectionTester {
             return object;
         }
 
-        private final List<Class<?>> stoppedClasses = new ArrayList<Class<?>>();
+        private final List<Class<?>> stoppedClasses = new ArrayList<>();
     }
 
 }

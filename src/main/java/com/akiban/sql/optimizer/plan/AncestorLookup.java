@@ -46,7 +46,7 @@ public class AncestorLookup extends BaseLookup
                           List<TableSource> tables) {
         super(input, tables);
         this.descendant = descendant.getTable();
-        this.ancestors = new ArrayList<TableNode>(tables.size());
+        this.ancestors = new ArrayList<>(tables.size());
         for (TableSource table : getTables()) {
             ancestors.add(table.getTable());
         }

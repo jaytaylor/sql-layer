@@ -169,7 +169,7 @@ public class LockServiceImpl implements LockService {
     private Map<Integer,int[]> getOrCreateModeMap(Session session, Mode mode) {
         Map<Integer,int[]> map = session.get(getMapKey(mode));
         if(map == null) {
-            map = new HashMap<Integer,int[]>();
+            map = new HashMap<>();
             session.put(getMapKey(mode), map);
         }
         return map;

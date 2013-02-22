@@ -1,0 +1,1 @@
+SELECT ** FROM test.customers WHERE cid=1

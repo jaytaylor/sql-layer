@@ -26,26 +26,47 @@
 
 package com.akiban.http;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.security.SecurityService;
 import com.google.inject.Inject;
+import org.eclipse.jetty.util.security.Constraint;
+import org.eclipse.jetty.security.Authenticator;
+import org.eclipse.jetty.security.ConstraintMapping;
+import org.eclipse.jetty.security.ConstraintSecurityHandler;
+import org.eclipse.jetty.security.JDBCLoginService;
+import org.eclipse.jetty.security.LoginService;
+import org.eclipse.jetty.security.SecurityHandler;
+import org.eclipse.jetty.security.authentication.BasicAuthenticator;
+import org.eclipse.jetty.security.authentication.DigestAuthenticator;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
+import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
 public final class HttpConductorImpl implements HttpConductor, Service {
     private static final Logger logger = LoggerFactory.getLogger(HttpConductorImpl.class);
     private static final String PORT_PROPERTY = "akserver.http.port";
+    private static final String SSL_PROPERTY = "akserver.http.ssl";
+    private static final String LOGIN_PROPERTY = "akserver.http.login";
+
+    private static final String REST_ROLE = "rest-user";
 
     private final ConfigurationService configurationService;
+    private final SecurityService securityService;
 
     private final Object lock = new Object();
     private HandlerCollection handlerCollection;
@@ -53,10 +74,16 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     private Set<String> registeredPaths;
     private volatile int port = -1;
 
+    // Need reference to prevent GC and setting loss
+    private final java.util.logging.Logger jerseyLogging;
+
     @Inject
-    public HttpConductorImpl(ConfigurationService configurationService) {
+    public HttpConductorImpl(ConfigurationService configurationService,
+                             SecurityService securityService) {
         this.configurationService = configurationService;
-        java.util.logging.Logger jerseyLogging = java.util.logging.Logger.getLogger("com.sun.jersey");
+        this.securityService = securityService;
+
+        jerseyLogging = java.util.logging.Logger.getLogger("com.sun.jersey");
         jerseyLogging.setLevel(java.util.logging.Level.OFF);
     }
 
@@ -109,10 +136,18 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         }
     }
 
+    static enum AuthenticationType {
+        NONE, BASIC, DIGEST
+    }
+
     @Override
     public void start() {
         String portProperty = configurationService.getProperty(PORT_PROPERTY);
+        String sslProperty = configurationService.getProperty(SSL_PROPERTY);
+        String loginProperty = configurationService.getProperty(LOGIN_PROPERTY);
         int portLocal;
+        boolean ssl;
+        AuthenticationType login;
         try {
             portLocal = Integer.parseInt(portProperty);
         }
@@ -120,10 +155,35 @@ public final class HttpConductorImpl implements HttpConductor, Service {
             logger.error("bad port descriptor: " + portProperty);
             throw e;
         }
-        logger.info("Starting HTTP service on port {}", portProperty);
-
+        ssl = Boolean.parseBoolean(sslProperty);
+        if ("none".equals(loginProperty)) {
+            login = AuthenticationType.NONE;
+        }
+        else if ("basic".equals(loginProperty)) {
+            login = AuthenticationType.BASIC;
+        }
+        else if ("digest".equals(loginProperty)) {
+            login = AuthenticationType.DIGEST;
+        }
+        else {
+            throw new IllegalArgumentException("Invalid " + LOGIN_PROPERTY +
+                                               " property: " + loginProperty);
+        }
+        logger.info("Starting {} service on port {} with authentication {}", 
+                    new Object[] { ssl ? "HTTPS" : "HTTP", portProperty, login });
+                    
         Server localServer = new Server();
-        SelectChannelConnector connector = new SelectChannelConnector();
+        SelectChannelConnector connector;
+        if (!ssl) {
+            connector = new SelectChannelConnector();
+        }
+        else {
+            // Share keystore configuration with PSQL.
+            SslContextFactory sslFactory = new SslContextFactory();
+            sslFactory.setKeyStorePath(System.getProperty("javax.net.ssl.keyStore"));
+            sslFactory.setKeyStorePassword(System.getProperty("javax.net.ssl.keyStorePassword"));
+            connector = new SslSelectChannelConnector(sslFactory);
+        }
         connector.setPort(portLocal);
         connector.setThreadPool(new QueuedThreadPool(200));
         connector.setAcceptors(4);
@@ -133,9 +193,48 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         localServer.setConnectors(new Connector[]{connector});
 
         HandlerCollection localHandlerCollection = new HandlerCollection(true);
-        localServer.setHandler(localHandlerCollection);
 
         try {
+            if (login == AuthenticationType.NONE) {
+                localServer.setHandler(localHandlerCollection);
+            }
+            else {
+                String resource;
+                Authenticator authenticator;
+                switch (login) {
+                case BASIC:
+                    resource = "basic.properties";
+                    authenticator = new BasicAuthenticator();
+                    break;
+                case DIGEST:
+                    resource = "digest.properties";
+                    authenticator = new DigestAuthenticator();
+                    break;
+                default:
+                    assert false : "Unexpected authentication type " + login;
+                    resource = null;
+                    authenticator = null;
+                }
+                Constraint constraint = new Constraint(authenticator.getAuthMethod(),
+                                                       REST_ROLE);
+                constraint.setAuthenticate(true);
+
+                ConstraintMapping cm = new ConstraintMapping();
+                cm.setPathSpec("/*");
+                cm.setConstraint(constraint);
+
+                ConstraintSecurityHandler sh = new ConstraintSecurityHandler();
+                sh.setAuthenticator(authenticator);
+                sh.setConstraintMappings(Collections.singletonList(cm));
+
+                LoginService loginService =
+                    new SingleThreadJDBCLoginService(SecurityService.REALM, 
+                                                     HttpConductorImpl.class.getResource(resource).toString());
+                sh.setLoginService(loginService);
+
+                sh.setHandler(localHandlerCollection);
+                localServer.setHandler(sh);
+            }
             localServer.start();
         }
         catch (Exception e) {
@@ -185,5 +284,41 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         if (result.contains("*"))
             throw new IllegalPathRequest("can't ask for a glob within the first URL segment");
         return result;
+    }
+
+    // Embedded JDBC is single-threaded, but login service assumes it
+    // is thread-safe.  Also, it does not close its ResultSet, which
+    // leaves a transaction active. So just close connection around
+    // each use.  Login service is already
+    // synchronized. Unfortunately, this needs a private method.
+    static class SingleThreadJDBCLoginService extends JDBCLoginService {
+        private Method closeMethod;
+
+        public SingleThreadJDBCLoginService(String name, String config)
+                throws IOException {
+            super(name, config);
+            try {
+                closeMethod = JDBCLoginService.class.getDeclaredMethod("closeConnection", null);
+                closeMethod.setAccessible(true);
+            }
+            catch (Exception ex) {
+                throw new AkibanInternalException("Cannot get JDBC close method", ex);
+            }
+        }
+
+        @Override
+        protected org.eclipse.jetty.server.UserIdentity loadUser(String username) {
+            try {
+                return super.loadUser(username);
+            }
+            finally {
+                try {
+                    closeMethod.invoke(this);
+                }
+                catch (Exception ex) {
+                    logger.warn("Cannot call JDBC close method", ex);
+                }
+            }
+        }
     }
 }

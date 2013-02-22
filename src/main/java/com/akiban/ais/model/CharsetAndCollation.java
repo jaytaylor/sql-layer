@@ -78,7 +78,7 @@ public class CharsetAndCollation
     }
 
     // charset/collation -> CharsetAndCollation
-    private static final Map<String, CharsetAndCollation> extent = new HashMap<String, CharsetAndCollation>();
+    private static final Map<String, CharsetAndCollation> extent = new HashMap<>();
 
     private final String charset;
     private final String collation;

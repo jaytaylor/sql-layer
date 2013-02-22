@@ -34,7 +34,7 @@ public class PrimaryKey
     public List<Column> getColumns()
     {
         if (columns == null) {
-            columns = new ArrayList<Column>();
+            columns = new ArrayList<>();
             for (IndexColumn indexColumn : index.getKeyColumns()) {
                 columns.add(indexColumn.getColumn());
             }

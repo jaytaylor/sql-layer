@@ -31,7 +31,7 @@ import java.util.List;
 
 final class BucketTestUtils {
     public static <T> Bucket<T> bucket(T value, long equals, long lessThans, long lessThanDistincts) {
-        Bucket<T> result = new Bucket<T>();
+        Bucket<T> result = new Bucket<>();
         result.init(value, 1);
         for (int i = 1; i < equals; ++i) { // starting count from 1 since a new Bucket has equals of 1
             result.addEquals();

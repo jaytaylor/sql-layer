@@ -42,6 +42,8 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.Serialization;
+import com.akiban.server.types3.texpressions.SerializeAs;
 import com.akiban.sql.types.TypeId;
 
 import java.io.UnsupportedEncodingException;
@@ -60,11 +62,12 @@ public final class MBinary extends SimpleDtdTClass {
     public static final TClass LONGBLOB = new MBinary(TypeId.BLOB_ID, "longblob", Integer.MAX_VALUE); // TODO not big enough!
     
     public enum Attrs implements Attribute {
-        LENGTH
+        @SerializeAs(Serialization.LONG_1) LENGTH
     }
 
-    public int getFixedLength() {
-        return defaultLength;
+    @Override
+    public boolean attributeIsPhysical(int attributeIndex) {
+        return false;
     }
 
     @Override

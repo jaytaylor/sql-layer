@@ -929,7 +929,7 @@ abstract class ExtractorsForDates extends LongExtractor {
     // class state
 
     private static final AtomicReference<DateFormatProvider> dateFormatProvider
-            = new AtomicReference<DateFormatProvider>(new DateFormatProvider(TimeZone.getDefault().getID()));
+            = new AtomicReference<>(new DateFormatProvider(TimeZone.getDefault().getID()));
 
     // consts
 

@@ -38,7 +38,7 @@ import com.akiban.server.error.DuplicateTableIdException;
 class TableIDsUnique implements AISValidation {
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        final Map<Integer, Table> tableIDList= new TreeMap<Integer, Table>();
+        final Map<Integer, Table> tableIDList= new TreeMap<>();
         for (UserTable table : ais.getUserTables().values()) {
             checkTableID (output, tableIDList, table);
         }

@@ -56,16 +56,16 @@ public class DefaultNameGenerator implements NameGenerator {
 
 
     public DefaultNameGenerator() {
-        treeNames = new HashSet<String>();
-        sequenceNames = new HashSet<TableName>();
-        userTableIDSet = new TreeSet<Integer>();
-        isTableIDSet = new TreeSet<Integer>();
-        indexIDMap = new HashMap<Integer,Integer>();
+        treeNames = new HashSet<>();
+        sequenceNames = new HashSet<>();
+        userTableIDSet = new TreeSet<>();
+        isTableIDSet = new TreeSet<>();
+        indexIDMap = new HashMap<>();
     }
 
     public DefaultNameGenerator(AkibanInformationSchema ais) {
         treeNames = collectTreeNames(ais);
-        sequenceNames = new HashSet<TableName>(ais.getSequences().keySet());
+        sequenceNames = new HashSet<>(ais.getSequences().keySet());
         isTableIDSet = collectTableIDs(ais, true);
         userTableIDSet = collectTableIDs(ais, false);
         indexIDMap = collectMaxIndexIDs(ais);
@@ -114,8 +114,8 @@ public class DefaultNameGenerator implements NameGenerator {
 
     @Override
     public String generateJoinName(TableName parentTable, TableName childTable, List<JoinColumn> columns) {
-        List<String> pkColNames = new LinkedList<String>();
-        List<String> fkColNames = new LinkedList<String>();
+        List<String> pkColNames = new LinkedList<>();
+        List<String> fkColNames = new LinkedList<>();
         for (JoinColumn col : columns) {
             pkColNames.add(col.getParent().getName());
             fkColNames.add(col.getChild().getName());
@@ -188,7 +188,7 @@ public class DefaultNameGenerator implements NameGenerator {
 
     @Override
     public Set<String> getTreeNames() {
-        return new TreeSet<String>(treeNames);
+        return new TreeSet<>(treeNames);
     }
 
 
@@ -217,7 +217,7 @@ public class DefaultNameGenerator implements NameGenerator {
     }
 
     private static SortedSet<Integer> collectTableIDs(AkibanInformationSchema ais, boolean onlyISTables) {
-        SortedSet<Integer> idSet = new TreeSet<Integer>();
+        SortedSet<Integer> idSet = new TreeSet<>();
         for(Schema schema : ais.getSchemas().values()) {
             if(TableName.INFORMATION_SCHEMA.equals(schema.getName()) != onlyISTables) {
                 continue;
@@ -231,7 +231,7 @@ public class DefaultNameGenerator implements NameGenerator {
 
     public static Map<Integer,Integer> collectMaxIndexIDs(AkibanInformationSchema ais) {
         MaxIndexIDVisitor visitor = new MaxIndexIDVisitor();
-        Map<Integer,Integer> idMap = new HashMap<Integer,Integer>();
+        Map<Integer,Integer> idMap = new HashMap<>();
         for(Group group : ais.getGroups().values()) {
             visitor.resetAndVisit(group);
             idMap.put(group.getRoot().getTableId(), visitor.getMaxIndexID());
@@ -240,7 +240,7 @@ public class DefaultNameGenerator implements NameGenerator {
     }
 
     public static Set<String> collectTreeNames(AkibanInformationSchema ais) {
-        Set<String> treeNames = new HashSet<String>();
+        Set<String> treeNames = new HashSet<>();
         for(Group group : ais.getGroups().values()) {
             treeNames.add(group.getTreeName());
             for(Index index : group.getIndexes()) {

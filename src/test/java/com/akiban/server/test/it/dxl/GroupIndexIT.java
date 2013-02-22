@@ -225,7 +225,7 @@ public class GroupIndexIT extends ITBase {
 
     private void expectIndexContents(GroupIndex groupIndex, Object[]... keys) throws Exception {
         final Iterator<Object[]> keyIt = Arrays.asList(keys).iterator();
-        final List<List<?>> extraKeys = new ArrayList<List<?>>();
+        final List<List<?>> extraKeys = new ArrayList<>();
 
         final int declaredColumns = groupIndex.getKeyColumns().size();
         for(Object[] key : keys) {
@@ -269,8 +269,8 @@ public class GroupIndexIT extends ITBase {
     }
 
     private static void checkGroupIndexes(Table onTable, GroupIndex... indexes) {
-        Set<GroupIndex> expected = new HashSet<GroupIndex>(Arrays.asList(indexes));
-        Set<GroupIndex> actual = new HashSet<GroupIndex>(onTable.getGroupIndexes());
+        Set<GroupIndex> expected = new HashSet<>(Arrays.asList(indexes));
+        Set<GroupIndex> actual = new HashSet<>(onTable.getGroupIndexes());
         assertEquals("group indexes for " + onTable, expected, actual);
     }
 }

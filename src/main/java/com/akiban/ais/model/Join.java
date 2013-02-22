@@ -189,7 +189,7 @@ public class Join implements Traversable, HasGroup
         this.joinName = joinName;
         this.parent = parent;
         this.child = child;
-        joinColumns = new LinkedList<JoinColumn>();
+        joinColumns = new LinkedList<>();
     }
 
     public enum GroupingUsage
@@ -251,5 +251,5 @@ public class Join implements Traversable, HasGroup
     private Group group;
 
     private GroupingUsage groupingUsage = GroupingUsage.WHEN_OPTIMAL;
-    private SerializableEnumSet<SourceType> sourceTypes = new SerializableEnumSet<SourceType>(SourceType.class);
+    private SerializableEnumSet<SourceType> sourceTypes = new SerializableEnumSet<>(SourceType.class);
 }

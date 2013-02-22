@@ -56,7 +56,7 @@ final class FromObjectTransformations {
     // for use in this class
 
     private static Map<AkType,Transformer> getTransformers() {
-        Map<AkType,Transformer> map = new EnumMap<AkType, Transformer>(AkType.class);
+        Map<AkType,Transformer> map = new EnumMap<>(AkType.class);
 
         new LongTransformer().addTo(map, AkType.INT, AkType.U_INT, AkType.LONG);
         new FloatTransformer().addTo(map, AkType.FLOAT, AkType.U_FLOAT);

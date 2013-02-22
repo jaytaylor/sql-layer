@@ -69,7 +69,7 @@ class PendingRows
     public PendingRows(int capacity)
     {
         this.capacity = capacity;
-        queue = new ArrayList<ShareHolder<Row>>(capacity+1);
+        queue = new ArrayList<>(capacity+1);
         for (int i = 0; i <= capacity; i++) {
             queue.add(new ShareHolder<Row>());
         }

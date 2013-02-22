@@ -54,7 +54,7 @@ public class TypeComposition
         ArgumentValidation.notNull("rowType", rowType);
         ArgumentValidation.notEmpty("tables", tables);
         this.rowType = rowType;
-        this.tables = Collections.unmodifiableSet(new HashSet<UserTable>(tables));
+        this.tables = Collections.unmodifiableSet(new HashSet<>(tables));
     }
 
     // Object state

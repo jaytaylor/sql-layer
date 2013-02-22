@@ -38,7 +38,7 @@ final class KeyComparableRegistry {
 
     public KeyComparableRegistry(InstanceFinder finder) {
         Collection<? extends TKeyComparable> keyComparables = finder.find(TKeyComparable.class);
-        keyComparablesMap = new HashMap<TwoElemSet, TKeyComparable>(keyComparables.size());
+        keyComparablesMap = new HashMap<>(keyComparables.size());
         for (TKeyComparable keyComparable : keyComparables) {
             TwoElemSet key = new TwoElemSet(keyComparable.getLeftTClass(), keyComparable.getRightTClass());
             keyComparablesMap.put(key, keyComparable);

@@ -28,7 +28,6 @@ package com.akiban.qp.operator;
 
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -45,7 +44,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static java.lang.Math.min;
@@ -181,7 +179,7 @@ public class BranchLookup_Default extends Operator
     @Override
     public List<Operator> getInputOperators()
     {
-        List<Operator> result = new ArrayList<Operator>(1);
+        List<Operator> result = new ArrayList<>(1);
         result.add(inputOperator);
         return result;
     }
@@ -332,9 +330,13 @@ public class BranchLookup_Default extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 checkQueryCancelation();
                 Row nextRow = null;
                 while (nextRow == null && inputRow.isHolding()) {
@@ -359,15 +361,17 @@ public class BranchLookup_Default extends Operator
                             break;
                     }
                 }
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("BranchLookup_Default: {}", lookupRow.get());
+                if (LOG_EXECUTION) {
+                    LOG.debug("BranchLookup_Default: {}", nextRow);
                 }
                 if (nextRow == null) {
                     close();
                 }
                 return nextRow;
             } finally {
-                TAP_NEXT.out();
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
 
@@ -470,9 +474,9 @@ public class BranchLookup_Default extends Operator
         // Object state
 
         private final Cursor inputCursor;
-        private final ShareHolder<Row> inputRow = new ShareHolder<Row>();
+        private final ShareHolder<Row> inputRow = new ShareHolder<>();
         private final GroupCursor lookupCursor;
-        private final ShareHolder<Row> lookupRow = new ShareHolder<Row>();
+        private final ShareHolder<Row> lookupRow = new ShareHolder<>();
         private final HKey lookupRowHKey;
         private LookupState lookupState;
         private boolean idle = true;

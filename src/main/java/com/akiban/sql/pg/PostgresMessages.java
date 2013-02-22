@@ -60,7 +60,7 @@ public enum PostgresMessages {
     PARAMETER_STATUS_TYPE   ('S', 1024, false, true), // (B)
     PARSE_TYPE              ('P', Integer.MAX_VALUE, true, false, ErrorMode.EXTENDED), // (F)
     PARSE_COMPLETE_TYPE     ('1', 4, false, true), // (B)
-    PASSWORD_MESSAGE_TYPE   ('p', 2048, true, false), // (F) - also GSS
+    PASSWORD_MESSAGE_TYPE   ('p', 2048, true, false, ErrorMode.FATAL), // (F) - also GSS
     PORTAL_SUSPENDED_TYPE   ('s', 4, false, true), // (B)
     QUERY_TYPE              ('Q', Integer.MAX_VALUE, true, false, ErrorMode.SIMPLE), // (F)
     READY_FOR_QUERY_TYPE    ('Z', 5, false, true), // (B)
@@ -120,8 +120,8 @@ public enum PostgresMessages {
     }
     
     static {
-        readMessages = new HashMap<Integer,PostgresMessages>();
-        writeMessages = new HashMap<Integer, PostgresMessages>();
+        readMessages = new HashMap<>();
+        writeMessages = new HashMap<>();
         for (PostgresMessages msg : PostgresMessages.values()) {
             if (msg.readType) {
                 readMessages.put(msg.code, msg);

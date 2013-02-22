@@ -182,7 +182,7 @@ public class OCD
     private PrintWriter output;
     private String url;
     private String[] queries;
-    private final List<QueryThread> threads = new ArrayList<QueryThread>();
+    private final List<QueryThread> threads = new ArrayList<>();
     private QueryRateMonitor queryRateMonitor;
     private boolean quiet = false;
 

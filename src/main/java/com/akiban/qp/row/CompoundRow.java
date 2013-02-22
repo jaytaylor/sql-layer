@@ -113,8 +113,8 @@ public class CompoundRow extends AbstractRow {
     // Object state
 
     private final CompoundRowType rowType;
-    private final ShareHolder<Row> firstRowh = new ShareHolder<Row>();
-    private final ShareHolder<Row> secondRowh = new ShareHolder<Row>();
+    private final ShareHolder<Row> firstRowh = new ShareHolder<>();
+    private final ShareHolder<Row> secondRowh = new ShareHolder<>();
     private final int firstRowFields;
     protected int rowOffset; 
 

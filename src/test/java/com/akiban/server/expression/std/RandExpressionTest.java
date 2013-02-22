@@ -40,7 +40,7 @@ public class RandExpressionTest
     
     private static List<Double> getRand (long seed, int size)
     {
-        List<Double> ret = new ArrayList<Double>(size);
+        List<Double> ret = new ArrayList<>(size);
         Expression input = new LiteralExpression(AkType.LONG, seed);
         Expression top = new RandExpression(Arrays.asList(input));
         

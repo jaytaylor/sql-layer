@@ -92,7 +92,7 @@ class ConcurrentAtomicsBase extends MTBase {
         TimedResult<List<NewRow>> scanResult = scanFuture.get();
         TimedResult<Void> updateResult = updateFuture.get();
 
-        List<String> timePoints = new ArrayList<String>();
+        List<String> timePoints = new ArrayList<>();
         timePoints.addAll(Arrays.asList("SCAN: START",
                                         "(SCAN: PAUSE)>",
                                         "UPDATE: IN",

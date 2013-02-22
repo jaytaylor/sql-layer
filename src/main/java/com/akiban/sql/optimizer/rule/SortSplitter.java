@@ -62,7 +62,7 @@ public class SortSplitter extends BaseRule
         if (input instanceof Project)
             return;             // Already all set.
         Project outputProject = null;
-        List<ExpressionNode> projects = new ArrayList<ExpressionNode>();
+        List<ExpressionNode> projects = new ArrayList<>();
         Project inputProject = new Project(input, projects);
         boolean projectsAdded = false;
         if (sort.getOutput() instanceof Project) {
@@ -111,7 +111,7 @@ public class SortSplitter extends BaseRule
     }
 
     static class MapSortFinder implements PlanVisitor, ExpressionVisitor {
-        List<Sort> result = new ArrayList<Sort>();
+        List<Sort> result = new ArrayList<>();
 
         public List<Sort> find(PlanNode root) {
             root.accept(this);

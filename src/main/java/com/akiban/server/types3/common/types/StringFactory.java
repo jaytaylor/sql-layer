@@ -57,7 +57,7 @@ public class StringFactory
         private static final Map<String,Charset> lookupMap = createLookupMap();
 
         private static Map<String, Charset> createLookupMap() {
-            Map<String,Charset> map = new HashMap<String, Charset>();
+            Map<String,Charset> map = new HashMap<>();
             for (Charset charset : Charset.values()) {
                 map.put(charset.name(), charset);
             }

@@ -242,14 +242,14 @@ public interface DMLFunctions {
     void writeRows(Session session, List<RowData> rows);
 
     /**
-     * <p>Deletes a row, possibly cascading the deletion to its children rows.</p>
-     * @param row the row to delete
-     * @throws PersistitException 
-     * @throws Exception 
-     * @throws NullPointerException if either the given table ID or row are null
+     * Deletes a row, possibly cascading the delete to the child rows
+     * @param session current execution session 
+     * @param row row to delete
+     * @param cascadeDelete set true to delete any child rows through the Group Foreign key
+     *      set false to delete only from the table. 
      */
-    void deleteRow(Session session, NewRow row);
-
+    void deleteRow(Session session, NewRow row, boolean cascadeDelete);
+    
     /**
      * <p>Updates a row, possibly cascading updates to its PK to children rows.</p>
      * @param oldRow the row to update

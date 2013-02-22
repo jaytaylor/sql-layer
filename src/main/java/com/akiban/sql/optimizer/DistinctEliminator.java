@@ -163,7 +163,7 @@ public class DistinctEliminator
         for (Index index : ((Table)binding.getTable()).getIndexes()) {
             if (!index.isUnique()) continue;
             Set<FromTable> joinTables = null;
-            Set<FromTable> columnJoinTables = new HashSet<FromTable>();
+            Set<FromTable> columnJoinTables = new HashSet<>();
             boolean handled = true, joined = false;
             for (IndexColumn indexColumn : index.getKeyColumns()) {
                 Column column = indexColumn.getColumn();
@@ -197,7 +197,7 @@ public class DistinctEliminator
                     }
                     joined = true;
                     if (joinTables == null)
-                        joinTables = new HashSet<FromTable>(columnJoinTables);
+                        joinTables = new HashSet<>(columnJoinTables);
                     else {
                         joinTables.retainAll(columnJoinTables);
                         if (joinTables.isEmpty()) {

@@ -26,6 +26,8 @@
 
 package com.akiban.sql.aisddl;
 
+import com.akiban.server.error.AkibanInternalException;
+import com.akiban.sql.parser.AlterTableRenameColumnNode;
 import com.akiban.sql.parser.AlterTableRenameNode;
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AISBuilder;
@@ -124,12 +126,13 @@ public class AlterTableDDL {
             return null;
         }
 
-        List<TableChange> columnChanges = new ArrayList<TableChange>();
-        List<TableChange> indexChanges = new ArrayList<TableChange>();
-        List<ColumnDefinitionNode> columnDefNodes = new ArrayList<ColumnDefinitionNode>();
-        List<FKConstraintDefinitionNode> fkDefNodes= new ArrayList<FKConstraintDefinitionNode>();
-        List<ConstraintDefinitionNode> conDefNodes = new ArrayList<ConstraintDefinitionNode>();
-
+        List<TableChange> columnChanges = new ArrayList<>();
+        List<TableChange> indexChanges = new ArrayList<>();
+        List<ColumnDefinitionNode> columnDefNodes = new ArrayList<>();
+        List<FKConstraintDefinitionNode> fkDefNodes= new ArrayList<>();
+        List<ConstraintDefinitionNode> conDefNodes = new ArrayList<>();
+        List<String> newCols = null;
+        
         for(TableElementNode node : elements) {
             switch(node.getNodeType()) {
                 case NodeTypes.COLUMN_DEFINITION_NODE: {
@@ -193,11 +196,26 @@ public class AlterTableDDL {
                     TableName oldName = table.getName();
                     ddl.renameTable(session, oldName, newName);
                     return ChangeLevel.METADATA;
+                    
+                case NodeTypes.AT_RENAME_COLUMN_NODE:
+
+                    AlterTableRenameColumnNode alterRenameCol = (AlterTableRenameColumnNode) node;
+                    String oldColName = alterRenameCol.getName();
+                    String newColName = alterRenameCol.newName();
+                    final Column oldCol = table.getColumn(oldColName);
+                    if (oldCol == null)
+                        throw new NoSuchColumnException(oldColName);
+                    if (newCols == null)
+                        newCols = new ArrayList<>();
+                    newCols.add(newColName);
+                    columnChanges.add(TableChange.createModify(oldColName, newColName));
+                    break;
+
                 default:
                     return null; // Something unsupported
             }
         }
-
+        
         final AkibanInformationSchema origAIS = table.getAIS();
         final UserTable tableCopy = copyTable(table, columnChanges);
         final AkibanInformationSchema aisCopy = tableCopy.getAIS();
@@ -235,6 +253,10 @@ public class AlterTableDDL {
                 TableDDL.addColumn(builder, cdn, table.getName().getSchemaName(), table.getName().getTableName(), pos++);
             }
         }
+        if (newCols != null)
+            for (String name : newCols)
+                if (tableCopy.getColumn(name) == null)
+                    throw new AkibanInternalException("New Columns " + newCols + " not created successfully");
         copyTableIndexes(table, tableCopy, columnChanges, indexChanges);
 
         IndexNameGenerator indexNamer = DefaultIndexNameGenerator.forTable(tableCopy);
@@ -297,6 +319,16 @@ public class AlterTableDDL {
         return null;
     }
 
+    private static String getNewName(List<TableChange> changes, String oldName)
+    {
+        for (TableChange change : changes)
+            if (oldName.equals(change.getOldName()))
+                return change.getChangeType() == ChangeType.DROP
+                            ? null
+                            : change.getNewName();
+        return oldName;
+    }
+
     private static UserTable copyTable(UserTable origTable, List<TableChange> columnChanges) {
         for(TableChange change : columnChanges) {
             if(change.getChangeType() != ChangeType.ADD) {
@@ -314,22 +346,22 @@ public class AlterTableDDL {
 
         int colPos = 0;
         for(Column origColumn : origTable.getColumns()) {
-            String columnName = origColumn.getName();
-            if(findOldName(columnChanges, columnName) != ChangeType.DROP) {
-                Column.create(tableCopy, origColumn, columnName, colPos++);
-            }
+            
+            String newName = getNewName(columnChanges, origColumn.getName());
+            if (newName != null)
+                Column.create(tableCopy, origColumn, newName, colPos++);
         }
 
         return tableCopy;
     }
-
+    
     private static void copyTableIndexes(UserTable origTable, UserTable tableCopy,
                                          List<TableChange> columnChanges, List<TableChange> indexChanges) {
         for(TableChange change : indexChanges) {
             checkIndexChange(origTable, change.getOldName(), change.getChangeType() == ChangeType.ADD);
         }
 
-        Collection<TableIndex> indexesToDrop = new ArrayList<TableIndex>();
+        Collection<TableIndex> indexesToDrop = new ArrayList<>();
         for(TableIndex origIndex : origTable.getIndexes()) {
             ChangeType indexChange = findOldName(indexChanges, origIndex.getIndexName().getName());
             if(indexChange == ChangeType.DROP) {
@@ -338,13 +370,14 @@ public class AlterTableDDL {
             TableIndex indexCopy = TableIndex.create(tableCopy, origIndex);
             boolean didModify = false;
             int pos = 0;
+            
             for(IndexColumn indexColumn : origIndex.getKeyColumns()) {
-                ChangeType change = findOldName(columnChanges, indexColumn.getColumn().getName());
-                if(change != ChangeType.DROP) {
-                    IndexColumn.create(indexCopy, tableCopy.getColumn(indexColumn.getColumn().getName()), indexColumn, pos++);
-                } else {
+                
+                String newName = getNewName(columnChanges, indexColumn.getColumn().getName());
+                if (newName != null)
+                    IndexColumn.create(indexCopy, tableCopy.getColumn(newName), indexColumn, pos++);
+                else
                     didModify = true;
-                }
             }
 
             // Automatically mark indexes for drop or modification

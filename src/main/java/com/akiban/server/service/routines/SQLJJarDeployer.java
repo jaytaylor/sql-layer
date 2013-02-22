@@ -146,8 +146,8 @@ public class SQLJJarDeployer
             throw new InvalidSQLJDeploymentDescriptorException(jarName, ex);
         }
         int nstmts = stmts.size();
-        List<DDLStatementNode> ddls = new ArrayList<DDLStatementNode>(nstmts);
-        List<String> sqls = new ArrayList<String>(nstmts);
+        List<DDLStatementNode> ddls = new ArrayList<>(nstmts);
+        List<String> sqls = new ArrayList<>(nstmts);
         for (StatementNode stmt : stmts) {
             boolean stmtOkay = false, thisjarOkay = false;
             if (undeploy) {

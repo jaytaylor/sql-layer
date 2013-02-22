@@ -67,7 +67,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     private static final String THREAD_NAME_PREFIX = "PostgresServer_Accept-"; // Port is appended
 
     protected static enum AuthenticationType {
-        NONE, CLEAR_TEXT, GSS
+        NONE, CLEAR_TEXT, MD5, GSS
     };
 
     private final Properties properties;
@@ -79,12 +79,12 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     private boolean listening = false;
     private int nconnections = 0;
     private Map<Integer,PostgresServerConnection> connections =
-        new HashMap<Integer,PostgresServerConnection>();
+        new HashMap<>();
     private Thread thread;
     // AIS-dependent state
     private volatile int statementCacheCapacity;
     private final Map<ObjectLongPair,ServerStatementCache<PostgresStatement>> statementCaches =
-        new HashMap<ObjectLongPair,ServerStatementCache<PostgresStatement>>(); // key and aisGeneration
+        new HashMap<>(); // key and aisGeneration
     // end AIS-dependent state
     private volatile Date overrideCurrentTime;
     private final CacheCounters cacheCounters = new CacheCounters();
@@ -144,7 +144,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
         Collection<PostgresServerConnection> conns;
         synchronized (this) {
             // Get a copy so they can remove themselves from stop().
-            conns = new ArrayList<PostgresServerConnection>(connections.values());
+            conns = new ArrayList<>(connections.values());
         }
         for (PostgresServerConnection connection : conns) {
             connection.stop();
@@ -216,7 +216,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
     }
     
     public synchronized Collection<PostgresServerConnection> getConnections() {
-        return new ArrayList<PostgresServerConnection>(connections.values());
+        return new ArrayList<>(connections.values());
     }
 
     @Override
@@ -264,7 +264,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
             if (statementCache == null) {
                 // No cache => recent DDL, reasonable time to do a little cleaning
                 cleanStatementCaches();
-                statementCache = new ServerStatementCache<PostgresStatement>(cacheCounters, statementCacheCapacity);
+                statementCache = new ServerStatementCache<>(cacheCounters, statementCacheCapacity);
                 statementCaches.put(fullKey, statementCache);
             }
         }
@@ -311,7 +311,7 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
 
     @Override
     public Set<Integer> getCurrentSessions() {
-        return new HashSet<Integer>(connections.keySet());
+        return new HashSet<>(connections.keySet());
 
     }
 
@@ -352,12 +352,28 @@ public class PostgresServer implements Runnable, PostgresMXBean, ServerMonitor {
 
     public synchronized AuthenticationType getAuthenticationType() {
         if (authenticationType == null) {
-            if (properties.getProperty("gssConfigName") != null)
+            if (properties.getProperty("gssConfigName") != null) {
                 authenticationType = AuthenticationType.GSS;
-            else if (Boolean.parseBoolean(properties.getProperty("require_password", "false")))
-                authenticationType = AuthenticationType.CLEAR_TEXT;
-            else
-                authenticationType = AuthenticationType.NONE;
+            }
+            else {
+                String login = properties.getProperty("login", "none");
+                if (login.equals("none")) {
+                    authenticationType = AuthenticationType.NONE;
+                }
+                else if (login.equals("password")) {
+                    authenticationType = AuthenticationType.CLEAR_TEXT;
+                }
+                else if (login.equals("md5")) {
+                    authenticationType = AuthenticationType.MD5;
+                }
+                else {
+                    throw new IllegalArgumentException("Invalid login property: " +
+                                                       login);
+                }
+            }
+            if (authenticationType != AuthenticationType.NONE) {
+                logger.info("Authentication required {}", authenticationType);
+            }
         }
         return authenticationType;
     }

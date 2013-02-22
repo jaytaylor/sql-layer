@@ -59,14 +59,14 @@ public class DDLGenerator
     public String createTable(Table table)
     {
         // columns
-        List<String> columnDeclarations = new ArrayList<String>();
+        List<String> columnDeclarations = new ArrayList<>();
         for (Column column : table.getColumns()) {
             columnDeclarations.add(declaration(column));
         } 
         // indexes
         String pkeyDecl = null;
-        List<String> indexDecls = new ArrayList<String>();
-        List<String> fkeyDecls = new ArrayList<String>();
+        List<String> indexDecls = new ArrayList<>();
+        List<String> fkeyDecls = new ArrayList<>();
         for (TableIndex index : table.getIndexes()) {
             String decl = declaration(index);
             if(index.isPrimaryKey())  {
@@ -163,7 +163,7 @@ public class DDLGenerator
 
     private String declaration(TableIndex index)
     {
-        List<String> columnDecls = new ArrayList<String>();
+        List<String> columnDecls = new ArrayList<>();
         for (IndexColumn indexColumn : index.getKeyColumns()) {
             columnDecls.add(declaration(indexColumn));
         }
@@ -175,7 +175,7 @@ public class DDLGenerator
                 return new String("");
             }
             
-            List<String> parentColumnDecls = new ArrayList<String>();
+            List<String> parentColumnDecls = new ArrayList<>();
             for (JoinColumn joinColumn : join.getJoinColumns()) {
                 parentColumnDecls.add(quote(joinColumn.getParent().getName()));
             }

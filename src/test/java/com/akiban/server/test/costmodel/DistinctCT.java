@@ -116,7 +116,7 @@ public class DistinctCT extends CostModelBase
 
     private void sort(int fields, int runs, String label)
     {
-        List<ExpressionGenerator> projectFields = new ArrayList<ExpressionGenerator>();
+        List<ExpressionGenerator> projectFields = new ArrayList<>();
         for (int f = 0; f < fields; f++) {
             projectFields.add(ExpressionGenerators.field(tRowType, f));
         }

@@ -36,7 +36,7 @@ import java.util.Deque;
 public final class ColumnEquivalenceStack {
     private static final int EQUIVS_DEQUE_SIZE = 3;
     private Deque<EquivalenceFinder<ColumnExpression>> stack
-            = new ArrayDeque<EquivalenceFinder<ColumnExpression>>(EQUIVS_DEQUE_SIZE);
+            = new ArrayDeque<>(EQUIVS_DEQUE_SIZE);
     
     public boolean enterNode(PlanNode n) {
         if (n instanceof BaseQuery) {

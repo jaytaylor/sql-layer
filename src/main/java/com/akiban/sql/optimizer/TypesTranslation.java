@@ -474,7 +474,7 @@ public final class TypesTranslation {
                     (TypeId.RowMultiSetTypeId)typeId;
                 String[] columnNames = rmsTypeId.getColumnNames();
                 DataTypeDescriptor[] columnTypes = rmsTypeId.getColumnTypes();
-                List<AkResultSet.Column> columns = new ArrayList<AkResultSet.Column>(columnNames.length);
+                List<AkResultSet.Column> columns = new ArrayList<>(columnNames.length);
                 for (int i = 0; i < columnNames.length; i++) {
                     columns.add(new AkResultSet.Column(columnNames[i],
                                                        toTInstance(columnTypes[i])));

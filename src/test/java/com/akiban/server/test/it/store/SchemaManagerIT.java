@@ -110,6 +110,10 @@ public final class SchemaManagerIT extends ITBase {
         schemaManager.registerStoredInformationSchemaTable(table, version);
     }
 
+    private void unRegisterISTable(final TableName name) throws Exception {
+        schemaManager.unRegisterMemoryInformationSchemaTable(name);
+    }
+
     private void deleteTableDef(final String schema, final String table) throws Exception {
         transactionally(new Callable<Void>() {
             public Void call() throws Exception {
@@ -143,7 +147,7 @@ public final class SchemaManagerIT extends ITBase {
     @Override
     protected Map<String, String> startupConfigProperties() {
         // Set up multi-volume treespace policy so we can be sure schema is properly distributed.
-        final Map<String, String> properties = new HashMap<String, String>();
+        final Map<String, String> properties = new HashMap<>();
         properties.put("akserver.treespace.a",
                                     VOL2_PREFIX + "*:${datapath}/${schema}.v0,create,pageSize:${buffersize},"
                                     + "initialSize:10K,extensionSize:1K,maximumSize:10G");
@@ -360,14 +364,14 @@ public final class SchemaManagerIT extends ITBase {
         final String SCHEMA = "s1";
         createTableDef(SCHEMA, T1_NAME, T1_DDL);
         createTableDef(SCHEMA, T3_CHILD_T1_NAME, T3_CHILD_T1_DDL);
-        Map<String, List<String>> schemaAndTables = new HashMap<String, List<String>>();
+        Map<String, List<String>> schemaAndTables = new HashMap<>();
         schemaAndTables.put(SCHEMA, Arrays.asList(T1_NAME, T3_CHILD_T1_NAME));
         assertSchemaStrings(schemaAndTables);
     }
 
     @Test
     public void schemaStringsMultipleSchemas() throws Exception {
-        final Map<String, List<String>> schemaAndTables = new HashMap<String, List<String>>();
+        final Map<String, List<String>> schemaAndTables = new HashMap<>();
         schemaAndTables.put("s1", Arrays.asList("t1", "t2"));
         schemaAndTables.put("s2", Arrays.asList("t3"));
         schemaAndTables.put("s3", Arrays.asList("t4"));
@@ -391,7 +395,7 @@ public final class SchemaManagerIT extends ITBase {
         }
 
         AkibanInformationSchema ais = ais();
-        Collection<UserTable> before = new ArrayList<UserTable>(ais.getUserTables().values());
+        Collection<UserTable> before = new ArrayList<>(ais.getUserTables().values());
         assertEquals("user tables count before", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
         assertTablesInSchema(SCHEMA, tableNames);
 
@@ -667,9 +671,14 @@ public final class SchemaManagerIT extends ITBase {
         TableName name = new TableName(TableName.INFORMATION_SCHEMA, "p");
         NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
         builder.userTable(name).colLong("id", false).pk("id");
-        builder.userTable(T1_NAME).colLong("id", false).colLong("pid", true).pk("id").joinTo("information_schema", "p").on("pid", "id");
-        registerISTable(builder.unvalidatedAIS().getUserTable(name), new MemoryTableFactoryMock());
-        ddl().createTable(session(), builder.unvalidatedAIS().getUserTable(SCHEMA, T1_NAME));
+        try {
+            builder.userTable(T1_NAME).colLong("id", false).colLong("pid", true).pk("id").joinTo("information_schema", "p").on("pid", "id");
+            registerISTable(builder.unvalidatedAIS().getUserTable(name), new MemoryTableFactoryMock());
+            ddl().createTable(session(), builder.unvalidatedAIS().getUserTable(SCHEMA, T1_NAME));
+        } finally {
+            // ApiTestBase#tearDownAllTables skips IS tables 
+            unRegisterISTable(name);
+        }
     }
 
     @Test
@@ -702,7 +711,7 @@ public final class SchemaManagerIT extends ITBase {
      * @throws Exception For any internal error.
      */
     private void assertTablesInSchema(String schema, String... tableNames) {
-        final SortedSet<String> expected = new TreeSet<String>();
+        final SortedSet<String> expected = new TreeSet<>();
         final AkibanInformationSchema ais = ddl().getAIS(session());
         for (String name : tableNames) {
             final Table table = ais.getTable(schema, name);
@@ -711,7 +720,7 @@ public final class SchemaManagerIT extends ITBase {
             assertNotNull(schema + "." + name  + " has definition", def);
             expected.add(name);
         }
-        final SortedSet<String> actual = new TreeSet<String>();
+        final SortedSet<String> actual = new TreeSet<>();
         for (TableDefinition def : getTableDefinitions(schema).values()) {
             final Table table = ais.getTable(schema, def.getTableName());
             assertNotNull(def + " in AIS", table);
@@ -731,7 +740,7 @@ public final class SchemaManagerIT extends ITBase {
         final String CREATE_SCHEMA = "create schema if not exists `";
         final String CREATE_TABLE = "create table `";
         final List<String> ddls = getSchemaStringsWithoutAIS();
-        final Set<String> sawSchemas = new HashSet<String>();
+        final Set<String> sawSchemas = new HashSet<>();
         for(String statement : ddls) {
             if(statement.startsWith(CREATE_SCHEMA)) {
                 final int offset = CREATE_SCHEMA.length();

@@ -66,7 +66,7 @@ public abstract class BaseDuplicatable implements Duplicatable, Cloneable
 
     protected static <T extends Duplicatable> List<T> duplicateList(List<T> list,
                                                                     DuplicateMap map) {
-        List<T> copy = new ArrayList<T>(list.size());
+        List<T> copy = new ArrayList<>(list.size());
         for (T elem : list) {
             copy.add((T)elem.duplicate(map));
         }
@@ -75,7 +75,7 @@ public abstract class BaseDuplicatable implements Duplicatable, Cloneable
 
     protected static <T extends Duplicatable> Set<T> duplicateSet(Set<T> set,
                                                                   DuplicateMap map) {
-        Set<T> copy = new HashSet<T>(set.size());
+        Set<T> copy = new HashSet<>(set.size());
         for (T elem : set) {
             copy.add((T)elem.duplicate(map));
         }

@@ -42,7 +42,7 @@ public class ZNearExpressionTest {
     
     @Test (expected=UnsupportedSQLException.class)
     public void testNOP() {
-        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(ZERO, ZERO, ZERO, ZERO));
+        List<Expression> lst = new LinkedList<>(Arrays.asList(ZERO, ZERO, ZERO, ZERO));
         Expression exp = new ZNearExpression(lst);
         
         ValueSource source = exp.evaluation().eval();
@@ -50,7 +50,7 @@ public class ZNearExpressionTest {
     
     @Test (expected=WrongExpressionArityException.class)
     public void testArity() {
-        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(ZERO, ZERO));
+        List<Expression> lst = new LinkedList<>(Arrays.asList(ZERO, ZERO));
         Expression exp = new ZNearExpression(lst);
     }
 }

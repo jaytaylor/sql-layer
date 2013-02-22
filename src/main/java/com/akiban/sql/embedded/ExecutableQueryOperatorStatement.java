@@ -29,13 +29,18 @@ package com.akiban.sql.embedded;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.sql.optimizer.plan.CostEstimate;
 
 class ExecutableQueryOperatorStatement extends ExecutableOperatorStatement
 {
+    private CostEstimate costEstimate;
+
     protected ExecutableQueryOperatorStatement(Operator resultOperator,
                                                JDBCResultSetMetaData resultSetMetaData, 
-                                               JDBCParameterMetaData parameterMetaData) {
+                                               JDBCParameterMetaData parameterMetaData,
+                                               CostEstimate costEstimate) {
         super(resultOperator, resultSetMetaData, parameterMetaData);
+        this.costEstimate = costEstimate;
     }
     
     @Override
@@ -68,6 +73,14 @@ class ExecutableQueryOperatorStatement extends ExecutableOperatorStatement
     @Override
     public AISGenerationMode getAISGenerationMode() {
         return AISGenerationMode.NOT_ALLOWED;
+    }
+
+    @Override
+    public long getEstimatedRowCount() {
+        if (costEstimate == null)
+            return -1;
+        else
+            return costEstimate.getRowCount();
     }
 
 }

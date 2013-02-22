@@ -32,10 +32,15 @@ import com.akiban.server.types3.Types3Switch;
 import org.junit.Before;
 import org.junit.Test;
 import static junit.framework.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.sql.*;
 
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
 import java.util.Map;
 
 public class EmbeddedJDBCIT extends ITBase
@@ -89,6 +94,7 @@ public class EmbeddedJDBCIT extends ITBase
     public void testPrepared() throws Exception {
         Connection conn = DriverManager.getConnection(CONNECTION_URL, SCHEMA_NAME, "");
         PreparedStatement stmt = conn.prepareStatement("SELECT name, order_date FROM c INNER JOIN o USING(cid) WHERE c.cid = ?");
+        assertEquals("estimated count", 2, ((JDBCPreparedStatement)stmt).getEstimatedRowCount());
         stmt.setInt(1, 2);
         assertTrue("has result set", stmt.execute());
         ResultSet rs = stmt.getResultSet();
@@ -230,6 +236,50 @@ public class EmbeddedJDBCIT extends ITBase
         assertFalse("script results 2 more", rs.next());
         rs.close();
         assertFalse("call returned more results", cstmt.getMoreResults());
+    }
+
+    @Test
+    public void testMoreTypes() throws Exception {
+        Connection conn = DriverManager.getConnection(CONNECTION_URL, SCHEMA_NAME, "");
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery("SELECT CURRENT_DATE, 3.14, 1.0e6");
+        assertTrue("has first row", rs.next());
+        assertEquals("date value", new Date(System.currentTimeMillis()).toString(), rs.getDate(1).toString());
+        assertEquals("decimal value", new BigDecimal("3.14"), rs.getBigDecimal(2));
+        assertEquals("double value", 1.0e6, rs.getDouble(3), 0);
+        assertFalse("has more rows", rs.next());
+        rs.close();
+        stmt.close();
+        conn.close();
+    }
+
+    @Test
+    public void prepareUsingObjects() throws Exception {
+        createTable("schm", "t", "i int, j bigint, d double, s varchar(16), b boolean, n decimal(8,3)");
+
+        try (Connection connection = DriverManager.getConnection(CONNECTION_URL, SCHEMA_NAME, "")) {
+            final String insert = "INSERT INTO schm.t(i, j, d, s, b, n) VALUES(?, ?, ?, ?, ?, ?)";
+            try (PreparedStatement s = connection.prepareStatement(insert)) {
+                s.setInt(1, 111);
+                s.setLong(2, 12345);
+                s.setDouble(3, 3.14159265);
+                s.setString(4, "hello");
+                s.setBoolean(5, true);
+                s.setBigDecimal(6, new BigDecimal("9876.543"));
+                s.execute();
+            }
+            try (Statement s = connection.createStatement()) {
+                ResultSet rs = s.executeQuery("SELECT * FROM schm.t");
+                assertTrue("no rs rows", rs.next());
+                assertEquals("row[1]", 111, rs.getInt(1));
+                assertEquals("row[2]", 12345, rs.getLong(2));
+                assertEquals("row[3]", 3.14159265, rs.getDouble(3), 0.01);
+                assertEquals("row[4]", "hello", rs.getString(4));
+                assertEquals("row[5]", true, rs.getBoolean(5));
+                assertEquals("row[6]", new BigDecimal("9876.543"), rs.getBigDecimal(6));
+                assertFalse("too many rs rows", rs.next());
+            }
+        }
     }
 
 }

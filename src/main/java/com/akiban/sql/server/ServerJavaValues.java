@@ -40,6 +40,7 @@ import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.aksql.aktypes.AkResultSet;
+import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
@@ -48,6 +49,7 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.util.AkibanAppender;
 import com.akiban.util.WrappingByteSource;
 
 import org.joda.time.DateTime;
@@ -330,7 +332,7 @@ public abstract class ServerJavaValues
             if (wasNull)
                 return null;
             else
-                return (BigDecimal)cachedCast(index, pvalue, MNumeric.DECIMAL).getObject();
+                return ((BigDecimalWrapper)cachedCast(index, pvalue, MNumeric.DECIMAL).getObject()).asBigDecimal();
         }
         else {
             ValueSource value = value(index);
@@ -886,5 +888,10 @@ public abstract class ServerJavaValues
 
     public void setArray(int index, Array x) {
         throw new UnsupportedOperationException();
+    }
+
+    public void formatAsJson(int index, AkibanAppender appender) {
+        PValueSource pvalue = getPValue(index);
+        pvalue.tInstance().formatAsJson(pvalue, appender);
     }
 }

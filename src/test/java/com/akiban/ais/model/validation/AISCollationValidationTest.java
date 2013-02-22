@@ -42,7 +42,7 @@ public class AISCollationValidationTest {
 
     @Before
     public void createValidations() {
-        validations = new LinkedList<AISValidation>();
+        validations = new LinkedList<>();
         validations.add(AISValidations.COLLATION_SUPPORTED);
     }
 

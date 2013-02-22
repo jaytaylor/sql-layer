@@ -35,6 +35,7 @@ import com.akiban.server.error.QueryTimedOutException;
 import com.akiban.server.explain.CompoundExplainer;
 import com.akiban.server.explain.ExplainContext;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -114,6 +115,7 @@ public class QueryTimeoutIT extends OperatorITBase
     }
 
     @Test
+    @Ignore
     public void shortenedTimeout() throws InterruptedException
     {
         int INITIAL_TIMEOUT_MILLI = 10000000;
@@ -151,6 +153,7 @@ public class QueryTimeoutIT extends OperatorITBase
     }
 
     @Test
+    @Ignore
     public void removedTimeout() throws InterruptedException
     {
         int INITIAL_TIMEOUT_MILLI = 5000;

@@ -39,13 +39,18 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.monitor.MonitorService;
 import com.akiban.server.service.routines.RoutineLoader;
+import com.akiban.server.service.security.SecurityService;
+import com.akiban.server.service.security.User;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 
+import java.security.Principal;
+import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.SQLException;
+import java.util.Properties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,15 +76,43 @@ public class EmbeddedJDBCServiceImpl implements EmbeddedJDBCService, Service {
                                    T3RegistryService overloadResolutionService,
                                    RoutineLoader routineLoader,
                                    TransactionService txnService,
+                                   SecurityService securityService,
                                    ServiceManager serviceManager) {
         reqs = new ServerServiceRequirements(akServer, dxlService, monitor, 
                 sessionService, store, treeService, functionsRegistry, 
-                config, indexStatisticsService, overloadResolutionService, routineLoader, txnService, serviceManager);
+                config, indexStatisticsService, overloadResolutionService, 
+                routineLoader, txnService, securityService, serviceManager);
     }
 
     @Override
     public Driver getDriver() {
         return driver;
+    }
+
+    @Override
+    public Connection newConnection(Properties properties, Principal principal) throws SQLException {
+        User user = null;
+        if (principal != null) {
+            if (principal instanceof User) {
+                user = (User)principal;
+            }
+            else {
+                // Translate from Java security realm (e.g., Jetty) to Akiban.
+                user = reqs.securityService().getUser(principal.getName());
+            }
+        }
+        if (user != null) {
+            properties.put("user", user.getName());
+            properties.put("database", user.getName());
+        }
+        else if (!properties.containsKey("user")) {
+            properties.put("user", ""); // Avoid NPE.
+        }
+        Connection conn = driver.connect(JDBCDriver.URL, properties);
+        if (user != null) {
+            ((JDBCConnection)conn).getSession().put(SecurityService.SESSION_KEY, user);
+        }
+        return conn;
     }
 
     @Override

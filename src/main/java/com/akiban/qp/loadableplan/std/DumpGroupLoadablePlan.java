@@ -110,7 +110,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             cursor = context.getStore(rootTable)
                 .newGroupCursor(rootTable.getGroup());
             cursor.open();
-            tableSizes = new HashMap<UserTable,Integer>();
+            tableSizes = new HashMap<>();
             buffer = new StringBuilder();
             int insertMaxRowCount;
             try {
@@ -200,7 +200,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
     }
 
     public static class SQLRowFormatter extends GroupRowFormatter {
-        private Map<UserTable,String> tableNames = new HashMap<UserTable,String>();
+        private Map<UserTable,String> tableNames = new HashMap<>();
         private int maxRowCount;
         private SqlLiteralValueFormatter literalFormatter;
         private AkibanAppender appender;

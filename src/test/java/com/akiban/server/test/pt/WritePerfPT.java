@@ -67,7 +67,7 @@ public class WritePerfPT extends PTBase {
     @Test
     public void writeMillionBulkRows() {
         RowDef rowDef = createOneColumnTable();
-        List<RowData> rows = new ArrayList<RowData>(ROWS_PER_BULK);
+        List<RowData> rows = new ArrayList<>(ROWS_PER_BULK);
         for(int i = 0; i < ROWS_PER_BULK; ++i) {
             rows.add(new RowData(new byte[100]));
         }

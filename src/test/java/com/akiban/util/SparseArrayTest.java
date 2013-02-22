@@ -114,7 +114,7 @@ public final class SparseArrayTest {
 
     @Test
     public void toListIsCompact() {
-        SparseArray<Integer> array = new SparseArray<Integer>();
+        SparseArray<Integer> array = new SparseArray<>();
         array.set(0, 10);
         array.set(1, 11);
         List<Integer> list = array.toList();
@@ -126,7 +126,7 @@ public final class SparseArrayTest {
 
     @Test(expected=IllegalArgumentException.class)
     public void toListMustBeCompact() {
-        SparseArray<Integer> array = new SparseArray<Integer>();
+        SparseArray<Integer> array = new SparseArray<>();
         array.set(5, 50);
         array.toList();
     }

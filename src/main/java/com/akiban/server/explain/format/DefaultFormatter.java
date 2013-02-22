@@ -43,9 +43,9 @@ public class DefaultFormatter
     private String defaultSchemaName;
     private LevelOfDetail levelOfDetail;
     private int numSubqueries = 0;
-    private List<CompoundExplainer> subqueries = new ArrayList<CompoundExplainer>();
+    private List<CompoundExplainer> subqueries = new ArrayList<>();
     private StringBuilder sb = new StringBuilder();
-    private List<String> rows = new ArrayList<String>();
+    private List<String> rows = new ArrayList<>();
     
     public DefaultFormatter(String defaultSchemaName) {
         this(defaultSchemaName, LevelOfDetail.NORMAL);

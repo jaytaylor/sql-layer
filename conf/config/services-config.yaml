@@ -18,5 +18,3 @@
     - com.akiban.server.service.is.ServerSchemaTablesService
     - com.akiban.rest.RestService
 #   - com.akiban.server.service.ui.SwingConsoleService  # Presents a simple UI
-- bind-modules:
-    - com.akiban.rest.RestServiceModule

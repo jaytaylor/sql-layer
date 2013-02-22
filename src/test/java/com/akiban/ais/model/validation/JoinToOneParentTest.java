@@ -45,7 +45,7 @@ public class JoinToOneParentTest {
     private AISBuilder builder; 
     @Before 
     public void createValidations() {
-        validations = new LinkedList<AISValidation>();
+        validations = new LinkedList<>();
         validations.add(AISValidations.JOIN_TO_ONE_PARENT);
         
         builder = new AISBuilder();

@@ -178,8 +178,8 @@ import org.yaml.snakeyaml.nodes.Tag;
 class YamlTester {
 
     private static final boolean DEBUG = Boolean.getBoolean("test.DEBUG");
-    private static final Map<String, Integer> typeNameToNumber = new HashMap<String, Integer>();
-    private static final Map<Integer, String> typeNumberToName = new HashMap<Integer, String>();
+    private static final Map<String, Integer> typeNameToNumber = new HashMap<>();
+    private static final Map<Integer, String> typeNumberToName = new HashMap<>();
     static {
 	addTypeNameAndNumber("VARBINARY", Types.BINARY); // name to number overwritten below
 	addTypeNameAndNumber("BIGINT", Types.BIGINT);
@@ -220,7 +220,7 @@ class YamlTester {
     private final String filename;
     private final Reader in;
     private final Connection connection;
-    private final Stack<String> includeStack = new Stack<String>();
+    private final Stack<String> includeStack = new Stack<>();
     private int commandNumber = 0;
     private String commandName = null;
     private boolean suppressed = false;
@@ -741,7 +741,7 @@ class YamlTester {
 		    paramTypes);
 	    List<String> paramTypeNames = nonEmptyStringSequence(value,
 		    "param_types value");
-	    paramTypes = new ArrayList<Integer>(paramTypeNames.size());
+	    paramTypes = new ArrayList<>(paramTypeNames.size());
 	    for (String typeName : paramTypeNames) {
 		Integer typeNumber = getTypeNumber(typeName);
 		assertNotNull("Unknown type name in param_types: " + typeName,
@@ -891,7 +891,7 @@ class YamlTester {
 		    outputRow += updateCount;
 		    checkRowCount(rowCount, false);
 		}
-                List<Warning> reportedWarnings = new ArrayList<Warning>();
+                List<Warning> reportedWarnings = new ArrayList<>();
                 collectWarnings(stmt.getWarnings(), reportedWarnings);
                 checkWarnings(reportedWarnings);
 	    } else {
@@ -975,8 +975,8 @@ class YamlTester {
 		ResultSetMetaData metaData = rs.getMetaData();
 		int numColumns = metaData.getColumnCount();
 		boolean resultsEmpty = false;
-                List<List<Object>> resultsList = new ArrayList<List<Object>>();
-                List<Warning> reportedWarnings = new ArrayList<Warning>();
+                List<List<Object>> resultsList = new ArrayList<>();
+                List<Warning> reportedWarnings = new ArrayList<>();
                 Statement stmt = rs.getStatement();
                 assert stmt != null;
                 collectWarnings(stmt.getWarnings(), reportedWarnings);
@@ -992,7 +992,7 @@ class YamlTester {
                         assertEquals("Unexpected number of columns in output:",
                                      row.size(), numColumns);
                     }
-                    List<Object> resultsRow = new ArrayList<Object>(row.size());
+                    List<Object> resultsRow = new ArrayList<>(row.size());
                     for (int j = 1; j <= numColumns; j++) {
                         resultsRow.add(rs.getObject(j));
                     }
@@ -1033,9 +1033,9 @@ class YamlTester {
 	    } else {
 		ResultSetMetaData metaData = rs.getMetaData();
 		int numColumns = metaData.getColumnCount();
-		List<Object> resultsRow = DEBUG ? new ArrayList<Object>(
+		List<Object> resultsRow = DEBUG ? new ArrayList<>(
 			numColumns) : null;
-                List<Warning> reportedWarnings = new ArrayList<Warning>();
+                List<Warning> reportedWarnings = new ArrayList<>();
                 Statement stmt = rs.getStatement();
                 assert stmt != null;
                 collectWarnings(stmt.getWarnings(), reportedWarnings);
@@ -1113,7 +1113,7 @@ class YamlTester {
         assertFalse("Statement execution succeeded, but was expected"
                     + " to generate an error", errorSpecified);
 
-        List<Warning> reportedWarnings = new ArrayList<Warning>();
+        List<Warning> reportedWarnings = new ArrayList<>();
         collectWarnings(stmt.getWarnings(), reportedWarnings);
         checkWarnings(reportedWarnings, warnings, warningsCount);
     }
@@ -1135,7 +1135,7 @@ class YamlTester {
                    warnings);
 
         List<Object> list = nonEmptySequence(value, "warnings");
-        warnings = new ArrayList<Warning>();
+        warnings = new ArrayList<>();
         for (int i = 0; i < list.size(); i++)
         {
             List<Object> element = nonEmptyScalarSequence(
@@ -1355,7 +1355,7 @@ class YamlTester {
 
     static List<String> stringSequence(Object object, String desc) {
 	List<Object> list = sequence(object, desc);
-	List<String> strList = new ArrayList<String>(list.size());
+	List<String> strList = new ArrayList<>(list.size());
 	for (Object elem : list) {
 	    assertThat("The element of the " + desc + " must be a string",
 		    elem, instanceOf(String.class));
@@ -1372,7 +1372,7 @@ class YamlTester {
 
     static List<List<Object>> rows(Object object, String desc) {
 	List<Object> list = nonEmptySequence(object, desc);
-	List<List<Object>> rows = new ArrayList<List<Object>>();
+	List<List<Object>> rows = new ArrayList<>();
 	int rowLength = -1;
 	for (int i = 0; i < list.size(); i++) {
 	    List<Object> row = nonEmptyScalarSequence(list.get(i), desc
@@ -1767,7 +1767,7 @@ class YamlTester {
             assertNull ("The split_result attribute must not appear more than once", split_output);
             assertNull ("The output and split_result attributes can not appear together", output);
             List<List<Object>> rows = rows(value, "output split value");
-            split_output = new ArrayList<Object>(rows.size());
+            split_output = new ArrayList<>(rows.size());
             for (List<?> row : rows) {
                 assertEquals("number of entries in row "+ row, 1, row.size());
                 split_output.add(row.get(0));
@@ -1783,7 +1783,7 @@ class YamlTester {
             assertNull("The split_result and output attributes can not appear together", split_output);
             
             List<List<Object>> rows = rows(value, "output value");
-            output = new ArrayList<Object>(rows.size());
+            output = new ArrayList<>(rows.size());
             for (List<?> row : rows) {
                 assertEquals("number of entries in row " + row, 1, row.size());
                 output.add(row.get(0));

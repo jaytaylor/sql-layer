@@ -68,7 +68,7 @@ public final class BasicDMLFunctionsTest {
 
         public StringRowCollector(int tableId, String... strings) {
             this.tableId = tableId;
-            this.strings = new ArrayList<String>(Arrays.asList(strings));
+            this.strings = new ArrayList<>(Arrays.asList(strings));
             open = true;
         }
 
@@ -174,7 +174,7 @@ public final class BasicDMLFunctionsTest {
 
         public List<String> getStrings() {
             int rowsLeft = getRowsCount();
-            final List<String> ret = new ArrayList<String>(rowsLeft);
+            final List<String> ret = new ArrayList<>(rowsLeft);
             int pos = Integer.SIZE / 8; // first int is the number of rows
             while ( (rowsLeft--) > 0) {
                 int length = buffer.getInt(pos);

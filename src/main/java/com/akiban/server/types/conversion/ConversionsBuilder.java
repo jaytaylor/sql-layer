@@ -80,7 +80,7 @@ final class ConversionsBuilder {
     }
 
     public Map<AkType,Set<AkType>> result() {
-        Map<AkType,Set<AkType>> full = new EnumMap<AkType, Set<AkType>>(result);
+        Map<AkType,Set<AkType>> full = new EnumMap<>(result);
         for (Map.Entry<AkType,AkType> entry : aliasesToMain.entrySet()) {
             AkType alias = entry.getKey();
             AkType main = entry.getValue();
@@ -107,7 +107,7 @@ final class ConversionsBuilder {
     }
 
     // object state
-    private final Map<AkType,Set<AkType>> result = new EnumMap<AkType, Set<AkType>>(AkType.class);
-    private final Map<AkType,AkType> aliasesToMain = new EnumMap<AkType, AkType>(AkType.class);
+    private final Map<AkType,Set<AkType>> result = new EnumMap<>(AkType.class);
+    private final Map<AkType,AkType> aliasesToMain = new EnumMap<>(AkType.class);
     private final Set<AkType> disallowed;
 }

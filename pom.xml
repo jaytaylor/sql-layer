@@ -71,7 +71,7 @@
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-persistit</artifactId>
-            <version>3.2.5-SNAPSHOT</version>
+            <version>3.2.6-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.akiban</groupId>
@@ -127,7 +127,6 @@
             <groupId>org.codehaus.jackson</groupId>
             <artifactId>jackson-mapper-asl</artifactId>
             <version>1.9.11</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
@@ -162,10 +161,6 @@
             <version>1.13</version>
         </dependency>
         <dependency>
-            <groupId>com.sun.jersey.contribs</groupId>
-            <artifactId>jersey-guice</artifactId>
-            <version>1.13</version>
-        <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-core</artifactId>
             <version>4.0.0</version>
@@ -179,6 +174,12 @@
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-queryparser</artifactId>
             <version>4.0.0</version>
+        </dependency>
+        <dependency>
+	    <groupId>org.apache.httpcomponents</groupId>
+	    <artifactId>httpclient</artifactId>
+	    <version>4.2.3</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <build>
@@ -389,10 +390,14 @@
                         <exclude>src/test/resources/com/akiban/**/README*</exclude>
                         <exclude>src/test/resources/com/akiban/**/*.properties</exclude>
                         <exclude>src/test/resources/com/akiban/ais/model/staticgrouping/*</exclude>
+                        <exclude>src/test/resources/com/akiban/rest/**</exclude>
                         <exclude>src/main/resources/com/akiban/server/service/functions/functionpath.txt</exclude>
                         <exclude>src/test/resources/com/akiban/server/service/functions/testfunctionpath.txt</exclude>
                         <exclude>src/test/resources/com/akiban/server/service/servicemanager/configuration/yaml/test-composite.yaml.1</exclude>
                         <exclude>src/main/resources/com/akiban/server/types3/service/t3s.txt</exclude>
+			<exclude>src/test/resources/com/akiban/server/entity/changes/*.*</exclude>
+			<exclude>src/test/resources/com/akiban/server/entity/fromais/*.*</exclude>
+			<exclude>src/test/resources/com/akiban/server/entity/model/*.*</exclude>
                     </excludes>
                     <mapping>
                         <g>JAVADOC_STYLE</g>

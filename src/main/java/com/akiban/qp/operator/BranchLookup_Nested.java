@@ -45,7 +45,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Set;
 
 import static java.lang.Math.min;
-import java.util.Map;
 
 /**
 
@@ -306,7 +305,7 @@ public class BranchLookup_Nested extends Operator
             try {
                 CursorLifecycle.checkIdle(this);
                 Row rowFromBindings = context.getRow(inputBindingPosition);
-                if (LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("BranchLookup_Nested: open using {}", rowFromBindings);
                 }
                 assert rowFromBindings.rowType() == inputRowType : rowFromBindings;
@@ -323,9 +322,13 @@ public class BranchLookup_Nested extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 checkQueryCancelation();
                 Row row;
                 if (keepInput && inputPrecedesBranch && inputRow.isHolding()) {
@@ -342,13 +345,15 @@ public class BranchLookup_Nested extends Operator
                         close();
                     }
                 }
-                if (LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("BranchLookup_Nested: yield {}", row);
                 }
                 idle = row == null;
                 return row;
             } finally {
-                TAP_NEXT.out();
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
 
@@ -409,7 +414,7 @@ public class BranchLookup_Nested extends Operator
 
         private final GroupCursor cursor;
         private final HKey hKey;
-        private ShareHolder<Row> inputRow = new ShareHolder<Row>();
+        private ShareHolder<Row> inputRow = new ShareHolder<>();
         private boolean idle = true;
     }
 }

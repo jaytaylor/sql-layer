@@ -1,0 +1,4 @@
+SELECT COUNT(*) c_cnt FROM test.customers;
+SELECT COUNT(*) a_cnt FROM test.addresses;
+SELECT COUNT(*) o_cnt FROM test.orders;
+SELECT COUNT(*) i_cnt FROM test.items;

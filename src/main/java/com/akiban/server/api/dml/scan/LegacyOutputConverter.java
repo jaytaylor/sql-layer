@@ -59,7 +59,7 @@ public final class LegacyOutputConverter implements BufferedLegacyOutputRouter.H
         aNew = converter.convertRowData(session, rowData);
 
         if (columnsToScan != null) {
-            final Set<Integer> colsToRemove = new HashSet<Integer>();
+            final Set<Integer> colsToRemove = new HashSet<>();
             for (Integer newRowCol : aNew.getFields().keySet()) {
                 if (!columnsToScan.contains(newRowCol)) {
                     colsToRemove.add(newRowCol);

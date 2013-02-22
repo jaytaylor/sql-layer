@@ -26,7 +26,6 @@
 
 package com.akiban.sql.embedded;
 
-import com.akiban.sql.parser.CallStatementNode;
 import com.akiban.sql.server.ServerCallInvocation;
 import com.akiban.sql.server.ServerJavaMethod;
 import com.akiban.sql.server.ServerJavaRoutine;
@@ -46,7 +45,6 @@ class ExecutableJavaMethod extends ExecutableJavaRoutine
 
     public static ExecutableStatement executableStatement(ServerCallInvocation invocation,
                                                           JDBCParameterMetaData parameterMetaData,
-                                                          CallStatementNode call,
                                                           EmbeddedQueryContext context) {
         JDBCConnection conn = context.getServer();
         Method method = conn.getRoutineLoader().loadJavaMethod(conn.getSession(),

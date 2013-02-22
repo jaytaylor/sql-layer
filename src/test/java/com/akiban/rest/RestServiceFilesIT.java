@@ -34,6 +34,7 @@ import com.akiban.server.test.it.ITBase;
 import com.akiban.sql.RegexFilenameFilter;
 import com.akiban.util.Strings;
 import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,9 +44,11 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -108,7 +111,7 @@ public class RestServiceFilesIT extends ITBase {
     }
 
     public static File[] gatherRequestFiles(File dir) {
-        File[] result = dir.listFiles(new RegexFilenameFilter(".*\\.(get|put|post|delete)"));
+        File[] result = dir.listFiles(new RegexFilenameFilter(".*\\.(get|put|post|delete|query|explain)"));
         Arrays.sort(result, new Comparator<File>() {
             public int compare(File f1, File f2) {
                 return f1.getName().compareTo(f2.getName());
@@ -122,6 +125,10 @@ public class RestServiceFilesIT extends ITBase {
             return Strings.dumpFileToString(file);
         }
         return null;
+    }
+
+    private static String trimAndURLEncode(String s) throws UnsupportedEncodingException {
+        return URLEncoder.encode(s.trim().replaceAll("\\s+", " "), "UTF-8");
     }
 
     @NamedParameterizedRunner.TestParameters
@@ -152,6 +159,14 @@ public class RestServiceFilesIT extends ITBase {
                 String checkURI = dumpFileIfExists(new File(basePath + ".check"));
                 String checkExpected = dumpFileIfExists(new File(basePath + ".check_expected"));
 
+                if("QUERY".equals(method)) {
+                    method = "GET";
+                    uri = "/query?q=" + trimAndURLEncode(uri);
+                } else if("EXPLAIN".equals(method)) {
+                    method = "GET";
+                    uri = "/explain?q=" + trimAndURLEncode(uri);
+                }
+
                 result.add(Parameterization.create(
                         subDirName + File.separator + caseName,
                         new CaseParams(subDirName, caseName, method, uri, body, header, expected, checkURI, checkExpected)
@@ -173,49 +188,111 @@ public class RestServiceFilesIT extends ITBase {
         if(schemaFile.exists()) {
             loadSchemaFile(SCHEMA_NAME, schemaFile);
         }
+        File spaceFile = new File(subDir, "space.json");
+        if(spaceFile.exists()) {
+            HttpURLConnection httpConn = openConnection(getRestURL("/entity/apply/" + SCHEMA_NAME), "POST");
+            postContents(httpConn, Strings.dumpFileToString(spaceFile).getBytes());
+            StringBuilder builder = new StringBuilder();
+            try {
+                Strings.readStreamTo(httpConn.getInputStream(), builder, true);
+            } catch(Exception e) {
+                Strings.readStreamTo(httpConn.getErrorStream(), builder, true);
+                throw new RuntimeException("Failing creating initial space: " + builder.toString(), e);
+            }
+            httpConn.disconnect();
+        }
         for (File data : subDir.listFiles(new RegexFilenameFilter(".*\\.dat"))) {
             loadDataFile(SCHEMA_NAME, data);
         }
+    }
+    
+    public void checkRequest() throws Exception {
+        if (caseParams.checkURI != null && caseParams.checkExpected != null) {
+            HttpURLConnection httpConn = openConnection(getRestURL(caseParams.checkURI.trim()), "GET");
+            try {
+                String actual = getOutput (httpConn);
+                compareExpected (caseParams.caseName + " check expected response ", caseParams.checkExpected, actual);
+            } finally {
+                httpConn.disconnect();
+            }
+        }
+    }
+
+    private static void postContents(HttpURLConnection httpConn, byte[] request) throws IOException {
+        httpConn.setDoInput(true);
+        httpConn.setFixedLengthStreamingMode(request.length);
+        httpConn.setRequestProperty("Content-Type", "application/json");
+        httpConn.setRequestProperty("Accept", "application/json");
+        httpConn.getOutputStream().write(request);
     }
 
     @Test
     public void testRequest() throws Exception {
         loadDatabase(caseParams.subDir);
 
-        URL requestURL = getRestURL(caseParams.requestURI);
-        HttpURLConnection httpConn = (HttpURLConnection)requestURL.openConnection();
+        HttpURLConnection httpConn = openConnection (getRestURL(caseParams.requestURI), caseParams.requestMethod);
 
-        if(!caseParams.requestMethod.equals("GET")) {
-            throw new UnsupportedOperationException("Unsupported method: " + caseParams.requestMethod);
-        }
-
-        httpConn.setRequestMethod(caseParams.requestMethod);
-        httpConn.setUseCaches(false);
-        httpConn.setDoInput(true);
-        httpConn.setDoOutput(true);
-
-        httpConn.connect();
         try {
             // Request
-            // TODO: write to getOutputStream for PUT and POST
+            if (caseParams.requestMethod.equals("POST") || caseParams.requestMethod.equals("PUT")) {
+                if (caseParams.requestBody == null) {
+                    throw new UnsupportedOperationException ("PUT/POST expects request body (<test>.body)");
+                }
+                LOG.debug(caseParams.requestBody);
+                postContents(httpConn, caseParams.requestBody.getBytes());
+            } // else GET || DELETE
 
             // Response
-            InputStream is;
-            try {
-                is = httpConn.getInputStream();
-            } catch(Exception e) {
-                is = httpConn.getErrorStream();
-            }
-            StringBuilder builder = new StringBuilder();
-            Strings.readStreamTo(is, builder, true);
-
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode expectedNode = mapper.readTree(caseParams.expectedResponse);
-            JsonNode actualNode = mapper.readTree(builder.toString());
-
-            assertEquals(caseParams.requestMethod + " response", expectedNode, actualNode);
+            String actual = getOutput(httpConn);
+            compareExpected(caseParams.requestMethod + " response", caseParams.expectedResponse, actual);
         } finally {
             httpConn.disconnect();
+        }
+        checkRequest();
+    }
+    
+    private HttpURLConnection openConnection(URL url, String requestMethod) throws IOException {
+        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+        conn.setUseCaches(false);
+        conn.setDoOutput(true);
+        conn.setRequestMethod(requestMethod);
+        return conn;
+    }
+     
+    private String getOutput(HttpURLConnection httpConn) throws IOException {
+        InputStream is;
+        try {
+            is = httpConn.getInputStream();
+        } catch(Exception e) {
+            is = httpConn.getErrorStream();
+        }
+        if (is == null) return null;
+        StringBuilder builder = new StringBuilder();
+        Strings.readStreamTo(is, builder, true);
+        return builder.toString().length() > 0 ? builder.toString() : null;
+    }
+    
+    private void compareExpected(String assertMsg, String expected, String actual) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode expectedNode = null;
+        JsonNode actualNode = null;
+        boolean skipNodeCheck = false;
+        try {
+            if(expected != null) {
+                expectedNode = mapper.readTree(expected);
+            }
+            if(actual != null) {
+                actualNode = mapper.readTree(actual);
+            }
+        } catch(JsonParseException e) {
+            assertEquals(assertMsg, expected, actual);
+            skipNodeCheck = true;
+        }
+        // Try manual equals and then assert strings for pretty print
+        if(expectedNode != null && actualNode != null && !expectedNode.equals(actualNode)) {
+            assertEquals(assertMsg, expectedNode.toString(), actualNode.toString());
+        } else if(!skipNodeCheck) {
+            assertEquals(assertMsg, expectedNode, actualNode);
         }
     }
 }

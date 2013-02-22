@@ -36,6 +36,7 @@ import com.google.protobuf.MessageLite;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 
 public class ProtobufWriter {
     public static interface WriteSelector {
@@ -337,6 +338,11 @@ public class ProtobufWriter {
                 setCharColl(convertCharAndCol(table.getCharsetAndCollation()));
                 // Not yet in AIS: ordinal, description, protected
 
+        UUID tableUuid = table.getUuid();
+        if (tableUuid != null) {
+            tableBuilder.setUuid(tableUuid.toString());
+        }
+
         if(table.hasVersion()) {
             tableBuilder.setVersion(table.getVersion());
         }
@@ -426,8 +432,16 @@ public class ProtobufWriter {
                 setColumnName(column.getName()).
                 setTypeName(column.getType().name()).
                 setIsNullable(column.getNullable()).
-                setPosition(column.getPosition()).
-                setCharColl(convertCharAndCol(column.getCharsetAndCollation()));
+                setPosition(column.getPosition());
+
+        if(Types.isTextType(column.getType())) {
+            columnBuilder.setCharColl(convertCharAndCol(column.getCharsetAndCollation()));
+        }
+
+        UUID columnUuid = column.getUuid();
+        if (columnUuid != null) {
+            columnBuilder.setUuid(columnUuid.toString());
+        }
 
         if(column.getTypeParameter1() != null) {
             columnBuilder.setTypeParam1(column.getTypeParameter1());
@@ -472,9 +486,11 @@ public class ProtobufWriter {
                 setIsPK(index.isPrimaryKey()).
                 setIsUnique(index.isUnique()).
                 setIsAkFK(index.isAkibanForeignKey()).
-                setJoinType(convertJoinType(index.getJoinType())).
                 setIndexMethod(convertIndexMethod(index.getIndexMethod()));
                 // Not yet in AIS: description
+        if(index.isGroupIndex()) {
+            indexBuilder.setJoinType(convertJoinType(index.getJoinType()));
+        }
         if(index.getTreeName() != null) {
             indexBuilder.setTreeName(index.getTreeName());
         }

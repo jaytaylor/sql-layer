@@ -26,7 +26,6 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -136,7 +135,7 @@ class Intersect_Ordered extends Operator
     @Override
     public List<Operator> getInputOperators()
     {
-        List<Operator> result = new ArrayList<Operator>(2);
+        List<Operator> result = new ArrayList<>(2);
         result.add(left);
         result.add(right);
         return result;
@@ -283,9 +282,13 @@ class Intersect_Ordered extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 Row next = null;
                 while (!closed && next == null) {
                     assert !(leftRow.isEmpty() && rightRow.isEmpty());
@@ -332,12 +335,14 @@ class Intersect_Ordered extends Operator
                         close();
                     }
                 }
-                if (LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("Intersect_Ordered: yield {}", next);
                 }
                 return next;
             } finally {
-                TAP_NEXT.out();
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
 
@@ -416,7 +421,7 @@ class Intersect_Ordered extends Operator
         {
             Row row = leftInput.next();
             leftRow.hold(row);
-            if (LOG.isDebugEnabled()) {
+            if (LOG_EXECUTION) {
                 LOG.debug("Intersect_Ordered: left {}", row);
             }
         }
@@ -425,7 +430,7 @@ class Intersect_Ordered extends Operator
         {
             Row row = rightInput.next();
             rightRow.hold(row);
-            if (LOG.isDebugEnabled()) {
+            if (LOG_EXECUTION) {
                 LOG.debug("Intersect_Ordered: right {}", row);
             }
         }
@@ -579,8 +584,8 @@ class Intersect_Ordered extends Operator
         private boolean closed = true;
         private final Cursor leftInput;
         private final Cursor rightInput;
-        private final ShareHolder<Row> leftRow = new ShareHolder<Row>();
-        private final ShareHolder<Row> rightRow = new ShareHolder<Row>();
+        private final ShareHolder<Row> leftRow = new ShareHolder<>();
+        private final ShareHolder<Row> rightRow = new ShareHolder<>();
         private ValuesHolderRow leftSkipRow;
         private ValuesHolderRow rightSkipRow;
     }

@@ -131,9 +131,9 @@ public class Schema {
     }
 
     private final String name;
-    private final Map<String, UserTable> userTables = new TreeMap<String, UserTable>();
-    private final Map<String, Sequence> sequences = new TreeMap<String, Sequence>();
-    private final Map<String, View> views = new TreeMap<String, View>();
-    private final Map<String, Routine> routines = new TreeMap<String, Routine>();
-    private final Map<String, SQLJJar> sqljJars = new TreeMap<String, SQLJJar>();
+    private final Map<String, UserTable> userTables = new TreeMap<>();
+    private final Map<String, Sequence> sequences = new TreeMap<>();
+    private final Map<String, View> views = new TreeMap<>();
+    private final Map<String, Routine> routines = new TreeMap<>();
+    private final Map<String, SQLJJar> sqljJars = new TreeMap<>();
 }

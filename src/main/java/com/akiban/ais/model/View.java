@@ -81,7 +81,7 @@ public class View extends Columnar
     public Collection<Column> getTableColumnReferences(Columnar table) {
         Collection<String> colnames = tableColumnReferences.get(table.getName());
         if (colnames == null) return null;
-        Collection<Column> columns = new HashSet<Column>();
+        Collection<Column> columns = new HashSet<>();
         for (String colname : colnames) {
             columns.add(table.getColumn(colname));
         }

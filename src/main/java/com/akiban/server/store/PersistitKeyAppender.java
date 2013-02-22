@@ -70,6 +70,11 @@ public abstract class PersistitKeyAppender {
         return key;
     }
 
+    public final void clear()
+    {
+        key().clear();
+    }
+
     public abstract void append(Object object, Column column);
 
     public abstract void append(ValueSource source, Column column);
