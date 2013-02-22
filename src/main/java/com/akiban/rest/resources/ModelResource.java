@@ -65,7 +65,7 @@ public final class ModelResource {
     }
 
     private static String getSchemaName(HttpServletRequest request, String schemaParam) {
-        if(schemaParam == null || schemaParam.isEmpty()) {
+        if(schemaParam == null || schemaParam.length() <= 1) { // empty or just /
             Principal user = request.getUserPrincipal();
             return (user == null) ? null : user.getName();
         }
