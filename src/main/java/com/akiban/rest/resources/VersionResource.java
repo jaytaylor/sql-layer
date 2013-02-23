@@ -28,6 +28,7 @@ package com.akiban.rest.resources;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.rest.ResourceRequirements;
+import com.akiban.rest.RestResponseBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -54,9 +55,10 @@ public class VersionResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getVersion(@Context HttpServletRequest request,
-                               @QueryParam("format") String format,
-                               @QueryParam("jsoncallback") String jsonp) throws Exception {
-        return reqs.restDMLService.getAllEntities(request, TABLE_NAME, DEPTH);
+    public Response getVersion(@QueryParam("format") String format,
+                               @QueryParam("jsonp") String jsonp) throws Exception {
+        RestResponseBuilder builder = RestResponseBuilder.builderFromRequest(format, jsonp);
+        reqs.restDMLService.getAllEntities(builder, TABLE_NAME, DEPTH);
+        return builder.build();
     }
 }

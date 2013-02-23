@@ -30,6 +30,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.rest.RestResponseBuilder;
 import com.akiban.server.Quote;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
@@ -68,6 +69,7 @@ import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.sql.Connection;
 import java.sql.ParameterMetaData;
 import java.sql.SQLException;
@@ -133,54 +135,39 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     /* RestDMLService */
 
     @Override
-    public Response getAllEntities(final HttpServletRequest request, final TableName tableName, Integer depth) {
-        if (!securityService.isAccessible(request, tableName.getSchemaName()))
-            return Response.status(Response.Status.FORBIDDEN).build();
+    public void getAllEntities(RestResponseBuilder builder, final TableName tableName, Integer depth) {
         final int realDepth = (depth != null) ? Math.max(depth, 0) : -1;
-        return Response.status(Response.Status.OK)
-                .entity(new StreamingOutput() {
-                    @Override
-                    public void write(OutputStream output) throws IOException {
-                        try (Session session = sessionService.createSession()) {
-                            // Do not auto-close writer as that prevents an exception from propagating to the client
-                            PrintWriter writer = new PrintWriter(output);
-                            extDataService.dumpAllAsJson(session, writer, tableName.getSchemaName(), tableName.getTableName(), realDepth, true);
-                            writer.write('\n');
-                            writer.close();
-                        } catch(InvalidOperationException e) {
-                            throw wrapException(e);
-                        }
-                    }
-                })
-                .build();
+        builder.setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+            @Override
+            public void write(PrintWriter writer) throws Exception {
+                try (Session session = sessionService.createSession()) {
+                    extDataService.dumpAllAsJson(session,
+                                                 writer,
+                                                 tableName.getSchemaName(),
+                                                 tableName.getTableName(),
+                                                 realDepth,
+                                                 true);
+                }
+            }
+        });
     }
 
     @Override
-    public Response getEntities(final HttpServletRequest request, final TableName tableName, Integer inDepth, final String identifiers) {
-        if (!securityService.isAccessible(request, tableName.getSchemaName()))
-            return Response.status(Response.Status.FORBIDDEN).build();
+    public void getEntities(RestResponseBuilder builder, final TableName tableName, Integer inDepth, final String identifiers) {
         final int depth = (inDepth != null) ? Math.max(inDepth, 0) : -1;
-        return Response.status(Response.Status.OK)
-                .entity(new StreamingOutput() {
-                    @Override
-                    public void write(OutputStream output) throws IOException {
-                        try (Session session = sessionService.createSession();
-                             CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
-                            // Do not auto-close writer as that prevents an exception from propagating to the client
-                            PrintWriter writer = new PrintWriter(output);
-                            UserTable uTable = dxlService.ddlFunctions().getUserTable(session, tableName);
-                            Index pkIndex = uTable.getPrimaryKeyIncludingInternal().getIndex();
-                            List<List<String>> pks = PrimaryKeyParser.parsePrimaryKeys(identifiers, pkIndex);
-                            extDataService.dumpBranchAsJson(session, writer, tableName.getSchemaName(), tableName.getTableName(), pks, depth, false);
-                            writer.write('\n');
-                            txn.commit();
-                            writer.close();
-                        } catch(InvalidOperationException e) {
-                            throw wrapException(e);
-                        }
-                    }
-                })
-                .build();
+        builder.setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+            @Override
+            public void write(PrintWriter writer) throws Exception {
+                try (Session session = sessionService.createSession();
+                     CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+                    UserTable uTable = dxlService.ddlFunctions().getUserTable(session, tableName);
+                    Index pkIndex = uTable.getPrimaryKeyIncludingInternal().getIndex();
+                    List<List<String>> pks = PrimaryKeyParser.parsePrimaryKeys(identifiers, pkIndex);
+                    extDataService.dumpBranchAsJson(session, writer, tableName.getSchemaName(), tableName.getTableName(), pks, depth, false);
+                    txn.commit();
+                }
+            }
+        });
     }
 
     @Override

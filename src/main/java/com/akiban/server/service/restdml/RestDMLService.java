@@ -32,16 +32,17 @@ import javax.servlet.http.HttpServletRequest;
 
 import javax.ws.rs.core.Response;
 
+import com.akiban.rest.RestResponseBuilder;
 import org.codehaus.jackson.JsonNode;
 
 import java.util.List;
 import java.util.Map;
 
 public interface RestDMLService {
-    public Response getAllEntities(HttpServletRequest request, 
-                                   TableName tableName, Integer depth);
-    public Response getEntities(HttpServletRequest request, 
-                                TableName tableName, Integer depth, String pks);
+    public void getAllEntities(RestResponseBuilder builder, TableName tableName, Integer depth);
+
+    public void getEntities(RestResponseBuilder builder, TableName tableName, Integer depth, String pks);
+
     public Response insert(HttpServletRequest request, 
                            TableName tableName, JsonNode node);
     public Response delete(HttpServletRequest request, 

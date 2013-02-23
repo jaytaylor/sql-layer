@@ -45,6 +45,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import com.akiban.rest.RestResponseBuilder;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -64,11 +65,16 @@ public class EntityResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response retrieveEntity(@Context HttpServletRequest request,
                                    @QueryParam("format") String format,
-                                   @QueryParam("jsoncallback") String jsonp,
+                                   @QueryParam("jsonp") String jsonp,
                                    @PathParam("entity") String entity,
                                    @QueryParam("depth") Integer depth) throws Exception {
         TableName tableName = parseTableName(request, entity);
-        return reqs.restDMLService.getAllEntities(request, tableName, depth);
+        if(!reqs.securityService.isAccessible(request, tableName.getSchemaName())) {
+            return RestResponseBuilder.FORBIDDEN_RESPONSE;
+        }
+        RestResponseBuilder builder = RestResponseBuilder.builderFromRequest(format, jsonp);
+        reqs.restDMLService.getAllEntities(builder, tableName, depth);
+        return builder.build();
     }
 
     @GET
@@ -76,14 +82,19 @@ public class EntityResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response retrieveEntity(@Context HttpServletRequest request,
                                    @QueryParam("format") String format,
-                                   @QueryParam("jsoncallback") String jsonp,
+                                   @QueryParam("jsonp") String jsonp,
                                    @PathParam("entity") String entity,
                                    @QueryParam("depth") Integer depth,
                                    @Context UriInfo uri) throws Exception {
         TableName tableName = parseTableName(request, entity);
+        if(!reqs.securityService.isAccessible(request, tableName.getSchemaName())) {
+            return RestResponseBuilder.FORBIDDEN_RESPONSE;
+        }
         String[] pks = uri.getPath(false).split("/");
         assert pks.length > 0 : uri;
-        return reqs.restDMLService.getEntities(request, tableName, depth, pks[pks.length-1]);
+        RestResponseBuilder builder = RestResponseBuilder.builderFromRequest(format, jsonp);
+        reqs.restDMLService.getEntities(builder, tableName, depth, pks[pks.length-1]);
+        return builder.build();
     }
 
     @POST

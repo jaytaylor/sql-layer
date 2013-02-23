@@ -285,7 +285,12 @@ public class RestServiceFilesIT extends ITBase {
                 actualNode = mapper.readTree(actual);
             }
         } catch(JsonParseException e) {
-            assertEquals(assertMsg, expected, actual);
+            // Note: This case handles the jsonp tests. Somewhat fragile, but not horrible yet.
+            assertEquals(
+                    assertMsg,
+                    expected != null ? expected.trim() : expected,
+                    actual != null ? actual.trim() : actual
+            );
             skipNodeCheck = true;
         }
         // Try manual equals and then assert strings for pretty print
