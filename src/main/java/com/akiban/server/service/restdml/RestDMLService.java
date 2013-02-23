@@ -27,31 +27,30 @@
 package com.akiban.server.service.restdml;
 
 import com.akiban.ais.model.TableName;
-
-import javax.servlet.http.HttpServletRequest;
-
-import javax.ws.rs.core.Response;
-
-import com.akiban.rest.RestResponseBuilder;
 import org.codehaus.jackson.JsonNode;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
 public interface RestDMLService {
-    public void getAllEntities(RestResponseBuilder builder, TableName tableName, Integer depth);
+    public void getAllEntities(PrintWriter PrintWriter, TableName tableName, Integer depth);
 
-    public void getEntities(RestResponseBuilder builder, TableName tableName, Integer depth, String pks);
+    public void getEntities(PrintWriter PrintWriter, TableName tableName, Integer depth, String pks);
 
-    public void insert(RestResponseBuilder builder, TableName tableName, JsonNode node);
+    public void insert(PrintWriter PrintWriter, TableName tableName, JsonNode node);
 
-    public void delete(RestResponseBuilder builder, TableName tableName, String pks);
+    public void delete(PrintWriter PrintWriter, TableName tableName, String pks);
 
-    public void update(RestResponseBuilder builder, TableName tableName, String values, JsonNode node);
+    public void update(PrintWriter PrintWriter, TableName tableName, String values, JsonNode node);
 
-    public void runSQL(RestResponseBuilder builder, HttpServletRequest request, String sql);
-    public void runSQL(RestResponseBuilder builder, HttpServletRequest request, List<String> sql);
-    public void explainSQL(RestResponseBuilder builder, HttpServletRequest request, String sql);
+    public void runSQL(PrintWriter PrintWriter, HttpServletRequest request, String sql) throws IOException, SQLException;
+    public void runSQL(PrintWriter PrintWriter, HttpServletRequest request, List<String> sql) throws IOException, SQLException;
+    public void explainSQL(PrintWriter PrintWriter, HttpServletRequest request, String sql) throws IOException, SQLException;
 
     public Response callProcedure(HttpServletRequest request, 
                                   TableName procName, Map<String,List<String>> params);

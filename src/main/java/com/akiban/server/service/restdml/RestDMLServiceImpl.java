@@ -30,7 +30,6 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.rest.RestResponseBuilder;
 import com.akiban.server.Quote;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
@@ -69,7 +68,6 @@ import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.Writer;
 import java.sql.Connection;
 import java.sql.ParameterMetaData;
 import java.sql.SQLException;
@@ -135,115 +133,85 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     /* RestDMLService */
 
     @Override
-    public void getAllEntities(RestResponseBuilder builder, final TableName tableName, Integer depth) {
+    public void getAllEntities(PrintWriter writer, TableName tableName, Integer depth) {
         final int realDepth = (depth != null) ? Math.max(depth, 0) : -1;
-        builder.setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
-            @Override
-            public void write(PrintWriter writer) throws Exception {
-                try (Session session = sessionService.createSession()) {
-                    extDataService.dumpAllAsJson(session,
-                                                 writer,
-                                                 tableName.getSchemaName(),
-                                                 tableName.getTableName(),
-                                                 realDepth,
-                                                 true);
-                }
-            }
-        });
+        try (Session session = sessionService.createSession()) {
+            extDataService.dumpAllAsJson(session,
+                                         writer,
+                                         tableName.getSchemaName(),
+                                         tableName.getTableName(),
+                                         realDepth,
+                                         true);
+        }
     }
 
     @Override
-    public void getEntities(RestResponseBuilder builder, final TableName tableName, Integer inDepth, final String identifiers) {
+    public void getEntities(PrintWriter writer, TableName tableName, Integer inDepth, String identifiers) {
         final int depth = (inDepth != null) ? Math.max(inDepth, 0) : -1;
-        builder.setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
-            @Override
-            public void write(PrintWriter writer) throws Exception {
-                try (Session session = sessionService.createSession();
-                     CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
-                    UserTable uTable = dxlService.ddlFunctions().getUserTable(session, tableName);
-                    Index pkIndex = uTable.getPrimaryKeyIncludingInternal().getIndex();
-                    List<List<String>> pks = PrimaryKeyParser.parsePrimaryKeys(identifiers, pkIndex);
-                    extDataService.dumpBranchAsJson(session,
-                                                    writer,
-                                                    tableName.getSchemaName(),
-                                                    tableName.getTableName(),
-                                                    pks,
-                                                    depth,
-                                                    false);
-                    txn.commit();
-                }
-            }
-        });
+        try (Session session = sessionService.createSession();
+             CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+            UserTable uTable = dxlService.ddlFunctions().getUserTable(session, tableName);
+            Index pkIndex = uTable.getPrimaryKeyIncludingInternal().getIndex();
+            List<List<String>> pks = PrimaryKeyParser.parsePrimaryKeys(identifiers, pkIndex);
+            extDataService.dumpBranchAsJson(session,
+                                            writer,
+                                            tableName.getSchemaName(),
+                                            tableName.getTableName(),
+                                            pks,
+                                            depth,
+                                            false);
+            txn.commit();
+        }
     }
 
     @Override
-    public void insert(RestResponseBuilder builder, final TableName rootTable, final JsonNode node)  {
-        builder.setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
-            @Override
-            public void write(PrintWriter writer) throws Exception {
-                try (Session session = sessionService.createSession();
-                     CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
-                    AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-                    String pk = insertProcessor.processInsert(session, ais, rootTable, node);
-                    txn.commit();
-                    writer.write(pk);
-                }
-            }
-        });
+    public void insert(PrintWriter writer, TableName rootTable, JsonNode node)  {
+        try (Session session = sessionService.createSession();
+             CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+            String pk = insertProcessor.processInsert(session, ais, rootTable, node);
+            txn.commit();
+            writer.write(pk);
+        }
     }
 
     @Override
-    public void delete(RestResponseBuilder builder, final TableName tableName, final String identifier) {
-        builder.setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
-            @Override
-            public void write(PrintWriter writer) throws Exception {
-                try (Session session = sessionService.createSession();
-                     CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
-                    AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-                    deleteProcessor.processDelete(session, ais, tableName, identifier);
-                    txn.commit();
-                }
-            }
-        });
+    public void delete(PrintWriter writer, TableName tableName, String identifier) {
+        try (Session session = sessionService.createSession();
+             CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+            deleteProcessor.processDelete(session, ais, tableName, identifier);
+            txn.commit();
+        }
     }
 
     @Override
-    public void update(RestResponseBuilder builder, final TableName tableName, final String pks, final JsonNode node) {
-        builder.setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
-            @Override
-            public void write(PrintWriter writer) throws Exception {
-                try (Session session = sessionService.createSession();
-                     CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
-                    AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-                    String pk = updateProcessor.processUpdate(session, ais, tableName, pks, node);
-                    txn.commit();
-                    writer.write(pk);
-                }
-            }
-        });
+    public void update(PrintWriter writer, TableName tableName, String pks, JsonNode node) {
+        try (Session session = sessionService.createSession();
+             CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+            String pk = updateProcessor.processUpdate(session, ais, tableName, pks, node);
+            txn.commit();
+            writer.write(pk);
+        }
     }
 
     @Override
-    public void runSQL(RestResponseBuilder builder, HttpServletRequest request, String sql) {
-        runSQLInternal(builder, request, Collections.singletonList(sql), OutputType.ARRAY, CommitMode.AUTO);
+    public void runSQL(PrintWriter writer, HttpServletRequest request, String sql) throws IOException, SQLException {
+        runSQLInternal(writer, request, Collections.singletonList(sql), OutputType.ARRAY, CommitMode.AUTO);
     }
 
     @Override
-    public void runSQL(RestResponseBuilder builder, HttpServletRequest request, List<String> sql) {
-        runSQLInternal(builder, request, sql, OutputType.OBJECT, CommitMode.MANUAL);
+    public void runSQL(PrintWriter writer, HttpServletRequest request, List<String> sql) throws IOException, SQLException {
+        runSQLInternal(writer, request, sql, OutputType.OBJECT, CommitMode.MANUAL);
 
     }
 
     @Override
-    public void explainSQL(RestResponseBuilder builder, final HttpServletRequest request, final String sql) {
-        builder.setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
-            @Override
-            public void write(PrintWriter writer) throws Exception {
-                try (JDBCConnection conn = jdbcConnection(request)) {
-                    new JsonFormatter().format(conn.explain(sql), writer);
-                }
-            }
-        });
+    public void explainSQL(PrintWriter writer, final HttpServletRequest request, final String sql) throws IOException, SQLException {
+        try (JDBCConnection conn = jdbcConnection(request)) {
+            new JsonFormatter().format(conn.explain(sql), writer);
+        }
     }
 
     @Override
@@ -310,46 +278,41 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                 .build();
     }
 
-    private void runSQLInternal(RestResponseBuilder builder,
-                                final HttpServletRequest request, final List<String> sqlList,
-                                final OutputType outputType, final CommitMode commitMode) {
-        builder.setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
-            @Override
-            public void write(PrintWriter writer) throws Exception {
-                boolean useSubArrays = (outputType == OutputType.OBJECT);
-                try (Connection conn = jdbcConnection(request);
-                     Statement s = conn.createStatement()) {
-                    AkibanAppender appender = AkibanAppender.of(writer);
-                    int nresults = 0;
-                    commitMode.begin(conn);
-                    outputType.begin(appender);
-                    for(String sql : sqlList) {
-                        String trimmed = sql.trim();
-                        if(trimmed.isEmpty()) {
-                            continue;
-                        }
-                        if(useSubArrays) {
-                            beginResultSetArray(appender, nresults == 0, nresults);
-                        }
-                        boolean res = s.execute(trimmed);
-                        if(res) {
-                            collectResults((JDBCResultSet)s.getResultSet(), appender);
-                        } else {
-                            int updateCount = s.getUpdateCount();
-                            appender.append("\n{\"update_count\":");
-                            appender.append(updateCount);
-                            appender.append("}\n");
-                        }
-                        if(useSubArrays) {
-                            endResultSetArray(appender);
-                        }
-                        ++nresults;
-                    }
-                    commitMode.end(conn);
-                    outputType.end(appender);
+    private void runSQLInternal(PrintWriter writer,
+                                HttpServletRequest request, List<String> sqlList,
+                                OutputType outputType, CommitMode commitMode) throws IOException, SQLException {
+        boolean useSubArrays = (outputType == OutputType.OBJECT);
+        try (Connection conn = jdbcConnection(request);
+             Statement s = conn.createStatement()) {
+            AkibanAppender appender = AkibanAppender.of(writer);
+            int nresults = 0;
+            commitMode.begin(conn);
+            outputType.begin(appender);
+            for(String sql : sqlList) {
+                String trimmed = sql.trim();
+                if(trimmed.isEmpty()) {
+                    continue;
                 }
+                if(useSubArrays) {
+                    beginResultSetArray(appender, nresults == 0, nresults);
+                }
+                boolean res = s.execute(trimmed);
+                if(res) {
+                    collectResults((JDBCResultSet)s.getResultSet(), appender);
+                } else {
+                    int updateCount = s.getUpdateCount();
+                    appender.append("\n{\"update_count\":");
+                    appender.append(updateCount);
+                    appender.append("}\n");
+                }
+                if(useSubArrays) {
+                    endResultSetArray(appender);
+                }
+                ++nresults;
             }
-        });
+            commitMode.end(conn);
+            outputType.end(appender);
+        }
     }
 
     private static void beginResultSetArray(AkibanAppender appender, boolean first, int resultOffset) {

@@ -25,14 +25,12 @@
  */
 package com.akiban.server.service.restdml;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import com.akiban.server.service.externaldata.TableRowTracker;
 import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,7 +95,7 @@ public class InsertProcessor extends DMLProcessor {
     }
     
     public String processInsert(Session session, AkibanInformationSchema ais, TableName rootTable, JsonNode node) 
-            throws JsonParseException, IOException {
+            {
         setAIS(ais);
         insertGenerator = getGenerator(CACHED_INSERT_GENERATOR);
 
@@ -112,7 +110,7 @@ public class InsertProcessor extends DMLProcessor {
         return appender.toString();
     }
     
-    private void processContainer (JsonNode node, AkibanAppender appender, InsertContext context) throws IOException {
+    private void processContainer (JsonNode node, AkibanAppender appender, InsertContext context) {
         boolean first = true;
         Map<Column, PValueSource> pkValues = null;
         
@@ -138,7 +136,7 @@ public class InsertProcessor extends DMLProcessor {
         
     }
     
-    private void processTable (JsonNode node, AkibanAppender appender, InsertContext context) throws IOException {
+    private void processTable (JsonNode node, AkibanAppender appender, InsertContext context) {
         
         // Pass one, insert fields from the table
         Iterator<Entry<String,JsonNode>> i = node.getFields();
@@ -180,23 +178,9 @@ public class InsertProcessor extends DMLProcessor {
     private void setValue (String field, JsonNode node, InsertContext context) {
         Column column = getColumn (context.table, field);
         setValue (context.queryContext, column, node.asText());
-/*        
-        if (node.isBoolean()) {
-            setValue (context.queryContext, column, node.asBoolean());
-        } else if (node.isInt()) {
-            setValue (context.queryContext, column, node.asInt());
-        } else if (node.isLong()) {
-            setValue (context.queryContext, column, node.asLong());
-        } else if (node.isDouble()) {
-            setValue (context.queryContext, column, node.asDouble());
-        } else if (node.isTextual() || node.isNull()) {
-            // Also handles NULLs 
-            setValue (context.queryContext, column, node.asText());
-        }
-*/        
     }
 
-    private void runUpdate (InsertContext context, AkibanAppender appender) throws IOException { 
+    private void runUpdate (InsertContext context, AkibanAppender appender) {
         assert context != null : "Bad Json format";
         LOG.trace("Insert row into: {}, values {}", context.tableName, context.queryContext.toString());
         Operator insert = insertGenerator.create(context.table.getName());

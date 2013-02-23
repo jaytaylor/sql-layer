@@ -66,6 +66,10 @@ public class RestResponseBuilder {
         this.jsonp = jsonp;
     }
 
+    public static RestResponseBuilder forJsonp(String jsonp) {
+        return new RestResponseBuilder(jsonp);
+    }
+
     public RestResponseBuilder setStatus(int status) {
         this.status = status;
         return this;

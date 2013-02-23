@@ -45,7 +45,7 @@ public interface ExternalDataService {
      */
     void dumpAllAsJson(Session session, PrintWriter writer,
                        String schemaName, String tableName,
-                       int depth, boolean withTransaction) throws IOException;
+                       int depth, boolean withTransaction);
 
     /**
      * Dump selected branches, identified by a list of PRIMARY KEY files, in JSON format.
@@ -57,7 +57,7 @@ public interface ExternalDataService {
     void dumpBranchAsJson(Session session, PrintWriter writer,
                           String schemaName, String tableName, 
                           List<List<String>> keys, int depth,
-                          boolean withTransaction) throws IOException;
+                          boolean withTransaction);
 
     long loadTableFromCsv(Session session, InputStream inputStream, 
                           CsvFormat format, long skipRows,

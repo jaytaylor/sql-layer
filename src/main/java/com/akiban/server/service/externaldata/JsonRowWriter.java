@@ -51,7 +51,7 @@ public class JsonRowWriter
         this.tracker = tracker;
     }
 
-    public boolean writeRows(Cursor cursor, AkibanAppender appender, String prefix, WriteRow rowWriter) throws IOException {
+    public boolean writeRows(Cursor cursor, AkibanAppender appender, String prefix, WriteRow rowWriter) {
         cursor.open();
         tracker.reset();
         final int minDepth = tracker.getMinDepth();

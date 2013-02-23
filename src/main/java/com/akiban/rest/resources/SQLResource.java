@@ -38,6 +38,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.PrintWriter;
 import java.util.Arrays;
 
 @Path("/sql")
@@ -52,37 +53,55 @@ public class SQLResource {
     @GET
     @Path("/query")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response query(@Context HttpServletRequest request,
+    public Response query(@Context final HttpServletRequest request,
                           @QueryParam("jsonp") String jsonp,
-                          @QueryParam("q") String query) throws Exception {
-        RestResponseBuilder builder = new RestResponseBuilder(jsonp);
-        reqs.restDMLService.runSQL(builder, request, query);
-        return builder.build();
+                          @QueryParam("q") final String query) {
+        return RestResponseBuilder
+                .forJsonp(jsonp)
+                .setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        reqs.restDMLService.runSQL(writer, request, query);
+                    }
+                })
+                .build();
     }
 
     /** Explain a single SQL statement specified by the 'q' query parameter. */
     @GET
     @Path("/explain")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response explain(@Context HttpServletRequest request,
+    public Response explain(@Context final HttpServletRequest request,
                             @QueryParam("jsonp") String jsonp,
-                            @QueryParam("q") String query) throws Exception {
-        RestResponseBuilder builder = new RestResponseBuilder(jsonp);
-        reqs.restDMLService.explainSQL(builder, request, query);
-        return builder.build();
+                            @QueryParam("q") final String query) {
+        return RestResponseBuilder
+                .forJsonp(jsonp)
+                .setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        reqs.restDMLService.explainSQL(writer, request, query);
+                    }
+                })
+                .build();
     }
 
     /** Run multiple SQL statements (single transaction) specified by semi-colon separated strings in the POST body. */
     @POST
     @Path("/execute")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response execute(@Context HttpServletRequest request,
+    public Response execute(@Context final HttpServletRequest request,
                             @QueryParam("jsonp") String jsonp,
-                            final byte[] postBytes) throws Exception {
+                            final byte[] postBytes) {
         String input = new String(postBytes);
-        String[] statements = input.split(";");
-        RestResponseBuilder builder = new RestResponseBuilder(jsonp);
-        reqs.restDMLService.runSQL(builder, request, Arrays.asList(statements));
-        return builder.build();
+        final String[] statements = input.split(";");
+        return RestResponseBuilder
+                .forJsonp(jsonp)
+                .setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        reqs.restDMLService.runSQL(writer, request, Arrays.asList(statements));
+                    }
+                })
+                .build();
     }
 }

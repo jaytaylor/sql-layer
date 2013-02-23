@@ -49,6 +49,8 @@ import com.akiban.rest.RestResponseBuilder;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 
+import java.io.PrintWriter;
+
 import static com.akiban.rest.ResourceHelper.getPKString;
 import static com.akiban.rest.ResourceHelper.parseTableName;
 import static com.akiban.rest.ResourceHelper.checkTableAccessible;
@@ -70,12 +72,18 @@ public class EntityResource {
     public Response retrieveEntity(@Context HttpServletRequest request,
                                    @QueryParam("jsonp") String jsonp,
                                    @PathParam("entity") String entity,
-                                   @QueryParam("depth") Integer depth) throws Exception {
-        TableName tableName = parseTableName(request, entity);
+                                   @QueryParam("depth") final Integer depth) {
+        final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
-        RestResponseBuilder builder = new RestResponseBuilder(jsonp);
-        reqs.restDMLService.getAllEntities(builder, tableName, depth);
-        return builder.build();
+        return RestResponseBuilder
+                .forJsonp(jsonp)
+                .setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        reqs.restDMLService.getAllEntities(writer, tableName, depth);
+                    }
+                })
+                .build();
     }
 
     @GET
@@ -84,13 +92,19 @@ public class EntityResource {
     public Response retrieveEntity(@Context HttpServletRequest request,
                                    @QueryParam("jsonp") String jsonp,
                                    @PathParam("entity") String entity,
-                                   @QueryParam("depth") Integer depth,
-                                   @Context UriInfo uri) throws Exception {
-        TableName tableName = parseTableName(request, entity);
+                                   @QueryParam("depth") final Integer depth,
+                                   @Context final UriInfo uri) {
+        final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
-        RestResponseBuilder builder = new RestResponseBuilder(jsonp);
-        reqs.restDMLService.getEntities(builder, tableName, depth, getPKString(uri));
-        return builder.build();
+        return RestResponseBuilder
+                .forJsonp(jsonp)
+                .setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        reqs.restDMLService.getEntities(writer, tableName, depth, getPKString(uri));
+                    }
+                })
+                .build();
     }
 
     @POST
@@ -99,31 +113,43 @@ public class EntityResource {
     public Response createEntity(@Context HttpServletRequest request,
                                  @QueryParam("jsonp") String jsonp,
                                  @PathParam("entity") String entity,
-                                 byte[] entityBytes) throws Exception {
-        TableName tableName = parseTableName(request, entity);
+                                 final byte[] entityBytes) {
+        final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
-        ObjectMapper m = new ObjectMapper();
-        JsonNode node = m.readTree(entityBytes);
-        RestResponseBuilder builder = new RestResponseBuilder(jsonp);
-        reqs.restDMLService.insert(builder, tableName, node);
-        return builder.build();
+        return RestResponseBuilder
+                .forJsonp(jsonp)
+                .setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        ObjectMapper m = new ObjectMapper();
+                        final JsonNode node = m.readTree(entityBytes);
+                        reqs.restDMLService.insert(writer, tableName, node);
+                    }
+                })
+                .build();
     }
 
     @PUT
     @Path("/" + IDENTIFIERS_MULTI)
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateEntity(@Context HttpServletRequest request,
-                                 @QueryParam("jsonp") String jsonp,
+                                 @QueryParam("jsonp") final String jsonp,
                                  @PathParam("entity") String entity,
-                                 byte[] entityBytes,
-                                 @Context UriInfo uri) throws Exception {
-        TableName tableName = parseTableName(request, entity);
+                                 final byte[] entityBytes,
+                                 @Context final UriInfo uri) {
+        final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
-        ObjectMapper m = new ObjectMapper();
-        JsonNode node = m.readTree(entityBytes);
-        RestResponseBuilder builder = new RestResponseBuilder(jsonp);
-        reqs.restDMLService.update(builder, tableName, getPKString(uri), node);
-        return builder.build();
+        return RestResponseBuilder
+                .forJsonp(jsonp)
+                .setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        ObjectMapper m = new ObjectMapper();
+                        JsonNode node = m.readTree(entityBytes);
+                        reqs.restDMLService.update(writer, tableName, getPKString(uri), node);
+                    }
+                })
+                .build();
     }
 
     @DELETE
@@ -132,11 +158,17 @@ public class EntityResource {
     public Response deleteEntity(@Context HttpServletRequest request,
                                  @QueryParam("jsonp") String jsonp,
                                  @PathParam("entity") String entity,
-                                 @Context UriInfo uri) throws Exception {
-        TableName tableName = parseTableName(request, entity);
+                                 @Context final UriInfo uri) {
+        final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
-        RestResponseBuilder builder = new RestResponseBuilder(jsonp);
-        reqs.restDMLService.delete(builder, tableName, getPKString(uri));
-        return builder.build();
+        return RestResponseBuilder
+                .forJsonp(jsonp)
+                .setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        reqs.restDMLService.delete(writer, tableName, getPKString(uri));
+                    }
+                })
+                .build();
     }
 }
