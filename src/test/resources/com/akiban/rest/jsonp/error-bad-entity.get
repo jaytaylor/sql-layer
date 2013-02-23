@@ -1,1 +1,1 @@
-/entity/test.notreal/42?jsonp=callback
+/entity/test.notreal/42?callback=func

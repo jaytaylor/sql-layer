@@ -52,6 +52,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
 import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 
 /**
@@ -70,7 +71,7 @@ public class SecurityResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response addUser(@Context HttpServletRequest request,
-                            @QueryParam("jsonp") String jsonp,
+                            @QueryParam(JSONP_ARG_NAME) String jsonp,
                             byte[] userBytes) throws Exception {
         RestResponseBuilder response = RestResponseBuilder.forJsonp(jsonp);
         if (!request.isUserInRole(SecurityService.ADMIN_ROLE)) {
@@ -121,8 +122,8 @@ public class SecurityResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response deleteUser(@Context HttpServletRequest request,
-                               @QueryParam("jsonp") String jsonp,
-                               @PathParam("user") final String user) throws Exception {
+                               @PathParam("user") final String user,
+                               @QueryParam(JSONP_ARG_NAME) String jsonp) {
         RestResponseBuilder response = RestResponseBuilder.forJsonp(jsonp);
         if (!request.isUserInRole(SecurityService.ADMIN_ROLE)) {
             return response.status(Response.Status.FORBIDDEN).build();

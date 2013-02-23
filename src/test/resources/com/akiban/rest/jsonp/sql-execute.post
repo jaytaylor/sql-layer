@@ -1,1 +1,1 @@
-/sql/execute?jsonp=callback
+/sql/execute?callback=func

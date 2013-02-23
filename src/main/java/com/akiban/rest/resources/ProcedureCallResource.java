@@ -41,6 +41,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.PrintWriter;
 
+import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
 import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 
 /**
@@ -58,7 +59,7 @@ public class ProcedureCallResource {
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response getQueryResults(@Context final HttpServletRequest request,
                                     @PathParam("proc") String proc,
-                                    @QueryParam("jsonp") String jsonp,
+                                    @QueryParam(JSONP_ARG_NAME) String jsonp,
                                     @Context final UriInfo uri) throws Exception {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
@@ -67,7 +68,8 @@ public class ProcedureCallResource {
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
-                        reqs.restDMLService.callProcedure(writer, request, procName, uri.getQueryParameters());
+                        reqs.restDMLService.callProcedure(writer, request, JSONP_ARG_NAME,
+                                                          procName, uri.getQueryParameters());
                     }
                 })
                 .build();

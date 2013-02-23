@@ -48,6 +48,6 @@ public interface RestDMLService {
     public void runSQL(PrintWriter writer, HttpServletRequest request, List<String> sql) throws SQLException;
     public void explainSQL(PrintWriter writer, HttpServletRequest request, String sql) throws IOException, SQLException;
 
-    public void callProcedure(PrintWriter writer, HttpServletRequest request,
+    public void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
                               TableName procName, Map<String,List<String>> params) throws SQLException;
 }

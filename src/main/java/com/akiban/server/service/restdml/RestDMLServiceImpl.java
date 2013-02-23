@@ -199,12 +199,12 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
-    public void callProcedure(PrintWriter writer, HttpServletRequest request,
+    public void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
                               TableName procName, Map<String,List<String>> params) throws SQLException {
         try (JDBCConnection conn = jdbcConnection(request);
              JDBCCallableStatement call = conn.prepareCall(procName)) {
             for (Map.Entry<String,List<String>> entry : params.entrySet()) {
-                if ("jsonp".equals(entry.getKey()))
+                if (jsonpArgName.equals(entry.getKey()))
                     continue;
                 if (entry.getValue().size() != 1)
                     throw new WrongExpressionArityException(1, entry.getValue().size());

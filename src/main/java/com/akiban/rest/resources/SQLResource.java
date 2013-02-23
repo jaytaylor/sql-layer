@@ -40,6 +40,7 @@ import javax.ws.rs.core.Response;
 import java.io.PrintWriter;
 import java.util.Arrays;
 
+import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
 import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 
 @Path("/sql")
@@ -55,7 +56,7 @@ public class SQLResource {
     @Path("/query")
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response query(@Context final HttpServletRequest request,
-                          @QueryParam("jsonp") String jsonp,
+                          @QueryParam(JSONP_ARG_NAME) String jsonp,
                           @QueryParam("q") final String query) {
         return RestResponseBuilder
                 .forJsonp(jsonp)
@@ -73,7 +74,7 @@ public class SQLResource {
     @Path("/explain")
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response explain(@Context final HttpServletRequest request,
-                            @QueryParam("jsonp") String jsonp,
+                            @QueryParam(JSONP_ARG_NAME) String jsonp,
                             @QueryParam("q") final String query) {
         return RestResponseBuilder
                 .forJsonp(jsonp)
@@ -91,7 +92,7 @@ public class SQLResource {
     @Path("/execute")
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response execute(@Context final HttpServletRequest request,
-                            @QueryParam("jsonp") String jsonp,
+                            @QueryParam(JSONP_ARG_NAME) String jsonp,
                             final byte[] postBytes) {
         String input = new String(postBytes);
         final String[] statements = input.split(";");

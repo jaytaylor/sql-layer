@@ -1,4 +1,4 @@
-callback({
+func({
   "type" : "project",
   "input_operator" : [ {
     "type" : "count_operator",

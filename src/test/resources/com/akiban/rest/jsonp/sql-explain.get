@@ -1,1 +1,1 @@
-/sql/explain?q=SELECT+COUNT%28*%29+t_cnt+FROM+test.t&jsonp=callback
+/sql/explain?q=SELECT+COUNT%28*%29+t_cnt+FROM+test.t&callback=func

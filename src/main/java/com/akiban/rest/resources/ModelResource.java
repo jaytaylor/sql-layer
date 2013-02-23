@@ -54,6 +54,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.security.Principal;
 
+import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
 import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 import static com.akiban.rest.resources.ResourceHelper.checkSchemaAccessible;
 import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
@@ -81,7 +82,7 @@ public final class ModelResource {
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response viewSpace(@Context HttpServletRequest request,
                               @PathParam("schema") String schemaParam,
-                              @QueryParam("jsonp") String jsonp) {
+                              @QueryParam(JSONP_ARG_NAME) String jsonp) {
         final String schema = getSchemaName(request, schemaParam);
         checkSchemaAccessible(reqs.securityService, request, schema);
         return RestResponseBuilder
@@ -109,7 +110,7 @@ public final class ModelResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response previewChange(@Context HttpServletRequest request,
                                   @PathParam("schema") String schemaParam,
-                                  @QueryParam("jsonp") String jsonp,
+                                  @QueryParam(JSONP_ARG_NAME) String jsonp,
                                   final InputStream postInput) {
         String schema = getSchemaName(request, schemaParam);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, schema);
@@ -122,7 +123,7 @@ public final class ModelResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response applyChange(@Context HttpServletRequest request,
                                 @PathParam("schema") String schemaParam,
-                                @QueryParam("jsonp") String jsonp,
+                                @QueryParam(JSONP_ARG_NAME) String jsonp,
                                 final InputStream postInput) {
         String schema = getSchemaName(request, schemaParam);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, schema);

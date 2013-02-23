@@ -37,6 +37,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import java.io.PrintWriter;
 
+import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
 import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 
 /**
@@ -55,7 +56,7 @@ public class VersionResource {
 
     @GET
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
-    public Response getVersion(@QueryParam("jsonp") String jsonp) {
+    public Response getVersion(@QueryParam(JSONP_ARG_NAME) String jsonp) {
         return RestResponseBuilder
                 .forJsonp(jsonp)
                 .body(new RestResponseBuilder.BodyGenerator() {
