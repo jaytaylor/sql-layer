@@ -47,11 +47,12 @@ public interface RestDMLService {
 
     public void delete(RestResponseBuilder builder, TableName tableName, String pks);
 
-    public void update(RestResponseBuilder builder,  TableName tableName, String values, JsonNode node);
+    public void update(RestResponseBuilder builder, TableName tableName, String values, JsonNode node);
 
-    public Response runSQL(HttpServletRequest request, String sql);
-    public Response runSQL(HttpServletRequest request, List<String> sql);
-    public Response explainSQL(HttpServletRequest request, String sql);
+    public void runSQL(RestResponseBuilder builder, HttpServletRequest request, String sql);
+    public void runSQL(RestResponseBuilder builder, HttpServletRequest request, List<String> sql);
+    public void explainSQL(RestResponseBuilder builder, HttpServletRequest request, String sql);
+
     public Response callProcedure(HttpServletRequest request, 
                                   TableName procName, Map<String,List<String>> params);
 }

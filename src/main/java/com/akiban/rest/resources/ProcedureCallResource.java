@@ -27,6 +27,7 @@
 package com.akiban.rest.resources;
 
 import com.akiban.ais.model.TableName;
+import com.akiban.rest.ResourceHelper;
 import com.akiban.rest.ResourceRequirements;
 
 import javax.servlet.http.HttpServletRequest;
@@ -57,7 +58,7 @@ public class ProcedureCallResource {
                                     @PathParam("proc") String proc,
                                     @QueryParam("jsoncallback") String jsonp,
                                     @Context UriInfo uri) throws Exception {
-        TableName procName = EntityResource.parseTableName(request, proc);
+        TableName procName = ResourceHelper.parseTableName(request, proc);
         return reqs.restDMLService.callProcedure(request, procName, uri.getQueryParameters());
     }
 }

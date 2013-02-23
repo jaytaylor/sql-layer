@@ -24,40 +24,36 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.rest.resources;
+package com.akiban.rest;
 
 import com.akiban.ais.model.TableName;
-import com.akiban.rest.ResourceRequirements;
-import com.akiban.rest.RestResponseBuilder;
+import com.akiban.server.service.security.SecurityService;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.UriInfo;
+import java.security.Principal;
 
-/**
- * Easy access to the server version
- */
-@Path("/version")
-public class VersionResource {
-    private static final TableName TABLE_NAME = new TableName(TableName.INFORMATION_SCHEMA, "server_instance_summary");
-    private static final int DEPTH = 0;
-
-    private final ResourceRequirements reqs;
-
-    public VersionResource(ResourceRequirements reqs) {
-        this.reqs = reqs;
+public class ResourceHelper {
+    public static String getPKString(UriInfo uri) {
+        String pks[] = uri.getPath(false).split("/");
+        assert pks.length > 0: uri;
+        return pks[pks.length - 1];
     }
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getVersion(@QueryParam("jsonp") String jsonp) throws Exception {
-        RestResponseBuilder builder = new RestResponseBuilder(jsonp);
-        reqs.restDMLService.getAllEntities(builder, TABLE_NAME, DEPTH);
-        return builder.build();
+    public static TableName parseTableName(HttpServletRequest request, String name) {
+        Principal user = request.getUserPrincipal();
+        String schema = (user == null) ? "" : user.getName();
+        return TableName.parse(schema, name);
+    }
+
+    public static void checkTableAccessible(SecurityService security, HttpServletRequest request, TableName name) {
+        checkSchemaAccessible(security, request, name.getSchemaName());
+    }
+
+    public static void checkSchemaAccessible(SecurityService security, HttpServletRequest request, String schema) {
+        if(!security.isAccessible(request, schema)) {
+            throw new WebApplicationException(RestResponseBuilder.FORBIDDEN_RESPONSE);
+        }
     }
 }

@@ -51,42 +51,19 @@ public class RestResponseBuilder {
         public void write(PrintWriter writer) throws Exception;
     }
 
-    private static final String DEFAULT_OUTPUT_FORMAT = "json";
     private static final int DEFAULT_RESPONSE_STATUS = Response.Status.OK.getStatusCode();
 
     private static final Charset UTF8 = Charset.forName("UTF-8");
     private static final Map<Class,Response.Status> EXCEPTION_STATUS_MAP = buildExceptionStatusMap();
     public static final Response FORBIDDEN_RESPONSE = Response.status(Response.Status.FORBIDDEN).build();
 
-    private String outputFormatName;
-    private String outputFormatArg;
-    private CharSequence outputBody;
+    private int status = DEFAULT_RESPONSE_STATUS;
     private ResponseGenerator outputGenerator;
-    private int status;
-    private boolean forbidden;
+    private String jsonp;
 
 
-    public RestResponseBuilder() {
-        this(DEFAULT_OUTPUT_FORMAT, null);
-    }
-
-    public RestResponseBuilder(String outputFormatName, String outputFormatArg) {
-        this.outputFormatName = outputFormatName;
-        this.outputFormatArg = outputFormatArg;
-        this.status = DEFAULT_RESPONSE_STATUS;
-    }
-
-    public static RestResponseBuilder builderFromRequest(String format, String jsonp) {
-        if(format == null) {
-            format = (jsonp == null) ? "json" : "jsonp";
-        }
-        return new RestResponseBuilder(format, jsonp);
-    }
-
-    public RestResponseBuilder setOutputFormat(String formatName, String formatArg) {
-        this.outputFormatName = formatName;
-        this.outputFormatArg = formatArg;
-        return this;
+    public RestResponseBuilder(String jsonp) {
+        this.jsonp = jsonp;
     }
 
     public RestResponseBuilder setStatus(int status) {
@@ -99,20 +76,8 @@ public class RestResponseBuilder {
         return this;
     }
 
-    public RestResponseBuilder setOutputBody(CharSequence output) {
-        this.outputBody = output;
-        this.outputGenerator = null;
-        return this;
-    }
-
     public RestResponseBuilder setOutputGenerator(ResponseGenerator output) {
-        this.outputBody = null;
         this.outputGenerator = output;
-        return this;
-    }
-
-    public RestResponseBuilder setForbidden(boolean forbidden) {
-        this.forbidden = forbidden;
         return this;
     }
 
@@ -129,17 +94,15 @@ public class RestResponseBuilder {
             public void write(OutputStream output)  {
                 try {
                     PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, UTF8), false);
-                    boolean jsonp = "jsonp".equals(outputFormatName);
-                    if(jsonp) {
-                        writer.write(outputFormatArg);
+                    boolean isJSONP = jsonp != null;
+                    if(isJSONP) {
+                        writer.write(jsonp);
                         writer.write('(');
                     }
                     if(outputGenerator != null) {
                         outputGenerator.write(writer);
-                    } else if(outputBody != null) {
-                        writer.write(outputBody.toString());
                     }
-                    if(jsonp) {
+                    if(isJSONP) {
                         writer.write(')');
                     }
                     writer.write('\n');
@@ -152,7 +115,7 @@ public class RestResponseBuilder {
         };
     }
 
-    private static WebApplicationException wrapException(Exception e) {
+    public static WebApplicationException wrapException(Exception e) {
         StringBuilder err = new StringBuilder(100);
         err.append("{\"code\":\"");
         String code;

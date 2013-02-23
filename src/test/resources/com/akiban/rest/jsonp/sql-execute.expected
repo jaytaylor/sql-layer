@@ -1,0 +1,5 @@
+callback({"result_set":[
+{"name":"Foo"}
+],"result_set_1":[
+{"id_sum":3}
+]})

@@ -29,7 +29,6 @@ package com.akiban.rest.resources;
 import com.akiban.ais.model.TableName;
 import com.akiban.rest.ResourceRequirements;
 
-import java.security.Principal;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -50,6 +49,10 @@ import com.akiban.rest.RestResponseBuilder;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 
+import static com.akiban.rest.ResourceHelper.getPKString;
+import static com.akiban.rest.ResourceHelper.parseTableName;
+import static com.akiban.rest.ResourceHelper.checkTableAccessible;
+
 /**
  * Entity based access (GET), creation (PUT, POST), and modification (PUT, DELETE)
  */
@@ -65,13 +68,12 @@ public class EntityResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response retrieveEntity(@Context HttpServletRequest request,
-                                   @QueryParam("format") String format,
                                    @QueryParam("jsonp") String jsonp,
                                    @PathParam("entity") String entity,
                                    @QueryParam("depth") Integer depth) throws Exception {
         TableName tableName = parseTableName(request, entity);
-        checkTableAccessible(request, tableName);
-        RestResponseBuilder builder = RestResponseBuilder.builderFromRequest(format, jsonp);
+        checkTableAccessible(reqs.securityService, request, tableName);
+        RestResponseBuilder builder = new RestResponseBuilder(jsonp);
         reqs.restDMLService.getAllEntities(builder, tableName, depth);
         return builder.build();
     }
@@ -80,14 +82,13 @@ public class EntityResource {
     @Path("/" + IDENTIFIERS_MULTI)
     @Produces(MediaType.APPLICATION_JSON)
     public Response retrieveEntity(@Context HttpServletRequest request,
-                                   @QueryParam("format") String format,
                                    @QueryParam("jsonp") String jsonp,
                                    @PathParam("entity") String entity,
                                    @QueryParam("depth") Integer depth,
                                    @Context UriInfo uri) throws Exception {
         TableName tableName = parseTableName(request, entity);
-        checkTableAccessible(request, tableName);
-        RestResponseBuilder builder = RestResponseBuilder.builderFromRequest(format, jsonp);
+        checkTableAccessible(reqs.securityService, request, tableName);
+        RestResponseBuilder builder = new RestResponseBuilder(jsonp);
         reqs.restDMLService.getEntities(builder, tableName, depth, getPKString(uri));
         return builder.build();
     }
@@ -96,15 +97,14 @@ public class EntityResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response createEntity(@Context HttpServletRequest request,
-                                 @QueryParam("format") String format,
                                  @QueryParam("jsonp") String jsonp,
                                  @PathParam("entity") String entity,
                                  byte[] entityBytes) throws Exception {
         TableName tableName = parseTableName(request, entity);
-        checkTableAccessible(request, tableName);
+        checkTableAccessible(reqs.securityService, request, tableName);
         ObjectMapper m = new ObjectMapper();
         JsonNode node = m.readTree(entityBytes);
-        RestResponseBuilder builder = RestResponseBuilder.builderFromRequest(format, jsonp);
+        RestResponseBuilder builder = new RestResponseBuilder(jsonp);
         reqs.restDMLService.insert(builder, tableName, node);
         return builder.build();
     }
@@ -113,16 +113,15 @@ public class EntityResource {
     @Path("/" + IDENTIFIERS_MULTI)
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateEntity(@Context HttpServletRequest request,
-                                 @QueryParam("format") String format,
                                  @QueryParam("jsonp") String jsonp,
                                  @PathParam("entity") String entity,
                                  byte[] entityBytes,
                                  @Context UriInfo uri) throws Exception {
         TableName tableName = parseTableName(request, entity);
-        checkTableAccessible(request, tableName);
+        checkTableAccessible(reqs.securityService, request, tableName);
         ObjectMapper m = new ObjectMapper();
         JsonNode node = m.readTree(entityBytes);
-        RestResponseBuilder builder = RestResponseBuilder.builderFromRequest(format, jsonp);
+        RestResponseBuilder builder = new RestResponseBuilder(jsonp);
         reqs.restDMLService.update(builder, tableName, getPKString(uri), node);
         return builder.build();
     }
@@ -131,32 +130,13 @@ public class EntityResource {
     @Path("/" + IDENTIFIERS_MULTI)
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteEntity(@Context HttpServletRequest request,
-                                 @QueryParam("format") String format,
                                  @QueryParam("jsonp") String jsonp,
                                  @PathParam("entity") String entity,
                                  @Context UriInfo uri) throws Exception {
         TableName tableName = parseTableName(request, entity);
-        checkTableAccessible(request, tableName);
-        RestResponseBuilder builder = RestResponseBuilder.builderFromRequest(format, jsonp);
+        checkTableAccessible(reqs.securityService, request, tableName);
+        RestResponseBuilder builder = new RestResponseBuilder(jsonp);
         reqs.restDMLService.delete(builder, tableName, getPKString(uri));
         return builder.build();
-    }
-
-    private void checkTableAccessible(HttpServletRequest request, TableName name) {
-        if(!reqs.securityService.isAccessible(request, name.getSchemaName())) {
-            throw new WebApplicationException(RestResponseBuilder.FORBIDDEN_RESPONSE);
-        }
-    }
-
-    private static String getPKString(UriInfo uri) {
-        String pks[] = uri.getPath(false).split("/");
-        assert pks.length > 0: uri;
-        return pks[pks.length - 1];
-    }
-
-    static TableName parseTableName(HttpServletRequest request, String name) {
-        Principal user = request.getUserPrincipal();
-        String schema = (user == null) ? "" : user.getName();
-        return TableName.parse(schema, name);
     }
 }

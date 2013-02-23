@@ -53,6 +53,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.Principal;
 
+import static com.akiban.rest.ResourceHelper.checkSchemaAccessible;
+
 @Path("/model")
 public final class ModelResource {
     private static final Response FORBIDDEN = Response.status(Response.Status.FORBIDDEN).build();
@@ -78,16 +80,14 @@ public final class ModelResource {
     public Response viewSpace(@Context HttpServletRequest request,
                               @PathParam("schema") String schemaParam) {
         String schema = getSchemaName(request, schemaParam);
-        if (schema == null || !reqs.securityService.isAccessible(request, schema)) {
-            return FORBIDDEN;
-        }
+        checkSchemaAccessible(reqs.securityService, request, schema);
         try (Session session = reqs.sessionService.createSession()) {
             reqs.transactionService.beginTransaction(session);
             try {
                 AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(session);
                 ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
                 Space space = AisToSpace.create(ais);
-                String json = space.toJson() + "\n";
+                String json = space.toJson();
                 return Response.status(Response.Status.OK).entity(json).build();
             }
             finally {

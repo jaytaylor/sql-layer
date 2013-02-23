@@ -27,6 +27,7 @@
 package com.akiban.rest.resources;
 
 import com.akiban.rest.ResourceRequirements;
+import com.akiban.rest.RestResponseBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -52,10 +53,11 @@ public class SQLResource {
     @Path("/query")
     @Produces(MediaType.APPLICATION_JSON)
     public Response query(@Context HttpServletRequest request,
-                          @QueryParam("format") String format,
-                          @QueryParam("jsoncallback") String jsonp,
+                          @QueryParam("jsonp") String jsonp,
                           @QueryParam("q") String query) throws Exception {
-        return reqs.restDMLService.runSQL(request, query);
+        RestResponseBuilder builder = new RestResponseBuilder(jsonp);
+        reqs.restDMLService.runSQL(builder, request, query);
+        return builder.build();
     }
 
     /** Explain a single SQL statement specified by the 'q' query parameter. */
@@ -63,10 +65,11 @@ public class SQLResource {
     @Path("/explain")
     @Produces(MediaType.APPLICATION_JSON)
     public Response explain(@Context HttpServletRequest request,
-                            @QueryParam("format") String format,
-                            @QueryParam("jsoncallback") String jsonp,
+                            @QueryParam("jsonp") String jsonp,
                             @QueryParam("q") String query) throws Exception {
-        return reqs.restDMLService.explainSQL(request, query);
+        RestResponseBuilder builder = new RestResponseBuilder(jsonp);
+        reqs.restDMLService.explainSQL(builder, request, query);
+        return builder.build();
     }
 
     /** Run multiple SQL statements (single transaction) specified by semi-colon separated strings in the POST body. */
@@ -74,11 +77,12 @@ public class SQLResource {
     @Path("/execute")
     @Produces(MediaType.APPLICATION_JSON)
     public Response execute(@Context HttpServletRequest request,
-                            @QueryParam("format") String format,
-                            @QueryParam("jsoncallback") String jsonp,
+                            @QueryParam("jsonp") String jsonp,
                             final byte[] postBytes) throws Exception {
         String input = new String(postBytes);
         String[] statements = input.split(";");
-        return reqs.restDMLService.runSQL(request, Arrays.asList(statements));
+        RestResponseBuilder builder = new RestResponseBuilder(jsonp);
+        reqs.restDMLService.runSQL(builder, request, Arrays.asList(statements));
+        return builder.build();
     }
 }
