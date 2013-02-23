@@ -50,9 +50,8 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.PrintWriter;
 
-import static com.akiban.rest.ResourceHelper.getPKString;
-import static com.akiban.rest.ResourceHelper.parseTableName;
-import static com.akiban.rest.ResourceHelper.checkTableAccessible;
+import static com.akiban.rest.resources.ResourceHelper.parseTableName;
+import static com.akiban.rest.resources.ResourceHelper.checkTableAccessible;
 
 /**
  * Entity based access (GET), creation (PUT, POST), and modification (PUT, DELETE)
@@ -169,5 +168,12 @@ public class EntityResource {
                     }
                 })
                 .build();
+    }
+
+
+    private static String getPKString(UriInfo uri) {
+        String pks[] = uri.getPath(false).split("/");
+        assert pks.length > 0: uri;
+        return pks[pks.length - 1];
     }
 }

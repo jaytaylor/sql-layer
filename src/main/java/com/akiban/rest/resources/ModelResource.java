@@ -29,7 +29,6 @@ package com.akiban.rest.resources;
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.protobuf.ProtobufWriter;
-import com.akiban.rest.ResourceHelper;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.server.entity.changes.DDLBasedSpaceModifier;
@@ -50,13 +49,12 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.security.Principal;
 
-import static com.akiban.rest.ResourceHelper.checkSchemaAccessible;
+import static com.akiban.rest.resources.ResourceHelper.checkSchemaAccessible;
 import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 
 @Path("/model")

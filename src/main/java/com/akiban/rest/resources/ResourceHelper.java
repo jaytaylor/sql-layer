@@ -24,9 +24,10 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.rest;
+package com.akiban.rest.resources;
 
 import com.akiban.ais.model.TableName;
+import com.akiban.rest.RestResponseBuilder;
 import com.akiban.server.service.security.SecurityService;
 
 import javax.servlet.http.HttpServletRequest;
@@ -35,12 +36,6 @@ import javax.ws.rs.core.UriInfo;
 import java.security.Principal;
 
 public class ResourceHelper {
-    public static String getPKString(UriInfo uri) {
-        String pks[] = uri.getPath(false).split("/");
-        assert pks.length > 0: uri;
-        return pks[pks.length - 1];
-    }
-
     public static TableName parseTableName(HttpServletRequest request, String name) {
         Principal user = request.getUserPrincipal();
         String schema = (user == null) ? "" : user.getName();
