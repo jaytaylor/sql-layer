@@ -33,10 +33,13 @@ import com.akiban.server.service.security.SecurityService;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.security.Principal;
 
 public class ResourceHelper {
+    public static final Response FORBIDDEN_RESPONSE = Response.status(Response.Status.FORBIDDEN).build();
+
     // Standard but not otherwise defined
     public static final String APPLICATION_JAVASCRIPT = "application/javascript";
     public static final MediaType APPLICATION_JAVASCRIPT_TYPE = MediaType.valueOf(APPLICATION_JAVASCRIPT);
@@ -59,7 +62,7 @@ public class ResourceHelper {
 
     public static void checkSchemaAccessible(SecurityService security, HttpServletRequest request, String schema) {
         if(!security.isAccessible(request, schema)) {
-            throw new WebApplicationException(RestResponseBuilder.FORBIDDEN_RESPONSE);
+            throw new WebApplicationException(FORBIDDEN_RESPONSE);
         }
     }
 }

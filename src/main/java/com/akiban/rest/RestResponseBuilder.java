@@ -52,31 +52,24 @@ public class RestResponseBuilder {
         public void write(PrintWriter writer) throws Exception;
     }
 
-    private static final int DEFAULT_RESPONSE_STATUS = Response.Status.OK.getStatusCode();
-
     private static final Charset UTF8 = Charset.forName("UTF-8");
     private static final Map<Class,Response.Status> EXCEPTION_STATUS_MAP = buildExceptionStatusMap();
-    public static final Response FORBIDDEN_RESPONSE = Response.status(Response.Status.FORBIDDEN).build();
 
     private final boolean isJsonp;
-    private int status = DEFAULT_RESPONSE_STATUS;
     private BodyGenerator outputGenerator;
     private String outputBody;
     private String jsonp;
+    private int status;
 
 
     public RestResponseBuilder(String jsonp) {
         this.jsonp = jsonp;
         this.isJsonp = jsonp != null;
+        this.status = Response.Status.OK.getStatusCode();
     }
 
     public static RestResponseBuilder forJsonp(String jsonp) {
         return new RestResponseBuilder(jsonp);
-    }
-
-    public RestResponseBuilder status(int status) {
-        this.status = status;
-        return this;
     }
 
     public RestResponseBuilder status(Response.Status status) {
@@ -112,27 +105,6 @@ public class RestResponseBuilder {
         return builder.build();
     }
 
-    public WebApplicationException wrapException(Exception e) {
-        String code;
-        if(e instanceof InvalidOperationException) {
-            code = ((InvalidOperationException)e).getCode().getFormattedValue();
-        } else if(e instanceof SQLException) {
-            code = ((SQLException)e).getSQLState();
-        } else {
-            code = ErrorCode.UNEXPECTED_EXCEPTION.getFormattedValue();
-        }
-        Response.Status status = EXCEPTION_STATUS_MAP.get(e.getClass());
-        if(status == null) {
-            status = Response.Status.CONFLICT;
-        }
-        return new WebApplicationException(
-                Response.status(status)
-                        .entity(formatErrorWithJsonp(code, e.getMessage()))
-                        .type(isJsonp ? ResourceHelper.APPLICATION_JAVASCRIPT_TYPE : MediaType.APPLICATION_JSON_TYPE)
-                        .build()
-        );
-    }
-
     public static void formatJsonError(StringBuilder builder, String code, String message) {
         builder.append("{\"code\":\"");
         builder.append(code);
@@ -154,6 +126,27 @@ public class RestResponseBuilder {
         }
         builder.append('\n');
         return builder.toString();
+    }
+
+    private WebApplicationException wrapException(Exception e) {
+        String code;
+        if(e instanceof InvalidOperationException) {
+            code = ((InvalidOperationException)e).getCode().getFormattedValue();
+        } else if(e instanceof SQLException) {
+            code = ((SQLException)e).getSQLState();
+        } else {
+            code = ErrorCode.UNEXPECTED_EXCEPTION.getFormattedValue();
+        }
+        Response.Status status = EXCEPTION_STATUS_MAP.get(e.getClass());
+        if(status == null) {
+            status = Response.Status.CONFLICT;
+        }
+        return new WebApplicationException(
+                Response.status(status)
+                        .entity(formatErrorWithJsonp(code, e.getMessage()))
+                        .type(isJsonp ? ResourceHelper.APPLICATION_JAVASCRIPT_TYPE : MediaType.APPLICATION_JSON_TYPE)
+                        .build()
+        );
     }
 
     private StreamingOutput createStreamingOutput() {
@@ -183,6 +176,7 @@ public class RestResponseBuilder {
             }
         };
     }
+
 
     private static Map<Class, Response.Status> buildExceptionStatusMap() {
         Map<Class, Response.Status> map = new HashMap<>();
