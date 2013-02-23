@@ -36,10 +36,11 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.PrintWriter;
 import java.util.Arrays;
+
+import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 
 @Path("/sql")
 public class SQLResource {
@@ -52,7 +53,7 @@ public class SQLResource {
     /** Run a single SQL statement specified by the 'q' query parameter. */
     @GET
     @Path("/query")
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response query(@Context final HttpServletRequest request,
                           @QueryParam("jsonp") String jsonp,
                           @QueryParam("q") final String query) {
@@ -70,7 +71,7 @@ public class SQLResource {
     /** Explain a single SQL statement specified by the 'q' query parameter. */
     @GET
     @Path("/explain")
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response explain(@Context final HttpServletRequest request,
                             @QueryParam("jsonp") String jsonp,
                             @QueryParam("q") final String query) {
@@ -88,7 +89,7 @@ public class SQLResource {
     /** Run multiple SQL statements (single transaction) specified by semi-colon separated strings in the POST body. */
     @POST
     @Path("/execute")
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response execute(@Context final HttpServletRequest request,
                             @QueryParam("jsonp") String jsonp,
                             final byte[] postBytes) {

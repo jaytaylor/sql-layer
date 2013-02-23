@@ -54,6 +54,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.security.Principal;
 
+import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 import static com.akiban.rest.resources.ResourceHelper.checkSchemaAccessible;
 import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 
@@ -77,7 +78,7 @@ public final class ModelResource {
 
     @GET
     @Path("/view" + OPTIONAL_SCHEMA)
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response viewSpace(@Context HttpServletRequest request,
                               @PathParam("schema") String schemaParam,
                               @QueryParam("jsonp") String jsonp) {
@@ -104,7 +105,7 @@ public final class ModelResource {
 
     @POST
     @Path("/preview" + OPTIONAL_SCHEMA)
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response previewChange(@Context HttpServletRequest request,
                                   @PathParam("schema") String schemaParam,
@@ -117,7 +118,7 @@ public final class ModelResource {
 
     @POST
     @Path("/apply" + OPTIONAL_SCHEMA)
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response applyChange(@Context HttpServletRequest request,
                                 @PathParam("schema") String schemaParam,

@@ -52,6 +52,8 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
+
 /**
  * Security operations via REST.
  */
@@ -66,7 +68,7 @@ public class SecurityResource {
     @Path("/users")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response addUser(@Context HttpServletRequest request,
                             @QueryParam("jsonp") String jsonp,
                             byte[] userBytes) throws Exception {
@@ -117,7 +119,7 @@ public class SecurityResource {
     @Path("/users/{user}")
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response deleteUser(@Context HttpServletRequest request,
                                @QueryParam("jsonp") String jsonp,
                                @PathParam("user") final String user) throws Exception {

@@ -32,10 +32,21 @@ import com.akiban.server.service.security.SecurityService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 import java.security.Principal;
 
 public class ResourceHelper {
+    // Standard but not otherwise defined
+    public static final String APPLICATION_JAVASCRIPT = "application/javascript";
+    public static final MediaType APPLICATION_JAVASCRIPT_TYPE = MediaType.valueOf(APPLICATION_JAVASCRIPT);
+
+    // For @Produces argument
+    public static final String MEDIATYPE_JSON_JAVASCRIPT = MediaType.APPLICATION_JSON + "," + APPLICATION_JAVASCRIPT;
+
+    public static final String JSONP_ARG_NAME = "callback";
+
+
     public static TableName parseTableName(HttpServletRequest request, String name) {
         Principal user = request.getUserPrincipal();
         String schema = (user == null) ? "" : user.getName();

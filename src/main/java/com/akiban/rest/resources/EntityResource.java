@@ -50,6 +50,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.PrintWriter;
 
+import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 import static com.akiban.rest.resources.ResourceHelper.parseTableName;
 import static com.akiban.rest.resources.ResourceHelper.checkTableAccessible;
 
@@ -66,7 +67,7 @@ public class EntityResource {
     }
 
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response retrieveEntity(@Context HttpServletRequest request,
                                    @QueryParam("jsonp") String jsonp,
                                    @PathParam("entity") String entity,
@@ -86,7 +87,7 @@ public class EntityResource {
 
     @GET
     @Path("/" + IDENTIFIERS_MULTI)
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response retrieveEntity(@Context HttpServletRequest request,
                                    @QueryParam("jsonp") String jsonp,
                                    @PathParam("entity") String entity,
@@ -107,7 +108,7 @@ public class EntityResource {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response createEntity(@Context HttpServletRequest request,
                                  @QueryParam("jsonp") String jsonp,
                                  @PathParam("entity") String entity,
@@ -129,7 +130,7 @@ public class EntityResource {
 
     @PUT
     @Path("/" + IDENTIFIERS_MULTI)
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response updateEntity(@Context HttpServletRequest request,
                                  @QueryParam("jsonp") final String jsonp,
                                  @PathParam("entity") String entity,
@@ -152,7 +153,7 @@ public class EntityResource {
 
     @DELETE
     @Path("/" + IDENTIFIERS_MULTI)
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response deleteEntity(@Context HttpServletRequest request,
                                  @QueryParam("jsonp") String jsonp,
                                  @PathParam("entity") String entity,

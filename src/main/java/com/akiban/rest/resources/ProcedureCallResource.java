@@ -37,10 +37,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.PrintWriter;
+
+import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 
 /**
  * Allows calling stored procedures directly.
@@ -54,7 +55,7 @@ public class ProcedureCallResource {
     }
 
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response getQueryResults(@Context final HttpServletRequest request,
                                     @PathParam("proc") String proc,
                                     @QueryParam("jsonp") String jsonp,

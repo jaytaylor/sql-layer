@@ -26,6 +26,7 @@
 
 package com.akiban.rest;
 
+import com.akiban.rest.resources.ResourceHelper;
 import com.akiban.server.Quote;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
@@ -104,10 +105,11 @@ public class RestResponseBuilder {
         if(outputBody == null && outputGenerator == null && jsonp == null) {
             status(Response.Status.NO_CONTENT);
         }
-        return Response
-                .status(status)
-                .entity(createStreamingOutput())
-                .build();
+        Response.ResponseBuilder builder = Response.status(status).entity(createStreamingOutput());
+        if(isJsonp) {
+            builder.type(ResourceHelper.APPLICATION_JAVASCRIPT_TYPE);
+        }
+        return builder.build();
     }
 
     public WebApplicationException wrapException(Exception e) {
@@ -126,7 +128,7 @@ public class RestResponseBuilder {
         return new WebApplicationException(
                 Response.status(status)
                         .entity(formatErrorWithJsonp(code, e.getMessage()))
-                        .type(MediaType.APPLICATION_JSON)
+                        .type(isJsonp ? ResourceHelper.APPLICATION_JAVASCRIPT_TYPE : MediaType.APPLICATION_JSON_TYPE)
                         .build()
         );
     }
