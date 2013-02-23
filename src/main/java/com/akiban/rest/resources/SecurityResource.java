@@ -82,22 +82,13 @@ public class SecurityResource {
         JsonNode passwordNode = node.get("password");
         JsonNode rolesNode = node.get("roles");
         if ((userNode == null) || !userNode.isTextual()) {
-            return response
-                    .status(Response.Status.BAD_REQUEST)
-                    .body(ErrorCode.SECURITY, "user string required")
-                    .build();
+            return badRequest(response, "user string required");
         }
         if ((passwordNode == null) || !passwordNode.isTextual()) {
-            return response
-                    .status(Response.Status.BAD_REQUEST)
-                    .body(ErrorCode.SECURITY, "password string required")
-                    .build();
+            return badRequest(response, "password string required");
         }
         if ((rolesNode == null) || !rolesNode.isArray()) {
-            return response
-                    .status(Response.Status.BAD_REQUEST)
-                    .body(ErrorCode.SECURITY, "roles array required")
-                    .build();
+            return badRequest(response, "roles array required");
         }
         final String user = userNode.getValueAsText();
         final String password = passwordNode.getValueAsText();
@@ -138,5 +129,12 @@ public class SecurityResource {
             }
         });
         return response.build();
+    }
+
+    private static Response badRequest(RestResponseBuilder builder, String message) {
+        return builder
+                .status(Response.Status.BAD_REQUEST)
+                .body(ErrorCode.SECURITY, message)
+                .build();
     }
 }
