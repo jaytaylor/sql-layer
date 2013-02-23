@@ -86,6 +86,7 @@ public class InsertProcessor extends DMLProcessor {
         public QueryContext queryContext;
         public Session session;
         public Map<Column, PValueSource> pkValues;
+        public boolean anyUpdates;
         
         public InsertContext (TableName tableName, UserTable table, Session session) {
             this.table = table;
@@ -221,8 +222,9 @@ public class InsertProcessor extends DMLProcessor {
         Cursor cursor = API.cursor(insert, context.queryContext);
         JsonRowWriter writer = new JsonRowWriter(new TableRowTracker(context.table, 0));
         WriteCapturePKRow rowWriter = new WriteCapturePKRow();
-        writer.writeRows(cursor, appender, "\n", rowWriter);
+        writer.writeRows(cursor, appender, context.anyUpdates ? "\n" : "", rowWriter);
         context.pkValues = rowWriter.getPKValues();
+        context.anyUpdates = true;
     }
     
     private PValue getFKPvalue (PValueSource pval) {
