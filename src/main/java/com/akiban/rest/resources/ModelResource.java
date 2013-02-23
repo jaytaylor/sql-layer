@@ -28,15 +28,19 @@ package com.akiban.rest.resources;
 
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.server.entity.changes.DDLBasedSpaceModifier;
+import com.akiban.server.entity.changes.EntityParser;
 import com.akiban.server.entity.changes.SpaceDiff;
 import com.akiban.server.entity.fromais.AisToSpace;
 import com.akiban.server.entity.model.Space;
 import com.akiban.server.entity.model.diff.JsonDiffPreview;
 import com.akiban.server.service.session.Session;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -57,6 +61,7 @@ import java.security.Principal;
 import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
 import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 import static com.akiban.rest.resources.ResourceHelper.checkSchemaAccessible;
+import static com.akiban.rest.resources.ResourceHelper.checkTableAccessible;
 import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 
 @Path("/model")
@@ -98,6 +103,36 @@ public final class ModelResource {
                             String json = space.toJson();
                             writer.write(json);
                             txn.commit();
+                        }
+                    }
+                })
+                .build();
+    }
+
+    @POST
+    @Path("/parse/{table}")
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response parse(@Context HttpServletRequest request,
+                          @PathParam("table") String table,
+                          @QueryParam(JSONP_ARG_NAME) String jsonp,
+                          final InputStream postInput) {
+        final TableName tableName = ResourceHelper.parseTableName(request, table);
+        checkTableAccessible(reqs.securityService, request, tableName);
+        return RestResponseBuilder
+                .forJsonp(jsonp)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        ObjectMapper m = new ObjectMapper();
+                        JsonNode node = m.readTree(postInput);
+                        EntityParser parser = new EntityParser (reqs.dxlService);
+                        try (Session session = reqs.sessionService.createSession()) {
+                            parser.parse(session, tableName, node);
+                            AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(session);
+                            ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(tableName.getSchemaName()));
+                            Space currSpace = AisToSpace.create(ais);
+                            writer.write(currSpace.toJson());
                         }
                     }
                 })
