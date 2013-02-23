@@ -31,10 +31,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.Quote;
-import com.akiban.server.error.ErrorCode;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.NoSuchRoutineException;
-import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.explain.format.JsonFormatter;
 import com.akiban.server.service.Service;
@@ -42,7 +38,6 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.externaldata.ExternalDataService;
 import com.akiban.server.service.externaldata.JsonRowWriter;
-import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
@@ -56,25 +51,18 @@ import com.akiban.sql.embedded.JDBCParameterMetaData;
 import com.akiban.sql.embedded.JDBCResultSet;
 import com.akiban.util.AkibanAppender;
 import com.google.inject.Inject;
-
 import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.ParameterMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collections;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
@@ -83,18 +71,16 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     private final SessionService sessionService;
     private final DXLService dxlService;
     private final TransactionService transactionService;
-    private final SecurityService securityService;
     private final ExternalDataService extDataService;
-    private InsertProcessor insertProcessor;
-    private DeleteProcessor deleteProcessor;
-    private UpdateProcessor updateProcessor;
     private final EmbeddedJDBCService jdbcService;
-    
+    private final InsertProcessor insertProcessor;
+    private final DeleteProcessor deleteProcessor;
+    private final UpdateProcessor updateProcessor;
+
     @Inject
     public RestDMLServiceImpl(SessionService sessionService,
                               DXLService dxlService,
                               TransactionService transactionService,
-                              SecurityService securityService,
                               ExternalDataService extDataService,
                               EmbeddedJDBCService jdbcService,
                               ConfigurationService configService,
@@ -104,7 +90,6 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         this.sessionService = sessionService;
         this.dxlService = dxlService;
         this.transactionService = transactionService;
-        this.securityService = securityService;
         this.extDataService = extDataService;
         this.jdbcService = jdbcService;
         this.insertProcessor = new InsertProcessor (configService, treeService, store, registryService);
@@ -134,7 +119,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
 
     @Override
     public void getAllEntities(PrintWriter writer, TableName tableName, Integer depth) {
-        final int realDepth = (depth != null) ? Math.max(depth, 0) : -1;
+        int realDepth = (depth != null) ? Math.max(depth, 0) : -1;
         try (Session session = sessionService.createSession()) {
             extDataService.dumpAllAsJson(session,
                                          writer,
@@ -146,8 +131,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
-    public void getEntities(PrintWriter writer, TableName tableName, Integer inDepth, String identifiers) {
-        final int depth = (inDepth != null) ? Math.max(inDepth, 0) : -1;
+    public void getEntities(PrintWriter writer, TableName tableName, Integer depth, String identifiers) {
+        int realDepth = (depth != null) ? Math.max(depth, 0) : -1;
         try (Session session = sessionService.createSession();
              CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
             UserTable uTable = dxlService.ddlFunctions().getUserTable(session, tableName);
@@ -158,7 +143,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                                             tableName.getSchemaName(),
                                             tableName.getTableName(),
                                             pks,
-                                            depth,
+                                            realDepth,
                                             false);
             txn.commit();
         }
@@ -197,90 +182,73 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
-    public void runSQL(PrintWriter writer, HttpServletRequest request, String sql) throws IOException, SQLException {
+    public void runSQL(PrintWriter writer, HttpServletRequest request, String sql) throws SQLException {
         runSQLInternal(writer, request, Collections.singletonList(sql), OutputType.ARRAY, CommitMode.AUTO);
     }
 
     @Override
-    public void runSQL(PrintWriter writer, HttpServletRequest request, List<String> sql) throws IOException, SQLException {
+    public void runSQL(PrintWriter writer, HttpServletRequest request, List<String> sql) throws SQLException {
         runSQLInternal(writer, request, sql, OutputType.OBJECT, CommitMode.MANUAL);
-
     }
 
     @Override
-    public void explainSQL(PrintWriter writer, final HttpServletRequest request, final String sql) throws IOException, SQLException {
+    public void explainSQL(PrintWriter writer, HttpServletRequest request, String sql) throws IOException, SQLException {
         try (JDBCConnection conn = jdbcConnection(request)) {
             new JsonFormatter().format(conn.explain(sql), writer);
         }
     }
 
     @Override
-    public Response callProcedure(final HttpServletRequest request, 
-                                  final TableName procName, 
-                                  final Map<String,List<String>> params) {
-        if (!securityService.isAccessible(request, procName.getSchemaName()))
-            return Response.status(Response.Status.FORBIDDEN).build();
-        return Response
-                .status(Response.Status.OK)
-                .entity(new StreamingOutput() {
-                    @Override
-                    public void write(OutputStream output) throws IOException, WebApplicationException {
-                        try (JDBCConnection conn = jdbcConnection(request);
-                             JDBCCallableStatement call = conn.prepareCall(procName)) {
-                            for (Map.Entry<String,List<String>> entry : params.entrySet()) {
-                                if ("jsoncallback".equals(entry.getKey()))
-                                    continue;
-                                if (entry.getValue().size() != 1)
-                                    throw new WrongExpressionArityException(1, entry.getValue().size());
-                                call.setString(entry.getKey(), entry.getValue().get(0));
-                            }
-                            boolean results = call.execute();
-                            PrintWriter writer = new PrintWriter(output);
-                            AkibanAppender appender = AkibanAppender.of(writer);
-                            appender.append('{');
-                            boolean first = true;
-                            JDBCParameterMetaData md = (JDBCParameterMetaData)call.getParameterMetaData();
-                            for (int i = 1; i <= md.getParameterCount(); i++) {
-                                String name;
-                                switch (md.getParameterMode(i)) {
-                                case ParameterMetaData.parameterModeOut:
-                                case ParameterMetaData.parameterModeInOut:
-                                    name = md.getParameterName(i);
-                                    if (name == null)
-                                        name = String.format("arg%d", i);
-                                    if (first)
-                                        first = false;
-                                    else
-                                        appender.append(',');
-                                    appender.append('"');
-                                    Quote.DOUBLE_QUOTE.append(appender, name);
-                                    appender.append("\":");
-                                    call.formatAsJson(i, appender);
-                                    break;
-                                }
-                            }
-                            int nresults = 0;
-                            while(results) {
-                                beginResultSetArray(appender, first, nresults++);
-                                first = false;
-                                collectResults((JDBCResultSet) call.getResultSet(), appender);
-                                endResultSetArray(appender);
-                                results = call.getMoreResults();
-                            }
-                            appender.append('}');
-                            writer.write('\n');
-                            writer.close();
-                        } catch(SQLException | InvalidOperationException e) {
-                            throw wrapException(e);
-                        }
-                    }
-                })
-                .build();
+    public void callProcedure(PrintWriter writer, HttpServletRequest request,
+                              TableName procName, Map<String,List<String>> params) throws SQLException {
+        try (JDBCConnection conn = jdbcConnection(request);
+             JDBCCallableStatement call = conn.prepareCall(procName)) {
+            for (Map.Entry<String,List<String>> entry : params.entrySet()) {
+                if ("jsonp".equals(entry.getKey()))
+                    continue;
+                if (entry.getValue().size() != 1)
+                    throw new WrongExpressionArityException(1, entry.getValue().size());
+                call.setString(entry.getKey(), entry.getValue().get(0));
+            }
+            boolean results = call.execute();
+            AkibanAppender appender = AkibanAppender.of(writer);
+            appender.append('{');
+            boolean first = true;
+            JDBCParameterMetaData md = (JDBCParameterMetaData)call.getParameterMetaData();
+            for (int i = 1; i <= md.getParameterCount(); i++) {
+                String name;
+                switch (md.getParameterMode(i)) {
+                case ParameterMetaData.parameterModeOut:
+                case ParameterMetaData.parameterModeInOut:
+                    name = md.getParameterName(i);
+                    if (name == null)
+                        name = String.format("arg%d", i);
+                    if (first)
+                        first = false;
+                    else
+                        appender.append(',');
+                    appender.append('"');
+                    Quote.DOUBLE_QUOTE.append(appender, name);
+                    appender.append("\":");
+                    call.formatAsJson(i, appender);
+                    break;
+                }
+            }
+            int nresults = 0;
+            while(results) {
+                beginResultSetArray(appender, first, nresults++);
+                first = false;
+                collectResults((JDBCResultSet) call.getResultSet(), appender);
+                endResultSetArray(appender);
+                results = call.getMoreResults();
+            }
+            appender.append('}');
+        }
     }
 
     private void runSQLInternal(PrintWriter writer,
                                 HttpServletRequest request, List<String> sqlList,
-                                OutputType outputType, CommitMode commitMode) throws IOException, SQLException {
+                                OutputType outputType, CommitMode commitMode) throws SQLException {
         boolean useSubArrays = (outputType == OutputType.OBJECT);
         try (Connection conn = jdbcConnection(request);
              Statement s = conn.createStatement()) {
@@ -316,7 +284,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     private static void beginResultSetArray(AkibanAppender appender, boolean first, int resultOffset) {
-        final String name = (resultOffset == 0) ? "result_set" : String.format("result_set_%d", resultOffset);
+        String name = (resultOffset == 0) ? "result_set" : String.format("result_set_%d", resultOffset);
         if(!first) {
             appender.append(",");
         }
@@ -329,7 +297,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         appender.append(']');
     }
 
-    private static void collectResults(JDBCResultSet resultSet, AkibanAppender appender) throws SQLException, IOException {
+    private static void collectResults(JDBCResultSet resultSet, AkibanAppender appender) throws SQLException {
         SQLOutputCursor cursor = new SQLOutputCursor(resultSet);
         JsonRowWriter jsonRowWriter = new JsonRowWriter(cursor);
         if(jsonRowWriter.writeRows(cursor, appender, "\n", cursor)) {
@@ -338,41 +306,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     private JDBCConnection jdbcConnection(HttpServletRequest request) throws SQLException {
-        return (JDBCConnection) jdbcService.newConnection(new Properties(),
-                                                          request.getUserPrincipal());
-    }
-
-    private WebApplicationException wrapException(Exception e) {
-        StringBuilder err = new StringBuilder(100);
-        err.append("[{\"code\":\"");
-        String code;
-        if (e instanceof InvalidOperationException) {
-            code = ((InvalidOperationException)e).getCode().getFormattedValue();
-        } else if (e instanceof SQLException) {
-            code = ((SQLException)e).getSQLState();
-        } else {
-            code = ErrorCode.UNEXPECTED_EXCEPTION.getFormattedValue();
-        }
-        err.append(code);
-        err.append("\",\"message\":\"");
-        Quote.JSON_QUOTE.append(AkibanAppender.of(err), e.getMessage());
-        err.append("\"}]\n");
-        // TODO: Map various IOEs to other codes?
-        final Response.Status status;
-        if((e instanceof NoSuchTableException) ||
-           (e instanceof NoSuchRoutineException)) {
-            status = Response.Status.NOT_FOUND;
-        } else if (e instanceof JsonParseException) {
-            status = Response.Status.BAD_REQUEST;
-        } else {
-            status = Response.Status.CONFLICT;
-        }
-        return new WebApplicationException(
-                Response.status(status)
-                        .entity(err.toString())
-                        .type(MediaType.APPLICATION_JSON)
-                        .build()
-        );
+        return (JDBCConnection) jdbcService.newConnection(new Properties(), request.getUserPrincipal());
     }
 
 

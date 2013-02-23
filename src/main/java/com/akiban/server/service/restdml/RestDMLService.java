@@ -38,20 +38,16 @@ import java.util.List;
 import java.util.Map;
 
 public interface RestDMLService {
-    public void getAllEntities(PrintWriter PrintWriter, TableName tableName, Integer depth);
+    public void getAllEntities(PrintWriter writer, TableName tableName, Integer depth);
+    public void getEntities(PrintWriter writer, TableName tableName, Integer depth, String pks);
+    public void insert(PrintWriter writer, TableName tableName, JsonNode node);
+    public void delete(PrintWriter writer, TableName tableName, String pks);
+    public void update(PrintWriter writer, TableName tableName, String values, JsonNode node);
 
-    public void getEntities(PrintWriter PrintWriter, TableName tableName, Integer depth, String pks);
+    public void runSQL(PrintWriter writer, HttpServletRequest request, String sql) throws SQLException;
+    public void runSQL(PrintWriter writer, HttpServletRequest request, List<String> sql) throws SQLException;
+    public void explainSQL(PrintWriter writer, HttpServletRequest request, String sql) throws IOException, SQLException;
 
-    public void insert(PrintWriter PrintWriter, TableName tableName, JsonNode node);
-
-    public void delete(PrintWriter PrintWriter, TableName tableName, String pks);
-
-    public void update(PrintWriter PrintWriter, TableName tableName, String values, JsonNode node);
-
-    public void runSQL(PrintWriter PrintWriter, HttpServletRequest request, String sql) throws IOException, SQLException;
-    public void runSQL(PrintWriter PrintWriter, HttpServletRequest request, List<String> sql) throws IOException, SQLException;
-    public void explainSQL(PrintWriter PrintWriter, HttpServletRequest request, String sql) throws IOException, SQLException;
-
-    public Response callProcedure(HttpServletRequest request, 
-                                  TableName procName, Map<String,List<String>> params);
+    public void callProcedure(PrintWriter writer, HttpServletRequest request,
+                              TableName procName, Map<String,List<String>> params) throws SQLException;
 }

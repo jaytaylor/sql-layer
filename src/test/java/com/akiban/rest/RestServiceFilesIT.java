@@ -133,7 +133,6 @@ public class RestServiceFilesIT extends ITBase {
 
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> gatherCases() throws Exception {
-        Set<String> sawNames = new HashSet<>();
         Collection<Parameterization> result = new ArrayList<>();
         for(String subDirName: RESOURCE_DIR.list()) {
             File subDir = new File(RESOURCE_DIR, subDirName);
@@ -145,10 +144,6 @@ public class RestServiceFilesIT extends ITBase {
                 String inputName = requestFile.getName();
                 int dotIndex = inputName.lastIndexOf('.');
                 String caseName = inputName.substring(0, dotIndex);
-
-                if(!sawNames.add(caseName)) {
-                    throw new IllegalStateException("Duplicate case names: " + caseName);
-                }
 
                 String basePath = requestFile.getParent() + File.separator + caseName;
                 String method = inputName.substring(dotIndex + 1).toUpperCase();

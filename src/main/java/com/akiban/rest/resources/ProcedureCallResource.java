@@ -29,6 +29,7 @@ package com.akiban.rest.resources;
 import com.akiban.ais.model.TableName;
 import com.akiban.rest.ResourceHelper;
 import com.akiban.rest.ResourceRequirements;
+import com.akiban.rest.RestResponseBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -40,6 +41,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.io.PrintWriter;
 
 /**
  * Allows calling stored procedures directly.
@@ -54,11 +56,20 @@ public class ProcedureCallResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getQueryResults(@Context HttpServletRequest request,
+    public Response getQueryResults(@Context final HttpServletRequest request,
                                     @PathParam("proc") String proc,
-                                    @QueryParam("jsoncallback") String jsonp,
-                                    @Context UriInfo uri) throws Exception {
-        TableName procName = ResourceHelper.parseTableName(request, proc);
-        return reqs.restDMLService.callProcedure(request, procName, uri.getQueryParameters());
+                                    @QueryParam("jsonp") String jsonp,
+                                    @Context final UriInfo uri) throws Exception {
+        final TableName procName = ResourceHelper.parseTableName(request, proc);
+        ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
+        return RestResponseBuilder
+                .forJsonp(jsonp)
+                .setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        reqs.restDMLService.callProcedure(writer, request, procName, uri.getQueryParameters());
+                    }
+                })
+                .build();
     }
 }
