@@ -58,7 +58,7 @@ public class SQLResource {
                           @QueryParam("q") final String query) {
         return RestResponseBuilder
                 .forJsonp(jsonp)
-                .setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+                .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
                         reqs.restDMLService.runSQL(writer, request, query);
@@ -76,7 +76,7 @@ public class SQLResource {
                             @QueryParam("q") final String query) {
         return RestResponseBuilder
                 .forJsonp(jsonp)
-                .setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+                .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
                         reqs.restDMLService.explainSQL(writer, request, query);
@@ -96,7 +96,7 @@ public class SQLResource {
         final String[] statements = input.split(";");
         return RestResponseBuilder
                 .forJsonp(jsonp)
-                .setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+                .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
                         reqs.restDMLService.runSQL(writer, request, Arrays.asList(statements));

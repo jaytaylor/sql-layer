@@ -27,8 +27,8 @@
 package com.akiban.rest.resources;
 
 import com.akiban.rest.ResourceRequirements;
+import com.akiban.rest.RestResponseBuilder;
 import com.akiban.server.error.ErrorCode;
-import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.security.User;
 import com.akiban.server.service.session.Session;
@@ -40,6 +40,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -47,6 +48,7 @@ import javax.ws.rs.core.Response;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -66,47 +68,50 @@ public class SecurityResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response addUser(@Context HttpServletRequest request,
+                            @QueryParam("jsonp") String jsonp,
                             byte[] userBytes) throws Exception {
-        JsonNode node = new ObjectMapper().readTree(userBytes);
+        RestResponseBuilder response = RestResponseBuilder.forJsonp(jsonp);
         if (!request.isUserInRole(SecurityService.ADMIN_ROLE)) {
-            return Response.status(Response.Status.FORBIDDEN).build();
+            return response.status(Response.Status.FORBIDDEN).build();
         }
+        JsonNode node = new ObjectMapper().readTree(userBytes);
         JsonNode userNode = node.get("user");
         JsonNode passwordNode = node.get("password");
         JsonNode rolesNode = node.get("roles");
         if ((userNode == null) || !userNode.isTextual()) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                .entity(jsonError(ErrorCode.SECURITY, "user string required"))
-                .build();
+            return response
+                    .status(Response.Status.BAD_REQUEST)
+                    .body(ErrorCode.SECURITY, "user string required")
+                    .build();
         }
         if ((passwordNode == null) || !passwordNode.isTextual()) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                .entity(jsonError(ErrorCode.SECURITY, "password string required"))
-                .build();
+            return response
+                    .status(Response.Status.BAD_REQUEST)
+                    .body(ErrorCode.SECURITY, "password string required")
+                    .build();
         }
         if ((rolesNode == null) || !rolesNode.isArray()) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                .entity(jsonError(ErrorCode.SECURITY, "roles array required"))
-                .build();
+            return response
+                    .status(Response.Status.BAD_REQUEST)
+                    .body(ErrorCode.SECURITY, "roles array required")
+                    .build();
         }
-        String user = userNode.getValueAsText();
-        String password = passwordNode.getValueAsText();
-        List<String> roles = new ArrayList<>();
+        final String user = userNode.getValueAsText();
+        final String password = passwordNode.getValueAsText();
+        final List<String> roles = new ArrayList<>();
         for (JsonNode elem : rolesNode) {
             roles.add(elem.getValueAsText());
         }
-        User newUser;
-        try {
-            newUser = reqs.securityService.addUser(user, password, roles);
-        }
-        catch (InvalidOperationException ex) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                .entity(jsonError(ex.getCode(), ex.getMessage()))
-                .build();
-        }
-        return Response.status(Response.Status.OK)
-            .entity(String.format("{\"id\":%d}", newUser.getId()))
-            .build();
+        response.body(new RestResponseBuilder.BodyGenerator() {
+            @Override
+            public void write(PrintWriter writer) throws Exception {
+                User newUser = reqs.securityService.addUser(user, password, roles);
+                writer.write("{\"id\":");
+                writer.write(newUser.getId());
+                writer.write('}');
+            }
+        });
+        return response.build();
     }
 
     @Path("/users/{user}")
@@ -114,25 +119,21 @@ public class SecurityResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteUser(@Context HttpServletRequest request,
-                               @PathParam("user") String user) throws Exception {
+                               @QueryParam("jsonp") String jsonp,
+                               @PathParam("user") final String user) throws Exception {
+        RestResponseBuilder response = RestResponseBuilder.forJsonp(jsonp);
         if (!request.isUserInRole(SecurityService.ADMIN_ROLE)) {
-            return Response.status(Response.Status.FORBIDDEN).build();
+            return response.status(Response.Status.FORBIDDEN).build();
         }
-        try (Session session = reqs.sessionService.createSession()) {
-            reqs.dxlService.ddlFunctions().dropSchema(session, user);
-            reqs.securityService.deleteUser(user);
-        }
-        catch (InvalidOperationException ex) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                .entity(jsonError(ex.getCode(), ex.getMessage()))
-                .build();
-        }
-        return Response.status(Response.Status.OK)
-            .build();
-    }
-
-    private String jsonError(ErrorCode code, String message) {
-        return String.format("{\"code\":\"%s\", \"message\":\"%s\"}",
-                             code.getFormattedValue(), message);
+        response.body(new RestResponseBuilder.BodyGenerator() {
+            @Override
+            public void write(PrintWriter writer) throws Exception {
+                try (Session session = reqs.sessionService.createSession()) {
+                    reqs.dxlService.ddlFunctions().dropSchema(session, user);
+                    reqs.securityService.deleteUser(user);
+                }
+            }
+        });
+        return response.build();
     }
 }

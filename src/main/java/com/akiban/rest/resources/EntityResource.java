@@ -39,7 +39,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -77,7 +76,7 @@ public class EntityResource {
         checkTableAccessible(reqs.securityService, request, tableName);
         return RestResponseBuilder
                 .forJsonp(jsonp)
-                .setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+                .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
                         reqs.restDMLService.getAllEntities(writer, tableName, depth);
@@ -98,7 +97,7 @@ public class EntityResource {
         checkTableAccessible(reqs.securityService, request, tableName);
         return RestResponseBuilder
                 .forJsonp(jsonp)
-                .setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+                .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
                         reqs.restDMLService.getEntities(writer, tableName, depth, getPKString(uri));
@@ -118,7 +117,7 @@ public class EntityResource {
         checkTableAccessible(reqs.securityService, request, tableName);
         return RestResponseBuilder
                 .forJsonp(jsonp)
-                .setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+                .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
                         ObjectMapper m = new ObjectMapper();
@@ -141,7 +140,7 @@ public class EntityResource {
         checkTableAccessible(reqs.securityService, request, tableName);
         return RestResponseBuilder
                 .forJsonp(jsonp)
-                .setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+                .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
                         ObjectMapper m = new ObjectMapper();
@@ -163,7 +162,7 @@ public class EntityResource {
         checkTableAccessible(reqs.securityService, request, tableName);
         return RestResponseBuilder
                 .forJsonp(jsonp)
-                .setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+                .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
                         reqs.restDMLService.delete(writer, tableName, getPKString(uri));

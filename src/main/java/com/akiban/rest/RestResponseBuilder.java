@@ -47,7 +47,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class RestResponseBuilder {
-    public interface ResponseGenerator {
+    public interface BodyGenerator {
         public void write(PrintWriter writer) throws Exception;
     }
 
@@ -58,7 +58,8 @@ public class RestResponseBuilder {
     public static final Response FORBIDDEN_RESPONSE = Response.status(Response.Status.FORBIDDEN).build();
 
     private int status = DEFAULT_RESPONSE_STATUS;
-    private ResponseGenerator outputGenerator;
+    private BodyGenerator outputGenerator;
+    private String outputBody;
     private String jsonp;
 
 
@@ -70,27 +71,74 @@ public class RestResponseBuilder {
         return new RestResponseBuilder(jsonp);
     }
 
-    public RestResponseBuilder setStatus(int status) {
+    public RestResponseBuilder status(int status) {
         this.status = status;
         return this;
     }
 
-    public RestResponseBuilder setStatus(Response.Status status) {
+    public RestResponseBuilder status(Response.Status status) {
         this.status = status.getStatusCode();
         return this;
     }
 
-    public RestResponseBuilder setOutputGenerator(ResponseGenerator output) {
-        this.outputGenerator = output;
+    public RestResponseBuilder body(String outputBody) {
+        this.outputBody = outputBody;
+        this.outputGenerator = null;
+        return this;
+    }
+
+    public RestResponseBuilder body(ErrorCode code, String message) {
+        body(formatJsonError(code.getFormattedValue(), message));
+        return this;
+    }
+
+    public RestResponseBuilder body(BodyGenerator outputGenerator) {
+        this.outputBody = null;
+        this.outputGenerator = outputGenerator;
         return this;
     }
 
     public Response build() {
+        if(outputBody == null && outputGenerator == null && jsonp == null) {
+            status(Response.Status.NO_CONTENT);
+        }
         return Response
                 .status(status)
                 .entity(createStreamingOutput())
                 .build();
     }
+
+    public static WebApplicationException wrapException(Exception e) {
+        String code;
+        if(e instanceof InvalidOperationException) {
+            code = ((InvalidOperationException)e).getCode().getFormattedValue();
+        } else if(e instanceof SQLException) {
+            code = ((SQLException)e).getSQLState();
+        } else {
+            code = ErrorCode.UNEXPECTED_EXCEPTION.getFormattedValue();
+        }
+        Response.Status status = EXCEPTION_STATUS_MAP.get(e.getClass());
+        if(status == null) {
+            status = Response.Status.CONFLICT;
+        }
+        return new WebApplicationException(
+                Response.status(status)
+                        .entity(formatJsonError(code, e.getMessage()))
+                        .type(MediaType.APPLICATION_JSON)
+                        .build()
+        );
+    }
+
+    public static String formatJsonError(String code, String message) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("{\"code\":\"");
+        builder.append(code);
+        builder.append("\", \"message\":\"");
+        Quote.JSON_QUOTE.append(AkibanAppender.of(builder), message);
+        builder.append("\"}\n");
+        return builder.toString();
+    }
+
 
     private StreamingOutput createStreamingOutput() {
         return new StreamingOutput() {
@@ -105,6 +153,8 @@ public class RestResponseBuilder {
                     }
                     if(outputGenerator != null) {
                         outputGenerator.write(writer);
+                    } else if(outputBody != null) {
+                        writer.write(outputBody);
                     }
                     if(isJSONP) {
                         writer.write(')');
@@ -117,33 +167,6 @@ public class RestResponseBuilder {
                 }
             }
         };
-    }
-
-    public static WebApplicationException wrapException(Exception e) {
-        StringBuilder err = new StringBuilder(100);
-        err.append("{\"code\":\"");
-        String code;
-        if(e instanceof InvalidOperationException) {
-            code = ((InvalidOperationException)e).getCode().getFormattedValue();
-        } else if(e instanceof SQLException) {
-            code = ((SQLException)e).getSQLState();
-        } else {
-            code = ErrorCode.UNEXPECTED_EXCEPTION.getFormattedValue();
-        }
-        err.append(code);
-        err.append("\",\"message\":\"");
-        Quote.JSON_QUOTE.append(AkibanAppender.of(err), e.getMessage());
-        err.append("\"}\n");
-        Response.Status status = EXCEPTION_STATUS_MAP.get(e.getClass());
-        if(status == null) {
-            status = Response.Status.CONFLICT;
-        }
-        return new WebApplicationException(
-                Response.status(status)
-                        .entity(err.toString())
-                        .type(MediaType.APPLICATION_JSON)
-                        .build()
-        );
     }
 
     private static Map<Class, Response.Status> buildExceptionStatusMap() {

@@ -64,7 +64,7 @@ public class ProcedureCallResource {
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
         return RestResponseBuilder
                 .forJsonp(jsonp)
-                .setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+                .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
                         reqs.restDMLService.callProcedure(writer, request, procName, uri.getQueryParameters());

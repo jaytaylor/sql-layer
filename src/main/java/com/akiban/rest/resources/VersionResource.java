@@ -57,7 +57,7 @@ public class VersionResource {
     public Response getVersion(@QueryParam("jsonp") String jsonp) {
         return RestResponseBuilder
                 .forJsonp(jsonp)
-                .setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+                .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
                         reqs.restDMLService.getAllEntities(writer, TABLE_NAME, DEPTH);
