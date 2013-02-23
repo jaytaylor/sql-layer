@@ -43,12 +43,12 @@ public interface RestDMLService {
 
     public void getEntities(RestResponseBuilder builder, TableName tableName, Integer depth, String pks);
 
-    public Response insert(HttpServletRequest request, 
-                           TableName tableName, JsonNode node);
-    public Response delete(HttpServletRequest request, 
-                           TableName tableName, String pks);
-    public Response update(HttpServletRequest request, 
-                            TableName tableName, String values, JsonNode node);
+    public void insert(RestResponseBuilder builder, TableName tableName, JsonNode node);
+
+    public void delete(RestResponseBuilder builder, TableName tableName, String pks);
+
+    public void update(RestResponseBuilder builder,  TableName tableName, String values, JsonNode node);
+
     public Response runSQL(HttpServletRequest request, String sql);
     public Response runSQL(HttpServletRequest request, List<String> sql);
     public Response explainSQL(HttpServletRequest request, String sql);

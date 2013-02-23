@@ -163,7 +163,13 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                     UserTable uTable = dxlService.ddlFunctions().getUserTable(session, tableName);
                     Index pkIndex = uTable.getPrimaryKeyIncludingInternal().getIndex();
                     List<List<String>> pks = PrimaryKeyParser.parsePrimaryKeys(identifiers, pkIndex);
-                    extDataService.dumpBranchAsJson(session, writer, tableName.getSchemaName(), tableName.getTableName(), pks, depth, false);
+                    extDataService.dumpBranchAsJson(session,
+                                                    writer,
+                                                    tableName.getSchemaName(),
+                                                    tableName.getTableName(),
+                                                    pks,
+                                                    depth,
+                                                    false);
                     txn.commit();
                 }
             }
@@ -171,53 +177,50 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
-    public Response insert(final HttpServletRequest request, final TableName rootTable, JsonNode node)  {
-        if (!securityService.isAccessible(request, rootTable.getSchemaName()))
-            return Response.status(Response.Status.FORBIDDEN).build();
-        try (Session session = sessionService.createSession();
-            CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
-            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-            String pk = insertProcessor.processInsert(session, ais, rootTable, node);
-            txn.commit();
-            return Response.status(Response.Status.OK).entity(pk).build();
-        } catch (RuntimeException | IOException ex) {
-            throw wrapException(ex);
-        }
+    public void insert(RestResponseBuilder builder, final TableName rootTable, final JsonNode node)  {
+        builder.setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+            @Override
+            public void write(PrintWriter writer) throws Exception {
+                try (Session session = sessionService.createSession();
+                     CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+                    AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+                    String pk = insertProcessor.processInsert(session, ais, rootTable, node);
+                    txn.commit();
+                    writer.write(pk);
+                }
+            }
+        });
     }
 
     @Override
-    public Response delete(final HttpServletRequest request, final TableName tableName, final String identifier) {
-        if (!securityService.isAccessible(request, tableName.getSchemaName()))
-            return Response.status(Response.Status.FORBIDDEN).build();
-        try (Session session = sessionService.createSession();
-                CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
-            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-            deleteProcessor.processDelete(session, ais, tableName, identifier);
-            txn.commit();
-            return Response.status(Response.Status.OK)
-                    .entity("")
-                    .build();
-        } catch (InvalidOperationException e) {
-            throw wrapException(e);
-        }
+    public void delete(RestResponseBuilder builder, final TableName tableName, final String identifier) {
+        builder.setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+            @Override
+            public void write(PrintWriter writer) throws Exception {
+                try (Session session = sessionService.createSession();
+                     CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+                    AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+                    deleteProcessor.processDelete(session, ais, tableName, identifier);
+                    txn.commit();
+                }
+            }
+        });
     }
 
     @Override
-    public Response update(HttpServletRequest request, 
-            TableName tableName, String pks, JsonNode node) {
-        if (!securityService.isAccessible(request, tableName.getSchemaName()))
-            return Response.status(Response.Status.FORBIDDEN).build();
-        try (Session session = sessionService.createSession();
-                CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
-            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-            String pk = updateProcessor.processUpdate (session, ais, tableName, pks, node);
-            txn.commit();
-            return Response.status(Response.Status.OK)
-                    .entity(pk)
-                    .build();
-        } catch (IOException | InvalidOperationException e) {
-            throw wrapException(e);
-        }
+    public void update(RestResponseBuilder builder, final TableName tableName, final String pks, final JsonNode node) {
+        builder.setOutputGenerator(new RestResponseBuilder.ResponseGenerator() {
+            @Override
+            public void write(PrintWriter writer) throws Exception {
+                try (Session session = sessionService.createSession();
+                     CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+                    AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+                    String pk = updateProcessor.processUpdate(session, ais, tableName, pks, node);
+                    txn.commit();
+                    writer.write(pk);
+                }
+            }
+        });
     }
 
     @Override
