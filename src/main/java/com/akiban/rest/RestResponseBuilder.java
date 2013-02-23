@@ -57,6 +57,7 @@ public class RestResponseBuilder {
     private static final Map<Class,Response.Status> EXCEPTION_STATUS_MAP = buildExceptionStatusMap();
     public static final Response FORBIDDEN_RESPONSE = Response.status(Response.Status.FORBIDDEN).build();
 
+    private final boolean isJsonp;
     private int status = DEFAULT_RESPONSE_STATUS;
     private BodyGenerator outputGenerator;
     private String outputBody;
@@ -65,6 +66,7 @@ public class RestResponseBuilder {
 
     public RestResponseBuilder(String jsonp) {
         this.jsonp = jsonp;
+        this.isJsonp = jsonp != null;
     }
 
     public static RestResponseBuilder forJsonp(String jsonp) {
@@ -88,7 +90,7 @@ public class RestResponseBuilder {
     }
 
     public RestResponseBuilder body(ErrorCode code, String message) {
-        body(formatJsonError(code.getFormattedValue(), message));
+        body(formatErrorWithJsonp(code.getFormattedValue(), message));
         return this;
     }
 
@@ -108,7 +110,7 @@ public class RestResponseBuilder {
                 .build();
     }
 
-    public static WebApplicationException wrapException(Exception e) {
+    public WebApplicationException wrapException(Exception e) {
         String code;
         if(e instanceof InvalidOperationException) {
             code = ((InvalidOperationException)e).getCode().getFormattedValue();
@@ -123,22 +125,34 @@ public class RestResponseBuilder {
         }
         return new WebApplicationException(
                 Response.status(status)
-                        .entity(formatJsonError(code, e.getMessage()))
+                        .entity(formatErrorWithJsonp(code, e.getMessage()))
                         .type(MediaType.APPLICATION_JSON)
                         .build()
         );
     }
 
-    public static String formatJsonError(String code, String message) {
-        StringBuilder builder = new StringBuilder();
+    public static void formatJsonError(StringBuilder builder, String code, String message) {
         builder.append("{\"code\":\"");
         builder.append(code);
         builder.append("\", \"message\":\"");
         Quote.JSON_QUOTE.append(AkibanAppender.of(builder), message);
-        builder.append("\"}\n");
-        return builder.toString();
+        builder.append("\"}");
     }
 
+
+    private String formatErrorWithJsonp(String code, String message) {
+        StringBuilder builder = new StringBuilder();
+        if(isJsonp) {
+            builder.append(jsonp);
+            builder.append('(');
+        }
+        formatJsonError(builder, code, message);
+        if(isJsonp) {
+            builder.append(')');
+        }
+        builder.append('\n');
+        return builder.toString();
+    }
 
     private StreamingOutput createStreamingOutput() {
         return new StreamingOutput() {
@@ -146,8 +160,7 @@ public class RestResponseBuilder {
             public void write(OutputStream output)  {
                 try {
                     PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, UTF8), false);
-                    boolean isJSONP = jsonp != null;
-                    if(isJSONP) {
+                    if(isJsonp) {
                         writer.write(jsonp);
                         writer.write('(');
                     }
@@ -156,7 +169,7 @@ public class RestResponseBuilder {
                     } else if(outputBody != null) {
                         writer.write(outputBody);
                     }
-                    if(isJSONP) {
+                    if(isJsonp) {
                         writer.write(')');
                     }
                     writer.write('\n');

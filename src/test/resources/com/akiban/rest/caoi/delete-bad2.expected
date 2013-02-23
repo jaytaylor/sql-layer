@@ -1,6 +1,4 @@
-[
-    {
-        "code":"42600",
-        "message":"KEY_COLUMN_MISMATCH: Supplied key column(s) cannot be parsed: Column `nosuchcolumn` is not a primary key column"
-    }
-]
+{
+    "code":"42600",
+    "message":"KEY_COLUMN_MISMATCH: Supplied key column(s) cannot be parsed: Column `nosuchcolumn` is not a primary key column"
+}

@@ -272,20 +272,18 @@ public class RestServiceFilesIT extends ITBase {
         JsonNode expectedNode = null;
         JsonNode actualNode = null;
         boolean skipNodeCheck = false;
+        String expectedTrimmed = (expected != null) ? expected.trim() : "";
+        String actualTrimmed = (actual != null) ? actual.trim() : "";
         try {
-            if(expected != null) {
+            if(!expectedTrimmed.isEmpty()) {
                 expectedNode = mapper.readTree(expected);
             }
-            if(actual != null) {
+            if(!actualTrimmed.isEmpty()) {
                 actualNode = mapper.readTree(actual);
             }
         } catch(JsonParseException e) {
             // Note: This case handles the jsonp tests. Somewhat fragile, but not horrible yet.
-            assertEquals(
-                    assertMsg,
-                    expected != null ? expected.trim() : expected,
-                    actual != null ? actual.trim() : actual
-            );
+            assertEquals(assertMsg, expectedTrimmed, actualTrimmed);
             skipNodeCheck = true;
         }
         // Try manual equals and then assert strings for pretty print
