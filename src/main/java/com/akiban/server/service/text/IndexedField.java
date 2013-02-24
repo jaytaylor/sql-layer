@@ -54,14 +54,12 @@ public class IndexedField
     }
 
     private final Column column;
-    private final boolean inKey;
     private final int position;
     private final String name;
     private final FieldType fieldType;
     
-    public IndexedField(Column column, boolean inKey) {
+    public IndexedField(Column column) {
         this.column = column;
-        this.inKey = inKey;
 
         position = column.getPosition();
         name = column.getName(); // TODO: Need to make unique among multiple tables.
@@ -101,10 +99,6 @@ public class IndexedField
         return column;
     }
 
-    public boolean isInKey() {
-        return inKey;
-    }
-
     public int getPosition() {
         return position;
     }
@@ -120,7 +114,7 @@ public class IndexedField
     public Field getField(PValueSource value) {
         if (value.isNull()) 
             return null;
-        Field.Store store = inKey ? Field.Store.YES : Field.Store.NO;
+        Field.Store store = Field.Store.NO; // Only store hkey.
         switch (fieldType) {
         case INT:
             switch (TInstance.pUnderlying(value.tInstance())) {

@@ -47,7 +47,6 @@ public class FullTextIndexAIS
     private final AkibanInformationSchema ais;
     private Schema schema;
     private UserTableRowType indexedRowType;
-    private List<IndexedField> keyFields;
     private Map<Column,IndexedField> fieldsByColumn;
     private Map<RowType,List<IndexedField>> fieldsByRowType;
     private String defaultFieldName;
@@ -64,14 +63,7 @@ public class FullTextIndexAIS
             throw new NoSuchTableException(index.getSchemaName(), index.getTableName());
         }
         indexedRowType = schema.userTableRowType(table);
-        List<Column> pkCols = table.getPrimaryKeyIncludingInternal().getColumns();
-        keyFields = new ArrayList<>(pkCols.size());
-        fieldsByColumn = new HashMap<>(pkCols.size() + index.getIndexedColumns().size());
-        for (Column pkCol : pkCols) {
-            IndexedField field = new IndexedField(pkCol, true);
-            keyFields.add(field);
-            fieldsByColumn.put(pkCol, field);
-        }
+        fieldsByColumn = new HashMap<>(index.getIndexedColumns().size());
         for (String cstr : index.getIndexedColumns()) {
             Column col;
             int idx = cstr.lastIndexOf('.');
@@ -108,7 +100,7 @@ public class FullTextIndexAIS
                 }
             }
             if (!fieldsByColumn.containsKey(col)) {
-                IndexedField indexedField = new IndexedField(col, false);
+                IndexedField indexedField = new IndexedField(col);
                 fieldsByColumn.put(col, indexedField);
                 if (defaultFieldName == null)
                     defaultFieldName = indexedField.getName();
@@ -138,24 +130,12 @@ public class FullTextIndexAIS
         return indexedRowType;
     }
 
-    public List<IndexedField> getKeyFields() {
-        return keyFields;
-    }
-
     public Map<Column,IndexedField> getFieldsByColumn() {
         return fieldsByColumn;
     }
 
     public Map<RowType,List<IndexedField>> getFieldsByRowType() {
         return fieldsByRowType;
-    }
-
-    public List<String> getKeyColumns() {
-        List<String> result = new ArrayList<>(keyFields.size());
-        for (IndexedField field : keyFields) {
-            result.add(field.getName());
-        }
-        return result;
     }
 
     public Set<String> getCasePreservingFieldNames() {

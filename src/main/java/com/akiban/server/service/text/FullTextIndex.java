@@ -115,8 +115,6 @@ public class FullTextIndex implements CacheValueGenerator<FullTextIndexAIS>
     public FullTextIndexAIS valueFor(AkibanInformationSchema ais) {
         FullTextIndexAIS result = new FullTextIndexAIS(this, ais);
         result.init();
-        if (keyColumns == null)
-            keyColumns = result.getKeyColumns();
         if (casePreservingFieldNames == null)
             casePreservingFieldNames = result.getCasePreservingFieldNames();
         if (defaultFieldName == null)
