@@ -43,7 +43,7 @@ public class IndexSizeTest {
     private AISBuilder builder;
     @Before 
     public void createValidations() {
-        validations = new LinkedList<AISValidation>();
+        validations = new LinkedList<>();
         validations.add(AISValidations.INDEX_SIZES);
         
         builder = new AISBuilder();

@@ -61,8 +61,8 @@ public class AISComparator {
     }
 
     private static class GroupMaps {
-        public final Collection<TableName> names = new TreeSet<TableName>();
-        public final Collection<String> indexes = new TreeSet<String>();
+        public final Collection<TableName> names = new TreeSet<>();
+        public final Collection<String> indexes = new TreeSet<>();
 
         public GroupMaps(Collection<Group> groups, boolean withIDs) {
             for(Group group : groups) {
@@ -80,10 +80,10 @@ public class AISComparator {
     }
 
     private static class TableMaps {
-        public final Collection<String> names = new TreeSet<String>();
-        public final Collection<String> indexes = new TreeSet<String>();
-        public final Collection<String> columns = new TreeSet<String>();
-        public final Collection<String> charAndCols = new TreeSet<String>();
+        public final Collection<String> names = new TreeSet<>();
+        public final Collection<String> indexes = new TreeSet<>();
+        public final Collection<String> columns = new TreeSet<>();
+        public final Collection<String> charAndCols = new TreeSet<>();
 
         public TableMaps(Collection<UserTable> tables, boolean withIDs) {
             for(UserTable table : tables) {

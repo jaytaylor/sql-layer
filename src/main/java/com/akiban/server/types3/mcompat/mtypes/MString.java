@@ -66,7 +66,7 @@ public class MString extends TString
     @Override
     public void selfCast(TExecutionContext context, TInstance sourceInstance, PValueSource source,
                          TInstance targetInstance, PValueTarget target) {
-        int maxTargetLen = targetInstance.attribute(StringAttribute.LENGTH);
+        int maxTargetLen = targetInstance.attribute(StringAttribute.MAX_LENGTH);
         String sourceString = source.getString();
         if (sourceString.length() > maxTargetLen) {
             String truncated = sourceString.substring(0, maxTargetLen);
@@ -99,7 +99,7 @@ public class MString extends TString
             out.putNull();
             return;
         }
-        int expectedLen = context.outputTInstance().attribute(StringAttribute.LENGTH);
+        int expectedLen = context.outputTInstance().attribute(StringAttribute.MAX_LENGTH);
         int charsetId = context.outputTInstance().attribute(StringAttribute.CHARSET);
         int collatorId = context.outputTInstance().attribute(StringAttribute.COLLATION);
 

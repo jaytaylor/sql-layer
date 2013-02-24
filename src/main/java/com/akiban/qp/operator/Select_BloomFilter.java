@@ -113,9 +113,9 @@ class Select_BloomFilter extends Operator
     protected Cursor cursor(QueryContext context)
     {
         if (tFields == null)
-            return new Execution<ExpressionEvaluation>(context, fields, oldExpressionsAdapater);
+            return new Execution<>(context, fields, oldExpressionsAdapater);
         else
-            return new Execution<TEvaluatableExpression>(context, tFields, newExpressionsAdapter);
+            return new Execution<>(context, tFields, newExpressionsAdapter);
     }
 
     @Override
@@ -386,7 +386,7 @@ class Select_BloomFilter extends Operator
         private final Cursor inputCursor;
         private final Cursor onPositiveCursor;
         private BloomFilter filter;
-        private final List<E> fieldEvals = new ArrayList<E>();
+        private final List<E> fieldEvals = new ArrayList<>();
         private final ExpressionAdapter<?, E> adapter;
         private boolean idle = true;
         private boolean destroyed = false;

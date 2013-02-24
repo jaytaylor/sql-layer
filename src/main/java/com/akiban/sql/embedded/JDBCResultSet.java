@@ -460,7 +460,7 @@ public class JDBCResultSet implements DirectResultSet
     }
 
     @Override
-    public ResultSetMetaData getMetaData() throws SQLException {
+    public JDBCResultSetMetaData getMetaData() throws SQLException {
         return metaData;
     }
 
@@ -1538,11 +1538,22 @@ public class JDBCResultSet implements DirectResultSet
     }
     
     public DirectObject getEntity(final Class<?> c) throws SQLException {
+
         DirectObject o = Direct.objectForRow(c);
         if (o != null) {
-            o.row(row);
+            o.resultSet(this);
             return o;
         }
         throw new JDBCException("No entity class for row");
+    }
+    
+    public Row currentRow() {
+        if (row == null) {
+            if (cursor == null)
+                throw JDBCException.wrapped("Already closed.");
+            else
+                throw JDBCException.wrapped("Past end.");
+        }
+        return row;
     }
 }

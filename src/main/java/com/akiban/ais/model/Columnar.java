@@ -193,9 +193,9 @@ public abstract class Columnar
     // State
     protected final AkibanInformationSchema ais;
     protected final Object columnsStaleLock = new Object();
-    protected final List<Column> columns = new ArrayList<Column>();
-    protected final List<Column> columnsWithoutInternal = new ArrayList<Column>();
-    protected final Map<String, Column> columnMap = new TreeMap<String, Column>();
+    protected final List<Column> columns = new ArrayList<>();
+    protected final List<Column> columnsWithoutInternal = new ArrayList<>();
+    protected final Map<String, Column> columnMap = new TreeMap<>();
     private BitSet notNull;
 
     protected TableName tableName;

@@ -30,19 +30,20 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 import com.akiban.qp.row.Row;
+import com.akiban.sql.embedded.JDBCResultSet;
 
 public class AbstractDirectObject implements DirectObject {
 
-    private Row row;
+    private JDBCResultSet resultSet;
     
     @Override
-    public void row(Row row) {
-        this.row = row;
+    public void resultSet(JDBCResultSet rs) {
+        this.resultSet = rs;
     }
 
     @Override
     public Row row() {
-        return row;
+        return resultSet.currentRow();
     }
     
 
@@ -51,15 +52,15 @@ public class AbstractDirectObject implements DirectObject {
     }
     
     protected boolean __getBOOL(int p) {
-        return row.pvalue(p).getBoolean();
+        return row().pvalue(p).getBoolean();
     }
     
     protected Date __getDATE(int p) {
-        return new Date(row.pvalue(p).getInt64());
+        return new Date(row().pvalue(p).getInt64());
     }
     
     protected Date __getDATETIME(int p) {
-        return new Date(row.pvalue(p).getInt64());
+        return new Date(row().pvalue(p).getInt64());
     }
     
     protected BigDecimal __getDECIMAL(int p) {
@@ -67,15 +68,15 @@ public class AbstractDirectObject implements DirectObject {
     }
 
     protected double __getDOUBLE(int p) {
-        return row.pvalue(p).getDouble();
+        return row().pvalue(p).getDouble();
     }
     
     protected float __getFLOAT(int p) {
-        return row.pvalue(p).getFloat();
+        return row().pvalue(p).getFloat();
     }
     
     protected int __getINT(int p) {
-        return row.pvalue(p).getInt32();
+        return row().pvalue(p).getInt32();
     }
     
     protected int __getINTERVAL_MILLIS(int p) {
@@ -87,7 +88,7 @@ public class AbstractDirectObject implements DirectObject {
     }
     
     protected long __getLONG(int p) {
-        return row.pvalue(p).getInt64();
+        return row().pvalue(p).getInt64();
     }
     
     protected Object __getNULL(int p) {
@@ -99,19 +100,19 @@ public class AbstractDirectObject implements DirectObject {
     }
     
     protected String __getTEXT(int p) {
-        return row.pvalue(p).getString();
+        return row().pvalue(p).getString();
     }
 
     protected long __getTIME(int p) {
-        return row.pvalue(p).getInt64();
+        return row().pvalue(p).getInt64();
     }
     
     protected long __getTIMESTAMP(int p) {
-        return row.pvalue(p).getInt64();
+        return row().pvalue(p).getInt64();
     }
     
     protected long __getU_INT(int p) {
-        return row.pvalue(p).getInt64();
+        return row().pvalue(p).getInt64();
     }
 
     protected Object __getU_BIGINT(int p) {
@@ -123,19 +124,19 @@ public class AbstractDirectObject implements DirectObject {
     }
     
     protected double __getU_FLOAT(int p) {
-        return row.pvalue(p).getDouble();
+        return row().pvalue(p).getDouble();
     }
 
     protected String __getVARCHAR(int p) {
-        return row.pvalue(p).getString();
+        return row().pvalue(p).getString();
     }
     
     protected byte[] __getVARBINARY(int p) {
-        return row.pvalue(p).getBytes();
+        return row().pvalue(p).getBytes();
     }
 
     protected int __getYEAR(int p) {
-        return row.pvalue(p).getInt32();
+        return row().pvalue(p).getInt32();
     }
     
 }

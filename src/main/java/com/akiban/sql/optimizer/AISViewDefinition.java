@@ -73,7 +73,7 @@ public class AISViewDefinition extends ViewDefinition
     }
 
     static class ReferenceCollector implements Visitor {
-        Map<TableName,Collection<String>> references = new HashMap<TableName,Collection<String>>();
+        Map<TableName,Collection<String>> references = new HashMap<>();
         
         @Override
         public Visitable visit(Visitable node) throws StandardException {
@@ -94,7 +94,7 @@ public class AISViewDefinition extends ViewDefinition
                         Columnar table = column.getColumnar();
                         Collection<String> entry = references.get(table.getName());
                         if (entry == null) {
-                            entry = new HashSet<String>();
+                            entry = new HashSet<>();
                             references.put(table.getName(), entry);
                         }
                         entry.add(column.getName());

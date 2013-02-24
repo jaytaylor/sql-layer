@@ -158,7 +158,7 @@ public class EquivalenceFinderTest {
     }
     
     protected static void checkEquivalents(Integer from, EquivalenceFinder<? super Integer> finder, Integer... expected) {
-        Set<Integer> expectedSet = new HashSet<Integer>();
+        Set<Integer> expectedSet = new HashSet<>();
         Collections.addAll(expectedSet, expected);
         AssertUtils.assertCollectionEquals("equivalents for " + from, expectedSet, finder.findEquivalents(from));
     }
@@ -179,11 +179,11 @@ public class EquivalenceFinderTest {
     }
 
     private static EquivalenceFinder<Integer> create() {
-        return new TraversalBoundEquivalenceFinder<Integer>();
+        return new TraversalBoundEquivalenceFinder<>();
     }
 
     private static EquivalenceFinder<Integer> create(int maxTraversal) {
-        return new TraversalBoundEquivalenceFinder<Integer>(maxTraversal);
+        return new TraversalBoundEquivalenceFinder<>(maxTraversal);
     }
     
     private static class TooMuchTraversingException extends RuntimeException {

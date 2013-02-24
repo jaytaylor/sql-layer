@@ -48,7 +48,7 @@ public final class HomeDirPluginsFinder implements PluginsFinder {
             if (files == null) {
                 throw new RuntimeException("'" + pluginsDir + "' must be a directory");
             }
-            plugins = new ArrayList<Plugin>(files.length);
+            plugins = new ArrayList<>(files.length);
             for (File pluginJar : files) {
                 plugins.add(new JarPlugin(pluginJar));
             }

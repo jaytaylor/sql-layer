@@ -228,7 +228,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     public void updateIndexStatistics(Session session, 
                                       Collection<? extends Index> indexes) {
         ensureAdapter(session);
-        final Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics> (indexes.size());
+        final Map<Index,IndexStatistics> updates = new HashMap<>(indexes.size());
 
         if (indexes.size() > 0) {
             final Index first = indexes.iterator().next();
@@ -248,7 +248,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     }
 
     private Map<Index,IndexStatistics> updatePersistitTableIndexStatistics (Session session, Collection<? extends Index> indexes) {
-        Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics>(indexes.size());
+        Map<Index,IndexStatistics> updates = new HashMap<>(indexes.size());
         for (Index index : indexes) {
             try {
                 IndexStatistics indexStatistics = storeStats.computeIndexStatistics(session, index);
@@ -282,7 +282,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     }
     
     private Map<Index,IndexStatistics> updateMemoryTableIndexStatistics (Session session, Collection<? extends Index> indexes) {
-        Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics>(indexes.size());
+        Map<Index,IndexStatistics> updates = new HashMap<>(indexes.size());
         IndexStatistics indexStatistics;
         for (Index index : indexes) {
             // memory store, when it calculates index statistics, and supports group indexes
@@ -353,8 +353,8 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Override
     public void dumpIndexStatistics(Session session, 
                                     String schema, Writer file) throws IOException {
-        List<Index> indexes = new ArrayList<Index>();
-        Set<Group> groups = new HashSet<Group>();
+        List<Index> indexes = new ArrayList<>();
+        Set<Group> groups = new HashSet<>();
         AkibanInformationSchema ais = schemaManager.getAis(session);
         for (UserTable table : ais.getUserTables().values()) {
             if (table.getName().getSchemaName().equals(schema)) {
@@ -364,7 +364,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             }
         }
         // Get all the stats already computed for an index on this schema.
-        Map<Index,IndexStatistics> toDump = new TreeMap<Index,IndexStatistics>(IndexStatisticsYamlLoader.INDEX_NAME_COMPARATOR);
+        Map<Index,IndexStatistics> toDump = new TreeMap<>(IndexStatisticsYamlLoader.INDEX_NAME_COMPARATOR);
         for (Index index : indexes) {
             IndexStatistics stats = getIndexStatistics(session, index);
             if (stats != null) {

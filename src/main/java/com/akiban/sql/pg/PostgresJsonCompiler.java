@@ -123,7 +123,7 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
                 (TypeId.RowMultiSetTypeId)sqlType.getTypeId();
             String[] columnNames = typeId.getColumnNames();
             DataTypeDescriptor[] columnTypes = typeId.getColumnTypes();
-            nestedResultColumns = new ArrayList<JsonResultColumn>(columnNames.length);
+            nestedResultColumns = new ArrayList<>(columnNames.length);
             for (int i = 0; i < columnNames.length; i++) {
                 nestedResultColumns.add(getJsonResultColumn(columnNames[i], columnTypes[i],
                         TypesTranslation.toTInstance(columnTypes[i])));
@@ -149,7 +149,7 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
                                                            PostgresType[] parameterTypes) {
         PostgresJsonStatement pjstmt = (PostgresJsonStatement)pstmt;
         int ncols = select.getResultColumns().size();
-        List<JsonResultColumn> resultColumns = new ArrayList<JsonResultColumn>(ncols);
+        List<JsonResultColumn> resultColumns = new ArrayList<>(ncols);
         for (PhysicalResultColumn physColumn : select.getResultColumns()) {
             JsonResultColumn resultColumn = (JsonResultColumn)physColumn;
             resultColumns.add(resultColumn);
@@ -177,7 +177,7 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
         }
         else {
             int ncols = update.getResultColumns().size();
-            List<JsonResultColumn> resultColumns = new ArrayList<JsonResultColumn>(ncols);
+            List<JsonResultColumn> resultColumns = new ArrayList<>(ncols);
             for (PhysicalResultColumn physColumn : update.getResultColumns()) {
                 JsonResultColumn resultColumn = (JsonResultColumn)physColumn;
                 resultColumns.add(resultColumn);

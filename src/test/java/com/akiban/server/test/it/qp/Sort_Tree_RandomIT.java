@@ -67,7 +67,7 @@ public class Sort_Tree_RandomIT extends OperatorITBase
         schema = new Schema(ais());
         tRowType = schema.userTableRowType(userTable(t));
         group = group(t);
-        List<NewRow> rows = new ArrayList<NewRow>();
+        List<NewRow> rows = new ArrayList<>();
         Random random = new Random(123456789);
         long key = 0;
         for (long a = 0; a < A; a++) {

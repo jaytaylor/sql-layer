@@ -121,7 +121,7 @@ public class PersistitIndexRowPool
         {
             Deque<PersistitIndexRow> indexRows = indexRowCache.get(indexRowType);
             if (indexRows == null) {
-                indexRows = new ArrayDeque<PersistitIndexRow>();
+                indexRows = new ArrayDeque<>();
                 indexRowCache.put(indexRowType, indexRows);
             }
             assert !indexRows.contains(indexRow);
@@ -135,6 +135,6 @@ public class PersistitIndexRowPool
 
         private final PersistitAdapter adapter;
         private final Map<IndexRowType, Deque<PersistitIndexRow>> indexRowCache =
-            new HashMap<IndexRowType, Deque<PersistitIndexRow>>();
+            new HashMap<>();
     }
 }

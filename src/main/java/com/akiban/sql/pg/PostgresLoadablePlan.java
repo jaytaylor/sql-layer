@@ -87,7 +87,7 @@ public class PostgresLoadablePlan
 
     public static List<PostgresType> columnTypes(LoadablePlan<?> plan)
     {
-        List<PostgresType> columnTypes = new ArrayList<PostgresType>();
+        List<PostgresType> columnTypes = new ArrayList<>();
         for (int jdbcType : plan.jdbcTypes()) {
             DataTypeDescriptor sqlType = DataTypeDescriptor.getBuiltInDataTypeDescriptor(jdbcType);
             AkType akType = TypesTranslation.sqlTypeToAkType(sqlType);

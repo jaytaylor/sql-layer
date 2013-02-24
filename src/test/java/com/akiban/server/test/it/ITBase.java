@@ -67,7 +67,7 @@ public abstract class ITBase extends ApiTestBase {
 
     protected void compareRows(RowBase[] expected, Cursor cursor, AkCollator ... collators)
     {
-        List<ShareHolder<Row>> actualRows = new ArrayList<ShareHolder<Row>>(); // So that result is viewable in debugger
+        List<ShareHolder<Row>> actualRows = new ArrayList<>(); // So that result is viewable in debugger
         try {
             cursor.open();
             RowBase actualRow;
@@ -86,7 +86,7 @@ public abstract class ITBase extends ApiTestBase {
                         assertEquals(count + ": hkey", expectedTestRow.persistityString(), actualHKeyString);
                     }
                 }
-                actualRows.add(new ShareHolder<Row>((Row) actualRow));
+                actualRows.add(new ShareHolder<>((Row) actualRow));
             }
         } finally {
             cursor.close();

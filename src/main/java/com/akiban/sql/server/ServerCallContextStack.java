@@ -61,7 +61,7 @@ public class ServerCallContextStack
     private static final ThreadLocal<Deque<Entry>> tl = new ThreadLocal<Deque<Entry>>() {
         @Override
         protected Deque<Entry> initialValue() {
-            return new ArrayDeque<Entry>();
+            return new ArrayDeque<>();
         }
     };
 

@@ -1,0 +1,5 @@
+INSERT INTO test.customers VALUES (5, 'Sally', 'Smith');
+INSERT INTO test.addresses values (501, 5, 'WA', 'Seattle');
+DELETE FROM test.items WHERE oid=201;
+UPDATE test.orders SET oid=501, cid=5 WHERE oid=201;
+SELECT ** FROM test.customers WHERE cid=5;

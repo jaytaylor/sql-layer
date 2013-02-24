@@ -184,7 +184,7 @@ public class CoalesceExpression extends AbstractCompositeExpression {
         private final AkType type;        
     }
     
-    private static final EnumMap<AkType, Integer> NUMERICS = new EnumMap<AkType, Integer>(AkType.class);
+    private static final EnumMap<AkType, Integer> NUMERICS = new EnumMap<>(AkType.class);
     static
     {
         // putting all the numeric types in a prioritised order (highest first) 

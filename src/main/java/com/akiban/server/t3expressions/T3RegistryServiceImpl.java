@@ -173,7 +173,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
     // private methods
 
     void start(InstanceFinder finder) {
-        tClasses = new HashSet<TClass>(finder.find(TClass.class));
+        tClasses = new HashSet<>(finder.find(TClass.class));
 
         TCastsRegistry castsRegistry = new TCastsRegistry(tClasses, finder);
         castsResolver = new TCastResolver(castsRegistry);
@@ -194,7 +194,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                     }
                 }
         );
-        scalarsResolver = new OverloadResolver<TValidatedScalar>(scalarsRegistry, castsResolver);
+        scalarsResolver = new OverloadResolver<>(scalarsRegistry, castsResolver);
 
         aggreatorsRegistry = ResolvablesRegistry.create(
                 finder,
@@ -208,7 +208,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
                 },
                 null
         );
-        aggregatesResolver = new OverloadResolver<TValidatedAggregator>(aggreatorsRegistry, castsResolver);
+        aggregatesResolver = new OverloadResolver<>(aggreatorsRegistry, castsResolver);
 
         keyComparableRegistry = new KeyComparableRegistry(finder);
     }
@@ -255,7 +255,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
 
         @Override
         public String describeAll() {
-            Map<String,Object> all = new LinkedHashMap<String, Object>(5);
+            Map<String,Object> all = new LinkedHashMap<>(5);
 
             all.put("types", typesDescriptors());
             all.put("casts", castsDescriptors());
@@ -271,9 +271,9 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         }
 
         private Object typesDescriptors() {
-            List<Map<String,Comparable<?>>> result = new ArrayList<Map<String,Comparable<?>>>(tClasses.size());
+            List<Map<String,Comparable<?>>> result = new ArrayList<>(tClasses.size());
             for (TClass tClass : tClasses) {
-                Map<String,Comparable<?>> map = new LinkedHashMap<String, Comparable<?>>();
+                Map<String,Comparable<?>> map = new LinkedHashMap<>();
                 buildTName("bundle", "name", tClass, map);
                 map.put("category", tClass.name().categoryName());
                 map.put("internalVersion", tClass.internalRepresentationVersion());
@@ -297,10 +297,10 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         private Object castsDescriptors() {
             // the starting size is just a guess
             Collection<Map<TClass, TCast>> castsBySource = castsResolver.castsBySource();
-            List<Map<String,Comparable<?>>> result = new ArrayList<Map<String,Comparable<?>>>(castsBySource.size() * 5);
+            List<Map<String,Comparable<?>>> result = new ArrayList<>(castsBySource.size() * 5);
             for (Map<TClass,TCast> castsByTarget : castsBySource) {
                 for (TCast tCast : castsByTarget.values()) {
-                    Map<String,Comparable<?>> map = new LinkedHashMap<String, Comparable<?>>();
+                    Map<String,Comparable<?>> map = new LinkedHashMap<>();
                     buildTName("source_bundle", "source_type", tCast.sourceClass(), map);
                     buildTName("target_bundle", "target_type", tCast.targetClass(), map);
                     map.put("strong", castsResolver.isStrong(tCast));
@@ -335,14 +335,14 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         private <T extends TOverload,S> Object describeOverloads(
                 Map<String, Collection<T>> elems, Function<? super T, S> format)
         {
-            Map<String,Map<String,String>> result = new TreeMap<String, Map<String,String>>();
+            Map<String,Map<String,String>> result = new TreeMap<>();
             for (Map.Entry<String, ? extends Collection<T>> entry : elems.entrySet()) {
                 Collection<T> overloads = entry.getValue();
-                Map<String,String> overloadDescriptions = new TreeMap<String, String>();
+                Map<String,String> overloadDescriptions = new TreeMap<>();
                 int idSuffix = 1;
                 boolean allSamePriorities = allSamePriorities(overloads);
                 if (!allSamePriorities) {
-                    List<T> asList = new ArrayList<T>(overloads);
+                    List<T> asList = new ArrayList<>(overloads);
                     Collections.sort(asList, compareByPriorities);
                     overloads = asList;
                 }
@@ -436,7 +436,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service, 
         @Override
         public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter) {
             Collection<Map<TClass, TCast>> castsBySource = castsResolver.castsBySource();
-            Collection<TCast> castsCollections = new ArrayList<TCast>(castsBySource.size());
+            Collection<TCast> castsCollections = new ArrayList<>(castsBySource.size());
             for (Map<?, TCast> castMap : castsBySource) {
                 castsCollections.addAll(castMap.values());
             }

@@ -83,7 +83,7 @@ public class Tester
     int repeat;
 
     public Tester() {
-        actions = new ArrayList<Action>();
+        actions = new ArrayList<>();
         parser = new SQLParser();
         parser.setNodeFactory(new BindingNodeFactory(parser.getNodeFactory()));
         compilerProperties = new Properties();

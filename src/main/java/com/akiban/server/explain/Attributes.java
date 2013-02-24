@@ -55,7 +55,7 @@ public class Attributes extends EnumMap<Label, List<Explainer>>
         List<Explainer> l = get(label);
         if (l == null)
         {
-            l = new ArrayList<Explainer>();
+            l = new ArrayList<>();
             put(label, l);
         }
         l.add(ex);
@@ -64,7 +64,7 @@ public class Attributes extends EnumMap<Label, List<Explainer>>
         
     public List<Entry<Label, Explainer>> valuePairs()
     {
-        List<Entry<Label, Explainer>> pairs = new ArrayList<Entry<Label,Explainer>>();
+        List<Entry<Label, Explainer>> pairs = new ArrayList<>();
         
         for (Entry<Label, List<Explainer>> entry : entrySet())                
             for (Explainer ex : entry.getValue())            

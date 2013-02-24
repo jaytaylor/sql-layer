@@ -37,7 +37,7 @@ abstract class SplitHandler<T> implements SampleVisitor<T> {
 
     @Override
     public void init() {
-        buffers = new ArrayList<SegmentBuffer<T>>(segments);
+        buffers = new ArrayList<>(segments);
         for (int i = 0; i < segments; ++i) {
             buffers.add(new SegmentBuffer<T>());
         }
@@ -79,7 +79,7 @@ abstract class SplitHandler<T> implements SampleVisitor<T> {
         this.segments = splitter.segments();
         if (segments < 1)
             throw new IllegalArgumentException("splitter must provide at least 1 segment: " + segments);
-        this.recycleBin = new ArrayList<T>(segments);
+        this.recycleBin = new ArrayList<>(segments);
     }
 
     private void checkInit() {

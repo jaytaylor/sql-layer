@@ -202,7 +202,7 @@ public class AggregatePT extends ApiTestBase {
         plan = API.aggregate_Partial(plan, rowType, 
                                      1, functions,
                                      Arrays.asList("count", "sum", "sum"),
-                                     new ArrayList<Object>(3));
+                                     new ArrayList<>(3));
         return plan;
     }
 
@@ -604,7 +604,7 @@ public class AggregatePT extends ApiTestBase {
 
         int nthreads = Integer.parseInt(System.getProperty("test.nthreads", "4"));
         double n = (double)NKEYS / nthreads;
-        List<ValuesRow> keyRows = new ArrayList<ValuesRow>();
+        List<ValuesRow> keyRows = new ArrayList<>();
         for (int i = 0; i < nthreads; i++) {
             Object[] values = new Object[2];
             values[0] = Math.round(n * i);
@@ -680,7 +680,7 @@ public class AggregatePT extends ApiTestBase {
         
         public RowQueue(Thread reader) {
             this.reader = reader;
-            queue = new ConcurrentLinkedQueue<Object>();
+            queue = new ConcurrentLinkedQueue<>();
         }
         
         public Row take() throws InterruptedException {
@@ -720,7 +720,7 @@ public class AggregatePT extends ApiTestBase {
             this.context = context;
             int nthreads = valuesRows.size();
             queue = new RowQueue(Thread.currentThread());
-            threads = new ArrayList<WorkerThread>(nthreads);
+            threads = new ArrayList<>(nthreads);
             for (ValuesRow valuesRow : valuesRows) {
                 threads.add(new WorkerThread(context, inputOperator, valuesType, valuesRow, bindingPosition, queue));
             }

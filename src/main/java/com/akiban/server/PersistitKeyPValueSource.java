@@ -252,7 +252,7 @@ public class PersistitKeyPValueSource implements PValueSource {
     private static final EnumMap<PUnderlying, Class<?>> pUnderlyingExpectedClasses = createPUnderlyingExpectedClasses();
 
     private static EnumMap<PUnderlying, Class<?>> createPUnderlyingExpectedClasses() {
-        EnumMap<PUnderlying, Class<?>> result = new EnumMap<PUnderlying, Class<?>>(PUnderlying.class);
+        EnumMap<PUnderlying, Class<?>> result = new EnumMap<>(PUnderlying.class);
         for (PUnderlying pUnderlying : PUnderlying.values()) {
             final Class<?> expected;
             switch (pUnderlying) {

@@ -119,7 +119,7 @@ class Select_HKeyOrdered extends Operator
     @Override
     public List<Operator> getInputOperators()
     {
-        List<Operator> result = new ArrayList<Operator>(1);
+        List<Operator> result = new ArrayList<>(1);
         result.add(inputOperator);
         return result;
     }
@@ -328,7 +328,7 @@ class Select_HKeyOrdered extends Operator
         // Object state
 
         private final Cursor input;
-        private final ShareHolder<Row> selectedRow = new ShareHolder<Row>(); // The last input row with type = predicateRowType.
+        private final ShareHolder<Row> selectedRow = new ShareHolder<>(); // The last input row with type = predicateRowType.
         private final ExpressionEvaluation evaluation;
         private final TEvaluatableExpression pEvaluation;
         private boolean idle = true;

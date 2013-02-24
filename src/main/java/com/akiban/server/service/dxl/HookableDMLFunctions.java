@@ -314,12 +314,12 @@ public final class HookableDMLFunctions implements DMLFunctions {
         }
     }
 
-    @Override
-    public void deleteRow(Session session, NewRow row) {
+    @Override 
+    public void deleteRow(Session session, NewRow row, boolean cascadeDelete) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.DELETE_ROW);
-            delegate.deleteRow(session, row);
+            delegate.deleteRow(session, row, cascadeDelete);
         } catch (RuntimeException t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.DELETE_ROW, t);

@@ -30,17 +30,74 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+import com.akiban.sql.embedded.JDBCConnection;
+
 public class DirectContextImpl implements DirectContext {
     public static final String SCHEMA_NAME = "test";
     public static final String CONNECTION_URL = "jdbc:default:connection";
-
-    public Connection getConnection() {
-        try {
-            return DriverManager.getConnection(CONNECTION_URL, SCHEMA_NAME, "");
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
+    
+    private class ConnectionHolder {
+        private Connection connection;
+        private ClassLoader contextClassLoader;
+        
+        private Connection getConnection() {
+            if (connection == null) {
+                try {
+                    connection = DriverManager.getConnection(CONNECTION_URL, SCHEMA_NAME, "");
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    throw new RuntimeException(e);
+                }
+            }
+            return connection;
+        }
+        
+        private void enter() {
+            contextClassLoader = Thread.currentThread().getContextClassLoader();
+            Thread.currentThread().setContextClassLoader(classLoader);
+        }
+        
+        private void leave() {
+            try {
+            if (connection != null) {
+                JDBCConnection c =  ((JDBCConnection)connection);
+                if (c.isTransactionActive()) {
+                    c.rollbackTransaction();
+                }
+            }
+            } finally {
+                Thread.currentThread().setContextClassLoader(contextClassLoader);
+            }
         }
     }
+    
+    private final DirectClassLoader classLoader;
+    
+    private final ThreadLocal<ConnectionHolder> connectionThreadLocal = new ThreadLocal<ConnectionHolder>() {
+        
+        @Override
+        protected ConnectionHolder initialValue() {
+            return new ConnectionHolder();
+        }
+    };
+    
+    public DirectContextImpl(final DirectClassLoader dcl) {
+        this.classLoader = dcl;
+    }
 
+    public Connection getConnection() {
+        return connectionThreadLocal.get().getConnection();
+    }
+    
+    public void enter() {
+        connectionThreadLocal.get().enter();
+    }
+    
+    public void leave() {
+        connectionThreadLocal.get().leave();
+    }
+
+    public DirectClassLoader getClassLoader() {
+        return classLoader;
+    }
 }

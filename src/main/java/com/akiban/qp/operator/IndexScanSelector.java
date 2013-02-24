@@ -154,7 +154,7 @@ public abstract class IndexScanSelector {
 
     private static IndexScanSelector create(GroupIndex index, SelectorCreationPolicy policy) {
         UserTable giLeaf = index.leafMostTable();
-        List<UserTable> requiredTables = new ArrayList<UserTable>(giLeaf.getDepth());
+        List<UserTable> requiredTables = new ArrayList<>(giLeaf.getDepth());
         for(UserTable table = giLeaf, end = index.rootMostTable().parentTable();
             table != null && !table.equals(end);
             table = table.parentTable()

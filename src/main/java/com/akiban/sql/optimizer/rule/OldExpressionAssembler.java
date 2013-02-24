@@ -87,7 +87,7 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
         List<Expression> arguments = 
             assembleExpressions(argumentNodes, columnContext, subqueryAssembler);
         int nargs = arguments.size();
-        List<ExpressionType> types = new ArrayList<ExpressionType>(nargs + 1);
+        List<ExpressionType> types = new ArrayList<>(nargs + 1);
         for (int i = 0; i < nargs; i++) {
             types.add(TypesTranslation.toExpressionType(argumentNodes.get(i).getSQLtype()));
         }

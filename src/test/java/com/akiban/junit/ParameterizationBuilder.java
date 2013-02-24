@@ -140,7 +140,7 @@ public final class ParameterizationBuilder
             throw new IllegalArgumentException("odd number of arguments");
         }
 
-        List<Parameterization> product = new LinkedList<Parameterization>();
+        List<Parameterization> product = new LinkedList<>();
         for (Parameterization param : list)
         {
             Object[] origArgs = param.getArguments();

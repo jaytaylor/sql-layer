@@ -117,7 +117,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
             preptimeValues = fexpr.getPreptimeValues();
         }
         else if (functionNode instanceof BooleanOperationExpression) {
-            List<TPreptimeValue> inputPreptimeValues = new ArrayList<TPreptimeValue>(argumentNodes.size());
+            List<TPreptimeValue> inputPreptimeValues = new ArrayList<>(argumentNodes.size());
             for (ExpressionNode argument : argumentNodes) {
                 inputPreptimeValues.add(argument.getPreptimeValue());
             }
@@ -261,8 +261,8 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     public Operator assembleAggregates(Operator inputOperator, RowType rowType, int nkeys, AggregateSource aggregateSource) {
         List<ResolvableExpression<TValidatedAggregator>> aggregates = aggregateSource.getResolved();
         int naggrs = aggregates.size();
-        List<TAggregator> aggregators = new ArrayList<TAggregator>(naggrs);
-        List<TInstance> outputInstances = new ArrayList<TInstance>(naggrs);
+        List<TAggregator> aggregators = new ArrayList<>(naggrs);
+        List<TInstance> outputInstances = new ArrayList<>(naggrs);
         for (int i = 0; i < naggrs; ++i) {
             ResolvableExpression<TValidatedAggregator> aggr = aggregates.get(i);
             aggregators.add(aggr.getResolved());

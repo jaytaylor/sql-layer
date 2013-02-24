@@ -1,0 +1,1 @@
+UPDATE test.customers SET first_name='Billy', last_name='Bob' WHERE cid=1

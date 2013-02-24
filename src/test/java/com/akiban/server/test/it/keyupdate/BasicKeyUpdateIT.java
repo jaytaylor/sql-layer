@@ -230,7 +230,7 @@ public final class BasicKeyUpdateIT extends ITBase {
 
     ) throws InvalidOperationException
     {
-        Set<Integer> sizes = new HashSet<Integer>();
+        Set<Integer> sizes = new HashSet<>();
         sizes.add( initialRows.size() );
         sizes.add( initialRowsByName.size() );
         sizes.add( endRows.size() );

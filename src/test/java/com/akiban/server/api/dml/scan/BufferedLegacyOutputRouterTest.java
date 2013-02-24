@@ -43,7 +43,7 @@ public final class BufferedLegacyOutputRouterTest {
     private final static int bytesPerInt = Integer.SIZE / 8;
 
     private static class IntegersSeeingHandler implements BufferedLegacyOutputRouter.Handler {
-        private final List<Integer> integers = new ArrayList<Integer>();
+        private final List<Integer> integers = new ArrayList<>();
 
         @Override
         public void handleRow(byte[] bytes, int offset, int length) {

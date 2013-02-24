@@ -119,8 +119,8 @@ public class AISMerge {
     /** Create a new AISMerge to be used for modifying a table. */
     public static AISMerge newForModifyTable(NameGenerator generator, AkibanInformationSchema sourceAIS,
                                              Collection<ChangedTableDescription> alteredTables) {
-        List<JoinChange> changedJoins = new ArrayList<JoinChange>();
-        Map<IndexName,IndexInfo> indexesToFix = new HashMap<IndexName,IndexInfo>();
+        List<JoinChange> changedJoins = new ArrayList<>();
+        Map<IndexName,IndexInfo> indexesToFix = new HashMap<>();
         AkibanInformationSchema targetAIS = copyAISForModify(sourceAIS, indexesToFix, changedJoins, alteredTables);
         return new AISMerge(generator, targetAIS, null, MergeType.MODIFY_TABLE, changedJoins, indexesToFix);
     }
@@ -150,9 +150,9 @@ public class AISMerge {
                                                             final List<JoinChange> joinsToFix,
                                                             Collection<ChangedTableDescription> changedTables)
     {
-        final Set<Sequence> excludedSequences = new HashSet<Sequence>();
-        final Set<Group> excludedGroups = new HashSet<Group>();
-        final Map<TableName,UserTable> filteredTables = new HashMap<TableName,UserTable>();
+        final Set<Sequence> excludedSequences = new HashSet<>();
+        final Set<Group> excludedGroups = new HashSet<>();
+        final Map<TableName,UserTable> filteredTables = new HashMap<>();
         for(ChangedTableDescription desc : changedTables) {
             // Copy tree names and IDs for pre-existing table and it's indexes
             UserTable oldTable = oldAIS.getUserTable(desc.getOldName());
@@ -468,6 +468,7 @@ public class AISMerge {
         targetTable.setEngine(table.getEngine());
         targetTable.setCharsetAndCollation(table.getCharsetAndCollation());
         targetTable.setPendingOSC(table.getPendingOSC());
+        targetTable.setUuid(table.getUuid());
         
         // columns
         for (Column column : table.getColumns()) {
@@ -481,6 +482,7 @@ public class AISMerge {
                     column.getCharsetAndCollation().collation(),
                     column.getDefaultValue());
             Column newColumn = targetTable.getColumn(column.getPosition());
+            newColumn.setUuid(column.getUuid());
             // if an auto-increment column, set the starting value. 
             if (column.getInitialAutoIncrementValue() != null) {
                 newColumn.setInitialAutoIncrementValue(column.getInitialAutoIncrementValue());
@@ -603,10 +605,10 @@ public class AISMerge {
     public static void copyView(AkibanInformationSchema newAIS,
                                 View oldView) {
         Map<TableName,Collection<String>> newReferences = 
-            new HashMap<TableName,Collection<String>>();
+            new HashMap<>();
         for (Map.Entry<TableName,Collection<String>> entry : oldView.getTableColumnReferences().entrySet()) {
             newReferences.put(entry.getKey(),
-                              new HashSet<String>(entry.getValue()));
+                              new HashSet<>(entry.getValue()));
         }
         View newView = View.create(newAIS,
                                    oldView.getName().getSchemaName(),

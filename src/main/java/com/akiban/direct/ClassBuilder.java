@@ -113,9 +113,12 @@ public abstract class ClassBuilder {
         ClassPool pool = new ClassPool(true);
         ClassObjectWriter helper = new ClassObjectWriter(pool, PACKAGE, schema);
         String scn = schemaClassName(schema);
+        Map<Integer, CtClass> implClassMap = new TreeMap<Integer, CtClass>();
+
         helper.startClass(scn, true, null, null, IMPORTS);
         for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
             helper.generateInterfaceClass(table, scn);
+            implClassMap.put(-table.getTableId(), helper.getCurrentClass());
         }
         helper.end();
 
@@ -123,7 +126,6 @@ public abstract class ClassBuilder {
          * Precompile the implementation classes
          */
 
-        Map<Integer, CtClass> implClassMap = new TreeMap<Integer, CtClass>();
         for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
             helper.generateImplementationClass(table, schema);
             implClassMap.put(table.getTableId(), helper.getCurrentClass());

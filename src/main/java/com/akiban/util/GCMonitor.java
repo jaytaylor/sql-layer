@@ -65,7 +65,7 @@ public class GCMonitor extends Thread {
 
     private final int interval;
     private final int logThreshold;
-    private final List<GCInfo> gcInfo = new ArrayList<GCInfo>();
+    private final List<GCInfo> gcInfo = new ArrayList<>();
     private final MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
     private volatile boolean running;
 

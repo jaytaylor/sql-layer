@@ -206,7 +206,7 @@ public final class PersistitValuePValueSource implements PValueSource {
     private static final Map<Class<?>,PUnderlying> classesToUnderlying = createTranslationMap();
 
     private static Map<Class<?>, PUnderlying> createTranslationMap() {
-        Map<Class<?>,PUnderlying> map = new HashMap<Class<?>, PUnderlying>(PUnderlying.values().length);
+        Map<Class<?>,PUnderlying> map = new HashMap<>(PUnderlying.values().length);
         map.put(boolean.class, PUnderlying.BOOL);
         map.put(byte.class, PUnderlying.INT_8);
         map.put(short.class, PUnderlying.INT_16);

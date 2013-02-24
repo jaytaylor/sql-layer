@@ -262,7 +262,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
 
         builder = AISBBasedBuilder.create();
         builder.userTable(cName).colLong("c1", true).colLong("c2", true).colLong("c3", true).colLong("c4", true).key("c4", "c4");
-        List<TableChange> changes = new ArrayList<TableChange>();
+        List<TableChange> changes = new ArrayList<>();
         changes.add(TableChange.createAdd("c4"));
 
         ddl().alterTable(session(), cName, builder.unvalidatedAIS().getUserTable(cName), changes, changes, queryContext());
@@ -507,7 +507,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         builder.groupingIsComplete();
         UserTable newTable = builder.akibanInformationSchema().getUserTable(SCHEMA, "c");
 
-        List<TableChange> changes = new ArrayList<TableChange>();
+        List<TableChange> changes = new ArrayList<>();
         changes.add(TableChange.createAdd("c5"));
         changes.add(TableChange.createDrop("c2"));
         changes.add(TableChange.createModify("c3", "c3"));
@@ -583,7 +583,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         builder.index(SCHEMA, "c", "foo", false, Index.KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, "c", "foo", "c2", 0, true, null);
 
-        List<TableChange> changes = new ArrayList<TableChange>();
+        List<TableChange> changes = new ArrayList<>();
         changes.add(TableChange.createDrop("foo"));
         changes.add(TableChange.createAdd("foo"));
 
@@ -617,7 +617,7 @@ public class AlterTableBasicIT extends AlterTableITBase {
         builder.indexColumn(SCHEMA, "c", "foo", "c2", 0, true, null);
         builder.indexColumn(SCHEMA, "c", "foo", "c1", 1, true, null);
 
-        List<TableChange> changes = new ArrayList<TableChange>();
+        List<TableChange> changes = new ArrayList<>();
         changes.add(TableChange.createModify("foo", "foo"));
 
         ddl().alterTable(session(), new TableName(SCHEMA, "c"), table, NO_CHANGES, changes, queryContext());
@@ -647,10 +647,10 @@ public class AlterTableBasicIT extends AlterTableITBase {
         builder.index(SCHEMA, "o", "y", false, Index.KEY_CONSTRAINT);
         builder.indexColumn(SCHEMA, "o", "y", "cid", 0, true, null);
 
-        List<TableChange> columnChanges = new ArrayList<TableChange>();
+        List<TableChange> columnChanges = new ArrayList<>();
         columnChanges.add(TableChange.createDrop("o1"));
         columnChanges.add(TableChange.createAdd("o1"));
-        List<TableChange> indexChanges = new ArrayList<TableChange>();
+        List<TableChange> indexChanges = new ArrayList<>();
         indexChanges.add(TableChange.createAdd("x"));
         indexChanges.add(TableChange.createAdd("y"));
 

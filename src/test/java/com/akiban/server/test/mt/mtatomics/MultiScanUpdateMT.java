@@ -159,7 +159,7 @@ public final class MultiScanUpdateMT extends MultiScanUpdateIT {
 
     // object state
 
-    private final BlockingQueue<UpdateTuple> updateQueue = new ArrayBlockingQueue<UpdateTuple>(1);
-    private final BlockingQueue<Throwable> updateExceptions = new ArrayBlockingQueue<Throwable>(1);
+    private final BlockingQueue<UpdateTuple> updateQueue = new ArrayBlockingQueue<>(1);
+    private final BlockingQueue<Throwable> updateExceptions = new ArrayBlockingQueue<>(1);
     private Thread updateThread;
 }

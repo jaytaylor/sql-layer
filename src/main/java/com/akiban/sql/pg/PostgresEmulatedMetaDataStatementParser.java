@@ -60,7 +60,7 @@ public class PostgresEmulatedMetaDataStatementParser implements PostgresStatemen
                                    String sql, int[] paramTypes)  {
         if (!possiblePattern.matcher(sql).find())
             return null;
-        List<String> groups = new ArrayList<String>();
+        List<String> groups = new ArrayList<>();
         for (Query query : Query.values()) {
             if (query.matches(sql, groups)) {
                 logger.debug("Emulated: {}{}", query, groups.subList(1, groups.size()));

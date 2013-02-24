@@ -45,7 +45,7 @@ public class NamedParamsTestBase extends TestBase
 
     /** Given method args whose first one is caseName, make named parameterizations. */
     public static Collection<Parameterization> namedCases(Collection<Object[]> margs) {
-        Collection<Parameterization> result = new ArrayList<Parameterization>(margs.size());
+        Collection<Parameterization> result = new ArrayList<>(margs.size());
         for (Object[] args : margs) {
             String caseName = (String)args[0];
             result.add(Parameterization.create(caseName, args));

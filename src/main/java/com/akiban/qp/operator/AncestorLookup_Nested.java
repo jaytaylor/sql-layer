@@ -161,7 +161,7 @@ class AncestorLookup_Nested extends Operator
         this.rowType = rowType;
         this.inputBindingPosition = inputBindingPosition;
         // Sort ancestor types by depth
-        this.ancestors = new ArrayList<UserTable>(ancestorTypes.size());
+        this.ancestors = new ArrayList<>(ancestorTypes.size());
         for (UserTableRowType ancestorType : ancestorTypes) {
             this.ancestors.add(ancestorType.userTable());
         }

@@ -116,7 +116,7 @@ class HKeyUnion_Ordered extends Operator
     @Override
     public List<Operator> getInputOperators()
     {
-        List<Operator> result = new ArrayList<Operator>(2);
+        List<Operator> result = new ArrayList<>(2);
         result.add(left);
         result.add(right);
         return result;
@@ -324,7 +324,7 @@ class HKeyUnion_Ordered extends Operator
             super(context);
             leftInput = left.cursor(context);
             rightInput = right.cursor(context);
-            hKeyCache = new HKeyCache<HKey>(context.getStore());
+            hKeyCache = new HKeyCache<>(context.getStore());
         }
         
         // For use by this class
@@ -377,8 +377,8 @@ class HKeyUnion_Ordered extends Operator
 
         private final Cursor leftInput;
         private final Cursor rightInput;
-        private final ShareHolder<Row> leftRow = new ShareHolder<Row>();
-        private final ShareHolder<Row> rightRow = new ShareHolder<Row>();
+        private final ShareHolder<Row> leftRow = new ShareHolder<>();
+        private final ShareHolder<Row> rightRow = new ShareHolder<>();
         private final HKeyCache<HKey> hKeyCache;
         private HKey previousHKey;
         private boolean closed = true;

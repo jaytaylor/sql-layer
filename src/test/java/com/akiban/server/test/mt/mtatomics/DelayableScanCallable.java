@@ -142,7 +142,7 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
         };
         ScanAllRequest request = new ScanAllRequest(
                 tableId,
-                new HashSet<Integer>(Arrays.asList(0, 1)),
+                new HashSet<>(Arrays.asList(0, 1)),
                 indexId,
                 EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END),
                 ScanLimit.NONE

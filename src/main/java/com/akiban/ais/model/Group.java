@@ -54,7 +54,7 @@ public class Group implements Traversable, TreeLink
     private Group(TableName name)
     {
         this.name = name;
-        this.indexMap = new HashMap<String, GroupIndex>();
+        this.indexMap = new HashMap<>();
     }
 
     @Override
@@ -189,7 +189,7 @@ public class Group implements Traversable, TreeLink
 
     private final TableName name;
     private final Map<String, GroupIndex> indexMap;
-    private final AtomicReference<TreeCache> treeCache = new AtomicReference<TreeCache>();
+    private final AtomicReference<TreeCache> treeCache = new AtomicReference<>();
     private String treeName;
     private UserTable rootTable;
 }

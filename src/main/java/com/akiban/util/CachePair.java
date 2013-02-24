@@ -62,7 +62,7 @@ public final class CachePair<K,V> {
     // class interface
 
     public static <K,V> CachePair<K,V> using(CachedValueProvider<? super K, ? extends V> valueProvider) {
-        return new CachePair<K, V>(valueProvider);
+        return new CachePair<>(valueProvider);
     }
 
     // for use by this class

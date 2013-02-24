@@ -129,7 +129,7 @@ public class MultiCursor implements Cursor
 
     // Object state
 
-    private final List<Cursor> cursors = new ArrayList<Cursor>();
+    private final List<Cursor> cursors = new ArrayList<>();
     private boolean sealed = false;
     private Iterator<Cursor> cursorIterator;
     private Cursor current;

@@ -68,10 +68,13 @@ public class DirectClassLoader extends URLClassLoader {
     }
 
     @Override
-    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+    protected Class<?> loadClass(String genericName, boolean resolve) throws ClassNotFoundException {
         /*
          * Not a parallel ClassLoader until necessary
          */
+        int p = genericName.indexOf('<');
+        String name = p == -1 ? genericName : genericName.substring(0, p);
+        
         synchronized (this) {
             Class<?> cl = findLoadedClass(name);
             if (cl == null && name.startsWith("java")) {

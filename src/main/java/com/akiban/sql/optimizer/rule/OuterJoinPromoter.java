@@ -48,7 +48,7 @@ public class OuterJoinPromoter extends BaseRule
     }
 
     static class WhereFinder implements PlanVisitor, ExpressionVisitor {
-        List<Select> result = new ArrayList<Select>();
+        List<Select> result = new ArrayList<>();
 
         public List<Select> find(PlanNode root) {
             root.accept(this);
@@ -101,8 +101,8 @@ public class OuterJoinPromoter extends BaseRule
     }
 
     static class RequiredSources implements ExpressionVisitor {
-        private Set<ColumnSource> required = new HashSet<ColumnSource>();
-        private Deque<ExpressionNode> stack = new ArrayDeque<ExpressionNode>();
+        private Set<ColumnSource> required = new HashSet<>();
+        private Deque<ExpressionNode> stack = new ArrayDeque<>();
         
         public RequiredSources() {
         }

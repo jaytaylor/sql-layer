@@ -176,7 +176,7 @@ public final class ServiceBindingsBuilderTest {
     }
 
     private static List<ServiceBinding> sorted(Collection<ServiceBinding> bindings) {
-        List<ServiceBinding> sortedList = new ArrayList<ServiceBinding>();
+        List<ServiceBinding> sortedList = new ArrayList<>();
         for (ServiceBinding binding : bindings) {
             sortedList.add(binding );
         }

@@ -41,8 +41,8 @@ class BidirectionalMap
 
     public BidirectionalMap (int size, float lf)
     {
-        map2Int = new EnumMap<AkType,Integer>(AkType.class);
-        map2Ak = new HashMap<Integer, AkType>(size, lf);
+        map2Int = new EnumMap<>(AkType.class);
+        map2Ak = new HashMap<>(size, lf);
     }
 
     public void put (AkType type, int k)

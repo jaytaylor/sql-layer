@@ -77,10 +77,10 @@ public class PostgresExecuteStatement extends PostgresBaseCursorStatement
         this.name = execute.getName();
         FromObjectValueSource fromObject = null;
         if (Types3Switch.ON) {
-            paramPValues = new ArrayList<TPreptimeValue>();
+            paramPValues = new ArrayList<>();
         }
         else {
-            paramValues = new ArrayList<ValueSource>();
+            paramValues = new ArrayList<>();
             fromObject = new FromObjectValueSource();
         }
         for (ValueNode param : execute.getParameterList()) {

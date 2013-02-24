@@ -56,7 +56,7 @@ public class Direct {
     
     public static void unregisterDirectObjectClasses() {
         classMap.clear();
-        instanceMap.set(null);
+        instanceMap.remove();
         
     }
 

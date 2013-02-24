@@ -316,7 +316,7 @@ public class InConditionReverser extends BaseRule
 
     static class ConditionFinder implements PlanVisitor, ExpressionVisitor {
         List<TopLevelSubqueryCondition> result = 
-            new ArrayList<TopLevelSubqueryCondition>();
+            new ArrayList<>();
 
         public List<TopLevelSubqueryCondition> find(PlanNode root) {
             root.accept(this);
@@ -370,7 +370,7 @@ public class InConditionReverser extends BaseRule
     }
 
     static class SubqueryBoundTables  implements PlanVisitor, ExpressionVisitor {
-        private Set<ColumnSource> insideTables = new HashSet<ColumnSource>();
+        private Set<ColumnSource> insideTables = new HashSet<>();
 
         private static enum State { TABLES, FREE, ONLY };
         private State state;

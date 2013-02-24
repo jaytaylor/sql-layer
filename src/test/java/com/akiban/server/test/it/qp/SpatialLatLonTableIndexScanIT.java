@@ -156,7 +156,8 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                                                             before(id),
                                                             after(id),
                                                              lats.get(id),
-                                                            lons.get(id)));
+                                                            lons.get(id)),
+                                    false);
                 }
             }
         }
@@ -331,7 +332,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                 lonHi = swap;
             }
             // Get the right answer
-            Set<Integer> expected = new HashSet<Integer>();
+            Set<Integer> expected = new HashSet<>();
             for (int id = 0; id < lats.size(); id++) {
                 BigDecimal lat = lats.get(id);
                 BigDecimal lon = lons.get(id);
@@ -343,7 +344,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                 }
             }
             // Get the query result using the (lat, lon) index
-            Set<Integer> actual = new HashSet<Integer>();
+            Set<Integer> actual = new HashSet<>();
             IndexBound lowerLeft = new IndexBound(row(latLonIndexRowType, latLo, lonLo),
                                                   new SetColumnSelector(0, 1));
             IndexBound upperRight = new IndexBound(row(latLonIndexRowType, latHi, lonHi),
@@ -394,7 +395,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                 lonHi = swap;
             }
             // Get the right answer
-            Set<Integer> expected = new HashSet<Integer>();
+            Set<Integer> expected = new HashSet<>();
             for (int id = 0; id < lats.size(); id++) {
                 BigDecimal lat = lats.get(id);
                 BigDecimal lon = lons.get(id);
@@ -406,7 +407,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                 }
             }
             // Get the query result
-            Set<Integer> actual = new HashSet<Integer>();
+            Set<Integer> actual = new HashSet<>();
             IndexBound lowerLeft = new IndexBound(row(latLonIndexRowType, latLo, lonLo),
                                                   new SetColumnSelector(0, 1));
             IndexBound upperRight = new IndexBound(row(latLonIndexRowType, latHi, lonHi),
@@ -458,7 +459,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
             // before = id mod 3, so try before = 0, 1, 2
             for (int before = 0; before <= 2; before++) {
                 // Get the right answer
-                Set<Integer> expected = new HashSet<Integer>();
+                Set<Integer> expected = new HashSet<>();
                 for (int id = 0; id < lats.size(); id++) {
                     BigDecimal lat = lats.get(id);
                     BigDecimal lon = lons.get(id);
@@ -471,7 +472,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                     }
                 }
                 // Get the query result using the (before, lat, lon) index
-                Set<Integer> actual = new HashSet<Integer>();
+                Set<Integer> actual = new HashSet<>();
                 IndexBound lowerLeft = new IndexBound(row(beforeLatLonIndexRowType, before, latLo, lonLo),
                                                       new SetColumnSelector(0, 1, 2));
                 IndexBound upperRight = new IndexBound(row(beforeLatLonIndexRowType, before, latHi, lonHi),
@@ -549,7 +550,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
             long zStart = space.shuffle(queryLat, queryLon);
             for (int before = 0; before <= 2; before++) {
                 // Expected
-                SortedMap<Long, Integer> distanceToId = new TreeMap<Long, Integer>();
+                SortedMap<Long, Integer> distanceToId = new TreeMap<>();
                 for (Map.Entry<Long, Integer> entry : zToId.entrySet()) {
                     long z = entry.getKey();
                     int id = entry.getValue();
@@ -571,7 +572,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                 cursor.open();
                 Row row;
                 long previousDistance = Long.MIN_VALUE;
-                Collection<Integer> actualIdByDistance = new ArrayList<Integer>();
+                Collection<Integer> actualIdByDistance = new ArrayList<>();
                 while ((row = cursor.next()) != null) {
                     assertSame(beforeLatLonIndexRowType.physicalRowType(), row.rowType());
                     int beforeActual = getLong(row, 0).intValue();
@@ -591,8 +592,8 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
                     previousDistance = distance;
                     actualIdByDistance.add(id);
                 }
-                assertEquals(new ArrayList<Integer>(expectedIdByDistance),
-                             new ArrayList<Integer>(actualIdByDistance));
+                assertEquals(new ArrayList<>(expectedIdByDistance),
+                             new ArrayList<>(actualIdByDistance));
             }
         }
     }
@@ -690,7 +691,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
         BigDecimal lonLo = new BigDecimal(40);
         BigDecimal lonHi = new BigDecimal(90);
         // Get the right answer
-        Set<Integer> expected = new HashSet<Integer>();
+        Set<Integer> expected = new HashSet<>();
         for (int id = 0; id < lats.size(); id++) {
             BigDecimal lat = lats.get(id);
             BigDecimal lon = lons.get(id);
@@ -702,7 +703,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
             }
         }
         // Get the query result
-        Set<Integer> actual = new HashSet<Integer>();
+        Set<Integer> actual = new HashSet<>();
         IndexBound lowerLeft = new IndexBound(row(latLonIndexRowType, latLo, lonLo),
                                               new SetColumnSelector(0, 1));
         IndexBound upperRight = new IndexBound(row(latLonIndexRowType, latHi, lonHi),
@@ -735,7 +736,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
         BigDecimal lonLo = new BigDecimal(160);
         BigDecimal lonHi = new BigDecimal(190);
         // Get the right answer
-        Set<Integer> expected = new HashSet<Integer>();
+        Set<Integer> expected = new HashSet<>();
         for (int id = 0; id < lats.size(); id++) {
             BigDecimal lat = lats.get(id);
             BigDecimal lon = lons.get(id);
@@ -747,7 +748,7 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
             }
         }
         // Get the query result
-        Set<Integer> actual = new HashSet<Integer>();
+        Set<Integer> actual = new HashSet<>();
         IndexBound lowerLeft = new IndexBound(row(latLonIndexRowType, latLo, lonLo),
                                               new SetColumnSelector(0, 1));
         IndexBound upperRight = new IndexBound(row(latLonIndexRowType, latHi, lonHi),
@@ -886,9 +887,9 @@ public class SpatialLatLonTableIndexScanIT extends OperatorITBase
     private IndexRowType latLonAfterIndexRowType;
     private IndexRowType beforeLatLonAfterIndexRowType;
     private SpaceLatLon space;
-    private Map<Long, Integer> zToId = new TreeMap<Long, Integer>();
-    List<BigDecimal> lats = new ArrayList<BigDecimal>(); // indexed by id
-    List<BigDecimal> lons = new ArrayList<BigDecimal>(); // indexed by id
-    List<Long> zs = new ArrayList<Long>(); // indexed by id
+    private Map<Long, Integer> zToId = new TreeMap<>();
+    List<BigDecimal> lats = new ArrayList<>(); // indexed by id
+    List<BigDecimal> lons = new ArrayList<>(); // indexed by id
+    List<Long> zs = new ArrayList<>(); // indexed by id
     Random random = new Random(123456);
 }

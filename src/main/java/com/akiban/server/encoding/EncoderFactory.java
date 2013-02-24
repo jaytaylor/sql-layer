@@ -86,7 +86,7 @@ public final class EncoderFactory {
     }
 
     private static Map<String, Encoding> initializeEncodingMap() {
-        final Map<String,Encoding> tmp = new HashMap<String, Encoding>();
+        final Map<String,Encoding> tmp = new HashMap<>();
         for (Field field : EncoderFactory.class.getDeclaredFields()) {
             final int m = field.getModifiers();
             if (Modifier.isFinal(m) && Modifier.isStatic(m) && Modifier.isPublic(m) && Encoding.class.isAssignableFrom(field.getType())) {
@@ -126,7 +126,7 @@ public final class EncoderFactory {
     public static Encoding charEncoding(String charsetName) {
         synchronized (ENCODING_MAP_LOCK) {
             if (charEncodingMap == null)
-                charEncodingMap = new HashMap<String,Encoding>();
+                charEncodingMap = new HashMap<>();
             Encoding encoding = encodingMap.get(charsetName);
             if (encoding == null) {
                 try {

@@ -49,16 +49,16 @@ public class ClassObjectWriter extends ClassBuilder {
     public void startClass(String name, boolean isInterface, String extendsClass, String[] implementsClasses,
             String[] imports) throws CannotCompileException, NotFoundException {
         if (isInterface) {
-            currentCtClass = classPool.makeInterface(name);
+            currentCtClass = classPool.makeInterface(simpleName(name));
         } else {
-            currentCtClass = classPool.makeClass(name);
+            currentCtClass = classPool.makeClass(simpleName(name));
         }
         if (extendsClass != null) {
-            currentCtClass.setSuperclass(classPool.get(extendsClass));
+            currentCtClass.setSuperclass(classPool.get(simpleName(extendsClass)));
         }
         if (implementsClasses != null) {
             for (final String interfaceClassName : implementsClasses) {
-                final CtClass interfaceClass = classPool.get(interfaceClassName);
+                final CtClass interfaceClass = classPool.get(simpleName(interfaceClassName));
                 assert interfaceClass.isInterface();
                 currentCtClass.addInterface(interfaceClass);
             }
@@ -72,10 +72,10 @@ public class ClassObjectWriter extends ClassBuilder {
             if (currentCtClass.isInterface()) {
                 assert body == null;
             }
-            CtClass returnClass = getCtClass(returnType);
+            CtClass returnClass = getCtClass(simpleName(returnType));
             CtClass[] parameters = new CtClass[argumentTypes.length];
             for (int i = 0; i < argumentTypes.length; i++) {
-                parameters[i] = getCtClass(argumentTypes[i]);
+                parameters[i] = getCtClass(simpleName(argumentTypes[i]));
             }
             CtMethod method = new CtMethod(returnClass, name, parameters, currentCtClass);
             if (body != null) {
@@ -139,4 +139,8 @@ public class ClassObjectWriter extends ClassBuilder {
         return c;
     }
 
+    private String simpleName(final String name) {
+        final int p = name.indexOf('<');
+        return p == -1 ? name : name.substring(0, p);
+    }
 }

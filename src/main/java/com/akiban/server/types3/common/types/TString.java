@@ -178,10 +178,15 @@ public abstract class TString extends TClass
     }
 
     @Override
+    public boolean attributeIsPhysical(int attributeIndex) {
+        return attributeIndex != StringAttribute.MAX_LENGTH.ordinal();
+    }
+
+    @Override
     public void attributeToString(int attributeIndex, long value, StringBuilder output) {
         StringAttribute attribute = StringAttribute.values()[attributeIndex];
         switch (attribute) {
-        case LENGTH:
+        case MAX_LENGTH:
             output.append(value);
             break;
         case CHARSET:
@@ -212,6 +217,40 @@ public abstract class TString extends TClass
         }
     }
 
+    @Override
+    public Object attributeToObject(int attributeIndex, int value) {
+        StringAttribute attribute = StringAttribute.values()[attributeIndex];
+        switch (attribute) {
+        case MAX_LENGTH:
+            return value;
+        case CHARSET:
+            StringFactory.Charset[] charsets = StringFactory.Charset.values();
+            if (value < 0 || value >= charsets.length) {
+                logger.warn("charset value out of range: {}", value);
+                return value;
+            }
+            else {
+                return charsets[value].name();
+            }
+        case COLLATION:
+            AkCollator collator = AkCollatorFactory.getAkCollator((int)value);
+            if (collator == null) {
+                if (value == StringFactory.NULL_COLLATION_ID) {
+                    return "NONE";
+                }
+                else {
+                    logger.warn("unknown collator for id " + value + " (" + ((int)value) + ')');
+                    return value;
+                }
+            }
+            else {
+                return collator.getName();
+            }
+        default:
+            throw new IllegalArgumentException("illegal attribute index: " + attributeIndex);
+        }
+    }
+
     public AkCollator getCollator(TInstance instance) {
         return AkCollatorFactory.getAkCollator((int)instance.attribute(StringAttribute.COLLATION));
     }
@@ -224,7 +263,7 @@ public abstract class TString extends TClass
     @Override
     protected DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
         return new DataTypeDescriptor(
-                typeId, instance.nullability(), instance.attribute(StringAttribute.LENGTH), StringAttribute.characterTypeAttributes(instance));
+                typeId, instance.nullability(), instance.attribute(StringAttribute.MAX_LENGTH), StringAttribute.characterTypeAttributes(instance));
     }
 
     @Override
@@ -259,7 +298,7 @@ public abstract class TString extends TClass
 
     @Override
     protected void validate(TInstance instance) {
-        int length = instance.attribute(StringAttribute.LENGTH);
+        int length = instance.attribute(StringAttribute.MAX_LENGTH);
         int charsetId = instance.attribute(StringAttribute.CHARSET);
         int collaitonid = instance.attribute(StringAttribute.COLLATION);
         // TODO
@@ -295,8 +334,8 @@ public abstract class TString extends TClass
             AkCollator collator = ExpressionTypes.mergeAkCollators(aAttrs, bAttrs);
             pickCollation = (collator == null) ? -1 : collator.getCollationId();
         }
-        int leftLen = left.attribute(StringAttribute.LENGTH);
-        int rightLen = right.attribute(StringAttribute.LENGTH);
+        int leftLen = left.attribute(StringAttribute.MAX_LENGTH);
+        int rightLen = right.attribute(StringAttribute.MAX_LENGTH);
         if (useRightLength) {
             pickLen = rightLen;
         }

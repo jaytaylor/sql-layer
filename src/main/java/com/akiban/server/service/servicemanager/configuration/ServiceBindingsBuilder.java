@@ -47,7 +47,7 @@ class ServiceBindingsBuilder {
 
     public Collection<ServiceBinding> getAllBindings(boolean strict) {
         markSectionEnd();
-        Collection<ServiceBinding> all = new ArrayList<ServiceBinding>(bindings.values());
+        Collection<ServiceBinding> all = new ArrayList<>(bindings.values());
         for (Iterator<ServiceBinding> iter = all.iterator(); iter.hasNext(); ) {
             ServiceBinding binding = iter.next();
             if (binding.isDirectlyRequired() && (binding.getImplementingClassName() == null)) {
@@ -145,16 +145,16 @@ class ServiceBindingsBuilder {
 
     // object state
     // invariant: key = bindings[key].getInterfaceName()
-    private final Map<String, ServiceBinding> bindings = new HashMap<String, ServiceBinding>();
+    private final Map<String, ServiceBinding> bindings = new HashMap<>();
 
     /**
      * This defines section requirements as a map of interface_name -> boolean. All interface names in this map
      * must be bound by the end of the current section; iff the entry's value is true, the binding must also be locked.
      * If we ever need to track more requirements, we should change the Boolean to an enum set.
      */
-    private final Map<String,Boolean> sectionRequirements = new HashMap<String, Boolean>();
+    private final Map<String,Boolean> sectionRequirements = new HashMap<>();
 
     /** Interfaces that ought to be run first (in order), as permitted
      * by dependencies. */
-    private final List<String> priorities = new ArrayList<String>();
+    private final List<String> priorities = new ArrayList<>();
 }

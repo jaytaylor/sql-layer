@@ -538,7 +538,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
     public void testFreeze()
     {
         RowType innerValuesRowType = schema.newValuesType(AkType.NULL);
-        List<BindableRow> innerValuesRows = new ArrayList<BindableRow>();
+        List<BindableRow> innerValuesRows = new ArrayList<>();
         innerValuesRows.add(BindableRow.of(innerValuesRowType, Collections.singletonList(literal(null)), null));
         Operator project = project_Default(valuesScan_Default(innerValuesRows, innerValuesRowType),
                                            innerValuesRowType,

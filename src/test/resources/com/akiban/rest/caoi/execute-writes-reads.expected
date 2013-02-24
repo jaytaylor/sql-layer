@@ -1,0 +1,44 @@
+{
+    "result_set": [
+        {
+            "update_count": 1
+        }
+    ],
+    "result_set_1": [
+        {
+            "update_count": 1
+        }
+    ],
+    "result_set_2": [
+        {
+            "update_count": 1
+        }
+    ],
+    "result_set_3": [
+        {
+            "update_count": 1
+        }
+    ],
+    "result_set_4": [
+        {
+            "cid": 5,
+            "first_name": "Sally",
+            "last_name": "Smith",
+            "test.orders": [
+                {
+                    "oid": 501,
+                    "cid": 5,
+                    "odate": "2011-03-03 00:00:00"
+                }
+            ],
+            "test.addresses": [
+                {
+                    "aid": 501,
+                    "cid": 5,
+                    "state": "WA",
+                    "city": "Seattle"
+                }
+            ]
+        }
+    ]
+}

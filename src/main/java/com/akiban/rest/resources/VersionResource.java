@@ -27,32 +27,44 @@
 package com.akiban.rest.resources;
 
 import com.akiban.ais.model.TableName;
-import com.akiban.server.service.restdml.RestDMLService;
-import com.google.inject.Inject;
+import com.akiban.rest.ResourceRequirements;
+import com.akiban.rest.RestResponseBuilder;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.PrintWriter;
+
+import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
+import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 
 /**
  * Easy access to the server version
  */
 @Path("/version")
 public class VersionResource {
-    private static final String SCHEMA_NAME = TableName.INFORMATION_SCHEMA;
-    private static final String TABLE_NAME = "server_instance_summary";
+    private static final TableName TABLE_NAME = new TableName(TableName.INFORMATION_SCHEMA, "server_instance_summary");
     private static final int DEPTH = 0;
 
-    @Inject
-    private RestDMLService restDMLService;
+    private final ResourceRequirements reqs;
+
+    public VersionResource(ResourceRequirements reqs) {
+        this.reqs = reqs;
+    }
 
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getVersion(@QueryParam("format") String format,
-                               @QueryParam("jsoncallback") String jsonp) throws Exception {
-        return restDMLService.getAllEntities(SCHEMA_NAME, TABLE_NAME, DEPTH);
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
+    public Response getVersion(@QueryParam(JSONP_ARG_NAME) String jsonp) {
+        return RestResponseBuilder
+                .forJsonp(jsonp)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        reqs.restDMLService.getAllEntities(writer, TABLE_NAME, DEPTH);
+                    }
+                })
+                .build();
     }
 }

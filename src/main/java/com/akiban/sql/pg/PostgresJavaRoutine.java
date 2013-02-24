@@ -242,7 +242,7 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
     }
 
     public static List<String> columnNames(Routine routine) {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         for (Parameter param : routine.getParameters()) {
             if (param.getDirection() == Parameter.Direction.IN) continue;
             String name = param.getName();
@@ -257,7 +257,7 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
     }
 
     public static List<PostgresType> columnTypes(Routine routine) {
-        List<PostgresType> result = new ArrayList<PostgresType>();
+        List<PostgresType> result = new ArrayList<>();
         for (Parameter param : routine.getParameters()) {
             if (param.getDirection() == Parameter.Direction.IN) continue;
             result.add(PostgresType.fromAIS(param));

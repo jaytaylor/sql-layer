@@ -113,7 +113,7 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public void deleteRow(Row oldRow, boolean usePValues) {
+    public void deleteRow(Row oldRow, boolean usePValues, boolean cascadeDelete) {
         throw new UnsupportedOperationException();
     }
 

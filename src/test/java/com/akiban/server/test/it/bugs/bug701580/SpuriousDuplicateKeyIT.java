@@ -91,8 +91,8 @@ public final class SpuriousDuplicateKeyIT extends ITBase {
             throws Exception {
         UserTable uTable = ddl().getAIS(session()).getUserTable("test", tableName);
 
-        Set<Integer> expectedUTableIds = new HashSet<Integer>();
-        Set<Integer> actualUTableIds = new HashSet<Integer>();
+        Set<Integer> expectedUTableIds = new HashSet<>();
+        Set<Integer> actualUTableIds = new HashSet<>();
         for (Index index : uTable.getIndexes()) {
             actualUTableIds.add(index.getIndexId());
             expectedUTableIds.add( expectedUTableIds.size() + startingAt );

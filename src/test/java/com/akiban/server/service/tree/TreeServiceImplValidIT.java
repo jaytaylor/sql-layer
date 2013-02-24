@@ -40,7 +40,7 @@ import static org.junit.Assert.assertTrue;
 public class TreeServiceImplValidIT extends ITBase {
     @Override
     protected Map<String, String> startupConfigProperties() {
-        final Map<String, String> properties = new HashMap<String, String>();
+        final Map<String, String> properties = new HashMap<>();
         properties.put("akserver.treespace.a",
                                     "drupal*:${datapath}/${schema}.v0,create,pageSize:${buffersize},"
                                     + "initialSize:10K,extensionSize:1K,maximumSize:10G");

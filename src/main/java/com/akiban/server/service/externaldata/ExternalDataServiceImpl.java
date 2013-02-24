@@ -45,6 +45,7 @@ import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.externaldata.JsonRowWriter.WriteTableRow;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
@@ -117,10 +118,11 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                             int depth,
                             boolean withTransaction,
                             Schema schema,
-                            Operator plan) throws IOException {
+                            Operator plan) {
         StoreAdapter adapter = getAdapter(session, table, schema);
         QueryContext queryContext = new SimpleQueryContext(adapter);
-        JsonRowWriter json = new JsonRowWriter(table, depth);
+        JsonRowWriter json = new JsonRowWriter(new TableRowTracker(table, depth));
+        WriteTableRow rowWriter = new WriteTableRow();
         AkibanAppender appender = AkibanAppender.of(writer);
         boolean transaction = false;
         Cursor cursor = null;
@@ -134,7 +136,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
             boolean begun = false;
 
             if (keys == null) {
-                begun = json.writeRows(cursor, appender, "\n");
+                begun = json.writeRows(cursor, appender, "\n", rowWriter);
             } else {
                 PValue pvalue = new PValue(MString.VARCHAR.instance(Integer.MAX_VALUE, false));
                 for (List<String> key : keys) {
@@ -143,7 +145,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                         pvalue.putString(akey, null);
                         queryContext.setPValue(i, pvalue);
                     }
-                    if (json.writeRows(cursor, appender, begun ? ",\n" : "\n"))
+                    if (json.writeRows(cursor, appender, begun ? ",\n" : "\n", rowWriter))
                         begun = true;
                 }
             }
@@ -167,8 +169,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     @Override
     public void dumpAllAsJson(Session session, PrintWriter writer,
                               String schemaName, String tableName,
-                              int depth, boolean withTransaction)
-            throws IOException {
+                              int depth, boolean withTransaction) {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
         UserTable table = getTable(ais, schemaName, tableName);
         logger.debug("Writing all of {}", table);
@@ -181,8 +182,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     public void dumpBranchAsJson(Session session, PrintWriter writer,
                                  String schemaName, String tableName, 
                                  List<List<String>> keys, int depth,
-                                 boolean withTransaction)
-            throws IOException {
+                                 boolean withTransaction) {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
         UserTable table = getTable(ais, schemaName, tableName);
         logger.debug("Writing from {}: {}", table, keys);

@@ -193,7 +193,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                 ddlFunctions.getTableName(session, request.getTableId())
         );
         final int colsCount = table.getColumns().size();
-        Set<Integer> allColumns = new HashSet<Integer>(colsCount);
+        Set<Integer> allColumns = new HashSet<>(colsCount);
         for (int i = 0; i < colsCount; ++i) {
             allColumns.add(i);
         }
@@ -352,7 +352,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         }
     }
 
-    private final BlockingQueue<PooledConverter> convertersPool = new LinkedBlockingDeque<PooledConverter>();
+    private final BlockingQueue<PooledConverter> convertersPool = new LinkedBlockingDeque<>();
 
     private PooledConverter getPooledConverter(Session session, RowOutput output, Set<Integer> columns) {
         PooledConverter converter = convertersPool.poll();
@@ -571,7 +571,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             return Collections.emptyList();
         }
 
-        List<NewRow> converted = new ArrayList<NewRow>(rowDatas.size());
+        List<NewRow> converted = new ArrayList<>(rowDatas.size());
         int lastRowDefId = -1;
         RowDef rowDef = null;
         for (RowData rowData : rowDatas) {
@@ -610,12 +610,12 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     }
 
     @Override
-    public void deleteRow(Session session, NewRow row)
+    public void deleteRow(Session session, NewRow row, boolean cascadeDelete)
     {
-        logger.trace("deleting a row");
+        logger.trace("deleting a row (cascade: {})", cascadeDelete);
         final RowData rowData = niceRowToRowData(row);
         try {
-            store().deleteRow(session, rowData);
+            store().deleteRow(session, rowData, true, cascadeDelete);
         } catch (PersistitException ex) {
             throw new PersistitAdapterException(ex);
         }
@@ -732,7 +732,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
      * @throws Exception 
      */
     private boolean canFastTruncate(Session session, UserTable userTable) {
-        List<UserTable> tableList = new ArrayList<UserTable>();
+        List<UserTable> tableList = new ArrayList<>();
         tableList.add(userTable.getGroup().getRoot());
         while(!tableList.isEmpty()) {
             UserTable table = tableList.remove(tableList.size() - 1);
@@ -771,7 +771,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         // (one reason is orphan row maintenance). Do so with a full table scan.
 
         // Store.deleteRow() requires all index columns to be in the passed RowData to properly clean everything up
-        Set<Integer> keyColumns = new HashSet<Integer>();
+        Set<Integer> keyColumns = new HashSet<>();
         for(Index index : utable.getIndexesIncludingInternal()) {
             for(IndexColumn col : index.getKeyColumns()) {
                 int pos = col.getColumn().getPosition();
@@ -786,7 +786,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             @Override
             public void handleRow(RowData rowData) {
                 rowWrapper.setRowData(rowData);
-                deleteRow(session, rowWrapper);
+                deleteRow(session, rowWrapper, false);
             }
 
             @Override

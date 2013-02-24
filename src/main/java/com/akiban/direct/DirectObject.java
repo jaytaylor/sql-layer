@@ -26,7 +26,10 @@
 
 package com.akiban.direct;
 
+
+
 import com.akiban.qp.row.Row;
+import com.akiban.sql.embedded.JDBCResultSet;
 
 /**
  * Prototype for what an Akiban Direct object might look like. 
@@ -36,7 +39,8 @@ import com.akiban.qp.row.Row;
  */
 public interface DirectObject {
 
-    void row(Row row);
+    void resultSet(JDBCResultSet rs);
+    
     Row row();
     
 }

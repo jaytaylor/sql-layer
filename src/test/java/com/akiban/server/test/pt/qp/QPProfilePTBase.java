@@ -70,7 +70,7 @@ public class QPProfilePTBase extends PTBase
     {
         UserTable userTable = userTable(userTableId);
         for (Index index : userTable.getIndexesIncludingInternal()) {
-            List<String> indexColumnNames = new ArrayList<String>();
+            List<String> indexColumnNames = new ArrayList<>();
             for (IndexColumn indexColumn : index.getKeyColumns()) {
                 indexColumnNames.add(indexColumn.getColumn().getName());
             }
@@ -119,7 +119,7 @@ public class QPProfilePTBase extends PTBase
 
     protected void compareRows(RowBase[] expected, Cursor cursor)
     {
-        List<RowBase> actualRows = new ArrayList<RowBase>(); // So that result is viewable in debugger
+        List<RowBase> actualRows = new ArrayList<>(); // So that result is viewable in debugger
         try {
             cursor.open();
             RowBase actualRow;
@@ -145,7 +145,7 @@ public class QPProfilePTBase extends PTBase
         try {
             cursor.open();
             count = 0;
-            List<RowBase> actualRows = new ArrayList<RowBase>(); // So that result is viewable in debugger
+            List<RowBase> actualRows = new ArrayList<>(); // So that result is viewable in debugger
             RowBase actualRow;
             while ((actualRow = cursor.next()) != null) {
                 assertEquals(expected[count], actualRow.hKey().toString());

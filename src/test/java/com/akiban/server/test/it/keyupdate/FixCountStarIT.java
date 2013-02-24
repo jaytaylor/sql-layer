@@ -135,7 +135,7 @@ public final class FixCountStarIT extends ITBase {
     }
 
     private static class IndexCheckBuilder {
-        private List<IndexCheckResult> results = new ArrayList<IndexCheckResult>();
+        private List<IndexCheckResult> results = new ArrayList<>();
 
         public IndexCheckBuilder add(Index index, long expectedCount, long sawCount, long verifiedCount) {
             if (index.isTableIndex())

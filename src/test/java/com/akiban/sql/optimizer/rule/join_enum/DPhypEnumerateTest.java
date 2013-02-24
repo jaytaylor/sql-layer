@@ -74,7 +74,7 @@ public class DPhypEnumerateTest extends OptimizerTestBase
 
     @TestParameters
     public static Collection<Parameterization> statements() throws Exception {
-        Collection<Object[]> result = new ArrayList<Object[]>();
+        Collection<Object[]> result = new ArrayList<>();
         File schemaFile = new File(RESOURCE_DIR, "schema.ddl");
         File rulesFile = new File(RESOURCE_DIR, "rules.yml");
         for (Object[] args : sqlAndExpected(RESOURCE_DIR)) {
@@ -156,7 +156,7 @@ public class DPhypEnumerateTest extends OptimizerTestBase
         public List<String> evaluateJoin(long s1, List<String> p1, long s2, List<String> p2, long s, List<String> existing, 
                                          JoinType joinType, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
             if (existing == null)
-                existing = new ArrayList<String>();
+                existing = new ArrayList<>();
             String jstr = " " + joinType + " JOIN ";
             StringBuilder cstr = new StringBuilder(" ON ");
             boolean first = true;

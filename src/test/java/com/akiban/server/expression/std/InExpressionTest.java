@@ -51,7 +51,7 @@ public final class InExpressionTest {
 
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params() {
-        List<Parameterization> params = new ArrayList<Parameterization>();
+        List<Parameterization> params = new ArrayList<>();
 
         addTo(params, lit(5), true, lit(3), lit(4), lit(5), exploding(AkType.VARCHAR));
         addTo(params, lit(5), false, lit(3));

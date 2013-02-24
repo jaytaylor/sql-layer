@@ -86,9 +86,9 @@ public class TreeServiceImpl
 
     private static int instanceCount = 0;
 
-    private final SortedMap<String, SchemaNode> schemaMap = new TreeMap<String, SchemaNode>();
+    private final SortedMap<String, SchemaNode> schemaMap = new TreeMap<>();
 
-    private final AtomicReference<Persistit> dbRef = new AtomicReference<Persistit>();
+    private final AtomicReference<Persistit> dbRef = new AtomicReference<>();
 
     private int volumeOffsetCounter = 0;
 
@@ -471,14 +471,14 @@ public class TreeServiceImpl
         Map<Tree, List<Exchange>> map = session.get(EXCHANGE_MAP);
         List<Exchange> list;
         if (map == null) {
-            map = new HashMap<Tree, List<Exchange>>();
+            map = new HashMap<>();
             session.put(EXCHANGE_MAP, map);
-            list = new ArrayList<Exchange>();
+            list = new ArrayList<>();
             map.put(tree, list);
         } else {
             list = map.get(tree);
             if (list == null) {
-                list = new ArrayList<Exchange>();
+                list = new ArrayList<>();
                 map.put(tree, list);
             } else {
                 if (!list.isEmpty()

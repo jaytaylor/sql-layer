@@ -41,7 +41,7 @@ public class DegreesExpressionTest extends ComposedExpressionTestBase
     @Test(expected = WrongExpressionArityException.class)
     public void testIllegalArg()
     {
-        List<Expression> argList = new ArrayList<Expression>();
+        List<Expression> argList = new ArrayList<>();
 
         argList.add(new LiteralExpression(AkType.DOUBLE, 123.0));
         argList.add(new LiteralExpression(AkType.DOUBLE, 34.3));
@@ -53,7 +53,7 @@ public class DegreesExpressionTest extends ComposedExpressionTestBase
     @Test(expected = WrongExpressionArityException.class)
     public void testNoArgs()
     {
-        List<Expression> argList = new ArrayList<Expression>();
+        List<Expression> argList = new ArrayList<>();
         
         Expression top = compose(DegreesExpression.COMPOSER, argList);
         top.evaluation().eval();

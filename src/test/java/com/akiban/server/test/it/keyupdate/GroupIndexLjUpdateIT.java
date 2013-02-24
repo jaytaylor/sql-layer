@@ -213,16 +213,16 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
         checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001 => " + containing(i, h));
 
         // delete from root on down
-        dml().deleteRow(session(), createNewRow(c, 1L, "Horton"));
+        dml().deleteRow(session(), createNewRow(c, 1L, "Horton"), false);
         checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001 => " + containing(i, h));
 
-        dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001 => " + containing( i, h)));
+        dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001 => " + containing( i, h)), false);
         checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001 => " + containing(i, h));
 
-        dml().deleteRow(session(), createNewRow(i, 101L, 11L, 1111));
+        dml().deleteRow(session(), createNewRow(i, 101L, 11L, 1111), false);
         checkIndex(indexName);
 
-        dml().deleteRow(session(), createNewRow(h, 1001L, 101L, "handle with care"));
+        dml().deleteRow(session(), createNewRow(h, 1001L, 101L, "handle with care"), false);
         checkIndex(indexName);
     }
 
@@ -238,13 +238,13 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
         // delete from root on down
 
-        dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"));
+        dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"), false);
         checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001 => " + containing(i, h));
 
-        dml().deleteRow(session(), createNewRow(i, 101L, 11L, 1111));
+        dml().deleteRow(session(), createNewRow(i, 101L, 11L, 1111), false);
         checkIndex(indexName);
 
-        dml().deleteRow(session(), createNewRow(h, 1001L, 101L, "handle with care"));
+        dml().deleteRow(session(), createNewRow(h, 1001L, 101L, "handle with care"), false);
         checkIndex(indexName);
     }
 
@@ -261,10 +261,10 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
         // delete from root on up
 
-        dml().deleteRow(session(), createNewRow(i, 101L, 11L, 1111));
+        dml().deleteRow(session(), createNewRow(i, 101L, 11L, 1111), false);
         checkIndex(indexName);
 
-        dml().deleteRow(session(), createNewRow(h, 1001L, 101L, "handle with care"));
+        dml().deleteRow(session(), createNewRow(h, 1001L, 101L, "handle with care"), false);
         checkIndex(indexName);
     }
 
@@ -280,10 +280,10 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
         // delete from root on up
 
-        dml().deleteRow(session(), createNewRow(i, 101L, 11L, 1111));
+        dml().deleteRow(session(), createNewRow(i, 101L, 11L, 1111), false);
         checkIndex(indexName);
 
-        dml().deleteRow(session(), createNewRow(h, 1001L, 101L, "handle with care"));
+        dml().deleteRow(session(), createNewRow(h, 1001L, 101L, "handle with care"), false);
         checkIndex(indexName);
     }
 
@@ -297,7 +297,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
         // delete from root on up
 
-        dml().deleteRow(session(), createNewRow(h, 1001L, 101L, "handle with care"));
+        dml().deleteRow(session(), createNewRow(h, 1001L, 101L, "handle with care"), false);
         checkIndex(indexName);
     }
 

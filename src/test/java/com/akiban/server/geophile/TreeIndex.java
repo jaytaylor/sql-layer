@@ -39,7 +39,7 @@ public class TreeIndex implements Index
     {
         Set<SpatialObject> spatialObjects = map.get(z);
         if (spatialObjects == null) {
-            spatialObjects = new HashSet<SpatialObject>();
+            spatialObjects = new HashSet<>();
             map.put(z, spatialObjects);
         }
         return spatialObjects.add(spatialObject);
@@ -74,5 +74,5 @@ public class TreeIndex implements Index
 
     private final Space space;
     private final SortedMap<Long, Set<SpatialObject>> map =
-        new TreeMap<Long, Set<SpatialObject>>();
+        new TreeMap<>();
 }

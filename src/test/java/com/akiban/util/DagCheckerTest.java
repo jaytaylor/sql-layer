@@ -103,12 +103,12 @@ public final class DagCheckerTest {
             return new DagChecker<String>() {
                 @Override
                 protected Set<? extends String> initialNodes() {
-                    return new TreeSet<String>(graph.vertexSet());
+                    return new TreeSet<>(graph.vertexSet());
                 }
 
                 @Override
                 protected Set<? extends String> nodesFrom(String starting) {
-                    Set<String> candidates = new TreeSet<String>(graph.vertexSet());
+                    Set<String> candidates = new TreeSet<>(graph.vertexSet());
                     for (Iterator<String> iter = candidates.iterator(); iter.hasNext(); ) {
                         String vertex = iter.next();
                         if (vertex.equals(starting) || (!graph.containsEdge(starting, vertex)))
@@ -119,7 +119,7 @@ public final class DagCheckerTest {
             };
         }
 
-        private Graph<String, StringPair> graph = new DefaultDirectedGraph<String, StringPair>(factory);
+        private Graph<String, StringPair> graph = new DefaultDirectedGraph<>(factory);
     }
 
     private static final EdgeFactory<String, StringPair> factory = new EdgeFactory<String, StringPair>() {

@@ -140,7 +140,7 @@ public class HKey implements Comparable<HKey>
 
     public HKey(Object... elements)
     {
-        this.elements = new ArrayList<Object>();
+        this.elements = new ArrayList<>();
         for (Object element : elements) {
             if (element instanceof RowDef) {
                 element = ((RowDef) element).userTable();

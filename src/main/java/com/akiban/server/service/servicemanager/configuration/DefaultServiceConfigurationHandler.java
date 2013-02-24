@@ -45,7 +45,7 @@ public final class DefaultServiceConfigurationHandler implements ServiceConfigur
     @Override
     public void bindModules(List<Module> modules) {
         if (this.modules == null)
-            this.modules = new ArrayList<Module>(modules.size());
+            this.modules = new ArrayList<>(modules.size());
         this.modules.addAll(modules);
     }
 

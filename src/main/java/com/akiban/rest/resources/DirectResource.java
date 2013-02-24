@@ -26,8 +26,8 @@
 
 package com.akiban.rest.resources;
 
-import java.io.IOException;
-import java.io.OutputStream;
+import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
+
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.List;
@@ -37,15 +37,16 @@ import javassist.CtClass;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriInfo;
 
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -54,10 +55,10 @@ import com.akiban.direct.ClassSourceWriter;
 import com.akiban.direct.DirectClassLoader;
 import com.akiban.direct.DirectContextImpl;
 import com.akiban.direct.DirectModule;
-import com.akiban.server.service.dxl.DXLService;
+import com.akiban.rest.ResourceRequirements;
+import com.akiban.rest.RestResponseBuilder;
+import com.akiban.rest.RestResponseBuilder.BodyGenerator;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionService;
-import com.google.inject.Inject;
 
 /**
  * Easy access to the server version
@@ -67,34 +68,45 @@ public class DirectResource {
 
     private final static String PACKAGE = "com.akiban.direct.entity";
 
-    private Map<String, DirectModule> dispatch = new HashMap<String, DirectModule>();
+    private static class DirectModuleHolder {
+        DirectModule module;
+        DirectContextImpl context;
 
-    @Inject
-    DXLService dxlService;
+        private DirectModuleHolder(final DirectModule module, final DirectContextImpl context) {
+            this.module = module;
+            this.context = context;
+        }
+    }
 
-    @Inject
-    SessionService sessionService;
-    
+    private Map<String, DirectModuleHolder> dispatch = new HashMap<String, DirectModuleHolder>();
+    private final ResourceRequirements reqs;
+
+    public DirectResource(ResourceRequirements reqs) {
+        this.reqs = reqs;
+    }
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getInterfaceText(@PathParam("op") final String op, @PathParam("schema") final String schema,
-            @Context final UriInfo uri) throws Exception {
+    public Response get(@PathParam("op") final String op, @PathParam("schema") final String schema,
+            @Context final UriInfo uri, @QueryParam(JSONP_ARG_NAME) String jsonp) throws Exception {
 
         final MultivaluedMap<String, String> params = uri.getQueryParameters();
         if ("igen".equals(op)) {
             /*
              * Generate Java interfaces in text form
              */
-            return Response.status(Response.Status.OK).entity(new StreamingOutput() {
+            return RestResponseBuilder.forJsonp(jsonp).body(new BodyGenerator() {
+
                 @Override
-                public void write(OutputStream output) throws IOException {
-                    final AkibanInformationSchema ais = dxlService.ddlFunctions()
-                            .getAIS(sessionService.createSession());
+                public void write(PrintWriter writer) throws Exception {
+
+                    final AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(
+                            reqs.sessionService.createSession());
                     if (ais.getSchema(schema) == null) {
                         throw new RuntimeException("No such schema: " + schema);
                     }
-                    ClassBuilder helper = new ClassSourceWriter(new PrintWriter(output), PACKAGE,
-                            ClassBuilder.schemaClassName(schema), false);
+                    ClassBuilder helper = new ClassSourceWriter(writer, PACKAGE, ClassBuilder.schemaClassName(schema),
+                            false);
                     try {
                         helper.writeGeneratedInterfaces(ais, schema);
                     } catch (Exception e) {
@@ -104,21 +116,22 @@ public class DirectResource {
                 }
             }).build();
         }
-        
+
         if ("cgen".equals(op)) {
             /*
              * Generate Java interfaces in text form
              */
-            return Response.status(Response.Status.OK).entity(new StreamingOutput() {
+            return RestResponseBuilder.forJsonp(jsonp).body(new BodyGenerator() {
+
                 @Override
-                public void write(OutputStream output) throws IOException {
-                    final AkibanInformationSchema ais = dxlService.ddlFunctions()
-                            .getAIS(sessionService.createSession());
+                public void write(PrintWriter writer) throws Exception {
+                    final AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(
+                            reqs.sessionService.createSession());
                     if (ais.getSchema(schema) == null) {
                         throw new RuntimeException("No such schema: " + schema);
                     }
-                    ClassBuilder helper = new ClassSourceWriter(new PrintWriter(output), PACKAGE,
-                            ClassBuilder.schemaClassName(schema), false);
+                    ClassBuilder helper = new ClassSourceWriter(writer, PACKAGE, ClassBuilder.schemaClassName(schema),
+                            false);
                     try {
                         helper.writeGeneratedClass(ais, schema, params.getFirst("table"));
                     } catch (Exception e) {
@@ -129,10 +142,24 @@ public class DirectResource {
             }).build();
         }
 
-        final DirectModule module = dispatch.get(op);
+        final DirectModuleHolder holder = dispatch.get(op);
 
-        if (module != null && module.isIdempotent()) {
-            return Response.status(Response.Status.OK).entity(module.exec(params)).build();
+        if (holder != null && holder.module.isIdempotent()) {
+            return RestResponseBuilder.forJsonp(jsonp).body(new BodyGenerator() {
+
+                @Override
+                public void write(PrintWriter writer) throws Exception {
+                    try {
+                        writer.print(exec(holder, params));
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                        throw new RuntimeException(e);
+                    } finally {
+                        holder.context.leave();
+                    }
+                }
+            }).build();
+
         }
 
         throw new NullPointerException("Module named " + op + " not loaded");
@@ -140,35 +167,39 @@ public class DirectResource {
 
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
-    public Response loadModule(@PathParam("op") final String op, @PathParam("schema") final String schema,
-            @Context final UriInfo uri) throws Exception {
+    public Response put(@PathParam("op") final String op, @PathParam("schema") final String schema,
+            @Context final UriInfo uri, @QueryParam(JSONP_ARG_NAME) String jsonp) throws Exception {
         final MultivaluedMap<String, String> params = uri.getQueryParameters();
         if ("module".equals(op)) {
             final String moduleName = params.getFirst("name");
             final List<String> urls = params.get("url");
-            return Response.status(Response.Status.OK).entity(new StreamingOutput() {
-                @SuppressWarnings("resource")
+            return RestResponseBuilder.forJsonp(jsonp).body(new BodyGenerator() {
+
                 @Override
-                public void write(OutputStream output) throws IOException {
-                    try (Session session = sessionService.createSession()) {
-                        final AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(
-                                sessionService.createSession());
+                public void write(PrintWriter writer) throws Exception {
+                    try (Session session = reqs.sessionService.createSession()) {
+                        final AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(
+                                reqs.sessionService.createSession());
                         if (ais.getSchema(schema) == null) {
                             throw new RuntimeException("No such schema: " + schema);
                         }
-                        Map<Integer, CtClass> generated = ClassBuilder.compileGeneratedInterfacesAndClasses(ais, schema);
+                        Map<Integer, CtClass> generated = ClassBuilder
+                                .compileGeneratedInterfacesAndClasses(ais, schema);
+                        @SuppressWarnings("resource")
                         final DirectClassLoader dcl = new DirectClassLoader(systemClassLoader());
                         final Class<? extends DirectModule> serviceClass = dcl.loadModule(ais, moduleName, urls);
                         dcl.registerDirectObjectClasses(generated);
                         DirectModule module = serviceClass.newInstance();
-                        module.setContext(new DirectContextImpl());
-                        DirectModule replaced = dispatch.put(serviceClass.getSimpleName(), module);
-                        if (replaced != null) {
-                            ClassLoader cl  = replaced.getClass().getClassLoader();
+                        DirectContextImpl context = new DirectContextImpl(dcl);
+                        module.setContext(context);
+                        DirectModuleHolder holder = dispatch.put(serviceClass.getSimpleName(), new DirectModuleHolder(
+                                module, context));
+                        if (holder != null) {
+                            ClassLoader cl = holder.module.getClass().getClassLoader();
                             assert cl instanceof DirectClassLoader;
-                            ((DirectClassLoader)cl).close();
+                            ((DirectClassLoader) cl).close();
                         }
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
                         e.printStackTrace();
                         throw new RuntimeException(e);
                     }
@@ -176,9 +207,20 @@ public class DirectResource {
             }).build();
         }
 
-        final DirectModule module = dispatch.get(op);
-        if (module != null && !module.isIdempotent()) {
-            return Response.status(Response.Status.OK).entity(module.exec(params)).build();
+        final DirectModuleHolder holder = dispatch.get(op);
+        if (holder.module != null && !holder.module.isIdempotent()) {
+            return RestResponseBuilder.forJsonp(jsonp).body(new BodyGenerator() {
+
+                @Override
+                public void write(PrintWriter writer) throws Exception {
+                    try {
+                        writer.print(exec(holder, params));
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                        throw new RuntimeException(e);
+                    }
+                }
+            }).build();
         }
 
         throw new NullPointerException("Module named " + op + " not loaded");
@@ -186,33 +228,66 @@ public class DirectResource {
 
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
-    public Response removeModule(@PathParam("op") final String op, @PathParam("schema") final String schema,
-            @Context final UriInfo uri) throws Exception {
+    public Response delete(@PathParam("op") final String op, @PathParam("schema") final String schema,
+            @Context final UriInfo uri, @QueryParam(JSONP_ARG_NAME) String jsonp) throws Exception {
         final MultivaluedMap<String, String> params = uri.getQueryParameters();
         if ("module".equals(op)) {
             final String moduleName = params.getFirst("name");
-            return Response.status(Response.Status.OK).entity(new StreamingOutput() {
+            return RestResponseBuilder.forJsonp(jsonp).body(new BodyGenerator() {
+
                 @Override
-                public void write(OutputStream output) throws IOException {
-                    
-                    DirectModule removed = dispatch.remove(moduleName);
-                    if (removed != null) {
-                        ClassLoader cl  = removed.getClass().getClassLoader();
+                public void write(PrintWriter writer) throws Exception {
+                    DirectModuleHolder holder = dispatch.get(moduleName);
+                    if (holder != null) {
+                        ClassLoader cl = holder.module.getClass().getClassLoader();
                         assert cl instanceof DirectClassLoader;
-                        ((DirectClassLoader)cl).close();
+                        ((DirectClassLoader) cl).close();
                     }
                 }
             }).build();
         }
 
-        final DirectModule module = dispatch.get(op);
-        if (module != null && !module.isIdempotent()) {
-            return Response.status(Response.Status.OK).entity(module.exec(params)).build();
+        throw new NullPointerException("Module named " + op + " not loaded");
+    }
+
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response post(@PathParam("op") final String op, @PathParam("schema") final String schema,
+            @Context final UriInfo uri, @QueryParam(JSONP_ARG_NAME) String jsonp) throws Exception {
+        final MultivaluedMap<String, String> params = uri.getQueryParameters();
+        final DirectModuleHolder holder = dispatch.get(op);
+
+        if (holder != null && !holder.module.isIdempotent()) {
+            return RestResponseBuilder.forJsonp(jsonp).body(new BodyGenerator() {
+
+                @Override
+                public void write(PrintWriter writer) throws Exception {
+                    try {
+                        writer.print(exec(holder, params));
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                        throw new RuntimeException(e);
+                    } finally {
+                        holder.context.leave();
+                    }
+                }
+            }).build();
+
         }
 
         throw new NullPointerException("Module named " + op + " not loaded");
     }
-    
+
+    private String exec(final DirectModuleHolder holder, MultivaluedMap<String, String> params)
+            throws Exception {
+        try {
+            holder.context.enter();
+            return holder.module.exec(params);
+        } finally {
+            holder.context.leave();
+        }
+    }
+
     private ClassLoader systemClassLoader() {
         ClassLoader cl = getClass().getClassLoader();
         while (cl.getParent() != null && cl.getParent() != cl) {

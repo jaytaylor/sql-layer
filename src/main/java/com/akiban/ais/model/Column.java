@@ -38,6 +38,7 @@ import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.server.collation.AkCollator;
@@ -91,6 +92,7 @@ public class Column implements ColumnContainer
             }
         }
         out.setDefaultValue(column.getDefaultValue());
+        out.setUuid(column.getUuid());
         return out;
     }
 
@@ -419,6 +421,19 @@ public class Column implements ColumnContainer
         return prefixSize;
     }
 
+    public void clearMaxAndPrefixSize() {
+        maxStorageSize = null;
+        prefixSize = null;
+    }
+
+    public UUID getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(UUID uuid) {
+        this.uuid = uuid;
+    }
+
     public Boolean isAkibanPKColumn()
     {
         return columnName.equals(AKIBAN_PK_NAME);
@@ -706,12 +721,13 @@ public class Column implements ColumnContainer
     private final Type type;
     private final Columnar table;
     private final Integer position;
+    private UUID uuid;
     private Boolean nullable;
     private Long typeParameter1;
     private Long typeParameter2;
     private Long initialAutoIncrementValue;
     private CharsetAndCollation charsetAndCollation;
-    private final AtomicReference<TInstance> tInstanceRef = new AtomicReference<TInstance>();
+    private final AtomicReference<TInstance> tInstanceRef = new AtomicReference<>();
 
     // TODO: Should be final, but the multi-part construction of a valid Column needs to be cleaned up
     private Long maxStorageSize;

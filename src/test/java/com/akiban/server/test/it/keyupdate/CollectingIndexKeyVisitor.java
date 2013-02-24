@@ -44,5 +44,5 @@ public class CollectingIndexKeyVisitor extends IndexKeyVisitor
         return records;
     }
 
-    private final List<List<?>> records = new ArrayList<List<?>>();
+    private final List<List<?>> records = new ArrayList<>();
 }

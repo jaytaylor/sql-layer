@@ -32,6 +32,7 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.util.AkibanAppender;
 
 public abstract class TClassBase extends TClass
@@ -62,54 +63,14 @@ public abstract class TClassBase extends TClass
          this.parser = parser;
          this.defaultVarcharLen = defaultVarcharLen;
      }
-     
+
     @Override
-     public void fromObject(TExecutionContext context, PValueSource in, PValueTarget out)
-     {
-         if (in.isNull()) {
-             out.putNull();
-         }
-         else {
-             PUnderlying underlyingType = TInstance.pUnderlying(in.tInstance());
-             if (underlyingType != PUnderlying.STRING && underlyingType != PUnderlying.BYTES) {
-                 // This isn't efficient, but it normalizes conversions of different inputs conveniently.
-                 // This method isn't used in any tight loops, so some inefficiency is okay.
-                 final String asString;
-                 switch (underlyingType) {
-                 case BOOL:
-                     asString = Boolean.toString(in.getBoolean());
-                     break;
-                 case INT_8:
-                     asString = Byte.toString(in.getInt8());
-                     break;
-                 case INT_16:
-                     asString = Short.toString(in.getInt16());
-                     break;
-                 case UINT_16:
-                     asString = Integer.toString(in.getUInt16());
-                     break;
-                 case INT_32:
-                     asString = Integer.toString(in.getInt32());
-                     break;
-                 case INT_64:
-                     asString = Long.toString(in.getInt64());
-                     break;
-                 case FLOAT:
-                     asString = Float.toString(in.getFloat());
-                     break;
-                 case DOUBLE:
-                     asString = Double.toString(in.getDouble());
-                     break;
-                 case BYTES:
-                 case STRING:
-                 default:
-                     throw new AssertionError(underlyingType + ": " + in);
-                 }
-                 in = new PValue(MString.varcharFor(asString), asString);
-             }
+    public void fromObject(TExecutionContext context, PValueSource in, PValueTarget out) {
+        if (in.isNull())
+            out.putNull();
+        else if (!tryFromObject(context, in, out))
             parser.parse(context, in, out);
-         }
-     }
+    }
 
     @Override
     public TCast castToVarchar() {
@@ -129,7 +90,7 @@ public abstract class TClassBase extends TClass
                 }
                 format(context.inputTInstanceAt(0), source, appender);
                 String string = sb.toString();
-                int maxlen = context.outputTInstance().attribute(StringAttribute.LENGTH);
+                int maxlen = context.outputTInstance().attribute(StringAttribute.MAX_LENGTH);
                 if (string.length() > maxlen) {
                     String trunc = sb.substring(0, maxlen);
                     context.reportTruncate(string, trunc);
@@ -162,6 +123,49 @@ public abstract class TClassBase extends TClass
                 parser.parse(context, source, target);
             }
         };
+    }
+
+    protected boolean tryFromObject(TExecutionContext context, PValueSource in, PValueTarget out) {
+        if (in.tInstance().equalsExcludingNullable(out.tInstance())) {
+            PValueTargets.copyFrom(in, out);
+            return true;
+        }
+        PUnderlying underlyingType = TInstance.pUnderlying(in.tInstance());
+        if (underlyingType == PUnderlying.STRING || underlyingType == PUnderlying.BYTES)
+            return false;
+        final String asString;
+        switch (underlyingType) {
+        case BOOL:
+            asString = Boolean.toString(in.getBoolean());
+            break;
+        case INT_8:
+            asString = Byte.toString(in.getInt8());
+            break;
+        case INT_16:
+            asString = Short.toString(in.getInt16());
+            break;
+        case UINT_16:
+            asString = Integer.toString(in.getUInt16());
+            break;
+        case INT_32:
+            asString = Integer.toString(in.getInt32());
+            break;
+        case INT_64:
+            asString = Long.toString(in.getInt64());
+            break;
+        case FLOAT:
+            asString = Float.toString(in.getFloat());
+            break;
+        case DOUBLE:
+            asString = Double.toString(in.getDouble());
+            break;
+        case BYTES:
+        case STRING:
+        default:
+            throw new AssertionError(underlyingType + ": " + in);
+        }
+        parser.parse(context, new PValue(MString.varcharFor(asString), asString), out);
+        return true;
     }
 
     private static final int APPENDER_CACHE_INDEX = 0;

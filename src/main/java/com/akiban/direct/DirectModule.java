@@ -32,6 +32,10 @@ import java.util.Map;
 public interface DirectModule {
 
     void setContext(DirectContext context);
+    
+    public void start();
+    
+    public void stop();
 
     boolean isIdempotent();
 
