@@ -26,6 +26,9 @@
 
 package com.akiban.server.service.text;
 
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.rowtype.HKeyRowType;
 import com.akiban.server.error.AkibanInternalException;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -33,12 +36,9 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
-import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.SearcherFactory;
 import org.apache.lucene.search.SearcherManager;
-import org.apache.lucene.search.TopDocs;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -57,8 +57,9 @@ public class Searcher implements Closeable
         this.searcherManager = new SearcherManager(index.open(), new SearcherFactory());
     }
 
-    public List<List<String>> search(String input, int size) throws IOException {
-        List<String> keyColumns = index.getKeyColumns();
+    public Cursor search(QueryContext context, HKeyRowType rowType, 
+                         String input, int limit)
+            throws IOException {
         Query query;
         try {
             query = parser.parse(input, index.getDefaultFieldName());
@@ -66,24 +67,8 @@ public class Searcher implements Closeable
         catch (QueryNodeException ex) {
             throw new AkibanInternalException("Parse error", ex);
         }
-        IndexSearcher searcher = searcherManager.acquire();
-        try {
-            TopDocs results = searcher.search(query, size);
-            ScoreDoc[] hits = results.scoreDocs;
-            List<List<String>> result = new ArrayList<>(hits.length);
-            for (ScoreDoc sdoc : hits) {
-                Document doc = searcher.doc(sdoc.doc);
-                List<String> keys = new ArrayList<>(keyColumns.size());
-                for (String name : keyColumns) {
-                    keys.add(doc.get(name));
-                }
-                result.add(keys);
-            }
-            return result;
-        }
-        finally {
-            searcherManager.release(searcher);
-        }
+        searcherManager.maybeRefresh(); // TODO: Move to better place.
+        return new FullTextCursor(context, rowType, searcherManager, query, limit);
     }
 
     @Override

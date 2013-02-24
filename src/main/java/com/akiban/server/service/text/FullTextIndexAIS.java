@@ -31,6 +31,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.rowtype.HKeyRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
@@ -47,6 +48,7 @@ public class FullTextIndexAIS
     private final AkibanInformationSchema ais;
     private Schema schema;
     private UserTableRowType indexedRowType;
+    private HKeyRowType hKeyRowType;
     private Map<Column,IndexedField> fieldsByColumn;
     private Map<RowType,List<IndexedField>> fieldsByRowType;
     private String defaultFieldName;
@@ -63,6 +65,7 @@ public class FullTextIndexAIS
             throw new NoSuchTableException(index.getSchemaName(), index.getTableName());
         }
         indexedRowType = schema.userTableRowType(table);
+        hKeyRowType = schema.newHKeyRowType(table.hKey());
         fieldsByColumn = new HashMap<>(index.getIndexedColumns().size());
         for (String cstr : index.getIndexedColumns()) {
             Column col;
@@ -128,6 +131,10 @@ public class FullTextIndexAIS
 
     public UserTableRowType getIndexedRowType() {
         return indexedRowType;
+    }
+
+    public HKeyRowType getHKeyRowType() {
+        return hKeyRowType;
     }
 
     public Map<Column,IndexedField> getFieldsByColumn() {

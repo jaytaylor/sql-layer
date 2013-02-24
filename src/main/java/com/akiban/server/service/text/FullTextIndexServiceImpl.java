@@ -144,8 +144,7 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
     }
     
     @Override
-    public List<List<String>> searchIndex(Session session, String name, 
-                                          String query, int size) {
+    public Cursor searchIndex(QueryContext context, String name, String query, int limit) {
         FullTextIndex index;
         synchronized (indexes) {
             index = indexes.get(name);
@@ -153,8 +152,10 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
         if (index == null) {
             throw new NoSuchIndexException(name);
         }
+        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(context.getSession());
+        FullTextIndexAIS indexAIS = index.forAIS(ais);
         try {
-            return searchIndex(index, query, size);
+            return searchIndex(context, indexAIS, query, limit);
         }
         catch (IOException ex) {
             throw new AkibanInternalException("Error searching index", ex);
@@ -254,8 +255,10 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
         }
     }
 
-    protected List<List<String>> searchIndex(FullTextIndex index, 
-                                             String query, int size) throws IOException {
+    protected Cursor searchIndex(QueryContext context, FullTextIndexAIS indexAIS, 
+                                 String query, int limit)
+            throws IOException {
+        FullTextIndex index = indexAIS.getIndex();
         Searcher searcher;
         synchronized (index) {
             searcher = index.getSearcher();
@@ -264,7 +267,7 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
             }
             index.setSearcher(searcher);
         }
-        return searcher.search(query, size);
+        return searcher.search(context, indexAIS.getHKeyRowType(), query, limit);
     }
 
     protected Analyzer getAnalyzer(FullTextIndex index) {

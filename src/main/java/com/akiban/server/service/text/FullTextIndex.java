@@ -44,7 +44,6 @@ public class FullTextIndex implements CacheValueGenerator<FullTextIndexAIS>
     private final String schemaName, tableName;
     private final List<String> indexedColumns;
     private String defaultFieldName;
-    private List<String> keyColumns;
     private Set<String> casePreservingFieldNames;
     private Directory directory;
     private Analyzer analyzer;
@@ -79,10 +78,6 @@ public class FullTextIndex implements CacheValueGenerator<FullTextIndexAIS>
 
     public List<String> getIndexedColumns() {
         return indexedColumns;
-    }
-
-    public List<String> getKeyColumns() {
-        return keyColumns;
     }
 
     public Set<String> getCasePreservingFieldNames() {
