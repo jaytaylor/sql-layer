@@ -220,7 +220,7 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
                                            session, configService);
         QueryContext queryContext = new SimpleQueryContext(adapter);
         IndexWriter writer = indexer.getWriter();
-        RowIndexer rowIndexer = new RowIndexer(indexAIS, writer);
+        RowIndexer rowIndexer = new RowIndexer(indexAIS, writer, false);
         boolean transaction = false;
         Cursor cursor = null;
         boolean success = false;

@@ -47,6 +47,8 @@ import org.apache.lucene.index.IndexWriterConfig;
 
 public class IndexedField
 {
+    public static final String KEY_FIELD = ".hkey";
+
     public static enum FieldType {
         INT, LONG, FLOAT, DOUBLE, STRING, TEXT
     }

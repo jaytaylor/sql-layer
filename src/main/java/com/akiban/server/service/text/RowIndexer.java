@@ -28,15 +28,20 @@ package com.akiban.server.service.text;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.persistitadapter.PersistitHKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.ShareHolder;
+import com.persistit.Key;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StoredField;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.util.BytesRef;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,10 +58,12 @@ public class RowIndexer implements Closeable
     private Map<RowType,List<IndexedField>> fieldsByRowType;
     private IndexWriter writer;
     private Document currentDocument;
+    private BytesRef keyBytes;
+    private boolean updating;
     
     private static final Logger logger = LoggerFactory.getLogger(RowIndexer.class);
 
-    public RowIndexer(FullTextIndexAIS indexAIS, IndexWriter writer) {
+    public RowIndexer(FullTextIndexAIS indexAIS, IndexWriter writer, boolean updating) {
         UserTableRowType indexedRowType = indexAIS.getIndexedRowType();
         int depth = indexedRowType.userTable().getDepth();
         ancestorRowTypes = new HashMap<>(depth+1);
@@ -79,6 +86,7 @@ public class RowIndexer implements Closeable
             }
         }
         this.writer = writer;
+        this.updating = updating;
         currentDocument = null;
     }
 
@@ -94,6 +102,7 @@ public class RowIndexer implements Closeable
             if (ancestorDepth == ancestors.length - 1) {
                 addDocument();
                 currentDocument = new Document();
+                getKeyBytes(row);
                 addFields(row, fieldsByRowType.get(rowType));
                 for (int i = 0; i < ancestors.length - 1; i++) {
                     ShareHolder<Row> holder = ancestors[i];
@@ -133,14 +142,24 @@ public class RowIndexer implements Closeable
 
     protected void addDocument() throws IOException {
         if (currentDocument != null) {
-            // TODO: To call updateDocument(), we need a Term for the
-            // key, which won't work if there is more than one pkey
-            // field. Maybe it should be a byte array of all of them
-            // in Key format.
-            writer.addDocument(currentDocument);
-            logger.debug("Added {}", currentDocument);
+            if (updating) {
+                writer.updateDocument(new Term(IndexedField.KEY_FIELD, keyBytes), 
+                                      currentDocument);
+                logger.debug("Updated {}", currentDocument);
+            }
+            else {
+                writer.addDocument(currentDocument);
+                logger.debug("Added {}", currentDocument);
+            }
             currentDocument = null;
         }
+    }
+
+    protected void getKeyBytes(Row row) {
+        Key key = ((PersistitHKey)row.hKey()).key();
+        keyBytes = new BytesRef(key.getEncodedBytes(), 0, key.getEncodedSize());
+        Field field = new StoredField(IndexedField.KEY_FIELD, keyBytes);
+        currentDocument.add(field);
     }
 
     protected void addFields(Row row, List<IndexedField> fields) throws IOException {
