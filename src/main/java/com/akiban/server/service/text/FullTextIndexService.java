@@ -40,7 +40,7 @@ public interface FullTextIndexService {
                             List<String> indexedColumns, boolean populate);
     public void dropIndex(Session session, String name);
     public void populateIndex(Session session, String name);
-    public Query parseQuery(QueryContext context, String name, String query);
+    public Query parseQuery(String name, String query);
     public Cursor searchIndex(QueryContext context, String name, 
                               Query query, int limit);
 }

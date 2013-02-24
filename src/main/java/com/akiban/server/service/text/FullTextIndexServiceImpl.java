@@ -145,7 +145,7 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
     }
     
     @Override
-    public Query parseQuery(QueryContext context, String name, String query) {
+    public Query parseQuery(String name, String query) {
         FullTextIndex index;
         synchronized (indexes) {
             index = indexes.get(name);

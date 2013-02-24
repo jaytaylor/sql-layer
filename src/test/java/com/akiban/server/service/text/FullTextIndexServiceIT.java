@@ -26,8 +26,9 @@
 
 package com.akiban.server.service.text;
 
-import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
+import static com.akiban.qp.operator.API.cursor;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
@@ -115,15 +116,11 @@ public class FullTextIndexServiceIT extends ITBase
             row(rowType, 1L),
             row(rowType, 3L)
         };
-        Cursor results = fullText.searchIndex(queryContext, "c",
-                                              fullText.parseQuery(queryContext, "c", "flintstone"),
-                                              10);
-        compareRows(expected, results);
+        Operator plan = new IndexScan_FullText(fullText, "c", "flintstone", 10);
+        compareRows(expected, cursor(plan, queryContext));
 
-        results = fullText.searchIndex(queryContext, "c",
-                                       fullText.parseQuery(queryContext, "c", "state:MA"),
-                                       10);
-        compareRows(expected, results);
+        plan = new IndexScan_FullText(fullText, "c", "state:MA", 10);
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -136,10 +133,8 @@ public class FullTextIndexServiceIT extends ITBase
         RowBase[] expected = new RowBase[] {
             row(rowType, 1L, 101L)
         };
-        Cursor results = fullText.searchIndex(queryContext, "o",
-                                              fullText.parseQuery(queryContext, "o", "name:Flintstone AND sku:1234"),
-                                              10);
-        compareRows(expected, results);
+        Operator plan = new IndexScan_FullText(fullText, "o", "name:Flintstone AND sku:1234", 10);
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     protected RowType rowType(String tableName) {
