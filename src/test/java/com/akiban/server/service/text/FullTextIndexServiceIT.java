@@ -26,8 +26,15 @@
 
 package com.akiban.server.service.text;
 
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.server.test.it.qp.TestRow;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -38,6 +45,11 @@ import java.util.*;
 public class FullTextIndexServiceIT extends ITBase
 {
     public static final String SCHEMA = "test";
+
+    protected FullTextIndexService fullText;
+    protected Schema schema;
+    protected PersistitAdapter adapter;
+    protected QueryContext queryContext;
 
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
@@ -84,48 +96,58 @@ public class FullTextIndexServiceIT extends ITBase
         writeRow(o, 301, 3, "2010-04-01");
         writeRow(a, 301, 3, "MA");
         writeRow(a, 302, 3, "ME");
+
+        fullText = serviceManager().getServiceByClass(FullTextIndexService.class);
+
+        schema = new Schema(ais());
+        adapter = persistitAdapter(schema);
+        queryContext = queryContext(adapter);
     }
 
     @Test
     public void cDown() {
-        FullTextIndexService fullText = 
-            serviceManager().getServiceByClass(FullTextIndexService.class);
-
         fullText.createIndex(session(), "c", SCHEMA, "c",
                              Arrays.asList("name", "i.sku", "a.state"),
                              true);
 
-        List<List<String>> results;
-        results = fullText.searchIndex(session(), "c",
-                                       "flintstone",
-                                       10);
-        assertEquals(Arrays.asList(Collections.singletonList("1"),
-                                   Collections.singletonList("3")),
-                     results);
+        RowType rowType = rowType("c");
+        RowBase[] expected = new RowBase[] {
+            row(rowType, 1L),
+            row(rowType, 3L)
+        };
+        Cursor results = fullText.searchIndex(queryContext, "c",
+                                              "flintstone",
+                                              10);
+        compareRows(expected, results);
 
-        results = fullText.searchIndex(session(), "c",
+        results = fullText.searchIndex(queryContext, "c",
                                        "state:MA",
                                        10);
-        assertEquals(Arrays.asList(Collections.singletonList("1"),
-                                   Collections.singletonList("3")),
-                     results);
+        compareRows(expected, results);
     }
 
     @Test
     public void oUpDown() {
-        FullTextIndexService fullText = 
-            serviceManager().getServiceByClass(FullTextIndexService.class);
-
         fullText.createIndex(session(), "o", SCHEMA, "o",
                              Arrays.asList("c.name", "i.sku"),
                              true);
 
-        List<List<String>> results;
-        results = fullText.searchIndex(session(), "o",
-                                       "name:Flintstone AND sku:1234",
-                                       10);
-        assertEquals(Arrays.asList(Collections.singletonList("101")),
-                     results);
+        RowType rowType = rowType("o");
+        RowBase[] expected = new RowBase[] {
+            row(rowType, 1L, 101L)
+        };
+        Cursor results = fullText.searchIndex(queryContext, "o",
+                                              "name:Flintstone AND sku:1234",
+                                              10);
+        compareRows(expected, results);
+    }
+
+    protected RowType rowType(String tableName) {
+        return schema.newHKeyRowType(ais().getUserTable(SCHEMA, tableName).hKey());
+    }
+
+    protected TestRow row(RowType rowType, Object... fields) {
+        return new TestRow(rowType, fields);
     }
 
 }
