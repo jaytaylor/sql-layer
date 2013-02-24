@@ -116,10 +116,10 @@ public class FullTextIndexServiceIT extends ITBase
             row(rowType, 1L),
             row(rowType, 3L)
         };
-        Operator plan = new IndexScan_FullText(fullText, "c", "flintstone", 10);
+        Operator plan = new IndexScan_FullText(fullText, "c", IndexScan_FullText.parseQuery("flintstone"), 10);
         compareRows(expected, cursor(plan, queryContext));
 
-        plan = new IndexScan_FullText(fullText, "c", "state:MA", 10);
+        plan = new IndexScan_FullText(fullText, "c", IndexScan_FullText.parseQuery("state:MA"), 10);
         compareRows(expected, cursor(plan, queryContext));
     }
 
@@ -133,7 +133,7 @@ public class FullTextIndexServiceIT extends ITBase
         RowBase[] expected = new RowBase[] {
             row(rowType, 1L, 101L)
         };
-        Operator plan = new IndexScan_FullText(fullText, "o", "name:Flintstone AND sku:1234", 10);
+        Operator plan = new IndexScan_FullText(fullText, "o", IndexScan_FullText.parseQuery("name:Flintstone AND sku:1234"), 10);
         compareRows(expected, cursor(plan, queryContext));
     }
 
