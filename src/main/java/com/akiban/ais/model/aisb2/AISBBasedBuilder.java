@@ -121,6 +121,11 @@ public class AISBBasedBuilder
         }
 
         @Override
+        public NewUserTableBuilder getUserTable() {
+            return this;
+        }
+        
+        @Override
         public NewAISBuilder sequence (String name) {
             return sequence (name, 1, 1, false);
         }

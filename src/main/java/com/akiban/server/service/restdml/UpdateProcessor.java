@@ -25,10 +25,7 @@
  */
 package com.akiban.server.service.restdml;
 
-import java.io.IOException;
-
 import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
@@ -53,8 +50,7 @@ public class UpdateProcessor extends DMLProcessor {
         this.insertProcessor = insertProcessor;
     }
 
-    public String processUpdate (Session session, AkibanInformationSchema ais, TableName tableName, String values, JsonNode node) 
-            throws JsonParseException, IOException {
+    public String processUpdate (Session session, AkibanInformationSchema ais, TableName tableName, String values, JsonNode node) {
         setAIS (ais);
         deleteProcessor.processDelete(session, ais, tableName, values);
         return insertProcessor.processInsert(session, ais, tableName, node);

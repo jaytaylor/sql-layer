@@ -118,7 +118,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                             int depth,
                             boolean withTransaction,
                             Schema schema,
-                            Operator plan) throws IOException {
+                            Operator plan) {
         StoreAdapter adapter = getAdapter(session, table, schema);
         QueryContext queryContext = new SimpleQueryContext(adapter);
         JsonRowWriter json = new JsonRowWriter(new TableRowTracker(table, depth));
@@ -169,8 +169,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     @Override
     public void dumpAllAsJson(Session session, PrintWriter writer,
                               String schemaName, String tableName,
-                              int depth, boolean withTransaction)
-            throws IOException {
+                              int depth, boolean withTransaction) {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
         UserTable table = getTable(ais, schemaName, tableName);
         logger.debug("Writing all of {}", table);
@@ -183,8 +182,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     public void dumpBranchAsJson(Session session, PrintWriter writer,
                                  String schemaName, String tableName, 
                                  List<List<String>> keys, int depth,
-                                 boolean withTransaction)
-            throws IOException {
+                                 boolean withTransaction) {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
         UserTable table = getTable(ais, schemaName, tableName);
         logger.debug("Writing from {}: {}", table, keys);

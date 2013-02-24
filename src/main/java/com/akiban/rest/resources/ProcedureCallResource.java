@@ -28,6 +28,7 @@ package com.akiban.rest.resources;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.rest.ResourceRequirements;
+import com.akiban.rest.RestResponseBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -36,9 +37,12 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.io.PrintWriter;
+
+import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
+import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 
 /**
  * Allows calling stored procedures directly.
@@ -52,12 +56,22 @@ public class ProcedureCallResource {
     }
 
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getQueryResults(@Context HttpServletRequest request,
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
+    public Response getQueryResults(@Context final HttpServletRequest request,
                                     @PathParam("proc") String proc,
-                                    @QueryParam("jsoncallback") String jsonp,
-                                    @Context UriInfo uri) throws Exception {
-        TableName procName = DataAccessOperationsResource.parseTableName(request, proc);
-        return reqs.restDMLService.callProcedure(request, procName, uri.getQueryParameters());
+                                    @QueryParam(JSONP_ARG_NAME) String jsonp,
+                                    @Context final UriInfo uri) throws Exception {
+        final TableName procName = ResourceHelper.parseTableName(request, proc);
+        ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
+        return RestResponseBuilder
+                .forJsonp(jsonp)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        reqs.restDMLService.callProcedure(writer, request, JSONP_ARG_NAME,
+                                                          procName, uri.getQueryParameters());
+                    }
+                })
+                .build();
     }
 }

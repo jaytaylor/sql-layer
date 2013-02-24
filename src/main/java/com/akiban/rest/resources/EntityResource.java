@@ -26,150 +26,154 @@
 
 package com.akiban.rest.resources;
 
-import com.akiban.ais.AISCloner;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.protobuf.ProtobufWriter;
+import com.akiban.ais.model.TableName;
 import com.akiban.rest.ResourceRequirements;
-import com.akiban.server.entity.changes.DDLBasedSpaceModifier;
-import com.akiban.server.entity.changes.SpaceDiff;
-import com.akiban.server.entity.fromais.AisToSpace;
-import com.akiban.server.entity.model.Space;
-import com.akiban.server.entity.model.diff.JsonDiffPreview;
-import com.akiban.server.service.session.Session;
+import com.akiban.rest.RestResponseBuilder;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.security.Principal;
+import javax.ws.rs.core.UriInfo;
+import java.io.PrintWriter;
 
-@Path("/entity")
-public final class EntityResource {
-    private static final Response FORBIDDEN = Response.status(Response.Status.FORBIDDEN).build();
+import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
+import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
+import static com.akiban.rest.resources.ResourceHelper.checkTableAccessible;
+import static com.akiban.rest.resources.ResourceHelper.parseTableName;
 
+/**
+ * Entity based access (GET), creation (PUT, POST), and modification (PUT, DELETE)
+ */
+@Path("/entity/{entity}")
+public class EntityResource {
+    private static final String IDENTIFIERS_MULTI = "{identifiers:.*}";
     private final ResourceRequirements reqs;
-
+    
     public EntityResource(ResourceRequirements reqs) {
         this.reqs = reqs;
     }
 
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getSpace(@Context HttpServletRequest request,
-                             @QueryParam("space") String schema) {
-        if(schema == null) {
-            schema = getUserSchema(request);
-        }
-        if (schema == null || !reqs.securityService.isAccessible(request, schema)) {
-            return FORBIDDEN;
-        }
-        try (Session session = reqs.sessionService.createSession()) {
-            reqs.transactionService.beginTransaction(session);
-            try {
-                AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(session);
-                ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
-                Space space = AisToSpace.create(ais);
-                String json = space.toJson() + "\n";
-                return Response.status(Response.Status.OK).entity(json).build();
-            }
-            finally {
-                reqs.transactionService.commitTransaction(session);
-            }
-        }
-    }
-
-    @POST
-    @Path("/preview")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response preview(@Context HttpServletRequest request,
-                            final InputStream postInput) throws IOException {
-        return preview(request, getUserSchema(request), postInput);
-    }
-
-    @POST
-    @Path("/preview/{schema}")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response preview(@Context HttpServletRequest request,
-                            @PathParam("schema") String schema,
-                            final InputStream postInput) throws IOException {
-        return previewOrApply(request, schema, postInput, false);
-    }
-
-    @POST
-    @Path("/apply")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response apply(@Context HttpServletRequest request,
-                          final InputStream postInput) throws IOException {
-        return apply(request, getUserSchema(request), postInput);
-    }
-
-    @POST
-    @Path("/apply/{schema}")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response apply(@Context HttpServletRequest request,
-                          @PathParam("schema") String schema,
-                          final InputStream postInput) throws IOException {
-        return previewOrApply(request, schema, postInput, true);
-    }
-
-    private Response previewOrApply(HttpServletRequest request, String schema, InputStream postInput, boolean doApply) throws IOException {
-        if (schema == null || !reqs.securityService.isAccessible(request, schema)) {
-            return FORBIDDEN;
-        }
-        try (Session session = reqs.sessionService.createSession()) {
-            // Cannot have transaction when attempting to perform DDL
-            AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(session);
-            ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
-            Space curSpace = AisToSpace.create(ais);
-            Space newSpace = Space.create(new InputStreamReader(postInput));
-            SpaceDiff diff = new SpaceDiff(curSpace, newSpace);
-
-            boolean success = true;
-            JsonDiffPreview jsonSummary = new JsonDiffPreview();
-            if(doApply) {
-                DDLBasedSpaceModifier modifier = new DDLBasedSpaceModifier(reqs.dxlService.ddlFunctions(), session, schema, newSpace);
-                diff.apply(modifier);
-                if(modifier.hadError()) {
-                    success = false;
-                    for(String err : modifier.getErrors()) {
-                        jsonSummary.error(err);
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
+    public Response retrieveEntity(@Context HttpServletRequest request,
+                                   @QueryParam(JSONP_ARG_NAME) String jsonp,
+                                   @PathParam("entity") String entity,
+                                   @QueryParam("depth") final Integer depth) {
+        final TableName tableName = parseTableName(request, entity);
+        checkTableAccessible(reqs.securityService, request, tableName);
+        return RestResponseBuilder
+                .forJsonp(jsonp)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        reqs.restDMLService.getAllEntities(writer, tableName, depth);
                     }
-                }
-            }
-            if(success) {
-                diff.apply(jsonSummary);
-            }
-
-            String json = jsonSummary.getJSON();
-            return Response.status(Response.Status.OK).entity(json).build();
-        } catch (Exception e) {
-            // TODO: Cleanup and make consistent with other REST
-            // While errors are still common, make them obvious.
-            throw new WebApplicationException(
-                    Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                            .entity(e.getMessage())
-                            .build()
-            );
-        }
+                })
+                .build();
     }
 
-    private String getUserSchema(HttpServletRequest request) {
-        Principal user = request.getUserPrincipal();
-        return (user == null) ? null : user.getName();
+    @GET
+    @Path("/" + IDENTIFIERS_MULTI)
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
+    public Response retrieveEntity(@Context HttpServletRequest request,
+                                   @QueryParam(JSONP_ARG_NAME) String jsonp,
+                                   @PathParam("entity") String entity,
+                                   @QueryParam("depth") final Integer depth,
+                                   @Context final UriInfo uri) {
+        final TableName tableName = parseTableName(request, entity);
+        checkTableAccessible(reqs.securityService, request, tableName);
+        return RestResponseBuilder
+                .forJsonp(jsonp)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        reqs.restDMLService.getEntities(writer, tableName, depth, getPKString(uri));
+                    }
+                })
+                .build();
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
+    public Response createEntity(@Context HttpServletRequest request,
+                                 @QueryParam(JSONP_ARG_NAME) String jsonp,
+                                 @PathParam("entity") String entity,
+                                 final byte[] entityBytes) {
+        final TableName tableName = parseTableName(request, entity);
+        checkTableAccessible(reqs.securityService, request, tableName);
+        return RestResponseBuilder
+                .forJsonp(jsonp)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        ObjectMapper m = new ObjectMapper();
+                        final JsonNode node = m.readTree(entityBytes);
+                        reqs.restDMLService.insert(writer, tableName, node);
+                    }
+                })
+                .build();
+    }
+
+    @PUT
+    @Path("/" + IDENTIFIERS_MULTI)
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
+    public Response updateEntity(@Context HttpServletRequest request,
+                                 @QueryParam(JSONP_ARG_NAME) final String jsonp,
+                                 @PathParam("entity") String entity,
+                                 final byte[] entityBytes,
+                                 @Context final UriInfo uri) {
+        final TableName tableName = parseTableName(request, entity);
+        checkTableAccessible(reqs.securityService, request, tableName);
+        return RestResponseBuilder
+                .forJsonp(jsonp)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        ObjectMapper m = new ObjectMapper();
+                        JsonNode node = m.readTree(entityBytes);
+                        reqs.restDMLService.update(writer, tableName, getPKString(uri), node);
+                    }
+                })
+                .build();
+    }
+
+    @DELETE
+    @Path("/" + IDENTIFIERS_MULTI)
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
+    public Response deleteEntity(@Context HttpServletRequest request,
+                                 @QueryParam(JSONP_ARG_NAME) String jsonp,
+                                 @PathParam("entity") String entity,
+                                 @Context final UriInfo uri) {
+        final TableName tableName = parseTableName(request, entity);
+        checkTableAccessible(reqs.securityService, request, tableName);
+        return RestResponseBuilder
+                .forJsonp(jsonp)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        reqs.restDMLService.delete(writer, tableName, getPKString(uri));
+                    }
+                })
+                .build();
+    }
+
+
+    private static String getPKString(UriInfo uri) {
+        String pks[] = uri.getPath(false).split("/");
+        assert pks.length > 0: uri;
+        return pks[pks.length - 1];
     }
 }
