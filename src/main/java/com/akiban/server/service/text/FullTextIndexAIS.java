@@ -159,9 +159,15 @@ public class FullTextIndexAIS
         return defaultFieldName;
     }
 
+    public Set<RowType> getRowTypes() {
+        Set<RowType> rowTypes = new HashSet<>(fieldsByRowType.keySet());
+        rowTypes.add(indexedRowType);
+        return rowTypes;
+    }
+
     public Operator fullScan() {
         Operator plan = API.groupScan_Default(indexedRowType.userTable().getGroup());
-        Set<RowType> rowTypes = new HashSet<>(fieldsByRowType.keySet());
+        Set<RowType> rowTypes = getRowTypes();
         plan = API.filter_Default(plan, rowTypes);
         return plan;
     }

@@ -69,7 +69,7 @@ public class RowIndexer implements Closeable
         ancestorRowTypes = new HashMap<>(depth+1);
         ancestors = (ShareHolder<Row>[])new ShareHolder<?>[depth+1];
         fieldsByRowType = indexAIS.getFieldsByRowType();
-        Set<RowType> rowTypes = fieldsByRowType.keySet();
+        Set<RowType> rowTypes = indexAIS.getRowTypes();
         descendantRowTypes = new HashSet<>(rowTypes.size() - ancestorRowTypes.size());
         for (RowType rowType : rowTypes) {
             if ((rowType == indexedRowType) ||
@@ -82,7 +82,7 @@ public class RowIndexer implements Closeable
                 descendantRowTypes.add(rowType);
             }
             else {
-                assert false : "Not ancestor nor descendant " + rowType;
+                assert false : "Not ancestor or descendant " + rowType;
             }
         }
         this.writer = writer;
@@ -163,6 +163,7 @@ public class RowIndexer implements Closeable
     }
 
     protected void addFields(Row row, List<IndexedField> fields) throws IOException {
+        if (fields == null) return;
         for (IndexedField indexedField : fields) {
             PValueSource value = row.pvalue(indexedField.getPosition());
             Field field = indexedField.getField(value);
