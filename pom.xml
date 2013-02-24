@@ -177,6 +177,7 @@
             <artifactId>javassist</artifactId>
             <version>3.16.1-GA</version>
         </dependency>
+        
     </dependencies>
     <build>
         <resources>

@@ -1,4 +1,11 @@
 
+# Emit interface file
+
+curl localhost:9000/api/direct/igen/test
+
+# Emit an implementation class
+
+curl localhost:9000/api/direct/cgen/test?table=customers
 
 # Load a DirectModule
 
