@@ -47,6 +47,7 @@ import com.akiban.server.store.Store;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.search.Query;
 
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -144,7 +145,25 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
     }
     
     @Override
-    public Cursor searchIndex(QueryContext context, String name, String query, int limit) {
+    public Query parseQuery(QueryContext context, String name, String query) {
+        FullTextIndex index;
+        synchronized (indexes) {
+            index = indexes.get(name);
+        }
+        if (index == null) {
+            throw new NoSuchIndexException(name);
+        }
+        try {
+            Searcher searcher = getSearcher(index);
+            return searcher.parse(query);
+        }
+        catch (IOException ex) {
+            throw new AkibanInternalException("Error populating index", ex);
+        }
+    }
+
+    @Override
+    public Cursor searchIndex(QueryContext context, String name, Query query, int limit) {
         FullTextIndex index;
         synchronized (indexes) {
             index = indexes.get(name);
@@ -155,7 +174,8 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(context.getSession());
         FullTextIndexAIS indexAIS = index.forAIS(ais);
         try {
-            return searchIndex(context, indexAIS, query, limit);
+            Searcher searcher = getSearcher(index);
+            return searcher.search(context, indexAIS.getHKeyRowType(), query, limit);
         }
         catch (IOException ex) {
             throw new AkibanInternalException("Error searching index", ex);
@@ -255,21 +275,6 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
         }
     }
 
-    protected Cursor searchIndex(QueryContext context, FullTextIndexAIS indexAIS, 
-                                 String query, int limit)
-            throws IOException {
-        FullTextIndex index = indexAIS.getIndex();
-        Searcher searcher;
-        synchronized (index) {
-            searcher = index.getSearcher();
-            if (searcher == null) {
-                searcher = new Searcher(index, getAnalyzer(index));
-            }
-            index.setSearcher(searcher);
-        }
-        return searcher.search(context, indexAIS.getHKeyRowType(), query, limit);
-    }
-
     protected Analyzer getAnalyzer(FullTextIndex index) {
         Analyzer analyzer;
         synchronized (index) {
@@ -279,6 +284,18 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
             }
         }
         return analyzer;
+    }
+
+    protected Searcher getSearcher(FullTextIndex index) throws IOException {
+        Searcher searcher;
+        synchronized (index) {
+            searcher = index.getSearcher();
+            if (searcher == null) {
+                searcher = new Searcher(index, getAnalyzer(index));
+            }
+            index.setSearcher(searcher);
+        }
+        return searcher;
     }
 
 }

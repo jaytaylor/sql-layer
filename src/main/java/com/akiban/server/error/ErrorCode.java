@@ -282,10 +282,12 @@ public enum ErrorCode {
 
     // Class 42/600 - JSON interface errors
     KEY_COLUMN_MISMATCH     ("42", "600", Importance.DEBUG, KeyColumnMismatchException.class),
-    
 
+    // Class 42/700 - full text errors
+    FULL_TEXT_QUERY_PARSE   ("42", "700", Importance.DEBUG, FullTextQueryParseException.class),
+        
     // Class 44 - with check option violation
-    
+
 
     // Class 46 - SQL/J
     INVALID_SQLJ_JAR_URL    ("46", "001", Importance.DEBUG, InvalidSQLJJarURLException.class),

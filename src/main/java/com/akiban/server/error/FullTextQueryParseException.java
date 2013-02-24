@@ -23,24 +23,12 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.server.error;
 
-package com.akiban.server.service.text;
+public class FullTextQueryParseException extends InvalidOperationException {
+    public FullTextQueryParseException(Exception cause) {
+        super(ErrorCode.FULL_TEXT_QUERY_PARSE, cause.getMessage());
+        initCause(cause);
+    }
 
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.service.session.Session;
-
-import org.apache.lucene.search.Query;
-
-import java.util.List;
-
-public interface FullTextIndexService {
-    public void createIndex(Session session, String name, 
-                            String schemaName, String tableName,
-                            List<String> indexedColumns, boolean populate);
-    public void dropIndex(Session session, String name);
-    public void populateIndex(Session session, String name);
-    public Query parseQuery(QueryContext context, String name, String query);
-    public Cursor searchIndex(QueryContext context, String name, 
-                              Query query, int limit);
 }

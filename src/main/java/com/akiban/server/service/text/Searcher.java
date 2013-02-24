@@ -29,7 +29,7 @@ package com.akiban.server.service.text;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.HKeyRowType;
-import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.error.FullTextQueryParseException;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
@@ -57,16 +57,18 @@ public class Searcher implements Closeable
         this.searcherManager = new SearcherManager(index.open(), new SearcherFactory());
     }
 
-    public Cursor search(QueryContext context, HKeyRowType rowType, 
-                         String input, int limit)
-            throws IOException {
-        Query query;
+    public Query parse(String input) {
         try {
-            query = parser.parse(input, index.getDefaultFieldName());
+            return parser.parse(input, index.getDefaultFieldName());
         }
         catch (QueryNodeException ex) {
-            throw new AkibanInternalException("Parse error", ex);
+            throw new FullTextQueryParseException(ex);
         }
+    }
+
+    public Cursor search(QueryContext context, HKeyRowType rowType,
+                         Query query, int limit)
+            throws IOException {
         searcherManager.maybeRefresh(); // TODO: Move to better place.
         return new FullTextCursor(context, rowType, searcherManager, query, limit);
     }

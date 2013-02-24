@@ -116,12 +116,12 @@ public class FullTextIndexServiceIT extends ITBase
             row(rowType, 3L)
         };
         Cursor results = fullText.searchIndex(queryContext, "c",
-                                              "flintstone",
+                                              fullText.parseQuery(queryContext, "c", "flintstone"),
                                               10);
         compareRows(expected, results);
 
         results = fullText.searchIndex(queryContext, "c",
-                                       "state:MA",
+                                       fullText.parseQuery(queryContext, "c", "state:MA"),
                                        10);
         compareRows(expected, results);
     }
@@ -137,7 +137,7 @@ public class FullTextIndexServiceIT extends ITBase
             row(rowType, 1L, 101L)
         };
         Cursor results = fullText.searchIndex(queryContext, "o",
-                                              "name:Flintstone AND sku:1234",
+                                              fullText.parseQuery(queryContext, "o", "name:Flintstone AND sku:1234"),
                                               10);
         compareRows(expected, results);
     }
