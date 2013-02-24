@@ -1,0 +1,24 @@
+func({
+  "type" : "project",
+  "input_operator" : [ {
+    "type" : "count_operator",
+    "name" : [ "Count_TableStatus" ],
+    "input_type" : [ {
+      "type" : "rowtype",
+      "name" : [ "test.t" ],
+      "table_schema" : [ "test" ],
+      "table_name" : [ "t" ]
+    } ],
+    "output_type" : [ {
+      "type" : "rowtype",
+      "name" : [ "values([MCOMPAT_ BIGINT(21) NOT NULL])" ]
+    } ]
+  } ],
+  "projection" : [ {
+    "type" : "field",
+    "position" : [ 0 ],
+    "name" : [ "Field" ]
+  } ],
+  "cost" : [ "rows = 2, cost = 6.53960" ],
+  "name" : [ "Project_Default" ]
+})

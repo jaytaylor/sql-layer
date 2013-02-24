@@ -27,6 +27,7 @@
 package com.akiban.rest.resources;
 
 import com.akiban.rest.ResourceRequirements;
+import com.akiban.rest.RestResponseBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -35,9 +36,12 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.PrintWriter;
 import java.util.Arrays;
+
+import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
+import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 
 @Path("/sql")
 public class SQLResource {
@@ -50,35 +54,56 @@ public class SQLResource {
     /** Run a single SQL statement specified by the 'q' query parameter. */
     @GET
     @Path("/query")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response query(@Context HttpServletRequest request,
-                          @QueryParam("format") String format,
-                          @QueryParam("jsoncallback") String jsonp,
-                          @QueryParam("q") String query) throws Exception {
-        return reqs.restDMLService.runSQL(request, query);
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
+    public Response query(@Context final HttpServletRequest request,
+                          @QueryParam(JSONP_ARG_NAME) String jsonp,
+                          @QueryParam("q") final String query) {
+        return RestResponseBuilder
+                .forJsonp(jsonp)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        reqs.restDMLService.runSQL(writer, request, query);
+                    }
+                })
+                .build();
     }
 
     /** Explain a single SQL statement specified by the 'q' query parameter. */
     @GET
     @Path("/explain")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response explain(@Context HttpServletRequest request,
-                            @QueryParam("format") String format,
-                            @QueryParam("jsoncallback") String jsonp,
-                            @QueryParam("q") String query) throws Exception {
-        return reqs.restDMLService.explainSQL(request, query);
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
+    public Response explain(@Context final HttpServletRequest request,
+                            @QueryParam(JSONP_ARG_NAME) String jsonp,
+                            @QueryParam("q") final String query) {
+        return RestResponseBuilder
+                .forJsonp(jsonp)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        reqs.restDMLService.explainSQL(writer, request, query);
+                    }
+                })
+                .build();
     }
 
     /** Run multiple SQL statements (single transaction) specified by semi-colon separated strings in the POST body. */
     @POST
     @Path("/execute")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response execute(@Context HttpServletRequest request,
-                            @QueryParam("format") String format,
-                            @QueryParam("jsoncallback") String jsonp,
-                            final byte[] postBytes) throws Exception {
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
+    public Response execute(@Context final HttpServletRequest request,
+                            @QueryParam(JSONP_ARG_NAME) String jsonp,
+                            final byte[] postBytes) {
         String input = new String(postBytes);
-        String[] statements = input.split(";");
-        return reqs.restDMLService.runSQL(request, Arrays.asList(statements));
+        final String[] statements = input.split(";");
+        return RestResponseBuilder
+                .forJsonp(jsonp)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        reqs.restDMLService.runSQL(writer, request, Arrays.asList(statements));
+                    }
+                })
+                .build();
     }
 }

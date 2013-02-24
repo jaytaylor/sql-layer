@@ -133,7 +133,6 @@ public class RestServiceFilesIT extends ITBase {
 
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> gatherCases() throws Exception {
-        Set<String> sawNames = new HashSet<>();
         Collection<Parameterization> result = new ArrayList<>();
         for(String subDirName: RESOURCE_DIR.list()) {
             File subDir = new File(RESOURCE_DIR, subDirName);
@@ -145,10 +144,6 @@ public class RestServiceFilesIT extends ITBase {
                 String inputName = requestFile.getName();
                 int dotIndex = inputName.lastIndexOf('.');
                 String caseName = inputName.substring(0, dotIndex);
-
-                if(!sawNames.add(caseName)) {
-                    throw new IllegalStateException("Duplicate case names: " + caseName);
-                }
 
                 String basePath = requestFile.getParent() + File.separator + caseName;
                 String method = inputName.substring(dotIndex + 1).toUpperCase();
@@ -277,15 +272,18 @@ public class RestServiceFilesIT extends ITBase {
         JsonNode expectedNode = null;
         JsonNode actualNode = null;
         boolean skipNodeCheck = false;
+        String expectedTrimmed = (expected != null) ? expected.trim() : "";
+        String actualTrimmed = (actual != null) ? actual.trim() : "";
         try {
-            if(expected != null) {
+            if(!expectedTrimmed.isEmpty()) {
                 expectedNode = mapper.readTree(expected);
             }
-            if(actual != null) {
+            if(!actualTrimmed.isEmpty()) {
                 actualNode = mapper.readTree(actual);
             }
         } catch(JsonParseException e) {
-            assertEquals(assertMsg, expected, actual);
+            // Note: This case handles the jsonp tests. Somewhat fragile, but not horrible yet.
+            assertEquals(assertMsg, expectedTrimmed, actualTrimmed);
             skipNodeCheck = true;
         }
         // Try manual equals and then assert strings for pretty print

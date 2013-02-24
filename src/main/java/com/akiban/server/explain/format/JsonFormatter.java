@@ -37,6 +37,7 @@ import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 
+import java.io.Writer;
 import java.util.List;
 import java.util.Map;
 import java.io.IOException;
@@ -64,8 +65,15 @@ public class JsonFormatter
         return str.toString();
     }
 
+    public void format(Explainer explainer, Writer writer) throws IOException {
+        format(explainer, factory.createJsonGenerator(writer));
+    }
+
     public void format(Explainer explainer, OutputStream stream) throws IOException {
-        JsonGenerator generator = factory.createJsonGenerator(stream, JsonEncoding.UTF8);
+        format(explainer, factory.createJsonGenerator(stream, JsonEncoding.UTF8));
+    }
+
+    public void format(Explainer explainer, JsonGenerator generator) throws IOException {
         if (pretty) {
             generator.useDefaultPrettyPrinter();
         }

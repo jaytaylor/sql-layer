@@ -28,15 +28,17 @@ package com.akiban.rest.resources;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.rest.ResourceRequirements;
+import com.akiban.rest.RestResponseBuilder;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.PrintWriter;
+
+import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
+import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 
 /**
  * Easy access to the server version
@@ -53,10 +55,16 @@ public class VersionResource {
     }
 
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getVersion(@Context HttpServletRequest request,
-                               @QueryParam("format") String format,
-                               @QueryParam("jsoncallback") String jsonp) throws Exception {
-        return reqs.restDMLService.getAllEntities(request, TABLE_NAME, DEPTH);
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
+    public Response getVersion(@QueryParam(JSONP_ARG_NAME) String jsonp) {
+        return RestResponseBuilder
+                .forJsonp(jsonp)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        reqs.restDMLService.getAllEntities(writer, TABLE_NAME, DEPTH);
+                    }
+                })
+                .build();
     }
 }
