@@ -9,13 +9,11 @@ curl localhost:9000/api/direct/cgen/test?table=customers
 
 # Load a DirectModule
 
-curl -X PUT "localhost:9000/api/direct/module/test?name=com.akiban.direct.DemoModule&url=file:/Users/peter/workspace/sandbox/bin/"
-
+curl -X PUT "localhost:9000/api/direct/module/test?language=js&name=Sample&url=file:/Users/peter/workspace/sandbox/bin/&file=sample.js"
 # Invoke
 
-curl localhost:9000/api/direct/DemoModule/test
+curl localhost:9000/api/direct/Sample/test
 
 # Remove a DirectModule
 
-curl -X DELETE "localhost:9000/api/direct/module/test?name=DemoModule&url=file:/Users/peter/workspace/sandbox/bin/"
-
+curl -X DELETE localhost:9000/api/direct/module/test?name="Sample"

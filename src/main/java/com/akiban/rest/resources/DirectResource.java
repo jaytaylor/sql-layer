@@ -215,7 +215,7 @@ public class DirectResource {
 
                 @Override
                 public void write(PrintWriter writer) throws Exception {
-                    DirectModuleHolder holder = dispatch.get(moduleName);
+                    DirectModuleHolder holder = dispatch.remove(moduleName);
                     if (holder != null) {
                         unloadModule(holder);
                     }

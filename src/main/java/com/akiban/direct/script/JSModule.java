@@ -24,10 +24,17 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 package com.akiban.direct.script;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.nio.file.Path;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -44,40 +51,39 @@ import com.akiban.direct.DirectModule;
 public class JSModule implements DirectModule {
 
     private File jsFile;
-    
+    private Path directoryPath;
+    private WatchService watcher;
     private boolean isIdempotent;
-    
     private DirectContext context;
-
+    ScriptEngine engine;
     private CompiledScript compiled;
-    
     private Bindings bindings;
-    
+
     @Override
     public void setContext(DirectContext context) {
         this.context = context;
     }
-    
+
     public DirectContext getContext() {
         return context;
     }
-    
+
     @Override
     public void start() throws Exception {
+        jsFile = jsFile.getAbsoluteFile();
         if (!jsFile.exists() || jsFile.isDirectory()) {
             throw new FileNotFoundException(jsFile.toString());
         }
-        ScriptEngineManager manager = new ScriptEngineManager(getClass().getClassLoader());
-        ScriptEngine engine = manager.getEngineByName("js");
-        Compilable compiler = (Compilable)engine;
-        compiled = compiler.compile(new FileReader(jsFile));
-        bindings = engine.createBindings();
-        bindings.put("dcontext", context);
+
+        directoryPath = jsFile.getParentFile().toPath();
+        watcher = directoryPath.getFileSystem().newWatchService();
+        directoryPath.register(watcher, ENTRY_MODIFY, ENTRY_DELETE, ENTRY_CREATE);
+        loadModule();
     }
 
     @Override
     public void stop() throws Exception {
-        // Nothing to do
+        watcher.close();
     }
 
     @Override
@@ -87,6 +93,20 @@ public class JSModule implements DirectModule {
 
     @Override
     public Object exec(Map<String, List<String>> params) throws Exception {
+        int changes = 0;
+        WatchKey key;
+        while ((key = watcher.poll()) != null) {
+            for (WatchEvent<?> event : key.pollEvents()) {
+                Path relativePath = (Path)event.context();
+                if (jsFile.toPath().endsWith(relativePath)) {
+                    changes++;
+                }
+            }
+            key.reset();
+        }
+        if (changes > 0) {
+            loadModule();
+        }
         bindings.put("params", params);
         return compiled.eval(bindings);
     }
@@ -94,11 +114,11 @@ public class JSModule implements DirectModule {
     public java.sql.Connection getConnection() {
         return context.getConnection();
     }
-    
+
     public java.sql.Statement createStatement() throws SQLException {
         return context.getConnection().createStatement();
     }
-    
+
     public void setParams(Map<String, List<String>> params) {
         jsFile = new File(getFirst(params, "file"));
         String isi = getFirst(params, "idempotent");
@@ -112,5 +132,21 @@ public class JSModule implements DirectModule {
         }
         return null;
     }
-   
+
+    private synchronized void loadModule() throws Exception {
+        if (!jsFile.exists() || jsFile.isDirectory()) {
+            throw new FileNotFoundException(jsFile.toString());
+        }
+        
+        if (engine == null) {
+            ScriptEngineManager manager = new ScriptEngineManager(getClass().getClassLoader());
+            engine = manager.getEngineByName("js");
+        }
+        Compilable compiler = (Compilable) engine;
+        compiled = compiler.compile(new FileReader(jsFile));
+        bindings = engine.createBindings();
+        bindings.put("dcontext", context);
+
+    }
+
 }

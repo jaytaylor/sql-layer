@@ -87,17 +87,17 @@ public class DirectClassLoader extends URLClassLoader {
 
             /*
              * If we are loading a generated classes then any of its references
-             * are resolve by the server's ClassLoader
+             * are resolved by the server's ClassLoader
              */
-            if (cl == null && depth > 0) {
-                cl = getClass().getClassLoader().loadClass(name);
-            }
+//            if (cl == null && depth > 0) {
+//                cl = getClass().getClassLoader().loadClass(name);
+//            }
 
             if (cl == null && name.startsWith(INCLUDE_PREFIX)) {
                 try {
                     /*
                      * These classes are included in the server jar, but we want
-                     * them defined in the DirectClassLoader.
+                     * them defined in this ClassLoader, not the parent.
                      */
                     String resourceName = name.replace('.', '/').concat(".class");
                     InputStream is = getClass().getClassLoader().getResourceAsStream(resourceName);
@@ -140,15 +140,22 @@ public class DirectClassLoader extends URLClassLoader {
             if (cl == null) {
                 cl = compileSpecialClass(name, resolve);
             }
+
+            if (cl == null) {
+                try {
+                    cl = getParent().loadClass(name);
+                } catch (ClassNotFoundException e) {
+                    // ignore
+                }
+            }
+
             if (cl == null) {
                 try {
                     cl = findClass(name);
                 } catch (ClassNotFoundException e) {
-                    // fall through
+                    System.out.println("Can't load class " + name);
+                    throw e;
                 }
-            }
-            if (cl == null) {
-                throw new ClassNotFoundException(name);
             }
             if (resolve) {
                 resolveClass(cl);
