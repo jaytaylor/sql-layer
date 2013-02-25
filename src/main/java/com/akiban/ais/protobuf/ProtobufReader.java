@@ -26,28 +26,7 @@
 
 package com.akiban.ais.protobuf;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.CharsetAndCollation;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Columnar;
-import com.akiban.ais.model.DefaultNameGenerator;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.NameGenerator;
-import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.SQLJJar;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.Type;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.View;
-import com.akiban.ais.model.PendingOSC;
+import com.akiban.ais.model.*;
 import com.akiban.ais.util.TableChange;
 import com.akiban.server.error.ProtobufReadException;
 import com.akiban.server.geophile.Space;
@@ -398,14 +377,25 @@ public class ProtobufReader {
     private void loadTableIndexes(UserTable userTable, Collection<AISProtobuf.Index> pbIndexes) {
         for(AISProtobuf.Index pbIndex : pbIndexes) {
             hasRequiredFields(pbIndex);
-            TableIndex tableIndex = TableIndex.create(
-                    destAIS,
-                    userTable,
-                    pbIndex.getIndexName(),
-                    pbIndex.getIndexId(),
-                    pbIndex.getIsUnique(),
-                    getIndexConstraint(pbIndex)
-            );
+            Index tableIndex;
+            if (isFullTextIndex(pbIndex)) {
+                tableIndex = FullTextIndex.create(
+                        destAIS,
+                        userTable,
+                        pbIndex.getIndexName(),
+                        pbIndex.getIndexId()
+                        );
+            }
+            else {
+                tableIndex = TableIndex.create(
+                        destAIS,
+                        userTable,
+                        pbIndex.getIndexName(),
+                        pbIndex.getIndexId(),
+                        pbIndex.getIsUnique(),
+                        getIndexConstraint(pbIndex)
+                        );
+            }
             handleTreeName(tableIndex, pbIndex);
             handleSpatial(tableIndex, pbIndex);
             loadIndexColumns(userTable, tableIndex, pbIndex.getColumnsList());
@@ -434,6 +424,16 @@ public class ProtobufReader {
         if(pbIndex.hasTreeName()) {
             index.setTreeName(pbIndex.getTreeName());
         }
+    }
+
+    private boolean isFullTextIndex(AISProtobuf.Index pbIndex) {
+        if (pbIndex.hasIndexMethod()) {
+            switch (pbIndex.getIndexMethod()) {
+                case FULL_TEXT:
+                    return true;
+            }
+        }
+        return false;
     }
 
     private void handleSpatial(Index index, AISProtobuf.Index pbIndex) {

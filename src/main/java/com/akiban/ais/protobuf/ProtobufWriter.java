@@ -382,6 +382,12 @@ public class ProtobufWriter {
             writePendingOSC(tableBuilder, table.getPendingOSC());
         }
 
+        for(FullTextIndex index : table.getOwnFullTextIndexes()) {
+            if(selector.isSelected(index)) {
+                writeFullTextIndex(tableBuilder, index);
+            }
+        }
+
         schemaBuilder.addTables(tableBuilder.build());
     }
 
@@ -516,6 +522,10 @@ public class ProtobufWriter {
         groupBuilder.addIndexes(writeIndexCommon(index, true));
     }
 
+    private static void writeFullTextIndex(AISProtobuf.Table.Builder tableBuilder, FullTextIndex index) {
+        tableBuilder.addIndexes(writeIndexCommon(index, false));
+    }
+
     private static void writeIndexColumn(AISProtobuf.Index.Builder indexBuilder, IndexColumn indexColumn, boolean withTableName) {
         AISProtobuf.IndexColumn.Builder indexColumnBuilder = AISProtobuf.IndexColumn.newBuilder().
                 setColumnName(indexColumn.getColumn().getName()).
@@ -565,6 +575,8 @@ public class ProtobufWriter {
             return AISProtobuf.IndexMethod.NORMAL;
         case Z_ORDER_LAT_LON: 
             return AISProtobuf.IndexMethod.Z_ORDER_LAT_LON;
+        case FULL_TEXT: 
+            return AISProtobuf.IndexMethod.FULL_TEXT;
         }
     }
 

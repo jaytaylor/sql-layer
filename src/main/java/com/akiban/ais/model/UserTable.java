@@ -584,6 +584,7 @@ public class UserTable extends Table
 
     /** Return full text indexes that index this table. */
     public Collection<FullTextIndex> getOwnFullTextIndexes() {
+        if (fullTextIndexes.isEmpty()) return Collections.emptyList();
         Collection<FullTextIndex> result = new ArrayList<>();
         for (FullTextIndex index : fullTextIndexes) {
             if (index.getIndexedTable() == this) {

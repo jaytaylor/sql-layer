@@ -47,6 +47,16 @@ public class FullTextIndex extends Index
     }
 
     @Override
+    public IndexType getIndexType() {
+        return IndexType.FULL_TEXT;
+    }
+
+    @Override
+    public IndexMethod getIndexMethod() {
+        return IndexMethod.FULL_TEXT;
+    }
+
+    @Override
     public void computeFieldAssociations(Map<Table,Integer> ordinalMap) {
         throw new UnsupportedOperationException();
     }
