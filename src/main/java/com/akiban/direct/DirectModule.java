@@ -33,11 +33,11 @@ public interface DirectModule {
 
     void setContext(DirectContext context);
     
-    public void start();
+    public void start() throws Exception;
     
-    public void stop();
+    public void stop() throws Exception;
 
     boolean isIdempotent();
 
-    String exec(Map<String, List<String>> params) throws Exception;
+    Object exec(Map<String, List<String>> params) throws Exception;
 }

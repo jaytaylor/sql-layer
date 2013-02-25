@@ -28,7 +28,10 @@ package com.akiban.rest.resources;
 
 import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
 
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +58,7 @@ import com.akiban.direct.ClassSourceWriter;
 import com.akiban.direct.DirectClassLoader;
 import com.akiban.direct.DirectContextImpl;
 import com.akiban.direct.DirectModule;
+import com.akiban.direct.script.JSModule;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.rest.RestResponseBuilder.BodyGenerator;
@@ -168,41 +172,15 @@ public class DirectResource {
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
     public Response put(@PathParam("op") final String op, @PathParam("schema") final String schema,
-            @Context final UriInfo uri, @QueryParam(JSONP_ARG_NAME) String jsonp) throws Exception {
+            @Context final UriInfo uri, @QueryParam(JSONP_ARG_NAME) String jsonp, final byte[] payload)
+            throws Exception {
         final MultivaluedMap<String, String> params = uri.getQueryParameters();
         if ("module".equals(op)) {
-            final String moduleName = params.getFirst("name");
-            final List<String> urls = params.get("url");
             return RestResponseBuilder.forJsonp(jsonp).body(new BodyGenerator() {
 
                 @Override
                 public void write(PrintWriter writer) throws Exception {
-                    try (Session session = reqs.sessionService.createSession()) {
-                        final AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(
-                                reqs.sessionService.createSession());
-                        if (ais.getSchema(schema) == null) {
-                            throw new RuntimeException("No such schema: " + schema);
-                        }
-                        Map<Integer, CtClass> generated = ClassBuilder
-                                .compileGeneratedInterfacesAndClasses(ais, schema);
-                        @SuppressWarnings("resource")
-                        final DirectClassLoader dcl = new DirectClassLoader(systemClassLoader());
-                        final Class<? extends DirectModule> serviceClass = dcl.loadModule(ais, moduleName, urls);
-                        dcl.registerDirectObjectClasses(generated);
-                        DirectModule module = serviceClass.newInstance();
-                        DirectContextImpl context = new DirectContextImpl(dcl);
-                        module.setContext(context);
-                        DirectModuleHolder holder = dispatch.put(serviceClass.getSimpleName(), new DirectModuleHolder(
-                                module, context));
-                        if (holder != null) {
-                            ClassLoader cl = holder.module.getClass().getClassLoader();
-                            assert cl instanceof DirectClassLoader;
-                            ((DirectClassLoader) cl).close();
-                        }
-                    } catch (Throwable e) {
-                        e.printStackTrace();
-                        throw new RuntimeException(e);
-                    }
+                    loadModule(schema, params, payload);
                 }
             }).build();
         }
@@ -239,9 +217,7 @@ public class DirectResource {
                 public void write(PrintWriter writer) throws Exception {
                     DirectModuleHolder holder = dispatch.get(moduleName);
                     if (holder != null) {
-                        ClassLoader cl = holder.module.getClass().getClassLoader();
-                        assert cl instanceof DirectClassLoader;
-                        ((DirectClassLoader) cl).close();
+                        unloadModule(holder);
                     }
                 }
             }).build();
@@ -272,20 +248,83 @@ public class DirectResource {
                     }
                 }
             }).build();
-
         }
 
         throw new NullPointerException("Module named " + op + " not loaded");
     }
 
-    private String exec(final DirectModuleHolder holder, MultivaluedMap<String, String> params)
+    private void start(final DirectModule module, DirectContextImpl context, MultivaluedMap<String, String> params)
             throws Exception {
+        module.setContext(context);
+        /*
+         * If module has optional method setParams, invoke it to pass the
+         * parameters available at load time.
+         */
+        try {
+            Method method = module.getClass().getMethod("setParams", Map.class);
+            method.invoke(module, params);
+        } catch (NoSuchMethodException e) {
+            // ignore
+        } catch (NoSuchMethodError | SecurityException | IllegalAccessException | IllegalArgumentException
+                | InvocationTargetException e) {
+            throw e;
+        }
+        module.start();
+    }
+
+    private void stop(final DirectModule module) {
+        try {
+            module.stop();
+        } catch (Exception e) {
+            // ignore
+        }
+    }
+
+    private Object exec(final DirectModuleHolder holder, MultivaluedMap<String, String> params) throws Exception {
         try {
             holder.context.enter();
             return holder.module.exec(params);
         } finally {
             holder.context.leave();
         }
+    }
+
+    private void loadModule(String schema, MultivaluedMap<String, String> params, byte[] payload) throws Exception {
+        String language = params.getFirst("language");
+        String name = params.getFirst("name");
+        String className = params.getFirst("class");
+        List<String> urls = params.get("url");
+        
+        if ("js".equals(language)) {
+            className = JSModule.class.getName();
+        }
+        
+        try (Session session = reqs.sessionService.createSession()) {
+            final AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(
+                    reqs.sessionService.createSession());
+            if (ais.getSchema(schema) == null) {
+                throw new RuntimeException("No such schema: " + schema);
+            }
+            Map<Integer, CtClass> generated = ClassBuilder.compileGeneratedInterfacesAndClasses(ais, schema);
+            final DirectClassLoader dcl = new DirectClassLoader(systemClassLoader());
+            final Class<? extends DirectModule> serviceClass = dcl.loadModule(ais, className, urls);
+            DirectModule module = serviceClass.newInstance();
+            DirectContextImpl context = new DirectContextImpl(dcl);
+            DirectModuleHolder holder = dispatch.put(name, new DirectModuleHolder(module,
+                    context));
+            if (holder != null) {
+                unloadModule(holder);
+            }
+            dcl.registerDirectObjectClasses(generated);
+            start(module, context, params);
+        }
+    }
+    
+    private void unloadModule(DirectModuleHolder holder) throws IOException {
+        ClassLoader cl = holder.module.getClass().getClassLoader();
+        assert cl instanceof DirectClassLoader;
+        stop(holder.module);
+        ((DirectClassLoader) cl).close();
     }
 
     private ClassLoader systemClassLoader() {

@@ -29,6 +29,7 @@ package com.akiban.direct;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import com.akiban.sql.embedded.JDBCConnection;
 
@@ -71,6 +72,7 @@ public class DirectContextImpl implements DirectContext {
         }
     }
     
+    
     private final DirectClassLoader classLoader;
     
     private final ThreadLocal<ConnectionHolder> connectionThreadLocal = new ThreadLocal<ConnectionHolder>() {
@@ -87,6 +89,10 @@ public class DirectContextImpl implements DirectContext {
 
     public Connection getConnection() {
         return connectionThreadLocal.get().getConnection();
+    }
+    
+    public Statement createStatement() throws SQLException {
+        return getConnection().createStatement();
     }
     
     public void enter() {
