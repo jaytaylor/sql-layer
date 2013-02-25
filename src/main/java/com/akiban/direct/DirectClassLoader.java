@@ -85,13 +85,6 @@ public class DirectClassLoader extends URLClassLoader {
                 cl = getParent().loadClass(name);
             }
 
-            /*
-             * If we are loading a generated classes then any of its references
-             * are resolved by the server's ClassLoader
-             */
-//            if (cl == null && depth > 0) {
-//                cl = getClass().getClassLoader().loadClass(name);
-//            }
 
             if (cl == null && name.startsWith(INCLUDE_PREFIX)) {
                 try {
