@@ -47,6 +47,11 @@ public class FullTextIndex extends Index
     }
 
     @Override
+    public boolean isGroupIndex() {
+        return false;
+    }
+
+    @Override
     public IndexType getIndexType() {
         return IndexType.FULL_TEXT;
     }

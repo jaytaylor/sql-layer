@@ -523,7 +523,7 @@ public class ProtobufWriter {
     }
 
     private static void writeFullTextIndex(AISProtobuf.Table.Builder tableBuilder, FullTextIndex index) {
-        tableBuilder.addIndexes(writeIndexCommon(index, false));
+        tableBuilder.addIndexes(writeIndexCommon(index, true));
     }
 
     private static void writeIndexColumn(AISProtobuf.Index.Builder indexBuilder, IndexColumn indexColumn, boolean withTableName) {
