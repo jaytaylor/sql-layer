@@ -195,8 +195,8 @@ public class SecurityServiceIT extends ITBase
 
         // Check returned id
         JsonNode idNode = new ObjectMapper().readTree(content).get("id");
-        assertNotNull(idNode);
-        idNode.getIntValue();
+        assertNotNull("Has id field", idNode);
+        assertEquals("id is integer", true, idNode.isInt());
 
         HttpDelete delete = new HttpDelete(getRestURL("/security/users/user3", null, "akiban:topsecret"));
         response = client.execute(delete);
