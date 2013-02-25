@@ -101,7 +101,7 @@ public class SecurityResource {
             public void write(PrintWriter writer) throws Exception {
                 User newUser = reqs.securityService.addUser(user, password, roles);
                 writer.write("{\"id\":");
-                writer.write(newUser.getId());
+                writer.print(newUser.getId());
                 writer.write('}');
             }
         });
