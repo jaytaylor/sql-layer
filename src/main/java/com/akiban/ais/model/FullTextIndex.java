@@ -91,15 +91,49 @@ public class FullTextIndex extends Index
         return ids;
     }
 
+    @Override
+    public void addColumn(IndexColumn indexColumn) {
+        UserTable table = indexColumn.getColumn().getUserTable();
+        if (!((table == indexedTable) ||
+              table.isDescendantOf(indexedTable) ||
+              indexedTable.isDescendantOf(table))) {
+            if (table.getGroup() != indexedTable.getGroup()) {
+                throw new IndexColNotInGroupException(indexColumn.getIndex().getIndexName().getName(),
+                                                      indexColumn.getColumn().getName());
+            }
+            else {
+                throw new BranchingGroupIndexException(indexColumn.getIndex().getIndexName().getName(),
+                                                       table.getName(),
+                                                       indexedTable.getName());
+            }
+        }
+        super.addColumn(indexColumn);
+        table.addFullTextIndex(this);
+    }
+
     /* FullTextIndex */
 
     public UserTable getIndexedTable() {
         return indexedTable;
     }
 
-    public FullTextIndex(UserTable indexedTable, String indexName, Integer indexId, Boolean isUnique, String constraint)
+    public static FullTextIndex create(AkibanInformationSchema ais,
+                                       UserTable table, String indexName, 
+                                       Integer indexId)
     {
-        super(indexedTable.getName(), indexName, indexId, isUnique, constraint);
+        ais.checkMutability();
+        table.checkMutability();
+        AISInvariants.checkDuplicateIndexesInTable(table, indexName);
+        FullTextIndex index = new FullTextIndex(table, indexName, indexId);
+        table.addFullTextIndex(index);
+        return index;
+    }
+
+    public static final String FULL_TEXT_CONSTRAINT = "FULL_TEXT";
+
+    public FullTextIndex(UserTable indexedTable, String indexName, Integer indexId)
+    {
+        super(indexedTable.getName(), indexName, indexId, false, FULL_TEXT_CONSTRAINT);
         this.indexedTable = indexedTable;
     }
     
