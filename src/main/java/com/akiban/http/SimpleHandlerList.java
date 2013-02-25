@@ -35,9 +35,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * <p>
@@ -50,7 +49,7 @@ import java.util.List;
  * </p>
  */
 public class SimpleHandlerList extends AbstractHandler {
-    private final List<Handler> handlers = Collections.synchronizedList(new ArrayList<Handler>());
+    private final List<Handler> handlers = new CopyOnWriteArrayList<>();
 
     @Override
     public void handle(String target,
@@ -60,13 +59,11 @@ public class SimpleHandlerList extends AbstractHandler {
         if(!isStarted()) {
             return;
         }
-        synchronized(handlers) {
-            for(Handler h : handlers) {
-                h.handle(target,baseRequest, request, response);
-                // Return once the request has been handled
-                if(baseRequest.isHandled()) {
-                    return;
-                }
+        for(Handler h : handlers) {
+            h.handle(target,baseRequest, request, response);
+            // Return once the request has been handled
+            if(baseRequest.isHandled()) {
+                return;
             }
         }
     }
@@ -79,13 +76,11 @@ public class SimpleHandlerList extends AbstractHandler {
         } catch(Exception e) {
             mex.add(e);
         }
-        synchronized(handlers) {
-            for(Handler h : handlers) {
-                try {
-                    h.start();
-                } catch(Exception e){
-                    mex.add(e);
-                }
+        for(Handler h : handlers) {
+            try {
+                h.start();
+            } catch(Exception e){
+                mex.add(e);
             }
         }
         mex.ifExceptionThrow();
@@ -94,13 +89,11 @@ public class SimpleHandlerList extends AbstractHandler {
     @Override
     protected void doStop() throws Exception {
         MultiException mex = new MultiException();
-        synchronized(handlers) {
-            for(Handler h : handlers) {
-                try{
-                    h.stop();
-                } catch(Exception e) {
-                    mex.add(e);
-                }
+        for(Handler h : handlers) {
+            try{
+                h.stop();
+            } catch(Exception e) {
+                mex.add(e);
             }
         }
         try {
@@ -114,13 +107,11 @@ public class SimpleHandlerList extends AbstractHandler {
     @Override
     public void destroy() {
         MultiException mex = new MultiException();
-        synchronized(handlers) {
-            for(Handler h : handlers) {
-                try {
-                    h.destroy();
-                } catch(Exception e) {
-                    mex.add(e);
-                }
+        for(Handler h : handlers) {
+            try {
+                h.destroy();
+            } catch(Exception e) {
+                mex.add(e);
             }
         }
         try {
