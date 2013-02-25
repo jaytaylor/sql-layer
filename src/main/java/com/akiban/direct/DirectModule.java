@@ -37,7 +37,7 @@ public interface DirectModule {
     
     public void stop() throws Exception;
 
-    boolean isIdempotent();
+    boolean isGetEnabled();
 
-    Object exec(Map<String, List<String>> params) throws Exception;
+    Object eval(Map<String, List<String>> params) throws Exception;
 }

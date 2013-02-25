@@ -148,7 +148,7 @@ public class DirectResource {
 
         final DirectModuleHolder holder = dispatch.get(op);
 
-        if (holder != null && holder.module.isIdempotent()) {
+        if (holder != null && holder.module.isGetEnabled()) {
             return RestResponseBuilder.forJsonp(jsonp).body(new BodyGenerator() {
 
                 @Override
@@ -186,7 +186,7 @@ public class DirectResource {
         }
 
         final DirectModuleHolder holder = dispatch.get(op);
-        if (holder.module != null && !holder.module.isIdempotent()) {
+        if (holder.module != null && !holder.module.isGetEnabled()) {
             return RestResponseBuilder.forJsonp(jsonp).body(new BodyGenerator() {
 
                 @Override
@@ -233,7 +233,7 @@ public class DirectResource {
         final MultivaluedMap<String, String> params = uri.getQueryParameters();
         final DirectModuleHolder holder = dispatch.get(op);
 
-        if (holder != null && !holder.module.isIdempotent()) {
+        if (holder != null && !holder.module.isGetEnabled()) {
             return RestResponseBuilder.forJsonp(jsonp).body(new BodyGenerator() {
 
                 @Override
@@ -283,7 +283,7 @@ public class DirectResource {
     private Object exec(final DirectModuleHolder holder, MultivaluedMap<String, String> params) throws Exception {
         try {
             holder.context.enter();
-            return holder.module.exec(params);
+            return holder.module.eval(params);
         } finally {
             holder.context.leave();
         }

@@ -9,7 +9,8 @@ curl localhost:9000/api/direct/cgen/test?table=customers
 
 # Load a DirectModule
 
-curl -X PUT "localhost:9000/api/direct/module/test?language=js&name=Sample&url=file:/Users/peter/workspace/sandbox/bin/&file=sample.js"
+curl -X PUT "localhost:9000/api/direct/module/test?language=js&name=Sample&file=src/test/resources/com/akiban/direct/sample.js&get=true"
+
 # Invoke
 
 curl localhost:9000/api/direct/Sample/test

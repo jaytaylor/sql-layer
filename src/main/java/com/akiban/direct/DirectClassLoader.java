@@ -71,20 +71,46 @@ public class DirectClassLoader extends URLClassLoader {
         return loadClass(name, false);
     }
 
+    /**
+     * Implementation of {@link ClassLoader#loadClass(String, boolean)} to
+     * handle special cases. For most classes, this implementation isolates
+     * loaded classes from the core of Akiban Server so that loaded code cannot
+     * access sensitive information within the server. (TODO: appropriate
+     * security context to prevent file access, etc.)
+     * 
+     * Special cases:
+     * <ul>
+     * <li>Classes in the com.akiban.direct.script package such as
+     * {@link com.akiban.direct.script.JSModule}. These are loaded within the
+     * context of this class loader (not the parent) but are defined by byte
+     * code found as a resource within the parent class loader. Translation: you
+     * can write a module in this package as part of Akiban Server code but it
+     * will be class-loaded in an isolated fashion. References to other Akiban
+     * Server classes, except for a small white list, will not resolve at
+     * runtime.</li>
+     * <li>A white list of classes defined by {@link #DIRECT_INTERFACES} are
+     * loaded from the parent. These include the DirectXXX interfaces and
+     * AbstractDataObject which implements the core functionality of a
+     * DirectObject.</li>
+     * <li>Classes that are generated from the schema. These have been
+     * precompiled by Javassist. As required to satisfy links in application
+     * code within the module these are reduced to byte code and defined here.</li>
+     * <li>All others are loaded from the base class loader provided as the
+     * parent of this loader. This is intended to be the bootstrap classloader.</li>
+     * </ul>
+     * 
+     * 
+     */
     @Override
     protected Class<?> loadClass(String genericName, boolean resolve) throws ClassNotFoundException {
-        /*
-         * Not a parallel ClassLoader until necessary
-         */
         int p = genericName.indexOf('<');
         String name = p == -1 ? genericName : genericName.substring(0, p);
 
+        /*
+         * Not a parallel ClassLoader until necessary
+         */
         synchronized (this) {
             Class<?> cl = findLoadedClass(name);
-            if (cl == null && (name.startsWith("java") || name.startsWith("com.sun."))) {
-                cl = getParent().loadClass(name);
-            }
-
 
             if (cl == null && name.startsWith(INCLUDE_PREFIX)) {
                 try {
@@ -116,8 +142,9 @@ public class DirectClassLoader extends URLClassLoader {
                 }
             }
             /*
-             * Load some classes selected carefully by name from the server's
-             * ClassLoader as
+             * Load some interfaces and classes selected carefully by name from
+             * the server's ClassLoader. These represent the server's context
+             * within the module.
              */
             if (cl == null) {
                 for (final String special : DIRECT_INTERFACES) {
@@ -143,12 +170,7 @@ public class DirectClassLoader extends URLClassLoader {
             }
 
             if (cl == null) {
-                try {
-                    cl = findClass(name);
-                } catch (ClassNotFoundException e) {
-                    System.out.println("Can't load class " + name);
-                    throw e;
-                }
+                cl = findClass(name);
             }
             if (resolve) {
                 resolveClass(cl);
@@ -196,9 +218,11 @@ public class DirectClassLoader extends URLClassLoader {
 
     public Class<? extends DirectModule> loadModule(AkibanInformationSchema ais, String moduleName, List<String> urls)
             throws Exception {
-        for (final String u : urls) {
-            URL url = new URL(u);
-            addURL(url);
+        if (urls != null) {
+            for (final String u : urls) {
+                URL url = new URL(u);
+                addURL(url);
+            }
         }
         @SuppressWarnings("unchecked")
         Class<? extends DirectModule> clazz = (Class<? extends DirectModule>) this.loadClass(moduleName);
