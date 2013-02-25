@@ -43,6 +43,8 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -187,9 +189,14 @@ public class SecurityServiceIT extends ITBase
         post.setEntity(new StringEntity(ADD_USER, ContentType.APPLICATION_JSON));
         HttpResponse response = client.execute(post);
         int code = response.getStatusLine().getStatusCode();
-        EntityUtils.consume(response.getEntity());
+        String content = EntityUtils.toString(response.getEntity());
         assertEquals(HttpStatus.SC_OK, code);
         assertNotNull(securityService.getUser("user3"));
+
+        // Check returned id
+        JsonNode idNode = new ObjectMapper().readTree(content).get("id");
+        assertNotNull(idNode);
+        idNode.getIntValue();
 
         HttpDelete delete = new HttpDelete(getRestURL("/security/users/user3", null, "akiban:topsecret"));
         response = client.execute(delete);
