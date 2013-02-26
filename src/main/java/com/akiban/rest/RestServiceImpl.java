@@ -27,12 +27,7 @@
 package com.akiban.rest;
 
 import com.akiban.http.HttpConductor;
-import com.akiban.rest.resources.EntityResource;
-import com.akiban.rest.resources.ModelResource;
-import com.akiban.rest.resources.ProcedureCallResource;
-import com.akiban.rest.resources.SQLResource;
-import com.akiban.rest.resources.SecurityResource;
-import com.akiban.rest.resources.VersionResource;
+import com.akiban.rest.resources.*;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
@@ -114,6 +109,7 @@ public class RestServiceImpl implements RestService, Service {
         );
         config.getSingletons().addAll(Arrays.asList(
                 new EntityResource(reqs),
+                new FullTextResource(reqs),
                 new ModelResource(reqs),
                 new ProcedureCallResource(reqs),
                 new SecurityResource(reqs),
