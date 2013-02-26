@@ -377,9 +377,7 @@ public class AISMerge {
             IndexColumn.create(newIndex, newColumn, indexCol, indexCol.getPosition());
         }
 
-        if (index.getIndexType() != Index.IndexType.FULL_TEXT) {
-            newIndex.setTreeName(nameGenerator.generateIndexTreeName(newIndex));
-        }
+        newIndex.setTreeName(nameGenerator.generateIndexTreeName(newIndex));
         newIndex.freezeColumns();
 
         return newIndex;
