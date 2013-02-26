@@ -194,8 +194,8 @@ public abstract class ClassBuilder {
         Join parentJoin = table.getParentJoin();
         if (parentJoin != null) {
             String parentTypeName = parentJoin.getParent().getName().getTableName();
-            addMethod("get" + asJavaName(parentTypeName, true), scn + "$" + asJavaName(parentTypeName, true), NONE, null,
-                    iface ? null : UNSUPPORTED);
+            addMethod("get" + asJavaName(parentTypeName, true), scn + "$" + asJavaName(parentTypeName, true), NONE,
+                    null, iface ? null : UNSUPPORTED);
         }
 
         /*
@@ -229,10 +229,10 @@ public abstract class ClassBuilder {
             if (!primaryKeyColumns.isEmpty()) {
                 String[] body = null;
                 if (!iface) {
-                    String s = buildDirectIterableExpr(childClassName, tableName, childTableName);
+                    String s = buildDirectIterableExpr(childClassName, childTableName);
                     for (final JoinColumn jc : join.getJoinColumns()) {
-                        s = s.concat(String.format(".naturalJoin(\"%s\", \"%s\")", jc.getParent().getName(), jc
-                                .getChild().getName()));
+                        s = s.concat(String.format(".join(\"%s\", \"%s\", \"%s\", \"%s\")", tableName, jc
+                                .getParent().getName(), childTableName, jc.getChild().getName()));
                         body = new String[] { "return " + s };
                     }
                 }
@@ -256,8 +256,8 @@ public abstract class ClassBuilder {
         return column.getType().akType().javaClass();
     }
 
-    private String buildDirectIterableExpr(final String className, final String fromTable, final String toTable) {
-        return String.format("(new com.akiban.direct.DirectIterableImpl"
-                + "(%1$s.class, \"%2$s\", \"%3$s\"))", className, fromTable, toTable);
+    private String buildDirectIterableExpr(final String className, final String table) {
+        return String.format("(new com.akiban.direct.DirectIterableImpl" + "(%1$s.class, \"%2$s\"))",
+                className, table);
     }
 }

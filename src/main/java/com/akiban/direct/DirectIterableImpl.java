@@ -44,9 +44,8 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
     final Class<T> clazz;
     boolean hasNext;
 
-    final String toTable;
-    final String fromTable;
-
+    final String table;
+    final List<String> joinTables = new ArrayList<String>();
     final List<String> predicates = new ArrayList<String>();
     String sort;
     String limit;
@@ -56,10 +55,9 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
 
     DirectResultSet resultSet;
 
-    public DirectIterableImpl(Class<T> clazz, String fromTable, String toTable) {
+    public DirectIterableImpl(Class<T> clazz, String toTable) {
         this.clazz = clazz;
-        this.fromTable = fromTable;
-        this.toTable = toTable;
+        this.table = toTable;
     }
 
     @Override
@@ -125,9 +123,9 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
     private void initIfNeeded() {
         if (!initialized) {
             StringBuilder sb = new StringBuilder();
-            sb.append("select ").append(toTable).append(".*").append(" from ").append(toTable);
-            if (fromTable != null) {
-                sb.append(", ").append(fromTable);
+            sb.append("select ").append(table).append(".*").append(" from ").append(table);
+            for (final String t : joinTables) {
+                sb.append(", ").append(t);
             }
             if (!predicates.isEmpty()) {
                 sb.append(" where ");
@@ -181,7 +179,7 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
      */
     @Override
     public DirectIterableImpl<T> where(final String predicate) {
-        predicates.add(toTable + "." + predicate);
+        predicates.add(table + "." + predicate);
         return this;
     }
 
@@ -214,8 +212,12 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
         throw new IllegalStateException("Sort already specified");
     }
 
-    public DirectIterableImpl<T> naturalJoin(final String fromColumn, String toColumn) {
-        return where(toColumn + " = " + fromTable + "." + fromColumn);
+    public DirectIterableImpl<T> join(final String fromTable, final String fromColumn, final String toTable, String toColumn) {
+        predicates.add(fromTable + "." + fromColumn + " = " + toTable + "." + toColumn);
+        if (!joinTables.contains(fromTable)) {
+            joinTables.add(fromTable);
+        }
+        return this;
     }
 
     @Override

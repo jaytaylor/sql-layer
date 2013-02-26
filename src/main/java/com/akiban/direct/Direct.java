@@ -93,12 +93,5 @@ public class Direct {
     public static void leave() {
         contextThreadLocal.set(null);
     }
-    
-    class Foo implements DirectObject {
-        
-    }
-    
-    static com.akiban.direct.DirectIterableImpl<com.akiban.direct.Direct.Foo> foo() {
-        return (new com.akiban.direct.DirectIterableImpl(com.akiban.direct.Direct.Foo.class, "customers", "addresses")).naturalJoin("cid", "cid");
-    }
+
 }
