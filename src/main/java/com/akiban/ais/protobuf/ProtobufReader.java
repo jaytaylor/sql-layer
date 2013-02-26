@@ -155,6 +155,10 @@ public class ProtobufReader {
         for(List<NewGroupInfo> newGroups : allNewGroups) {
             hookUpGroupAndCreateGroupIndexes(newGroups);
         }
+        // Likewise full text indexes.
+        for(AISProtobuf.Schema pbSchema : pbSchemas) {
+            loadFullTextIndexes(pbSchema.getSchemaName(), pbSchema.getTablesList());
+        }        
     }
     
     private List<NewGroupInfo> loadGroups(String schema, Collection<AISProtobuf.Group> pbGroups) {
@@ -377,25 +381,14 @@ public class ProtobufReader {
     private void loadTableIndexes(UserTable userTable, Collection<AISProtobuf.Index> pbIndexes) {
         for(AISProtobuf.Index pbIndex : pbIndexes) {
             hasRequiredFields(pbIndex);
-            Index tableIndex;
-            if (isFullTextIndex(pbIndex)) {
-                tableIndex = FullTextIndex.create(
-                        destAIS,
-                        userTable,
-                        pbIndex.getIndexName(),
-                        pbIndex.getIndexId()
-                        );
-            }
-            else {
-                tableIndex = TableIndex.create(
-                        destAIS,
-                        userTable,
-                        pbIndex.getIndexName(),
-                        pbIndex.getIndexId(),
-                        pbIndex.getIsUnique(),
-                        getIndexConstraint(pbIndex)
-                        );
-            }
+            TableIndex tableIndex = TableIndex.create(
+                    destAIS,
+                    userTable,
+                    pbIndex.getIndexName(),
+                    pbIndex.getIndexId(),
+                    pbIndex.getIsUnique(),
+                    getIndexConstraint(pbIndex)
+            );
             handleTreeName(tableIndex, pbIndex);
             handleSpatial(tableIndex, pbIndex);
             loadIndexColumns(userTable, tableIndex, pbIndex.getColumnsList());
@@ -420,20 +413,28 @@ public class ProtobufReader {
         }
     }
 
+    private void loadFullTextIndexes(String schema, Collection<AISProtobuf.Table> pbTables) {
+        for(AISProtobuf.Table pbTable : pbTables) {
+            for(AISProtobuf.Index pbIndex : pbTable.getFullTextIndexesList()) {
+                hasRequiredFields(pbIndex);
+                UserTable userTable = destAIS.getUserTable(schema, pbTable.getTableName());
+                FullTextIndex textIndex = FullTextIndex.create(
+                        destAIS,
+                        userTable,
+                        pbIndex.getIndexName(),
+                        pbIndex.getIndexId()
+                        );
+                handleTreeName(textIndex, pbIndex);
+                handleSpatial(textIndex, pbIndex);
+                loadIndexColumns(userTable, textIndex, pbIndex.getColumnsList());
+            }
+        }        
+    }
+
     private void handleTreeName(Index index, AISProtobuf.Index pbIndex) {
         if(pbIndex.hasTreeName()) {
             index.setTreeName(pbIndex.getTreeName());
         }
-    }
-
-    private boolean isFullTextIndex(AISProtobuf.Index pbIndex) {
-        if (pbIndex.hasIndexMethod()) {
-            switch (pbIndex.getIndexMethod()) {
-                case FULL_TEXT:
-                    return true;
-            }
-        }
-        return false;
     }
 
     private void handleSpatial(Index index, AISProtobuf.Index pbIndex) {
@@ -722,7 +723,8 @@ public class ProtobufReader {
                 AISProtobuf.Table.PROTECTED_FIELD_NUMBER,
                 AISProtobuf.Table.VERSION_FIELD_NUMBER,
                 AISProtobuf.Table.PENDINGOSC_FIELD_NUMBER,
-                AISProtobuf.Table.UUID_FIELD_NUMBER
+                AISProtobuf.Table.UUID_FIELD_NUMBER,
+                AISProtobuf.Table.FULLTEXTINDEXES_FIELD_NUMBER
         );
     }
 

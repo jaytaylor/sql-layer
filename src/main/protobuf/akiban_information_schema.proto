@@ -136,6 +136,7 @@ message Table {
                                         // For AIS tables.
     optional PendingOSC pendingOSC = 11; // ALTER by pt-online-schema-change.
     optional string uuid           = 12; // uuid unique to this group (including column uuids)
+    repeated Index fullTextIndexes = 13; // list of full text indexes on the table
 }
 
 message Property {
