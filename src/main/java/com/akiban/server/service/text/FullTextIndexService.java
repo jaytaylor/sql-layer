@@ -26,6 +26,7 @@
 
 package com.akiban.server.service.text;
 
+import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.service.session.Session;
@@ -35,12 +36,9 @@ import org.apache.lucene.search.Query;
 import java.util.List;
 
 public interface FullTextIndexService {
-    public void createIndex(Session session, String name, 
-                            String schemaName, String tableName,
-                            List<String> indexedColumns, boolean populate);
-    public void dropIndex(Session session, String name);
-    public void populateIndex(Session session, String name);
-    public Query parseQuery(QueryContext context, String name, String query);
-    public Cursor searchIndex(QueryContext context, String name, 
+    public void createIndex(Session session, IndexName name);
+    public void dropIndex(Session session, IndexName name);
+    public Query parseQuery(QueryContext context, IndexName name, String query);
+    public Cursor searchIndex(QueryContext context, IndexNameString name, 
                               Query query, int limit);
 }

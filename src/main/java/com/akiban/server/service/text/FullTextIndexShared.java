@@ -28,6 +28,7 @@ package com.akiban.server.service.text;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CacheValueGenerator;
+import com.akiban.ais.model.IndexName;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.store.Directory;
@@ -37,47 +38,30 @@ import java.io.*;
 import java.util.List;
 import java.util.Set;
 
-public class FullTextIndex implements CacheValueGenerator<FullTextIndexAIS>
+public class FullTextIndexShared implements CacheValueGenerator<FullTextIndexAIS>
 {
-    private final String name;
+    private final IndexName name;
     private final File path;
-    private final String schemaName, tableName;
-    private final List<String> indexedColumns;
-    private String defaultFieldName;
-    private Set<String> casePreservingFieldNames;
+    private final Set<String> casePreservingFieldNames;
+    private final String defaultFieldName;
     private Directory directory;
     private Analyzer analyzer;
     private Indexer indexer;
     private Searcher searcher;
 
-    public FullTextIndex(String name, File basepath,
-                         String schemaName, String tableName,
-                         List<String> indexedColumns) {
+    public FullTextIndexShared(IndexName name, FullTextIndexInfo info, File basepath) {
         this.name = name;
-        this.path = new File(basepath, name);
-        this.schemaName = schemaName;
-        this.tableName = tableName;
-        this.indexedColumns = indexedColumns;
+        this.path = new File(basepath, info.getIndex().getTreeName());
+        casePreservingFieldNames = info.getCasePreservingFieldNames();
+        defaultFieldName = info.getDefaultFieldName();
     }
 
-    public String getName() {
+    public IndexName getName() {
         return name;
     }
 
     public File getPath() {
         return path;
-    }
-
-    public String getSchemaName() {
-        return schemaName;
-    }
-
-    public String getTableName() {
-        return tableName;
-    }
-
-    public List<String> getIndexedColumns() {
-        return indexedColumns;
     }
 
     public Set<String> getCasePreservingFieldNames() {
@@ -102,18 +86,13 @@ public class FullTextIndex implements CacheValueGenerator<FullTextIndexAIS>
         }
     }
 
-    public FullTextIndexAIS forAIS(AkibanInformationSchema ais) {
+    public FullTextIndexInfo forAIS(AkibanInformationSchema ais) {
         return ais.getCachedValue(this, this);
     }
 
     @Override
-    public FullTextIndexAIS valueFor(AkibanInformationSchema ais) {
-        FullTextIndexAIS result = new FullTextIndexAIS(this, ais);
-        result.init();
-        if (casePreservingFieldNames == null)
-            casePreservingFieldNames = result.getCasePreservingFieldNames();
-        if (defaultFieldName == null)
-            defaultFieldName = result.getDefaultFieldName();
+    public FullTextIndexInfo valueFor(AkibanInformationSchema ais) {
+        FullTextIndexInfo result = new FullTextIndexInfo(this, indexName);
         return result;
     }
 

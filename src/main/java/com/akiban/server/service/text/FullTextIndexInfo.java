@@ -28,6 +28,8 @@ package com.akiban.server.service.text;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.FullTextIndex;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
@@ -42,10 +44,10 @@ import com.akiban.server.error.NoSuchTableException;
 
 import java.util.*;
 
-public class FullTextIndexAIS
+public class FullTextIndexInfo
 {
     private final FullTextIndex index;
-    private final AkibanInformationSchema ais;
+    private final FullTextIndexShared shared;
     private Schema schema;
     private UserTableRowType indexedRowType;
     private HKeyRowType hKeyRowType;
@@ -53,60 +55,24 @@ public class FullTextIndexAIS
     private Map<RowType,List<IndexedField>> fieldsByRowType;
     private String defaultFieldName;
 
-    public FullTextIndexAIS(FullTextIndex index, AkibanInformationSchema ais) {
+    public FullTextIndexInfo(FullTextIndex index, FullTextIndexShared shared) {
         this.index = index;
-        this.ais = ais;
+        this.shared = shared;
     }
 
     public void init() {
+        UserTable table = index.getIndexedTable();
+        AkibanInformationSchema ais = table.getAIS();
         schema = SchemaCache.globalSchema(ais);
-        UserTable table = ais.getUserTable(index.getSchemaName(), index.getTableName());
-        if (table == null) {
-            throw new NoSuchTableException(index.getSchemaName(), index.getTableName());
-        }
         indexedRowType = schema.userTableRowType(table);
         hKeyRowType = schema.newHKeyRowType(table.hKey());
-        fieldsByColumn = new HashMap<>(index.getIndexedColumns().size());
-        for (String cstr : index.getIndexedColumns()) {
-            Column col;
-            int idx = cstr.lastIndexOf('.');
-            if (idx < 0) {
-                col = table.getColumn(cstr);
-                if (col == null) {
-                    throw new NoSuchColumnException(cstr);
-                }
-            }
-            else {
-                String tstr = cstr.substring(0, idx);
-                cstr = cstr.substring(idx+1);
-                String schemaName, tableName;
-                idx = tstr.indexOf('.');
-                if (idx < 0) {
-                    schemaName = index.getSchemaName();
-                    tableName = tstr;
-                }
-                else {
-                    schemaName = tstr.substring(0, idx);
-                    tableName = tstr.substring(idx+1);
-                }
-                UserTable otherTable = ais.getUserTable(schemaName, tableName);
-                if (otherTable == null) {
-                    throw new NoSuchTableException(schemaName, tableName);
-                }
-                if (otherTable.getGroup() != table.getGroup()) {
-                    throw new IndexTableNotInGroupException(index.getName(), cstr,
-                                                            tableName);
-                }
-                col = otherTable.getColumn(cstr);
-                if (col == null) {
-                    throw new NoSuchColumnException(cstr);
-                }
-            }
-            if (!fieldsByColumn.containsKey(col)) {
-                IndexedField indexedField = new IndexedField(col);
-                fieldsByColumn.put(col, indexedField);
-                if (defaultFieldName == null)
-                    defaultFieldName = indexedField.getName();
+        fieldsByColumn = new HashMap<>(index.getKeyColumns().size());
+        for (IndexColumn indexColumn : index.getKeyColumns()) {
+            Column column = indexColumn.getColumn();
+            IndexedField indexedField = new IndexedField(column);
+            fieldsByColumn.put(column, indexedField);
+            if (defaultFieldName == null) {
+                defaultFieldName = indexedField.getName();
             }
         }
         fieldsByRowType = new HashMap<>();
@@ -123,10 +89,6 @@ public class FullTextIndexAIS
 
     public Schema getSchema() {
         return schema;
-    }
-
-    public FullTextIndex getIndex() {
-        return index;
     }
 
     public UserTableRowType getIndexedRowType() {
