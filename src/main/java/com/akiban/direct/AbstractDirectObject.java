@@ -63,7 +63,7 @@ public class AbstractDirectObject implements DirectObject {
     }
 
     protected Date __getDATE(int p) {
-        return new Date(row().pvalue(p).getInt64());
+        return new Date(row().pvalue(p).getInt32());
     }
 
     protected Date __getDATETIME(int p) {
@@ -146,4 +146,5 @@ public class AbstractDirectObject implements DirectObject {
         return row().pvalue(p).getInt32();
     }
 
+    
 }

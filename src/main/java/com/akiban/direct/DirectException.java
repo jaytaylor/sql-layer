@@ -26,15 +26,19 @@
 
 package com.akiban.direct;
 
-import java.util.List;
-
 /**
- * A List expanded to accept selection, limit and sort capabilities.
+ * An extended RuntimeException needed tunnel SQLExceptions through the
+ * Iterator interface.
  * 
  * @author peter
  *
  */
-public interface DirectList<T extends DirectObject> extends List<T> {
+public class DirectException extends RuntimeException {
 
-    
+    private static final long serialVersionUID = 9217986178149864740L;
+
+    public DirectException(final Exception e) {
+        super(e);
+    }
+
 }

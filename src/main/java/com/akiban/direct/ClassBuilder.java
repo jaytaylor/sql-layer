@@ -38,13 +38,14 @@ import javassist.NotFoundException;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Join;
+import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 
 public abstract class ClassBuilder {
     final static String PACKAGE = "com.akiban.direct.entity";
     final static String[] NONE = {};
-    final static String[] IMPORTS = { java.util.Date.class.getName(), com.akiban.direct.DirectList.class.getName() };
+    final static String[] IMPORTS = { java.util.Date.class.getName(), com.akiban.direct.DirectIterable.class.getName() };
     final static String[] UNSUPPORTED = { "// TODO", "throw new UnsupportedOperationException()" };
 
     protected final String packageName;
@@ -152,8 +153,7 @@ public abstract class ClassBuilder {
         generateImplementationClass(table, schema);
     }
 
-    public void generateInterfaceClass(UserTable table, String scn) throws CannotCompileException,
-            NotFoundException {
+    public void generateInterfaceClass(UserTable table, String scn) throws CannotCompileException, NotFoundException {
         table.getName().getTableName();
         String typeName = scn + "$" + asJavaName(table.getName().getTableName(), true);
         startClass(typeName, true, null, null, null);
@@ -177,6 +177,7 @@ public abstract class ClassBuilder {
     }
 
     private void addMethods(UserTable table, String scn, String typeName, String className, boolean iface) {
+        String tableName = table.getName().getTableName();
         /*
          * Add a property per column
          */
@@ -193,7 +194,7 @@ public abstract class ClassBuilder {
         Join parentJoin = table.getParentJoin();
         if (parentJoin != null) {
             String parentTypeName = parentJoin.getParent().getName().getTableName();
-            addMethod("get" + asJavaName(parentTypeName, true), asJavaName(parentTypeName, true), NONE, null,
+            addMethod("get" + asJavaName(parentTypeName, true), scn + "$" + asJavaName(parentTypeName, true), NONE, null,
                     iface ? null : UNSUPPORTED);
         }
 
@@ -212,7 +213,8 @@ public abstract class ClassBuilder {
                     iter.remove();
                 }
             }
-            String childTypeName = join.getChild().getName().getTableName();
+            String childTableName = join.getChild().getName().getTableName();
+            String childClassName = scn + "$" + asJavaName(childTableName, true);
             if (primaryKeyColumns.size() <= 1) {
                 /*
                  * Add a child accessor by primary key value
@@ -221,23 +223,41 @@ public abstract class ClassBuilder {
                 for (int i = 0; i < types.length; i++) {
                     types[i] = javaClass(primaryKeyColumns.get(i)).getName();
                 }
-                addMethod("get" + asJavaName(childTypeName, true), scn + "$" + asJavaName(childTypeName, true), types,
-                        null, iface ? null : UNSUPPORTED);
+                addMethod("get" + asJavaName(childTableName, true), childClassName, types, null, iface ? null
+                        : UNSUPPORTED);
             }
             if (!primaryKeyColumns.isEmpty()) {
-                addMethod("get" + asJavaName(childTypeName, true) + "List", "com.akiban.direct.DirectList<" + scn + "."
-                        + asJavaName(childTypeName, true) + ">", NONE, null, iface ? null : UNSUPPORTED);
+                String[] body = null;
+                if (!iface) {
+                    String s = buildDirectIterableExpr(childClassName, tableName, childTableName);
+                    for (final JoinColumn jc : join.getJoinColumns()) {
+                        s = s.concat(String.format(".naturalJoin(\"%s\", \"%s\")", jc.getParent().getName(), jc
+                                .getChild().getName()));
+                        body = new String[] { "return " + s };
+                    }
+                }
+                addMethod("get" + asJavaName(childTableName, true) + "List", "com.akiban.direct.DirectIterable<"
+                        + childClassName + ">", NONE, null, body);
             }
         }
         /*
          * Add boilerplate methods
          */
-        addMethod("copy", typeName, NONE, null,
-                iface ? null : new String[] { "System.out.println(\"copy\")", String.format("%1$s c = new %1$s()", className),
-                        "c.row(row())", "return c" });
+        addMethod(
+                "copy",
+                typeName,
+                NONE,
+                null,
+                iface ? null : new String[] { "System.out.println(\"copy\")",
+                        String.format("%1$s c = new %1$s()", className), "c.row(row())", "return c" });
     }
 
     private Class<?> javaClass(final Column column) {
         return column.getType().akType().javaClass();
+    }
+
+    private String buildDirectIterableExpr(final String className, final String fromTable, final String toTable) {
+        return String.format("(new com.akiban.direct.DirectIterableImpl"
+                + "(%1$s.class, \"%2$s\", \"%3$s\"))", className, fromTable, toTable);
     }
 }

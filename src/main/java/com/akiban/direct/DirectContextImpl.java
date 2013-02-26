@@ -31,26 +31,15 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.Session.Key;
-import com.akiban.server.service.session.SessionService;
 import com.akiban.sql.embedded.JDBCConnection;
 
 public class DirectContextImpl implements DirectContext {
     public static final String SCHEMA_NAME = "test";
     public static final String CONNECTION_URL = "jdbc:default:connection";
 
-    private final SessionService sessionService;
-    private final Key<DirectContextImpl> key = Key.named("directContext");
-
     private class ConnectionHolder {
         private Connection connection;
         private ClassLoader contextClassLoader;
-        private Session session;
-
-        private ConnectionHolder() {
-            session = sessionService.createSession();
-        }
 
         private Connection getConnection() {
             if (connection == null) {
@@ -64,14 +53,9 @@ public class DirectContextImpl implements DirectContext {
             return connection;
         }
 
-        private Session getSession() {
-            return session;
-        }
-
         private void enter() {
             contextClassLoader = Thread.currentThread().getContextClassLoader();
             Thread.currentThread().setContextClassLoader(classLoader);
-            session.put(key, DirectContextImpl.this);
         }
 
         private void leave() {
@@ -84,7 +68,6 @@ public class DirectContextImpl implements DirectContext {
                 }
             } finally {
                 Thread.currentThread().setContextClassLoader(contextClassLoader);
-                session.remove(key);
             }
         }
     }
@@ -99,17 +82,12 @@ public class DirectContextImpl implements DirectContext {
         }
     };
 
-    public DirectContextImpl(final DirectClassLoader dcl, SessionService sessionService) {
+    public DirectContextImpl(final DirectClassLoader dcl) {
         this.classLoader = dcl;
-        this.sessionService = sessionService;
     }
 
     public Connection getConnection() {
         return connectionThreadLocal.get().getConnection();
-    }
-
-    public Session getSession() {
-        return connectionThreadLocal.get().getSession();
     }
 
     public Statement createStatement() throws SQLException {

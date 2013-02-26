@@ -50,8 +50,8 @@ public class DirectClassLoader extends URLClassLoader {
 
     private final static int BUFFER_SIZE = 65536;
     private final static String[] DIRECT_INTERFACES = { DirectContext.class.getName(), DirectModule.class.getName(),
-            DirectObject.class.getName(), DirectList.class.getName(), AbstractDirectObject.class.getName(),
-            DirectResultSet.class.getName(), };
+            DirectObject.class.getName(), DirectIterable.class.getName(), DirectIterableImpl.class.getName(),
+            AbstractDirectObject.class.getName(), DirectResultSet.class.getName(), };
 
     private final static String INCLUDE_PREFIX = "com.akiban.direct.script";
 

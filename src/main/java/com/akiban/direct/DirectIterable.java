@@ -26,10 +26,18 @@
 
 package com.akiban.direct;
 
-import java.sql.Connection;
+/**
+ * A List expanded to accept selection, limit and sort capabilities.
+ * 
+ * @author peter
+ *
+ */
+public interface DirectIterable<T> extends Iterable<T> {
 
-public interface DirectContext {
+    public DirectIterableImpl<T> where(final String predicate);
 
-    Connection getConnection();
+    public DirectIterableImpl<T> sort(final String sort);
+    
+    public DirectIterableImpl<T> limit(final String limit);
     
 }

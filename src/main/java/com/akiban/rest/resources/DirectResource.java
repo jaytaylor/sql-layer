@@ -57,6 +57,7 @@ import com.akiban.direct.ClassBuilder;
 import com.akiban.direct.ClassSourceWriter;
 import com.akiban.direct.DirectClassLoader;
 import com.akiban.direct.DirectContextImpl;
+import com.akiban.direct.DirectException;
 import com.akiban.direct.DirectModule;
 import com.akiban.direct.script.JSModule;
 import com.akiban.rest.ResourceRequirements;
@@ -284,6 +285,8 @@ public class DirectResource {
         try {
             holder.context.enter();
             return holder.module.eval(params);
+        } catch (DirectException e) {
+            throw (Exception)e.getCause();
         } finally {
             holder.context.leave();
         }
@@ -309,7 +312,7 @@ public class DirectResource {
             final DirectClassLoader dcl = new DirectClassLoader(systemClassLoader());
             final Class<? extends DirectModule> serviceClass = dcl.loadModule(ais, className, urls);
             DirectModule module = serviceClass.newInstance();
-            DirectContextImpl context = new DirectContextImpl(dcl, reqs.sessionService);
+            DirectContextImpl context = new DirectContextImpl(dcl);
             DirectModuleHolder holder = dispatch.put(name, new DirectModuleHolder(module,
                     context));
             if (holder != null) {
