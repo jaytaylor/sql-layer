@@ -372,4 +372,13 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         }
     }
 
+    // TODO: Temporary.
+    public void refreshFullTextIndex(PrintWriter writer, IndexName indexName) {
+        long count;
+        try (Session session = sessionService.createSession()) {
+            count = fullTextService.createIndex(session, indexName);
+        }
+        writer.write(String.format("{\"count\":%d}", count));
+    }
+
 }

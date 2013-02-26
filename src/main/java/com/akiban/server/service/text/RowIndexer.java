@@ -130,14 +130,17 @@ public class RowIndexer implements Closeable
         }
     }
     
-    public void indexRows(Cursor cursor) throws IOException {
+    public long indexRows(Cursor cursor) throws IOException {
+        long count = -1;
         cursor.open();
         Row row;
         do {
             row = cursor.next();
             indexRow(row);
+            count++;
         } while (row != null);
         cursor.close();
+        return count;
     }
 
     protected void addDocument() throws IOException {

@@ -86,10 +86,10 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
     /* FullTextIndexService */
 
     @Override
-    public void createIndex(Session session, IndexName name) {
+    public long createIndex(Session session, IndexName name) {
         FullTextIndexInfo index = getIndex(session, name);
         try {
-            populateIndex(session, index);
+            return populateIndex(session, index);
         }
         catch (IOException ex) {
             throw new AkibanInternalException("Error populating index", ex);
@@ -184,7 +184,7 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
         return info;
     }
 
-    protected void populateIndex(Session session, FullTextIndexInfo index)
+    protected long populateIndex(Session session, FullTextIndexInfo index)
             throws IOException {
         Indexer indexer = index.getIndexer();
         Operator plan = index.fullScan();
@@ -204,10 +204,11 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
             transactionService.beginTransaction(session);
             transaction = true;
             cursor = API.cursor(plan, queryContext);
-            rowIndexer.indexRows(cursor);
+            long count = rowIndexer.indexRows(cursor);
             transactionService.commitTransaction(session);
             transaction = false;
             success = true;
+            return count;
         }
         finally {
             if (cursor != null)
