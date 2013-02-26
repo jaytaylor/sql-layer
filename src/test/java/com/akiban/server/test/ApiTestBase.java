@@ -770,6 +770,14 @@ public class ApiTestBase {
         return ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);
     }
 
+    protected final FullTextIndex createFullTextIndex(String schema, String table, String indexName, String... indexCols) {
+        AkibanInformationSchema tempAIS = createIndexInternal(schema, table, indexName, "FULL_TEXT(" + Strings.join(Arrays.asList(indexCols), ",") + ")");
+        Index tempIndex = tempAIS.getUserTable(schema, table).getFullTextIndex(indexName);
+        ddl().createIndexes(session(), Collections.singleton(tempIndex));
+        updateAISGeneration();
+        return ddl().getUserTable(session(), new TableName(schema, table)).getFullTextIndex(indexName);
+    }
+
     protected int createTablesAndIndexesFromDDL(String schema, String ddl) {
         SchemaFactory schemaFactory = new SchemaFactory(schema);
         AkibanInformationSchema ais = schemaFactory.ais(ddl);

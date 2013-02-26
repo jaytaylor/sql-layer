@@ -26,6 +26,7 @@
 
 package com.akiban.server.service.text;
 
+import com.akiban.ais.model.FullTextIndex;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import static com.akiban.qp.operator.API.cursor;
@@ -107,33 +108,38 @@ public class FullTextIndexServiceIT extends ITBase
 
     @Test
     public void cDown() {
-        fullText.createIndex(session(), "c", SCHEMA, "c",
-                             Arrays.asList("name", "i.sku", "a.state"),
-                             true);
+        FullTextIndex index = createFullTextIndex(SCHEMA, "c", "idx_c", 
+                                                  "name", "i.sku", "a.state");
+        fullText.createIndex(session(), index.getIndexName());
 
         RowType rowType = rowType("c");
         RowBase[] expected = new RowBase[] {
             row(rowType, 1L),
             row(rowType, 3L)
         };
-        Operator plan = new IndexScan_FullText(fullText, "c", IndexScan_FullText.parseQuery("flintstone"), 10);
+        Operator plan = 
+            new IndexScan_FullText(fullText, index.getIndexName(),
+                                   IndexScan_FullText.parseQuery("flintstone"), 10);
         compareRows(expected, cursor(plan, queryContext));
 
-        plan = new IndexScan_FullText(fullText, "c", IndexScan_FullText.parseQuery("state:MA"), 10);
+        plan = new IndexScan_FullText(fullText, index.getIndexName(),
+                                      IndexScan_FullText.parseQuery("state:MA"), 10);
         compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test
     public void oUpDown() {
-        fullText.createIndex(session(), "o", SCHEMA, "o",
-                             Arrays.asList("c.name", "i.sku"),
-                             true);
+        FullTextIndex index = createFullTextIndex(SCHEMA, "o", "idx_o",
+                                                  "c.name", "i.sku");
+        fullText.createIndex(session(), index.getIndexName());
 
         RowType rowType = rowType("o");
         RowBase[] expected = new RowBase[] {
             row(rowType, 1L, 101L)
         };
-        Operator plan = new IndexScan_FullText(fullText, "o", IndexScan_FullText.parseQuery("name:Flintstone AND sku:1234"), 10);
+        Operator plan = 
+            new IndexScan_FullText(fullText, index.getIndexName(), 
+                                   IndexScan_FullText.parseQuery("name:Flintstone AND sku:1234"), 10);
         compareRows(expected, cursor(plan, queryContext));
     }
 
