@@ -31,38 +31,45 @@ import java.util.Date;
 
 import com.akiban.qp.row.Row;
 import com.akiban.sql.embedded.JDBCResultSet;
+import com.akiban.util.ShareHolder;
 
 public class AbstractDirectObject implements DirectObject {
 
     private JDBCResultSet resultSet;
+    private ShareHolder<Row> rowHolder = new ShareHolder<>();
     
-    @Override
-    public void resultSet(JDBCResultSet rs) {
+    public void setResultSet(JDBCResultSet rs) {
         this.resultSet = rs;
     }
 
-    @Override
     public Row row() {
-        return resultSet.currentRow();
+        if (resultSet != null) {
+            return resultSet.currentRow();
+        } else {
+            return rowHolder.get();
+        }
     }
-    
+
+    public void row(Row row) {
+        rowHolder.hold(row);
+    }
 
     public void save() {
         // TODO
     }
-    
+
     protected boolean __getBOOL(int p) {
         return row().pvalue(p).getBoolean();
     }
-    
+
     protected Date __getDATE(int p) {
         return new Date(row().pvalue(p).getInt64());
     }
-    
+
     protected Date __getDATETIME(int p) {
         return new Date(row().pvalue(p).getInt64());
     }
-    
+
     protected BigDecimal __getDECIMAL(int p) {
         throw new UnsupportedOperationException("Don't know how to convert a DECIMAL from a ValueSource");
     }
@@ -70,15 +77,15 @@ public class AbstractDirectObject implements DirectObject {
     protected double __getDOUBLE(int p) {
         return row().pvalue(p).getDouble();
     }
-    
+
     protected float __getFLOAT(int p) {
         return row().pvalue(p).getFloat();
     }
-    
+
     protected int __getINT(int p) {
         return row().pvalue(p).getInt32();
     }
-    
+
     protected int __getINTERVAL_MILLIS(int p) {
         throw new UnsupportedOperationException("Don't know how to convert a INTERVAL_MILLIS from a ValueSource");
     }
@@ -86,19 +93,19 @@ public class AbstractDirectObject implements DirectObject {
     protected int __getINTERVAL_MONTH(int p) {
         throw new UnsupportedOperationException("Don't know how to convert a INTERVAL_MONTH from a ValueSource");
     }
-    
+
     protected long __getLONG(int p) {
         return row().pvalue(p).getInt64();
     }
-    
+
     protected Object __getNULL(int p) {
         throw new UnsupportedOperationException("Don't know how to convert a NULL from a ValueSource");
     }
-    
+
     protected Object __getRESULT_SET(int p) {
         throw new UnsupportedOperationException("Don't know how to convert a RESULT_SET from a ValueSource");
     }
-    
+
     protected String __getTEXT(int p) {
         return row().pvalue(p).getString();
     }
@@ -106,11 +113,11 @@ public class AbstractDirectObject implements DirectObject {
     protected long __getTIME(int p) {
         return row().pvalue(p).getInt64();
     }
-    
+
     protected long __getTIMESTAMP(int p) {
         return row().pvalue(p).getInt64();
     }
-    
+
     protected long __getU_INT(int p) {
         return row().pvalue(p).getInt64();
     }
@@ -118,11 +125,11 @@ public class AbstractDirectObject implements DirectObject {
     protected Object __getU_BIGINT(int p) {
         throw new UnsupportedOperationException("Don't know how to convert a U_BIGINT from a ValueSource");
     }
-    
+
     protected Object __getU_DOUBLE(int p) {
         throw new UnsupportedOperationException("Don't know how to convert a U)DOUBLE from a ValueSource");
     }
-    
+
     protected double __getU_FLOAT(int p) {
         return row().pvalue(p).getDouble();
     }
@@ -130,7 +137,7 @@ public class AbstractDirectObject implements DirectObject {
     protected String __getVARCHAR(int p) {
         return row().pvalue(p).getString();
     }
-    
+
     protected byte[] __getVARBINARY(int p) {
         return row().pvalue(p).getBytes();
     }
@@ -138,5 +145,5 @@ public class AbstractDirectObject implements DirectObject {
     protected int __getYEAR(int p) {
         return row().pvalue(p).getInt32();
     }
-    
+
 }

@@ -27,20 +27,13 @@
 package com.akiban.direct;
 
 
-
-import com.akiban.qp.row.Row;
-import com.akiban.sql.embedded.JDBCResultSet;
-
 /**
- * Prototype for what an Akiban Direct object might look like. 
+ * Marker interface for data access objects. 
  * 
  * @author peter
  *
  */
 public interface DirectObject {
 
-    void resultSet(JDBCResultSet rs);
-    
-    Row row();
     
 }

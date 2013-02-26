@@ -29,47 +29,48 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * TODO - Total hack that this is current static - need to a way to get this
- * into the context for JDBCResultSet.
+ * TODO - Total hack that this is static - need to a way to get this into the
+ * context for JDBCResultSet.
  * 
  * @author peter
  * 
  */
 public class Direct {
 
-    private final static Map<Class<?>, Class<? extends DirectObject>> classMap = new HashMap<>();
-    private final static ThreadLocal<Map<Class<?>, DirectObject>> instanceMap = new ThreadLocal<Map<Class<?>, DirectObject>>() {
+    private final static Map<Class<?>, Class<? extends AbstractDirectObject>> classMap = new HashMap<>();
+    private final static ThreadLocal<Map<Class<?>, AbstractDirectObject>> instanceMap = new ThreadLocal<Map<Class<?>, AbstractDirectObject>>() {
 
         @Override
-        protected Map<Class<?>, DirectObject> initialValue() {
-            return new HashMap<Class<?>, DirectObject>();
+        protected Map<Class<?>, AbstractDirectObject> initialValue() {
+            return new HashMap<Class<?>, AbstractDirectObject>();
         }
     };
     
-    public static void registerDirectObjectClass(final Class<?> iface, final Class<? extends DirectObject> impl) {
+    private final static ThreadLocal<DirectContextImpl> contextThreadLocal = new ThreadLocal<>();
+
+    public static void registerDirectObjectClass(final Class<?> iface, final Class<? extends AbstractDirectObject> impl) {
         classMap.put(iface, impl);
     }
-    
+
     /**
      * TODO - for now this clears everything!
      */
-    
+
     public static void unregisterDirectObjectClasses() {
         classMap.clear();
         instanceMap.remove();
-        
+
     }
 
     /**
      * Return a thread-private instance of an entity object of the registered
      * for a given Row, or null if there is none.
-     * 
      */
-    public static DirectObject objectForRow(final Class<?> c) {
-        DirectObject o = instanceMap.get().get(c);
+    public static AbstractDirectObject objectForRow(final Class<?> c) {
+        AbstractDirectObject o = instanceMap.get().get(c);
         if (o == null) {
             try {
-                Class<? extends DirectObject> cl = classMap.get(c);
+                Class<? extends AbstractDirectObject> cl = classMap.get(c);
                 o = cl.newInstance();
             } catch (InstantiationException | IllegalAccessException | ClassCastException e) {
                 throw new RuntimeException(e);
@@ -79,5 +80,17 @@ public class Direct {
             }
         }
         return o;
+    }
+    
+    public static void enter(DirectContextImpl dc) {
+        contextThreadLocal.set(dc);
+    }
+    
+    public static DirectContextImpl getDirectContext() {
+        return contextThreadLocal.get();
+    }
+    
+    public static void leave() {
+        contextThreadLocal.set(null);
     }
 }

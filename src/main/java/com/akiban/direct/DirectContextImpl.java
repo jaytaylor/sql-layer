@@ -31,16 +31,27 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.Session.Key;
+import com.akiban.server.service.session.SessionService;
 import com.akiban.sql.embedded.JDBCConnection;
 
 public class DirectContextImpl implements DirectContext {
     public static final String SCHEMA_NAME = "test";
     public static final String CONNECTION_URL = "jdbc:default:connection";
-    
+
+    private final SessionService sessionService;
+    private final Key<DirectContextImpl> key = Key.named("directContext");
+
     private class ConnectionHolder {
         private Connection connection;
         private ClassLoader contextClassLoader;
-        
+        private Session session;
+
+        private ConnectionHolder() {
+            session = sessionService.createSession();
+        }
+
         private Connection getConnection() {
             if (connection == null) {
                 try {
@@ -52,55 +63,67 @@ public class DirectContextImpl implements DirectContext {
             }
             return connection;
         }
-        
+
+        private Session getSession() {
+            return session;
+        }
+
         private void enter() {
             contextClassLoader = Thread.currentThread().getContextClassLoader();
             Thread.currentThread().setContextClassLoader(classLoader);
+            session.put(key, DirectContextImpl.this);
         }
-        
+
         private void leave() {
             try {
-            if (connection != null) {
-                JDBCConnection c =  ((JDBCConnection)connection);
-                if (c.isTransactionActive()) {
-                    c.rollbackTransaction();
+                if (connection != null) {
+                    JDBCConnection c = ((JDBCConnection) connection);
+                    if (c.isTransactionActive()) {
+                        c.rollbackTransaction();
+                    }
                 }
-            }
             } finally {
                 Thread.currentThread().setContextClassLoader(contextClassLoader);
+                session.remove(key);
             }
         }
     }
-    
-    
+
     private final DirectClassLoader classLoader;
-    
+
     private final ThreadLocal<ConnectionHolder> connectionThreadLocal = new ThreadLocal<ConnectionHolder>() {
-        
+
         @Override
         protected ConnectionHolder initialValue() {
             return new ConnectionHolder();
         }
     };
-    
-    public DirectContextImpl(final DirectClassLoader dcl) {
+
+    public DirectContextImpl(final DirectClassLoader dcl, SessionService sessionService) {
         this.classLoader = dcl;
+        this.sessionService = sessionService;
     }
 
     public Connection getConnection() {
         return connectionThreadLocal.get().getConnection();
     }
-    
+
+    public Session getSession() {
+        return connectionThreadLocal.get().getSession();
+    }
+
     public Statement createStatement() throws SQLException {
         return getConnection().createStatement();
     }
-    
+
     public void enter() {
         connectionThreadLocal.get().enter();
+        Direct.enter(this);
     }
-    
+
     public void leave() {
         connectionThreadLocal.get().leave();
+        Direct.leave();
     }
 
     public DirectClassLoader getClassLoader() {

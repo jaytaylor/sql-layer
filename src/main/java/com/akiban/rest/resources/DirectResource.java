@@ -154,7 +154,7 @@ public class DirectResource {
                 @Override
                 public void write(PrintWriter writer) throws Exception {
                     try {
-                        writer.print(exec(holder, params));
+                        writer.print(eval(holder, params));
                     } catch (Throwable e) {
                         e.printStackTrace();
                         throw new RuntimeException(e);
@@ -192,7 +192,7 @@ public class DirectResource {
                 @Override
                 public void write(PrintWriter writer) throws Exception {
                     try {
-                        writer.print(exec(holder, params));
+                        writer.print(eval(holder, params));
                     } catch (Throwable e) {
                         e.printStackTrace();
                         throw new RuntimeException(e);
@@ -239,7 +239,7 @@ public class DirectResource {
                 @Override
                 public void write(PrintWriter writer) throws Exception {
                     try {
-                        writer.print(exec(holder, params));
+                        writer.print(eval(holder, params));
                     } catch (Throwable e) {
                         e.printStackTrace();
                         throw new RuntimeException(e);
@@ -280,7 +280,7 @@ public class DirectResource {
         }
     }
 
-    private Object exec(final DirectModuleHolder holder, MultivaluedMap<String, String> params) throws Exception {
+    private Object eval(final DirectModuleHolder holder, MultivaluedMap<String, String> params) throws Exception {
         try {
             holder.context.enter();
             return holder.module.eval(params);
@@ -309,7 +309,7 @@ public class DirectResource {
             final DirectClassLoader dcl = new DirectClassLoader(systemClassLoader());
             final Class<? extends DirectModule> serviceClass = dcl.loadModule(ais, className, urls);
             DirectModule module = serviceClass.newInstance();
-            DirectContextImpl context = new DirectContextImpl(dcl);
+            DirectContextImpl context = new DirectContextImpl(dcl, reqs.sessionService);
             DirectModuleHolder holder = dispatch.put(name, new DirectModuleHolder(module,
                     context));
             if (holder != null) {

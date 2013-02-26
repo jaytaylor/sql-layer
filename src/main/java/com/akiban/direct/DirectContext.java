@@ -28,8 +28,11 @@ package com.akiban.direct;
 
 import java.sql.Connection;
 
+import com.akiban.server.service.session.Session;
+
 public interface DirectContext {
 
     Connection getConnection();
+    Session getSession();
     
 }

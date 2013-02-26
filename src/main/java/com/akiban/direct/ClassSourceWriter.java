@@ -115,6 +115,42 @@ public class ClassSourceWriter extends ClassBuilder {
                 append(", ");
             }
             String argName;
+            if (argumentNames != null) {
+                argName = argumentNames[counter];
+                counter++;
+            } else {
+                argName = "z" + ++counter;
+            }
+            append(localName(externalName(s), classNames.firstElement()), " ", argName);
+        }
+        append(")");
+        if (body == null) {
+            append(";");
+        } else {
+            append(" {");
+            newLine();
+            indentation++;
+            for (String s : body) {
+                println(s, ";");
+            }
+            indentation--;
+            println("}");
+        }
+        newLine();
+    }
+
+    @Override
+    public void addConstructor(final String[] argumentTypes,
+            final String[] argumentNames, final String[] body) {
+        newLine();
+        print("public ", localName(externalName(classNames.firstElement()), classNames.firstElement()),  "(");
+        boolean first = true;
+        int counter = 0;
+        for (final String s : argumentTypes) {
+            if (!first) {
+                append(", ");
+            }
+            String argName;
             if (argumentTypes != null) {
                 argName = argumentNames[counter];
                 counter++;

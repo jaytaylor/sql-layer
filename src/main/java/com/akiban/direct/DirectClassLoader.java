@@ -240,7 +240,7 @@ public class DirectClassLoader extends URLClassLoader {
                 resolveClass(cl);
                 if (!cl.isInterface()) {
                     Class<?> iface = cl.getInterfaces()[0];
-                    Direct.registerDirectObjectClass(iface, (Class<? extends DirectObject>) cl);
+                    Direct.registerDirectObjectClass(iface, (Class<? extends AbstractDirectObject>) cl);
                 }
             }
         } catch (Exception e) {
