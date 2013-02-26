@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.akiban.ais.model.TableName;
@@ -48,7 +49,7 @@ import com.persistit.exception.RollbackException;
 public class WriteSkewIT extends ITBase
 {
     // Test case from bug 1078331, comment 2
-    @Test
+    @Ignore ("broken until #1118871 is fixed") @Test
     public void testHKeyMaintenance() throws InterruptedException
     {
         createDatabase();
@@ -76,7 +77,7 @@ public class WriteSkewIT extends ITBase
     }
 
     // Test case from description of bug 1078331
-    @Test
+    @Ignore ("broken until #1118871 is fixed") @Test
     public void testGroupIndexMaintenance() throws InterruptedException
     {
         createDatabase();

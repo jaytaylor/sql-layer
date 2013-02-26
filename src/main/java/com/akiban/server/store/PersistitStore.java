@@ -51,13 +51,13 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.statistics.Histogram;
 import com.akiban.server.store.statistics.HistogramEntry;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsService;
+import com.akiban.server.test.it.dxl.Ingnore;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
@@ -127,7 +127,7 @@ public class PersistitStore implements Store, Service {
 
     private final TransactionService transactionService;
 
-    private TableStatusCache tableStatusCache;
+    //private TableStatusCache tableStatusCache;
 
     private DisplayFilter originalDisplayFilter;
 
@@ -162,7 +162,7 @@ public class PersistitStore implements Store, Service {
 
     @Override
     public synchronized void start() {
-        tableStatusCache = treeService.getTableStatusCache();
+        //tableStatusCache = treeService.getTableStatusCache();
         try {
             CoderManager cm = getDb().getCoderManager();
             Management m = getDb().getManagement();
@@ -423,7 +423,9 @@ public class PersistitStore implements Store, Service {
         final RowDef rowDef = writeRowCheck(session, rowData, false);
         Exchange hEx;
         hEx = getExchange(session, rowDef);
-        lockKeys(adapter(session), rowDef, rowData, hEx);
+        
+        // FIXME: broken by bug #1118871, enable to fix write skew bug #1078331 
+        // lockKeys(adapter(session), rowDef, rowData, hEx);
         WRITE_ROW_TAP.in();
         try {
             // Does the heavy lifting of looking up the full hkey in
@@ -672,7 +674,9 @@ public class PersistitStore implements Store, Service {
         DELETE_ROW_TAP.in();
         try {
             hEx = getExchange(session, rowDef);
-            lockKeys(adapter(session), rowDef, rowData, hEx);
+            
+            // FIXME: broken by bug #1118871, enable to fix write skew bug #1078331 
+            // lockKeys(adapter(session), rowDef, rowData, hEx);
             constructHKey(session, hEx, rowDef, rowData, false);
             hEx.fetch();
             //
@@ -741,8 +745,9 @@ public class PersistitStore implements Store, Service {
         UPDATE_ROW_TAP.in();
         try {
             hEx = getExchange(session, rowDef);
-            lockKeys(adapter, rowDef, oldRowData, hEx);
-            lockKeys(adapter, newRowDef, newRowData, hEx);
+            // FIXME: broken by bug #1118871, enable to fix write skew bug #1078331 
+            //lockKeys(adapter, rowDef, oldRowData, hEx);
+            //lockKeys(adapter, newRowDef, newRowData, hEx);
             constructHKey(session, hEx, rowDef, oldRowData, false);
             hEx.fetch();
             //
