@@ -35,6 +35,7 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -61,6 +62,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.util.Collections;
 import java.util.List;
 
 public class ExternalDataServiceImpl implements ExternalDataService, Service {
@@ -189,6 +191,19 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
         PlanGenerator generator = ais.getCachedValue(this, CACHED_PLAN_GENERATOR);
         Operator plan = generator.generateBranchPlan(table);
         dumpAsJson(session, writer, table, keys, depth, withTransaction, generator.getSchema(), plan);
+    }
+
+    @Override
+    public void dumpBranchAsJson(Session session, PrintWriter writer,
+                                 String schemaName, String tableName, 
+                                 Operator scan, RowType scanType, int depth,
+                                 boolean withTransaction) {
+        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+        UserTable table = getTable(ais, schemaName, tableName);
+        logger.debug("Writing from {}: {}", table, scan);
+        PlanGenerator generator = ais.getCachedValue(this, CACHED_PLAN_GENERATOR);
+        Operator plan = generator.generateBranchPlan(table, scan, scanType);
+        dumpAsJson(session, writer, table, Collections.<List<String>>emptyList(), depth, withTransaction, generator.getSchema(), plan);
     }
 
     @Override
