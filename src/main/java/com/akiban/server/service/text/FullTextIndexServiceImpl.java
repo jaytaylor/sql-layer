@@ -34,6 +34,7 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.DuplicateIndexException;
@@ -113,6 +114,12 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
         catch (IOException ex) {
             throw new AkibanInternalException("Error populating index", ex);
         }
+    }
+
+    @Override
+    public RowType searchRowType(Session session, IndexName name) {
+        FullTextIndexInfo index = getIndex(session, name);
+        return index.getHKeyRowType();
     }
 
     @Override

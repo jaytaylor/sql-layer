@@ -29,6 +29,7 @@ package com.akiban.server.service.text;
 import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.service.session.Session;
 
 import org.apache.lucene.search.Query;
@@ -39,6 +40,7 @@ public interface FullTextIndexService {
     public void createIndex(Session session, IndexName name);
     public void dropIndex(Session session, IndexName name);
     public Query parseQuery(QueryContext context, IndexName name, String query);
+    public RowType searchRowType(Session session, IndexName name);
     public Cursor searchIndex(QueryContext context, IndexName name, 
                               Query query, int limit);
 }
