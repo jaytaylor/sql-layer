@@ -39,6 +39,6 @@ public interface FullTextIndexService {
     public void createIndex(Session session, IndexName name);
     public void dropIndex(Session session, IndexName name);
     public Query parseQuery(QueryContext context, IndexName name, String query);
-    public Cursor searchIndex(QueryContext context, IndexNameString name, 
+    public Cursor searchIndex(QueryContext context, IndexName name, 
                               Query query, int limit);
 }

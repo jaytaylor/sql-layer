@@ -38,22 +38,33 @@ import java.io.*;
 import java.util.List;
 import java.util.Set;
 
-public class FullTextIndexShared implements CacheValueGenerator<FullTextIndexAIS>
+public class FullTextIndexShared implements CacheValueGenerator<FullTextIndexInfo>, Closeable
 {
     private final IndexName name;
-    private final File path;
-    private final Set<String> casePreservingFieldNames;
-    private final String defaultFieldName;
+    private File path;
+    private Set<String> casePreservingFieldNames;
+    private String defaultFieldName;
     private Directory directory;
     private Analyzer analyzer;
     private Indexer indexer;
     private Searcher searcher;
 
-    public FullTextIndexShared(IndexName name, FullTextIndexInfo info, File basepath) {
+    public FullTextIndexShared(IndexName name) {
         this.name = name;
-        this.path = new File(basepath, info.getIndex().getTreeName());
+    }
+
+    public FullTextIndexInfo init(AkibanInformationSchema ais, final FullTextIndexInfo info, 
+                                  File basepath) {
+        path = new File(basepath, info.getIndex().getTreeName());
         casePreservingFieldNames = info.getCasePreservingFieldNames();
         defaultFieldName = info.getDefaultFieldName();
+        // Put into cache.
+        return ais.getCachedValue(this, new CacheValueGenerator<FullTextIndexInfo>() {
+                                      @Override
+                                      public FullTextIndexInfo valueFor(AkibanInformationSchema ais) {
+                                          return info;
+                                      }
+                                  });
     }
 
     public IndexName getName() {
@@ -79,7 +90,16 @@ public class FullTextIndexShared implements CacheValueGenerator<FullTextIndexAIS
         return directory;
     }
 
+    @Override
     public synchronized void close() throws IOException {
+        if (indexer != null) {
+            indexer.close();
+            indexer = null;
+        }
+        if (searcher != null) {
+            searcher.close();
+            searcher = null;
+        }
         if (directory != null) {
             directory.close();
             directory = null;
@@ -92,7 +112,8 @@ public class FullTextIndexShared implements CacheValueGenerator<FullTextIndexAIS
 
     @Override
     public FullTextIndexInfo valueFor(AkibanInformationSchema ais) {
-        FullTextIndexInfo result = new FullTextIndexInfo(this, indexName);
+        FullTextIndexInfo result = new FullTextIndexInfo(this);
+        result.init(ais);
         return result;
     }
 

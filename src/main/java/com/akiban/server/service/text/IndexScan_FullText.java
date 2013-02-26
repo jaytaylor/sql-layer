@@ -26,6 +26,7 @@
 
 package com.akiban.server.service.text;
 
+import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
@@ -36,7 +37,7 @@ import org.apache.lucene.search.Query;
 public class IndexScan_FullText extends Operator
 {
     private final FullTextIndexService service;
-    private final String index;
+    private final IndexName index;
     private final QueryGenerator queryGenerator;
     private final int limit;
 
@@ -44,13 +45,13 @@ public class IndexScan_FullText extends Operator
      * time, parsed from a string, or built up from expressions.
      */
     public interface QueryGenerator extends Explainable {
-        public Query getQuery(FullTextIndexService service, QueryContext context, String indexName);
+        public Query getQuery(FullTextIndexService service, QueryContext context, IndexName indexName);
     }
 
     public static QueryGenerator staticQuery(final Query query) {
         return new QueryGenerator() {
                 @Override
-                public Query getQuery(FullTextIndexService service, QueryContext context, String indexName) {
+                public Query getQuery(FullTextIndexService service, QueryContext context, IndexName indexName) {
                     return query;
                 }
 
@@ -71,7 +72,7 @@ public class IndexScan_FullText extends Operator
     public static QueryGenerator parseQuery(final String query) {
         return new QueryGenerator() {
                 @Override
-                public Query getQuery(FullTextIndexService service, QueryContext context, String indexName) {
+                public Query getQuery(FullTextIndexService service, QueryContext context, IndexName indexName) {
                     return service.parseQuery(context, indexName, query);
                 }
 
@@ -89,7 +90,7 @@ public class IndexScan_FullText extends Operator
             };
     }
 
-    public IndexScan_FullText(FullTextIndexService service, String index, 
+    public IndexScan_FullText(FullTextIndexService service, IndexName index, 
                               QueryGenerator queryGenerator, int limit) {
         this.service = service;
         this.index = index;
@@ -108,7 +109,7 @@ public class IndexScan_FullText extends Operator
     {
         Attributes atts = new Attributes();
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
-        atts.put(Label.INDEX, PrimitiveExplainer.getInstance(index));
+        atts.put(Label.INDEX, PrimitiveExplainer.getInstance(index.toString()));
         atts.put(Label.INDEX_KIND, PrimitiveExplainer.getInstance("FULL_TEXT"));
         atts.put(Label.PREDICATE, queryGenerator.getExplainer(context));
         atts.put(Label.LIMIT, PrimitiveExplainer.getInstance(limit));

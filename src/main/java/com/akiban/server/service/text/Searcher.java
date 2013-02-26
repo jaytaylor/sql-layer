@@ -47,11 +47,11 @@ import java.util.List;
 
 public class Searcher implements Closeable
 {
-    private final FullTextIndex index;
+    private final FullTextIndexShared index;
     private final StandardQueryParser parser;
     private final SearcherManager searcherManager;
     
-    public Searcher(FullTextIndex index, Analyzer analyzer) throws IOException {
+    public Searcher(FullTextIndexShared index, Analyzer analyzer) throws IOException {
         this.index = index;
         this.parser = new StandardQueryParser(analyzer);
         this.searcherManager = new SearcherManager(index.open(), new SearcherFactory());

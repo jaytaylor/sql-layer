@@ -63,13 +63,13 @@ public class RowIndexer implements Closeable
     
     private static final Logger logger = LoggerFactory.getLogger(RowIndexer.class);
 
-    public RowIndexer(FullTextIndexAIS indexAIS, IndexWriter writer, boolean updating) {
-        UserTableRowType indexedRowType = indexAIS.getIndexedRowType();
+    public RowIndexer(FullTextIndexInfo index, IndexWriter writer, boolean updating) {
+        UserTableRowType indexedRowType = index.getIndexedRowType();
         int depth = indexedRowType.userTable().getDepth();
         ancestorRowTypes = new HashMap<>(depth+1);
         ancestors = (ShareHolder<Row>[])new ShareHolder<?>[depth+1];
-        fieldsByRowType = indexAIS.getFieldsByRowType();
-        Set<RowType> rowTypes = indexAIS.getRowTypes();
+        fieldsByRowType = index.getFieldsByRowType();
+        Set<RowType> rowTypes = index.getRowTypes();
         descendantRowTypes = new HashSet<>(rowTypes.size() - ancestorRowTypes.size());
         for (RowType rowType : rowTypes) {
             if ((rowType == indexedRowType) ||

@@ -38,16 +38,16 @@ import java.io.IOException;
 
 public class Indexer implements Closeable
 {
-    private final FullTextIndex index;
+    private final FullTextIndexShared index;
     private final IndexWriter writer;
     
-    public Indexer(FullTextIndex index, Analyzer analyzer) throws IOException {
+    public Indexer(FullTextIndexShared index, Analyzer analyzer) throws IOException {
         this.index = index;
         IndexWriterConfig iwc = new IndexWriterConfig(Version.LUCENE_40, analyzer);
         this.writer = new IndexWriter(index.open(), iwc);
     }
 
-    public FullTextIndex getIndex() {
+    public FullTextIndexShared getIndex() {
         return index;
     }
 

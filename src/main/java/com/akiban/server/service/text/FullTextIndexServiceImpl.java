@@ -37,7 +37,6 @@ import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.DuplicateIndexException;
-import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
@@ -67,7 +66,7 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
     private final TreeService treeService;
 
     private File indexPath;
-    private Map<String,FullTextIndex> indexes = new HashMap<>();
+    private Map<IndexName,FullTextIndexShared> indexes = new HashMap<>();
     
     private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceImpl.class);
 
@@ -87,9 +86,9 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
 
     @Override
     public void createIndex(Session session, IndexName name) {
-        FullTextIndex index = getIndex(session, name);
+        FullTextIndexInfo index = getIndex(session, name);
         try {
-            populateIndex(session, indexAIS);
+            populateIndex(session, index);
         }
         catch (IOException ex) {
             throw new AkibanInternalException("Error populating index", ex);
@@ -98,19 +97,18 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
 
     @Override
     public void dropIndex(Session session, IndexName name) {
-        FullTextIndex index = getIndex(session, name);
-        for (File f : index.getPath().listFiles()) {
-            f.delete();
+        FullTextIndexInfo index = getIndex(session, name);
+        index.deletePath();
+        synchronized (indexes) {
+            indexes.remove(name);
         }
-        index.getPath().delete();
     }
 
     @Override
     public Query parseQuery(QueryContext context, IndexName name, String query) {
-        FullTextIndex index = getIndex(session, name);
+        FullTextIndexInfo index = getIndex(context.getSession(), name);
         try {
-            Searcher searcher = getSearcher(index);
-            return searcher.parse(query);
+            return index.getSearcher().parse(query);
         }
         catch (IOException ex) {
             throw new AkibanInternalException("Error populating index", ex);
@@ -118,11 +116,11 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
     }
 
     @Override
-    public Cursor searchIndex(QueryContext context, String name, Query query, int limit) {
-        FullTextIndex index = getIndex(session, name);
+    public Cursor searchIndex(QueryContext context, IndexName name, Query query, int limit) {
+        FullTextIndexInfo index = getIndex(context.getSession(), name);
         try {
-            Searcher searcher = getSearcher(index);
-            return searcher.search(context, index.getHKeyRowType(), query, limit);
+            return index.getSearcher().search(context, index.getHKeyRowType(), 
+                                              query, limit);
         }
         catch (IOException ex) {
             throw new AkibanInternalException("Error searching index", ex);
@@ -138,17 +136,8 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
     @Override
     public void stop() {
         try {
-            for (FullTextIndex index : indexes.values()) {
-                Indexer indexer = index.getIndexer();
-                if (indexer != null) {
-                    indexer.close();
-                    index.setIndexer(null);
-                }
-                Searcher searcher = index.getSearcher();
-                if (searcher != null) {
-                    searcher.close();
-                    index.setSearcher(null);
-                }
+            for (FullTextIndexShared index : indexes.values()) {
+                index.close();
             }
         }
         catch (IOException ex) {
@@ -169,26 +158,37 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
         return indexPath;
     }
 
-    protected void populateIndex(Session session, FullTextIndexAIS indexAIS)
-            throws IOException {
-        FullTextIndex index = indexAIS.getIndex();
-        Indexer indexer;
-        synchronized (index) {
-            indexer = index.getIndexer();
-            if (indexer == null) {
-                indexer = new Indexer(index, getAnalyzer(index));
+    protected FullTextIndexInfo getIndex(Session session, IndexName name) {
+        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+        FullTextIndexInfo info;
+        synchronized (indexes) {
+            FullTextIndexShared shared = indexes.get(name);
+            if (shared != null) {
+                info = shared.forAIS(ais);
             }
-            index.setIndexer(indexer);
+            else {
+                shared = new FullTextIndexShared(name);
+                info = new FullTextIndexInfo(shared);
+                info.init(ais);
+                info = shared.init(ais, info, getIndexPath());
+                indexes.put(name, shared);
+            }
         }
-        Operator plan = indexAIS.fullScan();
+        return info;
+    }
+
+    protected void populateIndex(Session session, FullTextIndexInfo index)
+            throws IOException {
+        Indexer indexer = index.getIndexer();
+        Operator plan = index.fullScan();
         StoreAdapter adapter = session.get(StoreAdapter.STORE_ADAPTER_KEY);
         if (adapter == null)
-            adapter = new PersistitAdapter(indexAIS.getSchema(),
+            adapter = new PersistitAdapter(index.getSchema(),
                                            store, treeService, 
                                            session, configService);
         QueryContext queryContext = new SimpleQueryContext(adapter);
         IndexWriter writer = indexer.getWriter();
-        RowIndexer rowIndexer = new RowIndexer(indexAIS, writer, false);
+        RowIndexer rowIndexer = new RowIndexer(index, writer, false);
         boolean transaction = false;
         Cursor cursor = null;
         boolean success = false;
@@ -220,29 +220,6 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
                 throw new AkibanInternalException("Error closing indexer", ex);
             }
         }
-    }
-
-    protected Analyzer getAnalyzer(FullTextIndex index) {
-        Analyzer analyzer;
-        synchronized (index) {
-            analyzer = index.getAnalyzer();
-            if (analyzer == null) {
-                analyzer = new SelectiveCaseAnalyzer(index.getCasePreservingFieldNames());
-            }
-        }
-        return analyzer;
-    }
-
-    protected Searcher getSearcher(FullTextIndex index) throws IOException {
-        Searcher searcher;
-        synchronized (index) {
-            searcher = index.getSearcher();
-            if (searcher == null) {
-                searcher = new Searcher(index, getAnalyzer(index));
-            }
-            index.setSearcher(searcher);
-        }
-        return searcher;
     }
 
 }

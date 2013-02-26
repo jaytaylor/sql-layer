@@ -30,6 +30,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
@@ -38,16 +39,19 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.error.IndexTableNotInGroupException;
-import com.akiban.server.error.NoSuchColumnException;
+import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.error.NoSuchTableException;
 
+import org.apache.lucene.analysis.Analyzer;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 public class FullTextIndexInfo
 {
-    private final FullTextIndex index;
     private final FullTextIndexShared shared;
+    private FullTextIndex index;
     private Schema schema;
     private UserTableRowType indexedRowType;
     private HKeyRowType hKeyRowType;
@@ -55,14 +59,20 @@ public class FullTextIndexInfo
     private Map<RowType,List<IndexedField>> fieldsByRowType;
     private String defaultFieldName;
 
-    public FullTextIndexInfo(FullTextIndex index, FullTextIndexShared shared) {
-        this.index = index;
+    public FullTextIndexInfo(FullTextIndexShared shared) {
         this.shared = shared;
     }
 
-    public void init() {
-        UserTable table = index.getIndexedTable();
-        AkibanInformationSchema ais = table.getAIS();
+    public void init(AkibanInformationSchema ais) {
+        IndexName name = shared.getName();
+        UserTable table = ais.getUserTable(name.getFullTableName());
+        if (table == null) {
+            throw new NoSuchTableException(name.getFullTableName());
+        }
+        index = table.getFullTextIndex(name.getName());
+        if (index == null) {
+            throw new NoSuchIndexException(name.getName());
+        }
         schema = SchemaCache.globalSchema(ais);
         indexedRowType = schema.userTableRowType(table);
         hKeyRowType = schema.newHKeyRowType(table.hKey());
@@ -85,6 +95,10 @@ public class FullTextIndexInfo
             }
             fields.add(entry.getValue());
         }
+    }
+
+    public FullTextIndex getIndex() {
+        return index;
     }
 
     public Schema getSchema() {
@@ -134,6 +148,49 @@ public class FullTextIndexInfo
         return plan;
     }
 
+    public Analyzer getAnalyzer() {
+        Analyzer analyzer;
+        synchronized (shared) {
+            analyzer = shared.getAnalyzer();
+            if (analyzer == null) {
+                analyzer = new SelectiveCaseAnalyzer(shared.getCasePreservingFieldNames());
+            }
+        }
+        return analyzer;
+    }
+
+    protected Searcher getSearcher() throws IOException {
+        Searcher searcher;
+        synchronized (shared) {
+            searcher = shared.getSearcher();
+            if (searcher == null) {
+                searcher = new Searcher(shared, getAnalyzer());
+            }
+            shared.setSearcher(searcher);
+        }
+        return searcher;
+    }
+
+    public Indexer getIndexer() throws IOException {
+        Indexer indexer;
+        synchronized (shared) {
+            indexer = shared.getIndexer();
+            if (indexer == null) {
+                indexer = new Indexer(shared, getAnalyzer());
+                shared.setIndexer(indexer);
+            }
+        }
+        return indexer;
+    }
+
     // TODO: _Lookup plan to get rows just from a row being updated.
+
+    public void deletePath() {
+        File path = shared.getPath();
+        for (File f : path.listFiles()) {
+            f.delete();
+        }
+        path.delete();
+    }
 
 }
