@@ -47,6 +47,9 @@ import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.util.BytesRef;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 
 public class FullTextCursor implements Cursor
@@ -60,6 +63,8 @@ public class FullTextCursor implements Cursor
     private IndexSearcher searcher;
     private TopDocs results;
     private int position;
+
+    private static final Logger logger = LoggerFactory.getLogger(FullTextCursor.class);
 
     public FullTextCursor(QueryContext context, HKeyRowType rowType, 
                           SearcherManager searcherManager, Query query, int limit) {
@@ -102,7 +107,9 @@ public class FullTextCursor implements Cursor
             throw new AkibanInternalException("Error reading document", ex);
         }
         HKey hkey = hkey(doc.getBinaryValue(IndexedField.KEY_FIELD));
-        return new HKeyRow(rowType, hkey, hKeyCache);
+        Row row = new HKeyRow(rowType, hkey, hKeyCache);
+        logger.debug("FullTextCursor: yield {}", row);
+        return row;
     }
 
     @Override

@@ -203,7 +203,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
         logger.debug("Writing from {}: {}", table, scan);
         PlanGenerator generator = ais.getCachedValue(this, CACHED_PLAN_GENERATOR);
         Operator plan = generator.generateBranchPlan(table, scan, scanType);
-        dumpAsJson(session, writer, table, Collections.<List<String>>emptyList(), depth, withTransaction, generator.getSchema(), plan);
+        dumpAsJson(session, writer, table, Collections.singletonList(Collections.<String>emptyList()), depth, withTransaction, generator.getSchema(), plan);
     }
 
     @Override

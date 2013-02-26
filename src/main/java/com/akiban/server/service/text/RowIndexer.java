@@ -58,6 +58,7 @@ public class RowIndexer implements Closeable
     private Map<RowType,List<IndexedField>> fieldsByRowType;
     private IndexWriter writer;
     private Document currentDocument;
+    private long documentCount;
     private BytesRef keyBytes;
     private boolean updating;
     
@@ -131,16 +132,15 @@ public class RowIndexer implements Closeable
     }
     
     public long indexRows(Cursor cursor) throws IOException {
-        long count = -1;
+        documentCount = 0;
         cursor.open();
         Row row;
         do {
             row = cursor.next();
             indexRow(row);
-            count++;
         } while (row != null);
         cursor.close();
-        return count;
+        return documentCount;
     }
 
     protected void addDocument() throws IOException {
@@ -154,6 +154,7 @@ public class RowIndexer implements Closeable
                 writer.addDocument(currentDocument);
                 logger.debug("Added {}", currentDocument);
             }
+            documentCount++;
             currentDocument = null;
         }
     }
