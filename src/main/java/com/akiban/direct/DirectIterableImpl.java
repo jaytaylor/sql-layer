@@ -75,6 +75,7 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
 
             @SuppressWarnings("unchecked")
             @Override
+
             public T next() {
                 initIfNeeded();
                 if (!hasNext) {
