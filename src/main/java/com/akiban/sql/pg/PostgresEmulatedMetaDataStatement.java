@@ -869,7 +869,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             indexes.put(index.getIndexName().getName(), index);
         }
         for (Index index : table.getGroupIndexes()) {
-            indexes.put(index.getIndexName().getName(), index);
+            if (isTableReferenced(table, index)) {
+                indexes.put(index.getIndexName().getName(), index);
+            }
         }
         for (Index index : table.getFullTextIndexes()) {
             indexes.put(index.getIndexName().getName(), index);
@@ -1001,6 +1003,17 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         List<IndexColumn> indexColumns = index.getKeyColumns();
         return ((indexColumns.size() == 1) && 
                 indexColumns.get(0).getColumn().isAkibanPKColumn());
+    }
+
+    private boolean isTableReferenced(UserTable table, Index groupIndex) {
+        for (IndexColumn indexColumn : groupIndex.getKeyColumns()) {
+            // A table may only be referenced by hKey components, in
+            // which case we don't want to display it.
+            if (indexColumn.getColumn().getTable() == table) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String formatIndexdef(Index index, UserTable table) {
