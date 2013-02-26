@@ -25,6 +25,7 @@
  */
 package com.akiban.direct;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -70,13 +71,15 @@ public abstract class ClassBuilder {
      * @see com.akiban.direct.ClassBuilder#property(java.lang.String,
      * java.lang.String)
      */
-    public void addProperty(final String name, final String type, final String argName, final String[] getBody,
+    public String addProperty(final String name, final String type, final String argName, final String[] getBody,
             final String[] setBody) {
         String caseConverted = asJavaName(name, true);
         boolean b = "boolean".equals(type);
+        String getName = (b ? "is" : "get") + caseConverted;
         addMethod((b ? "is" : "get") + caseConverted, type, new String[0], null, getBody);
         addMethod("set" + caseConverted, "void", new String[] { type },
                 new String[] { argName == null ? "v" : argName }, setBody);
+        return getName + "()";
     }
 
     public abstract void end();
@@ -181,11 +184,14 @@ public abstract class ClassBuilder {
         /*
          * Add a property per column
          */
+        Map<String, String> getterMethods = new HashMap<String, String>();
         for (final Column column : table.getColumns()) {
             Class<?> javaClass = column.getType().akType().javaClass();
             String[] getBody = new String[] { "return __get" + column.getType().akType() + "(" + column.getPosition()
                     + ")" };
-            addProperty(column.getName(), javaClass.getName(), null, iface ? null : getBody, iface ? null : UNSUPPORTED);
+            String expr = addProperty(column.getName(), javaClass.getName(), null, iface ? null : getBody, iface ? null
+                    : UNSUPPORTED);
+            getterMethods.put(column.getName(), expr);
         }
 
         /*
@@ -229,11 +235,11 @@ public abstract class ClassBuilder {
             if (!primaryKeyColumns.isEmpty()) {
                 String[] body = null;
                 if (!iface) {
-                    String s = buildDirectIterableExpr(childClassName, childTableName);
+                    StringBuilder sb = new StringBuilder(buildDirectIterableExpr(childClassName, childTableName));
                     for (final JoinColumn jc : join.getJoinColumns()) {
-                        s = s.concat(String.format(".join(\"%s\", \"%s\", \"%s\", \"%s\")", tableName, jc
-                                .getParent().getName(), childTableName, jc.getChild().getName()));
-                        body = new String[] { "return " + s };
+                        sb.append(String.format(".where(\"%s\", %s)", jc.getChild().getName(),
+                                literal(getterMethods, jc.getParent())));
+                        body = new String[] { "return " + sb.toString() };
                     }
                 }
                 addMethod("get" + asJavaName(childTableName, true) + "List", "com.akiban.direct.DirectIterable<"
@@ -257,7 +263,55 @@ public abstract class ClassBuilder {
     }
 
     private String buildDirectIterableExpr(final String className, final String table) {
-        return String.format("(new com.akiban.direct.DirectIterableImpl" + "(%1$s.class, \"%2$s\"))",
-                className, table);
+        return String.format("(new com.akiban.direct.DirectIterableImpl" + "(%1$s.class, \"%2$s\"))", className, table);
+    }
+
+    /**
+     * Box by hand since the javassist compiler doesn't seem to do it.
+     * 
+     * @param getterMethods
+     * @param column
+     * @return
+     */
+    private String literal(Map<String, String> getterMethods, Column column) {
+        String getter = getterMethods.get(column.getName());
+        Class<?> type = column.getType().akType().javaClass();
+        if (type.isPrimitive()) {
+            return literalWrapper(type) + ".valueOf(" + getter + ")";
+        } else {
+            return getter;
+        }
+    }
+    
+    /*
+     * What a kludge!
+     */
+    private String literalWrapper(final Class<?> c) {
+        assert c.isPrimitive();
+        if (c == byte.class) {
+            return "Byte";
+        }
+        if (c == char.class) {
+            return "Character";
+        }
+        if (c == short.class) {
+            return "Short";
+        }
+        if (c == int.class) {
+            return "Integer";
+        }
+        if (c == long.class) {
+            return "Long";
+        }
+        if (c == float.class) {
+            return "Float";
+        }
+        if (c == double.class) {
+            return "Double";
+        }
+        if (c == boolean.class) {
+            return "Boolean";
+        }
+        return "?";
     }
 }

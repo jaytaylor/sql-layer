@@ -45,9 +45,8 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
     boolean hasNext;
 
     final String table;
-    final List<String> joinTables = new ArrayList<String>();
     final List<String> predicates = new ArrayList<String>();
-    String sort;
+    final List<String> sorts = new ArrayList<String>();
     String limit;
 
     boolean initialized;
@@ -73,7 +72,6 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
 
             @SuppressWarnings("unchecked")
             @Override
-
             public T next() {
                 initIfNeeded();
                 if (!hasNext) {
@@ -123,10 +121,7 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
     private void initIfNeeded() {
         if (!initialized) {
             StringBuilder sb = new StringBuilder();
-            sb.append("select ").append(table).append(".*").append(" from ").append(table);
-            for (final String t : joinTables) {
-                sb.append(", ").append(t);
-            }
+            sb.append("select * from ").append(table);
             if (!predicates.isEmpty()) {
                 sb.append(" where ");
                 boolean and = false;
@@ -138,8 +133,10 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
                     and = true;
                 }
             }
-            if (sort != null) {
-                sb.append(" order by ").append(sort);
+            boolean orderBy = false;
+            for (final String sort : sorts) {
+                sb.append(orderBy ? ", " : " order by ").append(sort);
+                orderBy = true;
             }
             if (limit != null) {
                 sb.append(" limit ").append(limit);
@@ -156,68 +153,35 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
         }
     }
 
-    /**
-     * TODO: this implementation assumes a predicate in which the first element
-     * is a column name in the child table. This method prepends that with the
-     * child table name. E.g.
-     * 
-     * <pre>
-     * <code>
-     * customer.getOrderList.where("order_date > '2010-01-01'") 
-     * </code>
-     * </pre>
-     * 
-     * is translated to a clause like
-     * 
-     * <pre>
-     * <code>
-     * where orders.orderDate > '2010-01-01'
-     * </code>
-     * </pre>
-     * 
-     * 
-     */
     @Override
     public DirectIterableImpl<T> where(final String predicate) {
-        predicates.add(table + "." + predicate);
+        predicates.add(predicate);
         return this;
     }
-
-    /**
-     * TODO: this implementation assumes a string in which the first element is
-     * a column name in the child table. E.g.,
-     * 
-     * <pre>
-     * <code>
-     * customer.getOrderList.sort("order_date desc") 
-     * </code>
-     * </pre>
-     * 
-     * is translated to a clause like
-     * 
-     * <pre>
-     * <code>
-     * order by orders.orderDate desc
-     * </code>
-     * </pre>
-     * 
-     * 
-     */
+    
     @Override
-    public DirectIterableImpl<T> sort(final String sort) {
-        if (this.sort == null) {
-            this.sort = sort;
-            return this;
+    public DirectIterableImpl<T> where(final String columnName, Object literal) {
+        StringBuilder sb = new StringBuilder(columnName).append(" = ");
+        if (literal instanceof Number) {
+            sb.append(literal);
+        } else {
+            sb.append('\'').append(literal.toString()).append('\'');
         }
+        predicates.add(sb.toString());
+        return this;
+    }
+    
+
+    @Override
+    public DirectIterableImpl<T> sort(final String column) {
+        sorts.add(column);
         throw new IllegalStateException("Sort already specified");
     }
 
-    public DirectIterableImpl<T> join(final String fromTable, final String fromColumn, final String toTable, String toColumn) {
-        predicates.add(fromTable + "." + fromColumn + " = " + toTable + "." + toColumn);
-        if (!joinTables.contains(fromTable)) {
-            joinTables.add(fromTable);
-        }
-        return this;
+    @Override
+    public DirectIterableImpl<T> sort(final String column, String direction) {
+        sorts.add(column + " " + direction);
+        throw new IllegalStateException("Sort already specified");
     }
 
     @Override
