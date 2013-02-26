@@ -57,7 +57,6 @@ import com.akiban.server.store.statistics.Histogram;
 import com.akiban.server.store.statistics.HistogramEntry;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsService;
-import com.akiban.server.test.it.dxl.Ingnore;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
