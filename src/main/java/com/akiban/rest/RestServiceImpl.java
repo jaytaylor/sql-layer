@@ -33,6 +33,7 @@ import com.akiban.rest.resources.ProcedureCallResource;
 import com.akiban.rest.resources.SQLResource;
 import com.akiban.rest.resources.SecurityResource;
 import com.akiban.rest.resources.VersionResource;
+import com.akiban.rest.resources.ViewResource;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
@@ -118,7 +119,8 @@ public class RestServiceImpl implements RestService, Service {
                 new ProcedureCallResource(reqs),
                 new SecurityResource(reqs),
                 new SQLResource(reqs),
-                new VersionResource(reqs)
+                new VersionResource(reqs),
+                new ViewResource(reqs)
         ));
         return config;
     }
