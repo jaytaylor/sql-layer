@@ -199,6 +199,18 @@ public class RestServiceFilesIT extends ITBase {
         for (File data : subDir.listFiles(new RegexFilenameFilter(".*\\.dat"))) {
             loadDataFile(SCHEMA_NAME, data);
         }
+        String postURI = dumpFileIfExists(new File(subDir, "schema.prepost"));
+        if (postURI != null) {
+            HttpURLConnection httpConn = openConnection(getRestURL(postURI.trim()), "POST");
+            postContents(httpConn, "[]".getBytes());
+            StringBuilder builder = new StringBuilder();
+            try {
+                Strings.readStreamTo(httpConn.getInputStream(), builder, true);
+            } catch(Exception e) {
+                Strings.readStreamTo(httpConn.getErrorStream(), builder, true);
+                throw new RuntimeException("Failing posting schema setup: " + builder.toString(), e);
+            }
+        }
     }
     
     public void checkRequest() throws Exception {
