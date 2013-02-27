@@ -57,6 +57,7 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.rest.RestServiceFilesIT;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.api.dml.scan.ScanFlag;
@@ -119,6 +120,8 @@ import org.junit.rules.MethodRule;
 import org.junit.rules.TestName;
 import org.junit.rules.TestWatchman;
 import org.junit.runners.model.FrameworkMethod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>Base class for all API tests. Contains a @SetUp that gives you a fresh DDLFunctions and DMLFunctions, plus
@@ -792,6 +795,10 @@ public class ApiTestBase {
         for (Routine routine : ais.getRoutines().values()) {
             ddl().createRoutine(session(), routine);
         }
+        for (View view : ais.getViews().values()) {
+            ddl().createView(session(), view);
+        }
+        
         updateAISGeneration();
         return ddl().getTableId(session(), tables.get(0).getName());
     }
