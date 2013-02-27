@@ -181,6 +181,7 @@ public abstract class ClassBuilder {
 
     private void addMethods(UserTable table, String scn, String typeName, String className, boolean iface) {
         String tableName = table.getName().getTableName();
+        String ifaceName = scn + "$" + asJavaName(tableName, true);
         /*
          * Add a property per column
          */
@@ -199,9 +200,20 @@ public abstract class ClassBuilder {
          */
         Join parentJoin = table.getParentJoin();
         if (parentJoin != null) {
-            String parentTypeName = parentJoin.getParent().getName().getTableName();
-            addMethod("get" + asJavaName(parentTypeName, true), scn + "$" + asJavaName(parentTypeName, true), NONE,
-                    null, iface ? null : UNSUPPORTED);
+            String parentTableName = parentJoin.getParent().getName().getTableName();
+            String parentClassName = scn + "$" + asJavaName(parentTableName, true);
+            String[] body = null;
+            if (!iface) {
+                StringBuilder sb = new StringBuilder(buildDirectIterableExpr(parentClassName, parentTableName));
+                for (final JoinColumn jc : parentJoin.getJoinColumns()) {
+                    sb.append(String.format(".where(\"%s\", %s)", jc.getParent().getName(),
+                            literal(getterMethods, jc.getParent())));
+                    body = new String[] { "return " + sb.toString() + ".single()" };
+
+                }
+            }
+            addMethod("get" + asJavaName(parentTableName, true), parentClassName, NONE,
+                    null, body);
         }
 
         /*
@@ -282,7 +294,7 @@ public abstract class ClassBuilder {
             return getter;
         }
     }
-    
+
     /*
      * What a kludge!
      */

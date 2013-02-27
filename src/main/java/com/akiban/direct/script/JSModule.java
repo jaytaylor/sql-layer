@@ -31,11 +31,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.nio.file.Path;
-import java.nio.file.WatchEvent;
-import java.nio.file.WatchKey;
-import java.nio.file.WatchService;
+import java.io.Reader;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -45,11 +41,9 @@ import javax.script.Compilable;
 import javax.script.CompiledScript;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-import javax.ws.rs.core.MultivaluedMap;
 
 import com.akiban.direct.DirectContext;
 import com.akiban.direct.DirectModule;
-import com.akiban.rest.resources.DirectResource;
 
 /**
  * <p>
@@ -76,14 +70,25 @@ import com.akiban.rest.resources.DirectResource;
  */
 public class JSModule implements DirectModule {
 
-    private File jsFile;
-    private Path directoryPath;
-    private WatchService watcher;
     private boolean isGetEnabled;
     private DirectContext context;
     ScriptEngine engine;
     private CompiledScript compiled;
     private Bindings bindings;
+    private Source source;
+
+    interface Source {
+
+        Reader getReader() throws Exception;
+
+        boolean isChanged() throws Exception;
+
+        void setParams(Map<String, List<String>> params);
+
+        void start() throws Exception;
+
+        void stop() throws Exception;
+    }
 
     /**
      * Receive a DirectContext instance. This provides a source for JDBC
@@ -108,14 +113,7 @@ public class JSModule implements DirectModule {
      */
     @Override
     public void start() throws Exception {
-        jsFile = jsFile.getAbsoluteFile();
-        if (!jsFile.exists() || jsFile.isDirectory()) {
-            throw new FileNotFoundException(jsFile.toString());
-        }
-
-        directoryPath = jsFile.getParentFile().toPath();
-        watcher = directoryPath.getFileSystem().newWatchService();
-        directoryPath.register(watcher, ENTRY_MODIFY, ENTRY_DELETE, ENTRY_CREATE);
+        source.start();
         loadModule();
     }
 
@@ -126,7 +124,7 @@ public class JSModule implements DirectModule {
      */
     @Override
     public void stop() throws Exception {
-        watcher.close();
+        source.stop();
     }
 
     /**
@@ -153,18 +151,7 @@ public class JSModule implements DirectModule {
      */
     @Override
     public Object eval(Map<String, List<String>> params) throws Exception {
-        int changes = 0;
-        WatchKey key;
-        while ((key = watcher.poll()) != null) {
-            for (WatchEvent<?> event : key.pollEvents()) {
-                Path relativePath = (Path) event.context();
-                if (jsFile.toPath().endsWith(relativePath)) {
-                    changes++;
-                }
-            }
-            key.reset();
-        }
-        if (changes > 0) {
+        if (source.isChanged()) {
             loadModule();
         }
         bindings.put("params", params);
@@ -193,30 +180,20 @@ public class JSModule implements DirectModule {
         return context.getConnection().createStatement();
     }
 
-    /**
-     * Receive parameters prior to invocation of {@link #start()}. The
-     * parameters are those provided with the PUT operation that is loading this
-     * module. Note that this is an optional operation for a DirectModule
-     * implementation; it is discovered and called by reflection from the
-     * {@link DirectResource}. In this implementation, the parameters named
-     * <code>file</code> and <code>get</code> are significant.
-     * <ul>
-     * <li><code>file</code> is the file name of a file containing Javascript
-     * source code to load</li>
-     * <li><code>get</code> is "true" to indicate this module does not affect
-     * server state and may be invoked through GET requests</li>
-     * </ul>
-     * 
-     * @param params
-     *            Map in the form of a {@link javax.ws.rs.core.MultivaluedMap}.
-     */
     public void setParams(Map<String, List<String>> params) {
-        jsFile = new File(getFirst(params, "file"));
         String isi = getFirst(params, "get");
         isGetEnabled = isi == null ? false : isi.equalsIgnoreCase("true");
+        if (getFirst(params, "source") != null) {
+            source = new JSModuleSourceString();
+        } else if (getFirst(params, "file") != null) {
+            source = new JSModuleSourceFile();
+        } else {
+            throw new IllegalArgumentException("Source parameter not specified");
+        }
+        source.setParams(params);
     }
 
-    private String getFirst(Map<String, List<String>> params, String name) {
+    static String getFirst(Map<String, List<String>> params, String name) {
         List<String> values = params.get(name);
         if (values != null && !values.isEmpty()) {
             return values.get(0);
@@ -225,16 +202,12 @@ public class JSModule implements DirectModule {
     }
 
     private synchronized void loadModule() throws Exception {
-        if (!jsFile.exists() || jsFile.isDirectory()) {
-            throw new FileNotFoundException(jsFile.toString());
-        }
-
         if (engine == null) {
             ScriptEngineManager manager = new ScriptEngineManager(getClass().getClassLoader());
             engine = manager.getEngineByName("js");
         }
         Compilable compiler = (Compilable) engine;
-        compiled = compiler.compile(new FileReader(jsFile));
+        compiled = compiler.compile(source.getReader());
         bindings = engine.createBindings();
         bindings.put("dcontext", context);
 

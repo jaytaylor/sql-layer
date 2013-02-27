@@ -44,7 +44,11 @@ public class AbstractDirectObject implements DirectObject {
 
     public Row row() {
         if (resultSet != null) {
-            return resultSet.currentRow();
+            Row row = resultSet.currentRow();
+            if (row != null) {
+                rowHolder.hold(row);
+            }
+            return row;
         } else {
             return rowHolder.get();
         }

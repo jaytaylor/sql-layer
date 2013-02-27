@@ -32,6 +32,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import com.akiban.qp.row.Row;
+import com.akiban.sql.embedded.JDBCResultSet;
+import com.akiban.util.ShareHolder;
+
 /**
  * Very kludgey implementation by constructing SQL strings.
  * 
@@ -52,7 +56,9 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
     boolean initialized;
     String sql;
 
-    DirectResultSet resultSet;
+    JDBCResultSet resultSet;
+    
+    ShareHolder<Row> rowHolder = new ShareHolder<Row>();
 
     public DirectIterableImpl(Class<T> clazz, String toTable) {
         this.clazz = clazz;
@@ -96,12 +102,9 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
     @SuppressWarnings("unchecked")
     public T single() {
         initIfNeeded();
-        if (hasNext) {
+        if (nextRow()) {
             try {
                 T result = (T) resultSet.getEntity(clazz);
-                if (nextRow()) {
-                    throw new IllegalStateException("Expected only one row");
-                }
                 return result;
             } catch (SQLException e) {
                 throw new DirectException(e);
@@ -112,7 +115,14 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
 
     private boolean nextRow() {
         try {
-            return resultSet.next();
+            if (rowHolder.isHolding()) {
+                rowHolder.release();
+            }
+            boolean result = resultSet.next();
+            if (result) {
+                rowHolder.hold(resultSet.currentRow());
+            }
+            return result;
         } catch (SQLException e) {
             throw new DirectException(e);
         }
@@ -145,7 +155,7 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
             try {
                 Statement statement = Direct.getDirectContext().createStatement();
                 sql = sb.toString();
-                resultSet = (DirectResultSet) statement.executeQuery(sql);
+                resultSet = (JDBCResultSet) statement.executeQuery(sql);
             } catch (SQLException e) {
                 throw new DirectException(e);
             }

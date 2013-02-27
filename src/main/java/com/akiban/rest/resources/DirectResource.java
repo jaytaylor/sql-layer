@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -300,6 +301,9 @@ public class DirectResource {
         
         if ("js".equals(language)) {
             className = JSModule.class.getName();
+            if (payload != null && payload.length > 0 && params.getFirst("source") == null) {
+                params.put("source", Arrays.asList(new String(payload)));
+            }
         }
         
         try (Session session = reqs.sessionService.createSession()) {
