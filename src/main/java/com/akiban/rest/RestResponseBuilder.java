@@ -37,6 +37,7 @@ import org.codehaus.jackson.JsonParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -58,6 +59,7 @@ public class RestResponseBuilder {
     private static final Map<Class,Response.Status> EXCEPTION_STATUS_MAP = buildExceptionStatusMap();
     private static final Logger LOG = LoggerFactory.getLogger(RestResponseBuilder.class.getName());
 
+    private final HttpServletRequest request;
     private final boolean isJsonp;
     private BodyGenerator outputGenerator;
     private String outputBody;
@@ -65,14 +67,15 @@ public class RestResponseBuilder {
     private int status;
 
 
-    public RestResponseBuilder(String jsonp) {
+    public RestResponseBuilder(HttpServletRequest request, String jsonp) {
+        this.request = request;
         this.jsonp = jsonp;
         this.isJsonp = jsonp != null;
         this.status = Response.Status.OK.getStatusCode();
     }
 
-    public static RestResponseBuilder forJsonp(String jsonp) {
-        return new RestResponseBuilder(jsonp);
+    public static RestResponseBuilder forRequest(HttpServletRequest request) {
+        return new RestResponseBuilder(request, request.getParameter(ResourceHelper.JSONP_ARG_NAME));
     }
 
     public RestResponseBuilder status(Response.Status status) {
@@ -144,14 +147,15 @@ public class RestResponseBuilder {
         if(status == null) {
             status = Response.Status.CONFLICT;
         }
-        String message = e.getMessage();
-        if(message == null) {
-            message = e.getClass().getSimpleName();
-        }
-        code.logAtImportance(LOG, e);
+        code.logAtImportance(
+                LOG, "Exception from request(method: {}, url: {}, params: {})",
+                request.getMethod(), request.getRequestURL(), request.getQueryString(),
+                e
+        );
+        String exMsg = (e.getMessage() != null) ? e.getMessage() : e.getClass().getName();
         return new WebApplicationException(
                 Response.status(status)
-                        .entity(formatErrorWithJsonp(code.getFormattedValue(), message))
+                        .entity(formatErrorWithJsonp(code.getFormattedValue(), exMsg))
                         .type(isJsonp ? ResourceHelper.APPLICATION_JAVASCRIPT_TYPE : MediaType.APPLICATION_JSON_TYPE)
                         .build()
         );

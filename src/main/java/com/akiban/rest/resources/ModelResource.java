@@ -91,7 +91,7 @@ public final class ModelResource {
         final String schema = getSchemaName(request, schemaParam);
         checkSchemaAccessible(reqs.securityService, request, schema);
         return RestResponseBuilder
-                .forJsonp(jsonp)
+                .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
@@ -120,7 +120,7 @@ public final class ModelResource {
         final TableName tableName = ResourceHelper.parseTableName(request, table);
         checkTableAccessible(reqs.securityService, request, tableName);
         return RestResponseBuilder
-                .forJsonp(jsonp)
+                .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
@@ -149,7 +149,7 @@ public final class ModelResource {
                                   final InputStream postInput) {
         String schema = getSchemaName(request, schemaParam);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, schema);
-        return previewOrApply(jsonp, schema, postInput, false);
+        return previewOrApply(request, schema, postInput, false);
     }
 
     @POST
@@ -162,12 +162,12 @@ public final class ModelResource {
                                 final InputStream postInput) {
         String schema = getSchemaName(request, schemaParam);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, schema);
-        return previewOrApply(jsonp, schema, postInput, true);
+        return previewOrApply(request, schema, postInput, true);
     }
 
-    private Response previewOrApply(String jsonp, final String schema, final InputStream postInput, final boolean doApply) {
+    private Response previewOrApply(HttpServletRequest request, final String schema, final InputStream postInput, final boolean doApply) {
         return RestResponseBuilder
-                .forJsonp(jsonp)
+                .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {

@@ -74,7 +74,7 @@ public class EntityResource {
         final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
         return RestResponseBuilder
-                .forJsonp(jsonp)
+                .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
@@ -95,7 +95,7 @@ public class EntityResource {
         final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
         return RestResponseBuilder
-                .forJsonp(jsonp)
+                .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
@@ -115,7 +115,7 @@ public class EntityResource {
         final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
         return RestResponseBuilder
-                .forJsonp(jsonp)
+                .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
@@ -138,7 +138,7 @@ public class EntityResource {
         final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
         return RestResponseBuilder
-                .forJsonp(jsonp)
+                .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
@@ -160,7 +160,7 @@ public class EntityResource {
         final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
         return RestResponseBuilder
-                .forJsonp(jsonp)
+                .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {

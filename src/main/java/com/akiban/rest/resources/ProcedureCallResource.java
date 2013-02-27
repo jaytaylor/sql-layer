@@ -64,7 +64,7 @@ public class ProcedureCallResource {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
         return RestResponseBuilder
-                .forJsonp(jsonp)
+                .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {

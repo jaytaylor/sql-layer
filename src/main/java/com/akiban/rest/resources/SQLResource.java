@@ -59,7 +59,7 @@ public class SQLResource {
                           @QueryParam(JSONP_ARG_NAME) String jsonp,
                           @QueryParam("q") final String query) {
         return RestResponseBuilder
-                .forJsonp(jsonp)
+                .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
@@ -77,7 +77,7 @@ public class SQLResource {
                             @QueryParam(JSONP_ARG_NAME) String jsonp,
                             @QueryParam("q") final String query) {
         return RestResponseBuilder
-                .forJsonp(jsonp)
+                .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
@@ -97,7 +97,7 @@ public class SQLResource {
         String input = new String(postBytes);
         final String[] statements = input.split(";");
         return RestResponseBuilder
-                .forJsonp(jsonp)
+                .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {

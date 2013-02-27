@@ -73,7 +73,7 @@ public class SecurityResource {
     public Response addUser(@Context HttpServletRequest request,
                             @QueryParam(JSONP_ARG_NAME) String jsonp,
                             byte[] userBytes) throws Exception {
-        RestResponseBuilder response = RestResponseBuilder.forJsonp(jsonp);
+        RestResponseBuilder response = RestResponseBuilder.forRequest(request);
         if (!request.isUserInRole(SecurityService.ADMIN_ROLE)) {
             return response.status(Response.Status.FORBIDDEN).build();
         }
@@ -115,7 +115,7 @@ public class SecurityResource {
     public Response deleteUser(@Context HttpServletRequest request,
                                @PathParam("user") final String user,
                                @QueryParam(JSONP_ARG_NAME) String jsonp) {
-        RestResponseBuilder response = RestResponseBuilder.forJsonp(jsonp);
+        RestResponseBuilder response = RestResponseBuilder.forRequest(request);
         if (!request.isUserInRole(SecurityService.ADMIN_ROLE)) {
             return response.status(Response.Status.FORBIDDEN).build();
         }
