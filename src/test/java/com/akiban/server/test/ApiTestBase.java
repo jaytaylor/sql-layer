@@ -797,6 +797,11 @@ public class ApiTestBase {
             if (!indexes.isEmpty())
                 ddl().createIndexes(session(), indexes);
         }
+        for (UserTable table : tables) {
+            Collection<FullTextIndex> indexes = table.getOwnFullTextIndexes();
+            if (!indexes.isEmpty())
+                ddl().createIndexes(session(), indexes);
+        }
         for (Routine routine : ais.getRoutines().values()) {
             ddl().createRoutine(session(), routine);
         }
