@@ -103,7 +103,8 @@ public class PersistitStore implements Store, Service {
     private static final String BULKLOAD_TMPDIRS_CONFIG = "akserver.bulkload.tmpdirs";
     private static final String BULKLOAD_PK_BUFFER_ALLOC = "akserver.bulkload.bufferalloc.pk";
     private static final String BULKLOAD_GROUP_BUFFER_ALLOC = "akserver.bulkload.bufferalloc.group";
-
+    private static final String WRITE_LOCK_ENABLED_CONFIG = "akserver.write_lock_enabled";
+    
     private final static int MAX_ROW_SIZE = 5000000;
 
     private final static int MAX_INDEX_TRANCHE_SIZE = 10 * 1024 * 1024;
@@ -111,6 +112,8 @@ public class PersistitStore implements Store, Service {
     private final static int KEY_STATE_SIZE_OVERHEAD = 50;
 
     private final static byte[] EMPTY_BYTE_ARRAY = new byte[0];
+    
+    private boolean writeLockEnabled;
 
     private boolean updateGroupIndexes;
 
@@ -125,8 +128,6 @@ public class PersistitStore implements Store, Service {
     private final LockService lockService;
 
     private final TransactionService transactionService;
-
-    //private TableStatusCache tableStatusCache;
 
     private DisplayFilter originalDisplayFilter;
 
@@ -161,7 +162,6 @@ public class PersistitStore implements Store, Service {
 
     @Override
     public synchronized void start() {
-        //tableStatusCache = treeService.getTableStatusCache();
         try {
             CoderManager cm = getDb().getCoderManager();
             Management m = getDb().getManagement();
@@ -177,6 +177,8 @@ public class PersistitStore implements Store, Service {
             config.getProperty(BULKLOAD_TMPDIRS_CONFIG).trim();
             pkBlBufferAllocation = Float.parseFloat(config.getProperty(BULKLOAD_PK_BUFFER_ALLOC));
             groupBlBufferAllocation = Float.parseFloat(config.getProperty(BULKLOAD_GROUP_BUFFER_ALLOC));
+            writeLockEnabled = Boolean.parseBoolean(config.getProperty(WRITE_LOCK_ENABLED_CONFIG));
+
         }
         else {
             pkBlBufferAllocation = .5f;
@@ -423,8 +425,7 @@ public class PersistitStore implements Store, Service {
         Exchange hEx;
         hEx = getExchange(session, rowDef);
         
-        // FIXME: broken by bug #1118871, enable to fix write skew bug #1078331 
-        // lockKeys(adapter(session), rowDef, rowData, hEx);
+        lockKeys(adapter(session), rowDef, rowData, hEx);
         WRITE_ROW_TAP.in();
         try {
             // Does the heavy lifting of looking up the full hkey in
@@ -674,8 +675,7 @@ public class PersistitStore implements Store, Service {
         try {
             hEx = getExchange(session, rowDef);
             
-            // FIXME: broken by bug #1118871, enable to fix write skew bug #1078331 
-            // lockKeys(adapter(session), rowDef, rowData, hEx);
+            lockKeys(adapter(session), rowDef, rowData, hEx);
             constructHKey(session, hEx, rowDef, rowData, false);
             hEx.fetch();
             //
@@ -744,9 +744,8 @@ public class PersistitStore implements Store, Service {
         UPDATE_ROW_TAP.in();
         try {
             hEx = getExchange(session, rowDef);
-            // FIXME: broken by bug #1118871, enable to fix write skew bug #1078331 
-            //lockKeys(adapter, rowDef, oldRowData, hEx);
-            //lockKeys(adapter, newRowDef, newRowData, hEx);
+            lockKeys(adapter, rowDef, oldRowData, hEx);
+            lockKeys(adapter, newRowDef, newRowData, hEx);
             constructHKey(session, hEx, rowDef, oldRowData, false);
             hEx.fetch();
             //
@@ -1725,6 +1724,9 @@ public class PersistitStore implements Store, Service {
     private void lockKeys(PersistitAdapter adapter, RowDef rowDef, RowData rowData, Exchange exchange)
         throws PersistitException
     {
+        // Temporary fix for #1118871 and #1078331 
+        // disable the  lock used to prevent write skew for some cases of data loading
+        if (!writeLockEnabled) return;
         UserTable table = rowDef.userTable();
         // Make fieldDefs big enough to accomodate PK field defs and FK field defs
         FieldDef[] fieldDefs = new FieldDef[table.getColumnsIncludingInternal().size()];
