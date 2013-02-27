@@ -49,7 +49,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -58,7 +57,6 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.security.Principal;
 
-import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
 import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 import static com.akiban.rest.resources.ResourceHelper.checkSchemaAccessible;
 import static com.akiban.rest.resources.ResourceHelper.checkTableAccessible;
@@ -86,8 +84,7 @@ public final class ModelResource {
     @Path("/view" + OPTIONAL_SCHEMA)
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response viewSpace(@Context HttpServletRequest request,
-                              @PathParam("schema") String schemaParam,
-                              @QueryParam(JSONP_ARG_NAME) String jsonp) {
+                              @PathParam("schema") String schemaParam) {
         final String schema = getSchemaName(request, schemaParam);
         checkSchemaAccessible(reqs.securityService, request, schema);
         return RestResponseBuilder
@@ -115,7 +112,6 @@ public final class ModelResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response parse(@Context HttpServletRequest request,
                           @PathParam("table") String table,
-                          @QueryParam(JSONP_ARG_NAME) String jsonp,
                           final InputStream postInput) {
         final TableName tableName = ResourceHelper.parseTableName(request, table);
         checkTableAccessible(reqs.securityService, request, tableName);
@@ -145,7 +141,6 @@ public final class ModelResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response previewChange(@Context HttpServletRequest request,
                                   @PathParam("schema") String schemaParam,
-                                  @QueryParam(JSONP_ARG_NAME) String jsonp,
                                   final InputStream postInput) {
         String schema = getSchemaName(request, schemaParam);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, schema);
@@ -158,7 +153,6 @@ public final class ModelResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response applyChange(@Context HttpServletRequest request,
                                 @PathParam("schema") String schemaParam,
-                                @QueryParam(JSONP_ARG_NAME) String jsonp,
                                 final InputStream postInput) {
         String schema = getSchemaName(request, schemaParam);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, schema);

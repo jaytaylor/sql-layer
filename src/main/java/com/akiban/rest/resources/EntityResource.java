@@ -48,7 +48,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.PrintWriter;
 
-import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
 import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 import static com.akiban.rest.resources.ResourceHelper.checkTableAccessible;
 import static com.akiban.rest.resources.ResourceHelper.parseTableName;
@@ -68,7 +67,6 @@ public class EntityResource {
     @GET
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response retrieveEntity(@Context HttpServletRequest request,
-                                   @QueryParam(JSONP_ARG_NAME) String jsonp,
                                    @PathParam("entity") String entity,
                                    @QueryParam("depth") final Integer depth) {
         final TableName tableName = parseTableName(request, entity);
@@ -88,7 +86,6 @@ public class EntityResource {
     @Path("/" + IDENTIFIERS_MULTI)
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response retrieveEntity(@Context HttpServletRequest request,
-                                   @QueryParam(JSONP_ARG_NAME) String jsonp,
                                    @PathParam("entity") String entity,
                                    @QueryParam("depth") final Integer depth,
                                    @Context final UriInfo uri) {
@@ -109,7 +106,6 @@ public class EntityResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response createEntity(@Context HttpServletRequest request,
-                                 @QueryParam(JSONP_ARG_NAME) String jsonp,
                                  @PathParam("entity") String entity,
                                  final byte[] entityBytes) {
         final TableName tableName = parseTableName(request, entity);
@@ -131,7 +127,6 @@ public class EntityResource {
     @Path("/" + IDENTIFIERS_MULTI)
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response updateEntity(@Context HttpServletRequest request,
-                                 @QueryParam(JSONP_ARG_NAME) final String jsonp,
                                  @PathParam("entity") String entity,
                                  final byte[] entityBytes,
                                  @Context final UriInfo uri) {
@@ -154,7 +149,6 @@ public class EntityResource {
     @Path("/" + IDENTIFIERS_MULTI)
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response deleteEntity(@Context HttpServletRequest request,
-                                 @QueryParam(JSONP_ARG_NAME) String jsonp,
                                  @PathParam("entity") String entity,
                                  @Context final UriInfo uri) {
         final TableName tableName = parseTableName(request, entity);
