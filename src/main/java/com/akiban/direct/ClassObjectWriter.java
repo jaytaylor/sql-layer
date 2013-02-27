@@ -37,9 +37,9 @@ import javassist.NotFoundException;
 
 public class ClassObjectWriter extends ClassBuilder {
 
-    final ClassPool classPool;
-    Stack<CtClass> ctClasses = new Stack<CtClass>();
-    CtClass currentCtClass;
+    private final ClassPool classPool;
+    private Stack<CtClass> ctClasses = new Stack<CtClass>();
+    private CtClass currentCtClass;
 
     public ClassObjectWriter(ClassPool classPool, String packageName, String schema) {
         super(packageName, schema);

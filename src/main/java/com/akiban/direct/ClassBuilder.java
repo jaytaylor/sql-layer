@@ -124,10 +124,14 @@ public abstract class ClassBuilder {
 
         helper.startClass(scn, true, null, null, IMPORTS);
         for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
+            if (table.isRoot()) {
+                helper.addExtentAccessor(table, scn, true);
+            }
             helper.generateInterfaceClass(table, scn);
             implClassMap.put(-table.getTableId(), helper.getCurrentClass());
         }
         helper.end();
+        implClassMap.put(Integer.MIN_VALUE, helper.getCurrentClass());
 
         /*
          * Precompile the implementation classes
@@ -137,6 +141,18 @@ public abstract class ClassBuilder {
             helper.generateImplementationClass(table, schema);
             implClassMap.put(table.getTableId(), helper.getCurrentClass());
         }
+        /*
+         * Precompile the extent class
+         */
+        helper.startExtentClass(schema, scn);
+        for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
+            if (table.isRoot()) {
+                helper.addExtentAccessor(table, scn, false);
+            }
+        }
+        helper.end();
+        implClassMap.put(Integer.MAX_VALUE, helper.getCurrentClass());
+
         return implClassMap;
     }
 
@@ -160,10 +176,8 @@ public abstract class ClassBuilder {
         table.getName().getTableName();
         String typeName = scn + "$" + asJavaName(table.getName().getTableName(), true);
         startClass(typeName, true, null, null, null);
-
         addMethods(table, scn, typeName, typeName, true);
         addMethod("save", "void", NONE, null, null);
-
         end();
     }
 
@@ -179,9 +193,26 @@ public abstract class ClassBuilder {
         end();
     }
 
-    private void addMethods(UserTable table, String scn, String typeName, String className, boolean iface) {
+    void startExtentClass(String schema, final String scn) throws CannotCompileException, NotFoundException {
+        String className = packageName + "._" + asJavaName(schema, true);
+        startClass(className, false, "com.akiban.direct.AbstractDirectObject", new String[] { scn }, IMPORTS);
+    }
+
+    void addExtentAccessor(UserTable table, String scn, boolean iface) {
         String tableName = table.getName().getTableName();
-        String ifaceName = scn + "$" + asJavaName(tableName, true);
+        String className = scn + "$" + asJavaName(tableName, true);
+
+        String[] body = null;
+        if (!iface) {
+            StringBuilder sb = new StringBuilder(buildDirectIterableExpr(className, tableName));
+            body = new String[] { "return " + sb.toString() };
+        }
+        addMethod("get" + asJavaName(tableName, true) + "List", "com.akiban.direct.DirectIterable<" + className + ">",
+                NONE, null, body);
+
+    }
+
+    private void addMethods(UserTable table, String scn, String typeName, String className, boolean iface) {
         /*
          * Add a property per column
          */
@@ -208,12 +239,10 @@ public abstract class ClassBuilder {
                 for (final JoinColumn jc : parentJoin.getJoinColumns()) {
                     sb.append(String.format(".where(\"%s\", %s)", jc.getParent().getName(),
                             literal(getterMethods, jc.getParent())));
-                    body = new String[] { "return " + sb.toString() + ".single()" };
-
                 }
+                body = new String[] { "return " + sb.toString() + ".single()" };
             }
-            addMethod("get" + asJavaName(parentTableName, true), parentClassName, NONE,
-                    null, body);
+            addMethod("get" + asJavaName(parentTableName, true), parentClassName, NONE, null, body);
         }
 
         /*
@@ -251,8 +280,8 @@ public abstract class ClassBuilder {
                     for (final JoinColumn jc : join.getJoinColumns()) {
                         sb.append(String.format(".where(\"%s\", %s)", jc.getChild().getName(),
                                 literal(getterMethods, jc.getParent())));
-                        body = new String[] { "return " + sb.toString() };
                     }
+                    body = new String[] { "return " + sb.toString() };
                 }
                 addMethod("get" + asJavaName(childTableName, true) + "List", "com.akiban.direct.DirectIterable<"
                         + childClassName + ">", NONE, null, body);

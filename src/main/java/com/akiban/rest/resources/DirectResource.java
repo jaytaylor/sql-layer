@@ -287,7 +287,7 @@ public class DirectResource {
             holder.context.enter();
             return holder.module.eval(params);
         } catch (DirectException e) {
-            throw (Exception)e.getCause();
+            throw (Exception) e.getCause();
         } finally {
             holder.context.leave();
         }
@@ -298,14 +298,14 @@ public class DirectResource {
         String name = params.getFirst("name");
         String className = params.getFirst("class");
         List<String> urls = params.get("url");
-        
+
         if ("js".equals(language)) {
             className = JSModule.class.getName();
             if (payload != null && payload.length > 0 && params.getFirst("source") == null) {
                 params.put("source", Arrays.asList(new String(payload)));
             }
         }
-        
+
         try (Session session = reqs.sessionService.createSession()) {
             final AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(
                     reqs.sessionService.createSession());
@@ -317,8 +317,7 @@ public class DirectResource {
             final Class<? extends DirectModule> serviceClass = dcl.loadModule(ais, className, urls);
             DirectModule module = serviceClass.newInstance();
             DirectContextImpl context = new DirectContextImpl(dcl);
-            DirectModuleHolder holder = dispatch.put(name, new DirectModuleHolder(module,
-                    context));
+            DirectModuleHolder holder = dispatch.put(name, new DirectModuleHolder(module, context));
             if (holder != null) {
                 unloadModule(holder);
             }
@@ -326,7 +325,7 @@ public class DirectResource {
             start(module, context, params);
         }
     }
-    
+
     private void unloadModule(DirectModuleHolder holder) throws IOException {
         ClassLoader cl = holder.module.getClass().getClassLoader();
         assert cl instanceof DirectClassLoader;

@@ -31,8 +31,10 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import javassist.ClassPool;
@@ -60,6 +62,8 @@ public class DirectClassLoader extends URLClassLoader {
     int depth = 0;
 
     final Set<String> generated = new HashSet<String>();
+    
+    Class<?> extentClass;
 
     public DirectClassLoader(ClassLoader baseLoader) {
         super(new URL[0], baseLoader);
@@ -232,7 +236,8 @@ public class DirectClassLoader extends URLClassLoader {
     @SuppressWarnings("unchecked")
     public void registerDirectObjectClasses(Map<Integer, CtClass> implClasses) throws Exception {
         try { // TODO
-            for (final CtClass c : implClasses.values()) {
+            for (final Entry<Integer, CtClass> entry : implClasses.entrySet()) {
+                CtClass c = entry.getValue();
                 generated.add(c.getName());
                 byte[] b = c.toBytecode();
                 Class<? extends DirectObject> cl = (Class<? extends DirectObject>) defineClass(c.getName(), b, 0,
@@ -241,6 +246,9 @@ public class DirectClassLoader extends URLClassLoader {
                 if (!cl.isInterface()) {
                     Class<?> iface = cl.getInterfaces()[0];
                     Direct.registerDirectObjectClass(iface, (Class<? extends AbstractDirectObject>) cl);
+                }
+                if (entry.getKey() == Integer.MAX_VALUE) {
+                    extentClass = cl;
                 }
             }
         } catch (Exception e) {
@@ -251,6 +259,10 @@ public class DirectClassLoader extends URLClassLoader {
     public void close() throws IOException {
         super.close();
         Direct.unregisterDirectObjectClasses();
+    }
+    
+    public Class<?> getExtentClass() {
+        return extentClass;
     }
 
 }

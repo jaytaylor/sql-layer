@@ -40,6 +40,7 @@ public class DirectContextImpl implements DirectContext {
     private class ConnectionHolder {
         private Connection connection;
         private ClassLoader contextClassLoader;
+        private DirectObject extent;
 
         private Connection getConnection() {
             if (connection == null) {
@@ -51,6 +52,21 @@ public class DirectContextImpl implements DirectContext {
                 }
             }
             return connection;
+        }
+
+        private DirectObject getExtent() {
+            if (extent == null) {
+                Class<?> cl = classLoader.getExtentClass();
+                if (cl != null) {
+                    try {
+                        extent = (DirectObject) cl.newInstance();
+                    } catch (InstantiationException | IllegalAccessException e) {
+                        e.printStackTrace();
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+            return extent;
         }
 
         private void enter() {
@@ -86,8 +102,14 @@ public class DirectContextImpl implements DirectContext {
         this.classLoader = dcl;
     }
 
+    @Override
     public Connection getConnection() {
         return connectionThreadLocal.get().getConnection();
+    }
+
+    @Override
+    public DirectObject getExtent() {
+        return connectionThreadLocal.get().getExtent();
     }
 
     public Statement createStatement() throws SQLException {

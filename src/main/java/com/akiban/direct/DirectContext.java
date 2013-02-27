@@ -32,4 +32,6 @@ public interface DirectContext {
 
     Connection getConnection();
     
+    DirectObject getExtent();
+    
 }
