@@ -504,24 +504,24 @@ public enum ErrorCode {
     }
 
     public void logAtImportance(Logger log, Throwable cause) {
-        logAtImportance(log, String.format("ErrorCode of %s importance", importance.name()), cause);
+        logAtImportance(log, "ErrorCode of {} importance", importance.name(), cause);
     }
 
-    public void logAtImportance(Logger log, String msg, Throwable cause) {
+    public void logAtImportance(Logger log, String msg, Object... msgArgs) {
         switch(getImportance()) {
             case TRACE:
-                log.trace(msg, cause);
+                log.trace(msg, msgArgs);
             break;
             case DEBUG:
-                log.debug(msg, cause);
+                log.debug(msg, msgArgs);
             break;
             case ERROR:
-                log.error(msg, cause);
+                log.error(msg, msgArgs);
             break;
             default:
                 assert false : "Unknown importance: " + getImportance();
         }
-        if(cause == null) {
+        if(msgArgs.length == 0 || !(msgArgs[msgArgs.length - 1] instanceof Throwable)) {
             log.warn("Cause unknown. Here is the current stack.", new RuntimeException());
         }
     }
