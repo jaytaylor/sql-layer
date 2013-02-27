@@ -34,6 +34,8 @@ import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.util.AkibanAppender;
 import org.codehaus.jackson.JsonParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
@@ -54,6 +56,7 @@ public class RestResponseBuilder {
 
     private static final Charset UTF8 = Charset.forName("UTF-8");
     private static final Map<Class,Response.Status> EXCEPTION_STATUS_MAP = buildExceptionStatusMap();
+    private static final Logger LOG = LoggerFactory.getLogger(RestResponseBuilder.class.getName());
 
     private final boolean isJsonp;
     private BodyGenerator outputGenerator;
@@ -129,21 +132,26 @@ public class RestResponseBuilder {
     }
 
     private WebApplicationException wrapException(Exception e) {
-        String code;
+        final ErrorCode code;
         if(e instanceof InvalidOperationException) {
-            code = ((InvalidOperationException)e).getCode().getFormattedValue();
+            code = ((InvalidOperationException)e).getCode();
         } else if(e instanceof SQLException) {
-            code = ((SQLException)e).getSQLState();
+            code = ErrorCode.valueOfCode(((SQLException)e).getSQLState());
         } else {
-            code = ErrorCode.UNEXPECTED_EXCEPTION.getFormattedValue();
+            code = ErrorCode.UNEXPECTED_EXCEPTION;
         }
         Response.Status status = EXCEPTION_STATUS_MAP.get(e.getClass());
         if(status == null) {
             status = Response.Status.CONFLICT;
         }
+        String message = e.getMessage();
+        if(message == null) {
+            message = e.getClass().getSimpleName();
+        }
+        code.logAtImportance(LOG, e);
         return new WebApplicationException(
                 Response.status(status)
-                        .entity(formatErrorWithJsonp(code, e.getMessage()))
+                        .entity(formatErrorWithJsonp(code.getFormattedValue(), message))
                         .type(isJsonp ? ResourceHelper.APPLICATION_JAVASCRIPT_TYPE : MediaType.APPLICATION_JSON_TYPE)
                         .build()
         );
