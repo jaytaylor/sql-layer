@@ -3,7 +3,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>CodeMirror: Autocomplete Demo</title>
+    <title>Akiban Direct Demo</title>
     <link rel="stylesheet" href="codemirror/lib/codemirror.css">
     <script src="codemirror/lib/codemirror.js"></script>
     <script src="codemirror/mode/javascript/javascript.js"></script>
@@ -15,10 +15,12 @@
 
 <SCRIPT TYPE="text/javascript">
 <!--
+
+var editor;
 function loadModule() {
   var xmlhttp = new XMLHttpRequest();
   xmlhttp.open("PUT","../module?space=test&language=js&name=Sample&get=true",false);
-  xmlhttp.send(document.getElementById("code").value);
+  xmlhttp.send(editor.getValue());
   document.getElementById("result").value=xmlhttp.responseText;
 }
 
@@ -81,7 +83,7 @@ Result...
       CodeMirror.commands.autocomplete = function(cm) {
         CodeMirror.simpleHint(cm, CodeMirror.javascriptHint);
       }
-      var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+        editor = CodeMirror.fromTextArea(document.getElementById("code"), {
         lineNumbers: true,
         extraKeys: {"Ctrl-Space": "autocomplete"}
       });
