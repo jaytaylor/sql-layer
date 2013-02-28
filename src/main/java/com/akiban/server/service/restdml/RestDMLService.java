@@ -30,7 +30,6 @@ import com.akiban.ais.model.TableName;
 import org.codehaus.jackson.JsonNode;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
@@ -46,6 +45,7 @@ public interface RestDMLService {
 
     public void runSQL(PrintWriter writer, HttpServletRequest request, String sql) throws SQLException;
     public void runSQL(PrintWriter writer, HttpServletRequest request, List<String> sql) throws SQLException;
+    public void runSQLParameter(PrintWriter writer,HttpServletRequest request, String SQL, List<String> parameters) throws SQLException;
     public void explainSQL(PrintWriter writer, HttpServletRequest request, String sql) throws IOException, SQLException;
 
     public void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
