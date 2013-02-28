@@ -28,8 +28,10 @@ package com.akiban.direct;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.GregorianCalendar;
 
 import com.akiban.qp.row.Row;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.sql.embedded.JDBCResultSet;
 import com.akiban.util.ShareHolder;
 
@@ -37,7 +39,7 @@ public class AbstractDirectObject implements DirectObject {
 
     private JDBCResultSet resultSet;
     private ShareHolder<Row> rowHolder = new ShareHolder<>();
-    
+
     public void setResultSet(JDBCResultSet rs) {
         this.resultSet = rs;
     }
@@ -67,11 +69,16 @@ public class AbstractDirectObject implements DirectObject {
     }
 
     protected Date __getDATE(int p) {
-        return new Date(row().pvalue(p).getInt32());
+        long[] ymd = MDatetimes.decodeDate(row().pvalue(p).getInt32());
+        GregorianCalendar calendar = new GregorianCalendar((int) ymd[0], (int) ymd[1], (int) ymd[2]);
+        return calendar.getTime();
     }
 
     protected Date __getDATETIME(int p) {
-        return new Date(row().pvalue(p).getInt64());
+        long[] ymd = MDatetimes.decodeDate(row().pvalue(p).getInt32());
+        GregorianCalendar calendar = new GregorianCalendar((int) ymd[0], (int) ymd[1], (int) ymd[2], (int) ymd[3],
+                (int) ymd[4], (int) ymd[5]);
+        return calendar.getTime();
     }
 
     protected BigDecimal __getDECIMAL(int p) {
@@ -150,5 +157,4 @@ public class AbstractDirectObject implements DirectObject {
         return row().pvalue(p).getInt32();
     }
 
-    
 }

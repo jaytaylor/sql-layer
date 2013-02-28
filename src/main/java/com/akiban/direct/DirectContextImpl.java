@@ -34,9 +34,10 @@ import java.sql.Statement;
 import com.akiban.sql.embedded.JDBCConnection;
 
 public class DirectContextImpl implements DirectContext {
-    public static final String SCHEMA_NAME = "test";
     public static final String CONNECTION_URL = "jdbc:default:connection";
 
+    private final String space;
+    
     private class ConnectionHolder {
         private Connection connection;
         private ClassLoader contextClassLoader;
@@ -45,7 +46,7 @@ public class DirectContextImpl implements DirectContext {
         private Connection getConnection() {
             if (connection == null) {
                 try {
-                    connection = DriverManager.getConnection(CONNECTION_URL, SCHEMA_NAME, "");
+                    connection = DriverManager.getConnection(CONNECTION_URL, space, "");
                 } catch (SQLException e) {
                     e.printStackTrace();
                     throw new RuntimeException(e);
@@ -98,7 +99,8 @@ public class DirectContextImpl implements DirectContext {
         }
     };
 
-    public DirectContextImpl(final DirectClassLoader dcl) {
+    public DirectContextImpl(final String space, final DirectClassLoader dcl) {
+        this.space = space;
         this.classLoader = dcl;
     }
 

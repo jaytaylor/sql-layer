@@ -121,7 +121,7 @@ public class DirectResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{op}")
 
-    public Response get(@PathParam(MODULE_ARG_NAME) final String op, @QueryParam(SPACE_ARG_NAME) final String schema,
+    public Response get(@PathParam(MODULE_ARG_NAME) final String op, @QueryParam(SPACE_ARG_NAME) final String space,
             @Context final UriInfo uri, @QueryParam(JSONP_ARG_NAME) String jsonp) throws Exception {
 
         final MultivaluedMap<String, String> params = uri.getQueryParameters();
@@ -136,13 +136,13 @@ public class DirectResource {
 
                     final AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(
                             reqs.sessionService.createSession());
-                    if (ais.getSchema(schema) == null) {
-                        throw new RuntimeException("No such schema: " + schema);
+                    if (ais.getSchema(space) == null) {
+                        throw new RuntimeException("No such space: " + space);
                     }
-                    ClassBuilder helper = new ClassSourceWriter(writer, PACKAGE, ClassBuilder.schemaClassName(schema),
+                    ClassBuilder helper = new ClassSourceWriter(writer, PACKAGE, ClassBuilder.schemaClassName(space),
                             false);
                     try {
-                        helper.writeGeneratedInterfaces(ais, schema);
+                        helper.writeGeneratedInterfaces(ais, space);
                     } catch (Exception e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
@@ -161,13 +161,13 @@ public class DirectResource {
                 public void write(PrintWriter writer) throws Exception {
                     final AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(
                             reqs.sessionService.createSession());
-                    if (ais.getSchema(schema) == null) {
-                        throw new RuntimeException("No such schema: " + schema);
+                    if (ais.getSchema(space) == null) {
+                        throw new RuntimeException("No such space: " + space);
                     }
-                    ClassBuilder helper = new ClassSourceWriter(writer, PACKAGE, ClassBuilder.schemaClassName(schema),
+                    ClassBuilder helper = new ClassSourceWriter(writer, PACKAGE, ClassBuilder.schemaClassName(space),
                             false);
                     try {
-                        helper.writeGeneratedClass(ais, schema, params.getFirst("table"));
+                        helper.writeGeneratedClass(ais, space, params.getFirst("table"));
                     } catch (Exception e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
@@ -203,7 +203,7 @@ public class DirectResource {
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{op}")
-    public Response put(@PathParam(MODULE_ARG_NAME) final String op, @QueryParam(SPACE_ARG_NAME) final String schema,
+    public Response put(@PathParam(MODULE_ARG_NAME) final String op, @QueryParam(SPACE_ARG_NAME) final String space,
             @Context final UriInfo uri, @QueryParam(JSONP_ARG_NAME) String jsonp, final byte[] payload)
             throws Exception {
         final MultivaluedMap<String, String> params = uri.getQueryParameters();
@@ -212,7 +212,7 @@ public class DirectResource {
 
                 @Override
                 public void write(PrintWriter writer) throws Exception {
-                    loadModule(schema, params, payload);
+                    loadModule(space, params, payload);
                 }
             }).build();
         }
@@ -240,7 +240,7 @@ public class DirectResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{op}")
     public Response delete(@PathParam(MODULE_ARG_NAME) final String op,
-            @QueryParam(SPACE_ARG_NAME) final String schema, @Context final UriInfo uri,
+            @QueryParam(SPACE_ARG_NAME) final String space, @Context final UriInfo uri,
             @QueryParam(JSONP_ARG_NAME) String jsonp) throws Exception {
         final MultivaluedMap<String, String> params = uri.getQueryParameters();
         if ("module".equals(op)) {
@@ -263,7 +263,7 @@ public class DirectResource {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{op}")
-    public Response post(@PathParam(MODULE_ARG_NAME) final String op, @QueryParam(SPACE_ARG_NAME) final String schema,
+    public Response post(@PathParam(MODULE_ARG_NAME) final String op, @QueryParam(SPACE_ARG_NAME) final String space,
             @Context final UriInfo uri, @QueryParam(JSONP_ARG_NAME) String jsonp) throws Exception {
         final MultivaluedMap<String, String> params = uri.getQueryParameters();
         final DirectModuleHolder holder = dispatch.get(op);
@@ -326,7 +326,7 @@ public class DirectResource {
         }
     }
 
-    private void loadModule(String schema, MultivaluedMap<String, String> params, byte[] payload) throws Exception {
+    private void loadModule(String space, MultivaluedMap<String, String> params, byte[] payload) throws Exception {
         String language = params.getFirst("language");
         String name = params.getFirst("name");
         String className = params.getFirst("class");
@@ -342,14 +342,14 @@ public class DirectResource {
         try (Session session = reqs.sessionService.createSession()) {
             final AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(
                     reqs.sessionService.createSession());
-            if (ais.getSchema(schema) == null) {
-                throw new RuntimeException("No such schema: " + schema);
+            if (ais.getSchema(space) == null) {
+                throw new RuntimeException("No such space: " + space);
             }
-            Map<Integer, CtClass> generated = ClassBuilder.compileGeneratedInterfacesAndClasses(ais, schema);
+            Map<Integer, CtClass> generated = ClassBuilder.compileGeneratedInterfacesAndClasses(ais, space);
             final DirectClassLoader dcl = new DirectClassLoader(systemClassLoader());
             final Class<? extends DirectModule> serviceClass = dcl.loadModule(ais, className, urls);
             DirectModule module = serviceClass.newInstance();
-            DirectContextImpl context = new DirectContextImpl(dcl);
+            DirectContextImpl context = new DirectContextImpl(space, dcl);
             DirectModuleHolder holder = dispatch.put(name, new DirectModuleHolder(module, context));
             if (holder != null) {
                 unloadModule(holder);

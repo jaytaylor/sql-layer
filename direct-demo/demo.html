@@ -18,57 +18,85 @@
 
 var editor;
 function loadModule() {
+  document.getElementById("result").value = "";
+  var space = document.getElementById("space").value;
+  var module = document.getElementById("module").value;
   var xmlhttp = new XMLHttpRequest();
-  xmlhttp.open("PUT","../module?space=test&language=js&name=Sample&get=true",false);
+  xmlhttp.open("PUT","../module?space=" + space + "&language=js&name=" + module + "&get=" + document.getElementById("getpost").value,false);
   xmlhttp.send(editor.getValue());
   document.getElementById("result").value=xmlhttp.responseText;
 }
 
 function removeModule() { 
+  document.getElementById("result").value = "";
+  var space = document.getElementById("space").value;
+  var module = document.getElementById("module").value;
   var xmlhttp = new XMLHttpRequest();
-  xmlhttp.open("DELETE","../module?space=test&name=Sample",false);
+  xmlhttp.open("DELETE","../module?space=" + space + "&name=" + module,false);
   xmlhttp.send();
   document.getElementById("result").value=xmlhttp.responseText;
 }
 
 function invokeGet() {
+  document.getElementById("result").value = "";
+  var space = document.getElementById("space").value;
+  var module = document.getElementById("module").value;
   var xmlhttp = new XMLHttpRequest();
-  xmlhttp.open("GET","../Sample?space=test",false);
+  xmlhttp.open("GET","../" + module + "?space=" + space,false);
   xmlhttp.send();
   document.getElementById("result").value=xmlhttp.responseText;
 }
 
 function invokePost() {
+  document.getElementById("result").value = "";
+  var space = document.getElementById("space").value;
+  var module = document.getElementById("module").value;
   var xmlhttp = new XMLHttpRequest();
-  xmlhttp.open("POST","../Sample?space=test",false);
+  xmlhttp.open("POST","../" + module + "?space=" + space,false);
   xmlhttp.send();
   document.getElementById("result").value=xmlhttp.responseText;
 }
 
+function showInterface() {
+  document.getElementById("result").value = "";
+  var space = document.getElementById("space").value;
+  var xmlhttp = new XMLHttpRequest();
+  xmlhttp.open("GET","../igen?space=" + space,false);
+  xmlhttp.send();
+  document.getElementById("result").value=xmlhttp.responseText;
+}
 
 //-->
 </SCRIPT>
 
 <form>
 <table>
-<tr><td>Space: </td><td> <input type="text" id="space" /></td></tr>
-<tr><td>Module name: </td><td><input type="text" id="module" /></td></tr>
+<tr><td>Space: </td><td> <input type="text" id="space" value="employees" /></td></tr>
+<tr><td>Module name: </td><td><input type="text" id="module" value="example" /></td></tr>
+<tr><td>Module type: </td><td> <select id="getpost">
+    <option value="true">GET</option>
+    <option value="false">POST</option>
+ </select>
+</td></tr>
 </table>
 <br />
 <textarea id="code" name="code">
-var c;
+var department;
+var employee;
 var result = "";
-for (c in Iterator(dcontext.extent.getCustomerList().where("cid = 1"))) {
-  result += "customer: " + c.cid + " " +  c.name + '\n';
-  for (o in Iterator(c.orderList)) {
-    result += " order: " + o.oid + " " + o.order_date + '\n';
-    var p = o.customer;
-    result += "   parent's customer: " + p.cid + " " +  p.name + '\n';
-  } 
+for (department in Iterator(dcontext.extent.getDepartmentList())) {
+  result += "Department: " + department.deptNo + " " +  department.deptName + '\n';
+}
+result += '\n';
+for (employee in Iterator(dcontext.extent.getEmployeeList().limit("10"))) {
+  result += "Employee: " + employee.empNo
+    + " name: " + employee.lastName + "," + employee.firstName
+    + " dob:" + employee.birthDate +'\n';
 }
 result;
 </textarea>
 <br />
+<input type="button" id="interface" onClick="showInterface()" value="Show Interface" />
 <input type="button" id="load" onClick="loadModule()" value="Install" />
 <input type="button" id="remove" onClick="removeModule()" value="Remove" />
 <input type="button" id="get"  onClick="invokeGet()" value="GET">
