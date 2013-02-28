@@ -40,7 +40,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -52,7 +51,6 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
 import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 
 /**
@@ -71,9 +69,8 @@ public class SecurityResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response addUser(@Context HttpServletRequest request,
-                            @QueryParam(JSONP_ARG_NAME) String jsonp,
                             byte[] userBytes) throws Exception {
-        RestResponseBuilder response = RestResponseBuilder.forJsonp(jsonp);
+        RestResponseBuilder response = RestResponseBuilder.forRequest(request);
         if (!request.isUserInRole(SecurityService.ADMIN_ROLE)) {
             return response.status(Response.Status.FORBIDDEN).build();
         }
@@ -113,9 +110,8 @@ public class SecurityResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response deleteUser(@Context HttpServletRequest request,
-                               @PathParam("user") final String user,
-                               @QueryParam(JSONP_ARG_NAME) String jsonp) {
-        RestResponseBuilder response = RestResponseBuilder.forJsonp(jsonp);
+                               @PathParam("user") final String user) {
+        RestResponseBuilder response = RestResponseBuilder.forRequest(request);
         if (!request.isUserInRole(SecurityService.ADMIN_ROLE)) {
             return response.status(Response.Status.FORBIDDEN).build();
         }
