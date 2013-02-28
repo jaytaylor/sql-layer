@@ -31,8 +31,7 @@ function removeModule() {
   document.getElementById("result").value = "";
   var space = document.getElementById("space").value;
   var module = document.getElementById("module").value;
-  var xmlhttp = new XMLHttpRequest();
-  xmlhttp.open("DELETE","../module?space=" + space + "&name=" + module,false);
+  var xmlhttp = xrq("DELETE","../module?space=" + space + "&name=" + module);
   xmlhttp.send();
   document.getElementById("result").value=xmlhttp.responseText;
 }
@@ -41,8 +40,7 @@ function invokeGet() {
   document.getElementById("result").value = "";
   var space = document.getElementById("space").value;
   var module = document.getElementById("module").value;
-  var xmlhttp = new XMLHttpRequest();
-  xmlhttp.open("GET","../" + module + "?space=" + space,false);
+  var xmlhttp = xrq("GET","../" + module + "?space=" + space);
   xmlhttp.send();
   document.getElementById("result").value=xmlhttp.responseText;
 }
@@ -51,8 +49,7 @@ function invokePost() {
   document.getElementById("result").value = "";
   var space = document.getElementById("space").value;
   var module = document.getElementById("module").value;
-  var xmlhttp = new XMLHttpRequest();
-  xmlhttp.open("POST","../" + module + "?space=" + space,false);
+  var xmlhttp = xrq("POST","../" + module + "?space=" + space);
   xmlhttp.send();
   document.getElementById("result").value=xmlhttp.responseText;
 }
@@ -60,12 +57,30 @@ function invokePost() {
 function showInterface() {
   document.getElementById("result").value = "";
   var space = document.getElementById("space").value;
-  var xmlhttp = new XMLHttpRequest();
-  xmlhttp.open("GET","../igen?space=" + space,false);
+  var xmlhttp = xrq("GET","../igen?space=" + space);
   xmlhttp.send();
   document.getElementById("result").value=xmlhttp.responseText;
 }
 
+function xrq(method, s) {
+  s += document.getElementById("params").value;
+  var href =  document.location.href;
+  var c = 0;
+  for (var p = href.length; --p > 0;) {
+    if (href.charAt(p) == '/') {
+      c++;
+      if (c == 2) {
+        href = href.substring(0, p);
+        break;
+      }
+    }
+  }
+  href += s.substring(2);
+  document.getElementById("rest").value = href;
+  var x = new XMLHttpRequest();
+  x.open(method, href, false);
+  return x
+}
 //-->
 </SCRIPT>
 
@@ -88,12 +103,18 @@ for (department in Iterator(dcontext.extent.getDepartmentList())) {
   result += "Department: " + department.deptNo + " " +  department.deptName + '\n';
 }
 result += '\n';
-for (employee in Iterator(dcontext.extent.getEmployeeList().limit("10"))) {
+for (employee in Iterator(dcontext.extent.getEmployeeList().limit("5"))) {
   result += "Employee: " + employee.empNo
     + " name: " + employee.lastName + "," + employee.firstName
     + " dob:" + employee.birthDate +'\n';
+  
+  var salary;
+  for (salary in Iterator(employee.getSalaryList().limit(3).sort("to_date", "desc"))) {
+       result += "   Salary: " + salary.salary + " from: " + salary.fromDate + " to: " + salary.toDate + '\n';
+  }     
 }
 result;
+
 </textarea>
 <br />
 <input type="button" id="interface" onClick="showInterface()" value="Show Interface" />
@@ -101,7 +122,8 @@ result;
 <input type="button" id="remove" onClick="removeModule()" value="Remove" />
 <input type="button" id="get"  onClick="invokeGet()" value="GET">
 <input type="button" id="post" onClick="invokePost()" value="POST">
-<input type="text" name="params" size="80"/>
+<input type="text" id="params" size="50"/>
+<input type="text" id="rest" size="80"/>
 </form>
 <br />
 <textarea rows="10" cols="100" disabled id="result">

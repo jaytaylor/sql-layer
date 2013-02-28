@@ -185,13 +185,13 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
     @Override
     public DirectIterableImpl<T> sort(final String column) {
         sorts.add(column);
-        throw new IllegalStateException("Sort already specified");
+        return this;
     }
 
     @Override
     public DirectIterableImpl<T> sort(final String column, String direction) {
         sorts.add(column + " " + direction);
-        throw new IllegalStateException("Sort already specified");
+        return this;
     }
 
     @Override
