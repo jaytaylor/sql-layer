@@ -172,6 +172,7 @@
             <artifactId>asm-commons</artifactId>
             <version>3.3.1</version>
         </dependency>
+        <!-- Akiban Direct -->
         <dependency>
             <groupId>org.javassist</groupId>
             <artifactId>javassist</artifactId>

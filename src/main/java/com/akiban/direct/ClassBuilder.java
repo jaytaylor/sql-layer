@@ -42,12 +42,15 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.sun.jersey.core.impl.provider.entity.Inflector;
 
 public abstract class ClassBuilder {
     final static String PACKAGE = "com.akiban.direct.entity";
     final static String[] NONE = {};
     final static String[] IMPORTS = { java.util.Date.class.getName(), com.akiban.direct.DirectIterable.class.getName() };
     final static String[] UNSUPPORTED = { "// TODO", "throw new UnsupportedOperationException()" };
+
+    private final static Inflector INFLECTOR = Inflector.getInstance();
 
     protected final String packageName;
     protected String schema;
@@ -90,26 +93,11 @@ public abstract class ClassBuilder {
      * uniqueness, etc.
      */
     public static String asJavaName(final String name, final boolean toUpper) {
-        StringBuilder sb = new StringBuilder(name);
-        if (sb.length() > 1 && name.charAt(sb.length() - 1) == 's') {
-            if (sb.length() > 2 && name.charAt(sb.length() - 2) == 'e') {
-                sb.setLength(sb.length() - 2);
-            } else {
-                sb.setLength(sb.length() - 1);
-            }
-        }
-        boolean isUpper = Character.isUpperCase(sb.charAt(0));
-        if (toUpper && !isUpper) {
-            sb.setCharAt(0, Character.toUpperCase(sb.charAt(0)));
-        }
-        if (!toUpper && isUpper) {
-            sb.setCharAt(0, Character.toLowerCase(sb.charAt(0)));
-        }
-        return sb.toString();
+        return INFLECTOR.camelize(INFLECTOR.singularize(name), !toUpper);
     }
 
     public static String schemaClassName(String schema) {
-        return PACKAGE + "." + asJavaName(schema, true);
+        return PACKAGE + "." + INFLECTOR.classify(schema);
     }
 
     public static Map<Integer, CtClass> compileGeneratedInterfacesAndClasses(final AkibanInformationSchema ais,
