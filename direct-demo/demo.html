@@ -13,51 +13,34 @@
     <link rel="stylesheet" href="codemirror/doc/docs.css">
     <style type="text/css">.CodeMirror {border: 1px solid #eee;} .CodeMirror-scroll { height: 100% }</style>
   </head>
-  <body>
-    <h1>CodeMirror: Autocomplete demo</h1>
+<body>
+    <h1>Akiban Direct Demo</h1>
 
-    <form><textarea id="code" name="code">
-function getCompletions(token, context) {
-  var found = [], start = token.string;
-  function maybeAdd(str) {
-    if (str.indexOf(start) == 0) found.push(str);
-  }
-  function gatherCompletions(obj) {
-    if (typeof obj == "string") forEach(stringProps, maybeAdd);
-    else if (obj instanceof Array) forEach(arrayProps, maybeAdd);
-    else if (obj instanceof Function) forEach(funcProps, maybeAdd);
-    for (var name in obj) maybeAdd(name);
-  }
-
-  if (context) {
-    // If this is a property, see if it belongs to some object we can
-    // find in the current environment.
-    var obj = context.pop(), base;
-    if (obj.className == "js-variable")
-      base = window[obj.string];
-    else if (obj.className == "js-string")
-      base = "";
-    else if (obj.className == "js-atom")
-      base = 1;
-    while (base != null && context.length)
-      base = base[context.pop().string];
-    if (base != null) gatherCompletions(base);
-  }
-  else {
-    // If not, just look in the window object and any local scope
-    // (reading into JS mode internals to get at the local variables)
-    for (var v = token.state.localVars; v; v = v.next) maybeAdd(v.name);
-    gatherCompletions(window);
-    forEach(keywords, maybeAdd);
-  }
-  return found;
+<form>
+<table>
+<tr><td>Space: </td><td> <input type="text" name="space"/></td></tr>
+<tr><td>Module name: </td><td><input type="text" name="module"/></td></tr>
+</table>
+<br />
+<textarea id="code" name="code">
+var c;
+var result = "";
+for (c in Iterator(dcontext.extent.getCustomerList().where("cid = 1"))) {
+  result += "customer: " + c.cid + " " +  c.name + '\n';
+  for (o in Iterator(c.orderList)) {
+    result += " order: " + o.oid + " " + o.order_date + '\n';
+    var p = o.customer;
+    result += "   parent's customer: " + p.cid + " " +  p.name + '\n';
+  } 
 }
-</textarea></form>
-
-<p>Press <strong>ctrl-space</strong> to activate autocompletion. See
-the code (<a href="../lib/util/simple-hint.js">here</a>
-and <a href="../lib/util/javascript-hint.js">here</a>) to figure out
-how it works.</p>
+result;
+</textarea>
+<br />
+<input type="button" name="load" value="Install" />
+<input type="button" name="remove" value="remove" />
+<input type="button" name="get" value="GET"><input type="button" name="post" value="POST">
+<input type="text" name="params" size="80"/>
+</form>
 
     <script>
       CodeMirror.commands.autocomplete = function(cm) {
