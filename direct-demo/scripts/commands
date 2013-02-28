@@ -1,0 +1,20 @@
+
+# Emit interface file
+
+curl localhost:9000/api/direct/igen/test
+
+# Emit an implementation class
+
+curl localhost:9000/api/direct/cgen/test?table=customers
+
+# Load a DirectModule
+
+curl -X PUT "localhost:9000/api/direct/module/test?language=js&name=Sample&file=direct-demo/scripts/sample.js&get=true"
+
+# Invoke
+
+curl localhost:9000/api/direct/Sample/test
+
+# Remove a DirectModule
+
+curl -X DELETE localhost:9000/api/direct/module/test?name="Sample"

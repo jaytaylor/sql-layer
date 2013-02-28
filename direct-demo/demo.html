@@ -6,20 +6,51 @@
     <title>CodeMirror: Autocomplete Demo</title>
     <link rel="stylesheet" href="codemirror/lib/codemirror.css">
     <script src="codemirror/lib/codemirror.js"></script>
-    <script src="codemirror/lib/util/simple-hint.js"></script>
-    <link rel="stylesheet" href="codemirror/lib/util/simple-hint.css">
-    <script src="codemirror/lib/util/javascript-hint.js"></script>
     <script src="codemirror/mode/javascript/javascript.js"></script>
     <link rel="stylesheet" href="codemirror/doc/docs.css">
     <style type="text/css">.CodeMirror {border: 1px solid #eee;} .CodeMirror-scroll { height: 100% }</style>
   </head>
 <body>
-    <h1>Akiban Direct Demo</h1>
+    <h2>Akiban Direct Demo</h2>
+
+<SCRIPT TYPE="text/javascript">
+<!--
+function loadModule() {
+  var xmlhttp = new XMLHttpRequest();
+  xmlhttp.open("PUT","../module?space=test&language=js&name=Sample&get=true",false);
+  xmlhttp.send(document.getElementById("code").value);
+  document.getElementById("result").value=xmlhttp.responseText;
+}
+
+function removeModule() { 
+  var xmlhttp = new XMLHttpRequest();
+  xmlhttp.open("DELETE","../module?space=test&name=Sample",false);
+  xmlhttp.send();
+  document.getElementById("result").value=xmlhttp.responseText;
+}
+
+function invokeGet() {
+  var xmlhttp = new XMLHttpRequest();
+  xmlhttp.open("GET","../Sample?space=test",false);
+  xmlhttp.send();
+  document.getElementById("result").value=xmlhttp.responseText;
+}
+
+function invokePost() {
+  var xmlhttp = new XMLHttpRequest();
+  xmlhttp.open("POST","../Sample?space=test",false);
+  xmlhttp.send();
+  document.getElementById("result").value=xmlhttp.responseText;
+}
+
+
+//-->
+</SCRIPT>
 
 <form>
 <table>
-<tr><td>Space: </td><td> <input type="text" name="space"/></td></tr>
-<tr><td>Module name: </td><td><input type="text" name="module"/></td></tr>
+<tr><td>Space: </td><td> <input type="text" id="space" /></td></tr>
+<tr><td>Module name: </td><td><input type="text" id="module" /></td></tr>
 </table>
 <br />
 <textarea id="code" name="code">
@@ -36,12 +67,16 @@ for (c in Iterator(dcontext.extent.getCustomerList().where("cid = 1"))) {
 result;
 </textarea>
 <br />
-<input type="button" name="load" value="Install" />
-<input type="button" name="remove" value="remove" />
-<input type="button" name="get" value="GET"><input type="button" name="post" value="POST">
+<input type="button" id="load" onClick="loadModule()" value="Install" />
+<input type="button" id="remove" onClick="removeModule()" value="Remove" />
+<input type="button" id="get"  onClick="invokeGet()" value="GET">
+<input type="button" id="post" onClick="invokePost()" value="POST">
 <input type="text" name="params" size="80"/>
 </form>
-
+<br />
+<textarea rows="10" cols="100" disabled id="result">
+Result...
+</textArea>
     <script>
       CodeMirror.commands.autocomplete = function(cm) {
         CodeMirror.simpleHint(cm, CodeMirror.javascriptHint);

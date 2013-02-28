@@ -28,6 +28,7 @@ package com.akiban.rest.resources;
 
 import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
 
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
@@ -69,9 +70,11 @@ import com.akiban.server.service.session.Session;
 /**
  * Easy access to the server version
  */
-@Path("direct/{op}/{schema}")
+@Path("direct")
 public class DirectResource {
 
+    private final static String SPACE_ARG_NAME = "space";
+    private final static String MODULE_ARG_NAME = "op";
     private final static String PACKAGE = "com.akiban.direct.entity";
 
     private static class DirectModuleHolder {
@@ -90,10 +93,35 @@ public class DirectResource {
     public DirectResource(ResourceRequirements reqs) {
         this.reqs = reqs;
     }
+    
+    @GET
+    @Produces(MediaType.WILDCARD)
+    @Path("{file: demo/.+}")
+    // TODO - remove this
+    public Response getAsset(@PathParam("file") final String fileName) throws Exception {
+        return RestResponseBuilder.forJsonp(null).body(new BodyGenerator() {
+
+            @Override
+            public void write(PrintWriter writer) throws Exception {
+                String path = "direct-demo/" + fileName.substring("demo/".length());
+                try (FileReader reader = new FileReader(path);) {
+                    int c;
+                    while ((c = reader.read()) != -1) {
+                        writer.write(c);
+                    }
+                } catch (Exception e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+        }).build();
+    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response get(@PathParam("op") final String op, @PathParam("schema") final String schema,
+    @Path("{op}")
+
+    public Response get(@PathParam(MODULE_ARG_NAME) final String op, @QueryParam(SPACE_ARG_NAME) final String schema,
             @Context final UriInfo uri, @QueryParam(JSONP_ARG_NAME) String jsonp) throws Exception {
 
         final MultivaluedMap<String, String> params = uri.getQueryParameters();
@@ -148,6 +176,7 @@ public class DirectResource {
             }).build();
         }
 
+
         final DirectModuleHolder holder = dispatch.get(op);
 
         if (holder != null && holder.module.isGetEnabled()) {
@@ -173,7 +202,8 @@ public class DirectResource {
 
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
-    public Response put(@PathParam("op") final String op, @PathParam("schema") final String schema,
+    @Path("{op}")
+    public Response put(@PathParam(MODULE_ARG_NAME) final String op, @QueryParam(SPACE_ARG_NAME) final String schema,
             @Context final UriInfo uri, @QueryParam(JSONP_ARG_NAME) String jsonp, final byte[] payload)
             throws Exception {
         final MultivaluedMap<String, String> params = uri.getQueryParameters();
@@ -208,8 +238,10 @@ public class DirectResource {
 
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
-    public Response delete(@PathParam("op") final String op, @PathParam("schema") final String schema,
-            @Context final UriInfo uri, @QueryParam(JSONP_ARG_NAME) String jsonp) throws Exception {
+    @Path("{op}")
+    public Response delete(@PathParam(MODULE_ARG_NAME) final String op,
+            @QueryParam(SPACE_ARG_NAME) final String schema, @Context final UriInfo uri,
+            @QueryParam(JSONP_ARG_NAME) String jsonp) throws Exception {
         final MultivaluedMap<String, String> params = uri.getQueryParameters();
         if ("module".equals(op)) {
             final String moduleName = params.getFirst("name");
@@ -230,7 +262,8 @@ public class DirectResource {
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    public Response post(@PathParam("op") final String op, @PathParam("schema") final String schema,
+    @Path("{op}")
+    public Response post(@PathParam(MODULE_ARG_NAME) final String op, @QueryParam(SPACE_ARG_NAME) final String schema,
             @Context final UriInfo uri, @QueryParam(JSONP_ARG_NAME) String jsonp) throws Exception {
         final MultivaluedMap<String, String> params = uri.getQueryParameters();
         final DirectModuleHolder holder = dispatch.get(op);
