@@ -81,6 +81,7 @@ public class FullTextCursor implements Cursor
     @Override
     public void open() {
         CursorLifecycle.checkIdle(this);
+        logger.debug("FullTextCursor: open {}", query);
         try {
             results = searcher.search(query, limit);
         }
