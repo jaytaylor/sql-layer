@@ -38,69 +38,20 @@ public class IndexScan_FullText extends Operator
 {
     private final FullTextIndexService service;
     private final IndexName index;
-    private final QueryGenerator queryGenerator;
+    private final FullTextQueryExpression queryExpression;
     private final int limit;
 
-    /** Return <code>Query</code>, which might be fixed from compile
-     * time, parsed from a string, or built up from expressions.
-     */
-    public interface QueryGenerator extends Explainable {
-        public Query getQuery(FullTextIndexService service, QueryContext context, IndexName indexName);
-    }
-
-    public static QueryGenerator staticQuery(final Query query) {
-        return new QueryGenerator() {
-                @Override
-                public Query getQuery(FullTextIndexService service, QueryContext context, IndexName indexName) {
-                    return query;
-                }
-
-                @Override
-                public CompoundExplainer getExplainer(ExplainContext context) {
-                    CompoundExplainer explainer = new CompoundExplainer(Type.LITERAL);
-                    explainer.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance(query.toString()));
-                    return explainer;
-                }
-
-                @Override
-                public String toString() {
-                    return query.toString();
-                }
-            };
-    }
-
-    public static QueryGenerator parseQuery(final String query) {
-        return new QueryGenerator() {
-                @Override
-                public Query getQuery(FullTextIndexService service, QueryContext context, IndexName indexName) {
-                    return service.parseQuery(context, indexName, query);
-                }
-
-                @Override
-                public CompoundExplainer getExplainer(ExplainContext context) {
-                    CompoundExplainer explainer = new CompoundExplainer(Type.LITERAL);
-                    explainer.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance(query));
-                    return explainer;
-                }
-
-                @Override
-                public String toString() {
-                    return query;
-                }
-            };
-    }
-
     public IndexScan_FullText(FullTextIndexService service, IndexName index, 
-                              QueryGenerator queryGenerator, int limit) {
+                              FullTextQueryExpression queryExpression, int limit) {
         this.service = service;
         this.index = index;
-        this.queryGenerator = queryGenerator;
+        this.queryExpression = queryExpression;
         this.limit = limit;
     }
 
     @Override
     protected Cursor cursor(QueryContext context) {
-        Query query = queryGenerator.getQuery(service, context, index);
+        Query query = queryExpression.getQuery(context);
         return service.searchIndex(context, index, query, limit);
     }
 
@@ -111,7 +62,7 @@ public class IndexScan_FullText extends Operator
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(getName()));
         atts.put(Label.INDEX, PrimitiveExplainer.getInstance(index.toString()));
         atts.put(Label.INDEX_KIND, PrimitiveExplainer.getInstance("FULL_TEXT"));
-        atts.put(Label.PREDICATE, queryGenerator.getExplainer(context));
+        atts.put(Label.PREDICATE, queryExpression.getExplainer(context));
         atts.put(Label.LIMIT, PrimitiveExplainer.getInstance(limit));
         if (context.hasExtraInfo(this))
             atts.putAll(context.getExtraInfo(this).get()); 
@@ -122,7 +73,7 @@ public class IndexScan_FullText extends Operator
     public String toString() {
         StringBuilder str = new StringBuilder(getName());
         str.append("(").append(index);
-        str.append(" ").append(queryGenerator);
+        str.append(" ").append(queryExpression);
         str.append(" LIMIT ");
         str.append(limit);
         str.append(")");

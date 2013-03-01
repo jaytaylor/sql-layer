@@ -117,13 +117,15 @@ public class FullTextIndexServiceIT extends ITBase
             row(rowType, 1L),
             row(rowType, 3L)
         };
+        FullTextQueryBuilder builder = new FullTextQueryBuilder(index.getIndexName(),
+                                                                fullText);
         Operator plan = 
             new IndexScan_FullText(fullText, index.getIndexName(),
-                                   IndexScan_FullText.parseQuery("flintstone"), 10);
+                                   builder.parseQuery("flintstone"), 10);
         compareRows(expected, cursor(plan, queryContext));
 
         plan = new IndexScan_FullText(fullText, index.getIndexName(),
-                                      IndexScan_FullText.parseQuery("state:MA"), 10);
+                                      builder.parseQuery("state:MA"), 10);
         compareRows(expected, cursor(plan, queryContext));
     }
 
@@ -137,9 +139,11 @@ public class FullTextIndexServiceIT extends ITBase
         RowBase[] expected = new RowBase[] {
             row(rowType, 1L, 101L)
         };
+        FullTextQueryBuilder builder = new FullTextQueryBuilder(index.getIndexName(),
+                                                                fullText);
         Operator plan = 
             new IndexScan_FullText(fullText, index.getIndexName(), 
-                                   IndexScan_FullText.parseQuery("name:Flintstone AND sku:1234"), 10);
+                                   builder.parseQuery("name:Flintstone AND sku:1234"), 10);
         compareRows(expected, cursor(plan, queryContext));
     }
 

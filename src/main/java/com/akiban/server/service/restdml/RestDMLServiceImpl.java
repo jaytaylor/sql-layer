@@ -42,6 +42,7 @@ import com.akiban.server.service.externaldata.JsonRowWriter;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.text.FullTextIndexService;
+import com.akiban.server.service.text.FullTextQueryBuilder;
 import com.akiban.server.service.text.IndexScan_FullText;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
@@ -356,10 +357,12 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     public void fullTextSearch(PrintWriter writer, IndexName indexName, Integer depth, String query, Integer limit) {
         int realDepth = (depth != null) ? Math.max(depth, 0) : -1;
         int realLimit = (limit != null) ? limit.intValue() : 1000; // TODO: MAX_VALUE?
+        FullTextQueryBuilder builder = new FullTextQueryBuilder(indexName, 
+                                                                fullTextService);
         try (Session session = sessionService.createSession()) {
             IndexScan_FullText scan = 
                 new IndexScan_FullText(fullTextService, indexName,
-                                       IndexScan_FullText.parseQuery(query), 
+                                       builder.parseQuery(query), 
                                        realLimit);
             extDataService.dumpBranchAsJson(session,
                                             writer,
