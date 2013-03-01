@@ -95,13 +95,14 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
-    public void addEntity(Entity entity)
+    public void addEntity(Entity entity, String name)
     {
         try
         {
             startObject();
             entry("action", "add_entity");
             entry("destructive", false);
+            entry("name", name);
             entity.accept("definition", new JsonEntityFormatter(jsonGen));
             endObject();
         }

@@ -98,8 +98,9 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     //
 
     @Override
-    public void addEntity(Entity entity) {
+    public void addEntity(Entity entity, String name) {
         String entityName = newSpaceLookup.getName(entity.uuid());
+        assert entityName.equals(name) : "mismatch between " + name + " and " + entityName;
         UserTable newRoot = newAIS.getUserTable(schemaName, entityName);
         createTableRecursively(newRoot);
         if(!newRoot.getGroup().getIndexes().isEmpty()) {
