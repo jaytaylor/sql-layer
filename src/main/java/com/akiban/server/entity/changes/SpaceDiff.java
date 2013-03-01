@@ -51,9 +51,9 @@ public final class SpaceDiff {
                 out.dropEntity(orig.getValue(), originalEntities.getName(uuid));
         }
         // new entities
-        for (UUID uuid : updatedEntities.keySet()) {
-            if (!originalEntities.containsUuid(uuid))
-                out.addEntity(uuid);
+        for (Map.Entry<UUID, Entity> entry : updatedEntities.entitiesByUuid().entrySet()) {
+            if (!originalEntities.containsUuid(entry.getKey()))
+                out.addEntity(entry.getValue());
         }
         for (UUID uuid : inBoth) {
             out.beginEntity(uuid);

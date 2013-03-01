@@ -31,9 +31,9 @@ import com.akiban.server.entity.changes.SpaceModificationHandler;
 import com.akiban.server.entity.model.Attribute;
 import com.akiban.server.entity.model.Entity;
 import com.akiban.server.entity.model.EntityIndex;
+import com.akiban.server.entity.model.JsonEntityFormatter;
 import com.akiban.server.entity.model.Validation;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.util.UUID;
 import org.codehaus.jackson.JsonFactory;
@@ -93,14 +93,14 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
-    public void addEntity(UUID entityUuid)
+    public void addEntity(Entity entity)
     {
         try
         {
             startObject();
             entry("action", "add_entity");
             entry("destructive", false);
-            entry("uuid", entityUuid.toString());
+            entity.accept("definition", new JsonEntityFormatter(jsonGen));
             endObject();
         }
         catch (IOException ex)

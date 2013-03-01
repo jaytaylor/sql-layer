@@ -54,7 +54,7 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     private final SpaceLookups newSpaceLookup;
     private final AkibanInformationSchema oldAIS;
     private final AkibanInformationSchema newAIS;
-    private final List<String> errors = new ArrayList();
+    private final List<String> errors = new ArrayList<>();
 
     // Per entity change information. Tracked after beginEntity() and executed in endEntity()
     private final List<UserTable> dropTables = new ArrayList<>();
@@ -98,8 +98,8 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     //
 
     @Override
-    public void addEntity(UUID entityUuid) {
-        String entityName = newSpaceLookup.getName(entityUuid);
+    public void addEntity(Entity entity) {
+        String entityName = newSpaceLookup.getName(entity.uuid());
         UserTable newRoot = newAIS.getUserTable(schemaName, entityName);
         createTableRecursively(newRoot);
         if(!newRoot.getGroup().getIndexes().isEmpty()) {

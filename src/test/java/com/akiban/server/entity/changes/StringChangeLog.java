@@ -41,8 +41,8 @@ public class StringChangeLog extends JUnitUtils.MessageTaker implements SpaceMod
     }
 
     @Override
-    public void addEntity(UUID entityUuid) {
-        message("add entity", entityUuid);
+    public void addEntity(Entity entity) {
+        message("add entity", entity.uuid());
     }
 
     @Override
