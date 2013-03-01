@@ -38,6 +38,7 @@ import java.io.Writer;
 import java.util.UUID;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.map.ObjectMapper;
 
 /**
  * 
@@ -58,6 +59,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         this.writer = writer;
         try
         {
+            factory.setCodec(new ObjectMapper());
             jsonGen = factory.createJsonGenerator(writer);
             if (useDefaultPrettyPrinter)
                 jsonGen.useDefaultPrettyPrinter();
