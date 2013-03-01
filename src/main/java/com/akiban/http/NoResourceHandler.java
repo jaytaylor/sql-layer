@@ -31,8 +31,8 @@ import java.io.OutputStream;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.MediaType;
 
-import org.eclipse.jetty.http.MimeTypes;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 
@@ -57,7 +57,7 @@ public class NoResourceHandler extends DefaultHandler {
         baseRequest.setHandled(true);
 
         response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        response.setContentType(MimeTypes.TEXT_JSON_UTF_8);
+        response.setContentType(MediaType.APPLICATION_JSON);
         
         StringBuilder builder = new StringBuilder();
         

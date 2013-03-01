@@ -42,7 +42,7 @@ import com.akiban.server.error.ErrorCode;
 
 import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 
-@Path("/{other:.*}")
+@Path("{other:.*}")
 public class DefaultResource {
 
     private final ResourceRequirements reqs;
