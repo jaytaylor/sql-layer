@@ -171,7 +171,10 @@ public class IndexDDL
         final String schemaName = index.getObjectName().getSchemaName() != null ? index.getObjectName().getSchemaName() : defaultSchemaName;
         final TableName tableName = TableName.create(schemaName, index.getIndexTableName().getTableName());
         
-        if (checkIndexType (index, tableName) == Index.IndexType.TABLE) {
+        if (index.getColumnList().functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
+            logger.debug ("Building Full text index on table {}", tableName) ;
+            return buildFullTextIndex (ais, tableName, index);
+        } else if (checkIndexType (index, tableName) == Index.IndexType.TABLE) {
             logger.debug ("Building Table index on table {}", tableName) ;
             return buildTableIndex (ais, tableName, index);
         } else {
@@ -342,6 +345,56 @@ public class IndexDDL
         }
         builder.basicSchemaIsComplete();
         return builder.akibanInformationSchema().getGroup(groupName).getIndex(indexName);
+    }
+
+    private static Index buildFullTextIndex (AkibanInformationSchema ais, TableName tableName, CreateIndexNode index) {
+        final String indexName = index.getObjectName().getTableName();
+
+        UserTable table = ais.getUserTable(tableName);
+        if (table == null) {
+            throw new NoSuchTableException (tableName);
+        }
+
+        if (index.getJoinType() != null) {
+            throw new TableIndexJoinTypeException();
+        }
+
+        AISBuilder builder = new AISBuilder();
+        clone(builder, ais);
+        
+        builder.fullTextIndex(tableName, indexName);
+        IndexColumnList indexColumns = index.getColumnList();
+        int i = 0;
+        String schemaName;
+        TableName columnTable;
+        for (IndexColumn col : index.getColumnList()) {
+            if (col.getTableName() != null) {
+                schemaName = col.getTableName().hasSchema() ? col.getTableName().getSchemaName() : tableName.getSchemaName();
+                columnTable = TableName.create(schemaName, col.getTableName().getTableName());
+            } else {
+                columnTable = tableName;
+                schemaName = tableName.getSchemaName();
+            }
+
+            final String columnName = col.getColumnName(); 
+
+            if (ais.getUserTable(columnTable) == null) {
+                throw new NoSuchTableException(columnTable);
+            }
+            
+            if (ais.getUserTable(columnTable).getGroup() != table.getGroup())
+                throw new IndexTableNotInGroupException(indexName, columnName, columnTable.getTableName());
+
+            Column tableCol = ais.getUserTable(columnTable).getColumn(columnName); 
+            if (tableCol == null) {
+                throw new NoSuchColumnException (col.getColumnName());
+            }
+            
+            builder.fullTextIndexColumn(tableName, indexName, schemaName, columnTable.getTableName(), columnName, i);
+            i++;
+        }
+        builder.basicSchemaIsComplete();
+        return builder.akibanInformationSchema().getUserTable(tableName).getFullTextIndex(indexName);
     }
 
     private static void clone(AISBuilder builder, AkibanInformationSchema ais) {

@@ -108,16 +108,19 @@ public class PlanGenerator {
      *   Index Scan (table, pk-> ?[, ?...])
      */
     public static Operator generateBranchPlan (AkibanInformationSchema ais, UserTable table) {
+        final Operator indexScan = generateIndexScan(ais, table);
         final Schema schema = SchemaCache.globalSchema(ais);
-        final Operator indexScan = generateIndexScan (ais, table);
-        final UserTableRowType tableType = schema.userTableRowType(table);
-
         PrimaryKey pkey = table.getPrimaryKeyIncludingInternal();
         IndexRowType indexType = schema.indexRowType(pkey.getIndex());
-        
-        Operator plan = API.branchLookup_Default(indexScan, table.getGroup(), indexType,
-                                        tableType, 
-                                        API.InputPreservationOption.DISCARD_INPUT);
+        return generateBranchPlan(table, indexScan, indexType);
+    }
+
+    public static Operator generateBranchPlan (UserTable table, Operator scan, RowType scanType) {
+        final Schema schema = (Schema)scanType.schema();
+        final UserTableRowType tableType = schema.userTableRowType(table);
+        Operator plan = API.branchLookup_Default(scan, table.getGroup(), 
+                                                 scanType, tableType, 
+                                                 API.InputPreservationOption.DISCARD_INPUT);
                                         
         if (logger.isDebugEnabled()) {
             DefaultFormatter formatter = new DefaultFormatter(table.getName().getSchemaName());

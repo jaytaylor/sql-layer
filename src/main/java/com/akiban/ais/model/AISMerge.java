@@ -326,6 +326,19 @@ public class AISMerge {
                                              index.getConstraint(), index.getJoinType());
             }
             break;
+            case FULL_TEXT:
+            {
+                final TableName tableName = new TableName(indexName.getSchemaName(), indexName.getTableName());
+                final UserTable newTable = targetAIS.getUserTable(tableName);
+                if(newTable == null) {
+                    throw new NoSuchTableException(tableName);
+                }
+                curIndex = newTable.getFullTextIndex(indexName.getName());
+                newGroup = newTable.getGroup();
+                Integer newId = newIndexID(newGroup);
+                newIndex = FullTextIndex.create(targetAIS, newTable, indexName.getName(), newId);
+            }
+            break;
             default:
                 throw new IllegalArgumentException("Unknown index type: " + index);
         }

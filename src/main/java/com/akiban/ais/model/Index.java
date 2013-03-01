@@ -270,7 +270,7 @@ public abstract class Index implements Traversable
         this.indexDef = indexDef;
     }
 
-    public final IndexType getIndexType()
+    public IndexType getIndexType()
     {
         return isTableIndex() ? IndexType.TABLE : IndexType.GROUP;
     }
@@ -522,7 +522,8 @@ public abstract class Index implements Traversable
 
     public static enum IndexType {
         TABLE("TABLE"),
-        GROUP("GROUP")
+        GROUP("GROUP"),
+        FULL_TEXT("FULL_TEXT")
         ;
 
         private IndexType(String asString) {
@@ -538,7 +539,7 @@ public abstract class Index implements Traversable
     }
 
     public enum IndexMethod {
-        NORMAL, Z_ORDER_LAT_LON
+        NORMAL, Z_ORDER_LAT_LON, FULL_TEXT
     }
 
     public String getTreeName() {
