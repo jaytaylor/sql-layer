@@ -21,6 +21,9 @@
                     "type": "integer",
                     "validation": [
                         {
+                            "required" : false
+                        },
+                        {
                             "width": 11
                         }
                     ]

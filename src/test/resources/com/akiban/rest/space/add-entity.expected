@@ -1,1 +1,36 @@
-[{"action":"add_entity","destructive":false,"uuid":"42c90072-773a-11e2-a740-980e7188419e"}]
+[
+  {
+    "action": "add_entity",
+    "definition": {
+      "attributes": {
+        "id": {
+          "scalar": "55dd742c-773a-11e2-8617-1cd2f046605f",
+          "validation": [
+            {
+              "required": true
+            },
+            {
+              "width": 11
+            }
+          ],
+          "type": "integer",
+          "spinal_pos": 0
+        }
+      },
+      "entity": "42c90072-773a-11e2-a740-980e7188419e"
+    },
+    "destructive": false,
+    "name": "an_entity"
+  },
+  {
+    "action": "change_scalar_validations",
+    "new_validations": [
+      {
+        "name": "width",
+        "value": 11
+      }
+    ],
+    "destructive": true,
+    "uuid": "33563d56-7737-11e2-a970-980e7188419e"
+  }
+]
