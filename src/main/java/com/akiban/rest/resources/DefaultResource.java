@@ -23,52 +23,46 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.http;
+package com.akiban.rest.resources;
 
-import java.io.IOException;
-import java.io.OutputStream;
-
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
 
-import org.eclipse.jetty.http.MimeTypes;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.DefaultHandler;
-
+import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.server.error.ErrorCode;
 
-public class NoResourceHandler extends DefaultHandler {
-    
-    public NoResourceHandler() {
-        
-    }
-    
-    @Override
-    public void handle(String target,
-            Request baseRequest,
-            HttpServletRequest request,
-            HttpServletResponse response)
-              throws IOException,
-                     ServletException {
-        if (response.isCommitted() || baseRequest.isHandled())
-            return;
-        baseRequest.setHandled(true);
+import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 
-        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        response.setContentType(MimeTypes.TEXT_JSON_UTF_8);
-        
-        StringBuilder builder = new StringBuilder();
-        
-        RestResponseBuilder.formatJsonError(builder, ErrorCode.MALFORMED_REQUEST.getFormattedValue(), "Path not supported; use /v1/");
-        builder.append('\n');
-        
-        response.setContentLength(builder.length());
-        OutputStream out=response.getOutputStream();
-        out.write(builder.toString().getBytes());
-        out.close();
-        
-       
+@Path("/{other:.*}")
+public class DefaultResource {
+
+    private final ResourceRequirements reqs;
+    
+    public DefaultResource(ResourceRequirements reqs) {
+        this.reqs = reqs;
     }
+
+    @GET
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
+    public Response handleNoResource(@Context HttpServletRequest request,
+                                        @PathParam("other") String other) {
+        return buildResponse(request, other);
+    }
+    
+    private Response buildResponse(HttpServletRequest request, String path) {
+        String msg = String.format("API %s/%s not supported", reqs.restService.getContextPath(), path);
+        return RestResponseBuilder
+                .forRequest(request)
+                .status(Response.Status.NOT_FOUND)
+                .body(ErrorCode.MALFORMED_REQUEST, msg)
+                .build();
+    }
+    
+    
 }

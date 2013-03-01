@@ -38,16 +38,19 @@ public class ResourceRequirements {
     public final SecurityService securityService;
     public final SessionService sessionService;
     public final TransactionService transactionService;
+    public final RestService restService;
 
     public ResourceRequirements(DXLService dxlService,
                                 RestDMLService restDMLService,
                                 SecurityService securityService,
                                 SessionService sessionService,
-                                TransactionService transactionService) {
+                                TransactionService transactionService,
+                                RestService restService) {
         this.dxlService = dxlService;
         this.restDMLService = restDMLService;
         this.securityService = securityService;
         this.sessionService = sessionService;
         this.transactionService = transactionService;
+        this.restService = restService;
     }
 }

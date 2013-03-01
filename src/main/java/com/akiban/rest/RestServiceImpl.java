@@ -27,6 +27,7 @@
 package com.akiban.rest;
 
 import com.akiban.http.HttpConductor;
+import com.akiban.rest.resources.DefaultResource;
 import com.akiban.rest.resources.EntityResource;
 import com.akiban.rest.resources.ModelResource;
 import com.akiban.rest.resources.ProcedureCallResource;
@@ -111,7 +112,7 @@ public class RestServiceImpl implements RestService, Service {
     private ResourceConfig createResourceConfigV1() {
         DefaultResourceConfig config = new DefaultResourceConfig();
         ResourceRequirements reqs = new ResourceRequirements(
-                dxlService, restDMLService, securityService, sessionService, transactionService
+                dxlService, restDMLService, securityService, sessionService, transactionService, this
         );
         config.getSingletons().addAll(Arrays.asList(
                 new EntityResource(reqs),
@@ -119,7 +120,8 @@ public class RestServiceImpl implements RestService, Service {
                 new ProcedureCallResource(reqs),
                 new SecurityResource(reqs),
                 new SQLResource(reqs),
-                new VersionResource(reqs)
+                new VersionResource(reqs),
+                new DefaultResource(reqs)
         ));
         return config;
     }
