@@ -1,0 +1,3 @@
+func([
+{"last_name":"Smith","first_name":"John","city":"Boston"}
+])

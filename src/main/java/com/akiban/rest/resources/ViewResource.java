@@ -74,6 +74,8 @@ public class ViewResource {
         for (Map.Entry<String,List<String>> entry : uri.getQueryParameters().entrySet()) {
             if (entry.getValue().size() != 1)
                 throw new WrongExpressionArityException(1, entry.getValue().size());
+            if (ResourceHelper.JSONP_ARG_NAME.equals(entry.getKey()))
+                continue;
             if (first) {
                 query.append(" WHERE ");
                 first = false;
