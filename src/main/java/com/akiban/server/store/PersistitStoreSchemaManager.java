@@ -399,7 +399,10 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             if(keepTree) {
                 newIndex.setTreeName(proposed.getTreeName());
             }
-            newIndexes.add(newIndex);
+            if (newIndex.getIndexType() != Index.IndexType.FULL_TEXT) {
+                // TODO: For now, do not build.
+                newIndexes.add(newIndex);
+            }
             tableIDs.addAll(newIndex.getAllTableIDs());
             schemas.add(DefaultNameGenerator.schemaNameForIndex(newIndex));
         }
@@ -771,8 +774,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
                         if(index.isTableIndex()) {
                             return true;
                         }
-                        GroupIndex gi = (GroupIndex)index;
-                        for(IndexColumn icol : gi.getKeyColumns()) {
+                        for(IndexColumn icol : index.getKeyColumns()) {
                             if(tableNames.contains(icol.getColumn().getTable().getName())) {
                                 return false;
                             }
