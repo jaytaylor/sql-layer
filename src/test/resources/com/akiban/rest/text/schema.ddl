@@ -1,7 +1,6 @@
 CREATE TABLE customers(
     cid INT NOT NULL,
-    first_name varchar(32),
-    last_name varchar(32),
+    name varchar(256) COLLATE en_us_ci,
     PRIMARY KEY(cid)
 );
 
@@ -31,4 +30,4 @@ CREATE TABLE items(
     GROUPING FOREIGN KEY(oid) REFERENCES orders(oid)
 );
 
-CREATE INDEX c_ai ON customers(FULL_TEXT(first_name, last_name, addresses.state, items.sku));
+CREATE INDEX c_ai ON customers(FULL_TEXT(name, addresses.state, items.sku));
