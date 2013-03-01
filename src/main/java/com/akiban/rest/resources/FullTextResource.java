@@ -42,7 +42,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.PrintWriter;
 
-import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
 import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 
 /**
@@ -59,7 +58,6 @@ public class FullTextResource {
     @GET
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response textSearch(@Context final HttpServletRequest request,
-                               @QueryParam(JSONP_ARG_NAME) String jsonp,
                                @PathParam("table") String table,
                                @PathParam("index") String index,
                                @QueryParam("q") final String query,
@@ -68,7 +66,7 @@ public class FullTextResource {
         final IndexName indexName = new IndexName(ResourceHelper.parseTableName(request, table), index);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, indexName.getSchemaName());
         return RestResponseBuilder
-                .forJsonp(jsonp)
+                .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
@@ -81,13 +79,12 @@ public class FullTextResource {
     @POST
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response textSearch(@Context final HttpServletRequest request,
-                               @QueryParam(JSONP_ARG_NAME) String jsonp,
                                @PathParam("table") String table,
                                @PathParam("index") String index) throws Exception {
         final IndexName indexName = new IndexName(ResourceHelper.parseTableName(request, table), index);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, indexName.getSchemaName());
         return RestResponseBuilder
-                .forJsonp(jsonp)
+                .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {

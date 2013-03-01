@@ -26,6 +26,8 @@
 
 package com.akiban.server.error;
 
+import org.slf4j.Logger;
+
 import java.util.ResourceBundle;
 
 /**
@@ -458,8 +460,9 @@ public enum ErrorCode {
     
     private final Importance importance;
     private final Class<? extends InvalidOperationException> exceptionClass;
-    private String formattedValue; 
-    private static ResourceBundle resourceBundle = ResourceBundle.getBundle("com.akiban.server.error.error_code");
+    private final String formattedValue;
+
+    private static final ResourceBundle resourceBundle = ResourceBundle.getBundle("com.akiban.server.error.error_code");
 
     private ErrorCode(String code, String subCode, Importance importance, 
             Class<? extends InvalidOperationException> exception) {
@@ -500,6 +503,29 @@ public enum ErrorCode {
     
     public String getSubCode() {
         return subcode;
+    }
+
+    public void logAtImportance(Logger log, Throwable cause) {
+        logAtImportance(log, "ErrorCode of {} importance", importance.name(), cause);
+    }
+
+    public void logAtImportance(Logger log, String msg, Object... msgArgs) {
+        switch(getImportance()) {
+            case TRACE:
+                log.trace(msg, msgArgs);
+            break;
+            case DEBUG:
+                log.debug(msg, msgArgs);
+            break;
+            case ERROR:
+                log.error(msg, msgArgs);
+            break;
+            default:
+                assert false : "Unknown importance: " + getImportance();
+        }
+        if(msgArgs.length == 0 || !(msgArgs[msgArgs.length - 1] instanceof Throwable)) {
+            log.warn("Cause unknown. Here is the current stack.", new RuntimeException());
+        }
     }
 
     public static enum Importance {
