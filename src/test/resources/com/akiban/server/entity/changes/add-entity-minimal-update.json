@@ -1,0 +1,22 @@
+{
+    "entities" : {
+        "customers" : {
+            "entity" : null,
+            "attributes" : {
+                "name" : {
+                    "scalar" : null,
+                    "type" : "varchar"
+                },
+                "orders" : {
+                    "collection" : null,
+                    "attributes" : {
+                        "placed" : {
+                            "scalar" : null,
+                            "type" : "date"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
