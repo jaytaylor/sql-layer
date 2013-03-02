@@ -96,10 +96,11 @@ public final class SpaceDiff {
             if (!origLookups.containsAttribute(uuid)) {
                 UUID parent = updateLookups.getParentAttribute(uuid);
                 if (parent == null || origLookups.containsAttribute(parent)) {
-                    if (updated.getValue().isSpinal())
+                    Attribute newAttribute = updated.getValue();
+                    if (newAttribute.isSpinal())
                         out.error("Can't add spinal attributes to entities or collections");
                     else
-                        out.addAttribute(uuid);
+                        out.addAttribute(updateLookups.nameFor(uuid), newAttribute);
                 }
             }
         }

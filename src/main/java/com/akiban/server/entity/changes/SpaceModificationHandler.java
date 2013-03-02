@@ -41,7 +41,7 @@ public interface SpaceModificationHandler {
     void renameEntity(UUID entityUuid, String oldName);
 
     void beginAttributes(AttributeLookups oldLookups, AttributeLookups newLookups);
-    void addAttribute(UUID attributeUuid);
+    void addAttribute(String name, Attribute attribute);
     void dropAttribute(Attribute dropped);
     void renameAttribute(UUID attributeUuid, String oldName);
     void changeScalarType(UUID scalarUuid, Attribute afterChange);

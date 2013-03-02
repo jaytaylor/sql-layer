@@ -61,8 +61,8 @@ public class StringChangeLog extends JUnitUtils.MessageTaker implements SpaceMod
     }
 
     @Override
-    public void addAttribute(UUID attributeUuid) {
-        message("add attribute", attributeUuid);
+    public void addAttribute(String name, Attribute attribute) {
+        message("add attribute", attribute.getUUID());
     }
 
     @Override

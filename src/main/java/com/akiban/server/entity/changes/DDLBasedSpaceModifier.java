@@ -134,19 +134,17 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     }
 
     @Override
-    public void addAttribute(UUID attributeUuid) {
-        UUID parent = newLookups.getParentAttribute(attributeUuid);
-        Attribute attr = newLookups.attributeFor(attributeUuid);
-        String attrName = newLookups.nameFor(attributeUuid);
-        switch(attr.getAttributeType()) {
+    public void addAttribute(String attrName, Attribute attribute) {
+        switch(attribute.getAttributeType()) {
             case SCALAR:
+                UUID parent = newLookups.getParentAttribute(attribute.getUUID());
                 trackColumnChange(getParentName(parent), TableChange.createAdd(attrName));
             break;
             case COLLECTION:
                 newTables.add(newAIS.getUserTable(schemaName, attrName));
             break;
             default:
-                unknownAttributeType(attr);
+                unknownAttributeType(attribute);
         }
     }
 

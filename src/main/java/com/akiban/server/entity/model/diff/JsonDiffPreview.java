@@ -155,14 +155,15 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
-    public void addAttribute(UUID attributeUuid)
+    public void addAttribute(String name, Attribute attribute)
     {
         try
         {
             startObject();
             entry("action", "add_attribute");
             entry("destructive", false);
-            entry("uuid", attributeUuid);
+            entry("name", name);
+            attribute.accept("definition", new JsonEntityFormatter(jsonGen));
             endObject();
         }
         catch (IOException ex)
