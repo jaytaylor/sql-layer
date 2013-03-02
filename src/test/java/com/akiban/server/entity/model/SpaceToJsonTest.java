@@ -67,7 +67,7 @@ public final class SpaceToJsonTest {
 
     @Test
     public void test() throws IOException {
-        Space space = Space.readSpace(testName + ".json", SpaceToJsonTest.class);
+        Space space = Space.readSpace(testName + ".json", SpaceToJsonTest.class, false);
         String actual = space.toJson();
         String expected = Strings.dumpFileToString(new File(testDir, testName + ".json"));
 

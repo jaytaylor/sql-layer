@@ -64,13 +64,13 @@ public final class SpaceValidationTest {
     @Test(expected = IllegalEntityDefinition.class)
     @OnlyIfNot("expectedValid()")
     public void invalid() throws IOException {
-        Space.readSpace(testName, SpaceValidationTest.class);
+        Space.readSpace(testName, SpaceValidationTest.class, false);
     }
 
     @Test
     @OnlyIf("expectedValid()")
     public void valid() throws IOException {
-        Space.readSpace(testName, SpaceValidationTest.class);
+        Space.readSpace(testName, SpaceValidationTest.class, false);
     }
 
     public boolean expectedValid() {

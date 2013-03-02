@@ -76,8 +76,8 @@ public final class SpaceDiffTest {
 
     @Test
     public void test() throws IOException {
-        Space orig = Space.readSpace(testName + ORIG_SUFFIX, SpaceDiffTest.class);
-        Space updated = Space.readSpace(testName + UPDATE_SUFFIX, SpaceDiffTest.class);
+        Space orig = Space.readSpace(testName + ORIG_SUFFIX, SpaceDiffTest.class, false);
+        Space updated = Space.readSpace(testName + UPDATE_SUFFIX, SpaceDiffTest.class, false);
         List<String> expected = Strings.dumpFile(new File(dir, testName + EXPECTED_SUFFIX));
         Collections.sort(expected);
         StringChangeLog log = new StringChangeLog();

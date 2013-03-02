@@ -47,7 +47,7 @@ public final class AisToSpace {
             Entity entity = new EntityBuilder(root).getEntity();
             entities.put(entityName, entity);
         }
-        return Space.create(entities);
+        return Space.create(entities, false);
     }
 
     private AisToSpace() {}

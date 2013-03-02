@@ -45,6 +45,11 @@ public final class Entity {
         return uuid;
     }
 
+    void assignUuid() {
+        assert uuid == null : uuid;
+        uuid = UUID.randomUUID();
+    }
+
     @SuppressWarnings("unused")
     void setEntity(String entity) {
         this.uuid = Util.parseUUID(entity);

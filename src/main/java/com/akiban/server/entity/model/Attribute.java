@@ -44,6 +44,11 @@ public final class Attribute {
         return uuid;
     }
 
+    void assignUuid() {
+        assert uuid == null : uuid;
+        uuid = UUID.randomUUID();
+    }
+
     public AttributeType getAttributeType() {
         return attributeType;
     }

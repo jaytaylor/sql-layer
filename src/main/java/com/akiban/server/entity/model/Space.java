@@ -30,7 +30,6 @@ import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -47,7 +46,7 @@ import java.util.UUID;
 
 public final class Space {
 
-    public static Space create(Reader reader) throws IOException {
+    public static Space create(Reader reader, boolean generateUUIDs) throws IOException {
         Space result;
         try {
             result = new ObjectMapper().readValue(reader, Space.class);
@@ -56,17 +55,17 @@ public final class Space {
                 throw (IllegalEntityDefinition) e.getCause();
             throw e;
         }
-        result.visit(new Validator());
+        result.visit(new Validator(generateUUIDs));
         return result;
     }
 
-    public static Space readSpace(String fileName, Class<?> forClass) {
+    public static Space readSpace(String fileName, Class<?> forClass, boolean generateUUIDs) {
         try (InputStream is = forClass.getResourceAsStream(fileName)) {
             if (is == null) {
                 throw new RuntimeException("resource not found: " + fileName);
             }
             Reader reader = new BufferedReader(new InputStreamReader(is, "utf-8"));
-            return create(reader);
+            return create(reader, generateUUIDs);
         }
         catch (IOException e) {
             throw new RuntimeException(e);
@@ -93,10 +92,10 @@ public final class Space {
         return entities.toString();
     }
 
-    public static Space create(Map<String, Entity> entities) {
+    public static Space create(Map<String, Entity> entities, boolean generateUUIDs) {
         Space space = new Space();
         space.setEntities(entities);
-        space.visit(new Validator());
+        space.visit(new Validator(generateUUIDs));
         return space;
     }
 
@@ -140,7 +139,8 @@ public final class Space {
 
         @Override
         public void visitEntity(String name, Entity entity) {
-            validateUUID(entity.uuid());
+            if (needsUUID(entity.uuid()))
+                entity.assignUuid();
             ensureUnique(name);
             if (entity.getAttributes() == null || entity.getAttributes().isEmpty())
                 throw new IllegalEntityDefinition("no attributes set for entity: " + name);
@@ -148,7 +148,8 @@ public final class Space {
 
         @Override
         public void visitScalar(String name, Attribute scalar) {
-            validateUUID(scalar.getUUID());
+            if (needsUUID(scalar.getUUID()))
+                scalar.assignUuid();
             if (scalar.getType() == null)
                 throw new IllegalEntityDefinition("no type set for scalar");
             if (scalar.getAttributes() != null)
@@ -157,7 +158,8 @@ public final class Space {
 
         @Override
         public void visitCollection(String name, Attribute collection) {
-            validateUUID(collection.getUUID());
+            if (needsUUID(collection.getUUID()))
+                collection.assignUuid();
             ensureUnique(name);
             if (collection.getType() != null)
                 throw new IllegalEntityDefinition("type can't be set for collection");
@@ -165,11 +167,16 @@ public final class Space {
                 throw new IllegalEntityDefinition("no attributes set for collection");
         }
 
-        private void validateUUID(UUID uuid) {
-            if (uuid == null)
-                throw new IllegalEntityDefinition("no uuid specified");
+        private boolean needsUUID(UUID uuid) {
+            if (uuid == null) {
+                if (generateUuids)
+                    return true;
+                else
+                    throw new IllegalEntityDefinition("no uuid specified");
+            }
             if (!uuids.add(uuid))
                 throw new IllegalEntityDefinition("duplicate uuid found: " + uuid);
+            return false;
         }
 
         private void ensureUnique(String name) {
@@ -177,7 +184,12 @@ public final class Space {
                 throw new IllegalEntityDefinition("duplicate name within entity and collections: " + name);
         }
 
+        private Validator(boolean generateUuids) {
+            this.generateUuids = generateUuids;
+        }
+
         private final Set<UUID> uuids = new HashSet<>();
         private final Set<String> collectionNames = new HashSet<>();
+        private final boolean generateUuids;
     }
 }
