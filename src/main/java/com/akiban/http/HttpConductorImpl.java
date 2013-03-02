@@ -289,9 +289,8 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     }
 
     private void addCrossOriginFilter(ContextHandler handler) throws ServletException {
-        String name = "CrossOriginFilter";
-        FilterRegistration reg = handler.getServletContext().addFilter(name, CrossOriginFilter.class);
-        reg.addMappingForServletNames(null /*REQUEST*/, false, "*");
+        FilterRegistration reg = handler.getServletContext().addFilter("CrossOriginFilter", CrossOriginFilter.class);
+        reg.addMappingForServletNames(null /*default = REQUEST*/, false, "*");
         reg.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM,
                              configurationService.getProperty(CONFIG_XORIGIN_ORIGINS));
         reg.setInitParameter(CrossOriginFilter.ALLOWED_METHODS_PARAM,
