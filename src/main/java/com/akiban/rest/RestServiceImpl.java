@@ -116,6 +116,7 @@ public class RestServiceImpl implements RestService, Service {
                 new SecurityResource(reqs),
                 new SQLResource(reqs),
                 new VersionResource(reqs),
+                new ViewResource(reqs),
                 // This must be last to capture anything not handled above 
                 new DefaultResource(reqs)
         ));

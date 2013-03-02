@@ -27,14 +27,12 @@
 package com.akiban.rest.resources;
 
 import com.akiban.ais.model.TableName;
-import com.akiban.rest.RestResponseBuilder;
 import com.akiban.server.service.security.SecurityService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 import java.security.Principal;
 
 public class ResourceHelper {
