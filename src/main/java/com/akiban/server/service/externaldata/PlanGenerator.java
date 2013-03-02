@@ -29,6 +29,7 @@ package com.akiban.server.service.externaldata;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
 
@@ -70,6 +71,11 @@ public class PlanGenerator
 
         branchPlans.put(table, plan);
         return plan;
+    }
+
+    public Operator generateBranchPlan(UserTable table, Operator scan, RowType scanType) {
+        // No caching possible.
+        return com.akiban.sql.optimizer.rule.PlanGenerator.generateBranchPlan(table, scan, scanType);
     }
 
 }

@@ -228,6 +228,30 @@ public class AISBuilder {
         IndexColumn.create(index, column, position, true, null);
     }
 
+    public void fullTextIndex(TableName tableName, String indexName)
+    {
+        LOG.trace("fullTextIndex: " + tableName + "." + indexName);
+        UserTable table = ais.getUserTable(tableName);
+        checkFound(table, "creating full text index", "table", tableName);
+        int indexID = nameGenerator.generateIndexID(getRooTableID(table));
+        Index index = FullTextIndex.create(ais, table, indexName, indexID);
+    }
+
+    public void fullTextIndexColumn(TableName indexedTableName, String indexName, 
+                                    String schemaName, String tableName, String columnName, Integer position)
+    {
+        LOG.trace("fullTextIndexColumn: " + indexedTableName + "." + indexName + ":" + columnName);
+        UserTable indexedTable = ais.getUserTable(indexedTableName);
+        checkFound(indexedTable, "creating full text index column", "table", indexedTableName);
+        Index index = indexedTable.getFullTextIndex(indexName);
+        checkFound(index, "creating full text index column", "index", concat(tableName.toString(), indexName));
+        Table table = ais.getTable(schemaName, tableName);
+        checkFound(table, "creating full text index column", "table", concat(schemaName, tableName));
+        Column column = table.getColumn(columnName);
+        checkFound(column, "creating full text index column", "column", concat(schemaName, tableName, columnName));
+        IndexColumn.create(index, column, position, true, null);
+    }
+
     public void joinTables(String joinName, String parentSchemaName,
             String parentTableName, String childSchemaName,
             String childTableName) {

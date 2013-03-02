@@ -868,10 +868,13 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             if (isAkibanPKIndex(index)) continue;
             indexes.put(index.getIndexName().getName(), index);
         }
-        for (Index index : table.getGroup().getIndexes()) {
-            if (table == index.leafMostTable()) {
+        for (Index index : table.getGroupIndexes()) {
+            if (isTableReferenced(table, index)) {
                 indexes.put(index.getIndexName().getName(), index);
             }
+        }
+        for (Index index : table.getFullTextIndexes()) {
+            indexes.put(index.getIndexName().getName(), index);
         }
         int ncols;
         if (groups.get(1) == null) {
@@ -1002,6 +1005,17 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 indexColumns.get(0).getColumn().isAkibanPKColumn());
     }
 
+    private boolean isTableReferenced(UserTable table, Index groupIndex) {
+        for (IndexColumn indexColumn : groupIndex.getKeyColumns()) {
+            // A table may only be referenced by hKey components, in
+            // which case we don't want to display it.
+            if (indexColumn.getColumn().getTable() == table) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private String formatIndexdef(Index index, UserTable table) {
         StringBuilder str = new StringBuilder();
         // Postgres CREATE INDEX has USING method, btree|hash|gist|gin|...
@@ -1009,11 +1023,20 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         // Only issue is that for PRIMARY KEY, it prints a comma in
         // anticipation of some method word before the column.
         str.append(" USING ");
-        int firstSpatialColumn = Integer.MAX_VALUE;
-        int lastSpatialColumn = Integer.MIN_VALUE;
-        if (index.getIndexMethod() == Index.IndexMethod.Z_ORDER_LAT_LON) {
-            firstSpatialColumn = index.firstSpatialArgument();
-            lastSpatialColumn = firstSpatialColumn + index.dimensions() - 1;
+        int firstFunctionColumn = Integer.MAX_VALUE;
+        int lastFunctionColumn = Integer.MIN_VALUE;
+        switch (index.getIndexMethod()) {
+        case NORMAL:
+            break;
+        case Z_ORDER_LAT_LON:
+            firstFunctionColumn = index.firstSpatialArgument();
+            lastFunctionColumn = firstFunctionColumn + index.dimensions() - 1;
+            break;
+        case FULL_TEXT:
+        default:
+            firstFunctionColumn = 0;
+            lastFunctionColumn = index.getKeyColumns().size() - 1;
+            break;
         }
         str.append("(");
         boolean first = true;
@@ -1026,7 +1049,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 str.append(", ");
             }
             int positionInIndex = icolumn.getPosition();
-            if (positionInIndex == firstSpatialColumn) {
+            if (positionInIndex == firstFunctionColumn) {
                 str.append(index.getIndexMethod().name());
                 str.append('(');
             }
@@ -1035,7 +1058,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                    .append(".");
             }
             str.append(column.getName());
-            if (positionInIndex == lastSpatialColumn) {
+            if (positionInIndex == lastFunctionColumn) {
                 str.append(')');
             }
         }

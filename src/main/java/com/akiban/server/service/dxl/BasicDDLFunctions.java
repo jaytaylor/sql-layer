@@ -961,6 +961,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             for(Index index : indexesToAdd) {
                 switch(index.getIndexType()) {
                     case TABLE:
+                    case FULL_TEXT: // TODO: More IDs?
                         UserTable table = ais.getUserTable(index.getIndexName().getFullTableName());
                         if(table != null) {
                             tableIDs.add(table.getTableId());
