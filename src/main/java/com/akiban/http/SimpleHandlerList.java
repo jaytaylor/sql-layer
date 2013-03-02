@@ -50,6 +50,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class SimpleHandlerList extends AbstractHandler {
     private final List<Handler> handlers = new CopyOnWriteArrayList<>();
+    private Handler defaultHandler = null;
 
     @Override
     public void handle(String target,
@@ -65,6 +66,9 @@ public class SimpleHandlerList extends AbstractHandler {
             if(baseRequest.isHandled()) {
                 return;
             }
+        }
+        if (defaultHandler != null) {
+            defaultHandler.handle(target, baseRequest, request, response);
         }
     }
 
@@ -83,6 +87,13 @@ public class SimpleHandlerList extends AbstractHandler {
                 mex.add(e);
             }
         }
+        try {
+            if (defaultHandler != null) {
+                defaultHandler.start();
+            }
+        } catch (Exception e) {
+            mex.add(e);
+        }
         mex.ifExceptionThrow();
     }
 
@@ -95,6 +106,13 @@ public class SimpleHandlerList extends AbstractHandler {
             } catch(Exception e) {
                 mex.add(e);
             }
+        }
+        try {
+            if (defaultHandler != null) {
+                defaultHandler.stop();
+            }
+        } catch (Exception e) {
+            mex.add(e);
         }
         try {
             super.doStop();
@@ -115,6 +133,14 @@ public class SimpleHandlerList extends AbstractHandler {
             }
         }
         try {
+            if (defaultHandler != null) {
+                defaultHandler.destroy();
+            }
+        } catch (Exception e) {
+            mex.add(e);
+        }
+
+        try {
             super.destroy();
         } catch(Exception e) {
             mex.add(e);
@@ -131,5 +157,12 @@ public class SimpleHandlerList extends AbstractHandler {
 
     public void removeHandler(Handler h) {
         handlers.remove(h);
+    }
+    
+    public void addDefaultHandler(Handler h) {
+        if (h.getServer() != getServer()) {
+            h.setServer(getServer());
+        }
+        defaultHandler = h;
     }
 }

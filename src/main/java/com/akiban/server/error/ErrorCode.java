@@ -380,7 +380,7 @@ public enum ErrorCode {
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),
     METAMODEL_MISMATCH      ("51", "002", Importance.ERROR, MetaModelVersionMismatchException.class),
     // Messaging errors
-    MALFORMED_REQUEST       ("51", "010", Importance.ERROR, null), 
+    MALFORMED_REQUEST       ("51", "010", Importance.ERROR, MalformedRequestException.class), 
     BAD_STATISTICS_TYPE     ("51", "011", Importance.ERROR, BadStatisticsTypeException.class),
     
     // Class 52 - Configuration & startup errors
