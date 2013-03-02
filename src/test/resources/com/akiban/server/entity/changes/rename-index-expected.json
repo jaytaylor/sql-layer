@@ -2,7 +2,7 @@
     {
         "action": "rename_index", 
         "new_name": "name_idx", 
-        "destructive": false, 
+        "destructive": false,
         "old_name": "name"
     }
 ]

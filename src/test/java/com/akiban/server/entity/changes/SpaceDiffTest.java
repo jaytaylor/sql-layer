@@ -33,21 +33,21 @@ import com.akiban.server.entity.model.diff.JsonDiffPreview;
 import com.akiban.util.JUnitUtils;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Properties;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 
@@ -56,6 +56,7 @@ public final class SpaceDiffTest {
     private static final String ORIG_SUFFIX = "-orig.json";
     private static final String UPDATE_SUFFIX = "-update.json";
     private static final String EXPECTED_SUFFIX = "-expected.json";
+    private static final String UUIDS_SUFFIX = "-uuids.properties";
 
     private static String getShortName(String testName) {
         return testName.substring(0, testName.length() - ORIG_SUFFIX.length());
@@ -81,8 +82,24 @@ public final class SpaceDiffTest {
 
     @Test
     public void test() throws IOException {
-        Space orig = Space.readSpace(testName + ORIG_SUFFIX, SpaceDiffTest.class, false);
-        Space updated = Space.readSpace(testName + UPDATE_SUFFIX, SpaceDiffTest.class, false);
+        Function<String, UUID> uuidGenerator;
+        File uuidsFile = new File(dir, testName + UUIDS_SUFFIX);
+        if (uuidsFile.exists()) {
+            final Properties uuids = new Properties();
+            uuids.load(new FileReader(uuidsFile));
+            uuidGenerator = new Function<String, UUID>() {
+                @Override
+                public UUID apply(String input) {
+                    String uuid = uuids.getProperty(input);
+                    return UUID.fromString(uuid);
+                }
+            };
+        }
+        else {
+            uuidGenerator = null;
+        }
+        Space orig = Space.readSpace(testName + ORIG_SUFFIX, SpaceDiffTest.class, null);
+        Space updated = Space.readSpace(testName + UPDATE_SUFFIX, SpaceDiffTest.class, uuidGenerator);
         JsonNode expected = new ObjectMapper().readTree(new File(dir, testName + EXPECTED_SUFFIX));
         StringWriter writer = new StringWriter();
         JsonDiffPreview diff = new JsonDiffPreview(writer);

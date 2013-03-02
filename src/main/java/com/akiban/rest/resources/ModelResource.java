@@ -170,7 +170,7 @@ public final class ModelResource {
                             AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(session);
                             ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
                             Space curSpace = AisToSpace.create(ais);
-                            Space newSpace = Space.create(new InputStreamReader(postInput), true);
+                            Space newSpace = Space.create(new InputStreamReader(postInput), Space.randomUUIDs);
                             SpaceDiff diff = new SpaceDiff(curSpace, newSpace);
 
                             boolean success = true;

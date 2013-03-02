@@ -48,7 +48,7 @@ public final class SpaceTest {
     @Test()
     public void coi() {
         // space
-        Space space = Space.readSpace("coi.json", SpaceTest.class, false);
+        Space space = Space.readSpace("coi.json", SpaceTest.class, null);
         isUnmodifiable("space", space.getEntities());
         assertEquals("space keys", set("customer"), space.getEntities().keySet());
 
@@ -134,7 +134,7 @@ public final class SpaceTest {
                 "leaving entity"
         );
         ToStringVisitor visitor = new ToStringVisitor();
-        Space.readSpace("coi.json", SpaceTest.class, false).visit(visitor);
+        Space.readSpace("coi.json", SpaceTest.class, null).visit(visitor);
         assertCollectionEquals("messages", expected, visitor.getMessages());
     }
 

@@ -74,7 +74,7 @@ public final class EntityToAISTest {
 
     @Test
     public void test() throws IOException {
-        Space spaceDef = Space.readSpace(testName + ORIG_SUFFIX, EntityToAISTest.class, false);
+        Space spaceDef = Space.readSpace(testName + ORIG_SUFFIX, EntityToAISTest.class, null);
         EntityToAIS eToAIS = new EntityToAIS(SCHEMA);
         spaceDef.visit(eToAIS);
 

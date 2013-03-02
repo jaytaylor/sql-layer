@@ -26,6 +26,7 @@
 
 package com.akiban.server.entity.model;
 
+import com.google.common.base.Function;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.map.JsonMappingException;
@@ -46,7 +47,7 @@ import java.util.UUID;
 
 public final class Space {
 
-    public static Space create(Reader reader, boolean generateUUIDs) throws IOException {
+    public static Space create(Reader reader, Function<String, UUID> generateUUIDs) throws IOException {
         Space result;
         try {
             result = new ObjectMapper().readValue(reader, Space.class);
@@ -59,7 +60,7 @@ public final class Space {
         return result;
     }
 
-    public static Space readSpace(String fileName, Class<?> forClass, boolean generateUUIDs) {
+    public static Space readSpace(String fileName, Class<?> forClass, Function<String, UUID> generateUUIDs) {
         try (InputStream is = forClass.getResourceAsStream(fileName)) {
             if (is == null) {
                 throw new RuntimeException("resource not found: " + fileName);
@@ -92,7 +93,7 @@ public final class Space {
         return entities.toString();
     }
 
-    public static Space create(Map<String, Entity> entities, boolean generateUUIDs) {
+    public static Space create(Map<String, Entity> entities, Function<String, UUID> generateUUIDs) {
         Space space = new Space();
         space.setEntities(entities);
         space.visit(new Validator(generateUUIDs));
@@ -140,7 +141,7 @@ public final class Space {
         @Override
         public void visitEntity(String name, Entity entity) {
             if (needsUUID(entity.uuid()))
-                entity.assignUuid();
+                entity.setUuid(uuidGenerator.apply(name));
             ensureUnique(name);
             if (entity.getAttributes() == null || entity.getAttributes().isEmpty())
                 throw new IllegalEntityDefinition("no attributes set for entity: " + name);
@@ -149,7 +150,7 @@ public final class Space {
         @Override
         public void visitScalar(String name, Attribute scalar) {
             if (needsUUID(scalar.getUUID()))
-                scalar.assignUuid();
+                scalar.setUuid(uuidGenerator.apply(name));
             if (scalar.getType() == null)
                 throw new IllegalEntityDefinition("no type set for scalar");
             if (scalar.getAttributes() != null)
@@ -159,7 +160,7 @@ public final class Space {
         @Override
         public void visitCollection(String name, Attribute collection) {
             if (needsUUID(collection.getUUID()))
-                collection.assignUuid();
+                collection.setUuid(uuidGenerator.apply(name));
             ensureUnique(name);
             if (collection.getType() != null)
                 throw new IllegalEntityDefinition("type can't be set for collection");
@@ -168,12 +169,8 @@ public final class Space {
         }
 
         private boolean needsUUID(UUID uuid) {
-            if (uuid == null) {
-                if (generateUuids)
-                    return true;
-                else
-                    throw new IllegalEntityDefinition("no uuid specified");
-            }
+            if (uuid == null)
+                return true;
             if (!uuids.add(uuid))
                 throw new IllegalEntityDefinition("duplicate uuid found: " + uuid);
             return false;
@@ -184,12 +181,26 @@ public final class Space {
                 throw new IllegalEntityDefinition("duplicate name within entity and collections: " + name);
         }
 
-        private Validator(boolean generateUuids) {
-            this.generateUuids = generateUuids;
+        private Validator(Function<String, UUID> uuidGenerator) {
+            this.uuidGenerator = uuidGenerator == null ? requireUUIDs : uuidGenerator;
         }
 
         private final Set<UUID> uuids = new HashSet<>();
         private final Set<String> collectionNames = new HashSet<>();
-        private final boolean generateUuids;
+        private final Function<String, UUID> uuidGenerator;
     }
+
+    public static final Function<String, UUID> randomUUIDs = new Function<String, UUID>() {
+        @Override
+        public UUID apply(String input) {
+            return UUID.randomUUID();
+        }
+    };
+
+    public static final Function<String, UUID> requireUUIDs = new Function<String, UUID>() {
+        @Override
+        public UUID apply(String input) {
+            throw new IllegalEntityDefinition("no uuid specified");
+        }
+    };
 }
