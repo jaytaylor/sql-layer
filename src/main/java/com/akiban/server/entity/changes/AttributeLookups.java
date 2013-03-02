@@ -79,7 +79,7 @@ public final class AttributeLookups {
         List<UUID> path = pathsByUuid.get(uuid);
         if (path == null)
             throw new NoSuchElementException(String.valueOf(uuid));
-        return path.size() < 2 ? null : path.get(0);
+        return path.size() < 2 ? null : path.get(path.size() - 1);
 
     }
 
@@ -99,23 +99,23 @@ public final class AttributeLookups {
     private class Visitor extends AbstractEntityVisitor {
         @Override
         public void visitEntity(String name, Entity entity) {
-            currentPath.push(entity.uuid());
+            currentPath.addLast(entity.uuid());
         }
 
         @Override
         public void leaveEntity() {
-            currentPath.pop();
+            currentPath.removeLast();
         }
 
         @Override
         public void visitCollection(String name, Attribute collection) {
             seeAttribute(name, collection);
-            currentPath.push(collection.getUUID());
+            currentPath.addLast(collection.getUUID());
         }
 
         @Override
         public void leaveCollection() {
-            currentPath.pop();
+            currentPath.removeLast();
         }
 
         @Override
