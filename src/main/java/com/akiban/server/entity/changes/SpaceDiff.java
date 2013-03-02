@@ -68,8 +68,8 @@ public final class SpaceDiff {
     }
 
     private void attributeActions(UUID entityUUID, SpaceModificationHandler out) {
-        AttributeLookups origLookups = new AttributeLookups(originalEntities.getEntity(entityUUID));
-        AttributeLookups updateLookups = new AttributeLookups(updatedEntities.getEntity(entityUUID));
+        AttributeLookups origLookups = new AttributeLookups(originalEntities, entityUUID);
+        AttributeLookups updateLookups = new AttributeLookups(updatedEntities, entityUUID);
         out.beginAttributes(origLookups, updateLookups);
 
         // added attributes
@@ -100,7 +100,7 @@ public final class SpaceDiff {
                     if (newAttribute.isSpinal())
                         out.error("Can't add spinal attributes to entities or collections");
                     else
-                        out.addAttribute(updateLookups.pathNamesFor(uuid), newAttribute);
+                        out.addAttribute(updateLookups.fullPathName(uuid), newAttribute);
                 }
             }
         }

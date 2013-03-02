@@ -41,7 +41,7 @@ public final class AttributeLookupsTest {
     public void testGetParentAttribute() throws Exception {
         Space space = Space.readSpace("attribute_lookups_space.json", AttributeLookupsTest.class, null);
         Entity customer = space.getEntities().get("customer");
-        AttributeLookups lookups = new AttributeLookups(customer);
+        AttributeLookups lookups = new AttributeLookups("customer", customer);
 
         Map<String, String> parents = new TreeMap<>();
         for (UUID uuid : lookups.getAttributesByUuid().keySet()) {
@@ -63,7 +63,7 @@ public final class AttributeLookupsTest {
     public void testGetParentAttributeOfUnknown() {
         Space space = Space.readSpace("attribute_lookups_space.json", AttributeLookupsTest.class, null);
         Entity customer = space.getEntities().get("customer");
-        AttributeLookups lookups = new AttributeLookups(customer);
+        AttributeLookups lookups = new AttributeLookups("customer", customer);
         lookups.getParentAttribute(customer.uuid());
 
     }

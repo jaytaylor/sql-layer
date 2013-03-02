@@ -34,6 +34,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -51,13 +52,15 @@ public final class AttributeLookups {
         return pathsByUuid.get(uuid);
     }
 
-    public List<String> pathNamesFor(UUID uuid) {
-        return Lists.transform(pathFor(uuid), new Function<UUID, String>() {
+    public List<String> fullPathName(UUID uuid) {
+        List<String> pathNames = new ArrayList<>(Lists.transform(pathFor(uuid), new Function<UUID, String>() {
             @Override
             public String apply(UUID pathSegment) {
                 return nameFor(pathSegment);
             }
-        });
+        }));
+        pathNames.add(nameFor(uuid));
+        return pathNames;
     }
 
     public Attribute attributeFor(UUID uuid) {
@@ -72,16 +75,21 @@ public final class AttributeLookups {
         return attributesByUuid.containsKey(uuid);
     }
 
-    public AttributeLookups(Entity entity) {
-        entity.accept(null, new Visitor());
-    }
-
     public UUID getParentAttribute(UUID uuid) {
         List<UUID> path = pathsByUuid.get(uuid);
         if (path == null)
             throw new NoSuchElementException(String.valueOf(uuid));
         return path.size() < 2 ? null : path.get(0);
 
+    }
+
+    public AttributeLookups(SpaceLookups spaceLookups, UUID entityUUID) {
+        this(spaceLookups.getName(entityUUID), spaceLookups.getEntity(entityUUID));
+    }
+
+    public AttributeLookups(String entityName, Entity entity) {
+        entity.accept(entityName, new Visitor());
+        namesByUuid.put(entity.uuid(), entityName);
     }
 
     private Map<UUID, Attribute> attributesByUuid = new HashMap<>();
