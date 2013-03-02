@@ -29,28 +29,33 @@ package com.akiban.server.entity.changes;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
 import com.akiban.server.entity.model.Space;
+import com.akiban.server.entity.model.diff.JsonDiffPreview;
 import com.akiban.util.JUnitUtils;
-import com.akiban.util.Strings;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
-import static com.akiban.util.AssertUtils.assertCollectionEquals;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(NamedParameterizedRunner.class)
 public final class SpaceDiffTest {
     private static final String ORIG_SUFFIX = "-orig.json";
     private static final String UPDATE_SUFFIX = "-update.json";
-    private static final String EXPECTED_SUFFIX = "-expected.txt";
+    private static final String EXPECTED_SUFFIX = "-expected.json";
 
     private static String getShortName(String testName) {
         return testName.substring(0, testName.length() - ORIG_SUFFIX.length());
@@ -78,12 +83,13 @@ public final class SpaceDiffTest {
     public void test() throws IOException {
         Space orig = Space.readSpace(testName + ORIG_SUFFIX, SpaceDiffTest.class, false);
         Space updated = Space.readSpace(testName + UPDATE_SUFFIX, SpaceDiffTest.class, false);
-        List<String> expected = Strings.dumpFile(new File(dir, testName + EXPECTED_SUFFIX));
-        Collections.sort(expected);
-        StringChangeLog log = new StringChangeLog();
-        new SpaceDiff(orig, updated).apply(log);
-        Collections.sort(log.getMessages());
-        assertCollectionEquals("changes", expected, log.getMessages());
+        JsonNode expected = new ObjectMapper().readTree(new File(dir, testName + EXPECTED_SUFFIX));
+        StringWriter writer = new StringWriter();
+        JsonDiffPreview diff = new JsonDiffPreview(writer);
+        new SpaceDiff(orig, updated).apply(diff);
+        diff.finish();
+        JsonNode actual = new ObjectMapper().readTree(new StringReader(writer.toString()));
+        assertEquals("changes", expected, actual);
     }
 
     public SpaceDiffTest(String testName) {
