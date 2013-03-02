@@ -1,0 +1,22 @@
+[
+    {
+        "action": "add_attribute", 
+        "definition": {
+            "scalar": "257e9b59-e77f-4a4d-a5da-00c7c2261875", 
+            "validation": [
+                {
+                    "max_length": 64
+                }, 
+                {
+                    "required": false
+                }
+            ], 
+            "type": "varchar", 
+            "properties": {
+                "charset": "utf8"
+            }
+        }, 
+        "destructive": false, 
+        "name": "last_name"
+    }
+]
