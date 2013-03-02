@@ -53,14 +53,12 @@ public final class AttributeLookups {
     }
 
     public List<String> fullPathName(UUID uuid) {
-        List<String> pathNames = new ArrayList<>(Lists.transform(pathFor(uuid), new Function<UUID, String>() {
+        return new ArrayList<>(Lists.transform(pathFor(uuid), new Function<UUID, String>() {
             @Override
             public String apply(UUID pathSegment) {
                 return nameFor(pathSegment);
             }
         }));
-        pathNames.add(nameFor(uuid));
-        return pathNames;
     }
 
     public Attribute attributeFor(UUID uuid) {
@@ -79,7 +77,10 @@ public final class AttributeLookups {
         List<UUID> path = pathsByUuid.get(uuid);
         if (path == null)
             throw new NoSuchElementException(String.valueOf(uuid));
-        return path.size() < 2 ? null : path.get(path.size() - 1);
+        // The first element is the entity name, so if there are 2 elements, then that means the parent of this
+        // uuid is the entity -- not an attribute. So in that case, return null.
+        // Otherwise, return the second to last element -- the last element being the UUID itself.
+        return path.size() < 3 ? null : path.get(path.size() - 2);
 
     }
 
@@ -125,7 +126,9 @@ public final class AttributeLookups {
 
         private void seeAttribute(String name, Attribute attribute) {
             attributesByUuid.put(attribute.getUUID(), attribute);
+            currentPath.addLast(attribute.getUUID());
             pathsByUuid.put(attribute.getUUID(), ImmutableList.copyOf(currentPath));
+            currentPath.removeLast();
             namesByUuid.put(attribute.getUUID(), name);
         }
 
