@@ -1728,7 +1728,7 @@ public class PersistitStore implements Store, Service {
         // disable the  lock used to prevent write skew for some cases of data loading
         if (!writeLockEnabled) return;
         UserTable table = rowDef.userTable();
-        // Make fieldDefs big enough to accomodate PK field defs and FK field defs
+        // Make fieldDefs big enough to accommodate PK field defs and FK field defs
         FieldDef[] fieldDefs = new FieldDef[table.getColumnsIncludingInternal().size()];
         Key lockKey = adapter.newKey();
         PersistitKeyAppender lockKeyAppender = PersistitKeyAppender.create(lockKey);

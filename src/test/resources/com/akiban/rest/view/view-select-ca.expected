@@ -1,0 +1,12 @@
+[
+    {
+        "last_name":"Smith",
+        "first_name":"John",
+        "city":"Boston"
+    },
+    {
+        "last_name":"Jones",
+        "first_name":"Willy",
+        "city":"New York"
+    }
+]
