@@ -35,6 +35,8 @@ import com.akiban.server.entity.model.JsonEntityFormatter;
 import com.akiban.server.entity.model.Validation;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
@@ -154,14 +156,14 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
-    public void addAttribute(String name, Attribute attribute)
+    public void addAttribute(List<String> path, Attribute attribute)
     {
         try
         {
             startObject();
             entry("action", "add_attribute");
             entry("destructive", false);
-            entry("name", name);
+            entry("path", new ArrayList<>(path));
             attribute.accept("definition", new JsonEntityFormatter(jsonGen));
             endObject();
         }

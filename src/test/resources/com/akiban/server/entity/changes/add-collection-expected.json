@@ -11,6 +11,6 @@
             "collection": "3a528882-0ac4-41b2-b8f0-38474c026fce"
         }, 
         "destructive": false, 
-        "name": "orders"
+        "path": ["customer", "orders"]
     }
 ]

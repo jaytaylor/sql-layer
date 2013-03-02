@@ -17,6 +17,6 @@
             }
         }, 
         "destructive": false, 
-        "name": "last_name"
+        "path": ["customer", "last_name"]
     }
 ]

@@ -134,7 +134,8 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     }
 
     @Override
-    public void addAttribute(String attrName, Attribute attribute) {
+    public void addAttribute(List<String> path, Attribute attribute) {
+        String attrName = path.get(path.size() - 1);
         switch(attribute.getAttributeType()) {
             case SCALAR:
                 UUID parent = newLookups.getParentAttribute(attribute.getUUID());

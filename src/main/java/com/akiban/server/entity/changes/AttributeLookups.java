@@ -29,7 +29,9 @@ package com.akiban.server.entity.changes;
 import com.akiban.server.entity.model.AbstractEntityVisitor;
 import com.akiban.server.entity.model.Attribute;
 import com.akiban.server.entity.model.Entity;
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -47,6 +49,15 @@ public final class AttributeLookups {
 
     public List<UUID> pathFor(UUID uuid) {
         return pathsByUuid.get(uuid);
+    }
+
+    public List<String> pathNamesFor(UUID uuid) {
+        return Lists.transform(pathFor(uuid), new Function<UUID, String>() {
+            @Override
+            public String apply(UUID pathSegment) {
+                return nameFor(pathSegment);
+            }
+        });
     }
 
     public Attribute attributeFor(UUID uuid) {

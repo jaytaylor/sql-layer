@@ -100,7 +100,7 @@ public final class SpaceDiff {
                     if (newAttribute.isSpinal())
                         out.error("Can't add spinal attributes to entities or collections");
                     else
-                        out.addAttribute(updateLookups.nameFor(uuid), newAttribute);
+                        out.addAttribute(updateLookups.pathNamesFor(uuid), newAttribute);
                 }
             }
         }

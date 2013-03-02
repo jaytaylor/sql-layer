@@ -31,6 +31,7 @@ import com.akiban.server.entity.model.Entity;
 import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Validation;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface SpaceModificationHandler {
@@ -41,7 +42,7 @@ public interface SpaceModificationHandler {
     void renameEntity(UUID entityUuid, String oldName);
 
     void beginAttributes(AttributeLookups oldLookups, AttributeLookups newLookups);
-    void addAttribute(String name, Attribute attribute);
+    void addAttribute(List<String> path, Attribute attribute);
     void dropAttribute(Attribute dropped);
     void renameAttribute(UUID attributeUuid, String oldName);
     void changeScalarType(UUID scalarUuid, Attribute afterChange);
