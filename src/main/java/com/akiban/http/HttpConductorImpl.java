@@ -31,6 +31,7 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.security.SecurityService;
 import com.google.inject.Inject;
+import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.security.Authenticator;
 import org.eclipse.jetty.security.ConstraintMapping;
@@ -49,6 +50,8 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.FilterRegistration;
+import javax.servlet.ServletException;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Collections;
@@ -57,9 +60,18 @@ import java.util.Set;
 
 public final class HttpConductorImpl implements HttpConductor, Service {
     private static final Logger logger = LoggerFactory.getLogger(HttpConductorImpl.class);
-    private static final String PORT_PROPERTY = "akserver.http.port";
-    private static final String SSL_PROPERTY = "akserver.http.ssl";
-    private static final String LOGIN_PROPERTY = "akserver.http.login";
+
+    private static final String CONFIG_HTTP_PREFIX = "akserver.http.";
+    private static final String CONFIG_PORT_PROPERTY = CONFIG_HTTP_PREFIX + "port";
+    private static final String CONFIG_SSL_PROPERTY = CONFIG_HTTP_PREFIX + "ssl";
+    private static final String CONFIG_LOGIN_PROPERTY = CONFIG_HTTP_PREFIX + "login";
+    private static final String CONFIG_XORIGIN_PREFIX = CONFIG_HTTP_PREFIX + "cross_origin.";
+    private static final String CONFIG_XORIGIN_ENABLED = CONFIG_XORIGIN_PREFIX + "enabled";
+    private static final String CONFIG_XORIGIN_ORIGINS = CONFIG_XORIGIN_PREFIX + "allowed_origins";
+    private static final String CONFIG_XORIGIN_METHODS = CONFIG_XORIGIN_PREFIX + "allowed_methods";
+    private static final String CONFIG_XORIGIN_HEADERS = CONFIG_XORIGIN_PREFIX + "allowed_headers";
+    private static final String CONFIG_XORIGIN_MAX_AGE = CONFIG_XORIGIN_PREFIX + "preflight_max_age";
+    private static final String CONFIG_XORIGIN_CREDENTIALS = CONFIG_XORIGIN_PREFIX + "allow_credentials";
 
     private static final String REST_ROLE = "rest-user";
 
@@ -70,6 +82,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     private SimpleHandlerList handlerList;
     private Server server;
     private Set<String> registeredPaths;
+    private boolean xOriginFilterEnabled;
     private volatile int port = -1;
 
     // Need reference to prevent GC and setting loss
@@ -93,14 +106,16 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                 registeredPaths = new HashSet<>();
             if (!registeredPaths.add(contextBase))
                 throw new IllegalPathRequest("context already reserved: " + contextBase);
-            handlerList.addHandler(handler);
-            if (!handler.isStarted()) {
-                try {
-                    handler.start();
+            try {
+                if(xOriginFilterEnabled) {
+                    addCrossOriginFilter(handler);
                 }
-                catch (Exception e) {
-                    throw new HttpConductorException(e);
+                handlerList.addHandler(handler);
+                if (!handler.isStarted()) {
+                        handler.start();
                 }
+            } catch (Exception e) {
+                throw new HttpConductorException(e);
             }
         }
     }
@@ -137,9 +152,9 @@ public final class HttpConductorImpl implements HttpConductor, Service {
 
     @Override
     public void start() {
-        String portProperty = configurationService.getProperty(PORT_PROPERTY);
-        String sslProperty = configurationService.getProperty(SSL_PROPERTY);
-        String loginProperty = configurationService.getProperty(LOGIN_PROPERTY);
+        String portProperty = configurationService.getProperty(CONFIG_PORT_PROPERTY);
+        String sslProperty = configurationService.getProperty(CONFIG_SSL_PROPERTY);
+        String loginProperty = configurationService.getProperty(CONFIG_LOGIN_PROPERTY);
         int portLocal;
         boolean ssl;
         AuthenticationType login;
@@ -161,11 +176,12 @@ public final class HttpConductorImpl implements HttpConductor, Service {
             login = AuthenticationType.DIGEST;
         }
         else {
-            throw new IllegalArgumentException("Invalid " + LOGIN_PROPERTY +
+            throw new IllegalArgumentException("Invalid " + CONFIG_LOGIN_PROPERTY +
                                                " property: " + loginProperty);
         }
-        logger.info("Starting {} service on port {} with authentication {}", 
-                    new Object[] { ssl ? "HTTPS" : "HTTP", portProperty, login });
+        xOriginFilterEnabled = Boolean.parseBoolean(configurationService.getProperty(CONFIG_XORIGIN_ENABLED));
+        logger.info("Starting {} service on port {} with authentication {} and CORS {}",
+                    new Object[] { ssl ? "HTTPS" : "HTTP", portProperty, login, xOriginFilterEnabled ? "on" : "off"});
                     
         Server localServer = new Server();
         SelectChannelConnector connector;
@@ -185,6 +201,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         connector.setMaxIdleTime(300000);
         connector.setAcceptQueueSize(12000);
         connector.setLowResourcesConnections(25000);
+
         localServer.setConnectors(new Connector[]{connector});
 
         SimpleHandlerList localHandlerList = new SimpleHandlerList();
@@ -230,6 +247,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                 sh.setHandler(localHandlerList);
                 localServer.setHandler(sh);
             }
+
             localServer.start();
         }
         catch (Exception e) {
@@ -249,6 +267,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     public void stop() {
         Server localServer;
         synchronized (lock) {
+            xOriginFilterEnabled = false;
             localServer = server;
             server = null;
             handlerList = null;
@@ -267,6 +286,21 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     @Override
     public void crash() {
         stop();
+    }
+
+    private void addCrossOriginFilter(ContextHandler handler) throws ServletException {
+        FilterRegistration reg = handler.getServletContext().addFilter("CrossOriginFilter", CrossOriginFilter.class);
+        reg.addMappingForServletNames(null /*default = REQUEST*/, false, "*");
+        reg.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM,
+                             configurationService.getProperty(CONFIG_XORIGIN_ORIGINS));
+        reg.setInitParameter(CrossOriginFilter.ALLOWED_METHODS_PARAM,
+                             configurationService.getProperty(CONFIG_XORIGIN_METHODS));
+        reg.setInitParameter(CrossOriginFilter.ALLOWED_HEADERS_PARAM,
+                             configurationService.getProperty(CONFIG_XORIGIN_HEADERS));
+        reg.setInitParameter(CrossOriginFilter.PREFLIGHT_MAX_AGE_PARAM,
+                             configurationService.getProperty(CONFIG_XORIGIN_MAX_AGE));
+        reg.setInitParameter(CrossOriginFilter.ALLOW_CREDENTIALS_PARAM,
+                             configurationService.getProperty(CONFIG_XORIGIN_CREDENTIALS));
     }
 
     static String getContextPathPrefix(String contextPath) {
