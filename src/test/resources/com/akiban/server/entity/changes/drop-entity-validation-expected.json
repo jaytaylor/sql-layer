@@ -1,6 +1,6 @@
 [
     {
-        "action": "drop_entity+validation", 
+        "action": "drop_entity_validation",
         "destructive": true, 
         "dropped_validation": {
             "name": "unique", 

@@ -1,41 +1,7 @@
 [
     {
         "action": "drop_entity", 
-        "destructive": true, 
-        "index_definition": {
-            "placed": {
-                "columns": [
-                    {
-                        "column": "placed", 
-                        "table": "orders"
-                    }
-                ]
-            }, 
-            "last_first": {
-                "columns": [
-                    {
-                        "column": "last_name", 
-                        "table": "customer"
-                    }, 
-                    {
-                        "column": "first_name", 
-                        "table": "customer"
-                    }
-                ]
-            }, 
-            "orderplaced_lastname": {
-                "columns": [
-                    {
-                        "column": "placed", 
-                        "table": "orders"
-                    }, 
-                    {
-                        "column": "last_name", 
-                        "table": "customer"
-                    }
-                ]
-            }
-        }, 
+        "destructive": true,
         "uuid": "2a57b59e-e1b7-4377-996e-a5c04e0abf29", 
         "name": "customer"
     }

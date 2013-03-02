@@ -3,14 +3,6 @@
         "action": "rename_index", 
         "new_name": "name_idx", 
         "destructive": false, 
-        "index": {
-            "columns": [
-                {
-                    "column": "name", 
-                    "table": "customer"
-                }
-            ]
-        }, 
         "old_name": "name"
     }
 ]

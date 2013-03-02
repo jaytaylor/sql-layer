@@ -122,7 +122,6 @@ public class JsonDiffPreview implements SpaceModificationHandler
             entry("destructive", true);
             entry("uuid", dropped.uuid());
             entry("name", oldName);
-            entry("index_definition", dropped.getIndexes());
             endObject();
         }
         catch (IOException ex)
@@ -289,7 +288,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         try
         {
             startObject();
-            entry("action", "drop_entity+validation");
+            entry("action", "drop_entity_validation");
             entry("destructive", true);
             entry("dropped_validation", validation);
             endObject();
@@ -345,7 +344,6 @@ public class JsonDiffPreview implements SpaceModificationHandler
             entry("destructive", false);
             entry("old_name", oldName);
             entry("new_name", newName);
-            entry("index", index);
             endObject();
         }
         catch (IOException ex)
