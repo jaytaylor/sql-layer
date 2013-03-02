@@ -114,7 +114,8 @@ public class RestServiceImpl implements RestService, Service {
                 new ProcedureCallResource(reqs),
                 new SecurityResource(reqs),
                 new SQLResource(reqs),
-                new VersionResource(reqs)
+                new VersionResource(reqs),
+                new ViewResource(reqs)
         ));
         return config;
     }

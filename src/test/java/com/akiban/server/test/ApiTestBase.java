@@ -805,6 +805,10 @@ public class ApiTestBase {
         for (Routine routine : ais.getRoutines().values()) {
             ddl().createRoutine(session(), routine);
         }
+        for (View view : ais.getViews().values()) {
+            ddl().createView(session(), view);
+        }
+        
         updateAISGeneration();
         return ddl().getTableId(session(), tables.get(0).getName());
     }
