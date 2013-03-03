@@ -167,9 +167,7 @@ public final class ModelResource {
                     public void write(PrintWriter writer) throws Exception {
                         try (Session session = reqs.sessionService.createSession()) {
                             // Cannot have transaction when attempting to perform DDL
-                            AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(session);
-                            ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
-                            Space curSpace = AisToSpace.create(ais);
+                            Space curSpace = spaceForAIS(session);
                             Space newSpace = Space.create(new InputStreamReader(postInput), Space.randomUUIDs);
                             SpaceDiff diff = new SpaceDiff(curSpace, newSpace);
 
@@ -184,12 +182,20 @@ public final class ModelResource {
                                         jsonSummary.error(err);
                                     }
                                 }
+                                // re-create the diff against the new AIS
+                                diff = new SpaceDiff(curSpace, spaceForAIS(session));
                             }
                             if(success) {
                                 diff.apply(jsonSummary);
                             }
                             jsonSummary.finish();
                         }
+                    }
+
+                    private Space spaceForAIS(Session session) {
+                        AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(session);
+                        ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
+                        return AisToSpace.create(ais);
                     }
                 })
                 .build();

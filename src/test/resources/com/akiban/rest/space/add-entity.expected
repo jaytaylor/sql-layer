@@ -21,16 +21,5 @@
     },
     "destructive": false,
     "name": "an_entity"
-  },
-  {
-    "action": "change_scalar_validations",
-    "new_validations": [
-      {
-        "name": "width",
-        "value": 11
-      }
-    ],
-    "destructive": true,
-    "uuid": "33563d56-7737-11e2-a970-980e7188419e"
   }
 ]
