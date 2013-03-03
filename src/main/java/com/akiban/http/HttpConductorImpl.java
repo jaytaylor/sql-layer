@@ -247,7 +247,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                 sh.setHandler(localHandlerList);
                 localServer.setHandler(sh);
             }
-
+            localHandlerList.addDefaultHandler(new NoResourceHandler());
             localServer.start();
         }
         catch (Exception e) {

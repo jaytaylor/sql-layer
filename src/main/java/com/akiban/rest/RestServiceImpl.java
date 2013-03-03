@@ -39,6 +39,7 @@ import com.google.inject.Inject;
 import com.sun.jersey.api.core.DefaultResourceConfig;
 import com.sun.jersey.api.core.ResourceConfig;
 import com.sun.jersey.spi.container.servlet.ServletContainer;
+
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 
@@ -105,7 +106,7 @@ public class RestServiceImpl implements RestService, Service {
     private ResourceConfig createResourceConfigV1() {
         DefaultResourceConfig config = new DefaultResourceConfig();
         ResourceRequirements reqs = new ResourceRequirements(
-                dxlService, restDMLService, securityService, sessionService, transactionService
+                dxlService, restDMLService, securityService, sessionService, transactionService, this
         );
         config.getSingletons().addAll(Arrays.asList(
                 new EntityResource(reqs),
@@ -115,7 +116,9 @@ public class RestServiceImpl implements RestService, Service {
                 new SecurityResource(reqs),
                 new SQLResource(reqs),
                 new VersionResource(reqs),
-                new ViewResource(reqs)
+                new ViewResource(reqs),
+                // This must be last to capture anything not handled above 
+                new DefaultResource(reqs)
         ));
         return config;
     }
