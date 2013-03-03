@@ -26,20 +26,41 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.ais.model.FullTextIndex;
+
 import java.util.List;
 import java.util.Set;
 
 public class FullTextScan extends BaseScan
 {
+    private FullTextIndex index;
+    private FullTextQuery query;
     private TableSource indexTable;
+    private List<ConditionExpression> conditions;
     private Set<TableSource> requiredTables;
 
-    public FullTextScan(TableSource indexTable) {
+    public FullTextScan(FullTextIndex index, FullTextQuery query,
+                        TableSource indexTable, List<ConditionExpression> conditions) {
+        this.index = index;
+        this.query = query;
         this.indexTable = indexTable;
+        this.conditions = conditions;
+    }
+
+    public FullTextIndex getIndex() {
+        return index;
+    }
+
+    public FullTextQuery getQuery() {
+        return query;
     }
 
     public TableSource getIndexTable() {
         return indexTable;
+    }
+
+    public List<ConditionExpression> getConditions() {
+        return conditions;
     }
 
     public Set<TableSource> getRequiredTables() {
@@ -63,7 +84,7 @@ public class FullTextScan extends BaseScan
         str.append('(');
         str.append(indexTable.getName());
         str.append(" - ");
-        str.append("???");      // TODO: conditions
+        str.append(query);
         str.append(")");
         return str.toString();
     }

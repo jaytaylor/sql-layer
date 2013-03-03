@@ -37,12 +37,14 @@ import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Index.JoinType;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
 import com.akiban.server.geophile.Space;
@@ -53,6 +55,7 @@ import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
+import com.akiban.util.Strings;
 
 import com.google.common.base.Function;
 import org.slf4j.Logger;
@@ -1759,8 +1762,156 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         return estimator.getCostEstimate();
     }
 
-    private FullTextScan pickFullText() {
-        return null;
+    protected FullTextScan pickFullText() {
+        List<ConditionExpression> textConditions = new ArrayList<>(0);
+
+        for (ConditionExpression condition : conditions) {
+            if ((condition instanceof FunctionExpression) &&
+                ((FunctionExpression)condition).getFunction().equalsIgnoreCase("full_text_search")) {
+                textConditions.add(condition);
+            }
+        }
+
+        if (textConditions.isEmpty())
+            return null;
+
+        List<ColumnExpression> textColumns = new ArrayList<>(0);
+        FullTextQuery query = null;
+        for (ConditionExpression condition : textConditions) {
+            List<ExpressionNode> operands = ((FunctionExpression)condition).getOperands();
+            FullTextQuery clause = null;
+            switch (operands.size()) {
+            case 1:
+                clause = fullTextBoolean(operands.get(0), textColumns);
+                break;
+            case 2:
+                if ((operands.get(0) instanceof ColumnExpression) &&
+                    constantOrBound(operands.get(1))) {
+                    ColumnExpression column = (ColumnExpression)operands.get(0);
+                    if ((column.getTable() instanceof TableSource) &&
+                        tables.containsTable((TableSource)column.getTable())) {
+                        textColumns.add(column);
+                        clause = new FullTextField(column, FullTextField.Type.PARSE,
+                                                   operands.get(1));
+                    }
+                }
+                break;
+            }
+            if (clause == null)
+                throw new UnsupportedSQLException("Unrecognized FULL_TEXT_SEARCH call",
+                                                  condition.getSQLsource());
+        }
+        FullTextIndex foundIndex = null;
+        TableSource foundTable = null;
+        find_index:
+        for (FullTextIndex index : textColumns.get(0).getColumn().getUserTable().getFullTextIndexes()) {
+            TableSource indexTable = null;
+            for (ColumnExpression columnExpr : textColumns) {
+                Column column = columnExpr.getColumn();
+                boolean found = false;
+                for (IndexColumn indexColumn : index.getKeyColumns()) {
+                    if (indexColumn.getColumn() == column) {
+                        found = true;
+                        if ((indexTable == null) &&
+                            (indexColumn.getColumn().getUserTable() == index.getIndexedTable())) {
+                            indexTable = (TableSource)columnExpr.getTable();
+                        }
+                        break;
+                    }
+                }
+                if (!found) {
+                    continue find_index;
+                }
+            }
+            if (foundIndex == null) {
+                foundIndex = index;
+                foundTable = indexTable;
+            }
+            else {
+                throw new UnsupportedSQLException("Ambiguous full text index: " +
+                                                  foundIndex + " and " + index);
+            }
+        }
+        if (foundIndex == null) {
+            throw new UnsupportedSQLException("No full text index for: " +
+                                              Strings.join(textColumns));
+        }
+
+        query = normalizeFullTextQuery(query);
+        FullTextScan scan = new FullTextScan(foundIndex, query,
+                                             foundTable, textConditions);
+        determineRequiredTables(scan);
+        return scan;
+    }
+
+    protected FullTextQuery fullTextBoolean(ExpressionNode condition,
+                                            List<ColumnExpression> textColumns) {
+        if (condition instanceof ComparisonCondition) {
+            ComparisonCondition ccond = (ComparisonCondition)condition;
+            if ((ccond.getLeft() instanceof ColumnExpression) &&
+                constantOrBound(ccond.getRight())) {
+                ColumnExpression column = (ColumnExpression)ccond.getLeft();
+                if ((column.getTable() instanceof TableSource) &&
+                    tables.containsTable((TableSource)column.getTable())) {
+                    textColumns.add(column);
+                    return new FullTextField(column, FullTextField.Type.MATCH,
+                                             ccond.getRight());
+                }
+            }
+        }
+        else if (condition instanceof LogicalFunctionCondition) {
+            LogicalFunctionCondition lcond = (LogicalFunctionCondition)condition;
+            String op = lcond.getFunction();
+            if ("and".equals(op)) {
+                return new FullTextBoolean(Arrays.asList(fullTextBoolean(lcond.getLeft(), textColumns),
+                                                         fullTextBoolean(lcond.getRight(), textColumns)),
+                                           Arrays.asList(FullTextBoolean.Type.MUST,
+                                                         FullTextBoolean.Type.MUST));
+            }
+            else if ("or".equals(op)) {
+                return new FullTextBoolean(Arrays.asList(fullTextBoolean(lcond.getLeft(), textColumns),
+                                                         fullTextBoolean(lcond.getRight(), textColumns)),
+                                           Arrays.asList(FullTextBoolean.Type.SHOULD,
+                                                         FullTextBoolean.Type.SHOULD));
+            }
+            else if ("not".equals(op)) {
+                return new FullTextBoolean(Arrays.asList(fullTextBoolean(lcond.getOperand(), textColumns)),
+                                           Arrays.asList(FullTextBoolean.Type.NOT));
+            }
+        }
+        // TODO: LIKE
+        throw new UnsupportedSQLException("Cannot convert to full text query" +
+                                              condition);
+    }
+
+    protected FullTextQuery normalizeFullTextQuery(FullTextQuery query) {
+        return query;
+    }
+
+    protected void determineRequiredTables(FullTextScan scan) {
+        // Include the non-condition requirements.
+        RequiredColumns requiredAfter = new RequiredColumns(requiredColumns);
+        RequiredColumnsFiller filler = new RequiredColumnsFiller(requiredAfter);
+        // Add in any non-full-text conditions.
+        for (ConditionExpression condition : conditions) {
+            boolean found = false;
+            for (ConditionExpression scanCondition : scan.getConditions()) {
+                if (scanCondition == condition) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+                condition.accept(filler);
+        }
+        // Does not sort.
+        if (queryGoal.getOrdering() != null) {
+            // Only this node, not its inputs.
+            filler.setIncludedPlanNodes(Collections.<PlanNode>singletonList(queryGoal.getOrdering()));
+            queryGoal.getOrdering().accept(filler);
+        }
+        Set<TableSource> required = new HashSet<>(requiredAfter.getTables());
+        scan.setRequiredTables(required);
     }
 
 }
