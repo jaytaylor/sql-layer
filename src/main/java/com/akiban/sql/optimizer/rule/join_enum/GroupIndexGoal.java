@@ -721,14 +721,19 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     public BaseScan pickBestScan() {
         logger.debug("Picking for {}", this);
 
-        Set<TableSource> required = tables.getRequired();
         BaseScan bestScan = null;
+
+        bestScan = pickFullText();
+        if (bestScan != null) {
+            return bestScan;    // TODO: Always wins for now.
+        }
 
         if (tables.getGroup().getRejectedJoins() != null) {
             bestScan = pickBestGroupLoop();
         }
 
         IntersectionEnumerator intersections = new IntersectionEnumerator();
+        Set<TableSource> required = tables.getRequired();
         for (TableGroupJoinNode table : tables) {
             IndexScan tableIndex = pickBestIndex(table, required, intersections);
             if ((tableIndex != null) &&
@@ -1752,6 +1757,10 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         estimator.setLimit(queryGoal.getLimit());
 
         return estimator.getCostEstimate();
+    }
+
+    private FullTextScan pickFullText() {
+        return null;
     }
 
 }
