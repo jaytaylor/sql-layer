@@ -184,6 +184,8 @@ public final class ModelResource {
                             if(success) {
                                 diff.apply(jsonSummary);
                             }
+                            if (doApply)
+                                jsonSummary.describeModifiedEntities();
                             jsonSummary.finish();
                         }
                     }
