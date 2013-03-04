@@ -26,35 +26,28 @@
 
 package com.akiban.server.service.routines;
 
-import java.io.File;
-import java.net.URL;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.script.Bindings;
-import javax.script.Compilable;
-import javax.script.CompiledScript;
-import javax.script.Invocable;
-import javax.script.ScriptContext;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineFactory;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.TableName;
-import com.akiban.direct.DirectClassLoader;
 import com.akiban.server.error.ExternalRoutineInvocationException;
 import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.store.SchemaManager;
+
+import org.apache.log4j.helpers.Loader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.script.*;
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ScriptCache
 {
@@ -63,6 +56,7 @@ public class ScriptCache
     private final ConfigurationService configService;
     private final Map<TableName,CacheEntry> cache = new HashMap<>();
     // Script engine discovery can be fairly expensive, so it is deferred.
+    private ScriptEngineManager manager = null;
     private final static Logger logger = LoggerFactory.getLogger(ScriptCache.class);
 
     public ScriptCache(DXLService dxlService, ConfigurationService configService) {
@@ -78,8 +72,8 @@ public class ScriptCache
         cache.remove(routineName);
     }
     
-    public boolean isScriptLanguage(Session session, String language, String schemaName) {
-        return (getManager(session, schemaName).getEngineByName(language) != null);
+    public boolean isScriptLanguage(Session session, String language) {
+        return (getManager(session).getEngineByName(language) != null);
     }
 
     public ScriptPool<ScriptEvaluator> getScriptEvaluator(Session session, TableName routineName) {
@@ -90,14 +84,33 @@ public class ScriptCache
         return getEntry(session, routineName).getScriptInvoker();
     }
     
-    public ScriptEngineNode createScriptEngineNode(String schemaName, AkibanInformationSchema ais) {
-        return new ScriptEngineNode(schemaName, ais);
-    }
-
-    protected ScriptEngineManager getManager(Session session, String schemaName) {
-        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-        ScriptEngineNode holder = ais.getScriptEngineNode(schemaName, this);
-        return holder.getManager(session);
+    protected ScriptEngineManager getManager(Session session) {
+        if (manager == null) {
+            logger.debug("Initializing script engine manager");
+            String classPath = configService.getProperty(CLASS_PATH);
+            // TODO: The idea should be to restrict scripts to standard Java classes
+            // without the rest of the Akiban server. But note
+            // java.sql.DriverManager.isDriverAllowed(), which requires that a
+            // registered driver's class by accessible to its caller by name. May
+            // need a JDBCDriver proxy get just to register without putting all of
+            // com.akiban.sql.embedded into the parent.
+            String[] paths = classPath.split(File.pathSeparator);
+            URL[] urls = new URL[paths.length];
+            try {
+                for (int i = 0; i < paths.length; i++) {
+                    urls[i] = new File(paths[i]).toURL();
+                }
+            } catch (MalformedURLException ex) {
+                logger.warn("Error setting script class loader", ex);
+                urls = new URL[0];
+            }
+            ClassLoader classLoader = new ScriptClassLoader(urls, getClass().getClassLoader());
+            synchronized (this) {
+                if (manager == null)
+                    manager = new ScriptEngineManager(classLoader);
+            }
+        }
+        return manager;
     }
 
     protected synchronized CacheEntry getEntry(Session session, TableName routineName) {
@@ -107,7 +120,7 @@ public class ScriptCache
         Routine routine = dxlService.ddlFunctions().getAIS(session).getRoutine(routineName);
         if (null == routine)
             throw new NoSuchRoutineException(routineName);
-        ScriptEngine engine = getManager(session, routineName.getSchemaName()).getEngineByName(routine.getLanguage());
+        ScriptEngine engine = getManager(session).getEngineByName(routine.getLanguage());
         if (engine == null)
             throw new ExternalRoutineInvocationException(routineName,
                                                          "Cannot find " + routine.getLanguage() + " script engine");
@@ -487,56 +500,32 @@ public class ScriptCache
         }
     }
     
-    public class ScriptEngineNode {
-        private final String schemaName;
-        private final AkibanInformationSchema ais;
-        private DirectClassLoader directClassLoader;
+    /**
+     * Extended URLClassLoader that uses a thread-private context class loader to load generated
+     * classes. There is one ScriptClassLoader per ScriptEngineManager.
+     */
+    static class ScriptClassLoader extends URLClassLoader {
 
-        ScriptEngineNode(String schemaName, AkibanInformationSchema ais) {
-            this.schemaName = schemaName;
-            this.ais = ais;
-        }
-
-        public String getSchemaName() {
-            return schemaName;
+        public ScriptClassLoader(URL[] urls, ClassLoader parent) {
+            super(urls, parent);
         }
         
-        public DirectClassLoader getDirectClassLoader() {
-            return directClassLoader;
-        }
-
-        private ScriptEngineManager manager = null;
-
-        ScriptEngineManager getManager(Session session) {
-            if (manager == null) {
-                logger.debug("Initializing script engine manager");
-                String classPath = configService.getProperty(CLASS_PATH);
-                // TODO: The idea should be to restrict scripts to standard Java classes
-                // without the rest of the Akiban server. But note
-                // java.sql.DriverManager.isDriverAllowed(), which requires that a
-                // registered driver's class by accessible to its caller by name. May
-                // need a JDBCDriver proxy get just to register without putting all of
-                // com.akiban.sql.embedded into the parent.
-                ClassLoader classLoader = getClass().getClassLoader();
-                try {
-                    String[] paths = classPath.split(File.pathSeparator);
-                    URL[] urls = new URL[paths.length];
-                    for (int i = 0; i < paths.length; i++) {
-                        urls[i] = new File(paths[i]).toURL();
-                    }
-                    directClassLoader = new DirectClassLoader(urls, classLoader, schemaName, ais);
-                    classLoader = directClassLoader;
-                    
-                } catch (Exception ex) {
-                    logger.warn("Error setting script class loader", ex);
-                }
-                synchronized (this) {
-                    if (manager == null)
-                        manager = new ScriptEngineManager(classLoader);
+        protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+            Class<?> cl = getParent().loadClass(name);
+            if (cl == null) {
+                ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
+                if (contextLoader != this) {
+                    cl = contextLoader.loadClass(name);
                 }
             }
-            return manager;
+            if (cl == null) {
+                throw new ClassNotFoundException(name);
+            }
+            if (resolve) {
+                resolveClass(cl);
+            }
+            return cl;
         }
+        
     }
-
 }

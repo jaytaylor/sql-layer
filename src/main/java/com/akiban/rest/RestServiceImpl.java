@@ -27,13 +27,7 @@
 package com.akiban.rest;
 
 import com.akiban.http.HttpConductor;
-import com.akiban.rest.resources.DirectResource;
-import com.akiban.rest.resources.EntityResource;
-import com.akiban.rest.resources.ModelResource;
-import com.akiban.rest.resources.ProcedureCallResource;
-import com.akiban.rest.resources.SQLResource;
-import com.akiban.rest.resources.SecurityResource;
-import com.akiban.rest.resources.VersionResource;
+import com.akiban.rest.resources.*;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
@@ -45,6 +39,7 @@ import com.google.inject.Inject;
 import com.sun.jersey.api.core.DefaultResourceConfig;
 import com.sun.jersey.api.core.ResourceConfig;
 import com.sun.jersey.spi.container.servlet.ServletContainer;
+
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 
@@ -111,16 +106,20 @@ public class RestServiceImpl implements RestService, Service {
     private ResourceConfig createResourceConfigV1() {
         DefaultResourceConfig config = new DefaultResourceConfig();
         ResourceRequirements reqs = new ResourceRequirements(
-                dxlService, restDMLService, securityService, sessionService, transactionService
+                dxlService, restDMLService, securityService, sessionService, transactionService, this
         );
         config.getSingletons().addAll(Arrays.asList(
                 new EntityResource(reqs),
+                new FullTextResource(reqs),
                 new ModelResource(reqs),
                 new ProcedureCallResource(reqs),
                 new SecurityResource(reqs),
                 new SQLResource(reqs),
                 new VersionResource(reqs),
-                new DirectResource(reqs)
+                new DirectResource(reqs),
+                new ViewResource(reqs),
+                // This must be last to capture anything not handled above 
+                new DefaultResource(reqs)
         ));
         return config;
     }

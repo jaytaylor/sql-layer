@@ -29,3 +29,4 @@
     com.akiban.http.HttpConductor : com.akiban.http.HttpConductorImpl
     com.akiban.rest.RestService : com.akiban.rest.RestServiceImpl
     com.akiban.server.service.restdml.RestDMLService: com.akiban.server.service.restdml.RestDMLServiceImpl
+    com.akiban.server.service.text.FullTextIndexService: com.akiban.server.service.text.FullTextIndexServiceImpl

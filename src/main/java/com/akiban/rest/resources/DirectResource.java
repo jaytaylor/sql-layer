@@ -30,10 +30,12 @@ import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
 
 import java.io.PrintWriter;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -63,13 +65,13 @@ public class DirectResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/igen")
-    public Response get(@QueryParam(SPACE_ARG_NAME) final String space,
+    public Response get(@Context HttpServletRequest request, @QueryParam(SPACE_ARG_NAME) final String space,
             @QueryParam(JSONP_ARG_NAME) String jsonp) throws Exception {
 
         /*
          * Generate Java interfaces in text form
          */
-        return RestResponseBuilder.forJsonp(jsonp).body(new BodyGenerator() {
+        return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
 
             @Override
             public void write(PrintWriter writer) throws Exception {
@@ -93,13 +95,14 @@ public class DirectResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/cgen")
-    public Response cgen(@QueryParam(SPACE_ARG_NAME) final String space, @QueryParam(TABLE_ARG_NAME) final String tableName,
-            @QueryParam(JSONP_ARG_NAME) String jsonp) throws Exception {
+    public Response cgen(@Context HttpServletRequest request, @QueryParam(SPACE_ARG_NAME) final String space,
+            @QueryParam(TABLE_ARG_NAME) final String tableName, @QueryParam(JSONP_ARG_NAME) String jsonp)
+            throws Exception {
 
         /*
          * Generate Java interfaces in text form
          */
-        return RestResponseBuilder.forJsonp(jsonp).body(new BodyGenerator() {
+        return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
 
             @Override
             public void write(PrintWriter writer) throws Exception {

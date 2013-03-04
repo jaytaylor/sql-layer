@@ -25,41 +25,40 @@
  */
 package com.akiban.direct;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
-import javassist.NotFoundException;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 
 /**
- * ClassLoader that delegates selectively. This loader is used to
+ * ClassLoader that generates Akiban Direct classes.  There is one instance of
+ * this ClassLoader per schema per AkibanInformationSchema instance. The method
+ * {@link AkibanInformationSchema#getDirectClassLoader(String, ClassLoader)}
+ * should be used to acquire or create an instance of this class.
  * 
  * @author peter
  * 
  */
-public class DirectClassLoader extends URLClassLoader {
+public class DirectClassLoader extends ClassLoader {
 
     final AkibanInformationSchema ais;
     final String schemaName;
+
     final ClassPool pool;
     final Set<String> generated = new HashSet<String>();
 
     Class<?> extentClass;
     boolean isGenerated;
 
-    public DirectClassLoader(final URL[] urls, final ClassLoader parentLoader, final String schemaName,
+    public DirectClassLoader(final ClassLoader parentLoader, final String schemaName,
             final AkibanInformationSchema ais) {
-        super(urls, parentLoader);
+        super(parentLoader);
         this.pool = new ClassPool(true);
         this.schemaName = schemaName;
         this.ais = ais;
@@ -71,89 +70,48 @@ public class DirectClassLoader extends URLClassLoader {
     }
 
     /**
+     * <p>
      * Implementation of {@link ClassLoader#loadClass(String, boolean)} to
-     * handle special cases. For most classes, this implementation isolates
-     * loaded classes from the core of Akiban Server so that loaded code cannot
-     * access sensitive information within the server. (TODO: appropriate
-     * security context to prevent file access, etc.)
-     * 
-     * Special cases:
-     * <ul>
-     * <li>Classes in the com.akiban.direct.script package such as
-     * {@link com.akiban.direct.script.JSModule}. These are loaded within the
-     * context of this class loader (not the parent) but are defined by byte
-     * code found as a resource within the parent class loader. Translation: you
-     * can write a module in this package as part of Akiban Server code but it
-     * will be class-loaded in an isolated fashion. References to other Akiban
-     * Server classes, except for a small white list, will not resolve at
-     * runtime.</li>
-     * <li>A white list of classes defined by {@link #DIRECT_INTERFACES} are
-     * loaded from the parent. These include the DirectXXX interfaces and
-     * AbstractDataObject which implements the core functionality of a
-     * DirectObject.</li>
-     * <li>Classes that are generated from the schema. These have been
+     * load classes generated from the schema. These have been
      * precompiled by Javassist. As required to satisfy links in application
-     * code within the module these are reduced to byte code and defined here.</li>
-     * <li>All others are loaded from the base class loader provided as the
-     * parent of this loader. This is intended to be the bootstrap classloader.</li>
-     * </ul>
-     * 
-     * 
+     * code within the module these are reduced to byte code and defined here.
+     * </p>
      */
     @Override
-    protected Class<?> loadClass(String genericName, boolean resolve) throws ClassNotFoundException {
-        // TODO - still needed? I think not.
-        int p = genericName.indexOf('<');
-        String name = p == -1 ? genericName : genericName.substring(0, p);
-
+    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         Class<?> cl = null;
         try {
             cl = getParent().loadClass(name);
         } catch (ClassNotFoundException e) {
             // ignore
         }
-
         if (cl == null) {
-            cl = findClass(name);
-        }
-
-        if (cl == null) {
-            /*
-             * Lazily generate Direct classes when needed.
-             */
-            try {
-                generate();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
             /*
              * Not a parallel ClassLoader until necessary
              */
             synchronized (this) {
-                if (generated.contains(name)) {
-                    try {
+                try {
+                    if (!isGenerated) {
                         /*
-                         * First check whether this is a precompiled interface
+                         * Lazily generate Direct classes from schema
                          */
+                        Map<Integer, CtClass> generatedClasses = ClassBuilder.compileGeneratedInterfacesAndClasses(ais,
+                                schemaName);
+                        this.registerDirectObjectClasses(generatedClasses);
+                        isGenerated = true;
+                    }
+                    if (generated.contains(name)) {
                         CtClass ctClass = pool.getOrNull(name);
                         if (ctClass != null) {
                             byte[] bytes = ctClass.toBytecode();
-                            try {
-                                FileOutputStream os = new FileOutputStream("/tmp/" + name + ".class");
-                                os.write(bytes);
-                                os.close();
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
                             cl = defineClass(name, bytes, 0, bytes.length);
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        throw new RuntimeException(e);
                     }
-                }
 
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    throw new RuntimeException(e);
+                }
             }
         }
         if (resolve) {
@@ -185,16 +143,7 @@ public class DirectClassLoader extends URLClassLoader {
         }
     }
 
-    private synchronized void generate() throws Exception {
-        if (!isGenerated) {
-            isGenerated = true;
-            Map<Integer, CtClass> generated = ClassBuilder.compileGeneratedInterfacesAndClasses(ais, schemaName);
-            this.registerDirectObjectClasses(generated);
-        }
-    }
-
     public void close() throws IOException {
-        super.close();
         Direct.unregisterDirectObjectClasses();
     }
 

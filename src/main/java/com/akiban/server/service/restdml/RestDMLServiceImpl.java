@@ -28,6 +28,7 @@ package com.akiban.server.service.restdml;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.Quote;
@@ -40,6 +41,8 @@ import com.akiban.server.service.externaldata.ExternalDataService;
 import com.akiban.server.service.externaldata.JsonRowWriter;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.text.FullTextIndexService;
+import com.akiban.server.service.text.IndexScan_FullText;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
@@ -58,6 +61,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.ParameterMetaData;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collections;
@@ -76,6 +80,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     private final InsertProcessor insertProcessor;
     private final DeleteProcessor deleteProcessor;
     private final UpdateProcessor updateProcessor;
+    private final FullTextIndexService fullTextService;
 
     @Inject
     public RestDMLServiceImpl(SessionService sessionService,
@@ -83,6 +88,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                               TransactionService transactionService,
                               ExternalDataService extDataService,
                               EmbeddedJDBCService jdbcService,
+                              FullTextIndexService fullTextService,
                               ConfigurationService configService,
                               TreeService treeService,
                               Store store,
@@ -92,6 +98,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         this.transactionService = transactionService;
         this.extDataService = extDataService;
         this.jdbcService = jdbcService;
+        this.fullTextService = fullTextService;
         this.insertProcessor = new InsertProcessor (configService, treeService, store, registryService);
         this.deleteProcessor = new DeleteProcessor (configService, treeService, store, registryService);
         this.updateProcessor = new UpdateProcessor (configService, treeService, store, registryService,
@@ -183,12 +190,17 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
 
     @Override
     public void runSQL(PrintWriter writer, HttpServletRequest request, String sql) throws SQLException {
-        runSQLInternal(writer, request, Collections.singletonList(sql), OutputType.ARRAY, CommitMode.AUTO);
+        runSQLFlat(writer, request, Collections.singletonList(sql), OutputType.ARRAY, CommitMode.AUTO);
     }
 
     @Override
     public void runSQL(PrintWriter writer, HttpServletRequest request, List<String> sql) throws SQLException {
-        runSQLInternal(writer, request, sql, OutputType.OBJECT, CommitMode.MANUAL);
+        runSQLFlat(writer, request, sql, OutputType.OBJECT, CommitMode.MANUAL);
+    }
+
+    @Override
+    public void runSQLParameter(PrintWriter writer,HttpServletRequest request, String sql, List<String> parameters) throws SQLException {
+        runSQLParameterized (writer, request, sql, parameters, OutputType.ARRAY, CommitMode.AUTO); 
     }
 
     @Override
@@ -246,43 +258,101 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         }
     }
 
-    private void runSQLInternal(PrintWriter writer,
-                                HttpServletRequest request, List<String> sqlList,
-                                OutputType outputType, CommitMode commitMode) throws SQLException {
-        boolean useSubArrays = (outputType == OutputType.OBJECT);
+    public interface ProcessStatement {
+        public Statement processStatement (int index) throws SQLException; 
+    }
+    
+    private void runSQLParameterized(PrintWriter writer,
+                                    HttpServletRequest request, String sql, List<String> params,
+                                    OutputType outputType, CommitMode commitMode) throws SQLException {
         try (Connection conn = jdbcConnection(request);
-             Statement s = conn.createStatement()) {
-            AkibanAppender appender = AkibanAppender.of(writer);
-            int nresults = 0;
-            commitMode.begin(conn);
-            outputType.begin(appender);
-            for(String sql : sqlList) {
-                String trimmed = sql.trim();
-                if(trimmed.isEmpty()) {
-                    continue;
-                }
-                if(useSubArrays) {
-                    beginResultSetArray(appender, nresults == 0, nresults);
-                }
-                boolean res = s.execute(trimmed);
-                if(res) {
-                    collectResults((JDBCResultSet)s.getResultSet(), appender);
-                } else {
-                    int updateCount = s.getUpdateCount();
-                    appender.append("\n{\"update_count\":");
-                    appender.append(updateCount);
-                    appender.append("}\n");
-                }
-                if(useSubArrays) {
-                    endResultSetArray(appender);
-                }
-                ++nresults;
+                final PreparedStatement s = conn.prepareStatement(sql)) {
+            int index = 1;
+            for (String param : params) {
+                s.setString(index++, param);
             }
-            commitMode.end(conn);
-            outputType.end(appender);
+            processSQL (conn, writer, outputType, commitMode,
+                    new ProcessStatement() {
+                    @Override
+                    public Statement processStatement(int index) throws SQLException {
+                        if (index == 0) {
+                            s.execute();
+                            return s;
+                        } else {
+                            return null;
+                        }
+                    }
+            });
         }
     }
 
+    private void runSQLFlat(PrintWriter writer,
+            HttpServletRequest request, final List<String> sqlList,
+            OutputType outputType, CommitMode commitMode) throws SQLException {
+        try (Connection conn = jdbcConnection(request);
+              final Statement s = conn.createStatement()) {
+            processSQL (conn, writer, outputType, commitMode,
+                    new ProcessStatement() {
+                        private int offset = 0;
+                        @Override
+                        public Statement processStatement(int index) throws SQLException {
+                            if (index + offset < sqlList.size()) {
+                                String trimmed = sqlList.get(index + offset).trim();
+                                while (trimmed.isEmpty() && sqlList.size() < index + offset) {
+                                    ++offset;
+                                    trimmed = sqlList.get(index + offset).trim();
+                                }
+                                if (!trimmed.isEmpty()) {
+                                    s.execute(trimmed);
+                                    return s;
+                                }
+                            }
+                            return null;
+                        }
+            });
+        }
+    }
+
+   private void processSQL (Connection conn, PrintWriter writer, 
+            OutputType outputType, CommitMode commitMode, 
+            ProcessStatement stmt) throws SQLException {
+        boolean useSubArrays = (outputType == OutputType.OBJECT);
+        AkibanAppender appender = AkibanAppender.of(writer);
+        int nresults = 0;
+        commitMode.begin(conn);
+        outputType.begin(appender);
+        
+        Statement s = stmt.processStatement(nresults);
+        while (s != null) {
+            if(useSubArrays) {
+                beginResultSetArray(appender, nresults == 0, nresults);
+            }
+            JDBCResultSet results = (JDBCResultSet) s.getResultSet();
+            int updateCount = s.getUpdateCount();
+            
+            if (results != null && !results.isClosed()) {
+                collectResults((JDBCResultSet)s.getResultSet(), appender);
+                // Force close the result set here because if you execute "SELECT...;INSERT..." 
+                // the call to s.getResultSet() returns the (now empty) SELECT result set
+                // giving bad results
+                results.close();
+            } else {
+                appender.append("\n{\"update_count\":");
+                appender.append(updateCount);
+                appender.append("}\n");
+            }
+            if(useSubArrays) {
+                endResultSetArray(appender);
+            }
+            ++nresults;
+            s = stmt.processStatement(nresults);
+        }
+        
+        commitMode.end(conn);
+        outputType.end(appender);
+
+    }
+    
     private static void beginResultSetArray(AkibanAppender appender, boolean first, int resultOffset) {
         String name = (resultOffset == 0) ? "result_set" : String.format("result_set_%d", resultOffset);
         if(!first) {
@@ -345,4 +415,34 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             }
         }
     }
+
+    @Override
+    public void fullTextSearch(PrintWriter writer, IndexName indexName, Integer depth, String query, Integer limit) {
+        int realDepth = (depth != null) ? Math.max(depth, 0) : -1;
+        int realLimit = (limit != null) ? limit.intValue() : 1000; // TODO: MAX_VALUE?
+        try (Session session = sessionService.createSession()) {
+            IndexScan_FullText scan = 
+                new IndexScan_FullText(fullTextService, indexName,
+                                       IndexScan_FullText.parseQuery(query), 
+                                       realLimit);
+            extDataService.dumpBranchAsJson(session,
+                                            writer,
+                                            indexName.getSchemaName(),
+                                            indexName.getTableName(),
+                                            scan,
+                                            fullTextService.searchRowType(session, indexName),
+                                            realDepth,
+                                            true);
+        }
+    }
+
+    // TODO: Temporary.
+    public void refreshFullTextIndex(PrintWriter writer, IndexName indexName) {
+        long count;
+        try (Session session = sessionService.createSession()) {
+            count = fullTextService.createIndex(session, indexName);
+        }
+        writer.write(String.format("{\"count\":%d}", count));
+    }
+
 }

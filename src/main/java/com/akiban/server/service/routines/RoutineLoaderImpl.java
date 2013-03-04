@@ -188,7 +188,7 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
 
     @Override
     public boolean isScriptLanguage(Session session, String language, String schemaName) {
-        return scripts.isScriptLanguage(session, language, schemaName);
+        return scripts.isScriptLanguage(session, language);
     }
 
     @Override

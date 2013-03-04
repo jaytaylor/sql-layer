@@ -150,6 +150,9 @@ public class DefaultNameGenerator implements NameGenerator {
                 }
                 tableName = root.getName();
             break;
+            case FULL_TEXT:
+                tableName = ((FullTextIndex)index).getIndexedTable().getName();
+            break;
             default:
                 throw new IllegalArgumentException("Unknown type: " + index.getIndexType());
         }
@@ -288,6 +291,8 @@ public class DefaultNameGenerator implements NameGenerator {
                 return ((TableIndex)index).getTable().getName().getSchemaName();
             case GROUP:
                 return ((GroupIndex)index).getGroup().getSchemaName();
+            case FULL_TEXT:
+                return ((FullTextIndex)index).getIndexedTable().getName().getSchemaName();
             default:
                 throw new IllegalArgumentException("Unknown type: " + index.getIndexType());
         }

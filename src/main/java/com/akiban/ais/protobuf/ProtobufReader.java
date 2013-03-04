@@ -26,28 +26,7 @@
 
 package com.akiban.ais.protobuf;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.CharsetAndCollation;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Columnar;
-import com.akiban.ais.model.DefaultNameGenerator;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.NameGenerator;
-import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.SQLJJar;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.Type;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.View;
-import com.akiban.ais.model.PendingOSC;
+import com.akiban.ais.model.*;
 import com.akiban.ais.util.TableChange;
 import com.akiban.server.error.ProtobufReadException;
 import com.akiban.server.geophile.Space;
@@ -176,6 +155,10 @@ public class ProtobufReader {
         for(List<NewGroupInfo> newGroups : allNewGroups) {
             hookUpGroupAndCreateGroupIndexes(newGroups);
         }
+        // Likewise full text indexes.
+        for(AISProtobuf.Schema pbSchema : pbSchemas) {
+            loadFullTextIndexes(pbSchema.getSchemaName(), pbSchema.getTablesList());
+        }        
     }
     
     private List<NewGroupInfo> loadGroups(String schema, Collection<AISProtobuf.Group> pbGroups) {
@@ -428,6 +411,24 @@ public class ProtobufReader {
             handleSpatial(groupIndex, pbIndex);
             loadIndexColumns(null, groupIndex, pbIndex.getColumnsList());
         }
+    }
+
+    private void loadFullTextIndexes(String schema, Collection<AISProtobuf.Table> pbTables) {
+        for(AISProtobuf.Table pbTable : pbTables) {
+            for(AISProtobuf.Index pbIndex : pbTable.getFullTextIndexesList()) {
+                hasRequiredFields(pbIndex);
+                UserTable userTable = destAIS.getUserTable(schema, pbTable.getTableName());
+                FullTextIndex textIndex = FullTextIndex.create(
+                        destAIS,
+                        userTable,
+                        pbIndex.getIndexName(),
+                        pbIndex.getIndexId()
+                        );
+                handleTreeName(textIndex, pbIndex);
+                handleSpatial(textIndex, pbIndex);
+                loadIndexColumns(userTable, textIndex, pbIndex.getColumnsList());
+            }
+        }        
     }
 
     private void handleTreeName(Index index, AISProtobuf.Index pbIndex) {
@@ -722,7 +723,8 @@ public class ProtobufReader {
                 AISProtobuf.Table.PROTECTED_FIELD_NUMBER,
                 AISProtobuf.Table.VERSION_FIELD_NUMBER,
                 AISProtobuf.Table.PENDINGOSC_FIELD_NUMBER,
-                AISProtobuf.Table.UUID_FIELD_NUMBER
+                AISProtobuf.Table.UUID_FIELD_NUMBER,
+                AISProtobuf.Table.FULLTEXTINDEXES_FIELD_NUMBER
         );
     }
 

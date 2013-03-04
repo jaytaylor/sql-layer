@@ -58,6 +58,8 @@ public class UserTable extends Table
     private UserTable(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
     {
         super(ais, schemaName, tableName, tableId);
+        this.fullTextIndexes = new HashSet<>();
+        this.unmodifiableFullTextIndexes = Collections.unmodifiableCollection(fullTextIndexes);
     }
 
     @Override
@@ -575,6 +577,37 @@ public class UserTable extends Table
         this.pendingOSC = pendingOSC;
     }
 
+    /** Return all full text indexes in which this table participates. */
+    public Collection<FullTextIndex> getFullTextIndexes() {
+        return unmodifiableFullTextIndexes;
+    }
+
+    /** Return full text indexes that index this table. */
+    public Collection<FullTextIndex> getOwnFullTextIndexes() {
+        if (fullTextIndexes.isEmpty()) return Collections.emptyList();
+        Collection<FullTextIndex> result = new ArrayList<>();
+        for (FullTextIndex index : fullTextIndexes) {
+            if (index.getIndexedTable() == this) {
+                result.add(index);
+            }
+        }
+        return result;
+    }
+
+    public void addFullTextIndex(FullTextIndex index) {
+        fullTextIndexes.add(index);
+    }
+
+    public FullTextIndex getFullTextIndex(String indexName) {
+        for (FullTextIndex index : fullTextIndexes) {
+            if ((index.getIndexedTable() == this) &&
+                (index.getIndexName().getName().equals(indexName))) {
+                return index;
+            }
+        }
+        return null;
+    }
+
     // State
 
     private final List<Join> candidateParentJoins = new ArrayList<>();
@@ -593,6 +626,8 @@ public class UserTable extends Table
     private MemoryTableFactory tableFactory;
     private Integer version;
     private PendingOSC pendingOSC;
+    private final Collection<FullTextIndex> fullTextIndexes;
+    private final Collection<FullTextIndex> unmodifiableFullTextIndexes;
 
     // consts
 

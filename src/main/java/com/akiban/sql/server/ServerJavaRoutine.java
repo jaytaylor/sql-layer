@@ -26,7 +26,11 @@
 
 package com.akiban.sql.server;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Parameter;
+import com.akiban.direct.Direct;
+import com.akiban.direct.DirectClassLoader;
+import com.akiban.direct.DirectContextImpl;
 import com.akiban.server.explain.Explainable;
 
 import java.sql.ResultSet;
@@ -59,9 +63,13 @@ public abstract class ServerJavaRoutine implements Explainable
 
     public void push() {
         ServerCallContextStack.push(context, invocation);
+        AkibanInformationSchema ais = context.getServer().getAIS();
+        DirectClassLoader dcl = ais.getDirectClassLoader(context.getCurrentSchema(), getClass().getClassLoader());
+        Direct.enter(new DirectContextImpl(context.getCurrentSchema(), dcl));
     }
 
     public void pop(boolean success) {
+        Direct.leave();
         ServerCallContextStack.pop(context, invocation);
     }
 

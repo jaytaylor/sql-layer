@@ -770,6 +770,14 @@ public class ApiTestBase {
         return ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);
     }
 
+    protected final FullTextIndex createFullTextIndex(String schema, String table, String indexName, String... indexCols) {
+        AkibanInformationSchema tempAIS = createIndexInternal(schema, table, indexName, "FULL_TEXT(" + Strings.join(Arrays.asList(indexCols), ",") + ")");
+        Index tempIndex = tempAIS.getUserTable(schema, table).getFullTextIndex(indexName);
+        ddl().createIndexes(session(), Collections.singleton(tempIndex));
+        updateAISGeneration();
+        return ddl().getUserTable(session(), new TableName(schema, table)).getFullTextIndex(indexName);
+    }
+
     protected int createTablesAndIndexesFromDDL(String schema, String ddl) {
         SchemaFactory schemaFactory = new SchemaFactory(schema);
         AkibanInformationSchema ais = schemaFactory.ais(ddl);
@@ -789,9 +797,18 @@ public class ApiTestBase {
             if (!indexes.isEmpty())
                 ddl().createIndexes(session(), indexes);
         }
+        for (UserTable table : tables) {
+            Collection<FullTextIndex> indexes = table.getOwnFullTextIndexes();
+            if (!indexes.isEmpty())
+                ddl().createIndexes(session(), indexes);
+        }
         for (Routine routine : ais.getRoutines().values()) {
             ddl().createRoutine(session(), routine);
         }
+        for (View view : ais.getViews().values()) {
+            ddl().createView(session(), view);
+        }
+        
         updateAISGeneration();
         return ddl().getTableId(session(), tables.get(0).getName());
     }
