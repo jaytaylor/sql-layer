@@ -304,7 +304,9 @@ public class JsonDiffPreview implements SpaceModificationHandler
             startObject();
             entry("action", "add_entity_validation");
             entry("destructive", false);
-            entry("new_validation", validation);
+            jsonGen.writeObjectFieldStart("new_validation");
+            jsonGen.writeObjectField(validation.getName(), validation.getValue());
+            jsonGen.writeEndObject();
             endObject();
         }
         catch (IOException ex)
