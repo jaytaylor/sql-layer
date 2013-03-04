@@ -1526,19 +1526,13 @@ public class JDBCResultSet implements DirectResultSet
 
         AbstractDirectObject o = Direct.objectForRow(c);
         if (o != null) {
-            o.setResultSet(this);
+            o.setResults(values, this);
             return o;
         }
         throw new JDBCException("No entity class for row");
     }
     
-    public Row currentRow() {
-        if (row == null) {
-            if (cursor == null)
-                throw JDBCException.wrapped("Already closed.");
-            else
-                throw JDBCException.wrapped("Past end.");
-        }
-        return row;
+    public boolean hasRow() {
+        return row != null;
     }
 }

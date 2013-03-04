@@ -27,37 +27,27 @@
 package com.akiban.direct;
 
 import java.math.BigDecimal;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.Date;
-import java.util.GregorianCalendar;
 
-import com.akiban.qp.row.Row;
-import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
-import com.akiban.sql.embedded.JDBCResultSet;
-import com.akiban.util.ShareHolder;
+import com.akiban.sql.server.ServerJavaValues;
 
 public class AbstractDirectObject implements DirectObject {
 
-    private JDBCResultSet resultSet;
-    private ShareHolder<Row> rowHolder = new ShareHolder<>();
+    private ServerJavaValues values;
+    private DirectResultSet rs;
 
-    public void setResultSet(JDBCResultSet rs) {
-        this.resultSet = rs;
+    public void setResults(ServerJavaValues values, DirectResultSet rs) {
+        this.values = values;
+        this.rs = rs;
     }
-
-    public Row row() {
-        if (resultSet != null) {
-            Row row = resultSet.currentRow();
-            if (row != null) {
-                rowHolder.hold(row);
-            }
-            return row;
-        } else {
-            return rowHolder.get();
+    
+    public ServerJavaValues values() {
+        if (rs.hasRow()) {
+            return values;
         }
-    }
-
-    public void row(Row row) {
-        rowHolder.hold(row);
+        throw new IllegalStateException("No more rows");
     }
 
     public void save() {
@@ -65,36 +55,31 @@ public class AbstractDirectObject implements DirectObject {
     }
 
     protected boolean __getBOOL(int p) {
-        return row().pvalue(p).getBoolean();
+        return values().getBoolean(p);
     }
 
     protected Date __getDATE(int p) {
-        long[] ymd = MDatetimes.decodeDate(row().pvalue(p).getInt32());
-        GregorianCalendar calendar = new GregorianCalendar((int) ymd[0], (int) ymd[1], (int) ymd[2]);
-        return calendar.getTime();
+        return values().getDate(p);
     }
 
     protected Date __getDATETIME(int p) {
-        long[] ymd = MDatetimes.decodeDate(row().pvalue(p).getInt32());
-        GregorianCalendar calendar = new GregorianCalendar((int) ymd[0], (int) ymd[1], (int) ymd[2], (int) ymd[3],
-                (int) ymd[4], (int) ymd[5]);
-        return calendar.getTime();
+        return values().getDate(p);
     }
 
     protected BigDecimal __getDECIMAL(int p) {
-        throw new UnsupportedOperationException("Don't know how to convert a DECIMAL from a ValueSource");
+        return values().getBigDecimal(p);
     }
 
     protected double __getDOUBLE(int p) {
-        return row().pvalue(p).getDouble();
+        return values().getDouble(p);
     }
 
     protected float __getFLOAT(int p) {
-        return row().pvalue(p).getFloat();
+        return values().getFloat(p);
     }
 
     protected int __getINT(int p) {
-        return row().pvalue(p).getInt32();
+        return values().getInt(p);
     }
 
     protected int __getINTERVAL_MILLIS(int p) {
@@ -106,7 +91,7 @@ public class AbstractDirectObject implements DirectObject {
     }
 
     protected long __getLONG(int p) {
-        return row().pvalue(p).getInt64();
+        return values().getLong(p);
     }
 
     protected Object __getNULL(int p) {
@@ -118,19 +103,19 @@ public class AbstractDirectObject implements DirectObject {
     }
 
     protected String __getTEXT(int p) {
-        return row().pvalue(p).getString();
+        return values().getString(p);
     }
 
-    protected long __getTIME(int p) {
-        return row().pvalue(p).getInt64();
+    protected Time __getTIME(int p) {
+        return values().getTime(p);
     }
 
-    protected long __getTIMESTAMP(int p) {
-        return row().pvalue(p).getInt64();
+    protected Timestamp __getTIMESTAMP(int p) {
+        return values().getTimestamp(p);
     }
 
     protected long __getU_INT(int p) {
-        return row().pvalue(p).getInt64();
+        throw new UnsupportedOperationException("Don't know how to convert a U_INT from a ValueSource");
     }
 
     protected Object __getU_BIGINT(int p) {
@@ -138,23 +123,23 @@ public class AbstractDirectObject implements DirectObject {
     }
 
     protected Object __getU_DOUBLE(int p) {
-        throw new UnsupportedOperationException("Don't know how to convert a U)DOUBLE from a ValueSource");
+        throw new UnsupportedOperationException("Don't know how to convert a U_DOUBLE from a ValueSource");
     }
 
     protected double __getU_FLOAT(int p) {
-        return row().pvalue(p).getDouble();
+        throw new UnsupportedOperationException("Don't know how to convert a U_FLOAT from a ValueSource");
     }
 
     protected String __getVARCHAR(int p) {
-        return row().pvalue(p).getString();
+        return values().getString(p);
     }
 
     protected byte[] __getVARBINARY(int p) {
-        return row().pvalue(p).getBytes();
+        return values.getBytes(p);
     }
 
     protected int __getYEAR(int p) {
-        return row().pvalue(p).getInt32();
+        throw new UnsupportedOperationException("Don't know how to convert a YEAR from a ValueSource");
     }
 
 }

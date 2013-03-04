@@ -278,8 +278,7 @@ public abstract class ClassBuilder {
                 typeName,
                 NONE,
                 null,
-                iface ? null : new String[] { "System.out.println(\"copy\")",
-                        String.format("%1$s c = new %1$s()", className), "c.row(row())", "return c" });
+                iface ? null : UNSUPPORTED);
     }
 
     private Class<?> javaClass(final Column column) {

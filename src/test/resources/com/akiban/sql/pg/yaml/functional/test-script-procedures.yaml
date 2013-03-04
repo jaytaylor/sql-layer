@@ -59,6 +59,4 @@
 - Statement: DROP PROCEDURE test_b2;
 ---
 - Statement: DROP PROCEDURE test_b3;
----
-- Statement: DROP PROCEDURE test_b4;
 ...

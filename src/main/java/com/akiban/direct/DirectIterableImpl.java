@@ -57,8 +57,6 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
     String sql;
 
     JDBCResultSet resultSet;
-    
-    ShareHolder<Row> rowHolder = new ShareHolder<Row>();
 
     public DirectIterableImpl(Class<T> clazz, String toTable) {
         this.clazz = clazz;
@@ -115,13 +113,8 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
 
     private boolean nextRow() {
         try {
-            if (rowHolder.isHolding()) {
-                rowHolder.release();
-            }
+            
             boolean result = resultSet.next();
-            if (result) {
-                rowHolder.hold(resultSet.currentRow());
-            }
             return result;
         } catch (SQLException e) {
             throw new DirectException(e);
