@@ -61,7 +61,7 @@
         "name": "placed"
     }, 
     {
-        "action": "drop_index", 
+        "action": "drop_index",
         "destructive": true, 
         "name": "last_first"
     }, 

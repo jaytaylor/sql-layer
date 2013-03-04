@@ -7,13 +7,13 @@
     }, 
     {
         "action": "change_scalar_validations", 
-        "new_validations": "[required: false]", 
+        "new_validations": [ {"required": false} ],
         "destructive": true, 
         "uuid": "33563d56-7737-11e2-a970-980e7188419e"
     }, 
     {
         "action": "change_scalar_properties", 
-        "new_properties": "{scale=-1, precision=-1}", 
+        "new_properties": {"scale":-1, "precision":-1},
         "destructive": true, 
         "uuid": "33563d56-7737-11e2-a970-980e7188419e"
     }
