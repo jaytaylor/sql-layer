@@ -419,7 +419,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     @Override
     public void fullTextSearch(PrintWriter writer, IndexName indexName, Integer depth, String query, Integer limit) {
         int realDepth = (depth != null) ? Math.max(depth, 0) : -1;
-        int realLimit = (limit != null) ? limit.intValue() : 1000; // TODO: MAX_VALUE?
+        int realLimit = (limit != null) ? limit.intValue() : -1;
         FullTextQueryBuilder builder = new FullTextQueryBuilder(indexName, 
                                                                 fullTextService);
         try (Session session = sessionService.createSession()) {

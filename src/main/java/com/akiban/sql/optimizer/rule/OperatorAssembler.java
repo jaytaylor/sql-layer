@@ -2161,8 +2161,7 @@ public class OperatorAssembler extends BaseRule
                                                                     planContext.getQueryContext());
             FullTextQueryExpression queryExpression = assembleFullTextQuery(textScan.getQuery(),
                                                                             builder);
-            int limit = 0;
-            stream.operator = builder.scanOperator(queryExpression, limit);
+            stream.operator = builder.scanOperator(queryExpression, textScan.getLimit());
             stream.rowType = stream.operator.rowType();
             return stream;
         }

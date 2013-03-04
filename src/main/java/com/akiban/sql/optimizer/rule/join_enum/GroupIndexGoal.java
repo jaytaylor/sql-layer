@@ -1849,6 +1849,14 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                                                   foundIndex + " and " + index);
             }
         }
+        if (foundTable == null) {
+            for (TableGroupJoinNode node : tables) {
+                if (node.getTable().getTable().getTable() == foundIndex.getIndexedTable()) {
+                    foundTable = node.getTable();
+                    break;
+                }
+            }
+        }
         if (foundIndex == null) {
             StringBuilder str = new StringBuilder("No full text index for: ");
             boolean first = true;
@@ -1863,7 +1871,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         }
 
         query = normalizeFullTextQuery(query);
-        FullTextScan scan = new FullTextScan(foundIndex, query,
+        FullTextScan scan = new FullTextScan(foundIndex, query, (int)queryGoal.getLimit(),
                                              foundTable, textConditions);
         determineRequiredTables(scan);
         return scan;

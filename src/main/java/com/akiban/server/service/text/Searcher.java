@@ -47,10 +47,12 @@ import java.util.List;
 
 public class Searcher implements Closeable
 {
+    public static final int DEFAULT_LIMIT = Integer.MAX_VALUE;
+
     private final FullTextIndexShared index;
     private final StandardQueryParser parser;
     private final SearcherManager searcherManager;
-    
+
     public Searcher(FullTextIndexShared index, Analyzer analyzer) throws IOException {
         this.index = index;
         this.parser = new StandardQueryParser(analyzer);
@@ -72,6 +74,7 @@ public class Searcher implements Closeable
                          Query query, int limit)
             throws IOException {
         searcherManager.maybeRefresh(); // TODO: Move to better place.
+        if (limit <= 0) limit = DEFAULT_LIMIT;
         return new FullTextCursor(context, rowType, searcherManager, query, limit);
     }
 

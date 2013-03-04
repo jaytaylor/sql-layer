@@ -35,14 +35,16 @@ public class FullTextScan extends BaseScan
 {
     private FullTextIndex index;
     private FullTextQuery query;
+    private int limit;
     private TableSource indexTable;
     private List<ConditionExpression> conditions;
     private Set<TableSource> requiredTables;
 
-    public FullTextScan(FullTextIndex index, FullTextQuery query,
+    public FullTextScan(FullTextIndex index, FullTextQuery query, int limit,
                         TableSource indexTable, List<ConditionExpression> conditions) {
         this.index = index;
         this.query = query;
+        this.limit = limit;
         this.indexTable = indexTable;
         this.conditions = conditions;
     }
@@ -53,6 +55,10 @@ public class FullTextScan extends BaseScan
 
     public FullTextQuery getQuery() {
         return query;
+    }
+
+    public int getLimit() {
+        return limit;
     }
 
     public TableSource getIndexTable() {
@@ -85,6 +91,10 @@ public class FullTextScan extends BaseScan
         str.append(indexTable.getName());
         str.append(" - ");
         str.append(query);
+        if (limit > 0) {
+            str.append(" LIMIT ");
+            str.append(limit);
+        }
         str.append(")");
         return str.toString();
     }
