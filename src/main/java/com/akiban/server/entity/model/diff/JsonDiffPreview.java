@@ -33,7 +33,6 @@ import com.akiban.server.entity.model.Entity;
 import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Validation;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.util.UUID;
 import org.codehaus.jackson.JsonFactory;
@@ -119,7 +118,6 @@ public class JsonDiffPreview implements SpaceModificationHandler
             entry("destructive", true);
             entry("uuid", dropped.uuid());
             entry("name", oldName);
-            entry("index_definition", dropped.getIndexes());
             endObject();
         }
         catch (IOException ex)
