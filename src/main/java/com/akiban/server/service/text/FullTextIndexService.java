@@ -39,7 +39,8 @@ import java.util.List;
 public interface FullTextIndexService {
     public long createIndex(Session session, IndexName name);
     public void dropIndex(Session session, IndexName name);
-    public Query parseQuery(QueryContext context, IndexName name, String query);
+    public Query parseQuery(QueryContext context, IndexName name, 
+                            String defaultField, String query);
     public RowType searchRowType(Session session, IndexName name);
     public Cursor searchIndex(QueryContext context, IndexName name, 
                               Query query, int limit);

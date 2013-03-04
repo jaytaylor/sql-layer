@@ -55,7 +55,6 @@ import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
-import com.akiban.util.Strings;
 
 import com.google.common.base.Function;
 import org.slf4j.Logger;
@@ -1779,14 +1778,14 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         if (textConditions.isEmpty())
             return null;
 
-        List<ColumnExpression> textColumns = new ArrayList<>(0);
+        List<FullTextField> textFields = new ArrayList<>(0);
         FullTextQuery query = null;
         for (ConditionExpression condition : textConditions) {
             List<ExpressionNode> operands = ((FunctionExpression)condition).getOperands();
             FullTextQuery clause = null;
             switch (operands.size()) {
             case 1:
-                clause = fullTextBoolean(operands.get(0), textColumns);
+                clause = fullTextBoolean(operands.get(0), textFields);
                 break;
             case 2:
                 if ((operands.get(0) instanceof ColumnExpression) &&
@@ -1794,9 +1793,11 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                     ColumnExpression column = (ColumnExpression)operands.get(0);
                     if ((column.getTable() instanceof TableSource) &&
                         tables.containsTable((TableSource)column.getTable())) {
-                        textColumns.add(column);
-                        clause = new FullTextField(column, FullTextField.Type.PARSE,
-                                                   operands.get(1));
+                        FullTextField field = new FullTextField(column, 
+                                                                FullTextField.Type.PARSE,
+                                                                operands.get(1));
+                        textFields.add(field);
+                        clause = field;
                     }
                 }
                 break;
@@ -1816,17 +1817,20 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         FullTextIndex foundIndex = null;
         TableSource foundTable = null;
         find_index:
-        for (FullTextIndex index : textColumns.get(0).getColumn().getUserTable().getFullTextIndexes()) {
+        for (FullTextIndex index : textFields.get(0).getColumn().getColumn().getUserTable().getFullTextIndexes()) {
             TableSource indexTable = null;
-            for (ColumnExpression columnExpr : textColumns) {
-                Column column = columnExpr.getColumn();
+            for (FullTextField textField : textFields) {
+                Column column = textField.getColumn().getColumn();
                 boolean found = false;
                 for (IndexColumn indexColumn : index.getKeyColumns()) {
                     if (indexColumn.getColumn() == column) {
+                        if (foundIndex == null) {
+                            textField.setIndexColumn(indexColumn);
+                        }
                         found = true;
                         if ((indexTable == null) &&
                             (indexColumn.getColumn().getUserTable() == index.getIndexedTable())) {
-                            indexTable = (TableSource)columnExpr.getTable();
+                            indexTable = (TableSource)textField.getColumn().getTable();
                         }
                         break;
                     }
@@ -1845,8 +1849,16 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             }
         }
         if (foundIndex == null) {
-            throw new UnsupportedSQLException("No full text index for: " +
-                                              Strings.join(textColumns));
+            StringBuilder str = new StringBuilder("No full text index for: ");
+            boolean first = true;
+            for (FullTextField textField : textFields) {
+                if (first)
+                    first = false;
+                else
+                    str.append(", ");
+                str.append(textField.getColumn());
+            }
+            throw new UnsupportedSQLException(str.toString());
         }
 
         query = normalizeFullTextQuery(query);
@@ -1857,7 +1869,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
 
     protected FullTextQuery fullTextBoolean(ExpressionNode condition,
-                                            List<ColumnExpression> textColumns) {
+                                            List<FullTextField> textFields) {
         if (condition instanceof ComparisonCondition) {
             ComparisonCondition ccond = (ComparisonCondition)condition;
             if ((ccond.getLeft() instanceof ColumnExpression) &&
@@ -1865,9 +1877,11 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 ColumnExpression column = (ColumnExpression)ccond.getLeft();
                 if ((column.getTable() instanceof TableSource) &&
                     tables.containsTable((TableSource)column.getTable())) {
-                    textColumns.add(column);
-                    return new FullTextField(column, FullTextField.Type.MATCH,
-                                             ccond.getRight());
+                    FullTextField field = new FullTextField(column, 
+                                                            FullTextField.Type.MATCH,
+                                                            ccond.getRight());
+                    textFields.add(field);
+                    return field;
                 }
             }
         }
@@ -1875,19 +1889,19 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             LogicalFunctionCondition lcond = (LogicalFunctionCondition)condition;
             String op = lcond.getFunction();
             if ("and".equals(op)) {
-                return new FullTextBoolean(Arrays.asList(fullTextBoolean(lcond.getLeft(), textColumns),
-                                                         fullTextBoolean(lcond.getRight(), textColumns)),
+                return new FullTextBoolean(Arrays.asList(fullTextBoolean(lcond.getLeft(), textFields),
+                                                         fullTextBoolean(lcond.getRight(), textFields)),
                                            Arrays.asList(FullTextBoolean.Type.MUST,
                                                          FullTextBoolean.Type.MUST));
             }
             else if ("or".equals(op)) {
-                return new FullTextBoolean(Arrays.asList(fullTextBoolean(lcond.getLeft(), textColumns),
-                                                         fullTextBoolean(lcond.getRight(), textColumns)),
+                return new FullTextBoolean(Arrays.asList(fullTextBoolean(lcond.getLeft(), textFields),
+                                                         fullTextBoolean(lcond.getRight(), textFields)),
                                            Arrays.asList(FullTextBoolean.Type.SHOULD,
                                                          FullTextBoolean.Type.SHOULD));
             }
             else if ("not".equals(op)) {
-                return new FullTextBoolean(Arrays.asList(fullTextBoolean(lcond.getOperand(), textColumns)),
+                return new FullTextBoolean(Arrays.asList(fullTextBoolean(lcond.getOperand(), textFields)),
                                            Arrays.asList(FullTextBoolean.Type.NOT));
             }
         }
@@ -1897,6 +1911,69 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
 
     protected FullTextQuery normalizeFullTextQuery(FullTextQuery query) {
+        if (query instanceof FullTextBoolean) {
+            FullTextBoolean bquery = (FullTextBoolean)query;
+            List<FullTextQuery> operands = bquery.getOperands();
+            List<FullTextBoolean.Type> types = bquery.getTypes();
+            int i = 0;
+            while (i < operands.size()) {
+                FullTextQuery opQuery = operands.get(i);
+                opQuery = normalizeFullTextQuery(opQuery);
+                if (opQuery instanceof FullTextBoolean) {
+                    FullTextBoolean opbquery = (FullTextBoolean)opQuery;
+                    List<FullTextQuery> opOperands = opbquery.getOperands();
+                    List<FullTextBoolean.Type> opTypes = opbquery.getTypes();
+                    // Fold in the simplest cases: 
+                    //  [MUST(x), [MUST(y), MUST(z)]] -> [MUST(x), MUST(y), MUST(z)]
+                    //  [MUST(x), [NOT(y)]] -> [MUST(x), NOT(y)]
+                    //  [SHOULD(x), [SHOULD(y), SHOULD(z)]] -> [SHOULD(x), SHOULD(y), SHOULD(z)]
+                    boolean fold = true;
+                    switch (types.get(i)) {
+                    case MUST:
+                    check_must:
+                        for (FullTextBoolean.Type opType : opTypes) {
+                            switch (opType) {
+                            case MUST:
+                            case NOT:
+                                break;
+                            default:
+                                fold = false;
+                                break check_must;
+                            }
+                        }
+                    case SHOULD:
+                    check_should:
+                        for (FullTextBoolean.Type opType : opTypes) {
+                            switch (opType) {
+                            case SHOULD:
+                                break;
+                            default:
+                                fold = false;
+                                break check_should;
+                            }
+                        }
+                    }
+                    if (fold) {
+                        for (int j = 0; j < opOperands.size(); j++) {
+                            FullTextQuery opOperand = opOperands.get(j);
+                            FullTextBoolean.Type opType = opTypes.get(j);
+                            if (j == 0) {
+                                operands.set(i, opOperand);
+                                types.set(i, opType);
+                            }
+                            else {
+                                operands.add(i, opOperand);
+                                types.add(i, opType);
+                            }
+                            i++;
+                        }
+                        continue;
+                    }
+                }
+                operands.set(i, opQuery);
+                i++;
+            }
+        }
         return query;
     }
 

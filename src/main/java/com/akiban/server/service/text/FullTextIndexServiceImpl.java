@@ -106,10 +106,11 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
     }
 
     @Override
-    public Query parseQuery(QueryContext context, IndexName name, String query) {
+    public Query parseQuery(QueryContext context, IndexName name, 
+                            String defaultField, String query) {
         FullTextIndexInfo index = getIndex(context.getSession(), name);
         try {
-            return index.getSearcher().parse(query);
+            return index.getSearcher().parse(defaultField, query);
         }
         catch (IOException ex) {
             throw new AkibanInternalException("Error populating index", ex);

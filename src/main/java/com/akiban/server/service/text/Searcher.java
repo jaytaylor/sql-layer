@@ -57,9 +57,11 @@ public class Searcher implements Closeable
         this.searcherManager = new SearcherManager(index.open(), new SearcherFactory());
     }
 
-    public Query parse(String input) {
+    public Query parse(String defaultField, String input) {
+        if (defaultField == null)
+            defaultField = index.getDefaultFieldName();
         try {
-            return parser.parse(input, index.getDefaultFieldName());
+            return parser.parse(input, defaultField);
         }
         catch (QueryNodeException ex) {
             throw new FullTextQueryParseException(ex);

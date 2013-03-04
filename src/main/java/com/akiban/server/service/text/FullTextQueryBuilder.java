@@ -27,6 +27,7 @@
 package com.akiban.server.service.text;
 
 import com.akiban.ais.model.FullTextIndex;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.explain.*;
@@ -39,6 +40,7 @@ public class FullTextQueryBuilder
     protected final FullTextIndexService service;
     protected final QueryContext buildContext;
 
+    /** Construct directly for testing. */
     public FullTextQueryBuilder(IndexName indexName, FullTextIndexService service) {
         this.indexName = indexName;
         this.service = service;
@@ -82,13 +84,19 @@ public class FullTextQueryBuilder
 
     /** A string in Lucene query syntax. */
     public FullTextQueryExpression parseQuery(final String query) {
+        return parseQuery(null, query);
+    }
+
+    public FullTextQueryExpression parseQuery(IndexColumn defaultField,
+                                              final String query) {
+        final String fieldName = (defaultField == null) ? null : defaultField.getColumn().getName();
         if (buildContext != null) {
-            return new Constant(service.parseQuery(buildContext, indexName, query));
+            return new Constant(service.parseQuery(buildContext, indexName, fieldName, query));
         }
         return new FullTextQueryExpression() {
                 @Override
                 public Query getQuery(QueryContext context) {
-                    return service.parseQuery(context, indexName, query);
+                    return service.parseQuery(context, indexName, fieldName, query);
                 }
 
                 @Override

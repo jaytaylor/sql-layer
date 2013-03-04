@@ -26,6 +26,8 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.ais.model.IndexColumn;
+
 public class FullTextField extends FullTextQuery
 {
     public enum Type { MATCH, PARSE, LIKE };
@@ -33,6 +35,7 @@ public class FullTextField extends FullTextQuery
     private ColumnExpression column;
     private Type type;
     private ExpressionNode key;
+    private IndexColumn indexColumn;
     
     public FullTextField(ColumnExpression column, Type type, ExpressionNode key) {
         this.column = column;
@@ -48,6 +51,13 @@ public class FullTextField extends FullTextQuery
     }
     public ExpressionNode getKey() {
         return key;
+    }
+
+    public IndexColumn getIndexColumn() {
+        return indexColumn;
+    }
+    public void setIndexColumn(IndexColumn indexColumn) {
+        this.indexColumn = indexColumn;
     }
 
     public boolean accept(ExpressionVisitor v) {
