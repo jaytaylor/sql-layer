@@ -113,7 +113,7 @@ public final class Space {
     public String toJson() {
         try {
             StringWriter writer = new StringWriter();
-            JsonGenerator generator = jsonFactory.createJsonGenerator(writer);
+            JsonGenerator generator = Util.createJsonGenerator(writer);
             generateJson(generator);
             generator.flush();
             writer.flush();
@@ -127,14 +127,6 @@ public final class Space {
     Space() {}
 
     private Map<String, Entity> entities = Collections.emptyMap();
-
-    private static final JsonFactory jsonFactory = createJsonFactory();
-
-    private static JsonFactory createJsonFactory() {
-        JsonFactory factory = new JsonFactory();
-        factory.setCodec(new ObjectMapper());
-        return factory;
-    }
 
     private static class Validator extends AbstractEntityVisitor {
 
