@@ -1,1 +1,0 @@
-error: [Can't add spinal attributes to entities or collections]

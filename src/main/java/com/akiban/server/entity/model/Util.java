@@ -31,6 +31,8 @@ import java.util.UUID;
 final class Util {
 
     public static UUID parseUUID(String string) {
+        if (string == null)
+            return null;
         UUID uuid;
         try {
             uuid = UUID.fromString(string);

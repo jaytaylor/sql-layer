@@ -1,0 +1,16 @@
+[
+    {
+        "action": "add_attribute", 
+        "definition": {
+            "attributes": {
+                "whatever": {
+                    "scalar": "17181af5-7e07-41fc-9a05-78e77cdabe13", 
+                    "type": "integer"
+                }
+            }, 
+            "collection": "3a528882-0ac4-41b2-b8f0-38474c026fce"
+        }, 
+        "destructive": false, 
+        "path": ["customer", "orders"]
+    }
+]
