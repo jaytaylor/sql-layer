@@ -51,6 +51,7 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ParameterNode;
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
@@ -102,6 +103,10 @@ import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.expression.UnboundExpressions;
+
+import com.akiban.server.service.text.FullTextIndexService;
+import com.akiban.server.service.text.FullTextQueryExpression;
+import com.akiban.server.service.text.IndexScan_FullText;
 
 import com.akiban.server.explain.*;
 
@@ -1054,6 +1059,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleUsingBloomFilter((UsingBloomFilter) node);
             else if (node instanceof BloomFilterFilter)
                 return assembleBloomFilterFilter((BloomFilterFilter) node);
+            else if (node instanceof FullTextScan)
+                return assembleFullTextScan((FullTextScan) node);
             else if (node instanceof InsertStatement) 
                 return assembleInsertStatement((InsertStatement)node);
             else if (node instanceof DeleteStatement)
@@ -2141,6 +2148,18 @@ public class OperatorAssembler extends BaseRule
                 result[param.getParameterNumber()] = param.getType();
             }        
             return result;
+        }
+
+        protected RowStream assembleFullTextScan(FullTextScan textScan) {
+            RowStream stream = new RowStream();
+            FullTextIndex index = textScan.getIndex();
+            FullTextQueryExpression queryExpression = null;
+            int limit = 0;
+            FullTextIndexService service = null;
+            stream.operator = new IndexScan_FullText(service, index.getIndexName(), 
+                                                     queryExpression, limit);
+            stream.rowType = stream.operator.rowType();
+            return stream;
         }
 
         /* Bindings-related state */
