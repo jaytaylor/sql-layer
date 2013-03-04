@@ -16,7 +16,8 @@
                     "scalar" : "b8b960ab-d169-44b8-8ee1-e9babfb92409",
                     "type" : "varchar",
                     "validation" : [
-                        { "max_length" : 32 }
+                        { "max_length" : 32 },
+                        { "required" : false }
                     ],
                     "properties" : {
                         "charset" : "UTF8",
@@ -50,7 +51,10 @@
                         },
                         "placed" : {
                             "scalar" : "6b52abfa-d1e8-48dd-8e7e-1cd473e7cd72",
-                            "type" : "date"
+                            "type" : "date",
+                            "validation" : [
+                                { "required" : false }
+                            ]
                         }
                     }
                 }
