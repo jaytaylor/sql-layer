@@ -26,17 +26,17 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import static com.akiban.server.service.text.FullTextQueryBuilder.BooleanType;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class FullTextBoolean extends FullTextQuery
 {
-    public enum Type { SHOULD, MUST, NOT };
-
     private List<FullTextQuery> operands;
-    private List<Type> types;
+    private List<BooleanType> types;
 
-    public FullTextBoolean(List<FullTextQuery> operands, List<Type> types) {
+    public FullTextBoolean(List<FullTextQuery> operands, List<BooleanType> types) {
         this.operands = operands;
         this.types = types;
     }
@@ -44,7 +44,7 @@ public class FullTextBoolean extends FullTextQuery
     public List<FullTextQuery> getOperands() {
         return operands;
     }
-    public List<Type> getTypes() {
+    public List<BooleanType> getTypes() {
         return types;
     }
 

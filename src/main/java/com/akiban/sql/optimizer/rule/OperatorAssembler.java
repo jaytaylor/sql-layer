@@ -34,6 +34,7 @@ import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.akiban.server.types3.texpressions.TValidatedScalar;
@@ -2163,7 +2164,43 @@ public class OperatorAssembler extends BaseRule
 
         protected FullTextQueryExpression assembleFullTextQuery(FullTextQuery query,
                                                                 FullTextQueryBuilder builder) {
-            return null;        // TODO
+            if (query instanceof FullTextField) {
+                FullTextField field = (FullTextField)query;
+                ExpressionNode key = field.getKey();
+                TPreparedExpression expr = null;
+                String constant = null;
+                boolean isConstant = false;
+                if (key.isConstant()) {
+                    PValueSource pValueSource = key.getPreptimeValue().value();
+                    constant = (pValueSource == null || pValueSource.isNull()) ? null : pValueSource.getString();
+                    isConstant = true;
+                }
+                else {
+                    expr = newPartialAssembler.assembleExpression(key, null);
+                }
+                switch (field.getType()) {
+                case PARSE:
+                    if (isConstant)
+                        return builder.parseQuery(field.getIndexColumn(), constant);
+                    else
+                        return builder.parseQuery(field.getIndexColumn(), expr);
+                case MATCH:
+                    if (isConstant)
+                        return builder.matchQuery(field.getIndexColumn(), constant);
+                    else
+                        return builder.matchQuery(field.getIndexColumn(), expr);
+                }
+            }
+            else if (query instanceof FullTextBoolean) {
+                FullTextBoolean bquery = (FullTextBoolean)query;
+                List<FullTextQuery> operands = bquery.getOperands();
+                List<FullTextQueryExpression> queries = new ArrayList<>(operands.size());
+                for (FullTextQuery operand : operands) {
+                    queries.add(assembleFullTextQuery(operand, builder));
+                }
+                return builder.booleanQuery(queries, bquery.getTypes());
+            }
+            throw new UnsupportedSQLException("Full text query " + query, null);
         }
 
         /* Bindings-related state */

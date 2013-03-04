@@ -31,8 +31,16 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.explain.*;
+import com.akiban.server.types3.texpressions.TEvaluatableExpression;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
 
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TermQuery;
+
+import java.util.List;
 
 public class FullTextQueryBuilder
 {
@@ -113,6 +121,127 @@ public class FullTextQueryBuilder
             };
     }
     
+    public FullTextQueryExpression parseQuery(IndexColumn defaultField,
+                                              final TPreparedExpression qexpr) {
+        final String fieldName = (defaultField == null) ? null : defaultField.getColumn().getName();
+        return new FullTextQueryExpression() {
+                @Override
+                public Query getQuery(QueryContext context) {
+                    TEvaluatableExpression qeval = qexpr.build();
+                    qeval.with(context);
+                    qeval.evaluate();
+                    if (qeval.resultValue().isNull())
+                        return null;
+                    String query = qeval.resultValue().getString();
+                    return service.parseQuery(context, indexName, fieldName, query);
+                }
+
+                @Override
+                public CompoundExplainer getExplainer(ExplainContext context) {
+                    CompoundExplainer explainer = new CompoundExplainer(Type.FIELD);
+                    explainer.addAttribute(Label.OPERAND, qexpr.getExplainer(context));
+                    return explainer;
+                }
+
+                @Override
+                public String toString() {
+                    return qexpr.toString();
+                }
+            };
+    }
+    
+    public FullTextQueryExpression matchQuery(IndexColumn field, String key) {
+        String fieldName = field.getColumn().getName();
+        return new Constant(new TermQuery(new Term(fieldName, key)));
+    }
+
+    public FullTextQueryExpression matchQuery(IndexColumn field,
+                                              final TPreparedExpression qexpr) {
+        final String fieldName = field.getColumn().getName();
+        return new FullTextQueryExpression() {
+                @Override
+                public Query getQuery(QueryContext context) {
+                    TEvaluatableExpression qeval = qexpr.build();
+                    qeval.with(context);
+                    qeval.evaluate();
+                    if (qeval.resultValue().isNull())
+                        return null;
+                    String query = qeval.resultValue().getString();
+                    return new TermQuery(new Term(fieldName, query));
+                }
+
+                @Override
+                public CompoundExplainer getExplainer(ExplainContext context) {
+                    CompoundExplainer explainer = new CompoundExplainer(Type.FIELD);
+                    explainer.addAttribute(Label.OPERAND, qexpr.getExplainer(context));
+                    return explainer;
+                }
+
+                @Override
+                public String toString() {
+                    return qexpr.toString();
+                }
+            };
+    }
+    
+    public enum BooleanType { SHOULD, MUST, NOT };
+
+    public FullTextQueryExpression booleanQuery(final List<FullTextQueryExpression> queries,
+                                                final List<BooleanType> types) {
+        boolean isConstant = true;
+        for (FullTextQueryExpression query : queries) {
+            if (!(query instanceof Constant)) {
+                isConstant = false;
+                break;
+            }
+        }
+        FullTextQueryExpression result = 
+            new FullTextQueryExpression() {
+                @Override
+                public Query getQuery(QueryContext context) {
+                    BooleanQuery query = new BooleanQuery();
+                    for (int i = 0; i < queries.size(); i++) {
+                        BooleanClause.Occur occur;
+                        switch (types.get(i)) {
+                        case MUST:
+                            occur = BooleanClause.Occur.MUST;
+                            break;
+                        case NOT:
+                            occur = BooleanClause.Occur.MUST_NOT;
+                            break;
+                        case SHOULD:
+                            occur = BooleanClause.Occur.SHOULD;
+                            break;
+                        default:
+                            throw new IllegalArgumentException(types.get(i).toString());
+                        }
+                        query.add(queries.get(i).getQuery(context), occur);
+                    }
+                    return query;
+                }
+
+                @Override
+                public CompoundExplainer getExplainer(ExplainContext context) {
+                    CompoundExplainer explainer = new CompoundExplainer(Type.FIELD);
+                    for (FullTextQueryExpression query : queries) {
+                        explainer.addAttribute(Label.OPERAND, query.getExplainer(context));
+                    }
+                    return explainer;
+                }
+
+                @Override
+                public String toString() {
+                    return queries.toString();
+                }
+            };
+        if (isConstant) {
+            return new Constant(result.getQuery(buildContext));
+        }
+        else {
+            return result;
+        }
+    }
+
     public IndexScan_FullText scanOperator(String query, int limit) {
         return scanOperator(parseQuery(query), limit);
     }

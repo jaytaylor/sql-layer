@@ -48,6 +48,7 @@ import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
 import com.akiban.server.geophile.Space;
+import com.akiban.server.service.text.FullTextQueryBuilder;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.Types3Switch;
@@ -1810,8 +1811,8 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             }
             else {
                 query = new FullTextBoolean(Arrays.asList(query, clause),
-                                            Arrays.asList(FullTextBoolean.Type.MUST,
-                                                          FullTextBoolean.Type.MUST));
+                                            Arrays.asList(FullTextQueryBuilder.BooleanType.MUST,
+                                                          FullTextQueryBuilder.BooleanType.MUST));
             }
         }
         FullTextIndex foundIndex = null;
@@ -1891,18 +1892,18 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             if ("and".equals(op)) {
                 return new FullTextBoolean(Arrays.asList(fullTextBoolean(lcond.getLeft(), textFields),
                                                          fullTextBoolean(lcond.getRight(), textFields)),
-                                           Arrays.asList(FullTextBoolean.Type.MUST,
-                                                         FullTextBoolean.Type.MUST));
+                                           Arrays.asList(FullTextQueryBuilder.BooleanType.MUST,
+                                                         FullTextQueryBuilder.BooleanType.MUST));
             }
             else if ("or".equals(op)) {
                 return new FullTextBoolean(Arrays.asList(fullTextBoolean(lcond.getLeft(), textFields),
                                                          fullTextBoolean(lcond.getRight(), textFields)),
-                                           Arrays.asList(FullTextBoolean.Type.SHOULD,
-                                                         FullTextBoolean.Type.SHOULD));
+                                           Arrays.asList(FullTextQueryBuilder.BooleanType.SHOULD,
+                                                         FullTextQueryBuilder.BooleanType.SHOULD));
             }
             else if ("not".equals(op)) {
                 return new FullTextBoolean(Arrays.asList(fullTextBoolean(lcond.getOperand(), textFields)),
-                                           Arrays.asList(FullTextBoolean.Type.NOT));
+                                           Arrays.asList(FullTextQueryBuilder.BooleanType.NOT));
             }
         }
         // TODO: LIKE
@@ -1914,7 +1915,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         if (query instanceof FullTextBoolean) {
             FullTextBoolean bquery = (FullTextBoolean)query;
             List<FullTextQuery> operands = bquery.getOperands();
-            List<FullTextBoolean.Type> types = bquery.getTypes();
+            List<FullTextQueryBuilder.BooleanType> types = bquery.getTypes();
             int i = 0;
             while (i < operands.size()) {
                 FullTextQuery opQuery = operands.get(i);
@@ -1922,7 +1923,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 if (opQuery instanceof FullTextBoolean) {
                     FullTextBoolean opbquery = (FullTextBoolean)opQuery;
                     List<FullTextQuery> opOperands = opbquery.getOperands();
-                    List<FullTextBoolean.Type> opTypes = opbquery.getTypes();
+                    List<FullTextQueryBuilder.BooleanType> opTypes = opbquery.getTypes();
                     // Fold in the simplest cases: 
                     //  [MUST(x), [MUST(y), MUST(z)]] -> [MUST(x), MUST(y), MUST(z)]
                     //  [MUST(x), [NOT(y)]] -> [MUST(x), NOT(y)]
@@ -1931,7 +1932,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                     switch (types.get(i)) {
                     case MUST:
                     check_must:
-                        for (FullTextBoolean.Type opType : opTypes) {
+                        for (FullTextQueryBuilder.BooleanType opType : opTypes) {
                             switch (opType) {
                             case MUST:
                             case NOT:
@@ -1943,7 +1944,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                         }
                     case SHOULD:
                     check_should:
-                        for (FullTextBoolean.Type opType : opTypes) {
+                        for (FullTextQueryBuilder.BooleanType opType : opTypes) {
                             switch (opType) {
                             case SHOULD:
                                 break;
@@ -1956,7 +1957,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                     if (fold) {
                         for (int j = 0; j < opOperands.size(); j++) {
                             FullTextQuery opOperand = opOperands.get(j);
-                            FullTextBoolean.Type opType = opTypes.get(j);
+                            FullTextQueryBuilder.BooleanType opType = opTypes.get(j);
                             if (j == 0) {
                                 operands.set(i, opOperand);
                                 types.set(i, opType);
