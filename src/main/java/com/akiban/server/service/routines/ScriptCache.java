@@ -33,8 +33,6 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 
-import javassist.CtClass;
-
 import javax.script.Bindings;
 import javax.script.Compilable;
 import javax.script.CompiledScript;
@@ -51,7 +49,6 @@ import org.slf4j.LoggerFactory;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.TableName;
-import com.akiban.direct.ClassBuilder;
 import com.akiban.direct.DirectClassLoader;
 import com.akiban.server.error.ExternalRoutineInvocationException;
 import com.akiban.server.error.NoSuchRoutineException;
@@ -66,7 +63,6 @@ public class ScriptCache
     private final ConfigurationService configService;
     private final Map<TableName,CacheEntry> cache = new HashMap<>();
     // Script engine discovery can be fairly expensive, so it is deferred.
-    private ScriptEngineManager manager = null;
     private final static Logger logger = LoggerFactory.getLogger(ScriptCache.class);
 
     public ScriptCache(DXLService dxlService, ConfigurationService configService) {
