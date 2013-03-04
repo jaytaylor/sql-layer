@@ -39,6 +39,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.error.ErrorCode;
+import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.externaldata.ExternalDataService;
 import com.akiban.server.service.functions.FunctionsRegistry;
@@ -171,6 +172,9 @@ public interface ServerSession
 
     /** Get the security service */
     public SecurityService getSecurityService();
+
+    /** Get the service manager */
+    public ServiceManager getServiceManager();
 
     /** Check access to given schema */
     public boolean isSchemaAccessible(String schemaName);

@@ -36,14 +36,13 @@ import org.apache.lucene.search.Query;
 
 public class IndexScan_FullText extends Operator
 {
-    private final FullTextIndexService service;
     private final IndexName index;
     private final FullTextQueryExpression queryExpression;
     private final int limit;
 
-    public IndexScan_FullText(FullTextIndexService service, IndexName index, 
-                              FullTextQueryExpression queryExpression, int limit) {
-        this.service = service;
+    public IndexScan_FullText(IndexName index, 
+                              FullTextQueryExpression queryExpression, 
+                              int limit) {
         this.index = index;
         this.queryExpression = queryExpression;
         this.limit = limit;
@@ -52,6 +51,7 @@ public class IndexScan_FullText extends Operator
     @Override
     protected Cursor cursor(QueryContext context) {
         Query query = queryExpression.getQuery(context);
+        FullTextIndexService service = context.getServiceManager().getServiceByClass(FullTextIndexService.class);
         return service.searchIndex(context, index, query, limit);
     }
 

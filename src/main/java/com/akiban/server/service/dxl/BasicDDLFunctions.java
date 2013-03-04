@@ -101,6 +101,7 @@ import com.akiban.server.error.NoSuchTableIdException;
 import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.error.UnsupportedDropException;
+import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
@@ -170,6 +171,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         @Override
         public Session getSession() {
             return delegate.getSession();
+        }
+
+        @Override
+        public ServiceManager getServiceManager() {
+            return delegate.getServiceManager();
         }
 
         @Override

@@ -26,6 +26,7 @@
 
 package com.akiban.server.service.text;
 
+import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.explain.*;
@@ -38,15 +39,16 @@ public class FullTextQueryBuilder
     protected final FullTextIndexService service;
     protected final QueryContext buildContext;
 
-    public FullTextQueryBuilder(IndexName indexName, FullTextIndexService service,
-                                QueryContext buildContext) {
+    public FullTextQueryBuilder(IndexName indexName, FullTextIndexService service) {
         this.indexName = indexName;
         this.service = service;
-        this.buildContext = buildContext;
+        this.buildContext = null;
     }
 
-    public FullTextQueryBuilder(IndexName indexName, FullTextIndexService service) {
-        this(indexName, service, null);
+    public FullTextQueryBuilder(FullTextIndex index, QueryContext buildContext) {
+        this.indexName = index.getIndexName();
+        this.service = buildContext.getServiceManager().getServiceByClass(FullTextIndexService.class);
+        this.buildContext = buildContext;
     }
 
     static class Constant implements FullTextQueryExpression {
@@ -108,7 +110,7 @@ public class FullTextQueryBuilder
     }
     
     public IndexScan_FullText scanOperator(FullTextQueryExpression query, int limit) {
-        return new IndexScan_FullText(service, indexName, query, limit);
+        return new IndexScan_FullText(indexName, query, limit);
     }
 
 }

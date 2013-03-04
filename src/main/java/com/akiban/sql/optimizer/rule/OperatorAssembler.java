@@ -104,9 +104,8 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.expression.UnboundExpressions;
 
-import com.akiban.server.service.text.FullTextIndexService;
+import com.akiban.server.service.text.FullTextQueryBuilder;
 import com.akiban.server.service.text.FullTextQueryExpression;
-import com.akiban.server.service.text.IndexScan_FullText;
 
 import com.akiban.server.explain.*;
 
@@ -2152,14 +2151,19 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleFullTextScan(FullTextScan textScan) {
             RowStream stream = new RowStream();
-            FullTextIndex index = textScan.getIndex();
-            FullTextQueryExpression queryExpression = null;
+            FullTextQueryBuilder builder = new FullTextQueryBuilder(textScan.getIndex(),
+                                                                    planContext.getQueryContext());
+            FullTextQueryExpression queryExpression = assembleFullTextQuery(textScan.getQuery(),
+                                                                            builder);
             int limit = 0;
-            FullTextIndexService service = null;
-            stream.operator = new IndexScan_FullText(service, index.getIndexName(), 
-                                                     queryExpression, limit);
+            stream.operator = builder.scanOperator(queryExpression, limit);
             stream.rowType = stream.operator.rowType();
             return stream;
+        }
+
+        protected FullTextQueryExpression assembleFullTextQuery(FullTextQuery query,
+                                                                FullTextQueryBuilder builder) {
+            return null;        // TODO
         }
 
         /* Bindings-related state */

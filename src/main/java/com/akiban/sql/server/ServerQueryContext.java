@@ -33,6 +33,7 @@ import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.error.QueryTimedOutException;
+import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.session.Session;
 import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
@@ -64,6 +65,11 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
     @Override
     public Session getSession() {
         return server.getSession();
+    }
+
+    @Override
+    public ServiceManager getServiceManager() {
+        return server.getServiceManager();
     }
 
     @Override
