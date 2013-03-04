@@ -117,6 +117,9 @@ public class BranchJoiner extends BaseRule
         else if (scan instanceof GroupLoopScan) {
             requiredTables = ((GroupLoopScan)scan).getRequiredTables();
         }
+        else if (scan instanceof FullTextScan) {
+            requiredTables = ((FullTextScan)scan).getRequiredTables();
+        }
         markBranches(tableGroup, requiredTables);
         top:
         if (scan instanceof IndexScan) {
@@ -174,6 +177,25 @@ public class BranchJoiner extends BaseRule
                 scan = new BranchLookup(scan, outsideTable.getTable(), insideTable.getTable(), tables);
                 scan = fillBranch(scan, tables, rootTable, rootTable, rootTable);
             }
+        }
+        else if (scan instanceof FullTextScan) {
+            FullTextScan textScan = (FullTextScan)scan;
+            TableSource indexSource = textScan.getIndexTable();
+            TableGroupJoinNode indexTable = rootTable.findTable(indexSource);
+            assert (indexTable != null) : textScan;
+            List<TableSource> ancestors = new ArrayList<>();
+            pendingTableSources(indexTable, rootTable, ancestors);
+            if (isParent(indexTable)) {
+                if (ancestors.remove(indexSource))
+                    setPending(indexTable); // Changed from ancestor to branch.
+                List<TableSource> tables = new ArrayList<>();
+                scan = new BranchLookup(scan, indexSource.getTable(), tables);
+                indexTable = singleBranchPending(indexTable, tables);
+            }
+            if (!ancestors.isEmpty())
+                scan = new AncestorLookup(scan, indexSource, ancestors);
+            scan = flatten(scan, indexTable, rootTable);
+            scan = fillSideBranches(scan, indexTable, rootTable);
         }
         else {
             throw new AkibanInternalException("Unknown TableGroupJoinTree scan");

@@ -1353,6 +1353,10 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 installConditions(((GroupLoopScan)scan).getJoinConditions(), 
                                   conditionSources);
             }
+            else if (scan instanceof FullTextScan) {
+                installConditions(((FullTextScan)scan).getConditions(), 
+                                  conditionSources);
+            }
             if (sortAllowed)
                 queryGoal.installOrderEffectiveness(IndexScan.OrderEffectiveness.NONE);
         }
@@ -1800,6 +1804,14 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             if (clause == null)
                 throw new UnsupportedSQLException("Unrecognized FULL_TEXT_SEARCH call",
                                                   condition.getSQLsource());
+            if (query == null) {
+                query = clause;
+            }
+            else {
+                query = new FullTextBoolean(Arrays.asList(query, clause),
+                                            Arrays.asList(FullTextBoolean.Type.MUST,
+                                                          FullTextBoolean.Type.MUST));
+            }
         }
         FullTextIndex foundIndex = null;
         TableSource foundTable = null;
