@@ -1414,7 +1414,7 @@ public class OperatorAssembler extends BaseRule
                 stream = assembleStream(ancestorLookup.getInput());
                 RowType inputRowType = stream.rowType; // The index row type.
                 API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
-                if (!(inputRowType instanceof IndexRowType)) {
+                if (!isIndexRowType(inputRowType)) {
                     // Getting from branch lookup.
                     inputRowType = tableRowType(ancestorLookup.getDescendant());
                     flag = API.InputPreservationOption.KEEP_INPUT;
@@ -1463,7 +1463,7 @@ public class OperatorAssembler extends BaseRule
                 stream = assembleStream(branchLookup.getInput());
                 RowType inputRowType = stream.rowType; // The index row type.
                 API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
-                if (!(inputRowType instanceof IndexRowType)) {
+                if (!isIndexRowType(inputRowType)) {
                     // Getting from ancestor lookup.
                     inputRowType = tableRowType(branchLookup.getSource());
                     flag = API.InputPreservationOption.KEEP_INPUT;
@@ -1478,6 +1478,11 @@ public class OperatorAssembler extends BaseRule
             stream.unknownTypesPresent = true;
             stream.fieldOffsets = null;
             return stream;
+        }
+
+        protected static boolean isIndexRowType(RowType rowType) {
+            return ((rowType instanceof IndexRowType) ||
+                    (rowType instanceof HKeyRowType));
         }
 
         protected RowStream assembleMapJoin(MapJoin mapJoin) {

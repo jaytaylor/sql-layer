@@ -30,6 +30,7 @@ import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.*;
 
 import org.apache.lucene.search.Query;
@@ -39,13 +40,24 @@ public class IndexScan_FullText extends Operator
     private final IndexName index;
     private final FullTextQueryExpression queryExpression;
     private final int limit;
+    private final RowType rowType;
 
     public IndexScan_FullText(IndexName index, 
                               FullTextQueryExpression queryExpression, 
-                              int limit) {
+                              int limit,
+                              RowType rowType) {
         this.index = index;
         this.queryExpression = queryExpression;
         this.limit = limit;
+        this.rowType = rowType;
+    }
+
+    @Override
+    public RowType rowType() {
+        if (rowType != null)
+            return rowType;
+        else
+            return super.rowType(); // Only when testing and not needed.
     }
 
     @Override
@@ -54,7 +66,7 @@ public class IndexScan_FullText extends Operator
         FullTextIndexService service = context.getServiceManager().getServiceByClass(FullTextIndexService.class);
         return service.searchIndex(context, index, query, limit);
     }
-
+    
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
     {

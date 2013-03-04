@@ -30,6 +30,7 @@ import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.*;
 import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
@@ -247,7 +248,10 @@ public class FullTextQueryBuilder
     }
     
     public IndexScan_FullText scanOperator(FullTextQueryExpression query, int limit) {
-        return new IndexScan_FullText(indexName, query, limit);
+        RowType rowType = null;
+        if (buildContext != null)
+            rowType = service.searchRowType(buildContext.getSession(), indexName);
+        return new IndexScan_FullText(indexName, query, limit, rowType);
     }
 
 }
