@@ -46,12 +46,11 @@ import org.codehaus.jackson.JsonGenerator;
 public class JsonDiffPreview implements SpaceModificationHandler
 {
     private static final JsonFactory factory = new JsonFactory();
-    private static final boolean useDefaultPrettyPrinter = true;
+    private static final boolean useDefaultPrettyPrinter = false;
     
     private final JsonGenerator jsonGen;
     private final Writer writer;
     private boolean finished = false;
-    private boolean hadObject = false;
 
     public JsonDiffPreview(Writer writer)
     {
@@ -73,8 +72,6 @@ public class JsonDiffPreview implements SpaceModificationHandler
         if(!finished) {
             try
             {
-                if (hadObject)
-                    jsonGen.writeRaw('\n');
                 jsonGen.writeEndArray();
                 jsonGen.flush();
                 writer.flush();
@@ -88,19 +85,19 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
-    public void beginEntity(UUID entityUUID) {
+    public void beginEntity(Entity entity, String name) {
         // None
     }
 
     @Override
-    public void addEntity(UUID entityUuid)
+    public void addEntity(Entity entity, String name)
     {
         try
         {
             startObject();
             entry("action", "add_entity");
             entry("destructive", false);
-            entry("uuid", entityUuid.toString());
+            entry("uuid", entity.uuid().toString());
             endObject();
         }
         catch (IOException ex)
@@ -381,8 +378,6 @@ public class JsonDiffPreview implements SpaceModificationHandler
     
     private void startObject() throws IOException
     {
-        hadObject = true;
-        jsonGen.writeRaw('\n');
         jsonGen.writeStartObject();
     }
     
