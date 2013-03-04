@@ -77,11 +77,11 @@ public final class AisToSpaceTest {
 
     @Test
     public void test() {
-        Space expectedSpace = Space.readSpace(testName + ".json", AisToSpaceTest.class);
+        Space expectedSpace = Space.readSpace(testName + ".json", AisToSpaceTest.class, null);
 
         AkibanInformationSchema ais = SchemaFactory.loadAIS(new File(testDir, testName + ".ddl"), "test_schema");
         ais.traversePostOrder(new SetUuidAssigner());
-        Space actualSpace = AisToSpace.create(ais);
+        Space actualSpace = AisToSpace.create(ais, null);
 
         assertEquals("space json", normalizeJson(expectedSpace.toJson()), normalizeJson(actualSpace.toJson()));
     }

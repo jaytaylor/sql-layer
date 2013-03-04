@@ -26,11 +26,11 @@
 
 package com.akiban.server.entity.model;
 
+import com.google.common.base.Function;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -47,7 +47,7 @@ import java.util.UUID;
 
 public final class Space {
 
-    public static Space create(Reader reader) throws IOException {
+    public static Space create(Reader reader, Function<String, UUID> uuidGenerator) throws IOException {
         Space result;
         try {
             result = new ObjectMapper().readValue(reader, Space.class);
@@ -56,17 +56,17 @@ public final class Space {
                 throw (IllegalEntityDefinition) e.getCause();
             throw e;
         }
-        result.visit(new Validator());
+        result.visit(new Validator(uuidGenerator));
         return result;
     }
 
-    public static Space readSpace(String fileName, Class<?> forClass) {
+    public static Space readSpace(String fileName, Class<?> forClass, Function<String, UUID> uuidGenerator) {
         try (InputStream is = forClass.getResourceAsStream(fileName)) {
             if (is == null) {
                 throw new RuntimeException("resource not found: " + fileName);
             }
             Reader reader = new BufferedReader(new InputStreamReader(is, "utf-8"));
-            return create(reader);
+            return create(reader, uuidGenerator);
         }
         catch (IOException e) {
             throw new RuntimeException(e);
@@ -93,10 +93,10 @@ public final class Space {
         return entities.toString();
     }
 
-    public static Space create(Map<String, Entity> entities) {
+    public static Space create(Map<String, Entity> entities, Function<String, UUID> uuidGenerator) {
         Space space = new Space();
         space.setEntities(entities);
-        space.visit(new Validator());
+        space.visit(new Validator(uuidGenerator));
         return space;
     }
 
@@ -140,6 +140,8 @@ public final class Space {
 
         @Override
         public void visitEntity(String name, Entity entity) {
+            if (entity.uuid() == null)
+                entity.setUuid(uuidGenerator.apply(name));
             validateUUID(entity.uuid());
             ensureUnique(name);
             if (entity.getAttributes() == null || entity.getAttributes().isEmpty())
@@ -148,6 +150,8 @@ public final class Space {
 
         @Override
         public void visitScalar(String name, Attribute scalar) {
+            if (scalar.getUUID() == null)
+                scalar.setUuid(uuidGenerator.apply(name));
             validateUUID(scalar.getUUID());
             if (scalar.getType() == null)
                 throw new IllegalEntityDefinition("no type set for scalar");
@@ -157,6 +161,8 @@ public final class Space {
 
         @Override
         public void visitCollection(String name, Attribute collection) {
+            if (collection.getUUID() == null)
+                collection.setUuid(uuidGenerator.apply(name));
             validateUUID(collection.getUUID());
             ensureUnique(name);
             if (collection.getType() != null)
@@ -177,7 +183,27 @@ public final class Space {
                 throw new IllegalEntityDefinition("duplicate name within entity and collections: " + name);
         }
 
+        private Validator(Function<String, UUID> uuidGenerator) {
+            this.uuidGenerator = uuidGenerator == null ? requireUUIDs : uuidGenerator;
+        }
+
         private final Set<UUID> uuids = new HashSet<>();
         private final Set<String> collectionNames = new HashSet<>();
+        private final Function<String, UUID> uuidGenerator;
     }
+
+
+    public static final Function<String, UUID> randomUUIDs = new Function<String, UUID>() {
+        @Override
+        public UUID apply(String input) {
+            return UUID.randomUUID();
+        }
+    };
+
+    public static final Function<String, UUID> requireUUIDs = new Function<String, UUID>() {
+        @Override
+        public UUID apply(String input) {
+            return null;
+        }
+    };
 }

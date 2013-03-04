@@ -164,7 +164,7 @@ public final class ModelResource {
                         try (Session session = reqs.sessionService.createSession()) {
                             // Cannot have transaction when attempting to perform DDL
                             Space curSpace = spaceForAIS(session, schema);
-                            Space newSpace = Space.create(new InputStreamReader(postInput));
+                            Space newSpace = Space.create(new InputStreamReader(postInput), Space.randomUUIDs);
                             SpaceDiff diff = new SpaceDiff(curSpace, newSpace);
 
                             boolean success = true;
@@ -194,6 +194,6 @@ public final class ModelResource {
     private Space spaceForAIS(Session session, String schema) {
         AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(session);
         ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
-        return AisToSpace.create(ais);
+        return AisToSpace.create(ais, Space.requireUUIDs);
     }
 }

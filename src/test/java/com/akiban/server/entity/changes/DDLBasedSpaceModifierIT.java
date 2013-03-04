@@ -86,9 +86,9 @@ public final class DDLBasedSpaceModifierIT extends ITBase {
 
     @Test
     public void test() throws IOException {
-        Space origSpace = Space.readSpace(testName + ORIG_SUFFIX, DDLBasedSpaceModifierIT.class);
+        Space origSpace = Space.readSpace(testName + ORIG_SUFFIX, DDLBasedSpaceModifierIT.class, null);
         loadSpace(origSpace);
-        Space updateSpace = Space.readSpace(testName + UPDATE_SUFFIX, DDLBasedSpaceModifierIT.class);
+        Space updateSpace = Space.readSpace(testName + UPDATE_SUFFIX, DDLBasedSpaceModifierIT.class, null);
         SpaceDiff diff = new SpaceDiff(origSpace, updateSpace);
 
         diff.apply(new DDLBasedSpaceModifier(ddl(), session(), SCHEMA, updateSpace));
