@@ -111,6 +111,7 @@ public class DirectContextImpl implements DirectContext {
 
     @Override
     public DirectObject getExtent() {
+        classLoader.ensureGenerated();
         return connectionThreadLocal.get().getExtent();
     }
 

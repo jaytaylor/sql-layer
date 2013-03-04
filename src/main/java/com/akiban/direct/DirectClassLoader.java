@@ -37,7 +37,7 @@ import javassist.CtClass;
 import com.akiban.ais.model.AkibanInformationSchema;
 
 /**
- * ClassLoader that generates Akiban Direct classes.  There is one instance of
+ * ClassLoader that generates Akiban Direct classes. There is one instance of
  * this ClassLoader per schema per AkibanInformationSchema instance. The method
  * {@link AkibanInformationSchema#getDirectClassLoader(String, ClassLoader)}
  * should be used to acquire or create an instance of this class.
@@ -56,8 +56,7 @@ public class DirectClassLoader extends ClassLoader {
     Class<?> extentClass;
     boolean isGenerated;
 
-    public DirectClassLoader(final ClassLoader parentLoader, final String schemaName,
-            final AkibanInformationSchema ais) {
+    public DirectClassLoader(final ClassLoader parentLoader, final String schemaName, final AkibanInformationSchema ais) {
         super(parentLoader);
         this.pool = new ClassPool(true);
         this.schemaName = schemaName;
@@ -71,10 +70,10 @@ public class DirectClassLoader extends ClassLoader {
 
     /**
      * <p>
-     * Implementation of {@link ClassLoader#loadClass(String, boolean)} to
-     * load classes generated from the schema. These have been
-     * precompiled by Javassist. As required to satisfy links in application
-     * code within the module these are reduced to byte code and defined here.
+     * Implementation of {@link ClassLoader#loadClass(String, boolean)} to load
+     * classes generated from the schema. These have been precompiled by
+     * Javassist. As required to satisfy links in application code within the
+     * module these are reduced to byte code and defined here.
      * </p>
      */
     @Override
@@ -91,15 +90,7 @@ public class DirectClassLoader extends ClassLoader {
              */
             synchronized (this) {
                 try {
-                    if (!isGenerated) {
-                        /*
-                         * Lazily generate Direct classes from schema
-                         */
-                        Map<Integer, CtClass> generatedClasses = ClassBuilder.compileGeneratedInterfacesAndClasses(ais,
-                                schemaName);
-                        this.registerDirectObjectClasses(generatedClasses);
-                        isGenerated = true;
-                    }
+                    ensureGenerated();
                     if (generated.contains(name)) {
                         CtClass ctClass = pool.getOrNull(name);
                         if (ctClass != null) {
@@ -118,6 +109,22 @@ public class DirectClassLoader extends ClassLoader {
             resolveClass(cl);
         }
         return cl;
+    }
+
+    synchronized void ensureGenerated() {
+        if (!isGenerated) {
+            try {
+                /*
+                 * Lazily generate Direct classes from schema
+                 */
+                Map<Integer, CtClass> generatedClasses = ClassBuilder.compileGeneratedInterfacesAndClasses(ais,
+                        schemaName);
+                this.registerDirectObjectClasses(generatedClasses);
+                isGenerated = true;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")
