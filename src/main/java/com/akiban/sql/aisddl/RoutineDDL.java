@@ -85,7 +85,7 @@ public class RoutineDDL {
         for (ParameterStyleCallingConvention cc : parameterStyleCallingConventions) {
             if (cc.language == null) {
                 if (!scriptChecked) {
-                    isScript = routineLoader.isScriptLanguage(session, language, schemaName);
+                    isScript = routineLoader.isScriptLanguage(session, language);
                     scriptChecked = true;
                 }
                 if (!isScript) continue;

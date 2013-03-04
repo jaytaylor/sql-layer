@@ -35,7 +35,6 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 
-import org.apache.log4j.helpers.Loader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

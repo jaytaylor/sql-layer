@@ -10,14 +10,11 @@
 - Statement: >
     CREATE PROCEDURE test_direct(OUT d INTEGER) AS $$
       importPackage(com.akiban.direct);
-      var dcontext = (new Direct).directContext;
-      java.lang.System.out.println("dcontext=" + dcontext);
-      var extent = dcontext.extent;
-      java.lang.System.out.println("extent=" + extent);
-      var i = 0;
       var obj = {};
+      var dcontext = (new Direct).directContext;
+      var extent = dcontext.extent;
+      var i = 0;
       for (x in Iterator(extent.t1List)) {
-        java.lang.System.out.println("x=" + x);
         if (++i == 2) {
           obj.d = x.id;
           break;

@@ -56,7 +56,7 @@ public class MockRoutineLoader implements RoutineLoader
     }
 
     @Override
-    public boolean isScriptLanguage(Session session, String language, String schemaName) {
+    public boolean isScriptLanguage(Session session, String language) {
         return true;
     }
 

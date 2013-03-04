@@ -87,11 +87,6 @@ public abstract class ClassBuilder {
 
     public abstract void end();
 
-    /*
-     * Complete demo hack for now. Remove file s from table name (because we
-     * want a singular name in the generated code). Make other assumptions about
-     * uniqueness, etc.
-     */
     public static String asJavaName(final String name, final boolean toUpper) {
         return INFLECTOR.camelize(INFLECTOR.singularize(name), !toUpper);
     }

@@ -10,8 +10,7 @@
         <!-- this is the default version number, hudson job sets this to the official number -->
         <BZR_REVISION></BZR_REVISION>
         <akiban.test.extraJvmArgs></akiban.test.extraJvmArgs>
-        <akiban.test.JmxJvmArgs>-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=8082 -Dcom.sun.management.jmxremote.ssl=false
-            -Dcom.sun.management.jmxremote.authenticate=false</akiban.test.JmxJvmArgs>
+        <akiban.test.JmxJvmArgs>-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=8082 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false</akiban.test.JmxJvmArgs>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
@@ -188,17 +187,13 @@
 	    <version>4.2.3</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>asm</groupId>
-            <artifactId>asm-commons</artifactId>
-            <version>3.3.1</version>
-        </dependency>
         <!-- Akiban Direct -->
-        <dependency>
+         <dependency>
             <groupId>org.javassist</groupId>
             <artifactId>javassist</artifactId>
             <version>3.16.1-GA</version>
         </dependency>
+        
     </dependencies>
     <build>
         <resources>
@@ -290,11 +285,11 @@
                 </configuration>
                 <executions>
                     <execution>
-                        <id>copy-dependencies</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>copy-dependencies</goal>
-                        </goals>
+                      <id>copy-dependencies</id>
+                      <phase>package</phase>
+                      <goals>
+                          <goal>copy-dependencies</goal>
+                      </goals>
                     </execution>
                 </executions>
             </plugin>
@@ -413,11 +408,9 @@
                         <exclude>src/test/resources/com/akiban/server/service/functions/testfunctionpath.txt</exclude>
                         <exclude>src/test/resources/com/akiban/server/service/servicemanager/configuration/yaml/test-composite.yaml.1</exclude>
                         <exclude>src/main/resources/com/akiban/server/types3/service/t3s.txt</exclude>
-                        <exclude>src/test/resources/com/akiban/direct/**</exclude>
-                        <exclude>direct-demo/**</exclude>
-			            <exclude>src/test/resources/com/akiban/server/entity/changes/*.*</exclude>
-			            <exclude>src/test/resources/com/akiban/server/entity/fromais/*.*</exclude>
-			            <exclude>src/test/resources/com/akiban/server/entity/model/*.*</exclude>
+			<exclude>src/test/resources/com/akiban/server/entity/changes/*.*</exclude>
+			<exclude>src/test/resources/com/akiban/server/entity/fromais/*.*</exclude>
+			<exclude>src/test/resources/com/akiban/server/entity/model/*.*</exclude>
                     </excludes>
                     <mapping>
                         <g>JAVADOC_STYLE</g>
@@ -432,7 +425,8 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- Earlier version of eclipse plugin to avoid resource filtering bug. (See http://stackoverflow.com/questions/1397903/setting-project-for-eclipse-using-maven) -->
+            <!-- Earlier version of eclipse plugin to avoid resource filtering bug. 
+         (See http://stackoverflow.com/questions/1397903/setting-project-for-eclipse-using-maven)-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-eclipse-plugin</artifactId>
@@ -447,10 +441,10 @@
                         <phase>generate-sources</phase>
                         <configuration>
                             <target>
-                                <mkdir dir="target/generated-sources/protobuf" />
+                                <mkdir dir="target/generated-sources/protobuf"/>
                                 <exec executable="protoc" failonerror="true">
-                                    <arg value="--java_out=target/generated-sources/protobuf" />
-                                    <arg value="src/main/protobuf/akiban_information_schema.proto" />
+                                    <arg value="--java_out=target/generated-sources/protobuf"/>
+                                    <arg value="src/main/protobuf/akiban_information_schema.proto"/>
                                 </exec>
                             </target>
                             <sourceRoot>target/generated-sources</sourceRoot>
@@ -473,11 +467,11 @@
                             <goal>enforce</goal>
                         </goals>
                         <configuration>
-                            <rules>
-                                <requireJavaVersion>
-                                    <version>1.7</version>
-                                </requireJavaVersion>
-                            </rules>
+                        <rules>
+                            <requireJavaVersion>
+                                <version>1.7</version>
+                            </requireJavaVersion>
+                        </rules>
                         </configuration>
                     </execution>
                 </executions>
