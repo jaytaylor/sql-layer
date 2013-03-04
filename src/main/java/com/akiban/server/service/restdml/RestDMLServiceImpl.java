@@ -43,7 +43,6 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.text.FullTextIndexService;
 import com.akiban.server.service.text.FullTextQueryBuilder;
-import com.akiban.server.service.text.IndexScan_FullText;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
@@ -424,15 +423,11 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         FullTextQueryBuilder builder = new FullTextQueryBuilder(indexName, 
                                                                 fullTextService);
         try (Session session = sessionService.createSession()) {
-            IndexScan_FullText scan = 
-                new IndexScan_FullText(fullTextService, indexName,
-                                       builder.parseQuery(query), 
-                                       realLimit);
             extDataService.dumpBranchAsJson(session,
                                             writer,
                                             indexName.getSchemaName(),
                                             indexName.getTableName(),
-                                            scan,
+                                            builder.scanOperator(query, realLimit),
                                             fullTextService.searchRowType(session, indexName),
                                             realDepth,
                                             true);

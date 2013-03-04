@@ -103,4 +103,12 @@ public class FullTextQueryBuilder
             };
     }
     
+    public IndexScan_FullText scanOperator(String query, int limit) {
+        return scanOperator(parseQuery(query), limit);
+    }
+    
+    public IndexScan_FullText scanOperator(FullTextQueryExpression query, int limit) {
+        return new IndexScan_FullText(service, indexName, query, limit);
+    }
+
 }
