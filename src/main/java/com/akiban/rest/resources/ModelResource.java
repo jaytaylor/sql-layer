@@ -179,7 +179,7 @@ public final class ModelResource {
                                     }
                                 }
                                 // re-create the diff against the new AIS
-                                // diff = new SpaceDiff(curSpace, spaceForAIS(session));
+                                diff = new SpaceDiff(curSpace, spaceForAIS(session, schema));
                             }
                             if(success) {
                                 diff.apply(jsonSummary);

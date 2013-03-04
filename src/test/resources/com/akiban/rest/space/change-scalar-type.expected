@@ -1,14 +1,20 @@
 [
     {
-        "action": "change_scalar_type",
-        "destructive": true,
-        "uuid": "33563d56-7737-11e2-a970-980e7188419e",
+        "action": "change_scalar_type", 
+        "destructive": true, 
+        "uuid": "33563d56-7737-11e2-a970-980e7188419e", 
         "new_scalar_type": "double"
-    },
+    }, 
     {
-        "action": "change_scalar_validations",
-        "destructive": true,
-        "uuid": "33563d56-7737-11e2-a970-980e7188419e",
-        "new_validations": "[]"
+        "action": "change_scalar_validations", 
+        "new_validations": "[required: false]", 
+        "destructive": true, 
+        "uuid": "33563d56-7737-11e2-a970-980e7188419e"
+    }, 
+    {
+        "action": "change_scalar_properties", 
+        "new_properties": "{scale=-1, precision=-1}", 
+        "destructive": true, 
+        "uuid": "33563d56-7737-11e2-a970-980e7188419e"
     }
 ]
