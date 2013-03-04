@@ -27,18 +27,17 @@ package com.akiban.direct;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
+import javassist.NotFoundException;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 
@@ -50,24 +49,20 @@ import com.akiban.ais.model.AkibanInformationSchema;
  */
 public class DirectClassLoader extends URLClassLoader {
 
-    private final static int BUFFER_SIZE = 65536;
-    private final static String[] DIRECT_INTERFACES = { DirectContext.class.getName(), DirectModule.class.getName(),
-            DirectObject.class.getName(), DirectIterable.class.getName(), DirectIterableImpl.class.getName(),
-            AbstractDirectObject.class.getName(), DirectResultSet.class.getName(), };
-
-    private final static String INCLUDE_PREFIX = "com.akiban.direct.script";
-
+    final AkibanInformationSchema ais;
+    final String schemaName;
     final ClassPool pool;
-
-    int depth = 0;
-
     final Set<String> generated = new HashSet<String>();
-    
-    Class<?> extentClass;
 
-    public DirectClassLoader(ClassLoader baseLoader) {
-        super(new URL[0], baseLoader);
+    Class<?> extentClass;
+    boolean isGenerated;
+
+    public DirectClassLoader(final URL[] urls, final ClassLoader parentLoader, final String schemaName,
+            final AkibanInformationSchema ais) {
+        super(urls, parentLoader);
         this.pool = new ClassPool(true);
+        this.schemaName = schemaName;
+        this.ais = ais;
     }
 
     @Override
@@ -107,130 +102,64 @@ public class DirectClassLoader extends URLClassLoader {
      */
     @Override
     protected Class<?> loadClass(String genericName, boolean resolve) throws ClassNotFoundException {
+        // TODO - still needed? I think not.
         int p = genericName.indexOf('<');
         String name = p == -1 ? genericName : genericName.substring(0, p);
 
-        /*
-         * Not a parallel ClassLoader until necessary
-         */
-        synchronized (this) {
-            Class<?> cl = findLoadedClass(name);
-
-            if (cl == null && name.startsWith(INCLUDE_PREFIX)) {
-                try {
-                    /*
-                     * These classes are included in the server jar, but we want
-                     * them defined in this ClassLoader, not the parent.
-                     */
-                    String resourceName = name.replace('.', '/').concat(".class");
-                    InputStream is = getClass().getClassLoader().getResourceAsStream(resourceName);
-                    if (is != null) {
-                        byte[] buffer = new byte[BUFFER_SIZE];
-                        int offset = 0;
-                        while (true) {
-                            int len = is.read(buffer, offset, buffer.length - offset);
-                            if (len == -1) {
-                                cl = defineClass(name, buffer, 0, offset);
-                                break;
-                            }
-                            offset += len;
-                            if (offset >= buffer.length) {
-                                byte[] temp = new byte[buffer.length * 2];
-                                System.arraycopy(buffer, 0, temp, 0, buffer.length);
-                                buffer = temp;
-                            }
-                        }
-                    }
-                } catch (IOException e) {
-                    throw new ClassNotFoundException(name, e);
-                }
-            }
-            /*
-             * Load some interfaces and classes selected carefully by name from
-             * the server's ClassLoader. These represent the server's context
-             * within the module.
-             */
-            if (cl == null) {
-                for (final String special : DIRECT_INTERFACES) {
-                    if (special.equals(name)) {
-                        cl = getClass().getClassLoader().loadClass(name);
-                        if (cl == null) {
-                            throw new ClassNotFoundException(name);
-                        }
-                        break;
-                    }
-                }
-            }
-            if (cl == null) {
-                cl = compileSpecialClass(name, resolve);
-            }
-
-            if (cl == null) {
-                try {
-                    cl = getParent().loadClass(name);
-                } catch (ClassNotFoundException e) {
-                    // ignore
-                }
-            }
-
-            if (cl == null) {
-                cl = findClass(name);
-            }
-            if (resolve) {
-                resolveClass(cl);
-            }
-            return cl;
+        Class<?> cl = null;
+        try {
+            cl = getParent().loadClass(name);
+        } catch (ClassNotFoundException e) {
+            // ignore
         }
-    }
 
-    private Class<?> compileSpecialClass(final String name, final boolean resolve) {
-        if (generated.contains(name)) {
-            depth++;
+        if (cl == null) {
+            cl = findClass(name);
+        }
+
+        if (cl == null) {
+            /*
+             * Lazily generate Direct classes when needed.
+             */
             try {
-                /*
-                 * First check whether this is a precompiled interface
-                 */
-                CtClass ctClass = pool.getOrNull(name);
-                if (ctClass != null) {
-                    byte[] bytes = ctClass.toBytecode();
-                    try {
-                        FileOutputStream os = new FileOutputStream("/tmp/" + name + ".class");
-                        os.write(bytes);
-                        os.close();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    final Class<?> c = defineClass(name, bytes, 0, bytes.length);
-                    if (c != null && !c.isInterface() && resolve) {
-                        /*
-                         * Resolve here within nested depth so that
-                         */
-                        resolveClass(c);
-                    }
-                    return c;
-                }
-
+                generate();
             } catch (Exception e) {
                 e.printStackTrace();
-                throw new RuntimeException(e);
-            } finally {
-                depth--;
             }
-        }
-        return null;
-    }
 
-    public Class<? extends DirectModule> loadModule(AkibanInformationSchema ais, String moduleName, List<String> urls)
-            throws Exception {
-        if (urls != null) {
-            for (final String u : urls) {
-                URL url = new URL(u);
-                addURL(url);
+            /*
+             * Not a parallel ClassLoader until necessary
+             */
+            synchronized (this) {
+                if (generated.contains(name)) {
+                    try {
+                        /*
+                         * First check whether this is a precompiled interface
+                         */
+                        CtClass ctClass = pool.getOrNull(name);
+                        if (ctClass != null) {
+                            byte[] bytes = ctClass.toBytecode();
+                            try {
+                                FileOutputStream os = new FileOutputStream("/tmp/" + name + ".class");
+                                os.write(bytes);
+                                os.close();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            cl = defineClass(name, bytes, 0, bytes.length);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        throw new RuntimeException(e);
+                    }
+                }
+
             }
         }
-        @SuppressWarnings("unchecked")
-        Class<? extends DirectModule> clazz = (Class<? extends DirectModule>) this.loadClass(moduleName);
-        return clazz;
+        if (resolve) {
+            resolveClass(cl);
+        }
+        return cl;
     }
 
     @SuppressWarnings("unchecked")
@@ -256,11 +185,19 @@ public class DirectClassLoader extends URLClassLoader {
         }
     }
 
+    private synchronized void generate() throws Exception {
+        if (!isGenerated) {
+            isGenerated = true;
+            Map<Integer, CtClass> generated = ClassBuilder.compileGeneratedInterfacesAndClasses(ais, schemaName);
+            this.registerDirectObjectClasses(generated);
+        }
+    }
+
     public void close() throws IOException {
         super.close();
         Direct.unregisterDirectObjectClasses();
     }
-    
+
     public Class<?> getExtentClass() {
         return extentClass;
     }

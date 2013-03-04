@@ -41,6 +41,8 @@ import com.akiban.ais.model.validation.AISValidation;
 import com.akiban.ais.model.validation.AISValidationFailure;
 import com.akiban.ais.model.validation.AISValidationOutput;
 import com.akiban.ais.model.validation.AISValidationResults;
+import com.akiban.server.service.routines.ScriptCache;
+import com.akiban.server.service.routines.ScriptCache.ScriptEngineNode;
 
 public class AkibanInformationSchema implements Traversable
 {
@@ -712,6 +714,14 @@ public class AkibanInformationSchema implements Traversable
         return "AIS(" + generation + ")";
     }
 
+    public synchronized ScriptEngineNode getScriptEngineNode(String schemaName, ScriptCache cache) {
+        ScriptEngineNode holder = scriptEngineNodes.get(schemaName);
+        if (holder == null) {
+            holder = cache.createScriptEngineNode(schemaName, this);
+            scriptEngineNodes.put(schemaName, holder);
+        }
+        return holder;
+    }
 
     // State
 
@@ -727,6 +737,7 @@ public class AkibanInformationSchema implements Traversable
     private final Map<String, Join> joins = new TreeMap<>();
     private final Map<String, Type> types = new TreeMap<>();
     private final Map<String, Schema> schemas = new TreeMap<>();
+    private final Map<String, ScriptEngineNode> scriptEngineNodes = new TreeMap<>();
     private final CharsetAndCollation charsetAndCollation;
     private final ConcurrentMap cachedValues = new ConcurrentHashMap(4,0.75f,4); // Very few, write-once entries expected
     private long generation = -1;
