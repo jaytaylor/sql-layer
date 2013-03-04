@@ -54,7 +54,7 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     private final SpaceLookups newSpaceLookup;
     private final AkibanInformationSchema oldAIS;
     private final AkibanInformationSchema newAIS;
-    private final List<String> errors = new ArrayList();
+    private final List<String> errors = new ArrayList<>();
 
     // Per entity change information. Tracked after beginEntity() and executed in endEntity()
     private final List<UserTable> dropTables = new ArrayList<>();
