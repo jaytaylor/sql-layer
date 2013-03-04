@@ -33,12 +33,10 @@
         "action": "change_scalar_validations", 
         "new_validations": [
             {
-                "name": "max_length", 
-                "value": 128
+                "max_length": 128
             }, 
             {
-                "name": "required", 
-                "value": true
+                "required": true
             }
         ], 
         "destructive": true, 
@@ -53,49 +51,17 @@
         "uuid": "257e9b59-e77f-4a4d-a5da-00c7c2261875"
     }, 
     {
-        "action": "drop_index", 
-        "index": {
-            "columns": [
-                {
-                    "column": "placed_old", 
-                    "table": "orders_old"
-                }, 
-                {
-                    "column": "last_name_old", 
-                    "table": "customer_old"
-                }
-            ]
-        }, 
+        "action": "drop_index",
         "destructive": true, 
         "name": "orderplaced_lastname"
     }, 
     {
-        "action": "drop_index", 
-        "index": {
-            "columns": [
-                {
-                    "column": "placed_old", 
-                    "table": "orders_old"
-                }
-            ]
-        }, 
+        "action": "drop_index",
         "destructive": true, 
         "name": "placed"
     }, 
     {
         "action": "drop_index", 
-        "index": {
-            "columns": [
-                {
-                    "column": "last_name_old", 
-                    "table": "customer_old"
-                }, 
-                {
-                    "column": "first_name", 
-                    "table": "customer_old"
-                }
-            ]
-        }, 
         "destructive": true, 
         "name": "last_first"
     }, 

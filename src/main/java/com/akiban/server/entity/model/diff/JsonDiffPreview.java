@@ -34,6 +34,7 @@ import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Validation;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Map;
 import java.util.UUID;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
@@ -228,7 +229,13 @@ public class JsonDiffPreview implements SpaceModificationHandler
             entry("action", "change_scalar_validations");
             entry("destructive", true);
             entry("uuid", scalarUuid);
-            entry("new_validations", afterChange.getValidation());
+            jsonGen.writeArrayFieldStart("new_validations");
+            for (Validation v : afterChange.getValidation()) {
+                jsonGen.writeStartObject();
+                jsonGen.writeObjectField(v.getName(), v.getValue());
+                jsonGen.writeEndObject();
+            }
+            jsonGen.writeEndArray();
             endObject();
         }
         catch (IOException ex)
@@ -246,7 +253,10 @@ public class JsonDiffPreview implements SpaceModificationHandler
             entry("action", "change_scalar_properties");
             entry("destructive", true);
             entry("uuid", scalarUuid);
-            entry("new_properties", afterChange.getProperties());
+            jsonGen.writeObjectFieldStart("new_properties");
+            for (Map.Entry<String, Object> prop : afterChange.getProperties().entrySet())
+                jsonGen.writeObjectField(prop.getKey(), prop.getValue());
+            jsonGen.writeEndObject();
             endObject();
         }
         catch (IOException ex)
@@ -283,9 +293,11 @@ public class JsonDiffPreview implements SpaceModificationHandler
         try
         {
             startObject();
-            entry("action", "drop_entity+validation");
+            entry("action", "drop_entity_validation");
             entry("destructive", true);
-            entry("dropped_validation", validation);
+            jsonGen.writeObjectFieldStart("dropped_validation");
+            jsonGen.writeObjectField(validation.getName(), validation.getValue());
+            jsonGen.writeEndObject();
             endObject();
         }
         catch (IOException ex)
@@ -320,7 +332,6 @@ public class JsonDiffPreview implements SpaceModificationHandler
             entry("action", "drop_index");
             entry("destructive", true);
             entry("name", name);
-            entry("index", index);
             endObject();
         }
         catch (IOException ex)
@@ -339,7 +350,6 @@ public class JsonDiffPreview implements SpaceModificationHandler
             entry("destructive", false);
             entry("old_name", oldName);
             entry("new_name", newName);
-            entry("index", index);
             endObject();
         }
         catch (IOException ex)

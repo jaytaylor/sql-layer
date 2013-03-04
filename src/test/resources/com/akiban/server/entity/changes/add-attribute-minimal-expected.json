@@ -1,25 +1,12 @@
 [
     {
         "action": "add_attribute", 
-        "path": ["customers", "orders", "placed" ],
         "destructive": false, 
-        "definition": {
-            "scalar": "0e6c32e0-6aa7-4d68-8975-400b6f99e7db", 
-            "type": "date"
-        }
+        "uuid": "0e6c32e0-6aa7-4d68-8975-400b6f99e7db"
     }, 
     {
         "action": "add_attribute", 
-        "path": ["customers", "orders", "items"],
         "destructive": false, 
-        "definition": {
-            "attributes": {
-                "sku": {
-                    "scalar": "9bf74326-7fa5-4773-b2a8-0d5821712373", 
-                    "type": "integer"
-                }
-            }, 
-            "collection": "67d01679-7098-4e2c-9747-d1ea288789d9"
-        }
+        "uuid": "67d01679-7098-4e2c-9747-d1ea288789d9"
     }
 ]

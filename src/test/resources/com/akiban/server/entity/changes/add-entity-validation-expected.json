@@ -1,10 +1,7 @@
 [
     {
         "action": "add_entity_validation", 
-        "new_validation": {
-            "name": "unique", 
-            "value": "id"
-        }, 
+        "new_validation": "unique: id", 
         "destructive": false
     }
 ]

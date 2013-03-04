@@ -1,14 +1,6 @@
 [
     {
-        "action": "drop_index", 
-        "index": {
-            "columns": [
-                {
-                    "column": "name", 
-                    "table": "customer"
-                }
-            ]
-        }, 
+        "action": "drop_index",
         "destructive": true, 
         "name": "name"
     }

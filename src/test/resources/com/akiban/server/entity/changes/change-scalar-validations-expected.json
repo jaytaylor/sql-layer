@@ -3,8 +3,7 @@
         "action": "change_scalar_validations", 
         "new_validations": [
             {
-                "name": "max_length", 
-                "value": 256
+                "max_length": 256
             }
         ], 
         "destructive": true, 
@@ -14,8 +13,7 @@
         "action": "change_scalar_validations", 
         "new_validations": [
             {
-                "name": "max", 
-                "value": 987
+                "max": 987
             }
         ], 
         "destructive": true, 
