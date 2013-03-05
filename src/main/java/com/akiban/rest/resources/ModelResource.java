@@ -94,9 +94,7 @@ public final class ModelResource {
                     public void write(PrintWriter writer) throws Exception {
                         try (Session session = reqs.sessionService.createSession();
                              CloseableTransaction txn = reqs.transactionService.beginCloseableTransaction(session)) {
-                            AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(session);
-                            ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
-                            Space space = AisToSpace.create(ais);
+                            Space space = spaceForAIS(session, schema);
                             String json = space.toJson();
                             writer.write(json);
                             txn.commit();
@@ -125,9 +123,7 @@ public final class ModelResource {
                         EntityParser parser = new EntityParser (reqs.dxlService);
                         try (Session session = reqs.sessionService.createSession()) {
                             parser.parse(session, tableName, node);
-                            AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(session);
-                            ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(tableName.getSchemaName()));
-                            Space currSpace = AisToSpace.create(ais);
+                            Space currSpace = spaceForAIS(session, tableName.getSchemaName());
                             writer.write(currSpace.toJson());
                         }
                     }
@@ -167,10 +163,8 @@ public final class ModelResource {
                     public void write(PrintWriter writer) throws Exception {
                         try (Session session = reqs.sessionService.createSession()) {
                             // Cannot have transaction when attempting to perform DDL
-                            AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(session);
-                            ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
-                            Space curSpace = AisToSpace.create(ais);
-                            Space newSpace = Space.create(new InputStreamReader(postInput));
+                            Space curSpace = spaceForAIS(session, schema);
+                            Space newSpace = Space.create(new InputStreamReader(postInput), Space.randomUUIDs);
                             SpaceDiff diff = new SpaceDiff(curSpace, newSpace);
 
                             boolean success = true;
@@ -184,14 +178,24 @@ public final class ModelResource {
                                         jsonSummary.error(err);
                                     }
                                 }
+                                // re-create the diff against the new AIS
+                                diff = new SpaceDiff(curSpace, spaceForAIS(session, schema));
                             }
                             if(success) {
                                 diff.apply(jsonSummary);
                             }
+                            if (doApply)
+                                jsonSummary.describeModifiedEntities();
                             jsonSummary.finish();
                         }
                     }
                 })
                 .build();
+    }
+
+    private Space spaceForAIS(Session session, String schema) {
+        AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(session);
+        ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
+        return AisToSpace.create(ais, Space.requireUUIDs);
     }
 }

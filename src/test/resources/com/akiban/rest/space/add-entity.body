@@ -40,6 +40,9 @@
                     "validation": [
                         {
                             "width": 11
+                        },
+                        {
+                            "required": false
                         }
                     ]
                 },
