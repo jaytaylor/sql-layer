@@ -1,0 +1,7 @@
+#
+# bug 1012317 - Error when subtracting an integer from a datetime expression
+#
+---
+- Statement: select from_unixtime(1362530682), from_unixtime(1362530682) - 0, from_unixtime(1362530682) - 86400;
+- output: [['2013-03-06 00:44:42.0', 2.0130306004442E13, 2.0130305918042E13]]
+...
