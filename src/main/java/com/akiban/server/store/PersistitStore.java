@@ -1341,6 +1341,7 @@ public class PersistitStore implements Store, Service {
         //     key of the index row. There may be duplicates due to nulls, and they will have different null separator
         //     values and the hkeys will differ. Look through these until the desired hkey is found, and delete that
         //     row. If the hkey is missing, then the row is already not present.
+        boolean deleted = false;
         PersistitAdapter adapter = adapter(session);
         if (index.isUniqueAndMayContainNulls()) {
             // Can't use a PIRB, because we need to get the hkey. Need a PersistitIndexRow.
@@ -1352,7 +1353,7 @@ public class PersistitStore implements Store, Service {
                 indexRow.copyFromExchange(exchange); // Gets the current state of the exchange into oldIndexRow
                 PersistitHKey rowHKey = (PersistitHKey) indexRow.hKey();
                 if (rowHKey.key().compareTo(hKey) == 0) {
-                    exchange.remove();
+                    deleted = exchange.remove();
                     break;
                 }
                 direction = Key.Direction.GT;
@@ -1360,8 +1361,9 @@ public class PersistitStore implements Store, Service {
             adapter.returnIndexRow(indexRow);
         } else {
             constructIndexRow(exchange, rowData, index, hKey, indexRowBuffer, false);
-            exchange.remove();
+            deleted = exchange.remove();
         }
+        assert deleted : "Exchange remove on deleteIndexRow";
     }
 
     private void deleteIndex(Session session,
