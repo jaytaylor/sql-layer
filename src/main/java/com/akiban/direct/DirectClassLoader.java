@@ -117,9 +117,11 @@ public class DirectClassLoader extends ClassLoader {
                 /*
                  * Lazily generate Direct classes from schema
                  */
-                Map<Integer, CtClass> generatedClasses = ClassBuilder.compileGeneratedInterfacesAndClasses(ais,
-                        schemaName);
-                this.registerDirectObjectClasses(generatedClasses);
+                if (ais != null && schemaName != null && schemaName.length() > 0) {
+                    Map<Integer, CtClass> generatedClasses = ClassBuilder.compileGeneratedInterfacesAndClasses(ais,
+                            schemaName);
+                    this.registerDirectObjectClasses(generatedClasses);
+                }
                 isGenerated = true;
             } catch (Exception e) {
                 e.printStackTrace();

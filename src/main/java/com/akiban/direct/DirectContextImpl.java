@@ -78,9 +78,9 @@ public class DirectContextImpl implements DirectContext {
         private void leave() {
             try {
                 if (connection != null) {
-                    JDBCConnection c = ((JDBCConnection) connection);
                     try {
-                        c.reset();
+                        connection.close();
+                        connection = null;
                     } catch (SQLException e) {
                         throw new RuntimeException(e);
                     }

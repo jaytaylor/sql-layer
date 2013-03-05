@@ -402,22 +402,15 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     @Override
     public void close() throws SQLException {
-        reset();
-        deregisterSessionMonitor();
-        this.closed = true;
-    }
-    
-    /*
-     * Close all cursors, but leave Connection in an open, usable state.
-     */
-    public void reset() throws SQLException {
         if (isTransactionActive())
             rollbackTransaction();
         while (!openResultSets.isEmpty()) {
             openResultSets.get(0).close();
         }
+        deregisterSessionMonitor();
+        this.closed = true;
     }
-
+    
     @Override
     public boolean isClosed() throws SQLException {
         return closed;
