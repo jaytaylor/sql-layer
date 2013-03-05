@@ -11,3 +11,5 @@ full-text-2n: negated term
 full-text-2v: with variable
 
 full-text-3: with semi-join
+
+full-text-join: with join to another group
