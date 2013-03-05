@@ -57,7 +57,7 @@ public final class SpaceDiff {
                 out.addEntity(updated.getValue(), updatedEntities.getName(uuid));
         }
         for (UUID uuid : inBoth) {
-            out.beginEntity(originalEntities.getEntity(uuid), originalEntities.getName(uuid));
+            out.beginEntity(updatedEntities.getEntity(uuid), updatedEntities.getName(uuid));
             if (!originalEntities.getName(uuid).equals(updatedEntities.getName(uuid)))
                 out.renameEntity(uuid, originalEntities.getName(uuid));
             attributeActions(uuid, out);
