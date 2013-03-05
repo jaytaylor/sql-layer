@@ -30,15 +30,16 @@
                 "attributes": {
                     "first_name": {
                         "scalar": "33563d56-7737-11e2-a970-980e7188419e", 
+                        "type": "double",
+                        "properties" : {
+                            "scale" : -1,
+                            "precision" : -1
+                        },
                         "validation": [
                             {
                                 "required": false
-                            }, 
-                            {
-                                "width": 11
                             }
-                        ], 
-                        "type": "integer"
+                        ]
                     }, 
                     "orders": {
                         "attributes": {
