@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
 
@@ -79,31 +80,11 @@ public class DirectClassLoader extends ClassLoader {
     @Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         Class<?> cl = null;
-        try {
-            cl = getParent().loadClass(name);
-        } catch (ClassNotFoundException e) {
-            // ignore
+        if (name.startsWith(ClassBuilder.PACKAGE)) {
+            ensureGenerated();
         }
         if (cl == null) {
-            /*
-             * Not a parallel ClassLoader until necessary
-             */
-            synchronized (this) {
-                try {
-                    ensureGenerated();
-                    if (generated.contains(name)) {
-                        CtClass ctClass = pool.getOrNull(name);
-                        if (ctClass != null) {
-                            byte[] bytes = ctClass.toBytecode();
-                            cl = defineClass(name, bytes, 0, bytes.length);
-                        }
-                    }
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    throw new RuntimeException(e);
-                }
-            }
+            cl = getParent().loadClass(name);
         }
         if (resolve) {
             resolveClass(cl);
@@ -124,13 +105,14 @@ public class DirectClassLoader extends ClassLoader {
                 }
                 isGenerated = true;
             } catch (Exception e) {
-                e.printStackTrace();
+                throw new DirectException(e);
             }
         }
     }
 
     @SuppressWarnings("unchecked")
-    public void registerDirectObjectClasses(Map<Integer, CtClass> implClasses) throws Exception {
+    public void registerDirectObjectClasses(Map<Integer, CtClass> implClasses) throws IOException,
+            CannotCompileException {
         try { // TODO
             for (final Entry<Integer, CtClass> entry : implClasses.entrySet()) {
                 CtClass c = entry.getValue();
@@ -147,7 +129,7 @@ public class DirectClassLoader extends ClassLoader {
                     extentClass = cl;
                 }
             }
-        } catch (Exception e) {
+        } catch (IOException | CannotCompileException e) {
             throw e;
         }
     }
