@@ -410,7 +410,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         deregisterSessionMonitor();
         this.closed = true;
     }
-    
+
     @Override
     public boolean isClosed() throws SQLException {
         return closed;
