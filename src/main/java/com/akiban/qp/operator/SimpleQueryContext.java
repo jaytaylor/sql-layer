@@ -58,7 +58,10 @@ public class SimpleQueryContext extends QueryContextBase
     
     @Override
     public Session getSession() {
-    	return adapter.getSession();
+    	if (adapter != null)
+            return adapter.getSession();
+    	else
+            return null;
     }
 
     @Override

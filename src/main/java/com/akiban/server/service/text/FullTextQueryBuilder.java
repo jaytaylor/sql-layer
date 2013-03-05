@@ -26,14 +26,18 @@
 
 package com.akiban.server.service.text;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.explain.*;
+import com.akiban.server.service.ServiceManager;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 
@@ -43,25 +47,61 @@ import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 
+import java.io.File;
 import java.util.List;
 
 public class FullTextQueryBuilder
 {
     protected final IndexName indexName;
-    protected final FullTextIndexService service;
+    protected final FullTextIndexInfos infos;
     protected final QueryContext buildContext;
 
-    /** Construct directly for testing. */
+    /** Construct directly for non-SQL and testing. */
     public FullTextQueryBuilder(IndexName indexName, FullTextIndexService service) {
         this.indexName = indexName;
-        this.service = service;
+        this.infos = service;
         this.buildContext = null;
     }
 
-    public FullTextQueryBuilder(FullTextIndex index, QueryContext buildContext) {
+    /** Construct for given index and context */
+    public FullTextQueryBuilder(FullTextIndex index, AkibanInformationSchema ais,
+                                QueryContext buildContext) {
         this.indexName = index.getIndexName();
-        this.service = buildContext.getServiceManager().getServiceByClass(FullTextIndexService.class);
+        ServiceManager serviceManager = null;
+        if (buildContext != null) {
+            try {
+                serviceManager = buildContext.getServiceManager();
+            }
+            catch (UnsupportedOperationException ex) {
+            }
+        }
+        if (serviceManager != null) {
+            this.infos = serviceManager.getServiceByClass(FullTextIndexService.class);
+        }
+        else {
+            this.infos = new TestFullTextIndexInfos(ais);
+        }
         this.buildContext = buildContext;
+    }
+
+    /** For testing without services running (or even stored AIS). */
+    static class TestFullTextIndexInfos extends FullTextIndexInfosImpl {
+        private final AkibanInformationSchema ais;
+        private final File dummyPath = new File("."); // Does not matter.
+
+        public TestFullTextIndexInfos(AkibanInformationSchema ais) {
+            this.ais = ais;
+        }
+
+        @Override
+        protected AkibanInformationSchema getAIS(Session session) {
+            return ais;
+        }
+
+        @Override
+        protected File getIndexPath() {
+            return dummyPath; 
+        }
     }
 
     static class Constant implements FullTextQueryExpression {
@@ -102,12 +142,12 @@ public class FullTextQueryBuilder
                                               final String query) {
         final String fieldName = (defaultField == null) ? null : defaultField.getColumn().getName();
         if (buildContext != null) {
-            return new Constant(service.parseQuery(buildContext, indexName, fieldName, query));
+            return new Constant(infos.parseQuery(buildContext, indexName, fieldName, query));
         }
         return new FullTextQueryExpression() {
                 @Override
                 public Query getQuery(QueryContext context) {
-                    return service.parseQuery(context, indexName, fieldName, query);
+                    return infos.parseQuery(context, indexName, fieldName, query);
                 }
 
                 @Override
@@ -136,7 +176,7 @@ public class FullTextQueryBuilder
                     if (qeval.resultValue().isNull())
                         return null;
                     String query = qeval.resultValue().getString();
-                    return service.parseQuery(context, indexName, fieldName, query);
+                    return infos.parseQuery(context, indexName, fieldName, query);
                 }
 
                 @Override
@@ -261,7 +301,7 @@ public class FullTextQueryBuilder
     public IndexScan_FullText scanOperator(FullTextQueryExpression query, int limit) {
         RowType rowType = null;
         if (buildContext != null)
-            rowType = service.searchRowType(buildContext.getSession(), indexName);
+            rowType = infos.searchRowType(buildContext.getSession(), indexName);
         return new IndexScan_FullText(indexName, query, limit, rowType);
     }
 

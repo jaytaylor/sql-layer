@@ -31,6 +31,7 @@ import com.akiban.ais.model.CacheValueGenerator;
 import com.akiban.ais.model.IndexName;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
@@ -46,6 +47,7 @@ public class FullTextIndexShared implements CacheValueGenerator<FullTextIndexInf
     private String defaultFieldName;
     private Directory directory;
     private Analyzer analyzer;
+    private StandardQueryParser parser;
     private Indexer indexer;
     private Searcher searcher;
 
@@ -123,6 +125,14 @@ public class FullTextIndexShared implements CacheValueGenerator<FullTextIndexInf
 
     public void setAnalyzer(Analyzer analyzer) {
         this.analyzer = analyzer;
+    }
+
+    public StandardQueryParser getParser() {
+        return parser;
+    }
+
+    public void setParser(StandardQueryParser parser) {
+        this.parser = parser;
     }
 
     public Indexer getIndexer() {

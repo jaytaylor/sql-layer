@@ -2158,6 +2158,7 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleFullTextScan(FullTextScan textScan) {
             RowStream stream = new RowStream();
             FullTextQueryBuilder builder = new FullTextQueryBuilder(textScan.getIndex(),
+                                                                    schema.ais(),
                                                                     planContext.getQueryContext());
             FullTextQueryExpression queryExpression = assembleFullTextQuery(textScan.getQuery(),
                                                                             builder);
