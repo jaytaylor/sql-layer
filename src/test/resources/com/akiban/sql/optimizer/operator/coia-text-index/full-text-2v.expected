@@ -4,7 +4,7 @@ PhysicalSelect[CHAR(2) CHARACTER SET utf8 COLLATE utf8_bin, VARCHAR(32) CHARACTE
       Filter_Default(customers - addresses)
         Flatten_HKeyOrdered(customers INNER addresses)
           BranchLookup_Default(HKey -> customers)
-            IndexScan_FullText(test.customers.cust_ft, TERM($1))
+            IndexScan_FullText(test.customers.cust_ft, TERM($1), TERM($2))
       Filter_Default(customers - orders - items)
         Flatten_HKeyOrdered(customers - orders INNER items)
           Flatten_HKeyOrdered(customers INNER orders)

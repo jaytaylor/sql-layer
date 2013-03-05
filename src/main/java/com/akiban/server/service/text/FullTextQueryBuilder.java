@@ -279,7 +279,7 @@ public class FullTextQueryBuilder
                     CompoundExplainer explainer = new CompoundExplainer(Type.FUNCTION);
                     explainer.addAttribute(Label.NAME, PrimitiveExplainer.getInstance("AND"));
                     for (FullTextQueryExpression query : queries) {
-                        explainer.addAttribute(Label.OPERAND, query.getExplainer(context));
+                        explainer.get().put(Label.OPERAND, query.getExplainer(context));
                     }
                     return explainer;
                 }
