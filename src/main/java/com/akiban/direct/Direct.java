@@ -87,7 +87,7 @@ public class Direct {
         dc.enter();
     }
     
-    public static DirectContextImpl getDirectContext() {
+    public static DirectContextImpl getContext() {
         return contextThreadLocal.get();
     }
     

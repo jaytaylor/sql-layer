@@ -146,7 +146,7 @@ public class DirectIterableImpl<T> implements DirectIterable<T> {
             }
 
             try {
-                Statement statement = Direct.getDirectContext().createStatement();
+                Statement statement = Direct.getContext().createStatement();
                 sql = sb.toString();
                 resultSet = (JDBCResultSet) statement.executeQuery(sql);
             } catch (SQLException e) {

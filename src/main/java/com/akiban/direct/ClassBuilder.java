@@ -91,6 +91,10 @@ public abstract class ClassBuilder {
     public static String asJavaName(final String name, final boolean toUpper) {
         return INFLECTOR.camelize(INFLECTOR.singularize(name), !toUpper);
     }
+    
+    public static String asJavaCollectionName(final String name, final boolean toUpper) {
+        return INFLECTOR.camelize(name, !toUpper);
+    }
 
     public static String schemaClassName(String schema) {
         return PACKAGE + "." + INFLECTOR.classify(schema);
@@ -191,7 +195,7 @@ public abstract class ClassBuilder {
             StringBuilder sb = new StringBuilder(buildDirectIterableExpr(className, tableName));
             body = new String[] { "return " + sb.toString() };
         }
-        addMethod("get" + asJavaName(tableName, true) + "List", "com.akiban.direct.DirectIterable<" + className + ">",
+        addMethod("get" + asJavaCollectionName(tableName, true), "com.akiban.direct.DirectIterable<" + className + ">",
                 NONE, null, body);
 
     }
@@ -267,7 +271,7 @@ public abstract class ClassBuilder {
                     }
                     body = new String[] { "return " + sb.toString() };
                 }
-                addMethod("get" + asJavaName(childTableName, true) + "List", "com.akiban.direct.DirectIterable<"
+                addMethod("get" + asJavaCollectionName(childTableName, true), "com.akiban.direct.DirectIterable<"
                         + childClassName + ">", NONE, null, body);
             }
         }

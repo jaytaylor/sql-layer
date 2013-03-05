@@ -41,7 +41,6 @@ import com.akiban.ais.model.validation.AISValidation;
 import com.akiban.ais.model.validation.AISValidationFailure;
 import com.akiban.ais.model.validation.AISValidationOutput;
 import com.akiban.ais.model.validation.AISValidationResults;
-import com.akiban.direct.DirectClassLoader;
 
 public class AkibanInformationSchema implements Traversable
 {
@@ -712,6 +711,7 @@ public class AkibanInformationSchema implements Traversable
     public String toString() {
         return "AIS(" + generation + ")";
     }
+
 
     // State
 
