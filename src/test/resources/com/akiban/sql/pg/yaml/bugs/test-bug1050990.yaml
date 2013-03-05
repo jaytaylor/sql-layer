@@ -1,0 +1,7 @@
+#
+# bug 1050990 -  types3 INTERVALs not  parsed correctly
+#
+---
+- Statement: SELECT DATE_ADD('2100-12-31 23:59:59', INTERVAL '1:1' MINUTE_SECOND);
+- output: [['2101-01-01 00:01:00']]
+...
