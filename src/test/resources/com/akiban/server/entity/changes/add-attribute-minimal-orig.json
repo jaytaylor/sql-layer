@@ -1,0 +1,28 @@
+{
+    "entities" : {
+        "customers" : {
+            "entity" : "2a57b59e-e1b7-4377-996e-a5c04e0abf29",
+            "attributes" : {
+                "id" : {
+                    "scalar" : "8644c36b-f881-4369-a06b-59e3fc580309",
+                    "type" : "integer",
+                    "spinal_pos" : 0
+                },
+                "orders" : {
+                    "collection" : "5ae0ff60-1d99-47b5-b6f8-8cf654581e96",
+                    "attributes" : {
+                        "id" : {
+                            "scalar" : "574ea39e-85c6-4c78-bd2c-221a0955e238",
+                            "type" : "integer",
+                            "spinal_pos" : 0,
+                            "validation" : [
+                                { "required" : true },
+                                { "width" : 11 }
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

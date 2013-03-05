@@ -34,7 +34,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
-final class JsonEntityFormatter implements EntityVisitor<IOException> {
+public final class JsonEntityFormatter implements EntityVisitor<IOException> {
 
     @Override
     public void visitEntity(String name, Entity entity) throws IOException {
@@ -114,7 +114,7 @@ final class JsonEntityFormatter implements EntityVisitor<IOException> {
         }
     }
 
-    JsonEntityFormatter(JsonGenerator json) {
+    public JsonEntityFormatter(JsonGenerator json) {
         this.json = json;
     }
 

@@ -31,12 +31,16 @@ import com.akiban.server.entity.changes.SpaceModificationHandler;
 import com.akiban.server.entity.model.Attribute;
 import com.akiban.server.entity.model.Entity;
 import com.akiban.server.entity.model.EntityIndex;
+import com.akiban.server.entity.model.JsonEntityFormatter;
+import com.akiban.server.entity.model.Util;
 import com.akiban.server.entity.model.Validation;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
-import org.codehaus.jackson.JsonFactory;
+
+import com.google.common.collect.Maps;
 import org.codehaus.jackson.JsonGenerator;
 
 /**
@@ -45,23 +49,40 @@ import org.codehaus.jackson.JsonGenerator;
  */
 public class JsonDiffPreview implements SpaceModificationHandler
 {
-    private static final JsonFactory factory = new JsonFactory();
-    private static final boolean useDefaultPrettyPrinter = true;
-    
     private final JsonGenerator jsonGen;
     private final Writer writer;
+    private final Map<String, Entity> modifiedEntities;
+    private Map.Entry<String, Entity> currentEntity;
     private boolean finished = false;
-    private boolean hadObject = false;
 
     public JsonDiffPreview(Writer writer)
     {
         this.writer = writer;
         try
         {
-            jsonGen = factory.createJsonGenerator(writer);
-            if (useDefaultPrettyPrinter)
-                jsonGen.useDefaultPrettyPrinter();
+            jsonGen = Util.createJsonGenerator(writer);
             jsonGen.writeStartArray();
+        }
+        catch (IOException ex)
+        {
+            throw new DiffIOException(ex);
+        }
+        this.modifiedEntities = new TreeMap<>();
+    }
+
+    public void describeModifiedEntities() {
+        try
+        {
+            startObject();
+            jsonGen.writeObjectFieldStart("modified_entities");
+            JsonEntityFormatter entityFormatter = new JsonEntityFormatter(jsonGen);
+            for (Map.Entry<String, Entity> entry : modifiedEntities.entrySet()) {
+                String name = entry.getKey();
+                Entity entity = entry.getValue();
+                entity.accept(name, entityFormatter);
+            }
+            jsonGen.writeEndObject();
+            endObject();
         }
         catch (IOException ex)
         {
@@ -73,8 +94,6 @@ public class JsonDiffPreview implements SpaceModificationHandler
         if(!finished) {
             try
             {
-                if (hadObject)
-                    jsonGen.writeRaw('\n');
                 jsonGen.writeEndArray();
                 jsonGen.flush();
                 writer.flush();
@@ -88,25 +107,26 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
-    public void beginEntity(UUID entityUUID) {
-        // None
+    public void beginEntity(Entity entity, String name) {
+        currentEntity = Maps.immutableEntry(name, entity);
     }
 
     @Override
-    public void addEntity(UUID entityUuid)
+    public void addEntity(Entity entity, String name)
     {
         try
         {
             startObject();
             entry("action", "add_entity");
             entry("destructive", false);
-            entry("uuid", entityUuid.toString());
+            entry("uuid", entity.uuid().toString());
             endObject();
         }
         catch (IOException ex)
         {
             throw new DiffIOException(ex);
         }
+        entityModified(name, entity);
     }
 
     @Override
@@ -119,7 +139,6 @@ public class JsonDiffPreview implements SpaceModificationHandler
             entry("destructive", true);
             entry("uuid", dropped.uuid());
             entry("name", oldName);
-            entry("index_definition", dropped.getIndexes());
             endObject();
         }
         catch (IOException ex)
@@ -166,6 +185,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         {
             throw new DiffIOException(ex);
         }
+        entityModified();
     }
 
     @Override
@@ -183,6 +203,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         {
             throw new DiffIOException(ex);
         }
+        entityModified();
     }
 
     @Override
@@ -201,6 +222,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         {
             throw new DiffIOException(ex);
         }
+        entityModified();
     }
 
     @Override
@@ -219,6 +241,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         {
             throw new DiffIOException(ex);
         }
+        entityModified();
     }
 
     @Override
@@ -230,13 +253,20 @@ public class JsonDiffPreview implements SpaceModificationHandler
             entry("action", "change_scalar_validations");
             entry("destructive", true);
             entry("uuid", scalarUuid);
-            entry("new_validations", afterChange.getValidation());
+            jsonGen.writeArrayFieldStart("new_validations");
+            for (Validation v : afterChange.getValidation()) {
+                jsonGen.writeStartObject();
+                jsonGen.writeObjectField(v.getName(), v.getValue());
+                jsonGen.writeEndObject();
+            }
+            jsonGen.writeEndArray();
             endObject();
         }
         catch (IOException ex)
         {
             throw new DiffIOException(ex);
         }
+        entityModified();
     }
 
     @Override
@@ -248,13 +278,17 @@ public class JsonDiffPreview implements SpaceModificationHandler
             entry("action", "change_scalar_properties");
             entry("destructive", true);
             entry("uuid", scalarUuid);
-            entry("new_properties", afterChange.getProperties());
+            jsonGen.writeObjectFieldStart("new_properties");
+            for (Map.Entry<String, Object> prop : afterChange.getProperties().entrySet())
+                jsonGen.writeObjectField(prop.getKey(), prop.getValue());
+            jsonGen.writeEndObject();
             endObject();
         }
         catch (IOException ex)
         {
             throw new DiffIOException(ex);
         }
+        entityModified();
     }
 
     @Override
@@ -270,13 +304,16 @@ public class JsonDiffPreview implements SpaceModificationHandler
             startObject();
             entry("action", "add_entity_validation");
             entry("destructive", false);
-            entry("new_validation", validation);
+            jsonGen.writeObjectFieldStart("new_validation");
+            jsonGen.writeObjectField(validation.getName(), validation.getValue());
+            jsonGen.writeEndObject();
             endObject();
         }
         catch (IOException ex)
         {
             throw new DiffIOException(ex);
         }
+        entityModified();
     }
 
     @Override
@@ -285,15 +322,18 @@ public class JsonDiffPreview implements SpaceModificationHandler
         try
         {
             startObject();
-            entry("action", "drop_entity+validation");
+            entry("action", "drop_entity_validation");
             entry("destructive", true);
-            entry("dropped_validation", validation);
+            jsonGen.writeObjectFieldStart("dropped_validation");
+            jsonGen.writeObjectField(validation.getName(), validation.getValue());
+            jsonGen.writeEndObject();
             endObject();
         }
         catch (IOException ex)
         {
             throw new DiffIOException(ex);
         }
+        entityModified();
     }
 
     @Override
@@ -311,6 +351,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         {
             throw new DiffIOException(ex);
         }
+        entityModified();
     }
 
     @Override
@@ -322,13 +363,13 @@ public class JsonDiffPreview implements SpaceModificationHandler
             entry("action", "drop_index");
             entry("destructive", true);
             entry("name", name);
-            entry("index", index);
             endObject();
         }
         catch (IOException ex)
         {
             throw new DiffIOException(ex);
         }
+        entityModified();
     }
 
     @Override
@@ -341,13 +382,13 @@ public class JsonDiffPreview implements SpaceModificationHandler
             entry("destructive", false);
             entry("old_name", oldName);
             entry("new_name", newName);
-            entry("index", index);
             endObject();
         }
         catch (IOException ex)
         {
             throw new DiffIOException(ex);
         }
+        entityModified();
     }
 
     @Override
@@ -373,8 +414,6 @@ public class JsonDiffPreview implements SpaceModificationHandler
     
     private void startObject() throws IOException
     {
-        hadObject = true;
-        jsonGen.writeRaw('\n');
         jsonGen.writeStartObject();
     }
     
@@ -398,5 +437,18 @@ public class JsonDiffPreview implements SpaceModificationHandler
             // This isn't ideal but without repeating a bunch of instanceofs, no other way to know success.
             jsonGen.writeObject(value.toString());
         }
+    }
+
+    private void entityModified() {
+        if (currentEntity != null) {
+            entityModified(currentEntity.getKey(), currentEntity.getValue());
+            currentEntity = null;
+        }
+    }
+
+    private void entityModified(String name, Entity entity) {
+        Object old = modifiedEntities.put(name, entity);
+        if (old != null)
+            throw new IllegalStateException("duplicate entry: " + currentEntity);
     }
 }

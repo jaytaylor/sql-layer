@@ -1,2 +1,0 @@
-error: [Can't change order of spinal attributes]
-error: [Can't change order of spinal attributes]

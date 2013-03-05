@@ -1,0 +1,7 @@
+[
+    {
+        "action": "drop_entity_validation",
+        "destructive": true, 
+        "dropped_validation": {"unique": "name"}
+    }
+]

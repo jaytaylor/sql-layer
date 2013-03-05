@@ -31,13 +31,15 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.entity.model.Entity;
 import com.akiban.server.entity.model.Space;
+import com.google.common.base.Function;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public final class AisToSpace {
 
-    public static Space create(AkibanInformationSchema ais) {
+    public static Space create(AkibanInformationSchema ais, Function<String, UUID> uuidGenerator) {
         Map<String, Entity> entities = new HashMap<>();
         for (Group group : ais.getGroups().values()) {
             UserTable root = group.getRoot();
@@ -47,7 +49,7 @@ public final class AisToSpace {
             Entity entity = new EntityBuilder(root).getEntity();
             entities.put(entityName, entity);
         }
-        return Space.create(entities);
+        return Space.create(entities, uuidGenerator);
     }
 
     private AisToSpace() {}

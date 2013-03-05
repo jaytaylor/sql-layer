@@ -1,0 +1,8 @@
+[
+    {
+        "action": "rename_index", 
+        "new_name": "name_idx", 
+        "destructive": false, 
+        "old_name": "name"
+    }
+]
