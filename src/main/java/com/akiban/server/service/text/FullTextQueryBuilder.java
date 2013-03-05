@@ -181,7 +181,8 @@ public class FullTextQueryBuilder
 
                 @Override
                 public CompoundExplainer getExplainer(ExplainContext context) {
-                    CompoundExplainer explainer = new CompoundExplainer(Type.FIELD);
+                    CompoundExplainer explainer = new CompoundExplainer(Type.FUNCTION);
+                    explainer.addAttribute(Label.NAME, PrimitiveExplainer.getInstance("PARSE"));
                     explainer.addAttribute(Label.OPERAND, qexpr.getExplainer(context));
                     return explainer;
                 }
@@ -215,7 +216,8 @@ public class FullTextQueryBuilder
 
                 @Override
                 public CompoundExplainer getExplainer(ExplainContext context) {
-                    CompoundExplainer explainer = new CompoundExplainer(Type.FIELD);
+                    CompoundExplainer explainer = new CompoundExplainer(Type.FUNCTION);
+                    explainer.addAttribute(Label.NAME, PrimitiveExplainer.getInstance("TERM"));
                     explainer.addAttribute(Label.OPERAND, qexpr.getExplainer(context));
                     return explainer;
                 }
@@ -274,7 +276,8 @@ public class FullTextQueryBuilder
 
                 @Override
                 public CompoundExplainer getExplainer(ExplainContext context) {
-                    CompoundExplainer explainer = new CompoundExplainer(Type.FIELD);
+                    CompoundExplainer explainer = new CompoundExplainer(Type.FUNCTION);
+                    explainer.addAttribute(Label.NAME, PrimitiveExplainer.getInstance("AND"));
                     for (FullTextQueryExpression query : queries) {
                         explainer.addAttribute(Label.OPERAND, query.getExplainer(context));
                     }
