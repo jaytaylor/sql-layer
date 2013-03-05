@@ -130,4 +130,6 @@ index-is-null: IS NULL condition
 
 full-text-1: single parsed query
 
+full-text-1v: from variable
+
 full-text-2: terms on multiple branches
