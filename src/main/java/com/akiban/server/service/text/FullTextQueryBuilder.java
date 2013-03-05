@@ -31,6 +31,8 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.explain.*;
 import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
@@ -152,13 +154,13 @@ public class FullTextQueryBuilder
     }
     
     public FullTextQueryExpression matchQuery(IndexColumn field, String key) {
-        String fieldName = field.getColumn().getName();
+        String fieldName = checkFieldForMatch(field);
         return new Constant(new TermQuery(new Term(fieldName, key)));
     }
 
     public FullTextQueryExpression matchQuery(IndexColumn field,
                                               final TPreparedExpression qexpr) {
-        final String fieldName = field.getColumn().getName();
+        final String fieldName = checkFieldForMatch(field);
         return new FullTextQueryExpression() {
                 @Override
                 public Query getQuery(QueryContext context) {
@@ -185,6 +187,15 @@ public class FullTextQueryBuilder
             };
     }
     
+    protected String checkFieldForMatch(IndexColumn field) {
+        String fieldName = field.getColumn().getName();
+        AkCollator collator = field.getColumn().getCollator();
+        if ((collator != null) && !collator.isCaseSensitive()) {
+            throw new AkibanInternalException("Building a term for field that may need analysis: " + fieldName);
+        }
+        return fieldName;
+    }
+
     public enum BooleanType { SHOULD, MUST, NOT };
 
     public FullTextQueryExpression booleanQuery(final List<FullTextQueryExpression> queries,

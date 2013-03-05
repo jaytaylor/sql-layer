@@ -75,7 +75,8 @@ public class IndexScan_FullText extends Operator
         atts.put(Label.INDEX, PrimitiveExplainer.getInstance(index.toString()));
         atts.put(Label.INDEX_KIND, PrimitiveExplainer.getInstance("FULL_TEXT"));
         atts.put(Label.PREDICATE, queryExpression.getExplainer(context));
-        atts.put(Label.LIMIT, PrimitiveExplainer.getInstance(limit));
+        if (limit > 0)
+            atts.put(Label.LIMIT, PrimitiveExplainer.getInstance(limit));
         if (context.hasExtraInfo(this))
             atts.putAll(context.getExtraInfo(this).get()); 
         return new CompoundExplainer(Type.SCAN_OPERATOR, atts);
@@ -86,8 +87,9 @@ public class IndexScan_FullText extends Operator
         StringBuilder str = new StringBuilder(getName());
         str.append("(").append(index);
         str.append(" ").append(queryExpression);
-        str.append(" LIMIT ");
-        str.append(limit);
+        if (limit > 0) {
+            str.append(" LIMIT ").append(limit);
+        }
         str.append(")");
         return str.toString();
     }

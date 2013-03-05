@@ -314,7 +314,7 @@ public class DefaultFormatter
         if (name.equals("IndexScan_Default")) {
             appendIndexScanOperator(atts);
         }
-        if (name.equals("ValuesScan_Default")) {
+        else if (name.equals("ValuesScan_Default")) {
             if (levelOfDetail != LevelOfDetail.BRIEF) {
                 if (atts.containsKey(Label.EXPRESSIONS)) {
                     for (Explainer row : atts.get(Label.EXPRESSIONS)) {
@@ -332,6 +332,9 @@ public class DefaultFormatter
                     sb.append(opt).append(" on ");
             }
             appendTableName(atts);
+        }
+        else if (name.equals("IndexScan_FullText")) {
+            appendFullTextScanOperator(atts);
         }
     }
 
@@ -469,6 +472,23 @@ public class DefaultFormatter
         }
     }
 
+    protected void appendFullTextScanOperator(Attributes atts) {
+        append(atts.getAttribute(Label.INDEX));
+        if (levelOfDetail != LevelOfDetail.BRIEF) {
+            CompoundExplainer pred = (CompoundExplainer)atts.getAttribute(Label.PREDICATE);
+            Attributes patts = pred.get();
+            if (patts.containsKey(Label.OPERAND)) {
+                for (Explainer entry : patts.get(Label.OPERAND)) {
+                    sb.append(", ");
+                    append(entry);
+                }
+            }
+            if (atts.containsKey(Label.LIMIT)) {
+                sb.append(", LIMIT ").append(atts.getValue(Label.LIMIT));
+            }
+        }
+    }
+    
     private static boolean isLiteralNull(Explainer explainer) {
         return ((explainer.getType() == Type.LITERAL) &&
                 "NULL".equals(((CompoundExplainer)explainer).get().getValue(Label.OPERAND)));
