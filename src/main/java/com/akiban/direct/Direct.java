@@ -84,6 +84,7 @@ public class Direct {
     
     public static void enter(DirectContextImpl dc) {
         contextThreadLocal.set(dc);
+        dc.enter();
     }
     
     public static DirectContextImpl getDirectContext() {
@@ -91,7 +92,10 @@ public class Direct {
     }
     
     public static void leave() {
-        contextThreadLocal.set(null);
+        DirectContextImpl dc = contextThreadLocal.get();
+        contextThreadLocal.remove();
+        assert dc != null : "enter() was not called before leave()";
+        dc.leave();
     }
 
 }

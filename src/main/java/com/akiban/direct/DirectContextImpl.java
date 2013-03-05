@@ -79,8 +79,10 @@ public class DirectContextImpl implements DirectContext {
             try {
                 if (connection != null) {
                     JDBCConnection c = ((JDBCConnection) connection);
-                    if (c.isTransactionActive()) {
-                        c.rollbackTransaction();
+                    try {
+                        c.reset();
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
                     }
                 }
             } finally {
@@ -121,12 +123,10 @@ public class DirectContextImpl implements DirectContext {
 
     public void enter() {
         connectionThreadLocal.get().enter();
-        Direct.enter(this);
     }
 
     public void leave() {
         connectionThreadLocal.get().leave();
-        Direct.leave();
     }
 
     public DirectClassLoader getClassLoader() {
