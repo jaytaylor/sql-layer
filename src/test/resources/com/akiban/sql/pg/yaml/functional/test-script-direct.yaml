@@ -10,10 +10,11 @@
 - Statement: >
     CREATE PROCEDURE test_direct(IN n INTEGER, OUT d INTEGER) AS $$
       importPackage(com.akiban.direct);
-      var dcontext = (new Direct).directContext;
+      var dcontext = Direct.directContext;
       var extent = dcontext.extent;
       var obj = {};
       var i = 0;
+      var c = Packages.com.akiban.direct.entity.Test.T1;
       for (x in Iterator(extent.t1List.sort("id"))) {
         if (++i == n) {
           obj.d = x.id;

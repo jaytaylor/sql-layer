@@ -713,15 +713,6 @@ public class AkibanInformationSchema implements Traversable
         return "AIS(" + generation + ")";
     }
 
-    public synchronized DirectClassLoader getDirectClassLoader(final String schemaName, final ClassLoader parent) {
-        DirectClassLoader dcl = directClassLoaders.get(schemaName);
-        if (dcl == null) {
-            dcl = new DirectClassLoader(parent, schemaName, this);
-            directClassLoaders.put(schemaName, dcl);
-        }
-        return dcl;
-    }
-
     // State
 
     private static String defaultCharset = "utf8";
@@ -736,7 +727,6 @@ public class AkibanInformationSchema implements Traversable
     private final Map<String, Join> joins = new TreeMap<>();
     private final Map<String, Type> types = new TreeMap<>();
     private final Map<String, Schema> schemas = new TreeMap<>();
-    private final Map<String, DirectClassLoader> directClassLoaders = new TreeMap<>();
     private final CharsetAndCollation charsetAndCollation;
     private final ConcurrentMap cachedValues = new ConcurrentHashMap(4,0.75f,4); // Very few, write-once entries expected
     private long generation = -1;

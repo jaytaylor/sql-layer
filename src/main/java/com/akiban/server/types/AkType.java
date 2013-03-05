@@ -26,38 +26,34 @@
 
 package com.akiban.server.types;
 
-import static com.akiban.server.types.AkType.UnderlyingType.BOOLEAN_AKTYPE;
-import static com.akiban.server.types.AkType.UnderlyingType.DOUBLE_AKTYPE;
-import static com.akiban.server.types.AkType.UnderlyingType.FLOAT_AKTYPE;
-import static com.akiban.server.types.AkType.UnderlyingType.LONG_AKTYPE;
-import static com.akiban.server.types.AkType.UnderlyingType.OBJECT_AKTYPE;
-
 import com.akiban.server.error.AkibanInternalException;
 
+import static com.akiban.server.types.AkType.UnderlyingType.*;
+
 public enum AkType {
-    DATE(LONG_AKTYPE, java.util.Date.class),
-    DATETIME(LONG_AKTYPE, java.util.Date.class),
-    DECIMAL(OBJECT_AKTYPE, java.math.BigDecimal.class),
-    DOUBLE(DOUBLE_AKTYPE, double.class),
-    FLOAT(FLOAT_AKTYPE, float.class),
-    INT(LONG_AKTYPE, int.class),
-    LONG(LONG_AKTYPE, long.class),
-    VARCHAR(OBJECT_AKTYPE, java.lang.String.class),
-    TEXT(OBJECT_AKTYPE, java.lang.String.class),
-    TIME(LONG_AKTYPE, java.sql.Time.class),
-    TIMESTAMP(LONG_AKTYPE, java.sql.Timestamp.class),
-    U_BIGINT(OBJECT_AKTYPE, java.math.BigInteger.class),
-    U_DOUBLE(DOUBLE_AKTYPE, java.math.BigDecimal.class),
-    U_FLOAT(FLOAT_AKTYPE, double.class),
-    U_INT(LONG_AKTYPE, long.class),
-    VARBINARY(OBJECT_AKTYPE, byte[].class),
-    YEAR(LONG_AKTYPE, int.class),
-    BOOL(BOOLEAN_AKTYPE, boolean.class),
-    INTERVAL_MILLIS(LONG_AKTYPE, long.class),
-    INTERVAL_MONTH(LONG_AKTYPE, long.class),
-    RESULT_SET(OBJECT_AKTYPE, java.sql.ResultSet.class),
-    NULL(null, null),
-    UNSUPPORTED(null, null),
+    DATE(LONG_AKTYPE),
+    DATETIME(LONG_AKTYPE),
+    DECIMAL(OBJECT_AKTYPE),
+    DOUBLE(DOUBLE_AKTYPE),
+    FLOAT(FLOAT_AKTYPE),
+    INT(LONG_AKTYPE),
+    LONG(LONG_AKTYPE),
+    VARCHAR(OBJECT_AKTYPE),
+    TEXT(OBJECT_AKTYPE),
+    TIME(LONG_AKTYPE),
+    TIMESTAMP(LONG_AKTYPE),
+    U_BIGINT(OBJECT_AKTYPE),
+    U_DOUBLE(DOUBLE_AKTYPE),
+    U_FLOAT(FLOAT_AKTYPE),
+    U_INT(LONG_AKTYPE),
+    VARBINARY(OBJECT_AKTYPE),
+    YEAR(LONG_AKTYPE),
+    BOOL(BOOLEAN_AKTYPE),
+    INTERVAL_MILLIS(LONG_AKTYPE),
+    INTERVAL_MONTH(LONG_AKTYPE),
+    RESULT_SET(OBJECT_AKTYPE),
+    NULL(null),
+    UNSUPPORTED(null),
     ;
 
     public UnderlyingType underlyingTypeOrNull() {
@@ -70,18 +66,12 @@ public enum AkType {
         }
         return underlyingType;
     }
-    
-    public Class<?> javaClass() {
-        return javaClass;
-    }
 
-    private AkType(UnderlyingType underlyingType, final Class<?> javaClass) {
+    private AkType(UnderlyingType underlyingType) {
         this.underlyingType = underlyingType;
-        this.javaClass = javaClass;
     }
 
     private final UnderlyingType underlyingType;
-    private final Class javaClass;
 
     public enum UnderlyingType {
         BOOLEAN_AKTYPE,

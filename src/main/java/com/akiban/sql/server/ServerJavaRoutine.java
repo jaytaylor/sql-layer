@@ -26,19 +26,21 @@
 
 package com.akiban.sql.server;
 
+import java.sql.ResultSet;
+import java.util.Queue;
+
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.CacheValueGenerator;
 import com.akiban.ais.model.Parameter;
 import com.akiban.direct.Direct;
 import com.akiban.direct.DirectClassLoader;
 import com.akiban.direct.DirectContextImpl;
 import com.akiban.server.explain.Explainable;
 
-import java.sql.ResultSet;
-import java.util.Queue;
-
 /** A Routine that uses Java native data types in its invocation API. */
 public abstract class ServerJavaRoutine implements Explainable
 {
+    private static final Object CACHE_KEY = new Object();
     private ServerQueryContext context;
     private ServerRoutineInvocation invocation;
 
@@ -64,7 +66,15 @@ public abstract class ServerJavaRoutine implements Explainable
     public void push() {
         ServerCallContextStack.push(context, invocation);
         AkibanInformationSchema ais = context.getServer().getAIS();
-        DirectClassLoader dcl = ais.getDirectClassLoader(context.getCurrentSchema(), getClass().getClassLoader());
+        
+        DirectClassLoader dcl = ais.getCachedValue(CACHE_KEY, new CacheValueGenerator<DirectClassLoader>() {
+
+            @Override
+            public DirectClassLoader valueFor(AkibanInformationSchema ais) {
+                return new DirectClassLoader(getClass().getClassLoader(), context.getCurrentSchema(), ais);
+            }
+            
+        });
         Direct.enter(new DirectContextImpl(context.getCurrentSchema(), dcl));
     }
 

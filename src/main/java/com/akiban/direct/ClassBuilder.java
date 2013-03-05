@@ -42,6 +42,7 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.types.AkType;
 import com.sun.jersey.core.impl.provider.entity.Inflector;
 
 public abstract class ClassBuilder {
@@ -201,7 +202,7 @@ public abstract class ClassBuilder {
          */
         Map<String, String> getterMethods = new HashMap<String, String>();
         for (final Column column : table.getColumns()) {
-            Class<?> javaClass = column.getType().akType().javaClass();
+            Class<?> javaClass = javaClass(column);
             String[] getBody = new String[] { "return __get" + column.getType().akType() + "(" + column.getPosition()
                     + ")" };
             String expr = addProperty(column.getName(), javaClass.getName(), null, iface ? null : getBody, iface ? null
@@ -273,16 +274,63 @@ public abstract class ClassBuilder {
         /*
          * Add boilerplate methods
          */
-        addMethod(
-                "copy",
-                typeName,
-                NONE,
-                null,
-                iface ? null : UNSUPPORTED);
+        addMethod("copy", typeName, NONE, null, iface ? null : UNSUPPORTED);
     }
 
     private Class<?> javaClass(final Column column) {
-        return column.getType().akType().javaClass();
+        AkType type = column.getType().akType();
+
+        switch (type) {
+        case DATE:
+            return java.sql.Date.class;
+        case DATETIME:
+            return java.sql.Date.class;
+        case DECIMAL:
+            return java.math.BigDecimal.class;
+        case DOUBLE:
+            return Double.TYPE;
+        case FLOAT:
+            return Float.TYPE;
+        case INT:
+            return Integer.TYPE;
+        case LONG:
+            return Long.TYPE;
+        case VARCHAR:
+            return java.lang.String.class;
+        case TEXT:
+            return java.lang.String.class;
+        case TIME:
+            return java.sql.Time.class;
+        case TIMESTAMP:
+            return java.sql.Timestamp.class;
+        case U_BIGINT:
+            return java.math.BigInteger.class;
+        case U_DOUBLE:
+            return java.math.BigDecimal.class;
+        case U_FLOAT:
+            return Double.TYPE;
+        case U_INT:
+            return Long.TYPE;
+        case VARBINARY:
+            return byte[].class;
+        case YEAR:
+            return Integer.TYPE;
+        case BOOL:
+            return Boolean.TYPE;
+        case INTERVAL_MILLIS:
+            return Long.TYPE;
+        case INTERVAL_MONTH:
+            return Long.TYPE;
+        case RESULT_SET:
+            return java.sql.ResultSet.class;
+        case NULL:
+            return null;
+        case UNSUPPORTED:
+            return null;
+        default:
+            throw new UnsupportedOperationException("No support for datatype " + type);
+        }
+
     }
 
     private String buildDirectIterableExpr(final String className, final String table) {
@@ -298,7 +346,7 @@ public abstract class ClassBuilder {
      */
     private String literal(Map<String, String> getterMethods, Column column) {
         String getter = getterMethods.get(column.getName());
-        Class<?> type = column.getType().akType().javaClass();
+        Class<?> type = javaClass(column);
         if (type.isPrimitive()) {
             return literalWrapper(type) + ".valueOf(" + getter + ")";
         } else {

@@ -82,6 +82,7 @@ public class DirectClassLoader extends ClassLoader {
         Class<?> cl = null;
         if (name.startsWith(ClassBuilder.PACKAGE)) {
             ensureGenerated();
+            cl = findLoadedClass(name);
         }
         if (cl == null) {
             cl = getParent().loadClass(name);
