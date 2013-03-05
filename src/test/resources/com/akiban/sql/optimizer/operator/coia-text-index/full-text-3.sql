@@ -1,0 +1,1 @@
+SELECT * FROM customers WHERE FULL_TEXT_SEARCH(name, 'john') AND cid IN (1,2,3)

@@ -9,3 +9,5 @@ full-text-2: terms on multiple branches
 full-text-2n: negated term
 
 full-text-2v: with variable
+
+full-text-3: with semi-join

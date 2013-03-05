@@ -1874,6 +1874,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         FullTextScan scan = new FullTextScan(foundIndex, query, (int)queryGoal.getLimit(),
                                              foundTable, textConditions);
         determineRequiredTables(scan);
+        scan.setCostEstimate(estimateCostFullText(scan));
         return scan;
     }
 
@@ -2028,6 +2029,10 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         }
         Set<TableSource> required = new HashSet<>(requiredAfter.getTables());
         scan.setRequiredTables(required);
+    }
+
+    public CostEstimate estimateCostFullText(FullTextScan scan) {
+        return new CostEstimate(Math.max(scan.getLimit(), 1), 1.0);
     }
 
 }
