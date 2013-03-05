@@ -1,0 +1,8 @@
+[
+    {
+        "action": "change_scalar_type", 
+        "destructive": true, 
+        "uuid": "d160a748-03ca-4497-b906-4bf0efb32618", 
+        "new_scalar_type": "blob"
+    }
+]

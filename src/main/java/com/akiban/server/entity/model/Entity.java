@@ -45,6 +45,13 @@ public final class Entity {
         return uuid;
     }
 
+    void setUuid(UUID uuid) {
+        if (this.uuid != null)
+            throw new IllegalStateException("uuid already set: " + this.uuid);
+        this.uuid = uuid;
+    }
+
+
     @SuppressWarnings("unused")
     void setEntity(String entity) {
         this.uuid = Util.parseUUID(entity);

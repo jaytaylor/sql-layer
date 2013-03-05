@@ -1,4 +1,0 @@
-add index: [subid_val]
-add index: [subid_val]
-change scalar type: [177400c6-7662-11e2-8057-2afbf046605f, datetime]
-change scalar type: [53042d5c-766a-11e2-8f7d-2afbf046605f, bigint]

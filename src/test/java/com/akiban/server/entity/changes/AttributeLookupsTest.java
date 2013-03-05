@@ -39,7 +39,7 @@ import java.util.UUID;
 public final class AttributeLookupsTest {
     @Test
     public void testGetParentAttribute() throws Exception {
-        Space space = Space.readSpace("attribute_lookups_space.json", AttributeLookupsTest.class);
+        Space space = Space.readSpace("attribute_lookups_space.json", AttributeLookupsTest.class, null);
         Entity customer = space.getEntities().get("customer");
         AttributeLookups lookups = new AttributeLookups(customer);
 
@@ -61,7 +61,7 @@ public final class AttributeLookupsTest {
 
     @Test(expected = NoSuchElementException.class)
     public void testGetParentAttributeOfUnknown() {
-        Space space = Space.readSpace("attribute_lookups_space.json", AttributeLookupsTest.class);
+        Space space = Space.readSpace("attribute_lookups_space.json", AttributeLookupsTest.class, null);
         Entity customer = space.getEntities().get("customer");
         AttributeLookups lookups = new AttributeLookups(customer);
         lookups.getParentAttribute(customer.uuid());
