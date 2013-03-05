@@ -1810,9 +1810,9 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 query = clause;
             }
             else {
-                query = new FullTextBoolean(Arrays.asList(query, clause),
-                                            Arrays.asList(FullTextQueryBuilder.BooleanType.MUST,
-                                                          FullTextQueryBuilder.BooleanType.MUST));
+                query = fullTextBoolean(Arrays.asList(query, clause),
+                                        Arrays.asList(FullTextQueryBuilder.BooleanType.MUST,
+                                                      FullTextQueryBuilder.BooleanType.MUST));
             }
         }
         FullTextIndex foundIndex = null;
@@ -1890,7 +1890,13 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                                                             FullTextField.Type.MATCH,
                                                             ccond.getRight());
                     textFields.add(field);
-                    return field;
+                    switch (ccond.getOperation()) {
+                    case EQ:
+                        return field;
+                    case NE:
+                        return fullTextBoolean(Arrays.<FullTextQuery>asList(field),
+                                               Arrays.asList(FullTextQueryBuilder.BooleanType.NOT));
+                    }
                 }
             }
         }
@@ -1898,25 +1904,32 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             LogicalFunctionCondition lcond = (LogicalFunctionCondition)condition;
             String op = lcond.getFunction();
             if ("and".equals(op)) {
-                return new FullTextBoolean(Arrays.asList(fullTextBoolean(lcond.getLeft(), textFields),
-                                                         fullTextBoolean(lcond.getRight(), textFields)),
-                                           Arrays.asList(FullTextQueryBuilder.BooleanType.MUST,
-                                                         FullTextQueryBuilder.BooleanType.MUST));
+                return fullTextBoolean(Arrays.asList(fullTextBoolean(lcond.getLeft(), textFields),
+                                                     fullTextBoolean(lcond.getRight(), textFields)),
+                                       Arrays.asList(FullTextQueryBuilder.BooleanType.MUST,
+                                                     FullTextQueryBuilder.BooleanType.MUST));
             }
             else if ("or".equals(op)) {
-                return new FullTextBoolean(Arrays.asList(fullTextBoolean(lcond.getLeft(), textFields),
-                                                         fullTextBoolean(lcond.getRight(), textFields)),
-                                           Arrays.asList(FullTextQueryBuilder.BooleanType.SHOULD,
-                                                         FullTextQueryBuilder.BooleanType.SHOULD));
+                return fullTextBoolean(Arrays.asList(fullTextBoolean(lcond.getLeft(), textFields),
+                                                     fullTextBoolean(lcond.getRight(), textFields)),
+                                       Arrays.asList(FullTextQueryBuilder.BooleanType.SHOULD,
+                                                     FullTextQueryBuilder.BooleanType.SHOULD));
             }
             else if ("not".equals(op)) {
-                return new FullTextBoolean(Arrays.asList(fullTextBoolean(lcond.getOperand(), textFields)),
-                                           Arrays.asList(FullTextQueryBuilder.BooleanType.NOT));
+                return fullTextBoolean(Arrays.asList(fullTextBoolean(lcond.getOperand(), textFields)),
+                                       Arrays.asList(FullTextQueryBuilder.BooleanType.NOT));
             }
         }
         // TODO: LIKE
         throw new UnsupportedSQLException("Cannot convert to full text query" +
                                               condition);
+    }
+
+    protected FullTextQuery fullTextBoolean(List<FullTextQuery> operands, 
+                                            List<FullTextQueryBuilder.BooleanType> types) {
+        // Make modifiable copies for normalize.
+        return new FullTextBoolean(new ArrayList<>(operands),
+                                   new ArrayList<>(types));
     }
 
     protected FullTextQuery normalizeFullTextQuery(FullTextQuery query) {
@@ -1950,6 +1963,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                                 break check_must;
                             }
                         }
+                        break;
                     case SHOULD:
                     check_should:
                         for (FullTextQueryBuilder.BooleanType opType : opTypes) {
@@ -1961,6 +1975,10 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                                 break check_should;
                             }
                         }
+                        break;
+                    default:
+                        fold = false;
+                        break;
                     }
                     if (fold) {
                         for (int j = 0; j < opOperands.size(); j++) {
