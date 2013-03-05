@@ -34,6 +34,7 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.test.it.qp.TestRow;
@@ -101,7 +102,7 @@ public class FullTextIndexServiceIT extends ITBase
 
         fullText = serviceManager().getServiceByClass(FullTextIndexService.class);
 
-        schema = new Schema(ais());
+        schema = SchemaCache.globalSchema(ais());
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
     }
@@ -117,7 +118,7 @@ public class FullTextIndexServiceIT extends ITBase
             row(rowType, 1L),
             row(rowType, 3L)
         };
-        FullTextQueryBuilder builder = new FullTextQueryBuilder(index, queryContext);
+        FullTextQueryBuilder builder = new FullTextQueryBuilder(index, ais(), queryContext);
         Operator plan = builder.scanOperator("flintstone", 10);
         compareRows(expected, cursor(plan, queryContext));
 
@@ -135,7 +136,7 @@ public class FullTextIndexServiceIT extends ITBase
         RowBase[] expected = new RowBase[] {
             row(rowType, 1L, 101L)
         };
-        FullTextQueryBuilder builder = new FullTextQueryBuilder(index, queryContext);
+        FullTextQueryBuilder builder = new FullTextQueryBuilder(index, ais(), queryContext);
         Operator plan = builder.scanOperator("name:Flintstone AND sku:1234", 10);
         compareRows(expected, cursor(plan, queryContext));
     }

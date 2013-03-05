@@ -35,3 +35,7 @@ geospatial-2: get within that radius
 geospatial-3: covering spatial index
 
 geospatial-5: Very large radius, testing handling of query regions exceeding latitude and longitude bounds.
+
+full-text-1: single parsed query
+
+full-text-2: terms on multiple branches
