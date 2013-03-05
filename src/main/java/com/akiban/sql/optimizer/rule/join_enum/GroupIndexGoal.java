@@ -1787,13 +1787,15 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             switch (operands.size()) {
             case 1:
                 clause = fullTextBoolean(operands.get(0), textFields);
+                if (clause == null) continue;
                 break;
             case 2:
                 if ((operands.get(0) instanceof ColumnExpression) &&
                     constantOrBound(operands.get(1))) {
                     ColumnExpression column = (ColumnExpression)operands.get(0);
-                    if ((column.getTable() instanceof TableSource) &&
-                        tables.containsTable((TableSource)column.getTable())) {
+                    if (column.getTable() instanceof TableSource) {
+                        if (!tables.containsTable((TableSource)column.getTable()))
+                            continue;
                         FullTextField field = new FullTextField(column, 
                                                                 FullTextField.Type.PARSE,
                                                                 operands.get(1));
@@ -1815,6 +1817,9 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                                                       FullTextQueryBuilder.BooleanType.MUST));
             }
         }
+        if (query == null) 
+            return null;
+
         FullTextIndex foundIndex = null;
         TableSource foundTable = null;
         find_index:
@@ -1885,8 +1890,9 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             if ((ccond.getLeft() instanceof ColumnExpression) &&
                 constantOrBound(ccond.getRight())) {
                 ColumnExpression column = (ColumnExpression)ccond.getLeft();
-                if ((column.getTable() instanceof TableSource) &&
-                    tables.containsTable((TableSource)column.getTable())) {
+                if (column.getTable() instanceof TableSource) {
+                    if (!tables.containsTable((TableSource)column.getTable()))
+                        return null;
                     FullTextField field = new FullTextField(column, 
                                                             FullTextField.Type.MATCH,
                                                             ccond.getRight());
@@ -1905,25 +1911,35 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             LogicalFunctionCondition lcond = (LogicalFunctionCondition)condition;
             String op = lcond.getFunction();
             if ("and".equals(op)) {
-                return fullTextBoolean(Arrays.asList(fullTextBoolean(lcond.getLeft(), textFields),
-                                                     fullTextBoolean(lcond.getRight(), textFields)),
-                                       Arrays.asList(FullTextQueryBuilder.BooleanType.MUST,
-                                                     FullTextQueryBuilder.BooleanType.MUST));
+                FullTextQuery left = fullTextBoolean(lcond.getLeft(), textFields);
+                FullTextQuery right = fullTextBoolean(lcond.getRight(), textFields);
+                if ((left == null) && (right == null)) return null;
+                if ((left != null) && (right != null))
+                    return fullTextBoolean(Arrays.asList(left, right),
+                                           Arrays.asList(FullTextQueryBuilder.BooleanType.MUST,
+                                                         FullTextQueryBuilder.BooleanType.MUST));
             }
             else if ("or".equals(op)) {
-                return fullTextBoolean(Arrays.asList(fullTextBoolean(lcond.getLeft(), textFields),
-                                                     fullTextBoolean(lcond.getRight(), textFields)),
-                                       Arrays.asList(FullTextQueryBuilder.BooleanType.SHOULD,
-                                                     FullTextQueryBuilder.BooleanType.SHOULD));
+                FullTextQuery left = fullTextBoolean(lcond.getLeft(), textFields);
+                FullTextQuery right = fullTextBoolean(lcond.getRight(), textFields);
+                if ((left == null) && (right == null)) return null;
+                if ((left != null) && (right != null))
+                    return fullTextBoolean(Arrays.asList(left, right),
+                                           Arrays.asList(FullTextQueryBuilder.BooleanType.SHOULD,
+                                                         FullTextQueryBuilder.BooleanType.SHOULD));
             }
             else if ("not".equals(op)) {
-                return fullTextBoolean(Arrays.asList(fullTextBoolean(lcond.getOperand(), textFields)),
-                                       Arrays.asList(FullTextQueryBuilder.BooleanType.NOT));
+                FullTextQuery inner = fullTextBoolean(lcond.getOperand(), textFields);
+                if (inner == null) 
+                    return null;
+                else
+                    return fullTextBoolean(Arrays.asList(inner),
+                                           Arrays.asList(FullTextQueryBuilder.BooleanType.NOT));
             }
         }
         // TODO: LIKE
         throw new UnsupportedSQLException("Cannot convert to full text query" +
-                                              condition);
+                                          condition);
     }
 
     protected FullTextQuery fullTextBoolean(List<FullTextQuery> operands, 
