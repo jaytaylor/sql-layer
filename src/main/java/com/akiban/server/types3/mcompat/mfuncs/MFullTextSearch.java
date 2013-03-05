@@ -57,7 +57,7 @@ public class MFullTextSearch extends TScalarBase
         if (singleArg)
             builder.covers(AkBool.INSTANCE, 0);
         else
-            builder.covers(MString.VARCHAR, 0, 1);
+            builder.covers(MString.VARCHAR, 0).covers(MString.VARCHAR, 1);
     }
 
     @Override
