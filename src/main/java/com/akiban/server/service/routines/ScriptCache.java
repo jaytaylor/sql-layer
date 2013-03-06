@@ -527,6 +527,9 @@ public class ScriptCache
                 }
             }
             if (cl == null) {
+                cl = findLoadedClass(name);
+            }
+            if (cl == null) {
                 cl = findClass(name);
             }
             if (resolve) {
