@@ -27,9 +27,10 @@
 package com.akiban.direct;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.util.Date;
 
 import com.akiban.sql.server.ServerJavaValues;
 
@@ -118,11 +119,11 @@ public class AbstractDirectObject implements DirectObject {
         throw new UnsupportedOperationException("Don't know how to convert a U_INT from a ValueSource");
     }
 
-    protected Object __getU_BIGINT(int p) {
+    protected BigInteger __getU_BIGINT(int p) {
         throw new UnsupportedOperationException("Don't know how to convert a U_BIGINT from a ValueSource");
     }
 
-    protected Object __getU_DOUBLE(int p) {
+    protected BigDecimal __getU_DOUBLE(int p) {
         throw new UnsupportedOperationException("Don't know how to convert a U_DOUBLE from a ValueSource");
     }
 
@@ -135,11 +136,11 @@ public class AbstractDirectObject implements DirectObject {
     }
 
     protected byte[] __getVARBINARY(int p) {
-        return values.getBytes(p);
+        return values().getBytes(p);
     }
 
     protected int __getYEAR(int p) {
-        throw new UnsupportedOperationException("Don't know how to convert a YEAR from a ValueSource");
+        return values().getInt(p);
     }
 
 }

@@ -327,10 +327,6 @@ public abstract class ClassBuilder {
             return Long.TYPE;
         case RESULT_SET:
             return java.sql.ResultSet.class;
-        case NULL:
-            return null;
-        case UNSUPPORTED:
-            return null;
         default:
             throw new UnsupportedOperationException("No support for datatype " + type);
         }
