@@ -48,12 +48,11 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ScriptCache
-{
+public class ScriptCache {
     public static final String CLASS_PATH = "akserver.routines.script_class_path";
     private final DXLService dxlService;
     private final ConfigurationService configService;
-    private final Map<TableName,CacheEntry> cache = new HashMap<>();
+    private final Map<TableName, CacheEntry> cache = new HashMap<>();
     // Script engine discovery can be fairly expensive, so it is deferred.
     private ScriptEngineManager manager = null;
     private final static Logger logger = LoggerFactory.getLogger(ScriptCache.class);
@@ -70,7 +69,7 @@ public class ScriptCache
     public synchronized void remove(TableName routineName) {
         cache.remove(routineName);
     }
-    
+
     public boolean isScriptLanguage(Session session, String language) {
         return (getManager(session).getEngineByName(language) != null);
     }
@@ -82,16 +81,19 @@ public class ScriptCache
     public ScriptPool<ScriptInvoker> getScriptInvoker(Session session, TableName routineName) {
         return getEntry(session, routineName).getScriptInvoker();
     }
-    
+
     protected ScriptEngineManager getManager(Session session) {
         if (manager == null) {
             logger.debug("Initializing script engine manager");
             String classPath = configService.getProperty(CLASS_PATH);
-            // TODO: The idea should be to restrict scripts to standard Java classes
+            // TODO: The idea should be to restrict scripts to standard Java
+            // classes
             // without the rest of the Akiban server. But note
             // java.sql.DriverManager.isDriverAllowed(), which requires that a
-            // registered driver's class by accessible to its caller by name. May
-            // need a JDBCDriver proxy get just to register without putting all of
+            // registered driver's class by accessible to its caller by name.
+            // May
+            // need a JDBCDriver proxy get just to register without putting all
+            // of
             // com.akiban.sql.embedded into the parent.
             String[] paths = classPath.split(File.pathSeparator);
             URL[] urls = new URL[paths.length];
@@ -121,8 +123,8 @@ public class ScriptCache
             throw new NoSuchRoutineException(routineName);
         ScriptEngine engine = getManager(session).getEngineByName(routine.getLanguage());
         if (engine == null)
-            throw new ExternalRoutineInvocationException(routineName,
-                                                         "Cannot find " + routine.getLanguage() + " script engine");
+            throw new ExternalRoutineInvocationException(routineName, "Cannot find " + routine.getLanguage()
+                    + " script engine");
         entry = new CacheEntry(routine, engine);
         cache.put(routineName, entry);
         return entry;
@@ -144,7 +146,7 @@ public class ScriptCache
             script = routine.getDefinition();
             function = routine.getMethodName();
             factory = engine.getFactory();
-            threading = (String)factory.getParameter("THREADING");
+            threading = (String) factory.getParameter("THREADING");
             invocable = (engine instanceof Invocable);
             compilable = (engine instanceof Compilable);
             spareEngine = engine;
@@ -155,8 +157,7 @@ public class ScriptCache
             // for THREAD-ISOLATED / STATELESS threading + Compilable,
             // which means that just one CompiledScript will work for
             // everyone.
-            if (compilable &&
-                ("THREAD-ISOLATED".equals(threading) || "STATELESS".equals(threading))) {
+            if (compilable && ("THREAD-ISOLATED".equals(threading) || "STATELESS".equals(threading))) {
                 synchronized (this) {
                     if (sharedEvaluatorPool == null) {
                         ScriptEngine engine = spareEngine;
@@ -164,17 +165,15 @@ public class ScriptCache
                             spareEngine = null;
                         else
                             engine = factory.getScriptEngine();
-                        CompiledEvaluator compiled = new CompiledEvaluator(routineName,
-                                                                           engine,
-                                                                           script,
-                                                                           true);
+                        CompiledEvaluator compiled = new CompiledEvaluator(routineName, engine, script, true);
                         sharedEvaluatorPool = new SharedPool<ScriptEvaluator>(compiled);
                     }
                     return sharedEvaluatorPool;
                 }
             }
 
-            // Otherwise, every caller gets a new pool which only has the scope of the
+            // Otherwise, every caller gets a new pool which only has the scope
+            // of the
             // prepared statement, etc.
             ScriptEngine engine;
             synchronized (this) {
@@ -187,8 +186,7 @@ public class ScriptCache
                 if (engine != null)
                     compiled = new CompiledEvaluator(routineName, engine, script, false);
                 return new CompiledEvaluatorPool(routineName, factory, script, compiled);
-            }
-            else {
+            } else {
                 EngineEvaluator evaluator = null;
                 if (engine != null)
                     evaluator = new EngineEvaluator(routineName, engine, script);
@@ -198,11 +196,11 @@ public class ScriptCache
 
         public ScriptPool<ScriptInvoker> getScriptInvoker() {
             assert invocable && (function != null);
-            // Can share if at multi-threaded (or stronger), since we are invoking
+            // Can share if at multi-threaded (or stronger), since we are
+            // invoking
             // the function.
-            if ("MULTITHREADED".equals(threading) ||
-                "THREAD-ISOLATED".equals(threading) ||
-                "STATELESS".equals(threading)) {
+            if ("MULTITHREADED".equals(threading) || "THREAD-ISOLATED".equals(threading)
+                    || "STATELESS".equals(threading)) {
                 synchronized (this) {
                     if (sharedInvokerPool == null) {
                         ScriptEngine engine = spareEngine;
@@ -210,15 +208,15 @@ public class ScriptCache
                             spareEngine = null;
                         else
                             engine = factory.getScriptEngine();
-                        ScriptInvoker invoker = new Invoker(routineName, 
-                                                            engine, script, function);
+                        ScriptInvoker invoker = new Invoker(routineName, engine, script, function);
                         sharedInvokerPool = new SharedPool<>(invoker);
                     }
                     return sharedInvokerPool;
-                }                
+                }
             }
 
-            // Otherwise, every caller gets a new pool which only has the scope of the
+            // Otherwise, every caller gets a new pool which only has the scope
+            // of the
             // prepared statement, etc.
             ScriptEngine engine;
             synchronized (this) {
@@ -241,8 +239,8 @@ public class ScriptCache
         }
 
         @Override
-        public T get() { 
-            return instance; 
+        public T get() {
+            return instance;
         }
 
         @Override
@@ -264,7 +262,7 @@ public class ScriptCache
         protected abstract T create();
 
         @Override
-        public T get() { 
+        public T get() {
             T elem;
             synchronized (pool) {
                 elem = pool.pollFirst();
@@ -299,7 +297,8 @@ public class ScriptCache
     }
 
     static class EngineEvaluatorPool extends BasePool<ScriptEvaluator> {
-        public EngineEvaluatorPool(TableName routineName, ScriptEngineFactory factory, String script, EngineEvaluator initial) {
+        public EngineEvaluatorPool(TableName routineName, ScriptEngineFactory factory, String script,
+                EngineEvaluator initial) {
             super(routineName, factory, script, initial);
         }
 
@@ -310,21 +309,22 @@ public class ScriptCache
     }
 
     static class CompiledEvaluatorPool extends BasePool<ScriptEvaluator> {
-        public CompiledEvaluatorPool(TableName routineName, ScriptEngineFactory factory, String script, CompiledEvaluator initial) {
+        public CompiledEvaluatorPool(TableName routineName, ScriptEngineFactory factory, String script,
+                CompiledEvaluator initial) {
             super(routineName, factory, script, initial);
         }
 
         @Override
         protected CompiledEvaluator create() {
-            return new CompiledEvaluator(routineName, factory.getScriptEngine(), 
-                                         script, false);
+            return new CompiledEvaluator(routineName, factory.getScriptEngine(), script, false);
         }
     }
 
     static class InvokerPool extends BasePool<ScriptInvoker> {
         private final String function;
-        
-        public InvokerPool(TableName routineName, ScriptEngineFactory factory, String script, String function, Invoker initial) {
+
+        public InvokerPool(TableName routineName, ScriptEngineFactory factory, String script, String function,
+                Invoker initial) {
             super(routineName, factory, script, initial);
             this.function = function;
         }
@@ -376,8 +376,7 @@ public class ScriptCache
             logger.debug("Evaluating {}", routineName);
             try {
                 return engine.eval(script); // Bindings came from engine.
-            }
-            catch (ScriptException ex) {
+            } catch (ScriptException ex) {
                 throw new ExternalRoutineInvocationException(routineName, ex);
             }
         }
@@ -388,15 +387,13 @@ public class ScriptCache
         private final CompiledScript compiled;
         private final boolean shared;
 
-        public CompiledEvaluator(TableName routineName, ScriptEngine engine, 
-                                 String script, boolean shared) {
+        public CompiledEvaluator(TableName routineName, ScriptEngine engine, String script, boolean shared) {
             this.routineName = routineName;
             setScriptName(routineName, engine);
             logger.debug("Compiling {}", routineName);
             try {
-                compiled = ((Compilable)engine).compile(script);
-            }
-            catch (ScriptException ex) {
+                compiled = ((Compilable) engine).compile(script);
+            } catch (ScriptException ex) {
                 throw new ExternalRoutineInvocationException(routineName, ex);
             }
             this.shared = shared;
@@ -436,8 +433,7 @@ public class ScriptCache
                     return compiled.eval(bindings);
                 else
                     return compiled.eval();
-            }
-            catch (ScriptException ex) {
+            } catch (ScriptException ex) {
                 throw new ExternalRoutineInvocationException(routineName, ex);
             }
         }
@@ -447,26 +443,23 @@ public class ScriptCache
         private final TableName routineName;
         private final String function;
         private final Invocable invocable;
-        
-        public Invoker(TableName routineName, ScriptEngine engine, 
-                       String script, String function) {
+
+        public Invoker(TableName routineName, ScriptEngine engine, String script, String function) {
             this.routineName = routineName;
             this.function = function;
             setScriptName(routineName, engine);
             try {
                 if (engine instanceof Compilable) {
                     logger.debug("Compiling and loading {}", routineName);
-                    ((Compilable)engine).compile(script).eval();
-                }
-                else {
+                    ((Compilable) engine).compile(script).eval();
+                } else {
                     logger.debug("Evaluating {}", routineName);
                     engine.eval(script);
                 }
-            }
-            catch (ScriptException ex) {
+            } catch (ScriptException ex) {
                 throw new ExternalRoutineInvocationException(routineName, ex);
             }
-            invocable = (Invocable)engine;
+            invocable = (Invocable) engine;
         }
 
         @Override
@@ -476,7 +469,7 @@ public class ScriptCache
 
         @Override
         public String getEngineName() {
-            return ((ScriptEngine)invocable).getFactory().getEngineName();
+            return ((ScriptEngine) invocable).getFactory().getEngineName();
         }
 
         @Override
@@ -489,16 +482,14 @@ public class ScriptCache
             logger.debug("Calling {} in {}", function, routineName);
             try {
                 return invocable.invokeFunction(function, args);
-            }
-            catch (ScriptException ex) {
+            } catch (ScriptException ex) {
                 throw new ExternalRoutineInvocationException(routineName, ex);
-            }
-            catch (NoSuchMethodException ex) {
+            } catch (NoSuchMethodException ex) {
                 throw new ExternalRoutineInvocationException(routineName, ex);
             }
         }
     }
-    
+
     /**
      * Extended URLClassLoader that uses a thread-private context class loader
      * to load generated classes. There is one ScriptClassLoader per
@@ -506,36 +497,39 @@ public class ScriptCache
      */
     static class ScriptClassLoader extends URLClassLoader {
 
+        
         public ScriptClassLoader(URL[] urls, ClassLoader parent) {
             super(urls, parent);
         }
 
         protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-            Class<?> cl = null;
-            try {
-                // delegate to parent
-                cl = getParent().loadClass(name);
-            } catch (ClassNotFoundException e1) {
-                ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
-                if (contextLoader != this) {
+            synchronized (getClassLoadingLock(name)) {
+
+                Class<?> cl = findLoadedClass(name);
+                if (cl == null) {
                     try {
-                        // Attempt to load generated class
-                        cl = contextLoader.loadClass(name);
-                    } catch (ClassNotFoundException e2) {
-                        // fall through
+                        // delegate to parent
+                        cl = getParent().loadClass(name);
+                    } catch (ClassNotFoundException e1) {
+                        ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
+                        if (contextLoader != this) {
+                            try {
+                                // Attempt to load generated class
+                                cl = contextLoader.loadClass(name);
+                            } catch (ClassNotFoundException e2) {
+                                // fall through
+                            }
+                        }
                     }
                 }
+                if (cl == null) {
+                    cl = findClass(name);
+                }
+                if (resolve) {
+                    resolveClass(cl);
+                }
+                return cl;
             }
-            if (cl == null) {
-                cl = findLoadedClass(name);
-            }
-            if (cl == null) {
-                cl = findClass(name);
-            }
-            if (resolve) {
-                resolveClass(cl);
-            }
-            return cl;
         }
 
     }
