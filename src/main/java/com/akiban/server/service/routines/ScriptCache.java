@@ -514,7 +514,7 @@ public class ScriptCache
             Class<?> cl = null;
             try {
                 // delegate to parent
-                getParent().loadClass(name);
+                cl = getParent().loadClass(name);
             } catch (ClassNotFoundException e1) {
                 ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
                 if (contextLoader != this) {

@@ -84,12 +84,18 @@ public class DirectClassLoader extends ClassLoader {
         if (name.startsWith(ClassBuilder.PACKAGE)) {
             ensureGenerated();
             cl = findLoadedClass(name);
-            if (resolve) {
-                resolveClass(cl);
-            }
-            return cl;
         }
-        throw new ClassNotFoundException(name);
+        /*
+         * Note: we must do the following because this is the ClassLoader
+         * used by Rhino. See sun.org.mozilla.javascript.internal.NativeJavaTopPackage#init.
+         */
+        if (cl == null) {
+            cl = getParent().loadClass(name);
+        }
+        if (resolve) {
+            resolveClass(cl);
+        }
+        return cl;
     }
 
     synchronized void ensureGenerated() {
