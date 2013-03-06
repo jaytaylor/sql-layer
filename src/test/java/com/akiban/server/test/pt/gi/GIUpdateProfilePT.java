@@ -167,7 +167,7 @@ public class GIUpdateProfilePT extends PTBase
     {
         UserTable userTable = userTable(userTableId);
         for (Index index : userTable.getIndexesIncludingInternal()) {
-            List<String> indexColumnNames = new ArrayList<String>();
+            List<String> indexColumnNames = new ArrayList<>();
             for (IndexColumn indexColumn : index.getKeyColumns()) {
                 indexColumnNames.add(indexColumn.getColumn().getName());
             }

@@ -77,6 +77,21 @@ public final class TInstance {
         tclass.formatAsJson(this, source, out);
     }
 
+    public Object attributeToObject(Attribute attribute) {
+        if (enumClass != attribute.getClass())
+            throw new IllegalArgumentException("Illegal attribute: " + attribute.name());
+        int value;
+        int attributeIndex = attribute.ordinal();
+        switch (attributeIndex) {
+        case 0: value = attr0; break;
+        case 1: value = attr1; break;
+        case 2: value = attr2; break;
+        case 3: value = attr3; break;
+        default: throw new AssertionError("index out of range for " + tclass +  ": " + attribute);
+        }
+        return tclass.attributeToObject(attributeIndex, value);
+    }
+
     public int attribute(Attribute attribute) {
         if (enumClass != attribute.getClass())
             throw new IllegalArgumentException("Illegal attribute: " + attribute.name());
@@ -155,7 +170,7 @@ public final class TInstance {
             return null;
         }
         int n = pExpressions.size();
-        List<TInstance> tInstances = new ArrayList<TInstance>(n);
+        List<TInstance> tInstances = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
             tInstances.add(pExpressions.get(i).resultType());
         }

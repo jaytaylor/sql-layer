@@ -103,7 +103,7 @@ public class PostgresCopyInStatement extends PostgresBaseStatement
         if (copyStmt.getColumnList() == null)
             toColumns = toTable.getColumns();
         else {
-            toColumns = new ArrayList<Column>(copyStmt.getColumnList().size());
+            toColumns = new ArrayList<>(copyStmt.getColumnList().size());
             for (ResultColumn rc : copyStmt.getColumnList()) {
                 ColumnReference cref = rc.getReference();
                 Column column = toTable.getColumn(cref.getColumnName());

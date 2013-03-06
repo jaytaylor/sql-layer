@@ -137,7 +137,7 @@ public final class YamlConfiguration implements BindingsConfigurationLoader {
 
     private void internalDoBindModules(ServiceConfigurationHandler config, String where, Object commandValue) {
         List<String> moduleNames = strings(where, commandValue);
-        List<Module> modules = new ArrayList<Module>(moduleNames.size());
+        List<Module> modules = new ArrayList<>(moduleNames.size());
         ClassLoader localClassLoader = (classLoader == null)
                 ? ClassLoader.getSystemClassLoader()
                 : classLoader;

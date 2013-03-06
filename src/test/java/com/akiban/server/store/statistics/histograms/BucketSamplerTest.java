@@ -201,7 +201,7 @@ public final class BucketSamplerTest {
         // pipe is median, V is inserted bucket      V       V        |              V|V
         StringToBuckets inputs = new StringToBuckets("a a a b c c c c d e e e e f f f g");
         assertEquals("buckets count", 7, inputs.buckets().size());
-        BucketSampler<String> sampler = new BucketSampler<String>(2, inputs.inputsCount(), true);
+        BucketSampler<String> sampler = new BucketSampler<>(2, inputs.inputsCount(), true);
 
         // insert one before everyone
         sampler.appendToResults(bucket("FIRST", 17, 100, 1000));
@@ -265,15 +265,15 @@ public final class BucketSamplerTest {
     
     @Test(expected = IllegalStateException.class)
     public void tooManyInputs() {
-        BucketSampler<String> sampler = new BucketSampler<String>(16, 0);
-        Bucket<String> bucket = new Bucket<String>();
+        BucketSampler<String> sampler = new BucketSampler<>(16, 0);
+        Bucket<String> bucket = new Bucket<>();
         bucket.init("alpha", 1);
         sampler.add(bucket);
     }
 
     @Test(expected = IllegalStateException.class)
     public void tooFewInputs() {
-        BucketSampler<String> sampler = new BucketSampler<String>(16, 1);
+        BucketSampler<String> sampler = new BucketSampler<>(16, 1);
         sampler.buckets();
     }
     
@@ -289,7 +289,7 @@ public final class BucketSamplerTest {
 
     private BucketSampler<String> runSampler(int maxBuckets, String inputString, boolean calculateStdDev) {
         StringToBuckets inputs = new StringToBuckets(inputString);
-        BucketSampler<String> sampler = new BucketSampler<String>(maxBuckets, inputs.inputsCount(), calculateStdDev);
+        BucketSampler<String> sampler = new BucketSampler<>(maxBuckets, inputs.inputsCount(), calculateStdDev);
         for (Bucket<String> bucket : inputs.buckets())
             sampler.add(bucket);
         return sampler;
@@ -301,7 +301,7 @@ public final class BucketSamplerTest {
     }
 
     private List<Bucket<String>> bucketsList(Bucket<?>... buckets) {
-        List<Bucket<String>> list = new ArrayList<Bucket<String>>();
+        List<Bucket<String>> list = new ArrayList<>();
         for (Bucket<?> bucket : buckets) {
             @SuppressWarnings("unchecked")
             Bucket<String> cast = (Bucket<String>) bucket;
@@ -313,11 +313,11 @@ public final class BucketSamplerTest {
     private class StringToBuckets {
         public StringToBuckets(String inputString) {
             String[] splits = inputString.length() == 0 ? new String[0] : inputString.split("\\s+");
-            buckets = new ArrayList<Bucket<String>>();
+            buckets = new ArrayList<>();
             Bucket<String> lastBucket = null;
             for (String split : splits) {
                 if (lastBucket == null || !split.equals(lastBucket.value())) {
-                    lastBucket = new Bucket<String>();
+                    lastBucket = new Bucket<>();
                     lastBucket.init(split, 1);
                     buckets.add(lastBucket);
                 }

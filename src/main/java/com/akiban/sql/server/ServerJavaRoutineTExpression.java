@@ -59,10 +59,10 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
         this.routine = routine;
         this.inputs = inputs;
     }
-
+     
     @Override
     public TPreptimeValue evaluateConstant(QueryContext context) {
-        List<TPreptimeValue> values = new ArrayList<TPreptimeValue>(inputs.size());
+        List<TPreptimeValue> values = new ArrayList<>(inputs.size());
         boolean allConstant = true, anyNull = false;
         PValueSource constantSource = null;
         for (TPreparedExpression input : inputs) {
@@ -103,7 +103,7 @@ public abstract class ServerJavaRoutineTExpression implements TPreparedExpressio
 
     @Override
     public TEvaluatableExpression build() {
-        List<TEvaluatableExpression> evals = new ArrayList<TEvaluatableExpression>(inputs.size());
+        List<TEvaluatableExpression> evals = new ArrayList<>(inputs.size());
         for (TPreparedExpression input : inputs) {
             evals.add(input.build());
         }

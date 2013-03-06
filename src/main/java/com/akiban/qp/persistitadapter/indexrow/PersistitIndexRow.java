@@ -141,7 +141,7 @@ public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
         resetForWrite(indexRowType.index(), keyState);
         this.indexRowType = indexRowType;
         this.leafmostTable = (UserTable) index.leafMostTable();
-        this.hKeyCache = new HKeyCache<PersistitHKey>(adapter);
+        this.hKeyCache = new HKeyCache<>(adapter);
         if (Types3Switch.ON) {
             this.tInstances = index.tInstances();
             this.akTypes = null;

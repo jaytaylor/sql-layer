@@ -125,12 +125,12 @@ public abstract class AbstractCompositeExpression implements Expression {
     protected AbstractCompositeExpression(AkType type, List<? extends Expression> children) {
         this.children = children.isEmpty()
                 ? Collections.<Expression>emptyList()
-                : Collections.unmodifiableList(new ArrayList<Expression>(children));
+                : Collections.unmodifiableList(new ArrayList<>(children));
         this.type = type;
     }
 
     protected List<? extends ExpressionEvaluation> childrenEvaluations() {
-        List<ExpressionEvaluation> result = new ArrayList<ExpressionEvaluation>();
+        List<ExpressionEvaluation> result = new ArrayList<>();
         for (Expression expression : children) {
             result.add(expression.evaluation());
         }

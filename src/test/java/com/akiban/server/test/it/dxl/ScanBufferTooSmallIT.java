@@ -98,7 +98,7 @@ public final class ScanBufferTooSmallIT extends ITBase {
     }
 
     private Set<Integer> allColumns(Table table) {
-        Set<Integer> cols = new HashSet<Integer>();
+        Set<Integer> cols = new HashSet<>();
         int colsCount = table.getColumns().size();
         while (--colsCount >= 0) {
             cols.add(colsCount);

@@ -1,0 +1,31 @@
+{
+    "entities" : {
+        "customer" : {
+            "entity" : "2a57b59e-e1b7-4377-996e-a5c04e0abf29",
+            "attributes" : {
+                "last_name" : {
+                    "scalar" : "257e9b59-e77f-4a4d-a5da-00c7c2261875",
+                    "type" : "varchar"
+                },
+                "orders" : {
+                    "collection" : "c5cedd91-9751-41c2-9417-8c29117ca2c9",
+                    "attributes" : {
+                        "placed" : {
+                            "scalar" : "58dd53b7-e8a1-488b-a751-c83f9beca04c",
+                            "type" : "date"
+                        },
+                        "line_items" : {
+                            "collection" : "378d22b2-acf0-45d3-8f8a-2c09188a1cf3",
+                            "attributes" : {
+                                "sku" : {
+                                    "scalar" : "24b0cf4f-6a33-43c4-bd15-db3a7b06d963",
+                                    "type" : "integer"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

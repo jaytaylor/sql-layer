@@ -39,7 +39,7 @@ public final class ColumnSetTest {
 
     @Test
     public void pack1Byte() throws Exception {
-        Set<Integer> columns = new HashSet<Integer>();
+        Set<Integer> columns = new HashSet<>();
         columns.add( 0 );
         columns.add( 6 );
 
@@ -48,7 +48,7 @@ public final class ColumnSetTest {
 
     @Test
     public void pack2BytesBoth() throws Exception {
-        Set<Integer> columns = new HashSet<Integer>();
+        Set<Integer> columns = new HashSet<>();
         columns.add( 0 );
         columns.add( 6 );
         columns.add( 9 );
@@ -58,7 +58,7 @@ public final class ColumnSetTest {
 
     @Test
     public void pack2BytesSparse() throws Exception {
-        Set<Integer> columns = new HashSet<Integer>();
+        Set<Integer> columns = new HashSet<>();
         columns.add( 8 );
 
         assertBytes("[ 00000000 10000000 ]", columns);
@@ -66,7 +66,7 @@ public final class ColumnSetTest {
 
     @Test
     public void emptySet() {
-        Set<Integer> empty = new HashSet<Integer>();
+        Set<Integer> empty = new HashSet<>();
         assertNotNull("got null byte[]", ColumnSet.packToLegacy(empty));
         assertBytes("[ ]", empty);
     }
@@ -85,23 +85,23 @@ public final class ColumnSetTest {
 
     @Test
     public void handleEighthBitSet() {
-        final Set<Integer> columns = new HashSet<Integer>();
+        final Set<Integer> columns = new HashSet<>();
         columns.addAll(Arrays.asList(0,7,8));
         assertBytes("[ 10000001 10000000 ]", columns);
     }
 
     @Test
     public void threeByteWrongOutput() {
-        final Set<Integer> columnsFitsTwo = new HashSet<Integer>();
+        final Set<Integer> columnsFitsTwo = new HashSet<>();
         columnsFitsTwo.addAll(Arrays.asList(0,1,2,3,4,5,10,11,15));
         assertBytes("[ 11111100 00110001 ]", columnsFitsTwo);
 
-        final Set<Integer> columnsFitsThree = new HashSet<Integer>();
+        final Set<Integer> columnsFitsThree = new HashSet<>();
         columnsFitsThree.addAll(Arrays.asList(0,1,2,3,4,5,10,11,15,16));
         assertBytes("[ 11111100 00110001 10000000 ]", columnsFitsThree);
 
         // The second byte was getting lost internally to packToLegacy (turned out to be a ByteBuffer copy error)
-        final Set<Integer> columnsActualCase = new HashSet<Integer>();
+        final Set<Integer> columnsActualCase = new HashSet<>();
         columnsActualCase.addAll(Arrays.asList(0,1,2,3,4,10,11,15,16,17,18,19,20,21,22,23));
         assertBytes("[ 11111000 00110001 11111111 ]", columnsActualCase);
     }

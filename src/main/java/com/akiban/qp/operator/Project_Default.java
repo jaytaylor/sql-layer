@@ -34,9 +34,12 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.*;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -177,7 +180,8 @@ class Project_Default extends Operator
     
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Project_Default open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Project_Default next");
-    
+    private static final Logger LOG = LoggerFactory.getLogger(Project_Default.class);
+
     // Object state
 
     protected final Operator inputOperator;
@@ -212,7 +216,7 @@ class Project_Default extends Operator
     private class Execution extends OperatorExecutionBase implements Cursor
     {
         // Cursor interface
-
+        
         @Override
         public void open()
         {
@@ -221,6 +225,7 @@ class Project_Default extends Operator
                 CursorLifecycle.checkIdle(this);
                 input.open();
                 idle = false;
+
             } finally {
                 TAP_OPEN.out();
             }
@@ -229,24 +234,33 @@ class Project_Default extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 checkQueryCancelation();
                 Row projectedRow = null;
                 Row inputRow;
                 if ((inputRow = input.next()) != null) {
                     projectedRow =
                         inputRow.rowType() == rowType
-                        ? new ProjectedRow(projectType, inputRow, context, projections, pExpressions, tInstances)
+                        ? new ProjectedRow(projectType, inputRow, context, projections, pEvalExpr, tInstances)
                         : inputRow;
                 }
                 if (projectedRow == null) {
                     close();
                 }
+                if (LOG_EXECUTION) {
+                    LOG.debug("Project_Default: yield {}", projectedRow);
+                }
                 return projectedRow;
             } finally {
-                TAP_NEXT.out();
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
 
@@ -267,6 +281,7 @@ class Project_Default extends Operator
                 close();
                 input.destroy();
                 input = null;
+                pEvalExpr = null;
             }
         }
 
@@ -294,11 +309,16 @@ class Project_Default extends Operator
         {
             super(context);
             this.input = input;
+            // one list of evaluatables per execution    
+            if (pExpressions != null)
+                    pEvalExpr = ProjectedRow.createTEvaluatableExpressions(pExpressions);
+            else
+                pEvalExpr = null;
         }
 
         // Object state
-
         private Cursor input; // input = null indicates destroyed.
         private boolean idle = true;
+        private List<TEvaluatableExpression> pEvalExpr = null;
     }
 }

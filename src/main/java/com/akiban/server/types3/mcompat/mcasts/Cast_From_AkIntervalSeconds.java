@@ -80,7 +80,7 @@ public final class Cast_From_AkIntervalSeconds {
     private static EnumMap<TimeUnit, Double> createPlaceMultiplierMap() {
         // Desired result is something like 20120802120133.000000
         // Nicer format: yyyyMMddHHmmSS.uuuuuu 
-        EnumMap<TimeUnit, Double> result = new EnumMap<TimeUnit, Double>(TimeUnit.class);
+        EnumMap<TimeUnit, Double> result = new EnumMap<>(TimeUnit.class);
         result.put(TimeUnit.MICROSECONDS, 1.0d/1000000.0d);
         result.put(TimeUnit.SECONDS,      1d);
         result.put(TimeUnit.MINUTES,    100d);

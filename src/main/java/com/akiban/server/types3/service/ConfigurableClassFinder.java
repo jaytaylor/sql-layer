@@ -48,7 +48,7 @@ public final class ConfigurableClassFinder implements ClassFinder {
     @Override
     public Set<Class<?>> findClasses() {
         try {
-            Set<Class<?>> results = new HashSet<Class<?>>();
+            Set<Class<?>> results = new HashSet<>();
             List<String> includes = Strings.dumpResource(ConfigurableClassFinder.class, configFile);
             for (String include : includes) {
                 scanDirectory(results, include);
@@ -118,7 +118,7 @@ public final class ConfigurableClassFinder implements ClassFinder {
             @Override
             public List<String> getFiles(String base) throws IOException {
                 Enumeration<URL> dirContents = dirListing(base);
-                List<String> results = new ArrayList<String>(256); // should be plenty, but it's not too big
+                List<String> results = new ArrayList<>(256); // should be plenty, but it's not too big
                 while (dirContents.hasMoreElements()) {
                     URL childUrl = dirContents.nextElement();
                     buildResults(new File(childUrl.getPath()), results, base);

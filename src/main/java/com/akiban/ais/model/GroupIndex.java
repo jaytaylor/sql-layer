@@ -59,7 +59,7 @@ public class GroupIndex extends Index
     @Override
     public Collection<Integer> getAllTableIDs()
     {
-        List<Integer> branchIDs = new ArrayList<Integer>(tablesByDepth.size());
+        List<Integer> branchIDs = new ArrayList<>(tablesByDepth.size());
         for (UserTable userTable = leafMostTable(); userTable != null; userTable = userTable.parentTable()) {
             branchIDs.add(userTable.getTableId());
         }
@@ -108,15 +108,15 @@ public class GroupIndex extends Index
     @Override
     public void computeFieldAssociations(Map<Table, Integer> ordinalMap)
     {
-        List<UserTable> branchTables = new ArrayList<UserTable>();
+        List<UserTable> branchTables = new ArrayList<>();
         for (UserTable userTable = leafMostTable(); userTable != null; userTable = userTable.parentTable()) {
             branchTables.add(userTable);
         }
         Collections.reverse(branchTables);
 
-        Map<UserTable, Integer> offsetsMap = new HashMap<UserTable, Integer>();
+        Map<UserTable, Integer> offsetsMap = new HashMap<>();
         int offset = 0;
-        columnsPerFlattenedField = new ArrayList<Column>();
+        columnsPerFlattenedField = new ArrayList<>();
         for (UserTable userTable : branchTables) {
             offsetsMap.put(userTable, offset);
             offset += userTable.getColumnsIncludingInternal().size();
@@ -218,10 +218,10 @@ public class GroupIndex extends Index
                                           Map<? extends Table, Integer> flattenedRowOffsets)
     {
         freezeColumns();
-        allColumns = new ArrayList<IndexColumn>();
+        allColumns = new ArrayList<>();
         allColumns.addAll(keyColumns);
         AssociationBuilder toIndexRowBuilder = new AssociationBuilder();
-        List<Column> indexColumns = new ArrayList<Column>();
+        List<Column> indexColumns = new ArrayList<>();
         // Add index key fields
         for (IndexColumn iColumn : getKeyColumns()) {
             Column column = iColumn.getColumn();
@@ -411,7 +411,7 @@ public class GroupIndex extends Index
     // Object state
 
     private final Group group;
-    private final NavigableMap<Integer, ParticipatingTable> tablesByDepth = new TreeMap<Integer, ParticipatingTable>();
+    private final NavigableMap<Integer, ParticipatingTable> tablesByDepth = new TreeMap<>();
     private List<Column> columnsPerFlattenedField;
     private IndexToHKey[] indexToHKeys;
 

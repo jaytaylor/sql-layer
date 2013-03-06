@@ -467,7 +467,7 @@ public class PlanCostEstimator
         if (childCount <= limit)
             // Turns out we need the whole group before reaching the limit.
             return null;
-        Map<UserTable,Long> tableCounts = new HashMap<UserTable,Long>();
+        Map<UserTable,Long> tableCounts = new HashMap<>();
         tableCounts.put(lastRequired.getTable(), limit);
         UserTable ancestor = lastRequired.getTable();
         while (true) {
@@ -479,7 +479,7 @@ public class PlanCostEstimator
                             (limit * ancestorCount + (childCount - 1)) / childCount);
         }
         Group group = lastRequired.getTable().getGroup();
-        Map<UserTable,Long> moreCounts = new HashMap<UserTable,Long>();
+        Map<UserTable,Long> moreCounts = new HashMap<>();
         for (UserTable table : lastRequired.getTable().getAIS().getUserTables().values()) {
             if (table.getGroup() == group) {
                 UserTable commonAncestor = table;

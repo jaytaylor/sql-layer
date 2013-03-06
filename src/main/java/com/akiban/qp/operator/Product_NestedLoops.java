@@ -26,7 +26,6 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.ProductRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.ProductRowType;
@@ -43,7 +42,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -156,7 +154,7 @@ class Product_NestedLoops extends Operator
     @Override
     public List<Operator> getInputOperators()
     {
-        List<Operator> result = new ArrayList<Operator>(2);
+        List<Operator> result = new ArrayList<>(2);
         result.add(outerInputOperator);
         result.add(innerInputOperator);
         return result;
@@ -229,9 +227,13 @@ class Product_NestedLoops extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 checkQueryCancelation();
                 Row outputRow = null;
                 while (!closed && outputRow == null) {
@@ -246,14 +248,14 @@ class Product_NestedLoops extends Operator
                                 Row branchRow = row.subRow(branchType);
                                 assert branchRow != null : row;
                                 if (outerBranchRow.isEmpty() || !branchRow.hKey().equals(outerBranchRow.get().hKey())) {
-                                    if (LOG.isDebugEnabled()) {
+                                    if (LOG_EXECUTION) {
                                         LOG.debug("Product_NestedLoops: branch row {}", row);
                                     }
                                     outerBranchRow.hold(branchRow);
                                     innerRows.newBranchRow(branchRow);
                                 }
                                 outerRow.hold(row);
-                                if (LOG.isDebugEnabled()) {
+                                if (LOG_EXECUTION) {
                                     LOG.debug("Product_NestedLoops: restart inner loop using current branch row");
                                 }
                                 innerRows.resetForCurrentBranchRow();
@@ -261,12 +263,14 @@ class Product_NestedLoops extends Operator
                         }
                     }
                 }
-                if(LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("Product_NestedLoops: yield {}", outputRow);
                 }
                 return outputRow;
             } finally {
-                TAP_NEXT.out();
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
 
@@ -346,8 +350,8 @@ class Product_NestedLoops extends Operator
         // Object state
 
         private final Cursor outerInput;
-        private final ShareHolder<Row> outerRow = new ShareHolder<Row>();
-        private final ShareHolder<Row> outerBranchRow = new ShareHolder<Row>();
+        private final ShareHolder<Row> outerRow = new ShareHolder<>();
+        private final ShareHolder<Row> outerBranchRow = new ShareHolder<>();
         private final InnerRows innerRows;
         private boolean closed = true;
 

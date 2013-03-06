@@ -126,7 +126,7 @@ public final class CreateIndexesIT extends ITBase {
     }
 
     private void checkIndexIDsInGroup(Group group) {
-        final Map<Integer,Index> idMap = new TreeMap<Integer,Index>();
+        final Map<Integer,Index> idMap = new TreeMap<>();
         for(UserTable table : ddl().getAIS(session()).getUserTables().values()) {
             if(table.getGroup().equals(group)) {
                 for(Index index : table.getIndexesIncludingInternal()) {
@@ -143,7 +143,7 @@ public final class CreateIndexesIT extends ITBase {
 
     @Before
     public void logRecreatedGis() {
-        recreatedGiNames = new ArrayList<String>();
+        recreatedGiNames = new ArrayList<>();
     }
 
     @After
@@ -153,7 +153,7 @@ public final class CreateIndexesIT extends ITBase {
     
     @Test
     public void emptyIndexList() throws InvalidOperationException {
-        ArrayList<Index> indexes = new ArrayList<Index>();
+        ArrayList<Index> indexes = new ArrayList<>();
         ddl().createIndexes(session(), indexes);
     }
 

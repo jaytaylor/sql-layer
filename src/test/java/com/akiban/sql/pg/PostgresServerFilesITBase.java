@@ -57,46 +57,13 @@ import java.util.regex.Pattern;
 public class PostgresServerFilesITBase extends PostgresServerITBase
 {
     public void loadDatabase(File dir) throws Exception {
-        loadSchemaFile(new File(dir, "schema.ddl"));
+        rootTableId = loadSchemaFile(SCHEMA_NAME, new File(dir, "schema.ddl"));
         for (File data : dir.listFiles(new RegexFilenameFilter(".*\\.dat"))) {
-            loadDataFile(data);
+            loadDataFile(SCHEMA_NAME, data);
         }
     }
 
     protected int rootTableId;
-
-    protected void loadSchemaFile(File file) throws Exception {
-        String sql = TestBase.fileContents(file);
-        rootTableId = createTablesAndIndexesFromDDL(SCHEMA_NAME, sql);
-    }
-
-    protected void loadDataFile(File file) throws Exception {
-        String tableName = file.getName().replace(".dat", "");
-        int tableId = tableId(SCHEMA_NAME, tableName);
-        Reader rdr = null;
-        try {
-            rdr = new InputStreamReader(new FileInputStream(file), "UTF-8");
-            BufferedReader brdr = new BufferedReader(rdr);
-            while (true) {
-                String line = brdr.readLine();
-                if (line == null) break;
-                String[] cols = line.split("\t");
-                NewRow row = createNewRow(tableId);
-                for (int i = 0; i < cols.length; i++)
-                    row.put(i, cols[i]);
-                dml().writeRow(session(), row);
-            }
-        }
-        finally {
-            if (rdr != null) {
-                try {
-                    rdr.close();
-                }
-                catch (IOException ex) {
-                }
-            }
-        }
-    }
 
     protected String dumpData() throws Exception {
         final StringBuilder str = new StringBuilder();

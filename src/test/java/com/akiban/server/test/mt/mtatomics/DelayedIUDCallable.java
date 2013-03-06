@@ -115,7 +115,7 @@ class DelayableIUDCallable extends TimedCallable<Void> {
                     dml().updateRow(session, oldRow, newRow, null);
                 break;
                 case DELETE:
-                    dml().deleteRow(session, oldRow);
+                    dml().deleteRow(session, oldRow, false);
                 break;
             }
         } catch(Exception e) {

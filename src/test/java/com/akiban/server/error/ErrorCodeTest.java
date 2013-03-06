@@ -40,7 +40,7 @@ public final class ErrorCodeTest {
 
     @Test
     public void errorCodesAllUnique() {
-        final Map<String,ErrorCode> map = new HashMap<String, ErrorCode>(ErrorCode.values().length);
+        final Map<String,ErrorCode> map = new HashMap<>(ErrorCode.values().length);
         for (ErrorCode errorCode : ErrorCode.values()) {
             ErrorCode oldCode = map.put(errorCode.getFormattedValue(), errorCode);
             if (oldCode != null) {
@@ -52,7 +52,7 @@ public final class ErrorCodeTest {
     
     @Test
     public void errorExceptionsUnique() {
-        final Map<Class<? extends InvalidOperationException>, ErrorCode> map = new HashMap<Class<? extends InvalidOperationException>,ErrorCode >(ErrorCode.values().length);
+        final Map<Class<? extends InvalidOperationException>, ErrorCode> map = new HashMap<>(ErrorCode.values().length);
         
         for (ErrorCode errorCode : ErrorCode.values()) {
             // don't check the null ones. 

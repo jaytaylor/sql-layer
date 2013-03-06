@@ -216,8 +216,8 @@ public class TValidatedOverload implements TOverload {
     TValidatedOverload(TOverload overload, List<TInputSet> inputSets) {
         TInputSet localVarargInputs = null;
         TInputSet localPickingInputs = null;
-        SparseArray<TInputSet> inputSetsArray = new SparseArray<TInputSet>();
-        this.inputSetsCached = new ArrayList<TInputSet>(inputSets);
+        SparseArray<TInputSet> inputSetsArray = new SparseArray<>();
+        this.inputSetsCached = new ArrayList<>(inputSets);
         for (TInputSet inputSet : inputSetsCached) {
             if (inputSet.coversRemaining()) {
                 if (localVarargInputs != null)
@@ -268,7 +268,7 @@ public class TValidatedOverload implements TOverload {
         if (varargs != null && varargs.positionsLength() == 0)
             ++positions;
         int[] results = new int[positions];
-        Map<TInputSet, Integer> inputSetsToIndex = new HashMap<TInputSet, Integer>(positions);
+        Map<TInputSet, Integer> inputSetsToIndex = new HashMap<>(positions);
         int indexCounter = 0;
         for (int i = 0; i < positions; ++i) {
             TInputSet inputSet = (i < naturalPositions) ? inputSetsByPos.get(i) : varargs;
@@ -288,7 +288,7 @@ public class TValidatedOverload implements TOverload {
         int nInputsRaw = inputSetsByPos.size();
         int nInputsExtended = (varargInputSet == null) ? nInputsRaw : (nInputsRaw + 1);
         String[] result = new String[nInputsExtended];
-        Map<TInputSet,String> map = new HashMap<TInputSet, String>(nInputsRaw);
+        Map<TInputSet,String> map = new HashMap<>(nInputsRaw);
         int anyCount = 0;
         // if the picking input set is T, it's always T (not T#1 etc)
         if (pickingSet != null && pickingSet.targetType() == null) {

@@ -214,7 +214,7 @@ public final class HKeySegmentTest {
     }
 
     private void checkEquivalentColumns(List<ColumnName> expected, List<Column> actual) {
-        List<ColumnName> actualNames = new ArrayList<ColumnName>();
+        List<ColumnName> actualNames = new ArrayList<>();
         for (Column column : actual) {
             actualNames.add(new ColumnName(column));
         }

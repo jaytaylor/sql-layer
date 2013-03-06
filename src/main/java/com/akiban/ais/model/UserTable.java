@@ -50,12 +50,16 @@ public class UserTable extends Table
      * @return The new copy of the UserTable.
      */
     public static UserTable create(AkibanInformationSchema ais, UserTable userTable) {
-        return create(ais, userTable.tableName.getSchemaName(), userTable.tableName.getTableName(), userTable.getTableId());
+        UserTable copy = create(ais, userTable.tableName.getSchemaName(), userTable.tableName.getTableName(), userTable.getTableId());
+        copy.setUuid(userTable.getUuid());
+        return copy;
     }
 
     private UserTable(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
     {
         super(ais, schemaName, tableName, tableId);
+        this.fullTextIndexes = new HashSet<>();
+        this.unmodifiableFullTextIndexes = Collections.unmodifiableCollection(fullTextIndexes);
     }
 
     @Override
@@ -100,7 +104,7 @@ public class UserTable extends Table
     {
         // TODO: make this a AISValidation check
         ArgumentValidation.isTrue(column + " doesn't belong to " + getName(), column.getTable() == this);
-        List<Column> matchingColumns = new ArrayList<Column>();
+        List<Column> matchingColumns = new ArrayList<>();
         matchingColumns.add(column);
         findMatchingAncestorColumns(column, matchingColumns);
         findMatchingDescendantColumns(column, matchingColumns);
@@ -189,7 +193,7 @@ public class UserTable extends Table
 
     public List<Join> getChildJoins()
     {
-        List<Join> childJoins = new ArrayList<Join>();
+        List<Join> childJoins = new ArrayList<>();
         Group group = getGroup();
         if (group != null) {
             for (Join candidateChildJoin : candidateChildJoins) {
@@ -293,8 +297,8 @@ public class UserTable extends Table
     }
 
     public void traverseTableAndDescendants(Visitor visitor) {
-        List<UserTable> remainingTables = new ArrayList<UserTable>();
-        List<Join> remainingJoins = new ArrayList<Join>();
+        List<UserTable> remainingTables = new ArrayList<>();
+        List<Join> remainingJoins = new ArrayList<>();
         remainingTables.add(this);
         remainingJoins.addAll(getCandidateChildJoins());
         // Add before visit in-case visitor changes group or joins
@@ -409,7 +413,7 @@ public class UserTable extends Table
         assert getGroup() != null;
         assert getPrimaryKeyIncludingInternal() != null;
         if (allHKeyColumns == null) {
-            allHKeyColumns = new ArrayList<Column>();
+            allHKeyColumns = new ArrayList<>();
             for (HKeySegment segment : hKey().segments()) {
                 for (HKeyColumn hKeyColumn : segment.columns()) {
                     allHKeyColumns.add(hKeyColumn.column());
@@ -432,13 +436,21 @@ public class UserTable extends Table
         return join == null ? null : join.getParent();
     }
 
+    public UUID getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(UUID uuid) {
+        this.uuid = uuid;
+    }
+
     // Descendent tables whose hkeys are affected by a change to this table's PK or FK.
     public List<UserTable> hKeyDependentTables()
     {
         if (hKeyDependentTables == null) {
             synchronized (lazyEvaluationLock) {
                 if (hKeyDependentTables == null) {
-                    hKeyDependentTables = new ArrayList<UserTable>();
+                    hKeyDependentTables = new ArrayList<>();
                     for (Join join : getChildJoins()) {
                         UserTable child = join.getChild();
                         if (!child.containsOwnHKey()) {
@@ -476,7 +488,7 @@ public class UserTable extends Table
         return version;
     }
 
-    public void setVersion(int version) {
+    public void setVersion(Integer version) {
         this.version = version;
     }
     
@@ -491,7 +503,7 @@ public class UserTable extends Table
     private void computeHKey()
     {
         hKey = new HKey(this);
-        List<Column> hKeyColumns = new ArrayList<Column>();
+        List<Column> hKeyColumns = new ArrayList<>();
         if (!isRoot()) {
             // Start with the parent's hkey
             Join join = getParentJoin();
@@ -546,7 +558,7 @@ public class UserTable extends Table
 
     private static Collection<TableIndex> removeInternalColumnIndexes(Collection<TableIndex> indexes)
     {
-        Collection<TableIndex> declaredIndexes = new ArrayList<TableIndex>(indexes);
+        Collection<TableIndex> declaredIndexes = new ArrayList<>(indexes);
         for (Iterator<TableIndex> iterator = declaredIndexes.iterator(); iterator.hasNext();) {
             TableIndex index = iterator.next();
             List<IndexColumn> indexColumns = index.getKeyColumns();
@@ -565,12 +577,44 @@ public class UserTable extends Table
         this.pendingOSC = pendingOSC;
     }
 
+    /** Return all full text indexes in which this table participates. */
+    public Collection<FullTextIndex> getFullTextIndexes() {
+        return unmodifiableFullTextIndexes;
+    }
+
+    /** Return full text indexes that index this table. */
+    public Collection<FullTextIndex> getOwnFullTextIndexes() {
+        if (fullTextIndexes.isEmpty()) return Collections.emptyList();
+        Collection<FullTextIndex> result = new ArrayList<>();
+        for (FullTextIndex index : fullTextIndexes) {
+            if (index.getIndexedTable() == this) {
+                result.add(index);
+            }
+        }
+        return result;
+    }
+
+    public void addFullTextIndex(FullTextIndex index) {
+        fullTextIndexes.add(index);
+    }
+
+    public FullTextIndex getFullTextIndex(String indexName) {
+        for (FullTextIndex index : fullTextIndexes) {
+            if ((index.getIndexedTable() == this) &&
+                (index.getIndexName().getName().equals(indexName))) {
+                return index;
+            }
+        }
+        return null;
+    }
+
     // State
 
-    private final List<Join> candidateParentJoins = new ArrayList<Join>();
-    private final List<Join> candidateChildJoins = new ArrayList<Join>();
+    private final List<Join> candidateParentJoins = new ArrayList<>();
+    private final List<Join> candidateChildJoins = new ArrayList<>();
     private final Object lazyEvaluationLock = new Object();
 
+    private UUID uuid;
     private PrimaryKey primaryKey;
     private HKey hKey;
     private boolean containsOwnHKey;
@@ -582,6 +626,8 @@ public class UserTable extends Table
     private MemoryTableFactory tableFactory;
     private Integer version;
     private PendingOSC pendingOSC;
+    private final Collection<FullTextIndex> fullTextIndexes;
+    private final Collection<FullTextIndex> unmodifiableFullTextIndexes;
 
     // consts
 

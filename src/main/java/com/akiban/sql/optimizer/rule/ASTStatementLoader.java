@@ -81,7 +81,7 @@ public class ASTStatementLoader extends BaseRule
     }
 
     public static final WhiteboardMarker<AST> MARKER = 
-        new DefaultWhiteboardMarker<AST>();
+        new DefaultWhiteboardMarker<>();
 
     /** Recover the {@link AST} put on the whiteboard when loaded. */
     public static AST getAST(PlanContext plan) {
@@ -165,7 +165,7 @@ public class ASTStatementLoader extends BaseRule
             assert (selectTable.getTable() == targetTable);
             ResultColumnList rcl = rs.getResultColumns();
             List<UpdateColumn> updateColumns = 
-                new ArrayList<UpdateColumn>(rcl.size());
+                new ArrayList<>(rcl.size());
             for (ResultColumn result : rcl) {
                 Column column = getColumnReferenceColumn(result.getReference(),
                                                          "result column");
@@ -202,7 +202,7 @@ public class ASTStatementLoader extends BaseRule
             if (rcl != null) {
                 if (ncols != rcl.size())
                     throw new InsertWrongCountException(rcl.size(), ncols);
-                targetColumns = new ArrayList<Column>(rcl.size());
+                targetColumns = new ArrayList<>(rcl.size());
                 for (ResultColumn resultColumn : rcl) {
                     Column column = getColumnReferenceColumn(resultColumn.getReference(),
                                                              "Unsupported target column");
@@ -214,7 +214,7 @@ public class ASTStatementLoader extends BaseRule
                 List<Column> aisColumns = targetTable.getTable().getColumns();
                 if (ncols > aisColumns.size())
                     throw new InsertWrongCountException(aisColumns.size(), ncols);
-                targetColumns = new ArrayList<Column>(ncols);
+                targetColumns = new ArrayList<>(ncols);
                 for (int i = 0; i < ncols; i++) {
                     targetColumns.add(aisColumns.get(i));
                 }
@@ -267,7 +267,7 @@ public class ASTStatementLoader extends BaseRule
             ReturningValues values = new ReturningValues();
             if (rcl != null) {
                 values.table = (TableSource)toJoinNode(table, true);
-                values.row = new ArrayList<ExpressionNode>(rcl.size());
+                values.row = new ArrayList<>(rcl.size());
                 for (ResultColumn resultColumn : rcl) {
                     values.row.add(toExpression(resultColumn.getExpression()));
                 }
@@ -289,12 +289,12 @@ public class ASTStatementLoader extends BaseRule
                                         fetchFirstClause);
             else if (resultSet instanceof RowResultSetNode) {
                 List<ExpressionNode> row = toExpressionsRow(resultSet);
-                List<List<ExpressionNode>> rows = new ArrayList<List<ExpressionNode>>(1);
+                List<List<ExpressionNode>> rows = new ArrayList<>(1);
                 rows.add(row);
                 return new ExpressionsSource(rows);
             }
             else if (resultSet instanceof RowsResultSetNode) {
-                List<List<ExpressionNode>> rows = new ArrayList<List<ExpressionNode>>();
+                List<List<ExpressionNode>> rows = new ArrayList<>();
                 for (ResultSetNode row : ((RowsResultSetNode)resultSet).getRows()) {
                     rows.add(toExpressionsRow(row));
                 }
@@ -313,7 +313,7 @@ public class ASTStatementLoader extends BaseRule
 
         protected List<ResultField> resultColumns(ResultColumnList rcl) 
                         throws StandardException {
-            List<ResultField> results = new ArrayList<ResultField>(rcl.size());
+            List<ResultField> results = new ArrayList<>(rcl.size());
             for (ResultColumn result : rcl) {
                 String name = result.getName();
                 DataTypeDescriptor type = result.getType();
@@ -341,14 +341,14 @@ public class ASTStatementLoader extends BaseRule
 
             ResultColumnList rcl = selectNode.getResultColumns();
             List<ResultField> results = resultColumns (rcl);
-            List<ExpressionNode> projects = new ArrayList<ExpressionNode>(rcl.size());
+            List<ExpressionNode> projects = new ArrayList<>(rcl.size());
 
             for (ResultColumn result : rcl) {
                 ExpressionNode expr = toExpression(result.getExpression());
                 projects.add(expr);
             }
 
-            List<OrderByExpression> sorts = new ArrayList<OrderByExpression>();
+            List<OrderByExpression> sorts = new ArrayList<>();
             if (orderByList != null) {
                 for (OrderByColumn orderByColumn : orderByList) {
                     ExpressionNode expression = toOrderGroupBy(orderByColumn.getExpression(), projects, "ORDER");
@@ -386,7 +386,7 @@ public class ASTStatementLoader extends BaseRule
                         break do_distinct;
                     }
                     else {
-                        query = new AggregateSource(query, new ArrayList<ExpressionNode>((projects)));
+                        query = new AggregateSource(query, new ArrayList<>((projects)));
                         // Don't break: treat like non-distinct case.
                     }
                 }
@@ -413,7 +413,7 @@ public class ASTStatementLoader extends BaseRule
         protected List<ExpressionNode> toExpressionsRow(ResultSetNode resultSet)
                 throws StandardException {
             ResultColumnList resultColumns = resultSet.getResultColumns();
-            List<ExpressionNode> row = new ArrayList<ExpressionNode>(resultColumns.size());
+            List<ExpressionNode> row = new ArrayList<>(resultColumns.size());
             for (ResultColumn resultColumn : resultColumns) {
                 row.add(toExpression(resultColumn.getExpression()));
             }
@@ -446,7 +446,7 @@ public class ASTStatementLoader extends BaseRule
         }
 
         protected Map<FromTable,Joinable> joinNodes =
-            new HashMap<FromTable,Joinable>();
+            new HashMap<>();
 
         protected Joinable toJoinNode(FromTable fromTable, boolean required)
                 throws StandardException {
@@ -676,20 +676,20 @@ public class ASTStatementLoader extends BaseRule
                 inCondition = buildInConditionNested(in, projects);
             }
             else {
-                List<List<ExpressionNode>> rows = new ArrayList<List<ExpressionNode>>();
+                List<List<ExpressionNode>> rows = new ArrayList<>();
                 for (ValueNode rightOperand : rightOperandList) {
-                    List<ExpressionNode> row = new ArrayList<ExpressionNode>(1);
+                    List<ExpressionNode> row = new ArrayList<>(1);
                     flattenInSameShape(row, rightOperand, lhs, projects);
                     rows.add(row);
                 }
                 ExpressionsSource source = new ExpressionsSource(rows);
-                List<ConditionExpression> conds = new ArrayList<ConditionExpression>();
+                List<ConditionExpression> conds = new ArrayList<>();
                 flattenAnyComparisons(conds, leftOperandList, source, projects, in.getType());
                 ConditionExpression combined = null;
                 for (ConditionExpression cond : conds) {
                     combined = andConditions(combined, cond);
                 }
-                List<ExpressionNode> fields = new ArrayList<ExpressionNode>(1);
+                List<ExpressionNode> fields = new ArrayList<>(1);
                 fields.add(combined);
                 PlanNode subquery = new Project(source, fields);
                 inCondition = new AnyCondition(new Subquery(subquery, peekEquivalenceFinder()), in.getType(), in);
@@ -762,7 +762,7 @@ public class ASTStatementLoader extends BaseRule
                     result = equalNode;
                 else
                 {
-                    List<ConditionExpression> operands = new ArrayList<ConditionExpression>(2);
+                    List<ConditionExpression> operands = new ArrayList<>(2);
 
                     operands.add(result);
                     operands.add(equalNode);
@@ -970,7 +970,7 @@ public class ASTStatementLoader extends BaseRule
                 // physical plan and move it to the expression, but it's
                 // easier to think about the scoping as evaluated at the
                 // end of the inner query.
-                List<ExpressionNode> fields = new ArrayList<ExpressionNode>(1);
+                List<ExpressionNode> fields = new ArrayList<>(1);
                 fields.add(inner);
                 subquery = new Project(subquery, fields);
                 if (distinct)
@@ -993,7 +993,7 @@ public class ASTStatementLoader extends BaseRule
                                             List<ExpressionNode> projects,
                                             UnaryOperatorNode unary)
                 throws StandardException {
-            List<ExpressionNode> operands = new ArrayList<ExpressionNode>(1);
+            List<ExpressionNode> operands = new ArrayList<>(1);
             operands.add(toExpression(unary.getOperand(), projects));
             conditions.add(new FunctionCondition(unary.getMethodName(),
                                                  operands,
@@ -1004,7 +1004,7 @@ public class ASTStatementLoader extends BaseRule
                                             List<ExpressionNode> projects,
                                             BinaryOperatorNode binary)
                 throws StandardException {
-            List<ExpressionNode> operands = new ArrayList<ExpressionNode>(2);
+            List<ExpressionNode> operands = new ArrayList<>(2);
             operands.add(toExpression(binary.getLeftOperand(), projects));
             operands.add(toExpression(binary.getRightOperand(), projects));
             conditions.add(new FunctionCondition(binary.getMethodName(),
@@ -1016,7 +1016,7 @@ public class ASTStatementLoader extends BaseRule
                                             List<ExpressionNode> projects,
                                             TernaryOperatorNode ternary)
                 throws StandardException {
-            List<ExpressionNode> operands = new ArrayList<ExpressionNode>(3);
+            List<ExpressionNode> operands = new ArrayList<>(3);
             operands.add(toExpression(ternary.getReceiver(), projects));
             operands.add(toExpression(ternary.getLeftOperand(), projects));
             
@@ -1033,7 +1033,7 @@ public class ASTStatementLoader extends BaseRule
                                           List<ExpressionNode> projects,
                                           IsNullNode isNull)
                 throws StandardException {
-            List<ExpressionNode> operands = new ArrayList<ExpressionNode>(1);
+            List<ExpressionNode> operands = new ArrayList<>(1);
             operands.add(toExpression(isNull.getOperand(), projects));
             String function = isNull.getMethodName();
             boolean negated = false;
@@ -1053,7 +1053,7 @@ public class ASTStatementLoader extends BaseRule
                                       List<ExpressionNode> projects,
                                       IsNode is)
                 throws StandardException {
-            List<ExpressionNode> operands = new ArrayList<ExpressionNode>(1);
+            List<ExpressionNode> operands = new ArrayList<>(1);
             operands.add(toCondition(is.getLeftOperand(), projects));
             String function;
             Boolean value = (Boolean)((ConstantNode)is.getRightOperand()).getValue();
@@ -1085,7 +1085,7 @@ public class ASTStatementLoader extends BaseRule
                 default:
                     throw new UnsupportedSQLException("Unsuported condition", condition);
                 }
-                operands = new ArrayList<ConditionExpression>(1);
+                operands = new ArrayList<>(1);
                 operands.add(toCondition(((UnaryLogicalOperatorNode)condition).getOperand(),
                                          projects));
             }
@@ -1111,7 +1111,7 @@ public class ASTStatementLoader extends BaseRule
                 default:
                     throw new UnsupportedSQLException("Unsuported condition", condition);
                 }
-                operands = new ArrayList<ConditionExpression>(2);
+                operands = new ArrayList<>(2);
                 operands.add(toCondition(leftOperand, projects));
                 operands.add(toCondition(rightOperand, projects));
             }
@@ -1153,7 +1153,7 @@ public class ASTStatementLoader extends BaseRule
         protected ConditionExpression toCondition(ValueNode condition,
                                                   List<ExpressionNode> projects)
                 throws StandardException {
-            List<ConditionExpression> conditions = new ArrayList<ConditionExpression>(1);
+            List<ConditionExpression> conditions = new ArrayList<>(1);
             addCondition(conditions, condition, projects);
             switch (conditions.size()) {
             case 0:
@@ -1182,7 +1182,7 @@ public class ASTStatementLoader extends BaseRule
             if (conds == null)
                 return cond;
             else {
-                List<ConditionExpression> operands = new ArrayList<ConditionExpression>(2);
+                List<ConditionExpression> operands = new ArrayList<>(2);
                 
                 operands.add(conds);
                 operands.add(cond);
@@ -1194,7 +1194,7 @@ public class ASTStatementLoader extends BaseRule
         /** Negate boolean condition. */
         protected ConditionExpression negateCondition(ConditionExpression cond,
                                                       ValueNode sql) {
-            List<ConditionExpression> operands = new ArrayList<ConditionExpression>(1);
+            List<ConditionExpression> operands = new ArrayList<>(1);
             operands.add(cond);
             return new LogicalFunctionCondition("not", operands, sql.getType(), sql);
         }
@@ -1304,9 +1304,9 @@ public class ASTStatementLoader extends BaseRule
             return (TableSource)joinNodes.get(firstTable);
         }
 
-        protected Map<Group,TableTree> groups = new HashMap<Group,TableTree>();
+        protected Map<Group,TableTree> groups = new HashMap<>();
         protected Deque<EquivalenceFinder<ColumnExpression>> columnEquivalences
-                = new ArrayDeque<EquivalenceFinder<ColumnExpression>>(1);
+                = new ArrayDeque<>(1);
 
         protected TableNode getTableNode(UserTable table)
                 throws StandardException {
@@ -1416,7 +1416,7 @@ public class ASTStatementLoader extends BaseRule
                     
                     if (orderByList != null)
                     {
-                        sorts = new ArrayList<OrderByExpression>();
+                        sorts = new ArrayList<>();
                         for (OrderByColumn orderByColumn : orderByList)
                         {
                             ExpressionNode expression = toOrderGroupBy(orderByColumn.getExpression(), projects, "ORDER");
@@ -1445,7 +1445,7 @@ public class ASTStatementLoader extends BaseRule
             }
             else if (valueNode instanceof UnaryOperatorNode) {
                 UnaryOperatorNode unary = (UnaryOperatorNode)valueNode;
-                List<ExpressionNode> operands = new ArrayList<ExpressionNode>(1);
+                List<ExpressionNode> operands = new ArrayList<>(1);
                 operands.add(toExpression(unary.getOperand(), projects));
                 return new FunctionExpression(unary.getMethodName(),
                                               operands,
@@ -1453,7 +1453,7 @@ public class ASTStatementLoader extends BaseRule
             }
             else if (valueNode instanceof BinaryOperatorNode) {
                 BinaryOperatorNode binary = (BinaryOperatorNode)valueNode;
-                List<ExpressionNode> operands = new ArrayList<ExpressionNode>(2);
+                List<ExpressionNode> operands = new ArrayList<>(2);
                 int nodeType = valueNode.getNodeType();
                 switch (nodeType) {
                 case NodeTypes.CONCATENATION_OPERATOR_NODE:
@@ -1478,7 +1478,7 @@ public class ASTStatementLoader extends BaseRule
             }
             else if (valueNode instanceof TernaryOperatorNode) {
                 TernaryOperatorNode ternary = (TernaryOperatorNode)valueNode;
-                List<ExpressionNode> operands = new ArrayList<ExpressionNode>(3);
+                List<ExpressionNode> operands = new ArrayList<>(3);
                 operands.add(toExpression(ternary.getReceiver(), projects));
                 operands.add(toExpression(ternary.getLeftOperand(), projects));
                 
@@ -1493,7 +1493,7 @@ public class ASTStatementLoader extends BaseRule
             }
             else if (valueNode instanceof CoalesceFunctionNode) {
                 CoalesceFunctionNode coalesce = (CoalesceFunctionNode)valueNode;
-                List<ExpressionNode> operands = new ArrayList<ExpressionNode>();
+                List<ExpressionNode> operands = new ArrayList<>();
                 for (ValueNode value : coalesce.getArgumentsList()) {
                     operands.add(toExpression(value, projects));
                 }
@@ -1551,7 +1551,7 @@ public class ASTStatementLoader extends BaseRule
             }
             else if (valueNode instanceof NextSequenceNode) {
                 NextSequenceNode seqNode = (NextSequenceNode)valueNode;
-                List<ExpressionNode> params = new ArrayList<ExpressionNode>(2);
+                List<ExpressionNode> params = new ArrayList<>(2);
 
                 String schema = seqNode.getSequenceName().hasSchema() ? 
                         seqNode.getSequenceName().getSchemaName() :
@@ -1571,7 +1571,7 @@ public class ASTStatementLoader extends BaseRule
             }
             else if (valueNode instanceof CurrentSequenceNode) {
                 CurrentSequenceNode seqNode = (CurrentSequenceNode)valueNode;
-                List<ExpressionNode> params = new ArrayList<ExpressionNode>(2);
+                List<ExpressionNode> params = new ArrayList<>(2);
 
                 String schema = seqNode.getSequenceName().hasSchema() ? 
                         seqNode.getSequenceName().getSchemaName() :
@@ -1603,7 +1603,7 @@ public class ASTStatementLoader extends BaseRule
                 throws StandardException {
             if (javaToSQL instanceof MethodCallNode) {
                 MethodCallNode methodCall = (MethodCallNode)javaToSQL;
-                List<ExpressionNode> operands = new ArrayList<ExpressionNode>();
+                List<ExpressionNode> operands = new ArrayList<>();
                 if (methodCall.getMethodParameters() != null) {
                     for (JavaValueNode javaValue : methodCall.getMethodParameters()) {
                         operands.add(toExpression(javaValue, null, false, projects));
@@ -1709,7 +1709,7 @@ public class ASTStatementLoader extends BaseRule
                                                     GroupByList groupByList,
                                                     List<ExpressionNode> projects)
                 throws StandardException {
-            List<ExpressionNode> groupBy = new ArrayList<ExpressionNode>();
+            List<ExpressionNode> groupBy = new ArrayList<>();
             if (groupByList != null) {
                 for (GroupByColumn groupByColumn : groupByList) {
                     groupBy.add(toOrderGroupBy(groupByColumn.getColumnExpression(),

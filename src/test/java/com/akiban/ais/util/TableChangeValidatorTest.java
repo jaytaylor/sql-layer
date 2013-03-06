@@ -59,7 +59,7 @@ public class TableChangeValidatorTest {
     private static final TableName TABLE_NAME = new TableName(SCHEMA, TABLE);
     private static final String NO_INDEX_CHANGE = "{}";
 
-    private List<TableChange> NO_CHANGES = new ArrayList<TableChange>();
+    private List<TableChange> NO_CHANGES = new ArrayList<>();
 
     @After
     public void clearChanges() {
@@ -120,7 +120,7 @@ public class TableChangeValidatorTest {
 
     private static Map<String,String> map(String... pairs) {
         assertTrue("Even number of pairs", (pairs.length % 2) == 0);
-        Map<String,String> map = new TreeMap<String, String>();
+        Map<String,String> map = new TreeMap<>();
         for(int i = 0; i < pairs.length; i += 2) {
             map.put(pairs[i], pairs[i+1]);
         }

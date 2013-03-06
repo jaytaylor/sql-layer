@@ -33,23 +33,31 @@ import com.akiban.server.explain.Label;
 
 import com.akiban.server.error.AkibanInternalException;
 
-import com.google.gson.stream.JsonWriter;
+import org.codehaus.jackson.JsonEncoding;
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonGenerator;
 
+import java.io.Writer;
 import java.util.List;
 import java.util.Map;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.StringWriter;
 
 public class JsonFormatter
 {
+    private final JsonFactory factory = new JsonFactory();
+    private final boolean pretty = true;
+
     public String format(Explainer explainer) {
         StringWriter str = new StringWriter();
-        JsonWriter writer = new JsonWriter(str);
-        if (true) {
-            writer.setIndent("  "); // Pretty print
-        }
         try {
-            write(writer, explainer);
+            JsonGenerator generator = factory.createJsonGenerator(str);
+            if (pretty) {
+                generator.useDefaultPrettyPrinter();
+            }
+            generate(generator, explainer);
+            generator.flush();
         }
         catch (IOException ex) {
             throw new AkibanInternalException("Error writing to string", ex);
@@ -57,43 +65,48 @@ public class JsonFormatter
         return str.toString();
     }
 
-    public void write(JsonWriter writer, Explainer explainer) throws IOException {
+    public void format(Explainer explainer, Writer writer) throws IOException {
+        format(explainer, factory.createJsonGenerator(writer));
+    }
+
+    public void format(Explainer explainer, OutputStream stream) throws IOException {
+        format(explainer, factory.createJsonGenerator(stream, JsonEncoding.UTF8));
+    }
+
+    public void format(Explainer explainer, JsonGenerator generator) throws IOException {
+        if (pretty) {
+            generator.useDefaultPrettyPrinter();
+        }
+        generate(generator, explainer);
+        generator.flush();
+    }
+
+    public void generate(JsonGenerator generator, Explainer explainer) throws IOException {
         switch (explainer.getType().generalType()) {
         case SCALAR_VALUE:
-            writePrimitive(writer, (PrimitiveExplainer)explainer);
+            generatePrimitive(generator, (PrimitiveExplainer)explainer);
             break;
         default:
-            writeCompound(writer, (CompoundExplainer)explainer);
+            generateCompound(generator, (CompoundExplainer)explainer);
             break;
         }
     }
 
-    protected void writePrimitive(JsonWriter writer, PrimitiveExplainer explainer) throws IOException {
-        switch (explainer.getType()) {
-        case STRING:
-            writer.value((String)explainer.get());
-            break;
-        case EXACT_NUMERIC:
-        case FLOATING_POINT:
-            writer.value((Number)explainer.get());
-            break;
-        default:
-            writer.value(explainer.get().toString());
-        }
+    protected void generatePrimitive(JsonGenerator generator, PrimitiveExplainer explainer) throws IOException {
+        generator.writeObject(explainer.get());
     }
 
-    protected void writeCompound(JsonWriter writer, CompoundExplainer explainer) throws IOException {
-        writer.beginObject();
-        writer.name("type");
-        writer.value(explainer.getType().name().toLowerCase());
+    protected void generateCompound(JsonGenerator generator, CompoundExplainer explainer) throws IOException {
+        generator.writeStartObject();
+        generator.writeObjectField("type", explainer.getType().name().toLowerCase());
         for (Map.Entry<Label, List<Explainer>> entry : explainer.get().entrySet()) {
-            writer.name(entry.getKey().name().toLowerCase());
-            writer.beginArray();
+            generator.writeFieldName(entry.getKey().name().toLowerCase());
+            generator.writeStartArray();
             for (Explainer child : entry.getValue()) {
-                write(writer, child);
+                generate(generator, child);
             }
-            writer.endArray();
+            generator.writeEndArray();
         }
-        writer.endObject();
+        generator.writeEndObject();
     }
 }

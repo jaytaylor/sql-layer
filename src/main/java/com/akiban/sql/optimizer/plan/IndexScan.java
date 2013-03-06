@@ -76,7 +76,7 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
 
     /** Return tables included in the index, leafmost to rootmost. */
     public List<TableSource> getTables() {
-        List<TableSource> tables = new ArrayList<TableSource>();
+        List<TableSource> tables = new ArrayList<>();
         TableSource table = leafMostTable;
         while (true) {
             tables.add(table);

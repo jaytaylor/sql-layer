@@ -68,7 +68,7 @@ public final class TPreparedFunction implements TPreparedExpression {
 
     @Override
     public TEvaluatableExpression build() {
-        List<TEvaluatableExpression> children = new ArrayList<TEvaluatableExpression>(inputs.size());
+        List<TEvaluatableExpression> children = new ArrayList<>(inputs.size());
         for (TPreparedExpression input : inputs)
             children.add(input.build());
         return new TEvaluatableFunction(

@@ -86,13 +86,13 @@ public class ConstantFolder extends BaseRule
     private static abstract class Folder implements PlanVisitor, ExpressionRewriteVisitor {
         protected final PlanContext planContext;
         protected final ExpressionAssembler<?> expressionAssembler;
-        private Set<ColumnSource> eliminatedSources = new HashSet<ColumnSource>();
+        private Set<ColumnSource> eliminatedSources = new HashSet<>();
         private Set<AggregateSource> changedAggregates = null;
         private enum State { FOLDING, AGGREGATES, FOLDING_PIECEMEAL };
         private State state;
         private boolean changed;
         private Map<ConditionExpression,Boolean> topLevelConditions = 
-            new IdentityHashMap<ConditionExpression,Boolean>();
+            new IdentityHashMap<>();
 
         protected Folder(PlanContext planContext, ExpressionAssembler<?> expressionAssembler) {
             this.planContext = planContext;
@@ -390,7 +390,7 @@ public class ConstantFolder extends BaseRule
                         if (!ok) {
                             if (isAggregateOfNull(afun)) {
                                 ok = true;
-                                changedAggregates = new HashSet<AggregateSource>();
+                                changedAggregates = new HashSet<>();
                                 changedAggregates.add(asource);
                             }
                         }
@@ -1043,7 +1043,7 @@ public class ConstantFolder extends BaseRule
             ExpressionNode cond = project.getFields().get(0);
             if (!(cond instanceof ConditionExpression))
                 return null;
-            List<ComparisonCondition> comps = new ArrayList<ComparisonCondition>();
+            List<ComparisonCondition> comps = new ArrayList<>();
             if (!getAnyConditions(comps, (ConditionExpression)cond, expressions))
                 return null;
             List<List<ExpressionNode>> rows = expressions.getExpressions();
@@ -1081,7 +1081,7 @@ public class ConstantFolder extends BaseRule
                 return;
 
             List<List<ExpressionNode>> rows = expressions.getExpressions();
-            List<List<ExpressionNode>> constants = new ArrayList<List<ExpressionNode>>();
+            List<List<ExpressionNode>> constants = new ArrayList<>();
             List<List<ExpressionNode>> parameters = null;
             List<List<ExpressionNode>> others = null;
             boolean anyNull = false;
@@ -1112,12 +1112,12 @@ public class ConstantFolder extends BaseRule
                 }
                 else if (allConstOrParam) {
                     if (parameters == null)
-                        parameters = new ArrayList<List<ExpressionNode>>();
+                        parameters = new ArrayList<>();
                     parameters.add(row);
                 }
                 else {
                     if (others == null)
-                        others = new ArrayList<List<ExpressionNode>>();
+                        others = new ArrayList<>();
                     others.add(row);
                 }
             }
@@ -1300,7 +1300,7 @@ public class ConstantFolder extends BaseRule
                 if (result == null)
                     result = comp;
                 else {
-                    List<ConditionExpression> operands = new ArrayList<ConditionExpression>(2);
+                    List<ConditionExpression> operands = new ArrayList<>(2);
                         
                     operands.add(result);
                     operands.add(comp);

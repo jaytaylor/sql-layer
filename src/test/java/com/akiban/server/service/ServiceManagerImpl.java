@@ -34,7 +34,7 @@ import com.akiban.server.service.session.Session;
 
 public final class ServiceManagerImpl extends DelegatingServiceManager
 {
-    private static final AtomicReference<ServiceManager> instance = new AtomicReference<ServiceManager>(null);
+    private static final AtomicReference<ServiceManager> instance = new AtomicReference<>(null);
 
     public static void setServiceManager(ServiceManager newInstance) {
         if (newInstance == null) {

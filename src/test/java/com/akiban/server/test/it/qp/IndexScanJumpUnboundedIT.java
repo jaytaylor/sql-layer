@@ -351,7 +351,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
             nudgedTarget.overlay(3, target.eval(3).getLong() + nudge);
             cursor.jump(nudgedTarget, INDEX_ROW_SELECTOR);
             Row row;
-            List<Long> actualIds = new ArrayList<Long>();
+            List<Long> actualIds = new ArrayList<>();
             while ((row = cursor.next()) != null) {
                 if (usingPValues()) {
                     actualIds.add((long)row.pvalue(3).getInt32());
@@ -360,7 +360,7 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
                     actualIds.add(getLong(row, 3));
                 }
             }
-            List<Long> expectedIds = new ArrayList<Long>();
+            List<Long> expectedIds = new ArrayList<>();
             for (int i = start; i < idOrdering.length; i++) {
                 expectedIds.add(idOrdering[i]);
             }
@@ -407,5 +407,5 @@ public class IndexScanJumpUnboundedIT extends OperatorITBase
     private int t;
     private RowType tRowType;
     private IndexRowType idxRowType;
-    private Map<Long, TestRow> indexRowMap = new HashMap<Long, TestRow>();
+    private Map<Long, TestRow> indexRowMap = new HashMap<>();
 }

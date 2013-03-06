@@ -220,7 +220,7 @@ public final class JmxRegistryServiceImplTest {
     }
 
     private void assertRegisteredServices(Set<ObjectName> actual, String... expecteds) {
-        Set<ObjectName> expectedSet = new HashSet<ObjectName>();
+        Set<ObjectName> expectedSet = new HashSet<>();
         for (String expected : expecteds) {
             try {
                 expectedSet.add(new ObjectName(expected));

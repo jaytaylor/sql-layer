@@ -41,7 +41,7 @@ public class DerivedTypesSchema {
 
     public static Set<RowType> descendentTypes(RowType ancestorType, Set<? extends RowType> allTypes)
     {
-        Set<RowType> descendentTypes = new HashSet<RowType>();
+        Set<RowType> descendentTypes = new HashSet<>();
         for (RowType type : allTypes) {
             if (type != ancestorType && ancestorType.ancestorOf(type)) {
                 descendentTypes.add(type);

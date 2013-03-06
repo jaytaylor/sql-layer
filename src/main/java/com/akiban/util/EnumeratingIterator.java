@@ -73,7 +73,7 @@ public final class EnumeratingIterator<T> implements Iterable<Enumerated<T>>
         @Override
         public Enumerated<T> next()
         {
-            return new InternalEnumerated<T>(iter.next(), counter++);
+            return new InternalEnumerated<>(iter.next(), counter++);
         }
 
         @Override
@@ -87,7 +87,7 @@ public final class EnumeratingIterator<T> implements Iterable<Enumerated<T>>
 
     public static <T> EnumeratingIterator<T> of(Iterable<T> iterable)
     {
-        return new EnumeratingIterator<T>(iterable);
+        return new EnumeratingIterator<>(iterable);
     }
 
     public EnumeratingIterator(Iterable<T> iterable)
@@ -98,6 +98,6 @@ public final class EnumeratingIterator<T> implements Iterable<Enumerated<T>>
     @Override
     public Iterator<Enumerated<T>> iterator()
     {
-        return new InternalIterator<T>(iterable.iterator());
+        return new InternalIterator<>(iterable.iterator());
     }
 }

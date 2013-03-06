@@ -59,6 +59,7 @@ message Sequence {
 enum IndexMethod {
    NORMAL          = 0;                  // Regular column index.
    Z_ORDER_LAT_LON = 1;                  // Spatial index on latitude, longitude.
+   FULL_TEXT       = 2;                  // Lucene full index text.
 }
 
 message IndexColumn {
@@ -114,6 +115,7 @@ message Column {
     optional string typeBundleUUID = 14; // bundle UUID of type. null if old style type
     optional int32  typeVersion    = 15; // serialization version of type. null if old style type
     optional string defaultValue   = 16; // default value for column (null if none specified)
+    optional string uuid           = 17; // uuid unique to this group (including table uuids)
 }
 
 // UserTable.  
@@ -133,6 +135,8 @@ message Table {
     optional int32   version     = 10;  // Version this table was created with.
                                         // For AIS tables.
     optional PendingOSC pendingOSC = 11; // ALTER by pt-online-schema-change.
+    optional string uuid           = 12; // uuid unique to this group (including column uuids)
+    repeated Index fullTextIndexes = 13; // list of full text indexes on the table
 }
 
 message Property {

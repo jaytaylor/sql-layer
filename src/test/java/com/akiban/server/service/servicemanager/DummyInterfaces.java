@@ -48,7 +48,7 @@ abstract class DummyInterfaces {
 
     // class state
 
-    private static final List<String> messages = new ArrayList<String>();
+    private static final List<String> messages = new ArrayList<>();
 
     // nested classes
 

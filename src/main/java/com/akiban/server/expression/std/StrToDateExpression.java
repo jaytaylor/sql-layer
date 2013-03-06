@@ -81,7 +81,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
     private static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
         private  int topType;
-        private EnumMap<DateTimeField, Long> valuesMap = new EnumMap<DateTimeField,Long>(DateTimeField.class);
+        private EnumMap<DateTimeField, Long> valuesMap = new EnumMap<>(DateTimeField.class);
         private boolean has24Hr;       
         
         public InnerEvaluation (AkType type, List<? extends ExpressionEvaluation> childrenEval)

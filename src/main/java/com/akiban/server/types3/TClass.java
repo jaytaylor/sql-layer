@@ -29,6 +29,8 @@ package com.akiban.server.types3;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueCacher;
 import com.akiban.server.types3.pvalue.PValueTargets;
+import com.akiban.server.types3.texpressions.Serialization;
+import com.akiban.server.types3.texpressions.SerializeAs;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -40,6 +42,12 @@ import com.google.common.primitives.Floats;
 import com.google.common.primitives.Longs;
 import com.google.common.primitives.UnsignedBytes;
 
+import java.lang.reflect.Field;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 public abstract class TClass {
@@ -143,15 +151,18 @@ public abstract class TClass {
             getPValueIO().copyCanonical(in, typeInstance, out);
     }
 
-    public void attributeToString(int attributeIndex, long value, StringBuilder output) {
-        output.append(value);
+    protected Object attributeToObject(int attributeIndex, int value) {
+        return value;
     }
 
-    protected static void attributeToString(Object[] array, long arrayIndex, StringBuilder output) {
-        if ( (array == null) || (arrayIndex < 0) || arrayIndex >= array.length)
-            output.append(arrayIndex);
-        else
-            output.append(array[(int)arrayIndex]);
+    public final boolean attributeIsPhysical(Attribute attribute) {
+        return attributeIsPhysical(attribute.ordinal());
+    }
+
+    protected abstract boolean attributeIsPhysical(int attributeIndex);
+
+    public void attributeToString(int attributeIndex, long value, StringBuilder output) {
+        output.append(value);
     }
 
     protected PValueIO getPValueIO() {
@@ -205,8 +216,16 @@ public abstract class TClass {
         return pUnderlying;
     }
 
-    public int nAttributes() {
-        return attributes.length;
+    int nAttributes() {
+        return attributeSerializations.size();
+    }
+
+    public Collection<? extends Attribute> attributes() {
+        return attributeSerializations.keySet();
+    }
+
+    public Map<? extends Attribute, ? extends Serialization> attributeSerializations() {
+        return attributeSerializations;
     }
 
     public TName name() {
@@ -309,18 +328,43 @@ public abstract class TClass {
          this.serializationVersion = serializationVersion;
          this.serializationSize = serializationSize < 0 ? -1 : serializationSize; // normalize all negative numbers
          this.pUnderlying = pUnderlying;
-         attributes = enumClass.getEnumConstants();
+         this.attributeSerializations = serializationsFor(enumClass);
 
          this.enumClass = enumClass;
-         for (int i = 0; i < attributes.length; ++i)
+         for (Attribute attribute : attributeSerializations.keySet())
          {
-             String attrValue = attributes[i].name();
+             String attrValue = attribute.name();
              if (!VALID_ATTRIBUTE_PATTERN.matcher(attrValue).matches())
-                 throw new IllegalNameException("attribute[" + i + "] for " + name + " has invalid name: " + attrValue);
+                 throw new IllegalNameException(attribute + " in " + name + " has invalid name: " + attrValue);
          }
      }
 
-     protected <A extends Enum<A> & Attribute> TClass(TBundleID bundle,
+    private static <A extends Enum<A> & Attribute> Map<A, Serialization> serializationsFor(Class<A> enumClass) {
+        EnumSet<Serialization> seenSerializations = EnumSet.noneOf(Serialization.class);
+        Map<A, Serialization> serializationsMap = new EnumMap<>(enumClass);
+        for (A attribute : enumClass.getEnumConstants()) {
+            Field attributeField;
+            try {
+                attributeField = enumClass.getField(attribute.name());
+            } catch (NoSuchFieldException e) {
+                throw new AssertionError(e);
+            }
+            SerializeAs serializeAs = attributeField.getAnnotation(SerializeAs.class);
+            Serialization serialization;
+            if (serializeAs != null) {
+                serialization = serializeAs.value();
+                if (!seenSerializations.add(serialization))
+                    throw new RuntimeException("duplicate serialization policy in " + enumClass);
+            }
+            else {
+                serialization = null;
+            }
+            serializationsMap.put(attribute, serialization);
+        }
+        return Collections.unmodifiableMap(serializationsMap);
+    }
+
+    protected <A extends Enum<A> & Attribute> TClass(TBundleID bundle,
             String name,
             Enum<?> category,
             Class<A> enumClass,
@@ -338,7 +382,7 @@ public abstract class TClass {
     private final TName name;
     private final Class<?> enumClass;
     protected final TClassFormatter formatter;
-    private final Attribute[] attributes;
+    private final Map<? extends Attribute, Serialization> attributeSerializations;
     private final int internalRepVersion;
     private final int serializationVersion;
     private final int serializationSize;

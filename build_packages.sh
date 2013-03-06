@@ -61,6 +61,7 @@ esac
 
 mkdir -p target
 mkdir -p packages-common/client
+mkdir -p packages-common/plugins
 common_dir="config-files/${target}" # require config-files/dir to be the same as the ${target} variable
 if [ ! -d ${common_dir} ]; then
     echo "fatal: Couldn't find configuration files in: ${common_dir}"
@@ -88,42 +89,6 @@ cp target/akiban-client-tools-*.jar ../../packages-common/
 cp target/dependency/* ../../packages-common/client/
 popd
 
-#
-# Add akiban-server-plugins
-#
-mkdir -p packages-common/plugins
-rm -f packages-common/plugins/*
-: ${PLUGINS_BRANCH:="https://github.com/akiban/akiban-server-plugins/archive/master.zip"}
-echo "Using akiban-server-plugins git branch: ${PLUGINS_BRANCH}"
-pushd .
-cd target
-rm -rf akiban-server-plugins-master
-rm -f akiban-server-plugins.zip
-curl -kLs -o akiban-server-plugins.zip ${PLUGINS_BRANCH}
-unzip -q akiban-server-plugins.zip
-cd akiban-server-plugins-master
-mvn -DskipTests=true install
-cd http-conductor
-mvn -DskipTests=true assembly:single
-cp target/*with-dependencies.jar ../../../packages-common/plugins
-popd
-
-#
-# Add akiban-rest
-#
-: ${REST_BRANCH:="https://github.com/akiban/akiban-rest/archive/master.zip"}
-echo "Using akiban-rest git branch: ${REST_BRANCH}"
-pushd .
-cd target
-rm -rf akiban-rest-*
-rm -f rest.zip
-curl -kLs -o rest.zip ${REST_BRANCH}
-unzip -q rest.zip
-cd akiban-rest-*
-mvn -DskipTests=true package
-cp target/*with-dependencies.jar ../../packages-common/plugins
-popd
-
 if [ -z "$2" ] ; then
 	epoch=`date +%s`
 else
@@ -136,8 +101,7 @@ if [ ${platform} == "debian" ]; then
     mvn -Dmaven.test.skip.exec clean install -DBZR_REVISION=${bzr_revno}
     mkdir -p ${platform}/server/
     cp ./target/dependency/* ${platform}/server/
-    mkdir -p ${platform}/plugins/
-    cp packages-common/plugins/* ${platform}/plugins
+    cp -R packages-common/plugins/ ${platform}/
     debuild
 elif [ ${platform} == "redhat" ]; then
     mkdir -p ${PWD}/redhat/rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
@@ -219,7 +183,7 @@ elif [ ${platform} == "macosx" ]; then
         cp $client_deps/* "$mac_app/Contents/Resources/tools/lib/client/"
         mkdir -p "$mac_app/Contents/Resources/tools/bin"
         cp $akdump_bin "$mac_app/Contents/Resources/tools/bin/"
-        cp -R $plugins_dir "$mac_app/Contents/Resources/plugins"
+        cp -R "$plugins_dir" "$mac_app/Contents/Resources/"
 
         # build disk image template
         rm -rf $inst_temp

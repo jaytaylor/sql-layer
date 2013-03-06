@@ -70,7 +70,7 @@ public class SelectPreponer extends BaseRule
      * <code>IndexScan</code> and <code><i>XxxLookup</i></code>.
      */
     static class TableOriginFinder implements PlanVisitor, ExpressionVisitor {
-        List<PlanNode> origins = new ArrayList<PlanNode>();
+        List<PlanNode> origins = new ArrayList<>();
 
         public void find(PlanNode root) {
             root.accept(this);
@@ -137,11 +137,11 @@ public class SelectPreponer extends BaseRule
         Map<PlanNode,Set<TableSource>> flattened; // Tables that participate in those.
         
         public Loop() {
-            loaders = new HashMap<TableSource,PlanNode>();
+            loaders = new HashMap<>();
         }
 
         public void setIndex(IndexScan index) {
-            indexColumns = new HashMap<ExpressionNode,PlanNode>();
+            indexColumns = new HashMap<>();
             for (int i = 0; i < index.getColumns().size(); i++) {
                 ExpressionNode column = index.getColumns().get(i);
                 if ((column != null) && index.isRecoverableAt(i)) {
@@ -159,14 +159,14 @@ public class SelectPreponer extends BaseRule
         /** Add a within-group join: Flatten or Product. */
         public Set<TableSource> addFlattenOrProduct(PlanNode join) {
             if (flattens == null)
-                flattens = new ArrayList<PlanNode>();
+                flattens = new ArrayList<>();
             flattens.add(join);
 
             // Might be able to place multi-table conditions after a flatten join,
             // so record what is available.
             if (flattened == null)
-                flattened = new HashMap<PlanNode,Set<TableSource>>();
-            Set<TableSource> tables = new HashSet<TableSource>(loaders.keySet());
+                flattened = new HashMap<>();
+            Set<TableSource> tables = new HashSet<>(loaders.keySet());
             flattened.put(join, tables);
             return tables;
         }
@@ -304,7 +304,7 @@ public class SelectPreponer extends BaseRule
                         // A Product takes multiple streams, so we may
                         // have seen this one before.
                         if (products == null)
-                            products = new HashMap<Product,Loop>();
+                            products = new HashMap<>();
                         Loop oloop = products.get(product);
                         if (oloop != null) {
                             loop = oloop.merge(loop, product);
@@ -360,7 +360,7 @@ public class SelectPreponer extends BaseRule
                                 // to the Map joins. Enable reuse for
                                 // Product.
                                 if (selects == null)
-                                    selects = new HashMap<Select,SelectConditions>();
+                                    selects = new HashMap<>();
                                 selects.put(select, selectConditions);
                             }
                         }
@@ -402,7 +402,7 @@ public class SelectPreponer extends BaseRule
 
         public void addLoop(Loop loop) {
             if (loops == null)
-                loops = new ArrayList<Loop>();
+                loops = new ArrayList<>();
             loops.add(loop);
         }
 
@@ -436,7 +436,7 @@ public class SelectPreponer extends BaseRule
                 // If the condition only references a single table, no
                 // need to check outer bindings; it's wherever it is.
                 if (singleTable == null)
-                    outerTables = new HashSet<TableSource>();
+                    outerTables = new HashSet<>();
                 // Several nested loops: find the shallowest one that has everything.
                 loop = findLoop(outerTables);
                 if (loop == null)
@@ -483,7 +483,7 @@ public class SelectPreponer extends BaseRule
                     if (outerTables != null)
                         // Even though index only has some columns, can exclude whole
                         // tables for purposes of deeper loops.
-                        maybeOuterTables = new HashSet<TableSource>();
+                        maybeOuterTables = new HashSet<>();
                     boolean allFound = true;
                     for (ColumnExpression column : dependencies.getReferencedColumns()) {
                         if (outerTables != null) {

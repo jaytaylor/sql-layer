@@ -75,7 +75,7 @@ public class MDatetimes
     public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(MBundleID,
             "timestamp", AkCategory.DATE_TIME, FORMAT.TIMESTAMP, 1, 1, 4, PUnderlying.INT_32, TParsers.TIMESTAMP, 19, TypeId.TIMESTAMP_ID);
 
-    public static final List<String> SUPPORTED_LOCALES = new LinkedList<String>();
+    public static final List<String> SUPPORTED_LOCALES = new LinkedList<>();
     
     public static final Map<String, String[]> MONTHS;
     public static final Map<String, String[]> SHORT_MONTHS;
@@ -167,10 +167,10 @@ public class MDatetimes
         // TODO: add all supported LOCALES here
         SUPPORTED_LOCALES.add(Locale.ENGLISH.getLanguage());
         
-       Map<String, String[]> months = new HashMap<String, String[]>();
-       Map<String, String[]> shortMonths = new HashMap<String, String[]>();
-       Map<String, String[]>weekDays = new HashMap<String, String[]>();
-       Map<String, String[]>shortWeekdays = new HashMap<String, String[]>();
+       Map<String, String[]> months = new HashMap<>();
+       Map<String, String[]> shortMonths = new HashMap<>();
+       Map<String, String[]>weekDays = new HashMap<>();
+       Map<String, String[]>shortWeekdays = new HashMap<>();
 
        for (String locale : SUPPORTED_LOCALES)
        {
@@ -897,13 +897,10 @@ public class MDatetimes
                                       ).getMillis();
             return (int)CastUtils.getInRange(TIMESTAMP_MAX, TIMESTAMP_MIN, millis / 1000L, TS_ERROR_VALUE, context);
         }
-        catch (IllegalFieldValueException e)
+        catch (IllegalFieldValueException | NumberFormatException e)
         {
+            context.warnClient(new InvalidDateFormatException("timestamp", ts));
             return 0; // e.g. SELECT UNIX_TIMESTAMP('1920-21-01 00:00:00') -> 0
-        }
-        catch (NumberFormatException ex)
-        {
-            throw new InvalidDateFormatException("datetime", ts);
         }
     }
 

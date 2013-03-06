@@ -98,7 +98,7 @@ public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase {
 
     @TestParameters
     public static Collection<Parameterization> queries() throws Exception {
-	Collection<Object[]> params = new ArrayList<Object[]>();
+	Collection<Object[]> params = new ArrayList<>();
 	collectParams(RESOURCE_DIR,
 		      Pattern.compile(CASE_NAME_REGEXP + "[.]yaml"), params);
 	return NamedParamsTestBase.namedCases(params);

@@ -94,7 +94,7 @@ public class API
     public static List<Expression> generateOld(List<? extends ExpressionGenerator> expressionGenerators) {
         if ((expressionGenerators == null) || Types3Switch.ON)
             return null;
-        List<Expression> results = new ArrayList<Expression>(expressionGenerators.size());
+        List<Expression> results = new ArrayList<>(expressionGenerators.size());
         for (ExpressionGenerator generator : expressionGenerators) {
             results.add(generator.getExpression());
         }
@@ -104,7 +104,7 @@ public class API
     public static List<TPreparedExpression> generateNew(List<? extends ExpressionGenerator> expressionGenerators) {
         if ((expressionGenerators == null) || (!Types3Switch.ON) )
             return null;
-        List<TPreparedExpression> results = new ArrayList<TPreparedExpression>(expressionGenerators.size());
+        List<TPreparedExpression> results = new ArrayList<>(expressionGenerators.size());
         for (ExpressionGenerator generator : expressionGenerators) {
             results.add(generator.getTPreparedExpression());
         }
@@ -898,9 +898,9 @@ public class API
         return new Delete_Default(inputOperator, usePValues);
     }
 
-    public static Operator delete_Returning (Operator inputOperator, boolean usePValues)
+    public static Operator delete_Returning (Operator inputOperator, boolean usePValues, boolean cascadeDelete)
     {
-        return new Delete_Returning(inputOperator, usePValues);
+        return new Delete_Returning(inputOperator, usePValues, cascadeDelete);
     }
 
     // Execution interface
@@ -1102,19 +1102,19 @@ public class API
         
         private Ordering(boolean usePVals) {
             if (usePVals) {
-                tExpressions = new ArrayList<TPreparedExpression>();
+                tExpressions = new ArrayList<>();
                 oExpressions = null; 
             }
             else {
                 tExpressions = null;
-                oExpressions = new ArrayList<Expression>();
+                oExpressions = new ArrayList<>();
             }
         }
 
         private final List<com.akiban.server.expression.Expression> oExpressions;
         private final List<TPreparedExpression> tExpressions;
-        private final List<Boolean> directions = new ArrayList<Boolean>(); // true: ascending, false: descending
-        private final List<AkCollator> collators = new ArrayList<AkCollator>();
+        private final List<Boolean> directions = new ArrayList<>(); // true: ascending, false: descending
+        private final List<AkCollator> collators = new ArrayList<>();
     }
 
     // Class state

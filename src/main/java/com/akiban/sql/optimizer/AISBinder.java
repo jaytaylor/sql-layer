@@ -113,9 +113,9 @@ public class AISBinder implements Visitor
 
     public void bind(QueryTreeNode node, boolean expandViews) throws StandardException {
         this.expandViews = expandViews;
-        visited = new HashSet<QueryTreeNode>();
-        bindingContexts = new ArrayDeque<BindingContext>();
-        havingClauses = new HashSet<ValueNode>();
+        visited = new HashSet<>();
+        bindingContexts = new ArrayDeque<>();
+        havingClauses = new HashSet<>();
         try {
             node.accept(this);
         }
@@ -442,7 +442,10 @@ public class AISBinder implements Visitor
         Columnar table = null;
         View view = ais.getView(schemaName, tableName);
         if (view != null) {
-            if (expandViews) {
+            if (!context.isAccessible(view.getName())) {
+                view = null;
+            }
+            else if (expandViews) {
                 ViewDefinition viewdef = context.getViewDefinition(view);
                 FromSubquery viewSubquery;
                 try {
@@ -452,6 +455,9 @@ public class AISBinder implements Visitor
                     throw new ViewHasBadSubqueryException(origName.toString(),
                                                           ex.getMessage());
                 }
+                if (fromBaseTable.getCorrelationName() != null)
+                    tableName = fromBaseTable.getCorrelationName();
+                viewSubquery.setCorrelationName(tableName);
                 return fromTable(viewSubquery, false);
             }
             else {
@@ -566,9 +572,9 @@ public class AISBinder implements Visitor
                 }
             }
             else if (joinNode.isNaturalJoin()) {
-                Map<String,ColumnBinding> leftCols = new HashMap<String,ColumnBinding>();
+                Map<String,ColumnBinding> leftCols = new HashMap<>();
                 getUniqueColumnBindings(fromLeft, leftCols);
-                Map<String,ColumnBinding> rightCols = new HashMap<String,ColumnBinding>();
+                Map<String,ColumnBinding> rightCols = new HashMap<>();
                 getUniqueColumnBindings(fromRight, rightCols);
                 for (String columnName : leftCols.keySet()) {
                     ColumnBinding rightBinding = rightCols.get(columnName);
@@ -681,7 +687,8 @@ public class AISBinder implements Visitor
 
     protected Table lookupTableName(TableName origName, String schemaName, String tableName) {
         Table result = ais.getUserTable(schemaName, tableName);
-        if (result == null)
+        if ((result == null) || 
+            ((context != null) && !context.isAccessible(result.getName())))
             throw new NoSuchTableException(schemaName, tableName, origName);
         return result;
     }
@@ -1197,13 +1204,16 @@ public class AISBinder implements Visitor
                 // Qualified name is always a routine and an immediate error if not.
                 routine = ais.getRoutine(methodCall.getProcedureName().getSchemaName(),
                                          methodCall.getProcedureName().getTableName());
-                if (routine == null) {
+                if ((routine == null) || !context.isAccessible(routine.getName())) {
                     throw new NoSuchFunctionException(methodCall.getProcedureName().toString());
                 }
             }
             else if (!functionDefined.isDefined(methodCall.getMethodName())) {
                 // Unqualified only if not a built-in function and error deferred.
                 routine = ais.getRoutine(defaultSchemaName, methodCall.getMethodName());
+                if ((routine != null) && !context.isAccessible(routine.getName())) {
+                    routine = null;
+                }
             }
             if (routine != null) {
                 if (routine.getReturnValue() == null) {
@@ -1215,8 +1225,8 @@ public class AISBinder implements Visitor
     }
 
     protected static class BindingContext {
-        Collection<FromTable> tables = new ArrayList<FromTable>();
-        Map<String,FromTable> correlationNames = new HashMap<String,FromTable>();
+        Collection<FromTable> tables = new ArrayList<>();
+        Map<String,FromTable> correlationNames = new HashMap<>();
         ResultColumnList resultColumns;
         boolean resultColumnsAvailable;
     }

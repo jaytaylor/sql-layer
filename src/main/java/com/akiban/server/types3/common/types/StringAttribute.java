@@ -30,6 +30,8 @@ import com.akiban.server.collation.AkCollator;
 import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.texpressions.Serialization;
+import com.akiban.server.types3.texpressions.SerializeAs;
 import com.akiban.sql.types.CharacterTypeAttributes;
 import com.akiban.sql.types.CharacterTypeAttributes.CollationDerivation;
 
@@ -39,11 +41,11 @@ public enum StringAttribute implements Attribute
      * Number of characters
      * (Not byte length)
      */
-    LENGTH,
+    @SerializeAs(Serialization.LONG_1)MAX_LENGTH,
 
-    CHARSET,
+    @SerializeAs(Serialization.CHARSET) CHARSET,
     
-    COLLATION
+    @SerializeAs(Serialization.COLLATION) COLLATION
     ;
 
     public static CharacterTypeAttributes characterTypeAttributes(TInstance tInstance) {
@@ -75,7 +77,7 @@ public enum StringAttribute implements Attribute
     public static TInstance copyWithCollation(TInstance tInstance, CharacterTypeAttributes cattrs) {
         AkCollator collator = AkCollatorFactory.getAkCollator(cattrs.getCollation());
         return tInstance.typeClass().instance(
-                tInstance.attribute(LENGTH),
+                tInstance.attribute(MAX_LENGTH),
                 tInstance.attribute(CHARSET), collator.getCollationId(),
                 tInstance.nullability());
     }

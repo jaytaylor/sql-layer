@@ -28,7 +28,6 @@ package com.akiban.sql.embedded;
 
 import com.akiban.server.service.routines.ScriptInvoker;
 import com.akiban.server.service.routines.ScriptPool;
-import com.akiban.sql.parser.CallStatementNode;
 import com.akiban.sql.script.ScriptFunctionJavaRoutine;
 import com.akiban.sql.server.ServerCallInvocation;
 import com.akiban.sql.server.ServerJavaMethod;
@@ -47,7 +46,6 @@ class ExecutableScriptFunctionJavaRoutine extends ExecutableJavaRoutine
 
     public static ExecutableStatement executableStatement(ServerCallInvocation invocation,
                                                           JDBCParameterMetaData parameterMetaData,
-                                                          CallStatementNode call,
                                                           EmbeddedQueryContext context) {
         JDBCConnection conn = context.getServer();
         ScriptPool<ScriptInvoker> pool = conn.getRoutineLoader().getScriptInvoker(conn.getSession(),

@@ -87,7 +87,7 @@ public class TableIndex extends Index
         freezeColumns();
         AssociationBuilder toIndexRowBuilder = new AssociationBuilder();
         AssociationBuilder toHKeyBuilder = new AssociationBuilder();
-        List<Column> indexColumns = new ArrayList<Column>();
+        List<Column> indexColumns = new ArrayList<>();
         // Add index key fields
         for (IndexColumn iColumn : getKeyColumns()) {
             Column column = iColumn.getColumn();
@@ -96,7 +96,7 @@ public class TableIndex extends Index
         }
         // Add leafward-biased hkey fields not already included
         int indexColumnPosition = indexColumns.size();
-        List<IndexColumn> hKeyColumns = new ArrayList<IndexColumn>();
+        List<IndexColumn> hKeyColumns = new ArrayList<>();
         HKey hKey = hKey();
         for (HKeySegment hKeySegment : hKey.segments()) {
             // TODO: ordinalMap is null if this function is called while marking an index as spatial.
@@ -127,7 +127,7 @@ public class TableIndex extends Index
                 toHKeyBuilder.toHKeyEntry(-1, indexColumns.indexOf(column));
             }
         }
-        allColumns = new ArrayList<IndexColumn>();
+        allColumns = new ArrayList<>();
         allColumns.addAll(keyColumns);
         allColumns.addAll(hKeyColumns);
         indexRowComposition = toIndexRowBuilder.createIndexRowComposition();

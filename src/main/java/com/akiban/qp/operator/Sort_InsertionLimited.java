@@ -26,6 +26,8 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.exec.Plannable;
+import com.akiban.qp.row.ImmutableRow;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
@@ -42,6 +44,8 @@ import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.WrappingByteSource;
 import com.akiban.util.tap.InOutTap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -156,7 +160,8 @@ class Sort_InsertionLimited extends Operator
     
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_InsertionLimited open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_InsertionLimited next");
-    
+    private static final Logger LOG = LoggerFactory.getLogger(Sort_InsertionLimited.class);
+
     // Object state
     private final API.SortOption sortOption;
     private final Operator inputOperator;
@@ -197,7 +202,7 @@ class Sort_InsertionLimited extends Operator
                     for (ExpressionEvaluation eval : oEvaluations)
                         eval.of(context);
                 }
-                sorted = new TreeSet<Holder>();
+                sorted = new TreeSet<>();
             } finally {
                 TAP_OPEN.out();
             }
@@ -206,9 +211,13 @@ class Sort_InsertionLimited extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 checkQueryCancelation();
                 switch (state) {
                 case FILLING:
@@ -260,24 +269,33 @@ class Sort_InsertionLimited extends Operator
                     }
                     /* falls through */
                 case EMPTYING:
+                    Row output;
                     if (iterator.hasNext()) {
                         Holder holder = iterator.next();
-                        return holder.empty();
+                        output = holder.empty();
                     }
                     else {
                         close();
-                        return null;
+                        output = null;
                     }
-                case CLOSED:
-                    return null;
+                    if (LOG_EXECUTION) {
+                        LOG.debug("Sort_InsertionLimited: yield {}", output);
+                    }
+                    return output;
                 case DESTROYED:
                     assert false;
-                    return null;
+                    // Fall through
+                case CLOSED:
                 default:
+                    if (LOG_EXECUTION) {
+                        LOG.debug("Sort_InsertionLimited: yield null");
+                    }
                     return null;
                 }
             } finally {
-                TAP_NEXT.out();
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
 
@@ -346,7 +364,7 @@ class Sort_InsertionLimited extends Operator
             this.input = input;
             int nsort = ordering.sortColumns();
             if (ordering.usingPVals()) {
-                tEvaluations = new ArrayList<TEvaluatableExpression>(nsort);
+                tEvaluations = new ArrayList<>(nsort);
                 for (int i = 0; i < nsort; ++i) {
                     TEvaluatableExpression evaluation = ordering.tExpression(i).build();
                     tEvaluations.add(evaluation);
@@ -355,7 +373,7 @@ class Sort_InsertionLimited extends Operator
             }
             else {
                 tEvaluations = null;
-                oEvaluations = new ArrayList<ExpressionEvaluation>(nsort);
+                oEvaluations = new ArrayList<>(nsort);
                 for (int i = 0; i < nsort; i++) {
                     ExpressionEvaluation evaluation = ordering.expression(i).evaluation();
                     oEvaluations.add(evaluation);
@@ -387,7 +405,7 @@ class Sort_InsertionLimited extends Operator
         public Holder(int index, Row arow, List<TEvaluatableExpression> evaluations, Void usingPValues) {
             this.index = index;
 
-            row = new ShareHolder<Row>();
+            row = new ShareHolder<>();
             row.hold(arow);
 
             values = new Comparable[ordering.sortColumns()];
@@ -402,7 +420,7 @@ class Sort_InsertionLimited extends Operator
         public Holder(int index, Row arow, List<ExpressionEvaluation> evaluations) {
             this.index = index;
 
-            row = new ShareHolder<Row>();
+            row = new ShareHolder<>();
             row.hold(arow);
 
             ToObjectValueTarget target = new ToObjectValueTarget();
@@ -428,7 +446,10 @@ class Sort_InsertionLimited extends Operator
         public void freeze() {
             Row arow = row.get();
             if (arow instanceof ProjectedRow)
-                ((ProjectedRow)arow).freeze();
+            {
+                Row copied = new ImmutableRow((ProjectedRow)arow);
+                row.hold(copied);
+            }
         }
 
         public int compareTo(Holder other) {

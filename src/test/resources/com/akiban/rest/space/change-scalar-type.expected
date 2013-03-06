@@ -1,0 +1,106 @@
+[
+    {
+        "action": "change_scalar_type", 
+        "destructive": true, 
+        "uuid": "33563d56-7737-11e2-a970-980e7188419e", 
+        "new_scalar_type": "double"
+    }, 
+    {
+        "action": "change_scalar_validations", 
+        "new_validations": [
+            {
+                "required": false
+            }
+        ], 
+        "destructive": true, 
+        "uuid": "33563d56-7737-11e2-a970-980e7188419e"
+    }, 
+    {
+        "action": "change_scalar_properties", 
+        "new_properties": {
+            "scale": -1, 
+            "precision": -1
+        }, 
+        "destructive": true, 
+        "uuid": "33563d56-7737-11e2-a970-980e7188419e"
+    }, 
+    {
+        "modified_entities": {
+            "customer": {
+                "attributes": {
+                    "first_name": {
+                        "scalar": "33563d56-7737-11e2-a970-980e7188419e", 
+                        "type": "double",
+                        "properties" : {
+                            "scale" : -1,
+                            "precision" : -1
+                        },
+                        "validation": [
+                            {
+                                "required": false
+                            }
+                        ]
+                    }, 
+                    "orders": {
+                        "attributes": {
+                            "items": {
+                                "attributes": {
+                                    "iid": {
+                                        "scalar": "6345d586-75f6-11e2-9d6c-7d727188419e", 
+                                        "validation": [
+                                            {
+                                                "required": true
+                                            }, 
+                                            {
+                                                "width": 11
+                                            }
+                                        ], 
+                                        "type": "integer", 
+                                        "spinal_pos": 0
+                                    }
+                                }, 
+                                "collection": "378d22b2-acf0-45d3-8f8a-2c09188a1cf3"
+                            }, 
+                            "oid": {
+                                "scalar": "e32f6dea-75ef-11e2-b48e-7d727188419e", 
+                                "validation": [
+                                    {
+                                        "required": true
+                                    }, 
+                                    {
+                                        "width": 11
+                                    }
+                                ], 
+                                "type": "integer", 
+                                "spinal_pos": 0
+                            }
+                        }, 
+                        "collection": "c5cedd91-9751-41c2-9417-8c29117ca2c9"
+                    }, 
+                    "cid": {
+                        "scalar": "ce7d3e22-75ef-11e2-947c-d2dcf046605f", 
+                        "validation": [
+                            {
+                                "required": true
+                            }, 
+                            {
+                                "width": 11
+                            }
+                        ], 
+                        "type": "integer", 
+                        "spinal_pos": 0
+                    }
+                }, 
+                "indexes": {
+                    "first_name": [
+                        [
+                            "customer", 
+                            "first_name"
+                        ]
+                    ]
+                }, 
+                "entity": "2a57b59e-e1b7-4377-996e-a5c04e0abf29"
+            }
+        }
+    }
+]

@@ -264,7 +264,7 @@ public class HKeyDependentTableTest
     private void checkTables(List<UserTable> expected, List<UserTable> actual)
     {
         // Check contents, not order
-        assertEquals(new HashSet<UserTable>(expected), new HashSet<UserTable>(actual));
+        assertEquals(new HashSet<>(expected), new HashSet<>(actual));
     }
     
     private List<UserTable> tables(UserTable ... tables)

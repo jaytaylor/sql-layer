@@ -111,7 +111,7 @@ public final class BasicDXLMiddleman {
     private BasicDXLMiddleman() {
     }
 
-    private final ConcurrentMap<CursorId,ScanData> openScansMap = new ConcurrentHashMap<CursorId, ScanData>();
+    private final ConcurrentMap<CursorId,ScanData> openScansMap = new ConcurrentHashMap<>();
 
-    private static final AtomicReference<BasicDXLMiddleman> lastInstance = new AtomicReference<BasicDXLMiddleman>();
+    private static final AtomicReference<BasicDXLMiddleman> lastInstance = new AtomicReference<>();
 }

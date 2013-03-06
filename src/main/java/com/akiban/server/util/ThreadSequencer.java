@@ -121,7 +121,7 @@ public class ThreadSequencer implements SequencerConstants {
 
     private static volatile Sequencer _sequencer = DISABLED_SEQUENCER;
 
-    private final static List<String> LOCATIONS = new ArrayList<String>();
+    private final static List<String> LOCATIONS = new ArrayList<>();
 
     private final static int MAX_LOCATIONS = 64;
 
@@ -364,7 +364,7 @@ public class ThreadSequencer implements SequencerConstants {
     }
 
     private static class EnabledSequencer implements Sequencer {
-        private final List<Long> _schedule = new ArrayList<Long>();
+        private final List<Long> _schedule = new ArrayList<>();
         private final Semaphore[] _semaphores = new Semaphore[MAX_LOCATIONS];
         private long _waiting = 0;
         private long _enabled = 0;
@@ -456,7 +456,7 @@ public class ThreadSequencer implements SequencerConstants {
         }
 
         private void enableHistory() {
-            _history = new ArrayList<Integer>();
+            _history = new ArrayList<>();
         }
 
         public synchronized String history() {

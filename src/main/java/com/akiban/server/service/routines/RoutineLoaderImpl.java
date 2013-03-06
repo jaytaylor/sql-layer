@@ -64,9 +64,9 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
 
     private final DXLService dxlService;
     private final SchemaManager schemaManager;
-    private final Map<TableName,ClassLoader> classLoaders = new HashMap<TableName,ClassLoader>();
-    private final Map<TableName,LoadablePlan<?>> loadablePlans = new HashMap<TableName,LoadablePlan<?>>();
-    private final Map<TableName,Method> javaMethods = new HashMap<TableName,Method>();
+    private final Map<TableName,ClassLoader> classLoaders = new HashMap<>();
+    private final Map<TableName,LoadablePlan<?>> loadablePlans = new HashMap<>();
+    private final Map<TableName,Method> javaMethods = new HashMap<>();
     private final ScriptCache scripts;
     private final static Logger logger = LoggerFactory.getLogger(RoutineLoaderImpl.class);
 

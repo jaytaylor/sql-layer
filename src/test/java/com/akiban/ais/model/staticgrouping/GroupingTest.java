@@ -43,7 +43,7 @@ public class GroupingTest {
     private static final GroupingVisitor<List<String>> SHORT_CIRCUIT_VISITOR = new ShortCircuitVisitor();
 
     private static class ReportingVisitor implements GroupingVisitor<List<String>> {
-        private final List<String> results = new ArrayList<String>();
+        private final List<String> results = new ArrayList<>();
         private String seenSchema;
         private int depth = 0;
 

@@ -178,7 +178,7 @@ public final class IndexHistogramsIT extends ITBase {
     
     @Test
     public void ordersPlaced() {
-        List<HistogramEntryDescription> expected = new ArrayList<HistogramEntryDescription>();
+        List<HistogramEntryDescription> expected = new ArrayList<>();
 
         // div-by-5s first
         expected.add(entry("{\"0000\"}", 120, 0, 0));
@@ -480,7 +480,7 @@ public final class IndexHistogramsIT extends ITBase {
     }
 
     private GroupIndex namePlacedGi;
-    private Set<Index> analyzedIndexes = new HashSet<Index>();
+    private Set<Index> analyzedIndexes = new HashSet<>();
     private int oidCounter = 0;
 
     private static final String SCHEMA = "indexes";

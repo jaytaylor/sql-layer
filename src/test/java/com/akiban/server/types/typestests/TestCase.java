@@ -46,90 +46,90 @@ import static org.junit.Assert.assertEquals;
 public final class TestCase<T> {
 
     public static <T> ConversionSuite<T> suite(LinkedConversion<? super T> conversion, TestCase<? extends T>... testCases) {
-        return new ConversionSuite<T>(conversion, Arrays.asList(testCases));
+        return new ConversionSuite<>(conversion, Arrays.asList(testCases));
     }
 
     public static <T> TestCase<T> forDate(long value, T expectedState) {
-        return new TestCase<T>(DATE, value, TC_LONG, expectedState);
+        return new TestCase<>(DATE, value, TC_LONG, expectedState);
     }
 
     public static <T> TestCase<T> forDateTime(long value, T expectedState) {
-        return new TestCase<T>(DATETIME, value, TC_LONG, expectedState);
+        return new TestCase<>(DATETIME, value, TC_LONG, expectedState);
     }
 
     public static <T> TestCase<T> forDecimal(BigDecimal value, long precision, long scale, T expectedState) {
-        return new TestCase<T>(DECIMAL, value, TC_OBJECT, precision, scale, expectedState);
+        return new TestCase<>(DECIMAL, value, TC_OBJECT, precision, scale, expectedState);
     }
 
     public static <T> TestCase<T> forDouble(double value, T expectedState) {
-        return new TestCase<T>(DOUBLE, value, TC_DOUBLE, expectedState);
+        return new TestCase<>(DOUBLE, value, TC_DOUBLE, expectedState);
     }
 
     public static <T> TestCase<T> forFloat(float value, T expectedState) {
-        return new TestCase<T>(FLOAT, value, TC_FLOAT, expectedState);
+        return new TestCase<>(FLOAT, value, TC_FLOAT, expectedState);
     }
 
     public static <T> TestCase<T> forInt(long value, T expectedState) {
-        return new TestCase<T>(INT, value, TC_LONG, expectedState);
+        return new TestCase<>(INT, value, TC_LONG, expectedState);
     }
 
     public static <T> TestCase<T> forLong(long value, T expectedState) {
-        return new TestCase<T>(LONG, value, TC_LONG, expectedState);
+        return new TestCase<>(LONG, value, TC_LONG, expectedState);
     }
 
     public static <T> TestCase<T> forString(String value, long maxWidth, String charset, T expectedState) {
-        return new TestCase<T>(VARCHAR, value, TC_OBJECT, maxWidth, charset, expectedState);
+        return new TestCase<>(VARCHAR, value, TC_OBJECT, maxWidth, charset, expectedState);
     }
 
     public static <T> TestCase<T> forText(String value, long maxWidth, String charset, T expectedState) {
-        return new TestCase<T>(TEXT, value, TC_OBJECT, maxWidth, charset, expectedState);
+        return new TestCase<>(TEXT, value, TC_OBJECT, maxWidth, charset, expectedState);
     }
 
     public static <T> TestCase<T> forTime(long value, T expectedState) {
-        return new TestCase<T>(TIME, value, TC_LONG, expectedState);
+        return new TestCase<>(TIME, value, TC_LONG, expectedState);
     }
 
     public static <T> TestCase<T> forTimestamp(long value, T expectedState) {
-        return new TestCase<T>(TIMESTAMP, value, TC_LONG, expectedState);
+        return new TestCase<>(TIMESTAMP, value, TC_LONG, expectedState);
     }
 
     public static <T> TestCase<T> forInterval_Millis(long value, T expectedState) {
-        return new TestCase<T>(INTERVAL_MILLIS, value, TC_LONG, expectedState);
+        return new TestCase<>(INTERVAL_MILLIS, value, TC_LONG, expectedState);
     }
 
     public static <T> TestCase<T> forInterval_Month(long value, T expectedState) {
-        return new TestCase<T>(INTERVAL_MONTH, value, TC_LONG, expectedState);
+        return new TestCase<>(INTERVAL_MONTH, value, TC_LONG, expectedState);
     }
     public static <T> TestCase<T> forUBigInt(BigInteger value, T expectedState) {
-        return new TestCase<T>(U_BIGINT, value, TC_OBJECT, expectedState);
+        return new TestCase<>(U_BIGINT, value, TC_OBJECT, expectedState);
     }
 
     public static <T> TestCase<T> forUDouble(double value, T expectedState) {
-        return new TestCase<T>(U_DOUBLE, value, TC_DOUBLE, expectedState);
+        return new TestCase<>(U_DOUBLE, value, TC_DOUBLE, expectedState);
     }
 
     public static <T> TestCase<T> forUFloat(float value, T expectedState) {
-        return new TestCase<T>(U_FLOAT, value, TC_FLOAT, expectedState);
+        return new TestCase<>(U_FLOAT, value, TC_FLOAT, expectedState);
     }
 
     public static <T> TestCase<T> forUInt(long value, T expectedState) {
-        return new TestCase<T>(U_INT, value, TC_LONG, expectedState);
+        return new TestCase<>(U_INT, value, TC_LONG, expectedState);
     }
 
     public static <T> TestCase<T> forVarBinary(ByteSource value, long maxWidth, T expectedState) {
-        return new TestCase<T>(VARBINARY, value, TC_OBJECT, maxWidth, expectedState);
+        return new TestCase<>(VARBINARY, value, TC_OBJECT, maxWidth, expectedState);
     }
 
     public static <T> TestCase<T> forYear(long value, T expectedState) {
-        return new TestCase<T>(YEAR, value, TC_LONG, expectedState);
+        return new TestCase<>(YEAR, value, TC_LONG, expectedState);
     }
 
     public static <T> TestCase<T> forBool(boolean value, T expectedState) {
-        return new TestCase<T>(BOOL, bool2long(value), TC_LONG, expectedState);
+        return new TestCase<>(BOOL, bool2long(value), TC_LONG, expectedState);
     }
 
     static <T> TestCase<T> derive(TestCase<?> source, T newState) {
-        return new TestCase<T>(source, newState);
+        return new TestCase<>(source, newState);
     }
 
     public AkType type() {

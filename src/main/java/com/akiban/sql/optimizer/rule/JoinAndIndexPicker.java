@@ -405,7 +405,7 @@ public class JoinAndIndexPicker extends BaseRule
 
     static class GroupPlanClass extends PlanClass {
         GroupIndexGoal groupGoal;
-        Collection<GroupPlan> bestPlans = new ArrayList<GroupPlan>();
+        Collection<GroupPlan> bestPlans = new ArrayList<>();
 
         public GroupPlanClass(JoinEnumerator enumerator, long bitset, 
                               GroupIndexGoal groupGoal) {
@@ -524,7 +524,7 @@ public class JoinAndIndexPicker extends BaseRule
     static class SubqueryPlanClass extends PlanClass {
         SubquerySource subquery;
         Picker picker;
-        Collection<SubqueryPlan> bestPlans = new ArrayList<SubqueryPlan>();
+        Collection<SubqueryPlan> bestPlans = new ArrayList<>();
 
         public SubqueryPlanClass(JoinEnumerator enumerator, long bitset, 
                                  SubquerySource subquery, Picker picker) {
@@ -817,13 +817,13 @@ public class JoinAndIndexPicker extends BaseRule
                     return planClass;
                 }
             }
-            joins = new ArrayList<JoinOperator>(joins);
+            joins = new ArrayList<>(joins);
             Collection<JoinOperator> condJoins = joins; // Joins with conditions for indexing.
             if (subqueryJoins != null) {
                 // "Push down" joins into the subquery. Since these
                 // are joins to the dervived table, they still need to
                 // be recognized to match an indexable column.
-                condJoins = new ArrayList<JoinOperator>(joins);
+                condJoins = new ArrayList<>(joins);
                 condJoins.addAll(subqueryJoins);
             }
             if (subqueryOutsideJoins != null) {
@@ -855,7 +855,7 @@ public class JoinAndIndexPicker extends BaseRule
             if (JoinableBitSet.isEmpty(tables) &&
                 (subqueryBoundTables == null))
                 return picker.queryGoal.getQuery().getOuterTables();
-            Set<ColumnSource> boundTables = new HashSet<ColumnSource>();
+            Set<ColumnSource> boundTables = new HashSet<>();
             boundTables.addAll(picker.queryGoal.getQuery().getOuterTables());
             if (subqueryBoundTables != null)
                 boundTables.addAll(subqueryBoundTables);
@@ -892,8 +892,8 @@ public class JoinAndIndexPicker extends BaseRule
             else
                 maxSelectivity = BLOOM_FILTER_MAX_SELECTIVITY_DEFAULT;
             if (maxSelectivity <= 0.0) return null; // Feature turned off.
-            List<ExpressionNode> hashColumns = new ArrayList<ExpressionNode>();
-            List<ExpressionNode> matchColumns = new ArrayList<ExpressionNode>();
+            List<ExpressionNode> hashColumns = new ArrayList<>();
+            List<ExpressionNode> matchColumns = new ArrayList<>();
             for (JoinOperator join : joins) {
                 if (join.getJoinConditions() != null) {
                     for (ConditionExpression cond : join.getJoinConditions()) {
@@ -959,7 +959,7 @@ public class JoinAndIndexPicker extends BaseRule
         List<Picker> result;
         Map<SubquerySource,Picker> subpickers;
         BaseQuery rootQuery;
-        Deque<SubqueryState> subqueries = new ArrayDeque<SubqueryState>();
+        Deque<SubqueryState> subqueries = new ArrayDeque<>();
         SchemaRulesContext rulesContext;
 
         public JoinsFinder(SchemaRulesContext rulesContext) {
@@ -967,8 +967,8 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         public List<Picker> find(BaseQuery query) {
-            result = new ArrayList<Picker>();
-            subpickers = new HashMap<SubquerySource,Picker>();
+            result = new ArrayList<>();
+            subpickers = new HashMap<>();
             rootQuery = query;
             query.accept(this);
             result.removeAll(subpickers.values()); // Do these in context.
@@ -1049,8 +1049,8 @@ public class JoinAndIndexPicker extends BaseRule
 
     static class SubqueryState {
         Subquery subquery;
-        Set<ColumnSource> tablesReferenced = new HashSet<ColumnSource>();
-        Set<ColumnSource> tablesDefined = new HashSet<ColumnSource>();
+        Set<ColumnSource> tablesReferenced = new HashSet<>();
+        Set<ColumnSource> tablesDefined = new HashSet<>();
 
         public SubqueryState(Subquery subquery) {
             this.subquery = subquery;

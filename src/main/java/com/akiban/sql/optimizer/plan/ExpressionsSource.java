@@ -54,7 +54,7 @@ public class ExpressionsSource extends BaseJoinable implements ColumnSource, Typ
         if (expressions.isEmpty())
             return Collections.emptyList();
         List<ExpressionNode> nodes = expressions.get(0);
-        List<TPreptimeValue> result = new ArrayList<TPreptimeValue>(nodes.size());
+        List<TPreptimeValue> result = new ArrayList<>(nodes.size());
         for (ExpressionNode node : nodes) {
             result.add(node.getPreptimeValue());
         }
@@ -166,7 +166,7 @@ public class ExpressionsSource extends BaseJoinable implements ColumnSource, Typ
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
-        expressions = new ArrayList<List<ExpressionNode>>(expressions);
+        expressions = new ArrayList<>(expressions);
         for (int i = 0; i < expressions.size(); i++) {
             expressions.set(i, duplicateList(expressions.get(i), map));
         }

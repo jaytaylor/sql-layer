@@ -64,6 +64,7 @@ import org.slf4j.LoggerFactory;
 import org.ietf.jgss.*;
 import java.security.Principal;
 import java.security.PrivilegedAction;
+import java.security.SecureRandom;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 
@@ -86,6 +87,7 @@ public class PostgresServerConnection extends ServerSessionBase
     private static final InOutTap READ_MESSAGE = Tap.createTimer("PostgresServerConnection: read message");
     private static final InOutTap PROCESS_MESSAGE = Tap.createTimer("PostgresServerConnection: process message");
     private static final String THREAD_NAME_PREFIX = "PostgresServer_Session-"; // Session ID appended
+    private static final String MD5_SALT = "MD5_SALT";
 
     private final PostgresServer server;
     private boolean running = false, ignoreUntilSync = false;
@@ -97,9 +99,9 @@ public class PostgresServerConnection extends ServerSessionBase
     private int sessionId, secret;
     private int version;
     private Map<String,PostgresPreparedStatement> preparedStatements =
-        new HashMap<String,PostgresPreparedStatement>();
+        new HashMap<>();
     private Map<String,PostgresBoundQueryContext> boundPortals =
-        new HashMap<String,PostgresBoundQueryContext>();
+        new HashMap<>();
 
     private ServerStatementCache<PostgresStatement> statementCache;
     private PostgresStatementParser[] unparsedGenerators;
@@ -122,7 +124,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 @Override
                 public List<PreparedStatementMonitor> getPreparedStatements() {
                     List<PreparedStatementMonitor> result = 
-                        new ArrayList<PreparedStatementMonitor>(preparedStatements.size());
+                        new ArrayList<>(preparedStatements.size());
                     synchronized (preparedStatements) {
                         result.addAll(preparedStatements.values());
                     }
@@ -132,7 +134,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 @Override
                 public List<CursorMonitor> getCursors() {
                     List<CursorMonitor> result = 
-                        new ArrayList<CursorMonitor>(boundPortals.size());
+                        new ArrayList<>(boundPortals.size());
                     synchronized (boundPortals) {
                         result.addAll(boundPortals.values());
                     }
@@ -460,6 +462,17 @@ public class PostgresServerConnection extends ServerSessionBase
                 messenger.sendMessage(true);
             }
             break;
+        case MD5:
+            {
+                byte[] salt = new byte[4];
+                new SecureRandom().nextBytes(salt);
+                setAttribute(MD5_SALT, salt);
+                messenger.beginMessage(PostgresMessages.AUTHENTICATION_TYPE.code());
+                messenger.writeInt(PostgresMessenger.AUTHENTICATION_MD5);
+                messenger.write(salt);
+                messenger.sendMessage(true);
+            }
+            break;
         case GSS:
             authenticationGSS();
             break;
@@ -503,7 +516,20 @@ public class PostgresServerConnection extends ServerSessionBase
     protected void processPasswordMessage() throws IOException {
         String user = properties.getProperty("user");
         String pass = messenger.readString();
-        logger.debug("Login {}/{}", user, pass);
+        Principal principal = null;
+        switch (server.getAuthenticationType()) {
+        case NONE:
+            break;
+        case CLEAR_TEXT:
+            principal = reqs.securityService()
+                .authenticate(session, user, pass);
+            break;
+        case MD5:
+            principal = reqs.securityService()
+                .authenticate(session, user, pass, (byte[])attributes.remove(MD5_SALT));
+            break;
+        }
+        logger.debug("Login {}", (principal != null) ? principal : user);
         authenticationOkay(user);
     }
     

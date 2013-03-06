@@ -139,7 +139,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
     public void testLoadAndRemove()
     {
         loadDB();
-        List<NewRow> remainingRows = new ArrayList<NewRow>();
+        List<NewRow> remainingRows = new ArrayList<>();
         {
             // Delete the first (1 + (pid % CHILDREN_PER_PARENT)) children of parent pid, and
             // keep track of the remaining rows.
@@ -149,7 +149,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                     int cid = pid + c;
                     NewRow row = createNewRow(child, cid, pid, after(cid), clats.get(cid), clons.get(cid));
                     if (c <= nChildrenToDelete) {
-                        dml().deleteRow(session(), row);
+                        dml().deleteRow(session(), row, false);
                     } else {
                         remainingRows.add(row);
                     }
@@ -192,7 +192,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
     public void testLoadAndUpdate()
     {
         loadDB();
-        List<Integer> pids = new ArrayList<Integer>(parentZToPid.values());
+        List<Integer> pids = new ArrayList<>(parentZToPid.values());
         parentZToPid.clear();
         childZToCid.clear();
         {
@@ -274,7 +274,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                 lonHi = swap;
             }
             // Get the right answer
-            Set<Integer> expectedCids = new HashSet<Integer>();
+            Set<Integer> expectedCids = new HashSet<>();
             for (int pid : parentZToPid.values()) {
                 int before = before(pid);
                 BigDecimal lat = plats.get(pid);
@@ -294,7 +294,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                 nEmpty++;
             }
             // Get the query result using an index
-            Set<Integer> actual = new HashSet<Integer>();
+            Set<Integer> actual = new HashSet<>();
             IndexBound lowerLeft = new IndexBound(row(pSpatialIndexRowType, beforeEQ, latLo, lonLo),
                                                   new SetColumnSelector(0, 1, 2));
             IndexBound upperRight = new IndexBound(row(pSpatialIndexRowType, beforeEQ, latHi, lonHi),
@@ -356,7 +356,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                 lonHi = swap;
             }
             // Get the right answer
-            Set<Integer> expectedCids = new HashSet<Integer>();
+            Set<Integer> expectedCids = new HashSet<>();
             for (int cid : childZToCid.values()) {
                 int before = before(pid(cid));
                 BigDecimal lat = clats.get(cid);
@@ -373,7 +373,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                 nEmpty++;
             }
             // Get the query result using an index
-            Set<Integer> actual = new HashSet<Integer>();
+            Set<Integer> actual = new HashSet<>();
             IndexBound lowerLeft = new IndexBound(row(cSpatialIndexRowType, beforeEQ, latLo, lonLo),
                                                   new SetColumnSelector(0, 1, 2));
             IndexBound upperRight = new IndexBound(row(cSpatialIndexRowType, beforeEQ, latHi, lonHi),
@@ -417,7 +417,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
             long zStart = space.shuffle(queryLat, queryLon);
             for (int beforeEQ = 0; beforeEQ <= 2; beforeEQ++) {
                 // Expected
-                SortedMap<Long, Integer> distanceToId = new TreeMap<Long, Integer>();
+                SortedMap<Long, Integer> distanceToId = new TreeMap<>();
                 for (Map.Entry<Long, Integer> entry : childZToCid.entrySet()) {
                     long z = entry.getKey();
                     int cid = entry.getValue();
@@ -439,7 +439,7 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                 cursor.open();
                 Row row;
                 long previousDistance = Long.MIN_VALUE;
-                Collection<Integer> actualIdByDistance = new ArrayList<Integer>();
+                Collection<Integer> actualIdByDistance = new ArrayList<>();
                 while ((row = cursor.next()) != null) {
                     // Get row state
                     int before = getLong(row, 0).intValue();
@@ -463,8 +463,8 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
                     previousDistance = distance;
                     actualIdByDistance.add(cid);
                 }
-                assertEquals(new ArrayList<Integer>(expectedIdByDistance),
-                             new ArrayList<Integer>(actualIdByDistance));
+                assertEquals(new ArrayList<>(expectedIdByDistance),
+                             new ArrayList<>(actualIdByDistance));
             }
         }
     }
@@ -599,12 +599,12 @@ public class SpatialLatLonGroupIndexScanIT extends OperatorITBase
     private IndexRowType cSpatialIndexRowType;
     private IndexRowType pSpatialIndexRowType;
     private SpaceLatLon space;
-    private Map<Long, Integer> childZToCid = new TreeMap<Long, Integer>();
-    private Map<Long, Integer> parentZToPid = new TreeMap<Long, Integer>();
-    Map<Integer, BigDecimal> plats = new HashMap<Integer, BigDecimal>(); // indexed by pid
-    Map<Integer, BigDecimal> plons = new HashMap<Integer, BigDecimal>(); // indexed by pid
-    Map<Integer, BigDecimal> clats = new HashMap<Integer, BigDecimal>(); // indexed by cid
-    Map<Integer, BigDecimal> clons = new HashMap<Integer, BigDecimal>(); // indexed by cid
-    List<Long> parentZs = new ArrayList<Long>(); // indexed by id
+    private Map<Long, Integer> childZToCid = new TreeMap<>();
+    private Map<Long, Integer> parentZToPid = new TreeMap<>();
+    Map<Integer, BigDecimal> plats = new HashMap<>(); // indexed by pid
+    Map<Integer, BigDecimal> plons = new HashMap<>(); // indexed by pid
+    Map<Integer, BigDecimal> clats = new HashMap<>(); // indexed by cid
+    Map<Integer, BigDecimal> clons = new HashMap<>(); // indexed by cid
+    List<Long> parentZs = new ArrayList<>(); // indexed by id
     Random random = new Random(123456);
 }

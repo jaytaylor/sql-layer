@@ -72,7 +72,7 @@ public final class CacheMapTest {
 
     @Test
     public void withAllocator() {
-        HookedCacheMap<Integer,String> map = new HookedCacheMap<Integer, String>(new TestAllocator());
+        HookedCacheMap<Integer,String> map = new HookedCacheMap<>(new TestAllocator());
 
         final String result = map.get(1);
         assertEquals("map[1]", "allocated key 1", result);
@@ -91,8 +91,8 @@ public final class CacheMapTest {
 
     @Test
     public void testEquality() {
-        CacheMap<Integer,String> cacheMap = new CacheMap<Integer, String>();
-        HashMap<Integer,String> expectedMap = new HashMap<Integer, String>();
+        CacheMap<Integer,String> cacheMap = new CacheMap<>();
+        HashMap<Integer,String> expectedMap = new HashMap<>();
 
         cacheMap.put(1, "one");
         expectedMap.put(1, "one");
@@ -120,7 +120,7 @@ public final class CacheMapTest {
 
     @Test
     public void lru() {
-        HookedCacheMap<Integer,String> map = new HookedCacheMap<Integer, String>(1, new TestAllocator());
+        HookedCacheMap<Integer,String> map = new HookedCacheMap<>(1, new TestAllocator());
 
         assertEquals("size", 0, map.size());
 
@@ -135,7 +135,7 @@ public final class CacheMapTest {
         assertEquals("size", 1, map.size());
         assertEquals("allocations", 1, map.allocations);
 
-        Map<Integer,String> expectedMap = new HashMap<Integer, String>();
+        Map<Integer,String> expectedMap = new HashMap<>();
         expectedMap.put(2, "allocated key 2");
         assertEquals("size", 1, map.size());
         assertEquals("map values", expectedMap, map);
@@ -144,20 +144,20 @@ public final class CacheMapTest {
 
     @Test
     public void nullAllocator() {
-        CacheMap<Integer,String> map = new CacheMap<Integer, String>(null);
+        CacheMap<Integer,String> map = new CacheMap<>(null);
         assertNull("expected null", map.get(1));
     }
 
     @Test
     public void nullKey() {
-        CacheMap<Integer,String> map = new CacheMap<Integer, String>(null);
+        CacheMap<Integer,String> map = new CacheMap<>(null);
         map.put(null, "hello");
         assertEquals("get(null)", "hello", map.get(null));
     }
 
     @Test
     public void nullValue() {
-        CacheMap<Integer,String> map = new CacheMap<Integer, String>(null);
+        CacheMap<Integer,String> map = new CacheMap<>(null);
         map.put(1, null);
         assertEquals("null value", null, map.get(1));
     }
@@ -175,7 +175,7 @@ public final class CacheMapTest {
     @Test(expected=ClassCastException.class)
     public void allocatorCastException() {
         @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
-        CacheMap<Integer,String> map = new CacheMap<Integer, String>(new TestAllocator());
+        CacheMap<Integer,String> map = new CacheMap<>(new TestAllocator());
         map.get("1");
     }
 }

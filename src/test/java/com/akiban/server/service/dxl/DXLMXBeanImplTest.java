@@ -153,7 +153,7 @@ public final class DXLMXBeanImplTest {
 
     private void checkGiDDLs(AkibanInformationSchema ais, String usingSchema, String... expectedDDLs) {
         List<String> expectedList = Arrays.asList(expectedDDLs);
-        List<String> actualList = new ArrayList<String>(DXLMXBeanImpl.listGiDDLs(ais, usingSchema));
+        List<String> actualList = new ArrayList<>(DXLMXBeanImpl.listGiDDLs(ais, usingSchema));
         // order is undefined
         Collections.sort(expectedList);
         Collections.sort(actualList);

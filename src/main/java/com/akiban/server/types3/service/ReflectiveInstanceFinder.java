@@ -69,7 +69,7 @@ public class ReflectiveInstanceFinder implements InstanceFinder
 
     private static <T> Collection<T> collectInstances(Collection<Class<?>> classes, Class<T> target)
     {
-        List<T> ret = new ArrayList<T>();
+        List<T> ret = new ArrayList<>();
         for (Class<?> cls : classes) {
             if (!Modifier.isPublic(cls.getModifiers()))
                 continue;

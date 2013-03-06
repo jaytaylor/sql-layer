@@ -112,6 +112,11 @@ public class AkResultSet extends TClassBase {
     }
 
     @Override
+    public boolean attributeIsPhysical(int attributeIndex) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     protected DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
         List<Column> columns = (List<Column>)instance.getMetaData();
         String[] columnNames = new String[columns.size()];

@@ -38,6 +38,11 @@ CREATE TABLE addresses
   city VARCHAR(100),
   GROUPING FOREIGN KEY (cid) REFERENCES customers(cid)
 );
+CREATE TABLE t
+(
+  id int primary key not null,
+  n bigint
+);
 
 --
 -- Two tables, types and types_i, are statically created in PostgresServerSelectIT

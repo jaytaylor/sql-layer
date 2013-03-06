@@ -61,7 +61,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
 
     private volatile Map<String,String> properties = null;
     private final PluginsFinder pluginsFinder;
-    private final Set<String> requiredKeys = new HashSet<String>();
+    private final Set<String> requiredKeys = new HashSet<>();
 
     private volatile long queryTimeoutMilli = -1L; // No timeout
 
@@ -106,7 +106,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     @Override
     public Map<String, String> getProperties() {
         Map<String, String> internalProperties = internalGetProperties();
-        Map<String, String> results = new TreeMap<String, String>();
+        Map<String, String> results = new TreeMap<>();
         for (Map.Entry<String, String> entry : internalProperties.entrySet()) {
             results.put(entry.getKey(), entry.getValue());
         }
@@ -177,7 +177,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
             throws ServiceStartupException {
         Map<String, String> ret = loadProperties();
 
-        Set<String> missingKeys = new HashSet<String>();
+        Set<String> missingKeys = new HashSet<>();
         for (String required : getRequiredKeys()) {
             if (!ret.containsKey(required)) {
                 missingKeys.add(required);
@@ -233,7 +233,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     }
 
     private static Map<String, String> propertiesToMap(Properties properties) {
-        Map<String, String> ret = new HashMap<String, String>();
+        Map<String, String> ret = new HashMap<>();
         for (String keyStr : properties.stringPropertyNames()) {
             String value = properties.getProperty(keyStr);
             ret.put(keyStr, value);
@@ -266,7 +266,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     }
 
     static void stripRequiredProperties(Properties properties, Set<String> toSet) {
-        Set<String> requiredKeyStrings = new HashSet<String>();
+        Set<String> requiredKeyStrings = new HashSet<>();
         for (String key : properties.stringPropertyNames()) {
             if (key.startsWith("REQUIRED.")) {
                 requiredKeyStrings.add(key);

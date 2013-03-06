@@ -69,7 +69,7 @@ public final class FilteringIteratorTest {
     public void correctUsageRemove() {
         ArrayList<Integer> list = list(1, 2, 3, 4, 5, 6);
         Iterator<Integer> iterator = onlyEvens(list, true);
-        List<Integer> removed = new ArrayList<Integer>();
+        List<Integer> removed = new ArrayList<>();
         while (iterator.hasNext()) {
             removed.add( iterator.next() );
             iterator.remove();
@@ -168,7 +168,7 @@ public final class FilteringIteratorTest {
     }
 
     private static List<Integer> dump(Iterator<Integer> iterator) {
-        ArrayList<Integer> list = new ArrayList<Integer>();
+        ArrayList<Integer> list = new ArrayList<>();
         while (iterator.hasNext()) {
             list.add(iterator.next());
         }
@@ -176,7 +176,7 @@ public final class FilteringIteratorTest {
     }
 
     private static ArrayList<Integer> list(int... values) {
-        ArrayList<Integer> list = new ArrayList<Integer>(values.length);
+        ArrayList<Integer> list = new ArrayList<>(values.length);
         for (int value : values) {
             list.add(value);
         }

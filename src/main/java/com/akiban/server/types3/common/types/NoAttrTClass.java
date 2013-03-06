@@ -56,6 +56,11 @@ public class NoAttrTClass extends SimpleDtdTClass {
     }
 
     @Override
+    public boolean attributeIsPhysical(int attributeIndex) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     protected TInstance doPickInstance(TInstance left, TInstance right, boolean suggestedNullability) {
         return right; // doesn't matter which!
     }

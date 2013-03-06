@@ -134,9 +134,9 @@ public final class T3ScalarsRegistryTest {
 
             Iterable<? extends ScalarsGroup<TValidatedScalar>> scalarsByPriority
                     = registry.getScalarsResolver().getRegistry().get(FUNC_NAME);
-            List<Set<TInputSet>> actuals = new ArrayList<Set<TInputSet>>();
+            List<Set<TInputSet>> actuals = new ArrayList<>();
             for (ScalarsGroup<TValidatedScalar> scalarsGroup : scalarsByPriority) {
-                Set<TInputSet> actualInputs = new HashSet<TInputSet>();
+                Set<TInputSet> actualInputs = new HashSet<>();
                 for (TScalar scalar : scalarsGroup.getOverloads()) {
                     TInputSet overloadInput = onlyInputSet(scalar);
                     actualInputs.add(overloadInput);
@@ -154,7 +154,7 @@ public final class T3ScalarsRegistryTest {
         }
 
         private final InstanceFinderBuilder instanceFinder = new InstanceFinderBuilder();
-        private final List<Set<TInputSet>> inputSetsByPriority = new ArrayList<Set<TInputSet>>();
+        private final List<Set<TInputSet>> inputSetsByPriority = new ArrayList<>();
         private boolean checked = false;
 
         private static final String FUNC_NAME = "foo";

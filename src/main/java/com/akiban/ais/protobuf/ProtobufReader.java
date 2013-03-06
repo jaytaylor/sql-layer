@@ -26,28 +26,7 @@
 
 package com.akiban.ais.protobuf;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.CharsetAndCollation;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Columnar;
-import com.akiban.ais.model.DefaultNameGenerator;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.NameGenerator;
-import com.akiban.ais.model.Parameter;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.Sequence;
-import com.akiban.ais.model.SQLJJar;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.Type;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ais.model.View;
-import com.akiban.ais.model.PendingOSC;
+import com.akiban.ais.model.*;
 import com.akiban.ais.util.TableChange;
 import com.akiban.server.error.ProtobufReadException;
 import com.akiban.server.geophile.Space;
@@ -66,6 +45,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 
 public class ProtobufReader {
     private final AkibanInformationSchema destAIS;
@@ -148,7 +128,7 @@ public class ProtobufReader {
     }
 
     private void loadSchemas(Collection<AISProtobuf.Schema> pbSchemas) {
-        List<List<NewGroupInfo>> allNewGroups = new ArrayList<List<NewGroupInfo>>();
+        List<List<NewGroupInfo>> allNewGroups = new ArrayList<>();
 
         for(AISProtobuf.Schema pbSchema : pbSchemas) {
             hasRequiredFields(pbSchema);
@@ -175,10 +155,14 @@ public class ProtobufReader {
         for(List<NewGroupInfo> newGroups : allNewGroups) {
             hookUpGroupAndCreateGroupIndexes(newGroups);
         }
+        // Likewise full text indexes.
+        for(AISProtobuf.Schema pbSchema : pbSchemas) {
+            loadFullTextIndexes(pbSchema.getSchemaName(), pbSchema.getTablesList());
+        }        
     }
     
     private List<NewGroupInfo> loadGroups(String schema, Collection<AISProtobuf.Group> pbGroups) {
-        List<NewGroupInfo> newGroups = new ArrayList<NewGroupInfo>();
+        List<NewGroupInfo> newGroups = new ArrayList<>();
         for(AISProtobuf.Group pbGroup : pbGroups) {
             hasRequiredFields(pbGroup);
             String rootTableName = pbGroup.getRootTableName();
@@ -190,7 +174,7 @@ public class ProtobufReader {
     }
 
     private void hookUpGroupAndCreateGroupIndexes(List<NewGroupInfo> newGroups) {
-        List<Join> joinsNeedingGroup = new ArrayList<Join>();
+        List<Join> joinsNeedingGroup = new ArrayList<>();
         
         for(NewGroupInfo newGroupInfo : newGroups) {
             String rootTableName = newGroupInfo.pbGroup.getRootTableName();
@@ -224,6 +208,17 @@ public class ProtobufReader {
                     pbTable.getTableName(),
                     pbTable.hasTableId() ? pbTable.getTableId() : generatedId++
             );
+            UUID uuid;
+            if (pbTable.hasUuid()) {
+                try {
+                    uuid = UUID.fromString(pbTable.getUuid());
+                } catch (IllegalArgumentException e) {
+                    throw new ProtobufReadException(
+                            AISProtobuf.Table.getDescriptor().getFullName(),
+                            "invalid UUID string: " + pbTable.getUuid());
+                }
+                userTable.setUuid(uuid);
+            }
             userTable.setCharsetAndCollation(getCharColl(pbTable.hasCharColl(), pbTable.getCharColl()));
             if(pbTable.hasVersion()) {
                 userTable.setVersion(pbTable.getVersion());
@@ -276,8 +271,8 @@ public class ProtobufReader {
                     );
                 }
 
-                List<String> parentColNames = new ArrayList<String>();
-                List<String> childColNames = new ArrayList<String>();
+                List<String> parentColNames = new ArrayList<>();
+                List<String> childColNames = new ArrayList<>();
                 for(AISProtobuf.JoinColumn pbJoinColumn : pbJoin.getColumnsList()) {
                     hasRequiredFields(pbJoinColumn);
                     parentColNames.add(pbJoinColumn.getParentColumn());
@@ -301,13 +296,13 @@ public class ProtobufReader {
         for(AISProtobuf.View pbView : pbViews) {
             hasRequiredFields(pbView);
             Map<TableName,Collection<String>> refs = 
-                new HashMap<TableName,Collection<String>>();
+                new HashMap<>();
             for(AISProtobuf.ColumnReference pbReference : pbView.getReferencesList()) {
                 hasRequiredFields(pbReference);
                 AISProtobuf.TableName pbTableName = pbReference.getTable();
                 hasRequiredFields(pbTableName);
                 TableName tableName = TableName.create(pbTableName.getSchemaName(), pbTableName.getTableName());
-                Collection<String> columns = new HashSet<String>();
+                Collection<String> columns = new HashSet<>();
                 Collection<String> old = refs.put(tableName, columns);
                 assert (old == null);
                 for(String colname : pbReference.getColumnsList()) {
@@ -354,6 +349,19 @@ public class ProtobufReader {
                     maxStorageSize,
                     prefixSize
             );
+            if (pbColumn.hasUuid()) {
+                if (pbColumn.hasUuid()) {
+                    UUID uuid;
+                    try {
+                        uuid = UUID.fromString(pbColumn.getUuid());
+                    } catch (IllegalArgumentException e) {
+                        throw new ProtobufReadException(
+                                AISProtobuf.Column.getDescriptor().getFullName(),
+                                "invalid UUID string: " + pbColumn.getUuid());
+                    }
+                    column.setUuid(uuid);
+                }
+            }
             if (pbColumn.hasDefaultIdentity()) {
                 column.setDefaultIdentity(pbColumn.getDefaultIdentity());
             }
@@ -403,6 +411,24 @@ public class ProtobufReader {
             handleSpatial(groupIndex, pbIndex);
             loadIndexColumns(null, groupIndex, pbIndex.getColumnsList());
         }
+    }
+
+    private void loadFullTextIndexes(String schema, Collection<AISProtobuf.Table> pbTables) {
+        for(AISProtobuf.Table pbTable : pbTables) {
+            for(AISProtobuf.Index pbIndex : pbTable.getFullTextIndexesList()) {
+                hasRequiredFields(pbIndex);
+                UserTable userTable = destAIS.getUserTable(schema, pbTable.getTableName());
+                FullTextIndex textIndex = FullTextIndex.create(
+                        destAIS,
+                        userTable,
+                        pbIndex.getIndexName(),
+                        pbIndex.getIndexId()
+                        );
+                handleTreeName(textIndex, pbIndex);
+                handleSpatial(textIndex, pbIndex);
+                loadIndexColumns(userTable, textIndex, pbIndex.getColumnsList());
+            }
+        }        
     }
 
     private void handleTreeName(Index index, AISProtobuf.Index pbIndex) {
@@ -596,9 +622,9 @@ public class ProtobufReader {
 
     private PendingOSC loadPendingOSC(AISProtobuf.PendingOSC pbPendingOSC) {
         hasRequiredFields(pbPendingOSC);
-        List<TableChange> columnChanges = new ArrayList<TableChange>();
+        List<TableChange> columnChanges = new ArrayList<>();
         loadPendingOSChanges(columnChanges, pbPendingOSC.getColumnChangesList());
-        List<TableChange> indexChanges = new ArrayList<TableChange>();
+        List<TableChange> indexChanges = new ArrayList<>();
         loadPendingOSChanges(indexChanges, pbPendingOSC.getIndexChangesList());
         PendingOSC osc = new PendingOSC(pbPendingOSC.getOriginalName(), columnChanges, indexChanges);
         if (pbPendingOSC.hasCurrentName())
@@ -696,7 +722,9 @@ public class ProtobufReader {
                 AISProtobuf.Table.DESCRIPTION_FIELD_NUMBER,
                 AISProtobuf.Table.PROTECTED_FIELD_NUMBER,
                 AISProtobuf.Table.VERSION_FIELD_NUMBER,
-                AISProtobuf.Table.PENDINGOSC_FIELD_NUMBER
+                AISProtobuf.Table.PENDINGOSC_FIELD_NUMBER,
+                AISProtobuf.Table.UUID_FIELD_NUMBER,
+                AISProtobuf.Table.FULLTEXTINDEXES_FIELD_NUMBER
         );
     }
 
@@ -725,7 +753,8 @@ public class ProtobufReader {
                 AISProtobuf.Column.PREFIXSIZE_FIELD_NUMBER,
                 AISProtobuf.Column.TYPEBUNDLEUUID_FIELD_NUMBER,
                 AISProtobuf.Column.TYPEVERSION_FIELD_NUMBER,
-                AISProtobuf.Column.DEFAULTVALUE_FIELD_NUMBER
+                AISProtobuf.Column.DEFAULTVALUE_FIELD_NUMBER,
+                AISProtobuf.Column.UUID_FIELD_NUMBER
         );
     }
 
@@ -831,7 +860,7 @@ public class ProtobufReader {
     }
 
     private static void requireAllFieldsExcept(AbstractMessage message, int... fieldNumbersNotRequired) {
-        Collection<Descriptors.FieldDescriptor> required = new ArrayList<Descriptors.FieldDescriptor>(message.getDescriptorForType().getFields());
+        Collection<Descriptors.FieldDescriptor> required = new ArrayList<>(message.getDescriptorForType().getFields());
         Collection<Descriptors.FieldDescriptor> actual = message.getAllFields().keySet();
         required.removeAll(actual);
         if(fieldNumbersNotRequired != null) {
@@ -840,7 +869,7 @@ public class ProtobufReader {
             }
         }
         if(!required.isEmpty()) {
-            Collection<String> names = new ArrayList<String>(required.size());
+            Collection<String> names = new ArrayList<>(required.size());
             for(Descriptors.FieldDescriptor desc : required) {
                 names.add(desc.getName());
             }

@@ -53,7 +53,7 @@ public class ScriptCache
     public static final String CLASS_PATH = "akserver.routines.script_class_path";
     private final DXLService dxlService;
     private final ConfigurationService configService;
-    private final Map<TableName,CacheEntry> cache = new HashMap<TableName,CacheEntry>();
+    private final Map<TableName,CacheEntry> cache = new HashMap<>();
     // Script engine discovery can be fairly expensive, so it is deferred.
     private ScriptEngineManager manager = null;
     private final static Logger logger = LoggerFactory.getLogger(ScriptCache.class);
@@ -215,7 +215,7 @@ public class ScriptCache
                             engine = factory.getScriptEngine();
                         ScriptInvoker invoker = new Invoker(routineName, 
                                                             engine, script, function);
-                        sharedInvokerPool = new SharedPool<ScriptInvoker>(invoker);
+                        sharedInvokerPool = new SharedPool<>(invoker);
                     }
                     return sharedInvokerPool;
                 }                
@@ -257,7 +257,7 @@ public class ScriptCache
     static final int FIXED_SIZE = 8;
 
     static abstract class FixedPool<T> implements ScriptPool<T> {
-        private final Deque<T> pool = new ArrayDeque<T>(FIXED_SIZE);
+        private final Deque<T> pool = new ArrayDeque<>(FIXED_SIZE);
 
         public FixedPool(T initial) {
             if (initial != null)

@@ -77,7 +77,7 @@ public class TestDirectAsync extends LoadableDirectObjectPlan
 
         @Override
         public void open() {
-            List<String> command = new ArrayList<String>();
+            List<String> command = new ArrayList<>();
             for (int i = 0; i < 100; i++) {
                 String carg;
                 try {
@@ -96,7 +96,7 @@ public class TestDirectAsync extends LoadableDirectObjectPlan
             catch (IOException ex) {
                 throw new AkibanInternalException("Could not launch", ex);
             }
-            output = new LinkedBlockingQueue<String>();
+            output = new LinkedBlockingQueue<>();
             new Thread() {
                 private final BufferedReader input = 
                     new BufferedReader(new InputStreamReader(process.getInputStream()));

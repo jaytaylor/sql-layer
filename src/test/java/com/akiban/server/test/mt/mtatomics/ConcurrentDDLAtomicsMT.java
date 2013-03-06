@@ -332,7 +332,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         builder.userTable(newTableName).colLong("id", false).pk("id");
         final UserTable tableToCreate = builder.ais().getUserTable(newTableName);
 
-        Set<TableName> expectedTableNames = new TreeSet<TableName>(ais().getUserTables().keySet());
+        Set<TableName> expectedTableNames = new TreeSet<>(ais().getUserTables().keySet());
         expectedTableNames.remove(TABLE_NAME);
 
         TimedCallable<Void> dropTable = new TimedCallable<Void>() {
@@ -389,7 +389,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
         new TimePointsComparison(dropResult, createResult).verify(expected);
 
-        Set<TableName> actualTableNames = new TreeSet<TableName>(ais().getUserTables().keySet());
+        Set<TableName> actualTableNames = new TreeSet<>(ais().getUserTables().keySet());
         assertEquals(
                 "user tables at end",
                 expectedTableNames,
@@ -512,7 +512,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
                 ScanAllRequest request = new ScanAllRequest(
                         tableId,
-                        new HashSet<Integer>(Arrays.asList(0, 1)),
+                        new HashSet<>(Arrays.asList(0, 1)),
                         index.getIndexId(),
                         EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END),
                         ScanLimit.NONE
@@ -1125,7 +1125,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
     private void newRowsOrdered(List<NewRow> rows, final int fieldIndex) {
         assertTrue("not enough rows: " + rows, rows.size() > 1);
-        List<NewRow> ordered = new ArrayList<NewRow>(rows);
+        List<NewRow> ordered = new ArrayList<>(rows);
         Collections.sort(ordered, new Comparator<NewRow>() {
             @Override @SuppressWarnings("unchecked")
             public int compare(NewRow o1, NewRow o2) {

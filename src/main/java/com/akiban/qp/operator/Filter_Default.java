@@ -26,7 +26,6 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.explain.CompoundExplainer;
@@ -34,6 +33,8 @@ import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.explain.std.FilterExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -79,7 +80,7 @@ class Filter_Default extends Operator
     @Override
     public String toString()
     {
-        TreeSet<String> keepTypesStrings = new TreeSet<String>();
+        TreeSet<String> keepTypesStrings = new TreeSet<>();
         for (RowType keepType : keepTypes) {
             keepTypesStrings.add(String.valueOf(keepType));
         }
@@ -118,13 +119,14 @@ class Filter_Default extends Operator
     {
         ArgumentValidation.notEmpty("keepTypes", keepTypes);
         this.inputOperator = inputOperator;
-        this.keepTypes = new HashSet<RowType>(keepTypes);
+        this.keepTypes = new HashSet<>(keepTypes);
     }
     
     // Class state
     
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Filter_Default open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Filter_Default next");
+    private static final Logger LOG = LoggerFactory.getLogger(Filter_Default.class);
 
     // Object state
 
@@ -159,9 +161,13 @@ class Filter_Default extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 checkQueryCancelation();
                 Row row;
                 do {
@@ -172,9 +178,14 @@ class Filter_Default extends Operator
                         row = null;
                     }
                 } while (row == null && !closed);
+                if (LOG_EXECUTION) {
+                    LOG.debug("Filter_Default: yield {}", row);
+                }
                 return row;
             } finally {
-                TAP_NEXT.out();
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
 

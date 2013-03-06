@@ -40,6 +40,8 @@ import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -114,7 +116,7 @@ class HKeyUnion_Ordered extends Operator
     @Override
     public List<Operator> getInputOperators()
     {
-        List<Operator> result = new ArrayList<Operator>(2);
+        List<Operator> result = new ArrayList<>(2);
         result.add(left);
         result.add(right);
         return result;
@@ -172,6 +174,7 @@ class HKeyUnion_Ordered extends Operator
 
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: HKeyUnion_Ordered open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: HKeyUnion_Ordered next");
+    private static final Logger LOG = LoggerFactory.getLogger(HKeyUnion_Ordered.class);
 
     // Object state
 
@@ -224,9 +227,13 @@ class HKeyUnion_Ordered extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 Row nextRow = null;
                 while (!closed && nextRow == null) {
                     assert !(leftRow.isEmpty() && rightRow.isEmpty());
@@ -259,9 +266,14 @@ class HKeyUnion_Ordered extends Operator
                         nextRow = null;
                     }
                 }
+                if (LOG_EXECUTION) {
+                    LOG.debug("HKeyUnion_Ordered: yield {}", nextRow);
+                }
                 return nextRow;
             } finally {
-                TAP_NEXT.out();
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
         
@@ -312,7 +324,7 @@ class HKeyUnion_Ordered extends Operator
             super(context);
             leftInput = left.cursor(context);
             rightInput = right.cursor(context);
-            hKeyCache = new HKeyCache<HKey>(context.getStore());
+            hKeyCache = new HKeyCache<>(context.getStore());
         }
         
         // For use by this class
@@ -365,8 +377,8 @@ class HKeyUnion_Ordered extends Operator
 
         private final Cursor leftInput;
         private final Cursor rightInput;
-        private final ShareHolder<Row> leftRow = new ShareHolder<Row>();
-        private final ShareHolder<Row> rightRow = new ShareHolder<Row>();
+        private final ShareHolder<Row> leftRow = new ShareHolder<>();
+        private final ShareHolder<Row> rightRow = new ShareHolder<>();
         private final HKeyCache<HKey> hKeyCache;
         private HKey previousHKey;
         private boolean closed = true;

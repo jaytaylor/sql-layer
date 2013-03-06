@@ -117,7 +117,7 @@ public class Sequence implements TreeLink {
     private final long maxValue;
     private final boolean cycle;
 
-    private AtomicReference<TreeCache> treeCache = new AtomicReference<TreeCache>();
+    private AtomicReference<TreeCache> treeCache = new AtomicReference<>();
     
    
     // TreeLink implementation

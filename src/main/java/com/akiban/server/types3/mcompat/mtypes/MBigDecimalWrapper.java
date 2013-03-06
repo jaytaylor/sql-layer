@@ -204,5 +204,11 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
     public String toString() {
         return value == null ? "UNSET" : value.toString();
     }
+
+    @Override
+    public BigDecimalWrapper deepCopy()
+    {
+        return new MBigDecimalWrapper(value);
+    }
 }
 

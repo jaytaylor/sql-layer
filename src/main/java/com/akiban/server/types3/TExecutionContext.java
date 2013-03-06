@@ -75,7 +75,7 @@ public final class TExecutionContext {
 
     public Object exectimeObjectAt(int index) {
         if (exectimeCache == null)
-            exectimeCache = new SparseArray<Object>();
+            exectimeCache = new SparseArray<>();
         return exectimeCache.get(index);
     }
 
@@ -86,7 +86,7 @@ public final class TExecutionContext {
                 throw new IllegalStateException("conflicts with preptime value: " + conflict);
         }
         if (exectimeCache == null)
-            exectimeCache = new SparseArray<Object>(index);
+            exectimeCache = new SparseArray<>(index);
         exectimeCache.set(index, value);
     }
 
@@ -221,7 +221,7 @@ public final class TExecutionContext {
 
     public TExecutionContext deriveContext(List<TInstance> inputTypes, TInstance outputType) {
         return new TExecutionContext(
-                new SparseArray<Object>(),
+                new SparseArray<>(),
                 inputTypes,
                 outputType,
                 queryContext,

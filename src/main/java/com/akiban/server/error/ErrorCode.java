@@ -26,6 +26,8 @@
 
 package com.akiban.server.error;
 
+import org.slf4j.Logger;
+
 import java.util.ResourceBundle;
 
 /**
@@ -187,6 +189,7 @@ public enum ErrorCode {
     INVALID_ARGUMENT_TYPE   ("22", "503", Importance.DEBUG, InvalidArgumentTypeException.class),
     ZERO_DATE_TIME          ("22", "504", Importance.DEBUG, ZeroDateTimeException.class),
     EXTERNAL_ROW_READER_EXCEPTION ("22", "505", Importance.DEBUG, ExternalRowReaderException.class),
+    SECURITY                ("22", "506", Importance.DEBUG, SecurityException.class),
 
     // Class 23 - integrity constraint violation
     DUPLICATE_KEY           ("23", "501", Importance.DEBUG, DuplicateKeyException.class),
@@ -279,9 +282,14 @@ public enum ErrorCode {
     NO_SUCH_CURSOR          ("42", "51C", Importance.DEBUG, NoSuchCursorException.class),
     NO_SUCH_PREPARED_STATEMENT ("42", "51D", Importance.DEBUG, NoSuchPreparedStatementException.class),
 
+    // Class 42/600 - JSON interface errors
+    KEY_COLUMN_MISMATCH     ("42", "600", Importance.DEBUG, KeyColumnMismatchException.class),
 
+    // Class 42/700 - full text errors
+    FULL_TEXT_QUERY_PARSE   ("42", "700", Importance.DEBUG, FullTextQueryParseException.class),
+        
     // Class 44 - with check option violation
-    
+
 
     // Class 46 - SQL/J
     INVALID_SQLJ_JAR_URL    ("46", "001", Importance.DEBUG, InvalidSQLJJarURLException.class),
@@ -372,7 +380,7 @@ public enum ErrorCode {
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),
     METAMODEL_MISMATCH      ("51", "002", Importance.ERROR, MetaModelVersionMismatchException.class),
     // Messaging errors
-    MALFORMED_REQUEST       ("51", "010", Importance.ERROR, null), 
+    MALFORMED_REQUEST       ("51", "010", Importance.ERROR, MalformedRequestException.class), 
     BAD_STATISTICS_TYPE     ("51", "011", Importance.ERROR, BadStatisticsTypeException.class),
     
     // Class 52 - Configuration & startup errors
@@ -429,6 +437,7 @@ public enum ErrorCode {
     INSERT_NULL_CHECK       ("57", "005", Importance.DEBUG, InsertNullCheckFailedException.class),
     TABLE_CHANGED_BY_DDL    ("57", "006", Importance.DEBUG, TableChangedByDDLException.class),
     BULKLOAD                ("57", "007", Importance.DEBUG, BulkloadException.class),
+    FK_VALUE_MISMATCH       ("57", "008", Importance.DEBUG, FKValueMismatchException.class),
 
     // Class 58 - Query canceled by user
     QUERY_CANCELED          ("58", "000", Importance.ERROR, QueryCanceledException.class),    
@@ -451,8 +460,9 @@ public enum ErrorCode {
     
     private final Importance importance;
     private final Class<? extends InvalidOperationException> exceptionClass;
-    private String formattedValue; 
-    private static ResourceBundle resourceBundle = ResourceBundle.getBundle("com.akiban.server.error.error_code");
+    private final String formattedValue;
+
+    private static final ResourceBundle resourceBundle = ResourceBundle.getBundle("com.akiban.server.error.error_code");
 
     private ErrorCode(String code, String subCode, Importance importance, 
             Class<? extends InvalidOperationException> exception) {
@@ -493,6 +503,29 @@ public enum ErrorCode {
     
     public String getSubCode() {
         return subcode;
+    }
+
+    public void logAtImportance(Logger log, Throwable cause) {
+        logAtImportance(log, "ErrorCode of {} importance", importance.name(), cause);
+    }
+
+    public void logAtImportance(Logger log, String msg, Object... msgArgs) {
+        switch(getImportance()) {
+            case TRACE:
+                log.trace(msg, msgArgs);
+            break;
+            case DEBUG:
+                log.debug(msg, msgArgs);
+            break;
+            case ERROR:
+                log.error(msg, msgArgs);
+            break;
+            default:
+                assert false : "Unknown importance: " + getImportance();
+        }
+        if(msgArgs.length == 0 || !(msgArgs[msgArgs.length - 1] instanceof Throwable)) {
+            log.warn("Cause unknown. Here is the current stack.", new RuntimeException());
+        }
     }
 
     public static enum Importance {

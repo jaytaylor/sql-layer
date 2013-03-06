@@ -355,6 +355,11 @@ public class AkInterval extends TClassBase {
     }
 
     @Override
+    public boolean attributeIsPhysical(int attributeIndex) {
+        return false;
+    }
+
+    @Override
     public void attributeToString(int attributeIndex, long value, StringBuilder output) {
         if (attributeIndex == formatAttribute.ordinal())
             attributeToString(formatters, value, output);
@@ -430,6 +435,13 @@ public class AkInterval extends TClassBase {
             return false;
     }
 
+    private static void attributeToString(IntervalFormat[] formatters, long arrayIndex, StringBuilder output) {
+        if ( (formatters == null) || (arrayIndex < 0) || arrayIndex >= formatters.length)
+            output.append(arrayIndex);
+        else
+            output.append(formatters[(int)arrayIndex]);
+    }
+
     private final IntervalFormat[] formatters;
     private final Attribute formatAttribute;
     private final Map<TypeId,IntervalFormat> typeIdToFormat;
@@ -457,7 +469,7 @@ public class AkInterval extends TClassBase {
     }
 
     private static <F extends IntervalFormat> Map<TypeId, F> createTypeIdToFormatMap(F[] values) {
-        Map<TypeId, F> map = new HashMap<TypeId, F>(values.length);
+        Map<TypeId, F> map = new HashMap<>(values.length);
         for (F literalFormat : values)
             map.put(literalFormat.getTypeId(), literalFormat);
         return map;
@@ -717,7 +729,7 @@ public class AkInterval extends TClassBase {
         private static final int WILD_QUESTION = -2;
 
         private ParseCompilation<U> compile(String pattern) {
-            ParseCompilation<U> result = new ParseCompilation<U>(pattern);
+            ParseCompilation<U> result = new ParseCompilation<>(pattern);
             for (int i = 0, len = pattern.length(); i < len; ++i) {
                 boolean checkBounds = true;
                 char c = pattern.charAt(i);
@@ -783,8 +795,8 @@ public class AkInterval extends TClassBase {
 
             private String inputPattern;
             private StringBuilder patternBuilder = new StringBuilder();
-            private List<U> unitsList = new ArrayList<U>();
-            private List<Integer> maxes = new ArrayList<Integer>();
+            private List<U> unitsList = new ArrayList<>();
+            private List<Integer> maxes = new ArrayList<>();
         }
     }
 }

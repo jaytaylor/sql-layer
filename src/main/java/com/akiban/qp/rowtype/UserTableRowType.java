@@ -150,7 +150,7 @@ public class UserTableRowType extends AisRowType
 
     private final UserTable table;
     // Type of indexRowTypes is ArrayList, not List, to make it clear that null values are permitted.
-    private final ArrayList<IndexRowType> indexRowTypes = new ArrayList<IndexRowType>();
+    private final ArrayList<IndexRowType> indexRowTypes = new ArrayList<>();
     private final AkType[] akTypes;
     private final ConstraintChecker constraintChecker;
 }

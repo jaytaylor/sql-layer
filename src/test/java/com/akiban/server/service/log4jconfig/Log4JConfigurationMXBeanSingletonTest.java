@@ -46,7 +46,7 @@ public final class Log4JConfigurationMXBeanSingletonTest {
     }
 
     private static class TestConfigurator extends Log4JConfigurationMXBeanSingleton {
-        private final List<String> messages = new ArrayList<String>();
+        private final List<String> messages = new ArrayList<>();
 
         @Override
         protected void configure(String configFile) {

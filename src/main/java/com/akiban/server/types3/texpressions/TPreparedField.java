@@ -37,6 +37,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.pvalue.PValueTargets;
 
 public final class TPreparedField implements TPreparedExpression {
+    
     @Override
     public TPreptimeValue evaluateConstant(QueryContext queryContext) {
         return null;

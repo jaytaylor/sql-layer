@@ -40,7 +40,7 @@ public final class ClearingIterableTest
     @Test
     public void mainTest()
     {
-        List<Integer> list = new ArrayList<Integer>(Arrays.asList(1, 2, 3, 4, 5));
+        List<Integer> list = new ArrayList<>(Arrays.asList(1, 2, 3, 4, 5));
 
         Iterator<Integer> iter = ClearingIterable.from(list).iterator();
 
@@ -70,7 +70,7 @@ public final class ClearingIterableTest
     @Test
     public void removeTest()
     {
-        List<Integer> list = new ArrayList<Integer>(Arrays.asList(1, 2, 3));
+        List<Integer> list = new ArrayList<>(Arrays.asList(1, 2, 3));
         Iterator<Integer> iter = ClearingIterable.from(list).iterator();
 
         assertEquals(iter.next().intValue(), 1);
@@ -92,7 +92,7 @@ public final class ClearingIterableTest
     @Test
     public void foreachTest()
     {
-        List<Integer> list = new ArrayList<Integer>(Arrays.asList(1, 2, 3, 4, 5));
+        List<Integer> list = new ArrayList<>(Arrays.asList(1, 2, 3, 4, 5));
 
         {
             int count=0, sum = 0;

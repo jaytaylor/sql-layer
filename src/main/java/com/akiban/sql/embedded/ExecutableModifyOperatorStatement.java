@@ -30,6 +30,7 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.row.ImmutableRow;
 import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.row.Row;
 import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
@@ -124,7 +125,7 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
     }
 
     static class SpoolCursor implements Cursor {
-        private List<ShareHolder<Row>> rows = new ArrayList<ShareHolder<Row>>();
+        private List<ShareHolder<Row>> rows = new ArrayList<>();
         private Iterator<ShareHolder<Row>> iterator;
         private enum State { CLOSED, FILLING, EMPTYING, DESTROYED }
         private State state;
@@ -136,8 +137,9 @@ class ExecutableModifyOperatorStatement extends ExecutableOperatorStatement
         public void add(Row row) {
             assert (state == State.FILLING);
             if (row instanceof ProjectedRow)
-                ((ProjectedRow)row).freeze();
-            ShareHolder<Row> holder = new ShareHolder<Row>();
+                // create a copy of this row, and hold it instead
+                row = new ImmutableRow((ProjectedRow)row);
+            ShareHolder<Row> holder = new ShareHolder<>();
             holder.hold(row);
             rows.add(holder);
         }

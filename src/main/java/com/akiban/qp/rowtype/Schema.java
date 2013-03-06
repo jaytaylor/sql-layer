@@ -54,7 +54,7 @@ public class Schema extends DerivedTypesSchema
 
     public Set<UserTableRowType> userTableTypes()
     {
-        Set<UserTableRowType> userTableTypes = new HashSet<UserTableRowType>();
+        Set<UserTableRowType> userTableTypes = new HashSet<>();
         for (AisRowType rowType : rowTypes.values()) {
             if (rowType instanceof UserTableRowType) {
                 if (!rowType.userTable().isAISTable()) {
@@ -67,7 +67,7 @@ public class Schema extends DerivedTypesSchema
 
     public Set<RowType> allTableTypes()
     {
-        Set<RowType> userTableTypes = new HashSet<RowType>();
+        Set<RowType> userTableTypes = new HashSet<>();
         for (RowType rowType : rowTypes.values()) {
             if (rowType instanceof UserTableRowType) {
                 userTableTypes.add(rowType);
@@ -132,6 +132,6 @@ public class Schema extends DerivedTypesSchema
     // Object state
 
     private final AkibanInformationSchema ais;
-    private final Map<Integer, AisRowType> rowTypes = new HashMap<Integer, AisRowType>();
-    private final List<IndexRowType> groupIndexRowTypes = new ArrayList<IndexRowType>();
+    private final Map<Integer, AisRowType> rowTypes = new HashMap<>();
+    private final List<IndexRowType> groupIndexRowTypes = new ArrayList<>();
 }

@@ -76,7 +76,7 @@ public final class TPreptimeContext {
 
     public void set(int index, Object value) {
         if (preptimeCache == null)
-            preptimeCache = new SparseArray<Object>(index);
+            preptimeCache = new SparseArray<>(index);
         preptimeCache.set(index, value);
     }
 

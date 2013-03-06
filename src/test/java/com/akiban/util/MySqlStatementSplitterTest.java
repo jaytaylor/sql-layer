@@ -38,8 +38,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class MySqlStatementSplitterTest {
-    private final List<String> inputs = new LinkedList<String>();
-    private final List<String> results = new LinkedList<String>();
+    private final List<String> inputs = new LinkedList<>();
+    private final List<String> results = new LinkedList<>();
     private String convertNewlines = "<NL>";
     private boolean keepSpecialComments;
     private boolean preTrim;

@@ -41,7 +41,7 @@ public abstract class LoadablePlan<T>
 
     public List<String> columnNames()
     {
-        List<String> columnNames = new ArrayList<String>();
+        List<String> columnNames = new ArrayList<>();
         int columns = jdbcTypes().length;
         for (int c = 0; c < columns; c++) {
             columnNames.add(String.format("c%d", c));

@@ -44,7 +44,7 @@ public class TreeServiceImplVolumeIT extends ITBase {
 
     @Override
     protected Map<String, String> startupConfigProperties() {
-        final Map<String, String> properties = new HashMap<String, String>();
+        final Map<String, String> properties = new HashMap<>();
         properties.put("akserver.treespace.a",
                                     "drupal*:${datapath}/${schema}.v0,create,pageSize:${buffersize},"
                                     + "initialSize:10K,extensionSize:1K,maximumSize:10G");
@@ -63,7 +63,7 @@ public class TreeServiceImplVolumeIT extends ITBase {
         checkExchangeName(treeService, link1, "drupal_large");
         final TestLink link2 = new TestLink("drupal.org", "_schema_");
         checkExchangeName(treeService, link2, "drupal.org");
-        final Set<Tree> trees = new HashSet<Tree>();
+        final Set<Tree> trees = new HashSet<>();
         treeService.visitStorage(session(), new TreeVisitor() {
             @Override
             public void visit(Exchange exchange) throws PersistitException {

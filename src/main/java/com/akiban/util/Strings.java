@@ -34,13 +34,14 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -55,7 +56,7 @@ public abstract class Strings {
     
     public static final String NL = nl();
     private static final int BASE_CHAR = 10 -'a';
-    private static final Set<Character> LEGAL_HEX = new HashSet<Character>();
+    private static final Set<Character> LEGAL_HEX = new HashSet<>();
     static
     {
        for (char ch = 'a'; ch <= 'f'; ++ch)
@@ -63,7 +64,39 @@ public abstract class Strings {
        for (char ch = '0'; ch <= '9'; ++ch)
            LEGAL_HEX.add(ch); 
     }
-    
+
+    public static List<String> entriesToString(Map<?, ?> map) {
+        List<String> result = new ArrayList<>(map.size());
+        for (Map.Entry<?, ?> entry : map.entrySet())
+            result.add(entry.toString());
+        return result;
+    }
+
+    private static class ListAppendable implements Appendable {
+        private final List<String> list;
+
+        public ListAppendable(List<String> list) {
+            this.list = list;
+        }
+
+        @Override
+        public Appendable append(CharSequence csq) throws IOException {
+            list.add(csq.toString());
+            return this;
+        }
+
+        @Override
+        public Appendable append(CharSequence csq, int start, int end) throws IOException {
+            return append(csq.subSequence(start, end).toString());
+        }
+
+        @Override
+        public Appendable append(char c) throws IOException {
+            return append(String.valueOf(c));
+        }
+    }
+
+
     /**
      * Gets the system <tt>line.separator</tt> newline.
      * @return <tt>System.getProperty("line.separator")</tt>
@@ -117,7 +150,7 @@ public abstract class Strings {
     }
 
     public static List<String> stringAndSort(Collection<?> inputs) {
-        List<String> results = new ArrayList<String>(inputs.size());
+        List<String> results = new ArrayList<>(inputs.size());
         
         for (Object item : inputs) {
             String asString = stringAndSort(item);
@@ -138,7 +171,7 @@ public abstract class Strings {
             multiMap.put(keyString, valueString);
         }
         // step 2: Flatten the multimap into a Map<String,String>, sorting by keys as you go.
-        Map<String,String> sortedAndFlattened = new TreeMap<String,String>();
+        Map<String,String> sortedAndFlattened = new TreeMap<>();
         for (Entry<String,Collection<String>> multiMapEntry : multiMap.asMap().entrySet()) {
             String keyString = multiMapEntry.getKey();
             String valueString = stringAndSort(multiMapEntry.getValue()).toString();
@@ -147,7 +180,7 @@ public abstract class Strings {
         }
 
         // step 3: Flatten the map into a List<String>
-        List<String> results = new ArrayList<String>(inputs.size());
+        List<String> results = new ArrayList<>(inputs.size());
         for (Entry<String,String> entry : sortedAndFlattened.entrySet()) {
             results.add(entry.toString());
         }
@@ -185,7 +218,7 @@ public abstract class Strings {
     }
 
     public static List<String> dumpURLs(Enumeration<URL> urls) throws IOException {
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         while (urls.hasMoreElements()) {
             URL next = urls.nextElement();
             LOG.debug("reading URL: {}", next);
@@ -199,7 +232,7 @@ public abstract class Strings {
             }
             if (readAsStream) {
                 InputStream is = next.openStream();
-                readStreamTo(is, result);
+                readStreamTo(is, new ListAppendable(result), false);
             }
         }
         return result;
@@ -253,16 +286,9 @@ public abstract class Strings {
     
     
     /**
-     *
-     * @param highChar
-     * @param lowChar
      * @return a character whose (ASCII) code is equal to the hexadecimal value
      *         of <highChar><lowChar>
-     * @throws InvalidParameterValue if either of the two char is not a legal
-     *         hex digit
-     *
-     * Eg., parseByte('2', '0') should return ' ' (space character)
-     *
+     *         Eg., parseByte('2', '0') should return ' ' (space character)
      */
     private static byte getByte (char highChar, char lowChar)
     {
@@ -311,21 +337,26 @@ public abstract class Strings {
         return new WrappingByteSource().wrap(ret, 0, resultIndex);
     }
 
-    private static List<String> readStream(InputStream is) throws IOException {
-        List<String> result = new ArrayList<String>();
-        readStreamTo(is, result);
+    public static List<String> readStream(InputStream is) throws IOException {
+        List<String> result = new ArrayList<>();
+        readStreamTo(is, new ListAppendable(result), false);
         return result;
     }
 
-    private static void readStreamTo(InputStream is, List<String> outList) throws IOException {
+    public static void readStreamTo(InputStream is, Appendable out, boolean keepNL) throws IOException {
+        readerTo(bufferedReader(is), out, keepNL);
+    }
+
+    private static void readerTo(BufferedReader reader, Appendable out, boolean keepNL) throws IOException {
         try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
             String line;
             while ((line=reader.readLine()) != null) {
-                outList.add(line);
+                out.append(line);
+                if (keepNL)
+                    out.append(NL);
             }
         } finally {
-            is.close();
+            reader.close();
         }
     }
 
@@ -368,22 +399,20 @@ public abstract class Strings {
     private static final Logger LOG = LoggerFactory.getLogger(Strings.class);
 
     public static List<String> dumpFile(File file) throws IOException {
-        List<String> results = new ArrayList<String>();
-        FileReader reader = new FileReader(file);
-        try {
-            BufferedReader buffered = new BufferedReader(reader);
-            for (String line; (line=buffered.readLine()) != null; ) {
-                results.add(line);
-            }
-        } finally {
-            reader.close();
-        }
+        List<String> results = new ArrayList<>();
+        readerTo(bufferedReader(new FileInputStream(file)), new ListAppendable(results), false);
         return results;
+    }
+
+    public static String dumpFileToString(File file) throws IOException {
+        StringBuilder builder = new StringBuilder();
+        readerTo(bufferedReader(new FileInputStream(file)), builder, true);
+        return builder.toString();
     }
     
     public static List<String> mapToString(Collection<?> collection) {
         // are lambdas here yet?!
-        List<String> strings = new ArrayList<String>(collection.size());
+        List<String> strings = new ArrayList<>(collection.size());
         for (Object o : collection)
             strings.add(String.valueOf(o));
         return strings;
@@ -391,5 +420,13 @@ public abstract class Strings {
 
     public static boolean equalCharsets(Charset one, String two) {
         return one.name().equals(two) || one.equals(Charset.forName(two));
+    }
+
+    private static BufferedReader bufferedReader(InputStream is) {
+        try {
+            return new BufferedReader(new InputStreamReader(is, "UTF-8"));
+        } catch(UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

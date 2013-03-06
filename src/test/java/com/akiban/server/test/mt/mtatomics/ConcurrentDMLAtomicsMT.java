@@ -305,7 +305,7 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
 
         ScanAllRequest request = new ScanAllRequest(
                 tableId,
-                new HashSet<Integer>(Arrays.asList(0, 1)),
+                new HashSet<>(Arrays.asList(0, 1)),
                 indexId,
                 EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END),
                 new FixedCountLimit(1)
@@ -345,13 +345,13 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
             BufferedLegacyOutputRouter smallRouter = new BufferedLegacyOutputRouter(size, false);
             LegacyOutputConverter converter = new LegacyOutputConverter(dml);
             ListRowOutput output = new ListRowOutput();
-            converter.reset(session, output, new HashSet<Integer>(Arrays.asList(0, 1)));
+            converter.reset(session, output, new HashSet<>(Arrays.asList(0, 1)));
             smallRouter.addHandler(converter);
 
 
             ScanAllRequest request = new ScanAllRequest(
                     tableId,
-                    new HashSet<Integer>(Arrays.asList(0, 1)),
+                    new HashSet<>(Arrays.asList(0, 1)),
                     indexId,
                     EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_AT_END),
                     ScanLimit.NONE

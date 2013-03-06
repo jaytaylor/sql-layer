@@ -141,7 +141,7 @@ public final class GroupIndexScanIT extends ITBase {
     }
 
     private List<List<?>> planToList(Operator plan) {
-        List<List<?>> actualResults = new ArrayList<List<?>>();
+        List<List<?>> actualResults = new ArrayList<>();
         Cursor cursor =  API.cursor(plan, queryContext);
         cursor.open();
         try {
@@ -173,7 +173,7 @@ public final class GroupIndexScanIT extends ITBase {
     }
 
     private List<List<?>> nestedList(Object[][] input) {
-        List<List<?>> listList = new ArrayList<List<?>>();
+        List<List<?>> listList = new ArrayList<>();
         for (Object[] array : input) {
             listList.add(Arrays.asList(array));
         }

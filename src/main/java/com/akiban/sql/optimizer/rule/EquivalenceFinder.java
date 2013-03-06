@@ -60,7 +60,7 @@ public class EquivalenceFinder<T> {
     }
     
     public Set<T> findEquivalents(T node) {
-        Set<T> accumulator = new HashSet<T>();
+        Set<T> accumulator = new HashSet<>();
         buildEquivalents(node, accumulator);
         boolean removedFirst = accumulator.remove(node);
         assert removedFirst : "didn't remove " + node + " from " + accumulator;
@@ -78,7 +78,7 @@ public class EquivalenceFinder<T> {
      */
     public Set<Entry<T, T>> equivalencePairs() {
         Collection<Entry<T, T>> entries = equivalences.entries();
-        Map<T,T> normalized = new HashMap<T, T>(entries.size() / 2);
+        Map<T,T> normalized = new HashMap<>(entries.size() / 2);
         for (Entry<T,T> entry : entries) {
             T key = entry.getKey();
             T val = entry.getValue();
@@ -101,7 +101,7 @@ public class EquivalenceFinder<T> {
 
     public Set<T> findParticipants() {
         Set<Entry<T,T>> pairs = equivalencePairs();
-        Set<T> results = new HashSet<T>(pairs.size() * 2);
+        Set<T> results = new HashSet<>(pairs.size() * 2);
         for (Entry<T,T> pair : pairs) {
             results.add(pair.getKey());
             results.add(pair.getValue());
@@ -179,7 +179,7 @@ public class EquivalenceFinder<T> {
 
     private void initSeenItems() {
         if (seenNodes == null)
-            seenNodes = new HashSet<T>();
+            seenNodes = new HashSet<>();
         else
             seenNodes.clear();
     }

@@ -55,7 +55,7 @@ public abstract class Flywheel<T> implements Recycler<T> {
     
     public void recycle(T element) {
         if (reserves == null)
-            reserves = new ArrayDeque<T>(defaultCapacity());
+            reserves = new ArrayDeque<>(defaultCapacity());
         reserves.offer(element);
     }
 

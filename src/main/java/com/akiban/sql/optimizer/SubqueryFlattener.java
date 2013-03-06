@@ -89,7 +89,7 @@ public class SubqueryFlattener
     public DMLStatementNode flatten(DMLStatementNode stmt) throws StandardException {
         ResultSetNode resultSet = stmt.getResultSetNode();
         if (resultSet.getNodeType() == NodeTypes.SELECT_NODE) {
-            selectStack = new Stack<SelectNode>();
+            selectStack = new Stack<>();
             currentSelectNode = null;
             selectNode((SelectNode)resultSet);
         }
@@ -102,7 +102,7 @@ public class SubqueryFlattener
 
         // Flatten subqueries in the FROM list.
         Iterator<FromTable> iter = selectNode.getFromList().iterator();
-        Collection<FromSubquery> flattenSubqueries = new HashSet<FromSubquery>();
+        Collection<FromSubquery> flattenSubqueries = new HashSet<>();
         while (iter.hasNext()) {
             FromTable fromTable = iter.next();
             if ((fromTable instanceof FromSubquery) &&
@@ -320,9 +320,9 @@ public class SubqueryFlattener
     // subquery.
     protected boolean isUniqueSubquery(SelectNode selectNode, ValueNode parentOperand)
             throws StandardException {
-        List<FromTable> fromTables = new ArrayList<FromTable>(); // Tables in the query.
+        List<FromTable> fromTables = new ArrayList<>(); // Tables in the query.
         List<BinaryComparisonOperatorNode> equalityConditions = 
-            new ArrayList<BinaryComparisonOperatorNode>(); // Column conditions.
+            new ArrayList<>(); // Column conditions.
         if (!innerJoinedFromTables(selectNode.getFromList(), 
                                    fromTables, equalityConditions))
             return false;
@@ -330,7 +330,7 @@ public class SubqueryFlattener
         Collection<Collection<ColumnBinding>> equatedColumns = 
             getEquatedColumns(fromTables, equalityConditions);
         Map<ColumnBinding,ColumnEquality> columnEqualities = 
-            new HashMap<ColumnBinding,ColumnEquality>();
+            new HashMap<>();
         boolean anyStronger = false;
         for (FromTable fromTable : fromTables) {
             TableBinding binding = (TableBinding)fromTable.getUserData();
@@ -437,7 +437,7 @@ public class SubqueryFlattener
     protected Collection<Collection<ColumnBinding>> getEquatedColumns(List<FromTable> fromTables, 
                                                                       List<BinaryComparisonOperatorNode> equalityConditions) {
         Collection<Collection<ColumnBinding>> result = 
-            new ArrayList<Collection<ColumnBinding>>();
+            new ArrayList<>();
         Iterator<BinaryComparisonOperatorNode> iter = equalityConditions.iterator();
         while (iter.hasNext()) {
             BinaryComparisonOperatorNode equals = iter.next();
@@ -481,7 +481,7 @@ public class SubqueryFlattener
             cc2.add(cb1);
         }
         else {
-            Collection<ColumnBinding> ncc = new HashSet<ColumnBinding>(2);
+            Collection<ColumnBinding> ncc = new HashSet<>(2);
             ncc.add(cb1);
             ncc.add(cb2);
             equatedColumns.add(ncc);

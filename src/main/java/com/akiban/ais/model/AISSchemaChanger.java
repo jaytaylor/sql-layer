@@ -38,7 +38,7 @@ public class AISSchemaChanger implements Visitor
     {
         this.from = from;
         this.to = to;
-        this.tableNameMap = new HashMap<String,TableName>();
+        this.tableNameMap = new HashMap<>();
     }
     
     private void updateTableName(Table table)

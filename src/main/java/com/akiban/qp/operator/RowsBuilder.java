@@ -174,7 +174,7 @@ public final class RowsBuilder {
     private final RowType rowType;
     private final AkType[] types;
     private final TInstance[] tinsts;
-    private final Deque<Row> rows = new ArrayDeque<Row>();
+    private final Deque<Row> rows = new ArrayDeque<>();
 
     // class state
 
@@ -207,7 +207,7 @@ public final class RowsBuilder {
 
         private InternalValuesRow(RowType rowType, List<? extends ValueSource> values) {
             this.rowType = rowType;
-            this.values = new ArrayList<ValueSource>(values);
+            this.values = new ArrayList<>(values);
         }
 
         private final RowType rowType;
@@ -237,7 +237,7 @@ public final class RowsBuilder {
 
         private InternalPValuesRow(RowType rowType, List<? extends PValueSource> pvalues) {
             this.rowType = rowType;
-            this.pvalues = new ArrayList<PValueSource>(pvalues);
+            this.pvalues = new ArrayList<>(pvalues);
         }
 
         private final RowType rowType;

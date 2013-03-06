@@ -365,9 +365,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final List<TPreparedExpression> pProjections;
         if(Types3Switch.ON) {
             projections = null;
-            pProjections = new ArrayList<TPreparedExpression>(newColumns.size());
+            pProjections = new ArrayList<>(newColumns.size());
             for(Column newCol : newColumns) {
-                Column oldCol = origTable.getColumn(newCol.getName());
                 Integer oldPosition = helper.findOldPosition(origTable, newCol);
                 TInstance newInst = newCol.tInstance();
                 if(oldPosition == null) {
@@ -389,6 +388,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     }
                     pProjections.add(new TPreparedLiteral(newInst, defaultValueSource));
                 } else {
+                    Column oldCol = origTable.getColumnsIncludingInternal().get(oldPosition);
                     TInstance oldInst = oldCol.tInstance();
                     TPreparedExpression pExp = new TPreparedField(oldInst, oldPosition);
                     if(!oldInst.equalsExcludingNullable(newInst)) {
@@ -399,7 +399,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 }
             }
         } else {
-            projections = new ArrayList<Expression>(newColumns.size());
+            projections = new ArrayList<>(newColumns.size());
             pProjections = null;
             for(Column newCol : newColumns) {
                 Integer oldPosition = helper.findOldPosition(origTable, newCol);
@@ -430,8 +430,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final Set<RowType> filteredTypes;
         final Map<RowType,RowType> typeMap;
         if(groupChange) {
-            filteredTypes = new HashSet<RowType>();
-            typeMap = new HashMap<RowType,RowType>();
+            filteredTypes = new HashSet<>();
+            typeMap = new HashMap<>();
             origTable.traverseTableAndDescendants(new NopVisitor() {
                 @Override
                 public void visitUserTable(UserTable table) {
@@ -466,7 +466,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                                                   oldRow,
                                                   queryContext,
                                                   projections,
-                                                  pProjections,
+                                                  ProjectedRow.createTEvaluatableExpressions(pProjections),
                                                   TInstance.createTInstances(pProjections));
                     queryContext.checkConstraints(newRow, usePValues);
                     adapter.alterRow(oldRow, newRow, oldTypeIndexes, groupChange, usePValues);
@@ -491,9 +491,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                                   List<TableChange> origColChanges, List<TableChange> origIndexChanges,
                                   QueryContext context)
     {
-        final Set<Integer> tableIDs = new HashSet<Integer>();
-        final List<TableChange> columnChanges = new ArrayList<TableChange>(origColChanges);
-        final List<TableChange> indexChanges = new ArrayList<TableChange>(origIndexChanges);
+        final Set<Integer> tableIDs = new HashSet<>();
+        final List<TableChange> columnChanges = new ArrayList<>(origColChanges);
+        final List<TableChange> indexChanges = new ArrayList<>(origIndexChanges);
         final TableChangeValidator validator;
         txnService.beginTransaction(session);
         try {
@@ -532,7 +532,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             txnService.rollbackTransactionIfOpen(session);
         }
 
-        lockTables(session, new ArrayList<Integer>(tableIDs));
+        lockTables(session, new ArrayList<>(tableIDs));
         final ChangeLevel level;
         txnService.beginTransaction(session);
         try {
@@ -555,9 +555,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         ChangeLevel changeLevel;
         boolean success = false;
         boolean oldWasRootAndIsNewGroup = false;
-        List<Index> indexesToDrop = new ArrayList<Index>();
-        List<Sequence> sequencesToDrop = new ArrayList<Sequence>();
-        List<IndexName> newIndexTrees = new ArrayList<IndexName>();
+        List<Index> indexesToDrop = new ArrayList<>();
+        List<Sequence> sequencesToDrop = new ArrayList<>();
+        List<IndexName> newIndexTrees = new ArrayList<>();
 
         try {
             changeLevel = validator.getFinalChangeLevel();
@@ -628,7 +628,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
                 case GROUP:
                     // PRIMARY tree *must* be preserved due to accumulators. No way to dup accum state so must do this.
-                    List<Index> indexesToTruncate = new ArrayList<Index>();
+                    List<Index> indexesToTruncate = new ArrayList<>();
                     for(ChangedTableDescription desc : validator.getAllChangedTables()) {
                         UserTable oldTable = origAIS.getUserTable(desc.getOldName());
                         Index index = oldTable.getPrimaryKeyIncludingInternal().getIndex();
@@ -658,7 +658,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             AkibanInformationSchema curAIS = getAIS(session);
             if(!success && (origAIS != curAIS)) {
                 // Be extra careful with null checks.. In a failure state, don't know what was created.
-                List<TreeLink> links = new ArrayList<TreeLink>();
+                List<TreeLink> links = new ArrayList<>();
                 if(oldWasRootAndIsNewGroup) {
                     UserTable newTable = curAIS.getUserTable(newDefinition.getName());
                     if(newTable != null) {
@@ -694,7 +694,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     {
         logger.trace("dropping schema {}", schemaName);
 
-        List<Integer> tableIDs = new ArrayList<Integer>();
+        List<Integer> tableIDs = new ArrayList<>();
         txnService.beginTransaction(session);
         try {
             final com.akiban.ais.model.Schema schema = getAIS(session).getSchema(schemaName);
@@ -723,15 +723,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         if (schema == null)
             return; // NOT throw new NoSuchSchemaException(schemaName); adapter does it.
 
-        List<View> viewsToDrop = new ArrayList<View>();
-        Set<View> seen = new HashSet<View>();
+        List<View> viewsToDrop = new ArrayList<>();
+        Set<View> seen = new HashSet<>();
         for (View view : schema.getViews().values()) {
             addView(view, viewsToDrop, seen, schema, schemaName);
         }
 
         // Find all groups and tables in the schema
-        Set<Group> groupsToDrop = new HashSet<Group>();
-        List<UserTable> tablesToDrop = new ArrayList<UserTable>();
+        Set<Group> groupsToDrop = new HashSet<>();
+        List<UserTable> tablesToDrop = new ArrayList<>();
 
         for(UserTable table : schema.getUserTables().values()) {
             groupsToDrop.add(table.getGroup());
@@ -751,7 +751,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 }
             }
         }
-        List<Sequence> sequencesToDrop = new ArrayList<Sequence>();
+        List<Sequence> sequencesToDrop = new ArrayList<>();
         for (Sequence sequence : schema.getSequences().values()) {
             // Drop the sequences in this schema, but not the 
             // generator sequences, which will be dropped with the table. 
@@ -771,8 +771,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                 return o2.getTableId().compareTo(o1.getTableId());
             }
         });
-        List<Routine> routinesToDrop = new ArrayList<Routine>(schema.getRoutines().values());
-        List<SQLJJar> jarsToDrop = new ArrayList<SQLJJar>();
+        List<Routine> routinesToDrop = new ArrayList<>(schema.getRoutines().values());
+        List<SQLJJar> jarsToDrop = new ArrayList<>();
         for (SQLJJar jar : schema.getSQLJJars().values()) {
             boolean anyOutside = false;
             for (Routine routine : jar.getRoutines()) {
@@ -830,7 +830,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     {
         logger.trace("dropping group {}", groupName);
 
-        List<Integer> tableIDs = new ArrayList<Integer>();
+        List<Integer> tableIDs = new ArrayList<>();
         txnService.beginTransaction(session);
         try {
             AkibanInformationSchema ais = getAIS(session);
@@ -931,12 +931,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public List<String> getDDLs(final Session session) {
-        logger.trace("getting DDLs");
-        return schemaManager().schemaStrings(session, false);
-    }
-
-    @Override
     public int getGenerationAsInt(Session session) {
         long full = getGeneration(session);
         return (int)full ^ (int)(full >>> 32);
@@ -959,7 +953,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
 
-        List<Integer> tableIDs = new ArrayList<Integer>(indexesToAdd.size());
+        List<Integer> tableIDs = new ArrayList<>(indexesToAdd.size());
         txnService.beginTransaction(session);
         try {
             AkibanInformationSchema ais = getAIS(session);
@@ -967,6 +961,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             for(Index index : indexesToAdd) {
                 switch(index.getIndexType()) {
                     case TABLE:
+                    case FULL_TEXT: // TODO: More IDs?
                         UserTable table = ais.getUserTable(index.getIndexName().getFullTableName());
                         if(table != null) {
                             tableIDs.add(table.getTableId());
@@ -996,7 +991,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
             // If indexes left in list, transaction was not committed and trees aren't transactional. Try to clean up.
             if((newIndexes != null) && !newIndexes.isEmpty()) {
-                Collection<TreeLink> links = new ArrayList<TreeLink>(newIndexes.size());
+                Collection<TreeLink> links = new ArrayList<>(newIndexes.size());
                 for(Index index : newIndexes) {
                     links.add(index.indexDef());
                 }
@@ -1035,7 +1030,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         txnService.beginTransaction(session);
         try {
             final Table table = getTable(session, tableName);
-            Collection<Index> indexes = new HashSet<Index>();
+            Collection<Index> indexes = new HashSet<>();
             for(String indexName : indexNamesToDrop) {
                 Index index = table.getIndex(indexName);
                 if(index == null) {
@@ -1062,7 +1057,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             return;
         }
 
-        List<Integer> tableIDs = new ArrayList<Integer>(3);
+        List<Integer> tableIDs = new ArrayList<>(3);
         txnService.beginTransaction(session);
         try {
             Group group = getAIS(session).getGroup(groupName);
@@ -1087,7 +1082,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             if (group == null) {
                 throw new NoSuchGroupException(groupName);
             }
-            Collection<Index> indexes = new HashSet<Index>();
+            Collection<Index> indexes = new HashSet<>();
             for(String indexName : indexNamesToDrop) {
                 final Index index = group.getIndex(indexName);
                 if(index == null) {
@@ -1106,7 +1101,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     @Override
     public void updateTableStatistics(Session session, TableName tableName, Collection<String> indexesToUpdate) {
         final Table table = getTable(session, tableName);
-        Collection<Index> indexes = new HashSet<Index>();
+        Collection<Index> indexes = new HashSet<>();
         if (indexesToUpdate == null) {
             indexes.addAll(table.getIndexes());
             for (Index index : table.getGroup().getIndexes()) {
@@ -1133,7 +1128,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         long startNs = System.nanoTime();
         Pattern schemaPattern = Pattern.compile(schemaRegex);
         Pattern tablePattern = Pattern.compile(tableRegex);
-        List<IndexCheckResult> results = new ArrayList<IndexCheckResult>();
+        List<IndexCheckResult> results = new ArrayList<>();
         AkibanInformationSchema ais = getAIS(session);
 
         for (Map.Entry<TableName,UserTable> entry : ais.getUserTables().entrySet()) {
@@ -1142,7 +1137,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     && tablePattern.matcher(tName.getTableName()).find())
             {
                 UserTable uTable = entry.getValue();
-                List<Index> indexes = new ArrayList<Index>();
+                List<Index> indexes = new ArrayList<>();
                 indexes.add(uTable.getPrimaryKeyIncludingInternal().getIndex());
                 for (Index gi : uTable.getGroup().getIndexes()) {
                     if (gi.leafMostTable().equals(uTable))

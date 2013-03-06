@@ -116,6 +116,9 @@ public final class RowDataBuilder {
                 case 3:
                     AkServerUtil.putMediumInt(bytes, fixedWidthSectionOffset, vlength);
                     break;
+                case 4:
+                    AkServerUtil.putInt(bytes, fixedWidthSectionOffset, vlength);
+                    break;
                 default:
                     throw new UnsupportedOperationException("bad width-of-width: " + fieldFixedWidth);
                 }
@@ -439,6 +442,7 @@ public final class RowDataBuilder {
             case 1: return AkServerUtil.getUByte(bytes, fixedWidthSectionOffset);
             case 2: return AkServerUtil.getUShort(bytes, fixedWidthSectionOffset);
             case 3: return AkServerUtil.getUMediumInt(bytes, fixedWidthSectionOffset);
+            case 4: return AkServerUtil.getInt(bytes, fixedWidthSectionOffset);
             default: throw new UnsupportedOperationException("bad width-of-width: " + widthWidth);
         }
     }

@@ -39,7 +39,7 @@ import static junit.framework.Assert.*;
 
 public final class NamedParameterizedRunnerTest
 {
-    private final static List<Parameterization> builderList = new LinkedList<Parameterization>();
+    private final static List<Parameterization> builderList = new LinkedList<>();
     private Properties oldProperties;
     private Properties workingProperties;
 
@@ -319,12 +319,12 @@ public final class NamedParameterizedRunnerTest
         List<Runner> children = runner.getChildren();
         assertEquals("children.size()", names.length, children.size());
 
-        Set<String> expectedNames = new HashSet<String>(names.length, 1.0f);
+        Set<String> expectedNames = new HashSet<>(names.length, 1.0f);
         for (String name : names) {
             assertTrue("unexpected error, duplicate name: " + name, expectedNames.add(name));
         }
 
-        Map<String,ReifiedParamRunner> foundRunners = new HashMap<String, ReifiedParamRunner>();
+        Map<String,ReifiedParamRunner> foundRunners = new HashMap<>();
         for (Runner child : children)
         {
             ReifiedParamRunner reified = (ReifiedParamRunner)child;

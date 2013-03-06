@@ -28,7 +28,6 @@ package com.akiban.qp.operator;
 
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.HKeyRowType;
@@ -162,7 +161,7 @@ class AncestorLookup_Nested extends Operator
         this.rowType = rowType;
         this.inputBindingPosition = inputBindingPosition;
         // Sort ancestor types by depth
-        this.ancestors = new ArrayList<UserTable>(ancestorTypes.size());
+        this.ancestors = new ArrayList<>(ancestorTypes.size());
         for (UserTableRowType ancestorType : ancestorTypes) {
             this.ancestors.add(ancestorType.userTable());
         }
@@ -256,10 +255,9 @@ class AncestorLookup_Nested extends Operator
             try {
                 CursorLifecycle.checkIdle(this);
                 Row rowFromBindings = context.getRow(inputBindingPosition);
-                if (LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("AncestorLookup_Nested: open using {}", rowFromBindings);
                 }
-                assert rowFromBindings.rowType() == rowType : rowFromBindings;
                 findAncestors(rowFromBindings);
                 closed = false;
             } finally {
@@ -270,12 +268,16 @@ class AncestorLookup_Nested extends Operator
         @Override
         public Row next()
         {
-            TAP_NEXT.in();
+            if (TAP_NEXT_ENABLED) {
+                TAP_NEXT.in();
+            }
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                if (CURSOR_LIFECYCLE_ENABLED) {
+                    CursorLifecycle.checkIdleOrActive(this);
+                }
                 checkQueryCancelation();
                 Row row = pending.take();
-                if (LOG.isDebugEnabled()) {
+                if (LOG_EXECUTION) {
                     LOG.debug("AncestorLookup: {}", row == null ? null : row);
                 }
                 if (row == null) {
@@ -283,7 +285,9 @@ class AncestorLookup_Nested extends Operator
                 }
                 return row;
             } finally {
-                TAP_NEXT.out();
+                if (TAP_NEXT_ENABLED) {
+                    TAP_NEXT.out();
+                }
             }
         }
 

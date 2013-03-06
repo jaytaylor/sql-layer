@@ -157,7 +157,7 @@ class PersistitGroupCursor implements GroupCursor
     {
         this.adapter = adapter;
         this.group = group;
-        this.row = new ShareHolder<PersistitGroupRow>(adapter.newGroupRow());
+        this.row = new ShareHolder<>(adapter.newGroupRow());
         this.controllingHKey = adapter.newKey();
         this.idle = true;
     }

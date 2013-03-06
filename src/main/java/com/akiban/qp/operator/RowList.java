@@ -82,7 +82,7 @@ class RowList
 
     // Object state
 
-    private final List<ShareHolder<Row>> list = new ArrayList<ShareHolder<Row>>(INITIAL_CAPACITY);
+    private final List<ShareHolder<Row>> list = new ArrayList<>(INITIAL_CAPACITY);
     private int count = 0;
     private int capacity = INITIAL_CAPACITY;
     private final Scan scan = new Scan(); // There should be only one scan of a RowList at a time.

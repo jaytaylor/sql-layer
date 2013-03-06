@@ -34,11 +34,11 @@ public final class SetColumnSelector implements ColumnSelector {
     private final Set<Integer> set;
 
     public SetColumnSelector(Set<Integer> set) {
-        this.set = new HashSet<Integer>(set);
+        this.set = new HashSet<>(set);
     }
 
     public SetColumnSelector(int... selectedPositions) {
-        set = new HashSet<Integer>();
+        set = new HashSet<>();
         for (int i : selectedPositions) {
             set.add(i);
         }

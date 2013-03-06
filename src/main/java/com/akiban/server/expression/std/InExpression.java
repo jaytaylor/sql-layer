@@ -93,7 +93,7 @@ public final class InExpression extends AbstractCompositeExpression {
     }
 
     private static List<? extends Expression> combine(Expression head, List<? extends Expression> tail) {
-        List<Expression> list = new ArrayList<Expression>();
+        List<Expression> list = new ArrayList<>();
         list.add(head);
         list.addAll(tail);
         return list;

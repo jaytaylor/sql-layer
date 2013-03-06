@@ -59,7 +59,8 @@ public abstract class TreeRecordVisitor
         this.store = store;
         this.exchange = exchange;
         for (UserTable table : store.getAIS(session).getUserTables().values()) {
-            if (!table.getName().getSchemaName().equals(TableName.INFORMATION_SCHEMA)) {
+            if (!table.getName().getSchemaName().equals(TableName.INFORMATION_SCHEMA) &&
+                !table.getName().getSchemaName().equals(TableName.SECURITY_SCHEMA)) {
                 ordinalToTable.put(table.rowDef().getOrdinal(), table);
             }
         }
@@ -104,5 +105,5 @@ public abstract class TreeRecordVisitor
     private Session session;
     private PersistitStore store;
     private Exchange exchange;
-    private final Map<Integer, UserTable> ordinalToTable = new HashMap<Integer, UserTable>();
+    private final Map<Integer, UserTable> ordinalToTable = new HashMap<>();
 }

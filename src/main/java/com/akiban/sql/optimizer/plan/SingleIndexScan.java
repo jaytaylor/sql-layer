@@ -115,7 +115,7 @@ public final class SingleIndexScan extends IndexScan {
     public void addEqualityCondition(ConditionExpression condition,
                                      ExpressionNode comparand) {
         if (equalityComparands == null)
-            equalityComparands = new ArrayList<ExpressionNode>();
+            equalityComparands = new ArrayList<>();
         equalityComparands.add(comparand);
         internalGetConditions().add(condition);
     }
@@ -129,7 +129,7 @@ public final class SingleIndexScan extends IndexScan {
                 lowInclusive = (comparison == Comparison.GE);
             }
             else if (lowInclusive == (comparison == Comparison.GE)) {
-                List<ExpressionNode> operands = new ArrayList<ExpressionNode>(2);
+                List<ExpressionNode> operands = new ArrayList<>(2);
                 operands.add(lowComparand);
                 operands.add(comparand);
                 lowComparand = new FunctionExpression("_max",
@@ -149,7 +149,7 @@ public final class SingleIndexScan extends IndexScan {
                 highInclusive = (comparison == Comparison.LE);
             }
             else if (highInclusive == (comparison == Comparison.LE)) {
-                List<ExpressionNode> operands = new ArrayList<ExpressionNode>(2);
+                List<ExpressionNode> operands = new ArrayList<>(2);
                 operands.add(highComparand);
                 operands.add(comparand);
                 highComparand = new FunctionExpression("_min",
@@ -360,7 +360,7 @@ public final class SingleIndexScan extends IndexScan {
 
     private List<ConditionExpression> internalGetConditions() {
         if (conditions == null)
-            conditions = new ArrayList<ConditionExpression>();
+            conditions = new ArrayList<>();
         return conditions;
     }
 

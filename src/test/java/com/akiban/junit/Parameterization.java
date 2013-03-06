@@ -56,7 +56,7 @@ public final class Parameterization
             throw new IllegalArgumentException("args can't be null");
         }
         this.name = name;
-        this.args = new LinkedList<Object>(Arrays.asList(args));
+        this.args = new LinkedList<>(Arrays.asList(args));
         this.expectedToPass = isPassing;
     }
 
@@ -69,7 +69,7 @@ public final class Parameterization
     public Parameterization(Parameterization copyFrom)
     {
         this.name = copyFrom.name;
-        this.args = new LinkedList<Object>(copyFrom.args);
+        this.args = new LinkedList<>(copyFrom.args);
         this.expectedToPass = copyFrom.expectedToPass;
     }
 

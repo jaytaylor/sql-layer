@@ -26,7 +26,6 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.exec.Plannable;
 import java.util.Collections;
 import java.util.List;
 
@@ -40,7 +39,8 @@ import com.akiban.server.explain.std.DUIOperatorExplainer;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
-import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
 
@@ -148,6 +148,7 @@ class Delete_Default implements UpdatePlannable {
     private final boolean usePValues;
     private final Operator inputOperator;
     private static final InOutTap DELETE_TAP = Tap.createTimer("operator: Delete_Default");
+    private static final Logger LOG = LoggerFactory.getLogger(Delete_Default.class);
 
     // Inner classes
 
@@ -156,21 +157,28 @@ class Delete_Default implements UpdatePlannable {
         public UpdateResult run()
         {
             int seen = 0, modified = 0;
-            DELETE_TAP.in();
+            if (TAP_NEXT_ENABLED) {
+                DELETE_TAP.in();
+            }
             try {
                 input.open();
                 Row oldRow;
                 while ((oldRow = input.next()) != null) {
                     checkQueryCancelation();
+                    if (LOG_EXECUTION && LOG.isDebugEnabled()) {
+                        LOG.debug("Delete_Default: deleting {}", oldRow);
+                    }
                     ++seen;
-                    adapter().deleteRow(oldRow, usePValues);
+                    adapter().deleteRow(oldRow, usePValues, false);
                     ++modified;
                 }
             } finally {
                 if (input != null) {
                     input.close();
                 }
-                DELETE_TAP.out();
+                if (TAP_NEXT_ENABLED) {
+                    DELETE_TAP.out();
+                }
             }
             return new StandardUpdateResult(seen, modified);
         }

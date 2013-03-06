@@ -78,12 +78,12 @@ public class PlanContext
     public static final class DefaultWhiteboardMarker<T> implements WhiteboardMarker<T> {
         // poor man's substitute for diamond operator
         public static <T> WhiteboardMarker<T> create() {
-            return new DefaultWhiteboardMarker<T>();
+            return new DefaultWhiteboardMarker<>();
         }
     }
 
     private Map<WhiteboardMarker<?>,Object> whiteboard = 
-        new HashMap<WhiteboardMarker<?>,Object>();
+        new HashMap<>();
 
     /** Store information associated with the plan for use by more
      * than one rule, but not associated directly with any part of the

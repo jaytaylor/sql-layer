@@ -642,7 +642,7 @@ public abstract class CostEstimator implements TableRowCounts
         coverBranches(tableGroup, startNode, requiredTables);
         long rowCount = 1;
         double cost = 0.0;
-        List<UserTableRowType> ancestorTypes = new ArrayList<UserTableRowType>();
+        List<UserTableRowType> ancestorTypes = new ArrayList<>();
         for (TableGroupJoinNode ancestorNode = startNode;
              ancestorNode != null;
              ancestorNode = ancestorNode.getParent()) {
@@ -936,12 +936,12 @@ public abstract class CostEstimator implements TableRowCounts
 
     public static class SelectivityConditions {
         private Map<ColumnExpression,Collection<ConditionExpression>> map =
-            new HashMap<ColumnExpression,Collection<ConditionExpression>>();
+            new HashMap<>();
         
         public void addCondition(ColumnExpression column, ConditionExpression condition) {
             Collection<ConditionExpression> entry = map.get(column);
             if (entry == null) {
-                entry = new ArrayList<ConditionExpression>();
+                entry = new ArrayList<>();
                 map.put(column, entry);
             }
             entry.add(condition);
