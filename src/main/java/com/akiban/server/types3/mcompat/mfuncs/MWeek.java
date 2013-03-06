@@ -40,6 +40,7 @@ import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TScalarBase;
 import org.joda.time.DateTimeConstants;
 import org.joda.time.DateTimeZone;
+import org.joda.time.IllegalFieldValueException;
 import org.joda.time.MutableDateTime;
 
 /**
@@ -120,8 +121,13 @@ public abstract class MWeek extends TScalarBase
         }
         else
         {
-            output.putInt32(modes[(int) mode].getWeek(new MutableDateTime(DateTimeZone.forID(context.getCurrentTimezone())),
+            try { 
+                output.putInt32(modes[(int) mode].getWeek(new MutableDateTime(DateTimeZone.forID(context.getCurrentTimezone())),
                                                       (int)ymd[0], (int)ymd[1], (int)ymd[2]));
+            } catch (IllegalFieldValueException ex) {
+                context.warnClient(new InvalidDateFormatException (ex.getMessage(), date+""));
+                output.putNull();
+            }
         }
     }
 

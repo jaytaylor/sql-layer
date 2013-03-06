@@ -66,17 +66,25 @@
 
 # bug1084613
 ---
-- Message: WEEK invalid range tests disabled due to bug1084613
+- Statement: select week(0) from all_types;
+- warnings_count: 1
+- warnings: [['22007', 'Invalid Value 0 for monthOfYear must be in the range [1,12] format: 0']]
+- output: [[null]]
+---
+- Statement: select week(13) from all_types;
+- warnings_count: 1
+- warnings: [['22007', 'Invalid Value 0 for monthOfYear must be in the range [1,12] format: 0']]
+- output: [[null]]
+---
+- Include: all-datetime-schema.yaml
+---
+- Statement: select id,WEEK(time_field) from datetime_matrix where WEEK(time_field) is not null;
+- row_count: 0
+# The WEEKOFYEAR in the source data is wrong, so the tests don't work. 
 #---
-#- Include: all-datetime-schema.yaml
-#---
-#- Statement: select id,WEEK(time_field) from datetime_matrix where WEEK(time_field) is not null;
+#- Statement: select id,WEEK(timestamp_field),WEEKOFYEAR from datetime_matrix where WEEK(timestamp_field) + 1 <> WEEKOFYEAR;
 #- row_count: 0
 #---
-#- Statement: select id,WEEK(timestamp_field),WEEKOFYEAR from datetime_matrix where WEEK(timestamp_field) <> WEEKOFYEAR;
+#- Statement: select id,WEEK(date_field), WEEKOFYEAR from datetime_matrix where WEEK(date_field)+1 <> WEEKOFYEAR;
 #- row_count: 0
-#---
-#- Statement: select id,WEEK(date_field), WEEKOFYEAR from datetime_matrix where WEEK(date_field) <> WEEKOFYEAR;
-#- row_count: 0
-
 ...
