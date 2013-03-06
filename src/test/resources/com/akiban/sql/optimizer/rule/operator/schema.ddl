@@ -47,3 +47,5 @@ CREATE INDEX "__akiban_fk_1" ON items(oid);
 
 CREATE INDEX cname_and_sku ON customers(customers.name, items.sku) USING LEFT JOIN;
 CREATE INDEX sku_and_date ON customers(items.sku, orders.order_date) USING LEFT JOIN;
+
+CREATE INDEX cust_ft ON customers(FULL_TEXT(name, items.sku, addresses.state));

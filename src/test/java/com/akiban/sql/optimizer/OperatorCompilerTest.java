@@ -205,7 +205,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     @Override
     public String generateResult() throws Exception {
         StatementNode stmt = parser.parseStatement(sql);
-        ExplainPlanContext context = new ExplainPlanContext(compiler);
+        ExplainPlanContext context = new ExplainPlanContext(compiler, null, null);
         BasePlannable result = compiler.compile((DMLStatementNode)stmt, 
                                                 parser.getParameterList(), context);
         return result.explainToString(context.getExplainContext(), OptimizerTestBase.DEFAULT_SCHEMA);

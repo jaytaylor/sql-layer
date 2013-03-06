@@ -30,6 +30,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
+import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
@@ -124,10 +125,16 @@ public interface QueryContext
      */
     public StoreAdapter getStore();
     public StoreAdapter getStore(UserTable table);
+
     /**
      * Get the session associated with this context.
      */
     public Session getSession();
+
+    /**
+     * Get the service manager.
+     */
+    public ServiceManager getServiceManager();
 
     /**
      * Get the current date.

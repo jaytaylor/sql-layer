@@ -127,3 +127,11 @@ geospatial-3: covering spatial index
 geospatial-4: two spatial indexes considered for intersection
 
 index-is-null: IS NULL condition
+
+full-text-1: single parsed query
+
+full-text-1v: from variable
+
+full-text-2: terms on multiple branches
+
+full-text-join: joined to another group

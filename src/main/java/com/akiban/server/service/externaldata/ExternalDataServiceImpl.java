@@ -44,6 +44,7 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.Service;
+import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.externaldata.JsonRowWriter.WriteTableRow;
@@ -71,6 +72,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     private final Store store;
     private final TransactionService transactionService;
     private final TreeService treeService;
+    private final ServiceManager serviceManager;
     
     private static final Logger logger = LoggerFactory.getLogger(ExternalDataServiceImpl.class);
 
@@ -87,12 +89,14 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     public ExternalDataServiceImpl(ConfigurationService configService,
                                    DXLService dxlService, Store store,
                                    TransactionService transactionService,
-                                   TreeService treeService) {
+                                   TreeService treeService,
+                                   ServiceManager serviceManager) {
         this.configService = configService;
         this.dxlService = dxlService;
         this.store = store;
         this.transactionService = transactionService;
         this.treeService = treeService;
+        this.serviceManager = serviceManager;
     }
 
     private UserTable getTable(AkibanInformationSchema ais, String schemaName, String tableName) {
@@ -122,7 +126,12 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                             Schema schema,
                             Operator plan) {
         StoreAdapter adapter = getAdapter(session, table, schema);
-        QueryContext queryContext = new SimpleQueryContext(adapter);
+        QueryContext queryContext = new SimpleQueryContext(adapter) {
+                @Override
+                public ServiceManager getServiceManager() {
+                    return serviceManager;
+                }
+            };
         JsonRowWriter json = new JsonRowWriter(new TableRowTracker(table, depth));
         WriteTableRow rowWriter = new WriteTableRow();
         AkibanAppender appender = AkibanAppender.of(writer);

@@ -82,11 +82,16 @@ public class FullTextCursor implements Cursor
     public void open() {
         CursorLifecycle.checkIdle(this);
         logger.debug("FullTextCursor: open {}", query);
-        try {
-            results = searcher.search(query, limit);
+        if (query == null) {
+            results = null;
         }
-        catch (IOException ex) {
-            throw new AkibanInternalException("Error searching index", ex);
+        else {
+            try {
+                results = searcher.search(query, limit);
+            }
+            catch (IOException ex) {
+                throw new AkibanInternalException("Error searching index", ex);
+            }
         }
         position = 0;
     }

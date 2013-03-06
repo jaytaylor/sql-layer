@@ -458,7 +458,12 @@ public class ApiTestBase {
     }
 
     protected final QueryContext queryContext(PersistitAdapter adapter) {
-        return new SimpleQueryContext(adapter);
+        return new SimpleQueryContext(adapter) {
+                @Override
+                public ServiceManager getServiceManager() {
+                    return sm;
+                }
+            };
     }
 
     protected final AkibanInformationSchema ais() {

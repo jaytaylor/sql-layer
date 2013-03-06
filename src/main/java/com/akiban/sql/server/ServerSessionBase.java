@@ -39,6 +39,7 @@ import com.akiban.server.error.NoTransactionInProgressException;
 import com.akiban.server.error.TransactionAbortedException;
 import com.akiban.server.error.TransactionInProgressException;
 import com.akiban.server.error.TransactionReadOnlyException;
+import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.externaldata.ExternalDataService;
 import com.akiban.server.service.functions.FunctionsRegistry;
@@ -285,6 +286,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     @Override
     public SecurityService getSecurityService() {
         return reqs.securityService();
+    }
+
+    @Override
+    public ServiceManager getServiceManager() {
+        return reqs.serviceManager();
     }
 
     @Override

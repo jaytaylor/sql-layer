@@ -34,6 +34,7 @@ import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.akiban.server.types3.texpressions.TValidatedScalar;
@@ -51,6 +52,7 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ParameterNode;
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
@@ -102,6 +104,9 @@ import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.expression.UnboundExpressions;
+
+import com.akiban.server.service.text.FullTextQueryBuilder;
+import com.akiban.server.service.text.FullTextQueryExpression;
 
 import com.akiban.server.explain.*;
 
@@ -1054,6 +1059,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleUsingBloomFilter((UsingBloomFilter) node);
             else if (node instanceof BloomFilterFilter)
                 return assembleBloomFilterFilter((BloomFilterFilter) node);
+            else if (node instanceof FullTextScan)
+                return assembleFullTextScan((FullTextScan) node);
             else if (node instanceof InsertStatement) 
                 return assembleInsertStatement((InsertStatement)node);
             else if (node instanceof DeleteStatement)
@@ -1407,7 +1414,7 @@ public class OperatorAssembler extends BaseRule
                 stream = assembleStream(ancestorLookup.getInput());
                 RowType inputRowType = stream.rowType; // The index row type.
                 API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
-                if (!(inputRowType instanceof IndexRowType)) {
+                if (!isIndexRowType(inputRowType)) {
                     // Getting from branch lookup.
                     inputRowType = tableRowType(ancestorLookup.getDescendant());
                     flag = API.InputPreservationOption.KEEP_INPUT;
@@ -1456,7 +1463,7 @@ public class OperatorAssembler extends BaseRule
                 stream = assembleStream(branchLookup.getInput());
                 RowType inputRowType = stream.rowType; // The index row type.
                 API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
-                if (!(inputRowType instanceof IndexRowType)) {
+                if (!isIndexRowType(inputRowType)) {
                     // Getting from ancestor lookup.
                     inputRowType = tableRowType(branchLookup.getSource());
                     flag = API.InputPreservationOption.KEEP_INPUT;
@@ -1471,6 +1478,11 @@ public class OperatorAssembler extends BaseRule
             stream.unknownTypesPresent = true;
             stream.fieldOffsets = null;
             return stream;
+        }
+
+        protected static boolean isIndexRowType(RowType rowType) {
+            return ((rowType instanceof IndexRowType) ||
+                    (rowType instanceof HKeyRowType));
         }
 
         protected RowStream assembleMapJoin(MapJoin mapJoin) {
@@ -2141,6 +2153,59 @@ public class OperatorAssembler extends BaseRule
                 result[param.getParameterNumber()] = param.getType();
             }        
             return result;
+        }
+
+        protected RowStream assembleFullTextScan(FullTextScan textScan) {
+            RowStream stream = new RowStream();
+            FullTextQueryBuilder builder = new FullTextQueryBuilder(textScan.getIndex(),
+                                                                    schema.ais(),
+                                                                    planContext.getQueryContext());
+            FullTextQueryExpression queryExpression = assembleFullTextQuery(textScan.getQuery(),
+                                                                            builder);
+            stream.operator = builder.scanOperator(queryExpression, textScan.getLimit());
+            stream.rowType = stream.operator.rowType();
+            return stream;
+        }
+
+        protected FullTextQueryExpression assembleFullTextQuery(FullTextQuery query,
+                                                                FullTextQueryBuilder builder) {
+            if (query instanceof FullTextField) {
+                FullTextField field = (FullTextField)query;
+                ExpressionNode key = field.getKey();
+                TPreparedExpression expr = null;
+                String constant = null;
+                boolean isConstant = false;
+                if (key.isConstant()) {
+                    PValueSource pValueSource = key.getPreptimeValue().value();
+                    constant = (pValueSource == null || pValueSource.isNull()) ? null : pValueSource.getString();
+                    isConstant = true;
+                }
+                else {
+                    expr = newPartialAssembler.assembleExpression(key, null);
+                }
+                switch (field.getType()) {
+                case PARSE:
+                    if (isConstant)
+                        return builder.parseQuery(field.getIndexColumn(), constant);
+                    else
+                        return builder.parseQuery(field.getIndexColumn(), expr);
+                case MATCH:
+                    if (isConstant)
+                        return builder.matchQuery(field.getIndexColumn(), constant);
+                    else
+                        return builder.matchQuery(field.getIndexColumn(), expr);
+                }
+            }
+            else if (query instanceof FullTextBoolean) {
+                FullTextBoolean bquery = (FullTextBoolean)query;
+                List<FullTextQuery> operands = bquery.getOperands();
+                List<FullTextQueryExpression> queries = new ArrayList<>(operands.size());
+                for (FullTextQuery operand : operands) {
+                    queries.add(assembleFullTextQuery(operand, builder));
+                }
+                return builder.booleanQuery(queries, bquery.getTypes());
+            }
+            throw new UnsupportedSQLException("Full text query " + query, null);
         }
 
         /* Bindings-related state */

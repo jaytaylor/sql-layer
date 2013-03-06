@@ -34,13 +34,10 @@ import com.akiban.server.service.session.Session;
 
 import org.apache.lucene.search.Query;
 
-import java.util.List;
-
-public interface FullTextIndexService {
+/** Full service that does index maintenance and querying. */
+public interface FullTextIndexService extends FullTextIndexInfos {
     public long createIndex(Session session, IndexName name);
     public void dropIndex(Session session, IndexName name);
-    public Query parseQuery(QueryContext context, IndexName name, String query);
-    public RowType searchRowType(Session session, IndexName name);
     public Cursor searchIndex(QueryContext context, IndexName name, 
                               Query query, int limit);
 }

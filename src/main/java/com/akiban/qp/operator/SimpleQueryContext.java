@@ -29,6 +29,7 @@ package com.akiban.qp.operator;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.ErrorCode;
+import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.session.Session;
 
 import org.slf4j.Logger;
@@ -57,7 +58,15 @@ public class SimpleQueryContext extends QueryContextBase
     
     @Override
     public Session getSession() {
-    	return adapter.getSession();
+    	if (adapter != null)
+            return adapter.getSession();
+    	else
+            return null;
+    }
+
+    @Override
+    public ServiceManager getServiceManager() {
+        throw new UnsupportedOperationException();
     }
 
     @Override
