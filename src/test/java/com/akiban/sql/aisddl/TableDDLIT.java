@@ -35,7 +35,9 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.DuplicateSequenceNameException;
@@ -385,10 +387,59 @@ public class TableDDLIT extends AISDDLITBase {
         assertEquals (1, index.getKeyColumns().size());
     }
     
+    
     @Test (expected=DuplicateSequenceNameException.class)
     public void createDoubleSerialTable() throws Exception {
         String sql = "CREATE TABLE test.t13 (c1 SERIAL PRIMARY KEY, c2 SERIAL)";
         executeDDL(sql);
     }
+    
+    @Test
+    public void createIndexTable() throws Exception {
+        String sql = "CREATE TABLE test.t14 (c1 INT NOT NULL PRIMARY KEY, c2 INT NOT NULL, INDEX (c2))";
+        executeDDL(sql);
+        UserTable table = ais().getUserTable("test", "t14");
+        Index index = table.getIndex("c2");
+        assertNotNull(index);
+        assertFalse (index.isUnique());
+        assertEquals(1, index.getKeyColumns().size());
+        assertFalse(index.isGroupIndex());
+        assertFalse(index.isSpatial());
+    }
+    
+    @Test
+    public void createNamedIndexTable() throws Exception {
+        String sql = "CREATE TABLE test.t15 (c1 int NOT NULL, c2 INT NOT NULL, INDEX idx_c2 (c2))";
+        executeDDL(sql);
+        UserTable table = ais().getUserTable("test", "t15");
+        Index index = table.getIndex("idx_c2");
+        assertNotNull(index);
+        assertFalse (index.isUnique());
+        assertEquals(1, index.getKeyColumns().size());
+        assertFalse(index.isGroupIndex());
+        assertFalse(index.isSpatial());
+    }
 
+    @Test
+    public void createSpatialIndexTable() throws Exception {
+        String sql = "CREATE TABLE test.t16 (c1 decimal(11,7), c2 decimal(11,7), INDEX idx1 (z_order_lat_lon(c1, c2)))";
+        executeDDL (sql);
+        UserTable table = ais().getUserTable("test", "t16");
+        TableIndex index = table.getIndex("idx1");
+        assertNotNull(index);
+        assertFalse (index.isUnique());
+        assertEquals(2, index.getKeyColumns().size());
+        assertTrue (index.isSpatial());
+    }
+    
+    @Test
+    public void createFullTextIndexTable() throws Exception {
+        String sql = "CREATE TABLE test.t17 (c1 varchar(1000), INDEX t17_ft (FULL_TEXT(c1)))";
+        executeDDL(sql);
+        UserTable table = ais().getUserTable("test","t17");
+        assertNull (table.getIndex("t17_ft"));
+        assertEquals (1, table.getFullTextIndexes().size());
+        FullTextIndex index = table.getFullTextIndexes().iterator().next();
+        assertNotNull (table.getFullTextIndex("t17_ft"));
+    }
 }
