@@ -31,7 +31,7 @@
 - Include: all-types-schema.yaml
 
 ---
-- Statement: INSERT INTO all_types(year_field, boolean_field, numeric_field, double_field, bigint_field, integer_field, date_field, time_field, timestamp_field, varchar_field) VALUES ('2013', 'True', '1','1.5','1','1','2012-01-20', '04:30:10', '2012-01-20 04:30:10', '1');
+- Statement: INSERT INTO all_types(year_field, boolean_field, numeric_field, double_field, bigint_field, integer_field, date_field, time_field, timestamp_field, varchar_field) VALUES ('2013', 'True', '1','1.5','1','1','2012-01-20', '04:30:10', '2012-01-20 04:30:10', 'Sassafras');
 ---
 - Statement: >
     CREATE PROCEDURE test_all_types(OUT errors VARCHAR(256)) AS $$
@@ -56,7 +56,7 @@
         // if (!x.timeField.toString().equals("04:30:10")) obj.errors += "time_field=" + x.timeField + ",";
 
         if (x.timestampField.toString().equals("2012-01-20 04:30:10")) obj.errors += "timestampField=" + x.timestampField + ",";
-        if (!x.varcharField.equals("1")) obj.errors += "varcharField=" + x.varcharField + ",";
+        if (!x.varcharField.equals("Sassafras")) obj.errors += "varcharField=" + x.varcharField + ",";
       } 
       obj;
     $$ LANGUAGE javascript PARAMETER STYLE variables
