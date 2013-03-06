@@ -74,7 +74,8 @@ public class DirectClassLoader extends ClassLoader {
      * Implementation of {@link ClassLoader#loadClass(String, boolean)} to load
      * classes generated from the schema. These have been precompiled by
      * Javassist. As required to satisfy links in application code within the
-     * module these are reduced to byte code and defined here.
+     * module these are reduced to byte code and defined by the
+     * {@link #ensureGenerated()} method.
      * </p>
      */
     @Override
@@ -83,14 +84,12 @@ public class DirectClassLoader extends ClassLoader {
         if (name.startsWith(ClassBuilder.PACKAGE)) {
             ensureGenerated();
             cl = findLoadedClass(name);
+            if (resolve) {
+                resolveClass(cl);
+            }
+            return cl;
         }
-        if (cl == null) {
-            cl = getParent().loadClass(name);
-        }
-        if (resolve) {
-            resolveClass(cl);
-        }
-        return cl;
+        throw new ClassNotFoundException(name);
     }
 
     synchronized void ensureGenerated() {

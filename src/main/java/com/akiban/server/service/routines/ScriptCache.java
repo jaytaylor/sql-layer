@@ -500,21 +500,30 @@ public class ScriptCache
     }
     
     /**
-     * Extended URLClassLoader that uses a thread-private context class loader to load generated
-     * classes. There is one ScriptClassLoader per ScriptEngineManager.
+     * Extended URLClassLoader that uses a thread-private context class loader
+     * to load generated classes. There is one ScriptClassLoader per
+     * ScriptEngineManager.
      */
     static class ScriptClassLoader extends URLClassLoader {
 
         public ScriptClassLoader(URL[] urls, ClassLoader parent) {
             super(urls, parent);
         }
-        
+
         protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-            Class<?> cl = getParent().loadClass(name);
-            if (cl == null) {
+            Class<?> cl = null;
+            try {
+                // delegate to parent
+                getParent().loadClass(name);
+            } catch (ClassNotFoundException e1) {
                 ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
                 if (contextLoader != this) {
-                    cl = contextLoader.loadClass(name);
+                    try {
+                        // Attempt to load generated class
+                        cl = contextLoader.loadClass(name);
+                    } catch (ClassNotFoundException e2) {
+                        // fall through
+                    }
                 }
             }
             if (cl == null) {
@@ -525,6 +534,6 @@ public class ScriptCache
             }
             return cl;
         }
-        
+
     }
 }
