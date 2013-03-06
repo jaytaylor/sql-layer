@@ -518,7 +518,7 @@ public class ScriptCache
                 }
             }
             if (cl == null) {
-                throw new ClassNotFoundException(name);
+                cl = findClass(name);
             }
             if (resolve) {
                 resolveClass(cl);
