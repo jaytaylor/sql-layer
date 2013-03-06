@@ -54,6 +54,7 @@ public class MString extends TString
     public static final MString CHAR = new MString(TypeId.CHAR_ID, "char");
     public static final MString VARCHAR = new MString(TypeId.VARCHAR_ID, "varchar");
     public static final MString TINYTEXT = new MString(TypeId.LONGVARCHAR_ID, "tinytext", 256);
+    
     public static final MString MEDIUMTEXT = new MString(TypeId.LONGVARCHAR_ID, "mediumtext", 65535);
     public static final MString TEXT = new MString(TypeId.LONGVARCHAR_ID, "text", 16777215);
     public static final MString LONGTEXT = new MString(TypeId.LONGVARCHAR_ID, "longtext", Integer.MAX_VALUE); // TODO not big enough!
@@ -92,6 +93,15 @@ public class MString extends TString
             ((this == VARCHAR) && (other == CHAR));
     }
 
+    // Generally, text fields are rarely used in comparisons other than 'EQUAL'
+    // Hence, it is not necessary to widen the width to capture the widest type
+    // If the input does not fit into *this* width, it is definitely not going to be equal
+    // Might need to flag 'TRUNCATION' as an error, not warning
+    public TClass widestComparable()
+    {
+        return this;
+    }
+    
     @Override
     public void fromObject(TExecutionContext context, PValueSource in, PValueTarget out)
     {

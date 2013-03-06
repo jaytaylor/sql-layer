@@ -1,9 +1,9 @@
-SelectQuery@58c92268
-  ResultSet@7cf20761[name]
-    Project@75c2b15c[customers.name]
-      Select@410a4b6a[ANY(Subquery@add3d82)]
-        TableSource@5aafb9e5(customers)
+SelectQuery@4d0a9bca
+  ResultSet@737a1249[name]
+    Project@5346b1d9[customers.name]
+      Select@46464845[ANY(Subquery@3032ce0e)]
+        TableSource@305cfa03(customers)
 
-Subquery@add3d82
-  Project@42f12760[1 == VALUES[0]]
-    ExpressionsSource@70e7a15e([[$0], [customers.cid]])
+Subquery@3032ce0e
+  Project@577611da[1 == VALUES[0]]
+    ExpressionsSource@2821f3c3([[$0], [Cast(customers.cid AS MCOMPAT_ BIGINT(21) NOT NULL)]])

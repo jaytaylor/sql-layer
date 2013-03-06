@@ -70,6 +70,11 @@ public final class MBinary extends SimpleDtdTClass {
         return false;
     }
 
+    public TClass widestComparable()
+    {
+        return this;
+    }
+    
     @Override
     public void fromObject(TExecutionContext context, PValueSource in, PValueTarget out)
     {

@@ -41,7 +41,14 @@ import com.akiban.sql.types.TypeId;
 public class MApproximateNumber extends SimpleDtdTClass
 {
     public static final TClass DOUBLE = new MApproximateNumber("double", TypeId.DOUBLE_ID, PUnderlying.DOUBLE, TParsers.DOUBLE, NumericFormatter.FORMAT.DOUBLE, 22);
-    public static final TClass DOUBLE_UNSIGNED = new MApproximateNumber("double unsigned", TypeId.DOUBLE_UNSIGNED_ID, PUnderlying.DOUBLE, TParsers.DOUBLE, NumericFormatter.FORMAT.DOUBLE, 22);
+    public static final TClass DOUBLE_UNSIGNED = new MApproximateNumber("double unsigned", TypeId.DOUBLE_UNSIGNED_ID, PUnderlying.DOUBLE, TParsers.DOUBLE, NumericFormatter.FORMAT.DOUBLE, 22)
+    {
+        public TClass widestComparable()
+        {
+            return MNumeric.DECIMAL;
+        }
+    };
+
     public static final TClass FLOAT = new MApproximateNumber("float", TypeId.REAL_ID, PUnderlying.FLOAT, TParsers.FLOAT,  NumericFormatter.FORMAT.FLOAT, 12);
     public static final TClass FLOAT_UNSIGNED = new MApproximateNumber("float unsigned", TypeId.REAL_UNSIGNED_ID, PUnderlying.FLOAT, TParsers.FLOAT, NumericFormatter.FORMAT.FLOAT, 12);
     
@@ -87,5 +94,10 @@ public class MApproximateNumber extends SimpleDtdTClass
     @Override
     protected void validate(TInstance instance) {
         // TODO
+    }
+    
+    public TClass widestComparable()
+    {
+        return DOUBLE;
     }
 }
