@@ -114,20 +114,15 @@ public abstract class MWeek extends TScalarBase
         int date = inputs.get(0).getInt32();
         long ymd[] = MDatetimes.decodeDate(date);
         int mode = getMode(context, inputs);
-        if (!MDatetimes.isValidDatetime(ymd) || mode < 0)
+        if (!MDatetimes.isValidDatetime(ymd) || mode < 0 || MDatetimes.isZeroDayMonth(ymd))
         {
             context.warnClient(new InvalidDateFormatException("Invalid DATE value " , date + ""));
             output.putNull();
         }
         else
         {
-            try { 
-                output.putInt32(modes[(int) mode].getWeek(new MutableDateTime(DateTimeZone.forID(context.getCurrentTimezone())),
-                                                      (int)ymd[0], (int)ymd[1], (int)ymd[2]));
-            } catch (IllegalFieldValueException ex) {
-                context.warnClient(new InvalidDateFormatException (ex.getMessage(), date+""));
-                output.putNull();
-            }
+            output.putInt32(modes[(int) mode].getWeek(new MutableDateTime(DateTimeZone.forID(context.getCurrentTimezone())),
+                                                  (int)ymd[0], (int)ymd[1], (int)ymd[2]));
         }
     }
 
