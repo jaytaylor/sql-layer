@@ -29,7 +29,9 @@ package com.akiban.rest.resources;
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.ais.protobuf.ProtobufWriter;
+import com.akiban.ais.util.UuidAssigner;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.server.entity.changes.DDLBasedSpaceModifier;
@@ -49,6 +51,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -110,6 +113,7 @@ public final class ModelResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response parse(@Context HttpServletRequest request,
                           @PathParam("table") String table,
+                          @QueryParam("create") final String create,
                           final InputStream postInput) {
         final TableName tableName = ResourceHelper.parseTableName(request, table);
         checkTableAccessible(reqs.securityService, request, tableName);
@@ -118,12 +122,23 @@ public final class ModelResource {
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
+                        boolean doCreate = Boolean.parseBoolean(create);
                         ObjectMapper m = new ObjectMapper();
                         JsonNode node = m.readTree(postInput);
-                        EntityParser parser = new EntityParser (reqs.dxlService);
+                        EntityParser parser = new EntityParser();
                         try (Session session = reqs.sessionService.createSession()) {
-                            parser.parse(session, tableName, node);
-                            Space currSpace = spaceForAIS(session, tableName.getSchemaName());
+                            final UserTable created;
+                            if(doCreate) {
+                                created = parser.parseAndCreate(reqs.dxlService.ddlFunctions(),
+                                                                session,
+                                                                tableName,
+                                                                node);
+                            } else {
+                                created = parser.parse(tableName, node);
+                                UuidAssigner uuidAssigner = new UuidAssigner();
+                                created.getAIS().traversePostOrder(uuidAssigner);
+                            }
+                            Space currSpace = spaceForAIS(created.getAIS(), tableName.getSchemaName());
                             writer.write(currSpace.toJson());
                         }
                     }
@@ -194,7 +209,10 @@ public final class ModelResource {
     }
 
     private Space spaceForAIS(Session session, String schema) {
-        AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(session);
+        return spaceForAIS(reqs.dxlService.ddlFunctions().getAIS(session), schema);
+    }
+
+    private Space spaceForAIS(AkibanInformationSchema ais, String schema) {
         ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
         return AisToSpace.create(ais, Space.requireUUIDs);
     }

@@ -44,29 +44,30 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.session.Session;
 
 public final class EntityParser {
-
-    private DDLFunctions  ddlFunctions;
     private static final Logger LOG = LoggerFactory.getLogger(EntityParser.class);
     
-    public EntityParser (DXLService dxlService) {
-        this.ddlFunctions = dxlService.ddlFunctions();
-    }    
+    public EntityParser () {
+    }
         
-    public void parse (final Session session, TableName tableName, JsonNode node) throws IOException {
-
+    public UserTable parse (TableName tableName, JsonNode node) throws IOException {
         NewAISBuilder builder = AISBBasedBuilder.create(tableName.getSchemaName());
-
         processContainer (node, builder, tableName);
+        return builder.ais().getUserTable(tableName);
+    }
 
-        UserTable table = builder.ais().getUserTable(tableName);
-
-        table.traverseTableAndDescendants(new NopVisitor() {
+    public UserTable create (final DDLFunctions ddlFunctions, final Session session, UserTable newRoot) throws IOException {
+        newRoot.traverseTableAndDescendants(new NopVisitor() {
             @Override
             public void visitUserTable(UserTable table) {
                 ddlFunctions.createTable(session, table);
-                
             }
         });
+        return ddlFunctions.getUserTable(session, newRoot.getName());
+    }
+
+    public UserTable parseAndCreate (final DDLFunctions ddlFunctions, final Session session,
+                                     TableName tableName, JsonNode node) throws IOException {
+        return create(ddlFunctions, session, parse(tableName, node));
     }
     
     private void processContainer (JsonNode node, NewAISBuilder builder, TableName tableName) throws IOException {
