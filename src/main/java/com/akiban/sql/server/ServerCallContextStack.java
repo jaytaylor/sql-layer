@@ -39,14 +39,20 @@ public class ServerCallContextStack
     public static class Entry {
         private ServerQueryContext context;
         private ServerRoutineInvocation invocation;
+        private ClassLoader contextClassLoader;
 
         private Entry(ServerQueryContext context, ServerRoutineInvocation invocation) {
             this.context = context;
             this.invocation = invocation;
+            this.contextClassLoader = Thread.currentThread().getContextClassLoader();
         }
 
         public ServerQueryContext getContext() {
             return context;
+        }
+        
+        public ClassLoader getContextClassLoader() {
+            return contextClassLoader;
         }
 
         public ServerRoutineInvocation getInvocation() {
@@ -80,5 +86,6 @@ public class ServerCallContextStack
     public static void pop(ServerQueryContext context, ServerRoutineInvocation invocation) {
         Entry last = stack().removeLast();
         assert (last.getContext() == context);
+        Thread.currentThread().setContextClassLoader(last.getContextClassLoader());
     }
 }

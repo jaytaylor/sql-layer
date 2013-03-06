@@ -26,26 +26,28 @@
 
 package com.akiban.sql.embedded;
 
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.row.Row;
-import com.akiban.sql.server.ServerJavaValues;
-import com.akiban.sql.server.ServerQueryContext;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PValueSource;
-
-import java.sql.*;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
+import java.sql.*;
 import java.util.Calendar;
 import java.util.Map;
 
-public class JDBCResultSet implements ResultSet
+import com.akiban.direct.AbstractDirectObject;
+import com.akiban.direct.Direct;
+import com.akiban.direct.DirectResultSet;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.row.Row;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.sql.server.ServerJavaValues;
+import com.akiban.sql.server.ServerQueryContext;
+
+public class JDBCResultSet implements DirectResultSet
 {
     protected final JDBCStatement statement;
     protected final JDBCResultSetMetaData metaData;
@@ -1518,5 +1520,19 @@ public class JDBCResultSet implements ResultSet
     //@Override // JDK 1.7
     public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
         return getObject(findColumn(columnLabel), type);
+    }
+    
+    public AbstractDirectObject getEntity(final Class<?> c) throws SQLException {
+
+        AbstractDirectObject o = Direct.objectForRow(c);
+        if (o != null) {
+            o.setResults(values, this);
+            return o;
+        }
+        throw new JDBCException("No entity class for row");
+    }
+    
+    public boolean hasRow() {
+        return row != null;
     }
 }
