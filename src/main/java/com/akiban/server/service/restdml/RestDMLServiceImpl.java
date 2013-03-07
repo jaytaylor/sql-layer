@@ -29,8 +29,13 @@ package com.akiban.server.service.restdml;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexName;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ajdax.Ajdax;
+import com.akiban.ajdax.JoinFields;
+import com.akiban.ajdax.JoinStrategy;
 import com.akiban.server.Quote;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.explain.format.JsonFormatter;
@@ -53,8 +58,14 @@ import com.akiban.sql.embedded.JDBCConnection;
 import com.akiban.sql.embedded.JDBCParameterMetaData;
 import com.akiban.sql.embedded.JDBCResultSet;
 import com.akiban.util.AkibanAppender;
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -62,11 +73,15 @@ import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Properties;
 
 import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
@@ -211,6 +226,43 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
+    public void runNextedSQL(PrintWriter writer, HttpServletRequest request, String sql, String schema) throws SQLException, IOException {
+        JsonGenerator generator = factory.createJsonGenerator(writer);
+        try (JDBCConnection conn = jdbcConnection(request)) {
+            conn.setProperty("OutputFormat", "json");
+            if (schema != null)
+                conn.setProperty("database", schema);
+            try (Statement statement = conn.createStatement()) {
+                try (ResultSet rs = statement.executeQuery(sql)) {
+                    writeNestedResults(rs, generator);
+                }
+            }
+        }
+        generator.flush();
+    }
+
+    private void writeNestedResults(ResultSet rs, JsonGenerator out) throws SQLException, IOException {
+        ResultSetMetaData meta = rs.getMetaData();
+        out.writeStartArray();
+        while (rs.next()) {
+            out.writeStartObject();
+            for (int i = 1, max = meta.getColumnCount(); i <= max; ++i) {
+                Object value = rs.getObject(i);
+                String columnName = meta.getColumnName(i);
+                if (value instanceof ResultSet) {
+                    out.writeFieldName(columnName);
+                    writeNestedResults((ResultSet)value, out);
+                }
+                else {
+                    out.writeObjectField(columnName, value);
+                }
+            }
+            out.writeEndObject();
+        }
+        out.writeEndArray();
+    }
+
+    @Override
     public void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
                               TableName procName, Map<String,List<String>> params) throws SQLException {
         try (JDBCConnection conn = jdbcConnection(request);
@@ -256,6 +308,43 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             }
             appender.append('}');
         }
+    }
+
+    @Override
+    public String ajdaxToSQL(TableName tableName, String ajdax) throws IOException {
+        final AkibanInformationSchema ais;
+        try (Session session = sessionService.createSession();
+             CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+            ais = dxlService.ddlFunctions().getAIS(session);
+            txn.commit();
+        }
+        JsonParser json = factory.createJsonParser(ajdax);
+        final String schema = tableName.getSchemaName();
+        // the JoinStrategy will assume all tables are in the same schema
+        JoinStrategy joinStrategy = new JoinStrategy() {
+            @Override
+            public Collection<? extends JoinFields> getJoins(String parent, String child) {
+                UserTable parentTable = (UserTable) ais.getTable(schema, parent);
+                if (parentTable == null)
+                    throw new NoSuchElementException("parent table: " + parent);
+                Join groupingJoin = findGroupingJoin(parentTable, child);
+                return Lists.transform(groupingJoin.getJoinColumns(), new Function<JoinColumn, JoinFields>() {
+                    @Override
+                    public JoinFields apply(JoinColumn input) {
+                        return new JoinFields(input.getParent().getName(), input.getChild().getName());
+                    }
+                });
+            }
+
+            private Join findGroupingJoin(UserTable parentTable, String childTable) {
+                for (Join join : parentTable.getChildJoins()) {
+                    if (join.getChild().getName().getTableName().equals(childTable))
+                        return join;
+                }
+                throw new NoSuchElementException("no child named " + childTable + " for table " + parentTable);
+            }
+        };
+        return Ajdax.createSQL(tableName.getTableName(), json, joinStrategy);
     }
 
     public interface ProcessStatement {
@@ -445,4 +534,12 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         writer.write(String.format("{\"count\":%d}", count));
     }
 
+
+    private static JsonFactory factory = createFactory();
+
+    private static JsonFactory createFactory() {
+        JsonFactory factory = new JsonFactory();
+        factory.setCodec(new ObjectMapper());
+        return factory;
+    }
 }

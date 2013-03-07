@@ -102,6 +102,45 @@ public class EntityResource {
                 .build();
     }
 
+    @GET
+    @Path("/ajdax/to-sql")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response ajdaxToSQL(@Context final HttpServletRequest request,
+                          @PathParam("entity") String entity,
+                          @QueryParam("json") final String query) {
+        final TableName tableName = parseTableName(request, entity);
+        checkTableAccessible(reqs.securityService, request, tableName);
+        return RestResponseBuilder
+                .forRequest(request)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        writer.write(reqs.restDMLService.ajdaxToSQL(tableName, query));
+                    }
+                })
+                .build();
+    }
+
+    @GET
+    @Path("/ajdax/query")
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
+    public Response ajdaxQuery(@Context final HttpServletRequest request,
+                          @PathParam("entity") String entity,
+                          @QueryParam("json") final String query) {
+        final TableName tableName = parseTableName(request, entity);
+        checkTableAccessible(reqs.securityService, request, tableName);
+        return RestResponseBuilder
+                .forRequest(request)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        String sql = reqs.restDMLService.ajdaxToSQL(tableName, query);
+                        reqs.restDMLService.runNextedSQL(writer, request, sql, tableName.getSchemaName());
+                    }
+                })
+                .build();
+    }
+
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
