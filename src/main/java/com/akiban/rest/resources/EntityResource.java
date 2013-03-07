@@ -135,7 +135,7 @@ public class EntityResource {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
                         String sql = reqs.restDMLService.ajdaxToSQL(tableName, query);
-                        reqs.restDMLService.runNextedSQL(writer, request, sql, tableName.getSchemaName());
+                        reqs.restDMLService.runSQL(writer, request, sql, tableName.getSchemaName());
                     }
                 })
                 .build();

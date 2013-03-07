@@ -67,7 +67,6 @@ import com.google.common.base.Functions;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
@@ -79,8 +78,6 @@ import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collection;
@@ -211,13 +208,13 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
-    public void runSQL(PrintWriter writer, HttpServletRequest request, String sql) throws SQLException {
-        runSQLFlat(writer, request, Collections.singletonList(sql), OutputType.ARRAY, CommitMode.AUTO);
+    public void runSQL(PrintWriter writer, HttpServletRequest request, String sql, String schema) throws SQLException {
+        runSQLFlat(writer, request, Collections.singletonList(sql), schema, OutputType.ARRAY, CommitMode.AUTO);
     }
 
     @Override
     public void runSQL(PrintWriter writer, HttpServletRequest request, List<String> sql) throws SQLException {
-        runSQLFlat(writer, request, sql, OutputType.OBJECT, CommitMode.MANUAL);
+        runSQLFlat(writer, request, sql, null, OutputType.OBJECT, CommitMode.MANUAL);
     }
 
     @Override
@@ -230,43 +227,6 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         try (JDBCConnection conn = jdbcConnection(request)) {
             new JsonFormatter().format(conn.explain(sql), writer);
         }
-    }
-
-    @Override
-    public void runNextedSQL(PrintWriter writer, HttpServletRequest request, String sql, String schema) throws SQLException, IOException {
-        JsonGenerator generator = factory.createJsonGenerator(writer);
-        try (JDBCConnection conn = jdbcConnection(request)) {
-            conn.setProperty("OutputFormat", "json");
-            if (schema != null)
-                conn.setProperty("database", schema);
-            try (Statement statement = conn.createStatement()) {
-                try (ResultSet rs = statement.executeQuery(sql)) {
-                    writeNestedResults(rs, generator);
-                }
-            }
-        }
-        generator.flush();
-    }
-
-    private void writeNestedResults(ResultSet rs, JsonGenerator out) throws SQLException, IOException {
-        ResultSetMetaData meta = rs.getMetaData();
-        out.writeStartArray();
-        while (rs.next()) {
-            out.writeStartObject();
-            for (int i = 1, max = meta.getColumnCount(); i <= max; ++i) {
-                Object value = rs.getObject(i);
-                String columnName = meta.getColumnName(i);
-                if (value instanceof ResultSet) {
-                    out.writeFieldName(columnName);
-                    writeNestedResults((ResultSet)value, out);
-                }
-                else {
-                    out.writeObjectField(columnName, value);
-                }
-            }
-            out.writeEndObject();
-        }
-        out.writeEndArray();
     }
 
     @Override
@@ -414,10 +374,12 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     private void runSQLFlat(PrintWriter writer,
-            HttpServletRequest request, final List<String> sqlList,
+            HttpServletRequest request, final List<String> sqlList, String schema,
             OutputType outputType, CommitMode commitMode) throws SQLException {
-        try (Connection conn = jdbcConnection(request);
+        try (JDBCConnection conn = jdbcConnection(request);
               final Statement s = conn.createStatement()) {
+            if (schema != null)
+                conn.setProperty("database", schema);
             processSQL (conn, writer, outputType, commitMode,
                     new ProcessStatement() {
                         private int offset = 0;
