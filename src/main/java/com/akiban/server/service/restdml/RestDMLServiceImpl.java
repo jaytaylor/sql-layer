@@ -381,7 +381,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                 }
             }
         });
-        return Ajdax.createSQL(tableName.getTableName(), json, joinStrategy, Functions.forMap(additionalActionsMap));
+        Function<String, Action> additionalActions = Functions.forMap(additionalActionsMap, null);
+        return Ajdax.createSQL(tableName.getTableName(), json, joinStrategy, additionalActions);
     }
 
     public interface ProcessStatement {
