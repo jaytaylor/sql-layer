@@ -44,7 +44,7 @@ public interface RestDMLService {
     public void delete(PrintWriter writer, TableName tableName, String pks);
     public void update(PrintWriter writer, TableName tableName, String values, JsonNode node);
 
-    public void runSQL(PrintWriter writer, HttpServletRequest request, String sql) throws SQLException;
+    public void runSQL(PrintWriter writer, HttpServletRequest request, String sql, String schema) throws SQLException;
     public void runSQL(PrintWriter writer, HttpServletRequest request, List<String> sql) throws SQLException;
     public void runSQLParameter(PrintWriter writer,HttpServletRequest request, String SQL, List<String> parameters) throws SQLException;
     public void explainSQL(PrintWriter writer, HttpServletRequest request, String sql) throws IOException, SQLException;
@@ -55,4 +55,6 @@ public interface RestDMLService {
     public void fullTextSearch(PrintWriter writer, IndexName indexName, Integer depth, String query, Integer limit);
     // TODO: Temporary.
     public void refreshFullTextIndex(PrintWriter writer, IndexName indexName);
+
+    public String ajdaxToSQL(TableName tableName, String ajdax) throws IOException;
 }
