@@ -27,13 +27,17 @@
 package com.akiban.server.service.restdml;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ajdax.Action;
 import com.akiban.ajdax.Ajdax;
+import com.akiban.ajdax.AjdaxException;
+import com.akiban.ajdax.AjdaxWriter;
 import com.akiban.ajdax.JoinFields;
 import com.akiban.ajdax.JoinStrategy;
 import com.akiban.server.Quote;
@@ -59,12 +63,14 @@ import com.akiban.sql.embedded.JDBCParameterMetaData;
 import com.akiban.sql.embedded.JDBCResultSet;
 import com.akiban.util.AkibanAppender;
 import com.google.common.base.Function;
+import com.google.common.base.Functions;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.JsonToken;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import javax.servlet.http.HttpServletRequest;
@@ -79,6 +85,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -324,7 +331,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         JoinStrategy joinStrategy = new JoinStrategy() {
             @Override
             public Collection<? extends JoinFields> getJoins(String parent, String child) {
-                UserTable parentTable = (UserTable) ais.getTable(schema, parent);
+                UserTable parentTable = ais.getUserTable(schema, parent);
                 if (parentTable == null)
                     throw new NoSuchElementException("parent table: " + parent);
                 Join groupingJoin = findGroupingJoin(parentTable, child);
@@ -344,7 +351,37 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                 throw new NoSuchElementException("no child named " + childTable + " for table " + parentTable);
             }
         };
-        return Ajdax.createSQL(tableName.getTableName(), json, joinStrategy);
+        Map<String, Action> additionalActionsMap = new HashMap<>();
+        additionalActionsMap.put("fields", new Action() {
+            @Override
+            public void apply(JsonParser input, AjdaxWriter output, String tableName) throws IOException {
+                JsonToken token = input.nextToken();
+                if (token == JsonToken.VALUE_STRING) {
+                    String value = input.getText();
+                    if (value.equalsIgnoreCase("all")) {
+                        UserTable table = ais.getUserTable(schema, tableName);
+                        for (Column column : table.getColumns())
+                            output.addScalar(column.getName());
+                    }
+                    else {
+                        throw new AjdaxException("illegal string value for @fields (must be \"all\"): " + value);
+                    }
+                }
+                else if (token == JsonToken.START_ARRAY) {
+                    while (input.nextToken() != JsonToken.END_ARRAY) {
+                        if (input.getCurrentToken() != JsonToken.VALUE_STRING) {
+                            throw new AjdaxException("illegal value for @attributes list: "
+                                    + input.getText() + " (" + token + ')');
+                        }
+                        output.addScalar(input.getText());
+                    }
+                }
+                else {
+                    throw new AjdaxException("illegal value for @fields: " + input.getText() + " (" + token + ')');
+                }
+            }
+        });
+        return Ajdax.createSQL(tableName.getTableName(), json, joinStrategy, Functions.forMap(additionalActionsMap));
     }
 
     public interface ProcessStatement {
