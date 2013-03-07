@@ -52,7 +52,7 @@ public class EntityParserIT extends ITBase {
     
     @Before
     public void createParser() {
-        parser = new EntityParser(dxl());
+        parser = new EntityParser();
     }
  
     
@@ -63,7 +63,7 @@ public class EntityParserIT extends ITBase {
         String postInput = "{\"cid\": 3, \"first_name\": \"Bobby\",\"last_name\": \"Jones\"}";
         ObjectMapper m = new ObjectMapper();
         JsonNode node = m.readTree(postInput);
-        parser.parse(session(), tableName, node);
+        parser.parseAndCreate(ddl(), session(), tableName, node);
         
         AkibanInformationSchema ais = dxl().ddlFunctions().getAIS(session());
         
@@ -83,7 +83,7 @@ public class EntityParserIT extends ITBase {
         String postInput = "{\"oid\" : 103, \"cid\" : 2, \"odate\": \"2012-12-31 12:00:00\"}";
         ObjectMapper m = new ObjectMapper();
         JsonNode node = m.readTree(postInput);
-        parser.parse(session(), tableName, node);
+        parser.parseAndCreate(ddl(), session(), tableName, node);
         
         AkibanInformationSchema ais = dxl().ddlFunctions().getAIS(session());
         assertNotNull(ais.getTable(tableName));
@@ -98,7 +98,7 @@ public class EntityParserIT extends ITBase {
                 "\"test.addresses\": {\"aid\": 104, \"cid\": 6, \"state\": \"MA\", \"city\": \"Boston\"}}";
         ObjectMapper m = new ObjectMapper();
         JsonNode node = m.readTree(postInput);
-        parser.parse(session(), tableName, node);
+        parser.parseAndCreate(ddl(), session(), tableName, node);
         AkibanInformationSchema ais = dxl().ddlFunctions().getAIS(session());
         
         assertNotNull (ais.getTable(tableName));
@@ -129,7 +129,7 @@ public class EntityParserIT extends ITBase {
         String postInput ="{\"cid\": 6, \"first_name\": \"John\", \"ordered\": false, \"order_date\": null, \"tax_rate\": 0.01}";
         ObjectMapper m = new ObjectMapper();
         JsonNode node = m.readTree(postInput);
-        parser.parse(session(), tableName, node);
+        parser.parseAndCreate(ddl(), session(), tableName, node);
         AkibanInformationSchema ais = dxl().ddlFunctions().getAIS(session());
 
         assertNotNull (ais.getTable(tableName));
@@ -155,7 +155,7 @@ public class EntityParserIT extends ITBase {
                 "\"orders\": {\"oid\" : 103, \"cid\" : 2, \"odate\": \"2012-12-31 12:00:00\"}}";
         ObjectMapper m = new ObjectMapper();
         JsonNode node = m.readTree(postInput);
-        parser.parse(session(), tableName, node);
+        parser.parseAndCreate(ddl(), session(), tableName, node);
         AkibanInformationSchema ais = dxl().ddlFunctions().getAIS(session());
         
         assertNotNull(ais.getTable(new TableName("test", "customers")));
@@ -183,7 +183,7 @@ public class EntityParserIT extends ITBase {
                 "{\"aid\": 105, \"cid\": 6, \"state\": \"MA\", \"city\": \"Boston\"}]}";
         ObjectMapper m = new ObjectMapper();
         JsonNode node = m.readTree(postInput);
-        parser.parse(session(), tableName, node);
+        parser.parseAndCreate(ddl(), session(), tableName, node);
         AkibanInformationSchema ais = dxl().ddlFunctions().getAIS(session());
         
         assertNotNull (ais.getTable(tableName));

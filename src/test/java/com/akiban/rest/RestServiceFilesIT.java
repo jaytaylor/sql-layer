@@ -73,12 +73,13 @@ public class RestServiceFilesIT extends ITBase {
         public final String requestBody;
         public final String expectedHeader;
         public final String expectedResponse;
+        public final boolean expectedIgnore;
         public final String checkURI;
         public final String checkExpected;
 
         private CaseParams(String subDir, String caseName,
                            String requestMethod, String requestURI, String requestBody,
-                           String expectedHeader, String expectedResponse,
+                           String expectedHeader, String expectedResponse, boolean expectedIgnore,
                            String checkURI, String checkExpected) {
             this.subDir = subDir;
             this.caseName = caseName;
@@ -87,6 +88,7 @@ public class RestServiceFilesIT extends ITBase {
             this.requestBody = requestBody;
             this.expectedHeader = expectedHeader;
             this.expectedResponse = expectedResponse;
+            this.expectedIgnore = expectedIgnore;
             this.checkURI = checkURI;
             this.checkExpected = checkExpected;
         }
@@ -149,6 +151,7 @@ public class RestServiceFilesIT extends ITBase {
                 String body = dumpFileIfExists(new File(basePath + ".body"));
                 String header = dumpFileIfExists(new File(basePath + ".expected_header"));
                 String expected = dumpFileIfExists(new File(basePath + ".expected"));
+                boolean expectedIgnore = new File(basePath + ".expected_ignore").exists();
                 String checkURI = dumpFileIfExists(new File(basePath + ".check"));
                 String checkExpected = dumpFileIfExists(new File(basePath + ".check_expected"));
 
@@ -162,7 +165,9 @@ public class RestServiceFilesIT extends ITBase {
 
                 result.add(Parameterization.create(
                         subDirName + File.separator + caseName,
-                        new CaseParams(subDirName, caseName, method, uri, body, header, expected, checkURI, checkExpected)
+                        new CaseParams(subDirName, caseName, method, uri, body,
+                                       header, expected, expectedIgnore,
+                                       checkURI, checkExpected)
                 ));
             }
         }
@@ -249,7 +254,9 @@ public class RestServiceFilesIT extends ITBase {
 
             // Response
             String actual = getOutput(httpConn);
-            compareExpected(caseParams.requestMethod + " response", caseParams.expectedResponse, actual);
+            if(!caseParams.expectedIgnore) {
+                compareExpected(caseParams.requestMethod + " response", caseParams.expectedResponse, actual);
+            }
         } finally {
             httpConn.disconnect();
         }
