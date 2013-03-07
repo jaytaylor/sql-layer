@@ -102,12 +102,12 @@ public class EntityResource {
                 .build();
     }
 
-    @GET
+    @POST
     @Path("/ajdax/to-sql")
-    @Produces(MediaType.TEXT_PLAIN)
+    @Consumes(MEDIATYPE_JSON_JAVASCRIPT)
     public Response ajdaxToSQL(@Context final HttpServletRequest request,
                           @PathParam("entity") String entity,
-                          @QueryParam("json") final String query) {
+                          final String query) {
         final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
         return RestResponseBuilder
