@@ -58,6 +58,7 @@ public interface NewAISBuilder extends NewAISProvider {
      * @return
      */
     NewUserTableBuilder getUserTable();
+    NewUserTableBuilder getUserTable(TableName table);
    
     /**
      * create a new sequence
