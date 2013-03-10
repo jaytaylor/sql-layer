@@ -79,6 +79,7 @@ abstract class ExecutableCallStatement extends ExecutableStatement
         case JAVA:
             return ExecutableJavaMethod.executableStatement(invocation, parameterMetaData, context);
         case SCRIPT_FUNCTION_JAVA:
+        case SCRIPT_FUNCTION_JSON:
             return ExecutableScriptFunctionJavaRoutine.executableStatement(invocation, parameterMetaData, context);
         case SCRIPT_BINDINGS:
             return ExecutableScriptBindingsRoutine.executableStatement(invocation, parameterMetaData, context);
