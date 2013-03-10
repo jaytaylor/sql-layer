@@ -247,7 +247,31 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         try (JDBCConnection conn = jdbcConnection(request);
              JDBCCallableStatement call = conn.prepareCall(procName)) {
             Routine routine = call.getRoutine();
-            Routine.CallingConvention callingConvention = routine.getCallingConvention();
+            switch (routine.getCallingConvention()) {
+            case SCRIPT_FUNCTION_JSON:
+                callJsonProcedure(writer, request, jsonpArgName, call, params, paramBytes);
+                break;
+            default:
+                callDefaultProcedure(writer, request, jsonpArgName, call, params, paramBytes);
+                break;
+            }
+        }
+    }
+
+    protected void callJsonProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
+                                     JDBCCallableStatement call, Map<String,List<String>> params, byte[] paramBytes) throws SQLException {
+        String json = null;
+        if (paramBytes != null) {
+            json = new String(paramBytes, "UTF-8");
+        }
+        call.setString(1, json);
+        call.execute();
+        writer.append(call.getString(2));
+    }
+
+    protected void callDefaultProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
+                                        JDBCCallableStatement call, Map<String,List<String>> params, byte[] paramBytes) throws SQLException {
+        if (params != null) {
             for (Map.Entry<String,List<String>> entry : params.entrySet()) {
                 if (jsonpArgName.equals(entry.getKey()))
                     continue;
@@ -255,40 +279,44 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                     throw new WrongExpressionArityException(1, entry.getValue().size());
                 call.setString(entry.getKey(), entry.getValue().get(0));
             }
-            boolean results = call.execute();
-            AkibanAppender appender = AkibanAppender.of(writer);
-            appender.append('{');
-            boolean first = true;
-            JDBCParameterMetaData md = (JDBCParameterMetaData)call.getParameterMetaData();
-            for (int i = 1; i <= md.getParameterCount(); i++) {
-                String name;
-                switch (md.getParameterMode(i)) {
-                case ParameterMetaData.parameterModeOut:
-                case ParameterMetaData.parameterModeInOut:
-                    name = md.getParameterName(i);
-                    if (name == null)
-                        name = String.format("arg%d", i);
-                    if (first)
-                        first = false;
-                    else
-                        appender.append(',');
-                    appender.append('"');
-                    Quote.DOUBLE_QUOTE.append(appender, name);
-                    appender.append("\":");
-                    call.formatAsJson(i, appender);
-                    break;
-                }
-            }
-            int nresults = 0;
-            while(results) {
-                beginResultSetArray(appender, first, nresults++);
-                first = false;
-                collectResults((JDBCResultSet) call.getResultSet(), appender);
-                endResultSetArray(appender);
-                results = call.getMoreResults();
-            }
-            appender.append('}');
         }
+        if (paramBytes != null) {
+            // TODO: Content encoding charset from request?
+            call.setString(1, new String(paramBytes, "UTF-8"));
+        }
+        boolean results = call.execute();
+        AkibanAppender appender = AkibanAppender.of(writer);
+        appender.append('{');
+        boolean first = true;
+        JDBCParameterMetaData md = (JDBCParameterMetaData)call.getParameterMetaData();
+        for (int i = 1; i <= md.getParameterCount(); i++) {
+            String name;
+            switch (md.getParameterMode(i)) {
+            case ParameterMetaData.parameterModeOut:
+            case ParameterMetaData.parameterModeInOut:
+                name = md.getParameterName(i);
+                if (name == null)
+                    name = String.format("arg%d", i);
+                if (first)
+                    first = false;
+                else
+                    appender.append(',');
+                appender.append('"');
+                Quote.DOUBLE_QUOTE.append(appender, name);
+                appender.append("\":");
+                call.formatAsJson(i, appender);
+                break;
+            }
+        }
+        int nresults = 0;
+        while(results) {
+            beginResultSetArray(appender, first, nresults++);
+            first = false;
+            collectResults((JDBCResultSet) call.getResultSet(), appender);
+            endResultSetArray(appender);
+            results = call.getMoreResults();
+        }
+        appender.append('}');
     }
 
     @Override
