@@ -232,6 +232,17 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     @Override
     public void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
                               TableName procName, Map<String,List<String>> params) throws SQLException {
+        callProcedure(writer, request, jsonpArgName, procName, params, null);
+    }
+
+    @Override
+    public void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
+                              TableName procName, byte[] paramBytes) throws SQLException {
+        callProcedure(writer, request, jsonpArgName, procName, null, paramBytes);
+    }
+
+    protected void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
+                                 TableName procName, Map<String,List<String>> params, byte[] paramBytes) throws SQLException {
         try (JDBCConnection conn = jdbcConnection(request);
              JDBCCallableStatement call = conn.prepareCall(procName)) {
             for (Map.Entry<String,List<String>> entry : params.entrySet()) {

@@ -31,7 +31,9 @@ import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.PathParam;
@@ -56,9 +58,9 @@ public class ProcedureCallResource {
 
     @GET
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
-    public Response getQueryResults(@Context final HttpServletRequest request,
-                                    @PathParam("proc") String proc,
-                                    @Context final UriInfo uri) throws Exception {
+    public Response getCall(@Context final HttpServletRequest request,
+                            @PathParam("proc") String proc,
+                            @Context final UriInfo uri) throws Exception {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
         return RestResponseBuilder
@@ -72,4 +74,25 @@ public class ProcedureCallResource {
                 })
                 .build();
     }
+
+    @POST
+    @Consumes(MEDIATYPE_JSON_JAVASCRIPT)
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
+    public Response postCall(@Context final HttpServletRequest request,
+                             @PathParam("proc") String proc,
+                             final byte[] paramBytes) throws Exception {
+        final TableName procName = ResourceHelper.parseTableName(request, proc);
+        ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
+        return RestResponseBuilder
+                .forRequest(request)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        reqs.restDMLService.callProcedure(writer, request, JSONP_ARG_NAME,
+                                                          procName, paramBytes);
+                    }
+                })
+                .build();
+    }
+
 }
