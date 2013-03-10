@@ -98,6 +98,10 @@ abstract class ExecutableCallStatement extends ExecutableStatement
         return new JDBCParameterMetaData(Arrays.asList(ptypes));
     }
 
+    public ServerCallInvocation getInvocation() {
+        return invocation;
+    }
+
     @Override
     public JDBCParameterMetaData getParameterMetaData() {
         return parameterMetaData;

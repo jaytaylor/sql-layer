@@ -32,6 +32,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ajdax.Ajdax;
@@ -245,6 +246,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                                  TableName procName, Map<String,List<String>> params, byte[] paramBytes) throws SQLException {
         try (JDBCConnection conn = jdbcConnection(request);
              JDBCCallableStatement call = conn.prepareCall(procName)) {
+            Routine routine = call.getRoutine();
+            Routine.CallingConvention callingConvention = routine.getCallingConvention();
             for (Map.Entry<String,List<String>> entry : params.entrySet()) {
                 if (jsonpArgName.equals(entry.getKey()))
                     continue;
