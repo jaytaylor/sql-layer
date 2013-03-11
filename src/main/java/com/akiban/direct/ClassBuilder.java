@@ -40,8 +40,10 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.types.AkType;
 import com.sun.jersey.core.impl.provider.entity.Inflector;
 
@@ -54,7 +56,6 @@ public abstract class ClassBuilder {
     private final static Inflector INFLECTOR = Inflector.getInstance();
 
     protected final String packageName;
-    protected String schema;
 
     public abstract void startClass(String name, boolean isInterface, String extendsClass, String[] implementsClasses,
             String[] imports) throws CannotCompileException, NotFoundException;
@@ -64,9 +65,8 @@ public abstract class ClassBuilder {
 
     public abstract void addConstructor(String[] argumentTypes, String[] argumentNames, String[] body);
 
-    protected ClassBuilder(String packageName, String schema) {
+    protected ClassBuilder(String packageName) {
         this.packageName = packageName;
-        this.schema = schema;
     }
 
     /*
@@ -88,10 +88,12 @@ public abstract class ClassBuilder {
 
     public abstract void end();
 
+    public abstract void close();
+
     public static String asJavaName(final String name, final boolean toUpper) {
         return INFLECTOR.camelize(INFLECTOR.singularize(name), !toUpper);
     }
-    
+
     public static String asJavaCollectionName(final String name, final boolean toUpper) {
         return INFLECTOR.camelize(name, !toUpper);
     }
@@ -106,7 +108,7 @@ public abstract class ClassBuilder {
          * Precompile the interfaces
          */
         ClassPool pool = new ClassPool(true);
-        ClassObjectWriter helper = new ClassObjectWriter(pool, PACKAGE, schema);
+        ClassObjectWriter helper = new ClassObjectWriter(pool, PACKAGE);
         String scn = schemaClassName(schema);
         Map<Integer, CtClass> implClassMap = new TreeMap<Integer, CtClass>();
 
@@ -144,20 +146,39 @@ public abstract class ClassBuilder {
         return implClassMap;
     }
 
-    public void writeGeneratedInterfaces(final AkibanInformationSchema ais, final String schema)
+    public void writeGeneratedInterfaces(final AkibanInformationSchema ais, final TableName tableName)
             throws CannotCompileException, NotFoundException {
+        final String schema = tableName.getSchemaName();
         String scn = schemaClassName(schema);
         startClass(scn, true, null, null, IMPORTS);
-        for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
+        if ("*".equals(tableName.getTableName())) {
+            for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
+                generateInterfaceClass(table, scn);
+            }
+        } else {
+            final UserTable table = ais.getUserTable(tableName);
+            if (table == null) {
+                throw new NoSuchTableException(tableName);
+            }
             generateInterfaceClass(table, scn);
         }
         end();
     }
 
-    public void writeGeneratedClass(final AkibanInformationSchema ais, final String schema, final String name)
+    public void writeGeneratedClass(final AkibanInformationSchema ais, final TableName tableName)
             throws CannotCompileException, NotFoundException {
-        UserTable table = ais.getUserTable(new TableName(schema, name));
-        generateImplementationClass(table, schema);
+        if ("*".equals(tableName.getTableName())) {
+            Schema schema = ais.getSchema(tableName.getSchemaName());
+            for (final UserTable table : schema.getUserTables().values()) {
+                generateImplementationClass(table, tableName.getSchemaName());
+            }
+        } else {
+            UserTable table = ais.getUserTable(tableName);
+            if (table == null) {
+                throw new NoSuchTableException(tableName);
+            }
+            generateImplementationClass(table, tableName.getSchemaName());
+        }
     }
 
     public void generateInterfaceClass(UserTable table, String scn) throws CannotCompileException, NotFoundException {
@@ -169,11 +190,12 @@ public abstract class ClassBuilder {
         end();
     }
 
-    void generateImplementationClass(UserTable table, String schema) throws CannotCompileException, NotFoundException {
+    void generateImplementationClass(UserTable table, String schemaName) throws CannotCompileException,
+            NotFoundException {
         table.getName().getTableName();
-        String scn = schemaClassName(schema);
+        String scn = schemaClassName(schemaName);
         String typeName = scn + "$" + asJavaName(table.getName().getTableName(), true);
-        String className = packageName + "._" + asJavaName(schema, true) + "_"
+        String className = packageName + "._" + asJavaName(schemaName, true) + "_"
                 + asJavaName(table.getName().getTableName(), true);
         startClass(className, false, "com.akiban.direct.AbstractDirectObject", new String[] { typeName }, IMPORTS);
         addConstructor(NONE, NONE, NONE);

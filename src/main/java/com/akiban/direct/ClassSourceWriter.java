@@ -43,8 +43,8 @@ public class ClassSourceWriter extends ClassBuilder {
     private String[] imports;
     private int indentation = 0;
 
-    public ClassSourceWriter(final PrintWriter writer, final String packageName, final String schema, boolean isAbstract) {
-        super(packageName, schema);
+    public ClassSourceWriter(final PrintWriter writer, final String packageName, boolean isAbstract) {
+        super(packageName);
         this.writer = writer;
         this.isAbstract = isAbstract;
     }
@@ -106,7 +106,6 @@ public class ClassSourceWriter extends ClassBuilder {
     @Override
     public void addMethod(final String name, final String returnType, final String[] argumentTypes,
             final String[] argumentNames, final String[] body) {
-        newLine();
         print("public ", localName(externalName(returnType), classNames.firstElement()), " ", name, "(");
         boolean first = true;
         int counter = 0;
@@ -184,10 +183,13 @@ public class ClassSourceWriter extends ClassBuilder {
     public void end() {
         indentation--;
         println("}");
-        if (indentation == 0) {
-            writer.close();
-        }
+        newLine();
         classNames.pop();
+    }
+    
+    @Override
+    public void close() {
+        writer.close();
     }
 
     private void print(String... strings) {

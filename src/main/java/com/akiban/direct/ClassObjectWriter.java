@@ -41,8 +41,8 @@ public class ClassObjectWriter extends ClassBuilder {
     private Stack<CtClass> ctClasses = new Stack<CtClass>();
     private CtClass currentCtClass;
 
-    public ClassObjectWriter(ClassPool classPool, String packageName, String schema) {
-        super(packageName, schema);
+    public ClassObjectWriter(ClassPool classPool, String packageName) {
+        super(packageName);
         this.classPool = classPool;
     }
 
@@ -95,7 +95,7 @@ public class ClassObjectWriter extends ClassBuilder {
             e.printStackTrace();
         }
     }
-    
+
     @Override
     public void addConstructor(String[] argumentTypes, String[] argumentNames, String[] body) {
         try {
@@ -127,6 +127,10 @@ public class ClassObjectWriter extends ClassBuilder {
     @Override
     public void end() {
         currentCtClass = ctClasses.pop();
+    }
+
+    @Override
+    public void close() {
     }
 
     CtClass getCurrentClass() {
