@@ -247,7 +247,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
 
     protected void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
                                  TableName procName, Map<String,List<String>> queryParams, String jsonParams) throws SQLException {
-        try (JDBCConnection conn = jdbcConnection(request);
+        try (JDBCConnection conn = jdbcConnection(request, procName.getSchemaName());
              JDBCCallableStatement call = conn.prepareCall(procName)) {
             Routine routine = call.getRoutine();
             switch (routine.getCallingConvention()) {
@@ -535,6 +535,16 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         return (JDBCConnection) jdbcService.newConnection(new Properties(), request.getUserPrincipal());
     }
 
+    private JDBCConnection jdbcConnection(HttpServletRequest request, String schemaName) throws SQLException {
+        // TODO: This is to make up for test situations where the
+        // request is not authenticated.
+        Properties properties = new Properties();
+        if ((request.getUserPrincipal() == null) &&
+            (schemaName != null)) {
+            properties.put("user", schemaName);
+        }
+        return (JDBCConnection) jdbcService.newConnection(properties, request.getUserPrincipal());
+    }
 
     private static enum OutputType {
         ARRAY('[', ']'),
