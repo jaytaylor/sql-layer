@@ -199,7 +199,8 @@ public class GroupSkipScanIT extends OperatorITBase
                 1,
                 ascending(true),
                 JoinType.INNER_JOIN,
-                EnumSet.of(OUTPUT, scanType)),
+                EnumSet.of(OUTPUT, scanType),
+                null),
             union_Ordered(
               union_Ordered(
                 indexScan_Default(
@@ -232,7 +233,8 @@ public class GroupSkipScanIT extends OperatorITBase
             2,
             ascending(true),
             JoinType.INNER_JOIN,
-            EnumSet.of(OUTPUT, scanType));
+            EnumSet.of(OUTPUT, scanType),
+            null);
     }
 
     private IndexKeyRange nEq(IndexRowType nIndexRowType, long n)

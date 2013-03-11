@@ -42,6 +42,7 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TAggregator;
+import com.akiban.server.types3.TComparison;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
@@ -648,11 +649,12 @@ public class API
                                              int rightOrderingFields,
                                              int comparisonFields,
                                              JoinType joinType,
-                                             IntersectOption intersectOutput)
+                                             IntersectOption intersectOutput,
+                                             List<TComparison> comparisons)
     {
         return intersect_Ordered(leftInput, rightInput,  leftRowType, rightRowType,
                 leftOrderingFields, rightOrderingFields, comparisonFields, joinType, intersectOutput,
-                Types3Switch.ON);
+                Types3Switch.ON, comparisons);
     }
 
     public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
@@ -662,7 +664,8 @@ public class API
                                             int comparisonFields,
                                             JoinType joinType,
                                             IntersectOption intersectOutput,
-                                            boolean usePValues)
+                                            boolean usePValues,
+                                            List<TComparison> comparisons)
     {
         if (comparisonFields < 0) {
             throw new IllegalArgumentException();
@@ -676,7 +679,8 @@ public class API
                                      ascending,
                                      joinType,
                                      EnumSet.of(intersectOutput),
-                                     usePValues);
+                                     usePValues,
+                                     comparisons);
     }
 
     public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
@@ -685,7 +689,8 @@ public class API
                                              int rightOrderingFields,
                                              boolean[] ascending,
                                              JoinType joinType,
-                                             EnumSet<IntersectOption> intersectOptions)
+                                             EnumSet<IntersectOption> intersectOptions,
+                                             List<TComparison> comparisons)
     {
         return new Intersect_Ordered(leftInput, rightInput,
                 leftRowType, rightRowType,
@@ -694,7 +699,8 @@ public class API
                 ascending,
                 joinType,
                 intersectOptions,
-                Types3Switch.ON);
+                Types3Switch.ON,
+                comparisons);
     }
 
     public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
@@ -704,7 +710,8 @@ public class API
                                             boolean[] ascending,
                                             JoinType joinType,
                                             EnumSet<IntersectOption> intersectOptions,
-                                            boolean usePValues)
+                                            boolean usePValues,
+                                            List<TComparison> comparisons)
     {
         return new Intersect_Ordered(leftInput, rightInput,
                                      leftRowType, rightRowType,
@@ -713,7 +720,8 @@ public class API
                                      ascending,
                                      joinType,
                                      intersectOptions,
-                                     usePValues);
+                                     usePValues,
+                                     comparisons);
     }
     
     // Union

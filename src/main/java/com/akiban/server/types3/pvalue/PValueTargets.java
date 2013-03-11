@@ -26,13 +26,31 @@
 
 package com.akiban.server.types3.pvalue;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.DeepCopiable;
 import com.akiban.server.types3.TInstance;
 
 public final class PValueTargets {
     private PValueTargets() {}
 
-    public static PUnderlying pUnderlying(PValueTarget valueTarget) {
+    public static void putLong(PValueTarget target, long val)
+    {
+        switch (pUnderlying(target))
+        {
+            case INT_8:
+                target.putInt8((byte)val);
+            case INT_16:
+                target.putInt16((short)val);
+            case INT_32:
+                target.putInt32((int)val);
+            case INT_64:
+                target.putInt64((long)val);
+            default:
+                throw new AkibanInternalException("Cannot put LONG into " + target.tInstance());
+        }
+    }
+    
+    public static PUnderlying pUnderlying(PValueTarget valueTarget){
         return TInstance.pUnderlying(valueTarget.tInstance());
     }
 

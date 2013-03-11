@@ -32,6 +32,8 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TKeyComparable;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.google.common.primitives.Longs;
 
 import java.util.ArrayList;
@@ -47,10 +49,17 @@ public final class MKeyComparables {
     public static final TKeyComparable[] intComparisons = createIntComparisons();
 
     private static TKeyComparable[] createIntComparisons() {
+        
         final TComparison integerComparison = new TComparison() {
             @Override
             public int compare(TInstance leftInstance, PValueSource left, TInstance rightInstance, PValueSource right) {
                 return Longs.compare(getLong(left), getLong(right));
+            }
+
+            @Override
+            public void copyComparables(PValueSource source, PValueTarget target)
+            {
+                PValueTargets.putLong(target, getLong(source));
             }
         };
 
@@ -60,6 +69,7 @@ public final class MKeyComparables {
                 MNumeric.INT_UNSIGNED
                 // BIGINT UNSIGNED is not here, because its representation is not a signed long
         );
+
         Set<Set<TClass>> alreadyCreated = new HashSet<>();
         List<TKeyComparable> results = new ArrayList<>();
         for (TClass outer : candidates) {

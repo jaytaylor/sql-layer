@@ -24,12 +24,12 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3;
+package com.akiban.server.types3.mcompat.mcasts;
 
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 
-public interface TComparison {
-    int compare(TInstance leftInstance, PValueSource left, TInstance rightInstance, PValueSource right);
-    void copyComparables(PValueSource source, PValueTarget target);
+public interface TComparableCopy
+{
+    public boolean copyComparables(PValueSource source, PValueTarget target);
 }

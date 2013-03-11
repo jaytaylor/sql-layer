@@ -1,0 +1,21 @@
+# Test bug 1079876 on PValueSource comparisons and copying
+---
+- CreateTable: p(pid int NOT NULL PRIMARY KEY, n int);
+---
+- Statement: CREATE INDEX p_n ON p(n);
+---
+- Statement: INSERT INTO p VALUES(1,0),(2,10),(3,0),(4,10);
+---
+- CreateTable: c(cid int NOT NULL PRIMARY KEY, pid int unsigned NOT NULL, GROUPING FOREIGN KEY(pid) REFERENCES p(pid), m int);
+---
+- Statement: INSERT INTO c VALUES(101,1,100),(201,2,200),(301,3,100),(401,4,200);
+---
+- Statement: CREATE INDEX c_m ON c(m);
+---
+- Statement: ALTER TABLE p ALL UPDATE STATISTICS;
+---
+- Statement: ALTER TABLE c ALL UPDATE STATISTICS;
+---
+- Statement: SELECT p.pid FROM p INNER JOIN c USING (pid) WHERE n = 10 AND (m = 199 OR m = 200);
+- output: [['2'], ['4']]
+...
