@@ -1,0 +1,14 @@
+#
+# test bug 1043995 - unsigned int column should not allow neg values to be inserted 
+#
+---
+- CreateTable: t4 (c1 int unsigned not null)
+---
+- Statement: INSERT INTO t4 (c1) values  (0)
+---
+- Statement: INSERT INTO t4 (c1) values (-1)
+- warnings: [[22001, "String data right-truncated: '-1' truncated to '0'" ]]
+---
+- Statement: select * from t4
+- output: [[0],[0]]
+...
