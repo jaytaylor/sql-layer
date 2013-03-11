@@ -71,6 +71,11 @@
 ---
 - CreateTable: fk_is_bigint_u(cid int not null primary key, pid bigint unsigned not null, grouping foreign key(pid) references pk_is_int(pid))
 - error: [50011]
+---
+
+- CreateTable: pk_is_bigint_u(pid bigint unsigned not null primary key)
+---
+- CreateTable: fk_is_bigint_u(cid int not null primary key, pid bigint unsigned not null, grouping foreign key(pid) references pk_is_bigint_u(pid))
 
 ...
 
