@@ -37,6 +37,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.akiban.server.rowdata.SchemaFactory;
+import org.junit.Assert;
 import org.junit.Test;
 
 public class AISTest
@@ -412,16 +413,18 @@ public class AISTest
         for(Type t : ais.getTypes()) {
             ais.canTypesBeJoined(t.name(), t.name());
         }
-        // All int types can be joined together
+        // All int types can be joined together except bigint unsigned
         final String intTypeNames[] = {"tinyint", "smallint", "int", "mediumint", "bigint"};
         for(String t1 : intTypeNames) {
             String t1U = t1 + " unsigned";
             for(String t2 : intTypeNames) {
                 String t2U = t2 + " unsigned";
+                boolean t1UIsBigint = "bigint unsigned".equals(t1U);
+                boolean t2UIsBigint = "bigint unsigned".equals(t2U);
                 assertTrue(t1+"->"+t2, ais.canTypesBeJoined(t1, t2));
-                assertTrue(t1U+"->"+t2, ais.canTypesBeJoined(t1U, t2));
-                assertTrue(t1+"->"+t2U, ais.canTypesBeJoined(t1, t2U));
-                assertTrue(t1U+"->"+t2U, ais.canTypesBeJoined(t1U, t2U));
+                assertEquals(t1U + "->" + t2, !t1UIsBigint, ais.canTypesBeJoined(t1U, t2));
+                assertEquals(t1 + "->" + t2U, !t2UIsBigint, ais.canTypesBeJoined(t1, t2U));
+                assertEquals(t1U+"->"+t2U, (t1UIsBigint == t2UIsBigint), ais.canTypesBeJoined(t1U, t2U));
             }
         }
         // Check a few that cannot be

@@ -347,6 +347,6 @@ public class Types {
                type.equals(SMALLINT) || type.equals(U_SMALLINT) ||
                type.equals(INT) || type.equals(U_INT) ||
                type.equals(MEDIUMINT) || type.equals(U_MEDIUMINT) ||
-               type.equals(BIGINT) || type.equals(U_BIGINT);
+               type.equals(BIGINT);
     }
 }
