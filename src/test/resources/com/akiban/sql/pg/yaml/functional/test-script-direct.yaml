@@ -63,4 +63,8 @@
 ---
 - Statement: CALL test_all_types();
 - output: [['']]
+---
+- Statement: DROP PROCEDURE test_direct;
+---
+- Statement: DROP PROCEDURE test_all_types;
 ...
