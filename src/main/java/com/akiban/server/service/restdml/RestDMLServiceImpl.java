@@ -238,31 +238,31 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
 
     @Override
     public void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
-                              TableName procName, byte[] paramBytes) throws SQLException {
-        callProcedure(writer, request, jsonpArgName, procName, null, paramBytes);
+                              TableName procName, String jsonParams) throws SQLException {
+        callProcedure(writer, request, jsonpArgName, procName, null, jsonParams);
     }
 
     protected void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
-                                 TableName procName, Map<String,List<String>> params, byte[] paramBytes) throws SQLException {
+                                 TableName procName, Map<String,List<String>> params, String jsonParams) throws SQLException {
         try (JDBCConnection conn = jdbcConnection(request);
              JDBCCallableStatement call = conn.prepareCall(procName)) {
             Routine routine = call.getRoutine();
             switch (routine.getCallingConvention()) {
             case SCRIPT_FUNCTION_JSON:
-                callJsonProcedure(writer, request, jsonpArgName, call, params, paramBytes);
+                callJsonProcedure(writer, request, jsonpArgName, call, params, jsonParams);
                 break;
             default:
-                callDefaultProcedure(writer, request, jsonpArgName, call, params, paramBytes);
+                callDefaultProcedure(writer, request, jsonpArgName, call, params, jsonParams);
                 break;
             }
         }
     }
 
     protected void callJsonProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
-                                     JDBCCallableStatement call, Map<String,List<String>> params, byte[] paramBytes) throws SQLException {
+                                     JDBCCallableStatement call, Map<String,List<String>> params, String jsonParams) throws SQLException {
         String json = null;
-        if (paramBytes != null) {
-            json = new String(paramBytes, "UTF-8");
+        if (jsonParams != null) {
+            json = jsonParams;
         }
         call.setString(1, json);
         call.execute();
@@ -270,7 +270,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     protected void callDefaultProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
-                                        JDBCCallableStatement call, Map<String,List<String>> params, byte[] paramBytes) throws SQLException {
+                                        JDBCCallableStatement call, Map<String,List<String>> params, String jsonParams) throws SQLException {
         if (params != null) {
             for (Map.Entry<String,List<String>> entry : params.entrySet()) {
                 if (jsonpArgName.equals(entry.getKey()))
@@ -280,9 +280,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                 call.setString(entry.getKey(), entry.getValue().get(0));
             }
         }
-        if (paramBytes != null) {
-            // TODO: Content encoding charset from request?
-            call.setString(1, new String(paramBytes, "UTF-8"));
+        if (jsonParams != null) {
+            call.setString(1, jsonParams);
         }
         boolean results = call.execute();
         AkibanAppender appender = AkibanAppender.of(writer);

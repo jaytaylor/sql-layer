@@ -80,7 +80,7 @@ public class ProcedureCallResource {
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response postCall(@Context final HttpServletRequest request,
                              @PathParam("proc") String proc,
-                             final byte[] paramBytes) throws Exception {
+                             final String jsonParams) throws Exception {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
         return RestResponseBuilder
@@ -89,7 +89,7 @@ public class ProcedureCallResource {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
                         reqs.restDMLService.callProcedure(writer, request, JSONP_ARG_NAME,
-                                                          procName, paramBytes);
+                                                          procName, jsonParams);
                     }
                 })
                 .build();
