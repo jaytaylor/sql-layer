@@ -37,6 +37,7 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
 import com.akiban.server.MemoryOnlyTableStatusCache;
+import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.ddl.DDLFunctionsMockBase;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.service.routines.MockRoutineLoader;
@@ -96,14 +97,17 @@ public class SchemaFactory {
             throw new RuntimeException(e);
         }
     }
-
+    
     public AkibanInformationSchema ais(AkibanInformationSchema baseAIS, String... ddl) {
+        return ais(new CreateOnlyDDLMock(baseAIS), null, ddl);
+    }
+
+    public AkibanInformationSchema ais(DDLFunctions ddlFunctions, Session session, String... ddl) {
         StringBuilder buffer = new StringBuilder();
         for (String line : ddl) {
             buffer.append(line);
         }
         String fullDDL = buffer.toString();
-        CreateOnlyDDLMock ddlFunctions = new CreateOnlyDDLMock(baseAIS);
         SQLParser parser = new SQLParser();
         List<StatementNode> nodes;
         try {
@@ -113,21 +117,21 @@ public class SchemaFactory {
         }
         for(StatementNode stmt : nodes) {
             if (stmt instanceof CreateTableNode) {
-                TableDDL.createTable(ddlFunctions , null, defaultSchema, (CreateTableNode) stmt, null);
+                TableDDL.createTable(ddlFunctions , session , defaultSchema, (CreateTableNode) stmt, null);
             } else if (stmt instanceof CreateIndexNode) {
-                IndexDDL.createIndex(ddlFunctions, null, defaultSchema, (CreateIndexNode) stmt);
+                IndexDDL.createIndex(ddlFunctions, session, defaultSchema, (CreateIndexNode) stmt);
             } else if (stmt instanceof CreateViewNode) {
-                ViewDDL.createView(ddlFunctions, null, defaultSchema, (CreateViewNode) stmt,
-                                   new AISBinderContext(ddlFunctions.getAIS(null), defaultSchema), null);
+                ViewDDL.createView(ddlFunctions, session, defaultSchema, (CreateViewNode) stmt,
+                                   new AISBinderContext(ddlFunctions.getAIS(session), defaultSchema), null);
             } else if (stmt instanceof CreateSequenceNode) {
-                SequenceDDL.createSequence(ddlFunctions, null, defaultSchema, (CreateSequenceNode)stmt);
+                SequenceDDL.createSequence(ddlFunctions, session, defaultSchema, (CreateSequenceNode)stmt);
             } else if (stmt instanceof CreateAliasNode) {
-                RoutineDDL.createRoutine(ddlFunctions, new MockRoutineLoader(), null, defaultSchema, (CreateAliasNode)stmt);
+                RoutineDDL.createRoutine(ddlFunctions, new MockRoutineLoader(), session, defaultSchema, (CreateAliasNode)stmt);
             } else {
                 throw new IllegalStateException("Unsupported StatementNode type: " + stmt);
             }
         }
-        return ddlFunctions.getAIS(null);
+        return ddlFunctions.getAIS(session);
     }
 
     public void buildRowDefs(AkibanInformationSchema ais) {
