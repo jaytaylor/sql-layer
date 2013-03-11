@@ -42,6 +42,7 @@ import com.akiban.ajdax.JoinFields;
 import com.akiban.ajdax.JoinStrategy;
 import com.akiban.ajdax.actions.Action;
 import com.akiban.server.Quote;
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.explain.format.JsonFormatter;
 import com.akiban.server.service.Service;
@@ -68,6 +69,7 @@ import com.google.common.base.Functions;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
@@ -76,6 +78,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
@@ -232,8 +235,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
 
     @Override
     public void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
-                              TableName procName, Map<String,List<String>> params) throws SQLException {
-        callProcedure(writer, request, jsonpArgName, procName, params, null);
+                              TableName procName, Map<String,List<String>> queryParams) throws SQLException {
+        callProcedure(writer, request, jsonpArgName, procName, queryParams, null);
     }
 
     @Override
@@ -243,26 +246,49 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     protected void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
-                                 TableName procName, Map<String,List<String>> params, String jsonParams) throws SQLException {
+                                 TableName procName, Map<String,List<String>> queryParams, String jsonParams) throws SQLException {
         try (JDBCConnection conn = jdbcConnection(request);
              JDBCCallableStatement call = conn.prepareCall(procName)) {
             Routine routine = call.getRoutine();
             switch (routine.getCallingConvention()) {
             case SCRIPT_FUNCTION_JSON:
-                callJsonProcedure(writer, request, jsonpArgName, call, params, jsonParams);
+                callJsonProcedure(writer, request, jsonpArgName, call, queryParams, jsonParams);
                 break;
             default:
-                callDefaultProcedure(writer, request, jsonpArgName, call, params, jsonParams);
+                callDefaultProcedure(writer, request, jsonpArgName, call, queryParams, jsonParams);
                 break;
             }
         }
     }
 
     protected void callJsonProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
-                                     JDBCCallableStatement call, Map<String,List<String>> params, String jsonParams) throws SQLException {
+                                     JDBCCallableStatement call, Map<String,List<String>> queryParams, String jsonParams) throws SQLException {
         String json = null;
         if (jsonParams != null) {
             json = jsonParams;
+        }
+        else if (queryParams != null) {
+            try {
+                StringWriter str = new StringWriter();
+                JsonGenerator jg = factory.createJsonGenerator(str);
+                jg.writeStartObject();
+                for (Map.Entry<String,List<String>> entry : queryParams.entrySet()) {
+                    if (jsonpArgName.equals(entry.getKey()))
+                        continue;
+                    jg.writeFieldName(entry.getKey());
+                    if (entry.getValue().size() != 1)
+                        jg.writeStartArray();
+                    for (String value : entry.getValue())
+                        jg.writeString(value);
+                    if (entry.getValue().size() != 1)
+                        jg.writeEndArray();
+                }
+                jg.writeEndObject();
+                json = str.toString();
+            }
+            catch (IOException ex) {
+                throw new AkibanInternalException("Error writing to string", ex);
+            }
         }
         call.setString(1, json);
         call.execute();
@@ -270,9 +296,9 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     protected void callDefaultProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
-                                        JDBCCallableStatement call, Map<String,List<String>> params, String jsonParams) throws SQLException {
-        if (params != null) {
-            for (Map.Entry<String,List<String>> entry : params.entrySet()) {
+                                        JDBCCallableStatement call, Map<String,List<String>> queryParams, String jsonParams) throws SQLException {
+        if (queryParams != null) {
+            for (Map.Entry<String,List<String>> entry : queryParams.entrySet()) {
                 if (jsonpArgName.equals(entry.getKey()))
                     continue;
                 if (entry.getValue().size() != 1)
