@@ -1,0 +1,6 @@
+SelectQuery@315d971e
+  ResultSet@776c4be3[cid, name]
+    Project@66ea6155[customers.cid, customers.name]
+      Select@259c483c[]
+        TableGroupJoinTree@374a6e6e(TableGroup@7798141d(customers), customers - FullTextScan@2150b942(customers - PARSE(customers.name, $0)))
+          TableSource@460bcf67(customers - TableGroup@7798141d(customers))

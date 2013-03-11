@@ -61,7 +61,7 @@ public class SQLResource {
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
-                        reqs.restDMLService.runSQL(writer, request, query);
+                        reqs.restDMLService.runSQL(writer, request, query, null);
                     }
                 })
                 .build();

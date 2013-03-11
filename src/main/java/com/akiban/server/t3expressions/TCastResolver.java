@@ -70,10 +70,10 @@ public final class TCastResolver {
         if (tClass1 == null) {
             if (tClass2 == null)
                 throw new IllegalArgumentException("both inputs can't be null");
-            return tClass2;
+            return tClass2.widestComparable();
         }
         if (tClass2 == null)
-            return tClass1;
+            return tClass1.widestComparable();
 
         // If they're the same class, this is a really easy question to answer.
         if (tClass1.equals(tClass2))

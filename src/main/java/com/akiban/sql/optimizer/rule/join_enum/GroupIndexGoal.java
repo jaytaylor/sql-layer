@@ -37,15 +37,18 @@ import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Index.JoinType;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
 import com.akiban.server.geophile.Space;
+import com.akiban.server.service.text.FullTextQueryBuilder;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.Types3Switch;
@@ -721,14 +724,19 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     public BaseScan pickBestScan() {
         logger.debug("Picking for {}", this);
 
-        Set<TableSource> required = tables.getRequired();
         BaseScan bestScan = null;
+
+        bestScan = pickFullText();
+        if (bestScan != null) {
+            return bestScan;    // TODO: Always wins for now.
+        }
 
         if (tables.getGroup().getRejectedJoins() != null) {
             bestScan = pickBestGroupLoop();
         }
 
         IntersectionEnumerator intersections = new IntersectionEnumerator();
+        Set<TableSource> required = tables.getRequired();
         for (TableGroupJoinNode table : tables) {
             IndexScan tableIndex = pickBestIndex(table, required, intersections);
             if ((tableIndex != null) &&
@@ -1345,6 +1353,10 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 installConditions(((GroupLoopScan)scan).getJoinConditions(), 
                                   conditionSources);
             }
+            else if (scan instanceof FullTextScan) {
+                installConditions(((FullTextScan)scan).getConditions(), 
+                                  conditionSources);
+            }
             if (sortAllowed)
                 queryGoal.installOrderEffectiveness(IndexScan.OrderEffectiveness.NONE);
         }
@@ -1752,6 +1764,291 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         estimator.setLimit(queryGoal.getLimit());
 
         return estimator.getCostEstimate();
+    }
+
+    protected FullTextScan pickFullText() {
+        List<ConditionExpression> textConditions = new ArrayList<>(0);
+
+        for (ConditionExpression condition : conditions) {
+            if ((condition instanceof FunctionExpression) &&
+                ((FunctionExpression)condition).getFunction().equalsIgnoreCase("full_text_search")) {
+                textConditions.add(condition);
+            }
+        }
+
+        if (textConditions.isEmpty())
+            return null;
+
+        List<FullTextField> textFields = new ArrayList<>(0);
+        FullTextQuery query = null;
+        for (ConditionExpression condition : textConditions) {
+            List<ExpressionNode> operands = ((FunctionExpression)condition).getOperands();
+            FullTextQuery clause = null;
+            switch (operands.size()) {
+            case 1:
+                clause = fullTextBoolean(operands.get(0), textFields);
+                if (clause == null) continue;
+                break;
+            case 2:
+                if ((operands.get(0) instanceof ColumnExpression) &&
+                    constantOrBound(operands.get(1))) {
+                    ColumnExpression column = (ColumnExpression)operands.get(0);
+                    if (column.getTable() instanceof TableSource) {
+                        if (!tables.containsTable((TableSource)column.getTable()))
+                            continue;
+                        FullTextField field = new FullTextField(column, 
+                                                                FullTextField.Type.PARSE,
+                                                                operands.get(1));
+                        textFields.add(field);
+                        clause = field;
+                    }
+                }
+                break;
+            }
+            if (clause == null)
+                throw new UnsupportedSQLException("Unrecognized FULL_TEXT_SEARCH call",
+                                                  condition.getSQLsource());
+            if (query == null) {
+                query = clause;
+            }
+            else {
+                query = fullTextBoolean(Arrays.asList(query, clause),
+                                        Arrays.asList(FullTextQueryBuilder.BooleanType.MUST,
+                                                      FullTextQueryBuilder.BooleanType.MUST));
+            }
+        }
+        if (query == null) 
+            return null;
+
+        FullTextIndex foundIndex = null;
+        TableSource foundTable = null;
+        find_index:
+        for (FullTextIndex index : textFields.get(0).getColumn().getColumn().getUserTable().getFullTextIndexes()) {
+            TableSource indexTable = null;
+            for (FullTextField textField : textFields) {
+                Column column = textField.getColumn().getColumn();
+                boolean found = false;
+                for (IndexColumn indexColumn : index.getKeyColumns()) {
+                    if (indexColumn.getColumn() == column) {
+                        if (foundIndex == null) {
+                            textField.setIndexColumn(indexColumn);
+                        }
+                        found = true;
+                        if ((indexTable == null) &&
+                            (indexColumn.getColumn().getUserTable() == index.getIndexedTable())) {
+                            indexTable = (TableSource)textField.getColumn().getTable();
+                        }
+                        break;
+                    }
+                }
+                if (!found) {
+                    continue find_index;
+                }
+            }
+            if (foundIndex == null) {
+                foundIndex = index;
+                foundTable = indexTable;
+            }
+            else {
+                throw new UnsupportedSQLException("Ambiguous full text index: " +
+                                                  foundIndex + " and " + index);
+            }
+        }
+        if (foundIndex == null) {
+            StringBuilder str = new StringBuilder("No full text index for: ");
+            boolean first = true;
+            for (FullTextField textField : textFields) {
+                if (first)
+                    first = false;
+                else
+                    str.append(", ");
+                str.append(textField.getColumn());
+            }
+            throw new UnsupportedSQLException(str.toString());
+        }
+        if (foundTable == null) {
+            for (TableGroupJoinNode node : tables) {
+                if (node.getTable().getTable().getTable() == foundIndex.getIndexedTable()) {
+                    foundTable = node.getTable();
+                    break;
+                }
+            }
+        }
+
+        query = normalizeFullTextQuery(query);
+        FullTextScan scan = new FullTextScan(foundIndex, query, (int)queryGoal.getLimit(),
+                                             foundTable, textConditions);
+        determineRequiredTables(scan);
+        scan.setCostEstimate(estimateCostFullText(scan));
+        return scan;
+    }
+
+    protected FullTextQuery fullTextBoolean(ExpressionNode condition,
+                                            List<FullTextField> textFields) {
+        if (condition instanceof ComparisonCondition) {
+            ComparisonCondition ccond = (ComparisonCondition)condition;
+            if ((ccond.getLeft() instanceof ColumnExpression) &&
+                constantOrBound(ccond.getRight())) {
+                ColumnExpression column = (ColumnExpression)ccond.getLeft();
+                if (column.getTable() instanceof TableSource) {
+                    if (!tables.containsTable((TableSource)column.getTable()))
+                        return null;
+                    FullTextField field = new FullTextField(column, 
+                                                            FullTextField.Type.MATCH,
+                                                            ccond.getRight());
+                    textFields.add(field);
+                    switch (ccond.getOperation()) {
+                    case EQ:
+                        return field;
+                    case NE:
+                        return fullTextBoolean(Arrays.<FullTextQuery>asList(field),
+                                               Arrays.asList(FullTextQueryBuilder.BooleanType.NOT));
+                    }
+                }
+            }
+        }
+        else if (condition instanceof LogicalFunctionCondition) {
+            LogicalFunctionCondition lcond = (LogicalFunctionCondition)condition;
+            String op = lcond.getFunction();
+            if ("and".equals(op)) {
+                FullTextQuery left = fullTextBoolean(lcond.getLeft(), textFields);
+                FullTextQuery right = fullTextBoolean(lcond.getRight(), textFields);
+                if ((left == null) && (right == null)) return null;
+                if ((left != null) && (right != null))
+                    return fullTextBoolean(Arrays.asList(left, right),
+                                           Arrays.asList(FullTextQueryBuilder.BooleanType.MUST,
+                                                         FullTextQueryBuilder.BooleanType.MUST));
+            }
+            else if ("or".equals(op)) {
+                FullTextQuery left = fullTextBoolean(lcond.getLeft(), textFields);
+                FullTextQuery right = fullTextBoolean(lcond.getRight(), textFields);
+                if ((left == null) && (right == null)) return null;
+                if ((left != null) && (right != null))
+                    return fullTextBoolean(Arrays.asList(left, right),
+                                           Arrays.asList(FullTextQueryBuilder.BooleanType.SHOULD,
+                                                         FullTextQueryBuilder.BooleanType.SHOULD));
+            }
+            else if ("not".equals(op)) {
+                FullTextQuery inner = fullTextBoolean(lcond.getOperand(), textFields);
+                if (inner == null) 
+                    return null;
+                else
+                    return fullTextBoolean(Arrays.asList(inner),
+                                           Arrays.asList(FullTextQueryBuilder.BooleanType.NOT));
+            }
+        }
+        // TODO: LIKE
+        throw new UnsupportedSQLException("Cannot convert to full text query" +
+                                          condition);
+    }
+
+    protected FullTextQuery fullTextBoolean(List<FullTextQuery> operands, 
+                                            List<FullTextQueryBuilder.BooleanType> types) {
+        // Make modifiable copies for normalize.
+        return new FullTextBoolean(new ArrayList<>(operands),
+                                   new ArrayList<>(types));
+    }
+
+    protected FullTextQuery normalizeFullTextQuery(FullTextQuery query) {
+        if (query instanceof FullTextBoolean) {
+            FullTextBoolean bquery = (FullTextBoolean)query;
+            List<FullTextQuery> operands = bquery.getOperands();
+            List<FullTextQueryBuilder.BooleanType> types = bquery.getTypes();
+            int i = 0;
+            while (i < operands.size()) {
+                FullTextQuery opQuery = operands.get(i);
+                opQuery = normalizeFullTextQuery(opQuery);
+                if (opQuery instanceof FullTextBoolean) {
+                    FullTextBoolean opbquery = (FullTextBoolean)opQuery;
+                    List<FullTextQuery> opOperands = opbquery.getOperands();
+                    List<FullTextQueryBuilder.BooleanType> opTypes = opbquery.getTypes();
+                    // Fold in the simplest cases: 
+                    //  [MUST(x), [MUST(y), MUST(z)]] -> [MUST(x), MUST(y), MUST(z)]
+                    //  [MUST(x), [NOT(y)]] -> [MUST(x), NOT(y)]
+                    //  [SHOULD(x), [SHOULD(y), SHOULD(z)]] -> [SHOULD(x), SHOULD(y), SHOULD(z)]
+                    boolean fold = true;
+                    switch (types.get(i)) {
+                    case MUST:
+                    check_must:
+                        for (FullTextQueryBuilder.BooleanType opType : opTypes) {
+                            switch (opType) {
+                            case MUST:
+                            case NOT:
+                                break;
+                            default:
+                                fold = false;
+                                break check_must;
+                            }
+                        }
+                        break;
+                    case SHOULD:
+                    check_should:
+                        for (FullTextQueryBuilder.BooleanType opType : opTypes) {
+                            switch (opType) {
+                            case SHOULD:
+                                break;
+                            default:
+                                fold = false;
+                                break check_should;
+                            }
+                        }
+                        break;
+                    default:
+                        fold = false;
+                        break;
+                    }
+                    if (fold) {
+                        for (int j = 0; j < opOperands.size(); j++) {
+                            FullTextQuery opOperand = opOperands.get(j);
+                            FullTextQueryBuilder.BooleanType opType = opTypes.get(j);
+                            if (j == 0) {
+                                operands.set(i, opOperand);
+                                types.set(i, opType);
+                            }
+                            else {
+                                operands.add(i, opOperand);
+                                types.add(i, opType);
+                            }
+                            i++;
+                        }
+                        continue;
+                    }
+                }
+                operands.set(i, opQuery);
+                i++;
+            }
+        }
+        return query;
+    }
+
+    protected void determineRequiredTables(FullTextScan scan) {
+        // Include the non-condition requirements.
+        RequiredColumns requiredAfter = new RequiredColumns(requiredColumns);
+        RequiredColumnsFiller filler = new RequiredColumnsFiller(requiredAfter);
+        // Add in any non-full-text conditions.
+        for (ConditionExpression condition : conditions) {
+            boolean found = false;
+            for (ConditionExpression scanCondition : scan.getConditions()) {
+                if (scanCondition == condition) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+                condition.accept(filler);
+        }
+        // Does not sort.
+        if (queryGoal.getOrdering() != null) {
+            // Only this node, not its inputs.
+            filler.setIncludedPlanNodes(Collections.<PlanNode>singletonList(queryGoal.getOrdering()));
+            queryGoal.getOrdering().accept(filler);
+        }
+        Set<TableSource> required = new HashSet<>(requiredAfter.getTables());
+        scan.setRequiredTables(required);
+    }
+
+    public CostEstimate estimateCostFullText(FullTextScan scan) {
+        return new CostEstimate(Math.max(scan.getLimit(), 1), 1.0);
     }
 
 }

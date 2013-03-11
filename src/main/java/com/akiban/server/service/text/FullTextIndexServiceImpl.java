@@ -35,6 +35,7 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.DuplicateIndexException;
@@ -57,7 +58,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.*;
 
-public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
+public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements FullTextIndexService, Service {
     public static final String INDEX_PATH_PROPERTY = "akserver.text.indexpath";
 
     private final ConfigurationService configService;
@@ -67,7 +68,6 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
     private final TreeService treeService;
 
     private File indexPath;
-    private Map<IndexName,FullTextIndexShared> indexes = new HashMap<>();
     
     private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceImpl.class);
 
@@ -106,23 +106,6 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
     }
 
     @Override
-    public Query parseQuery(QueryContext context, IndexName name, String query) {
-        FullTextIndexInfo index = getIndex(context.getSession(), name);
-        try {
-            return index.getSearcher().parse(query);
-        }
-        catch (IOException ex) {
-            throw new AkibanInternalException("Error populating index", ex);
-        }
-    }
-
-    @Override
-    public RowType searchRowType(Session session, IndexName name) {
-        FullTextIndexInfo index = getIndex(session, name);
-        return index.getHKeyRowType();
-    }
-
-    @Override
     public Cursor searchIndex(QueryContext context, IndexName name, Query query, int limit) {
         FullTextIndexInfo index = getIndex(context.getSession(), name);
         try {
@@ -157,6 +140,9 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
         stop();
     }
     
+    /* FullTextIndexInfosImpl */
+
+    @Override
     protected synchronized File getIndexPath() {
         if (indexPath == null) {
             indexPath = new File(configService.getProperty(INDEX_PATH_PROPERTY));
@@ -165,23 +151,9 @@ public class FullTextIndexServiceImpl implements FullTextIndexService, Service {
         return indexPath;
     }
 
-    protected FullTextIndexInfo getIndex(Session session, IndexName name) {
-        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-        FullTextIndexInfo info;
-        synchronized (indexes) {
-            FullTextIndexShared shared = indexes.get(name);
-            if (shared != null) {
-                info = shared.forAIS(ais);
-            }
-            else {
-                shared = new FullTextIndexShared(name);
-                info = new FullTextIndexInfo(shared);
-                info.init(ais);
-                info = shared.init(ais, info, getIndexPath());
-                indexes.put(name, shared);
-            }
-        }
-        return info;
+    @Override
+    protected AkibanInformationSchema getAIS(Session session) {
+        return dxlService.ddlFunctions().getAIS(session);
     }
 
     protected long populateIndex(Session session, FullTextIndexInfo index)

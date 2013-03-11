@@ -160,6 +160,11 @@ public class MBigDecimal extends TClassBase {
                 DataTypeDescriptor.computeMaxWidth(precision, scale));
     }
 
+    public TClass widestComparable()
+    {
+        return this;
+    }
+    
     @Override
     public PValueCacher cacher() {
         return cacher;

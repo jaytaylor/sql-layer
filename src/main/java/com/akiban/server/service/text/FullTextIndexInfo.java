@@ -43,6 +43,7 @@ import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.error.NoSuchTableException;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
 
 import java.io.File;
 import java.io.IOException;
@@ -157,6 +158,18 @@ public class FullTextIndexInfo
             }
         }
         return analyzer;
+    }
+
+    public StandardQueryParser getParser() {
+        StandardQueryParser parser;
+        synchronized (shared) {
+            parser = shared.getParser();
+            if (parser == null) {
+                parser = new StandardQueryParser(getAnalyzer());
+            }
+            shared.setParser(parser);
+        }
+        return parser;
     }
 
     protected Searcher getSearcher() throws IOException {

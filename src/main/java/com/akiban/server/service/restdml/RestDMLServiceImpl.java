@@ -27,10 +27,19 @@
 package com.akiban.server.service.restdml;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexName;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ajdax.Ajdax;
+import com.akiban.ajdax.AjdaxException;
+import com.akiban.ajdax.AjdaxWriter;
+import com.akiban.ajdax.JoinFields;
+import com.akiban.ajdax.JoinStrategy;
+import com.akiban.ajdax.actions.Action;
 import com.akiban.server.Quote;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.explain.format.JsonFormatter;
@@ -42,7 +51,7 @@ import com.akiban.server.service.externaldata.JsonRowWriter;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.text.FullTextIndexService;
-import com.akiban.server.service.text.IndexScan_FullText;
+import com.akiban.server.service.text.FullTextQueryBuilder;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
@@ -53,8 +62,15 @@ import com.akiban.sql.embedded.JDBCConnection;
 import com.akiban.sql.embedded.JDBCParameterMetaData;
 import com.akiban.sql.embedded.JDBCResultSet;
 import com.akiban.util.AkibanAppender;
+import com.google.common.base.Function;
+import com.google.common.base.Functions;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.JsonToken;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -64,9 +80,12 @@ import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Properties;
 
 import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
@@ -189,13 +208,13 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
-    public void runSQL(PrintWriter writer, HttpServletRequest request, String sql) throws SQLException {
-        runSQLFlat(writer, request, Collections.singletonList(sql), OutputType.ARRAY, CommitMode.AUTO);
+    public void runSQL(PrintWriter writer, HttpServletRequest request, String sql, String schema) throws SQLException {
+        runSQLFlat(writer, request, Collections.singletonList(sql), schema, OutputType.ARRAY, CommitMode.AUTO);
     }
 
     @Override
     public void runSQL(PrintWriter writer, HttpServletRequest request, List<String> sql) throws SQLException {
-        runSQLFlat(writer, request, sql, OutputType.OBJECT, CommitMode.MANUAL);
+        runSQLFlat(writer, request, sql, null, OutputType.OBJECT, CommitMode.MANUAL);
     }
 
     @Override
@@ -258,6 +277,74 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         }
     }
 
+    @Override
+    public String ajdaxToSQL(TableName tableName, String ajdax) throws IOException {
+        final AkibanInformationSchema ais;
+        try (Session session = sessionService.createSession();
+             CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+            ais = dxlService.ddlFunctions().getAIS(session);
+            txn.commit();
+        }
+        JsonParser json = factory.createJsonParser(ajdax);
+        final String schema = tableName.getSchemaName();
+        // the JoinStrategy will assume all tables are in the same schema
+        JoinStrategy joinStrategy = new JoinStrategy() {
+            @Override
+            public Collection<? extends JoinFields> getJoins(String parent, String child) {
+                UserTable parentTable = ais.getUserTable(schema, parent);
+                if (parentTable == null)
+                    throw new NoSuchElementException("parent table: " + parent);
+                Join groupingJoin = findGroupingJoin(parentTable, child);
+                return Lists.transform(groupingJoin.getJoinColumns(), new Function<JoinColumn, JoinFields>() {
+                    @Override
+                    public JoinFields apply(JoinColumn input) {
+                        return new JoinFields(input.getParent().getName(), input.getChild().getName());
+                    }
+                });
+            }
+
+            private Join findGroupingJoin(UserTable parentTable, String childTable) {
+                for (Join join : parentTable.getChildJoins()) {
+                    if (join.getChild().getName().getTableName().equals(childTable))
+                        return join;
+                }
+                throw new NoSuchElementException("no child named " + childTable + " for table " + parentTable);
+            }
+        };
+        Map<String, Action> additionalActionsMap = new HashMap<>();
+        additionalActionsMap.put("fields", new Action() {
+            @Override
+            public void apply(JsonParser input, AjdaxWriter output, String tableName) throws IOException {
+                JsonToken token = input.nextToken();
+                if (token == JsonToken.VALUE_STRING) {
+                    String value = input.getText();
+                    if (value.equalsIgnoreCase("all")) {
+                        UserTable table = ais.getUserTable(schema, tableName);
+                        for (Column column : table.getColumns())
+                            output.addScalar(column.getName());
+                    }
+                    else {
+                        throw new AjdaxException("illegal string value for @fields (must be \"all\"): " + value);
+                    }
+                }
+                else if (token == JsonToken.START_ARRAY) {
+                    while (input.nextToken() != JsonToken.END_ARRAY) {
+                        if (input.getCurrentToken() != JsonToken.VALUE_STRING) {
+                            throw new AjdaxException("illegal value for @attributes list: "
+                                    + input.getText() + " (" + token + ')');
+                        }
+                        output.addScalar(input.getText());
+                    }
+                }
+                else {
+                    throw new AjdaxException("illegal value for @fields: " + input.getText() + " (" + token + ')');
+                }
+            }
+        });
+        Function<String, Action> additionalActions = Functions.forMap(additionalActionsMap, null);
+        return Ajdax.createSQL(tableName.getTableName(), json, joinStrategy, additionalActions);
+    }
+
     public interface ProcessStatement {
         public Statement processStatement (int index) throws SQLException; 
     }
@@ -287,10 +374,12 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     private void runSQLFlat(PrintWriter writer,
-            HttpServletRequest request, final List<String> sqlList,
+            HttpServletRequest request, final List<String> sqlList, String schema,
             OutputType outputType, CommitMode commitMode) throws SQLException {
-        try (Connection conn = jdbcConnection(request);
+        try (JDBCConnection conn = jdbcConnection(request);
               final Statement s = conn.createStatement()) {
+            if (schema != null)
+                conn.setProperty("database", schema);
             processSQL (conn, writer, outputType, commitMode,
                     new ProcessStatement() {
                         private int offset = 0;
@@ -419,17 +508,15 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     @Override
     public void fullTextSearch(PrintWriter writer, IndexName indexName, Integer depth, String query, Integer limit) {
         int realDepth = (depth != null) ? Math.max(depth, 0) : -1;
-        int realLimit = (limit != null) ? limit.intValue() : 1000; // TODO: MAX_VALUE?
+        int realLimit = (limit != null) ? limit.intValue() : -1;
+        FullTextQueryBuilder builder = new FullTextQueryBuilder(indexName, 
+                                                                fullTextService);
         try (Session session = sessionService.createSession()) {
-            IndexScan_FullText scan = 
-                new IndexScan_FullText(fullTextService, indexName,
-                                       IndexScan_FullText.parseQuery(query), 
-                                       realLimit);
             extDataService.dumpBranchAsJson(session,
                                             writer,
                                             indexName.getSchemaName(),
                                             indexName.getTableName(),
-                                            scan,
+                                            builder.scanOperator(query, realLimit),
                                             fullTextService.searchRowType(session, indexName),
                                             realDepth,
                                             true);
@@ -445,4 +532,12 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         writer.write(String.format("{\"count\":%d}", count));
     }
 
+
+    private static JsonFactory factory = createFactory();
+
+    private static JsonFactory createFactory() {
+        JsonFactory factory = new JsonFactory();
+        factory.setCodec(new ObjectMapper());
+        return factory;
+    }
 }

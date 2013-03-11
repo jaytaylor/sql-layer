@@ -27,6 +27,7 @@
 package com.akiban.server.types3.aksql.aktypes;
 
 import com.akiban.server.types3.Attribute;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TClassBase;
 import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TExecutionContext;
@@ -143,4 +144,8 @@ public class AkResultSet extends TClassBase {
         throw new UnsupportedOperationException();
     }
 
+    public TClass widestComparable()
+    {
+        return this;
+    }
 }
