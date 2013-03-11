@@ -1116,6 +1116,8 @@ public class OperatorAssembler extends BaseRule
                 TClass right =  outputRowType.typeInstanceAt(rightBase + n).typeClass();
                 if (left != right)
                     comparisons.add(n, reg.getKeyComparable(left, right).getComparison());
+                else
+                    comparisons.add(n, null);
             }
             
             stream.operator = API.intersect_Ordered(
