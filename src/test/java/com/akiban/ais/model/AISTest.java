@@ -37,7 +37,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.akiban.server.rowdata.SchemaFactory;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class AISTest
