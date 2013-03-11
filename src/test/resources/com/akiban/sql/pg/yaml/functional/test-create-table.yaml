@@ -63,6 +63,19 @@
 # Bug 941657 -- fk column doesn't exist
 - CreateTable: child3 (cid int not null, pid int, primary key(cid), grouping foreign key(no_such_column) references parent(pid))
 - error: [50018]
+---
+
+- CreateTable: pk_is_int(pid int not null primary key)
+---
+- CreateTable: fk_is_bigint(cid int not null primary key, pid bigint not null, grouping foreign key(pid) references pk_is_int(pid))
+---
+- CreateTable: fk_is_bigint_u(cid int not null primary key, pid bigint unsigned not null, grouping foreign key(pid) references pk_is_int(pid))
+- error: [50011]
+---
+
+- CreateTable: pk_is_bigint_u(pid bigint unsigned not null primary key)
+---
+- CreateTable: fk_is_bigint_u(cid int not null primary key, pid bigint unsigned not null, grouping foreign key(pid) references pk_is_bigint_u(pid))
 
 ...
 
