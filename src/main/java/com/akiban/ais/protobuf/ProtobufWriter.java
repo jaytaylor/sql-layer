@@ -695,6 +695,8 @@ public class ProtobufWriter {
             return AISProtobuf.RoutineCallingConvention.SCRIPT_FUNCTION_JAVA;
         case SCRIPT_BINDINGS: 
             return AISProtobuf.RoutineCallingConvention.SCRIPT_BINDINGS;
+        case SCRIPT_FUNCTION_JSON: 
+            return AISProtobuf.RoutineCallingConvention.SCRIPT_FUNCTION_JSON;
         }
     }
 

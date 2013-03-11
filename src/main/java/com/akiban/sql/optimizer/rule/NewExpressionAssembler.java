@@ -249,6 +249,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
         case JAVA:
             return new ServerJavaMethodTExpression(routine, inputs);
         case SCRIPT_FUNCTION_JAVA:
+        case SCRIPT_FUNCTION_JSON:
             return new ScriptFunctionJavaRoutineTExpression(routine, inputs);
         case SCRIPT_BINDINGS:
             return new ScriptBindingsRoutineTExpression(routine, inputs);
