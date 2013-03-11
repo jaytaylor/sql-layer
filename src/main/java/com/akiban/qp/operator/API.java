@@ -40,6 +40,7 @@ import com.akiban.server.aggregation.Aggregators;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.FieldExpression;
+import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TComparison;
@@ -650,11 +651,11 @@ public class API
                                              int comparisonFields,
                                              JoinType joinType,
                                              IntersectOption intersectOutput,
-                                             List<TComparison> comparisons)
+                                             T3RegistryService reg)
     {
         return intersect_Ordered(leftInput, rightInput,  leftRowType, rightRowType,
                 leftOrderingFields, rightOrderingFields, comparisonFields, joinType, intersectOutput,
-                Types3Switch.ON, comparisons);
+                Types3Switch.ON, reg);
     }
 
     public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
@@ -665,7 +666,7 @@ public class API
                                             JoinType joinType,
                                             IntersectOption intersectOutput,
                                             boolean usePValues,
-                                            List<TComparison> comparisons)
+                                            T3RegistryService reg)
     {
         if (comparisonFields < 0) {
             throw new IllegalArgumentException();
@@ -680,7 +681,7 @@ public class API
                                      joinType,
                                      EnumSet.of(intersectOutput),
                                      usePValues,
-                                     comparisons);
+                                     reg);
     }
 
     public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
@@ -690,7 +691,7 @@ public class API
                                              boolean[] ascending,
                                              JoinType joinType,
                                              EnumSet<IntersectOption> intersectOptions,
-                                             List<TComparison> comparisons)
+                                             T3RegistryService reg)
     {
         return new Intersect_Ordered(leftInput, rightInput,
                 leftRowType, rightRowType,
@@ -700,7 +701,7 @@ public class API
                 joinType,
                 intersectOptions,
                 Types3Switch.ON,
-                comparisons);
+                reg);
     }
 
     public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
@@ -711,7 +712,7 @@ public class API
                                             JoinType joinType,
                                             EnumSet<IntersectOption> intersectOptions,
                                             boolean usePValues,
-                                            List<TComparison> comparisons)
+                                            T3RegistryService reg)
     {
         return new Intersect_Ordered(leftInput, rightInput,
                                      leftRowType, rightRowType,
@@ -721,7 +722,7 @@ public class API
                                      joinType,
                                      intersectOptions,
                                      usePValues,
-                                     comparisons);
+                                     reg);
     }
     
     // Union

@@ -26,6 +26,10 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.server.types3.TKeyComparable;
+import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.types3.TComparison;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
@@ -160,7 +164,7 @@ class Intersect_Ordered extends Operator
                              JoinType joinType,
                              EnumSet<IntersectOption> options,
                              boolean usePValues,
-                             List<TComparison> comparisons)
+                             T3RegistryService reg)
     {
         ArgumentValidation.notNull("left", left);
         ArgumentValidation.notNull("right", right);
@@ -215,7 +219,7 @@ class Intersect_Ordered extends Operator
         leftSkipRowColumnSelector = new IndexRowPrefixSelector(leftFixedFields + fieldsToCompare);
         rightSkipRowColumnSelector = new IndexRowPrefixSelector(rightFixedFields + fieldsToCompare);
         this.usePValues = usePValues;
-        this.comparisons = comparisons;
+        this.reg = reg;
     }
 
     // For use by this class
@@ -244,7 +248,7 @@ class Intersect_Ordered extends Operator
     private final ColumnSelector leftSkipRowColumnSelector;
     private final ColumnSelector rightSkipRowColumnSelector;
     private final boolean usePValues;
-    private final List<TComparison> comparisons;
+    private final T3RegistryService reg;;
     
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
@@ -353,6 +357,7 @@ class Intersect_Ordered extends Operator
         @Override
         public void jump(Row jumpRow, ColumnSelector jumpRowColumnSelector)
         {
+            new UnsupportedOperationException("calling Jump From: " ).printStackTrace();
             // This operator emits rows from left or right. The row used to specify the jump should be of the matching
             // row type.
             int suffixRowFixedFields;
@@ -520,11 +525,15 @@ class Intersect_Ordered extends Operator
                 for (int f = 0; f < fieldsToCompare; f++) {
                     if (usingPValues)
                     {
+                        PValueSource source = jumpRow.pvalue(jumpRowFixedFields + f);
+                        PValueTarget target =  skipRow.pvalueAt(skipRowFixedFields + f);
                         
-                        TComparison comparison = null;
-                        if (comparisons != null && (comparison = comparisons.get(f)) != null)
-                            comparison.copyComparables(jumpRow.pvalue(jumpRowFixedFields + f),
-                                                       skipRow.pvalueAt(skipRowFixedFields + f));
+                        TKeyComparable comparable = reg.getKeyComparable(source.tInstance().typeClass(),
+                                                                         target.tInstance().typeClass());
+                        
+                        if (comparable != null)
+                            comparable.getComparison().copyComparables(source,
+                                                                       target);
                         else
                             PValueTargets.copyFrom(
                                     jumpRow.pvalue(jumpRowFixedFields + f),
