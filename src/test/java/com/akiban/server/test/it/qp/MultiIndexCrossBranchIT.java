@@ -225,7 +225,8 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
                 2,
                 1,
                 JoinType.INNER_JOIN,
-                side);
+                side,
+                null);
         return plan;
     }
 

@@ -140,7 +140,8 @@ public class ParentAndChildSkipScanIT extends OperatorITBase
                 ascending(ascending),
                 joinType,
                 EnumSet.of(skipScan ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN,
-                           IntersectOption.OUTPUT_RIGHT));
+                           IntersectOption.OUTPUT_RIGHT),
+                null);
     }
 
     private IndexKeyRange parentXEq(long x)

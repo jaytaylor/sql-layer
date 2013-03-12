@@ -153,7 +153,8 @@ public class Intersect_OrderedVsHKeyColumnEquivalenceIT extends OperatorITBase
                 4,
                 ascending(true, true, true, true),
                 JoinType.INNER_JOIN,
-                EnumSet.of(IntersectOption.OUTPUT_RIGHT, IntersectOption.SKIP_SCAN));
+                EnumSet.of(IntersectOption.OUTPUT_RIGHT, IntersectOption.SKIP_SCAN),
+                null);
         return plan;
     }
     private boolean[] ascending(boolean... ascending)
