@@ -27,7 +27,6 @@
 package com.akiban.server.entity.model;
 
 import com.google.common.base.Function;
-import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -83,7 +82,6 @@ public final class Space {
         return entities;
     }
 
-    @SuppressWarnings("unused")
     void setEntities(Map<String, Entity> entities) {
         this.entities = Collections.unmodifiableMap(new TreeMap<>(entities));
     }
