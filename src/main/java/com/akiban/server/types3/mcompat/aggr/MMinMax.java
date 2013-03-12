@@ -31,7 +31,6 @@ import com.akiban.server.types3.TAggregatorBase;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;

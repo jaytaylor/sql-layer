@@ -49,7 +49,6 @@ import java.util.*;
 public class JoinAndIndexPicker extends BaseRule
 {
     private static final Logger logger = LoggerFactory.getLogger(JoinAndIndexPicker.class);
-
     @Override
     protected Logger getLogger() {
         return logger;
@@ -59,7 +58,7 @@ public class JoinAndIndexPicker extends BaseRule
     public void apply(PlanContext planContext) {
         BaseQuery query = (BaseQuery)planContext.getPlan();
         List<Picker> pickers = 
-            new JoinsFinder((SchemaRulesContext)planContext.getRulesContext())
+            new JoinsFinder(planContext)
             .find(query);
         for (Picker picker : pickers) {
             picker.apply();
@@ -68,6 +67,7 @@ public class JoinAndIndexPicker extends BaseRule
 
     static class Picker {
         Map<SubquerySource,Picker> subpickers;
+        PlanContext planContext;
         SchemaRulesContext rulesContext;
         Joinable joinable;
         BaseQuery query;
@@ -75,10 +75,11 @@ public class JoinAndIndexPicker extends BaseRule
         ConditionList originalSubqueryWhereConditions;
 
         public Picker(Joinable joinable, BaseQuery query,
-                      SchemaRulesContext rulesContext,
+                      PlanContext planContext,
                       Map<SubquerySource,Picker> subpickers) {
             this.subpickers = subpickers;
-            this.rulesContext = rulesContext;
+            this.planContext = planContext;
+            this.rulesContext = (SchemaRulesContext)planContext.getRulesContext();
             this.joinable = joinable;
             this.query = query;
         }
@@ -86,7 +87,11 @@ public class JoinAndIndexPicker extends BaseRule
         public CostEstimator getCostEstimator() {
             return rulesContext.getCostEstimator();
         }
-
+        
+        public PlanContext getPlanContext() { 
+            return planContext;
+        }
+        
         public void apply() {
             queryGoal = determineQueryIndexGoal(joinable);
             if (joinable instanceof TableGroupJoinTree) {
@@ -173,7 +178,7 @@ public class JoinAndIndexPicker extends BaseRule
         // join algorithm and can shortcut some of the setup for this
         // group.
         protected void pickIndex(TableGroupJoinTree tables) {
-            GroupIndexGoal groupGoal = new GroupIndexGoal(queryGoal, tables);
+            GroupIndexGoal groupGoal = new GroupIndexGoal(queryGoal, tables, planContext);
             List<JoinOperator> empty = Collections.emptyList(); // No more joins / bound tables.
             groupGoal.updateRequiredColumns(empty, empty);
             BaseScan scan = groupGoal.pickBestScan();
@@ -253,7 +258,7 @@ public class JoinAndIndexPicker extends BaseRule
             }
             if (joinable instanceof TableGroupJoinTree) {
                 TableGroupJoinTree tables = (TableGroupJoinTree)joinable;
-                GroupIndexGoal groupGoal = new GroupIndexGoal(queryGoal, tables);
+                GroupIndexGoal groupGoal = new GroupIndexGoal(queryGoal, tables, planContext);
                 // In this block because we were not a JoinNode, query has no joins itself
                 List<JoinOperator> queryJoins = Collections.emptyList();
                 List<ConditionList> conditionSources = groupGoal.updateContext(subqueryBoundTables, queryJoins, subqueryJoins, subqueryOutsideJoins, true, null);
@@ -767,7 +772,7 @@ public class JoinAndIndexPicker extends BaseRule
             // Seed with the right plan class to hold state / alternatives.
             if (joinable instanceof TableGroupJoinTree) {
                 GroupIndexGoal groupGoal = new GroupIndexGoal(picker.queryGoal, 
-                                                              (TableGroupJoinTree)joinable);
+                                                              (TableGroupJoinTree)joinable, picker.getPlanContext());
                 return new GroupPlanClass(this, s, groupGoal);
             }
             if (joinable instanceof SubquerySource) {
@@ -960,10 +965,10 @@ public class JoinAndIndexPicker extends BaseRule
         Map<SubquerySource,Picker> subpickers;
         BaseQuery rootQuery;
         Deque<SubqueryState> subqueries = new ArrayDeque<>();
-        SchemaRulesContext rulesContext;
+        PlanContext planContext;
 
-        public JoinsFinder(SchemaRulesContext rulesContext) {
-            this.rulesContext = rulesContext;
+        public JoinsFinder(PlanContext planContext) {
+            this.planContext = planContext;
         }
 
         public List<Picker> find(BaseQuery query) {
@@ -1019,7 +1024,7 @@ public class JoinAndIndexPicker extends BaseRule
                         // Already have another set of joins to same root join.
                         return true;
                 }
-                Picker picker = new Picker(j, query, rulesContext, subpickers);
+                Picker picker = new Picker(j, query, planContext, subpickers);
                 result.add(picker);
                 if (subquerySource != null)
                     subpickers.put(subquerySource, picker);

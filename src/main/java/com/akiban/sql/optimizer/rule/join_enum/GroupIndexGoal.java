@@ -27,6 +27,7 @@
 package com.akiban.sql.optimizer.rule.join_enum;
 
 import com.akiban.sql.optimizer.rule.EquivalenceFinder;
+import com.akiban.sql.optimizer.rule.PlanContext;
 import com.akiban.sql.optimizer.rule.cost.CostEstimator.SelectivityConditions;
 import com.akiban.sql.optimizer.rule.cost.PlanCostEstimator;
 import com.akiban.sql.optimizer.rule.join_enum.DPhyp.JoinOperator;
@@ -36,14 +37,8 @@ import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.FullTextIndex;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.Index;
+import com.akiban.ais.model.*;
 import com.akiban.ais.model.Index.JoinType;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
@@ -93,9 +88,12 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     // Mapping of Range-expressible conditions, by their column. lazy loaded.
     private Map<ColumnExpression,ColumnRanges> columnsToRanges;
     
-    public GroupIndexGoal(QueryIndexGoal queryGoal, TableGroupJoinTree tables) {
+    private PlanContext queryContext; 
+    
+    public GroupIndexGoal(QueryIndexGoal queryGoal, TableGroupJoinTree tables, PlanContext queryContext) {
         this.queryGoal = queryGoal;
         this.tables = tables;
+        this.queryContext = queryContext;
 
         if (queryGoal.getWhereConditions() != null) {
             conditionSources = Collections.singletonList(queryGoal.getWhereConditions());
@@ -877,7 +875,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         // called, see GroupIndexGoal#setJoinConditions().
         if (required.contains(table)) {
             for (TableIndex index : table.getTable().getTable().getIndexes()) {
-                SingleIndexScan candidate = new SingleIndexScan(index, table);
+                SingleIndexScan candidate = new SingleIndexScan(index, table, queryContext);
                 bestIndex = betterIndex(bestIndex, candidate, enumerator);
             }
         }
@@ -948,7 +946,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                 }
                 SingleIndexScan candidate = new SingleIndexScan(index, rootTable,
                                                     rootRequired, leafRequired, 
-                                                    table);
+                                                    table, queryContext);
                 bestIndex = betterIndex(bestIndex, candidate, enumerator);
             }
         }

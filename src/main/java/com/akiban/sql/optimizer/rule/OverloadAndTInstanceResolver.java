@@ -142,14 +142,14 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         return plan.getWhiteboard(RESOLVER_MARKER);
     }
 
-    static class ResolvingVisitor implements PlanVisitor, ExpressionRewriteVisitor {
+    public static class ResolvingVisitor implements PlanVisitor, ExpressionRewriteVisitor {
 
         private NewFolder folder;
         private T3RegistryService registry;
         private QueryContext queryContext;
         private ParametersSync parametersSync;
 
-        ResolvingVisitor(PlanContext context, NewFolder folder) {
+        public ResolvingVisitor(PlanContext context, NewFolder folder) {
             this.folder = folder;
             SchemaRulesContext src = (SchemaRulesContext)context.getRulesContext();
             registry = src.getT3Registry();
