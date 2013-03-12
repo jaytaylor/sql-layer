@@ -59,7 +59,7 @@ public final class MKeyComparables {
             @Override
             public void copyComparables(PValueSource source, PValueTarget target)
             {
-                PValueTargets.putLong(target, getLong(source));
+                PValueTargets.putLong(target, getLong(source));   
             }
         };
 

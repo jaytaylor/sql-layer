@@ -39,12 +39,16 @@ public final class PValueTargets {
         {
             case INT_8:
                 target.putInt8((byte)val);
+                break;
             case INT_16:
                 target.putInt16((short)val);
+                break;
             case INT_32:
                 target.putInt32((int)val);
+                break;
             case INT_64:
                 target.putInt64((long)val);
+                break;
             default:
                 throw new AkibanInternalException("Cannot put LONG into " + target.tInstance());
         }

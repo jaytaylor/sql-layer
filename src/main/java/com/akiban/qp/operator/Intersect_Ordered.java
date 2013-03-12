@@ -26,6 +26,7 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TKeyComparable;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -38,6 +39,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.IndexRowPrefixSelector;
 import com.akiban.server.explain.*;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
@@ -357,7 +359,6 @@ class Intersect_Ordered extends Operator
         @Override
         public void jump(Row jumpRow, ColumnSelector jumpRowColumnSelector)
         {
-            new UnsupportedOperationException("calling Jump From: " ).printStackTrace();
             // This operator emits rows from left or right. The row used to specify the jump should be of the matching
             // row type.
             int suffixRowFixedFields;
@@ -481,7 +482,7 @@ class Intersect_Ordered extends Operator
                     c = adjustComparison(c);
                     if (c >= 0) return;
                 }
-                addSuffixToSkipRow(leftSkipRow(jumpRow.rowType()),
+                addSuffixToSkipRow(leftSkipRow(),
                                    leftFixedFields,
                                    jumpRow,
                                    jumpRowFixedFields);
@@ -530,7 +531,6 @@ class Intersect_Ordered extends Operator
                         
                         TKeyComparable comparable = reg.getKeyComparable(source.tInstance().typeClass(),
                                                                          target.tInstance().typeClass());
-                        
                         if (comparable != null)
                             comparable.getComparison().copyComparables(source,
                                                                        target);
@@ -545,7 +545,7 @@ class Intersect_Ordered extends Operator
             }
         }
 
-        private ValuesHolderRow leftSkipRow(RowType otherRowType)
+        private ValuesHolderRow leftSkipRow()
         {
             if (leftSkipRow == null) {
                 assert leftRow.isHolding();
@@ -555,7 +555,6 @@ class Intersect_Ordered extends Operator
                 while (f < leftFixedFields) {
                     if (usingPValues)
                     {
-                        //otherRowType.typeInstanceAt(f)
                         PValueTargets.copyFrom(
                                 leftRow.get().pvalue(f),
                                 leftSkipRow.pvalueAt(f));
