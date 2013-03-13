@@ -222,6 +222,7 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
         case JAVA:
             return new ServerJavaMethodExpression(routine, inputs);
         case SCRIPT_FUNCTION_JAVA:
+        case SCRIPT_FUNCTION_JSON:
             return new ScriptFunctionJavaRoutineExpression(routine, inputs);
         case SCRIPT_BINDINGS:
             return new ScriptBindingsRoutineExpression(routine, inputs);

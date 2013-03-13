@@ -94,6 +94,7 @@ public abstract class PostgresJavaRoutine extends PostgresDMLStatement
                                                 columnNames, columnTypes,
                                                 parameterTypes, usesPValues);
         case SCRIPT_FUNCTION_JAVA:
+        case SCRIPT_FUNCTION_JSON:
             return PostgresScriptFunctionJavaRoutine.statement(server, invocation, 
                                                                columnNames, columnTypes,
                                                                parameterTypes, usesPValues);

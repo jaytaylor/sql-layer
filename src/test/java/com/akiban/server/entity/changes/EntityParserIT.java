@@ -25,7 +25,9 @@
  */
 package com.akiban.server.entity.changes;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -61,13 +63,8 @@ public class EntityParserIT extends ITBase {
         TableName tableName = new TableName ("test", "customers");
 
         String postInput = "{\"cid\": 3, \"first_name\": \"Bobby\",\"last_name\": \"Jones\"}";
-        ObjectMapper m = new ObjectMapper();
-        JsonNode node = m.readTree(postInput);
-        parser.parseAndCreate(ddl(), session(), tableName, node);
+        AkibanInformationSchema ais = processParse(tableName, postInput);
         
-        AkibanInformationSchema ais = dxl().ddlFunctions().getAIS(session());
-        
-        assertNotNull(ais.getTable(tableName));
         assertTrue(ais.getTable(tableName).getColumns().size() == 3);
         assertTrue(ais.getTable(tableName).getColumn(0).getName().equals("cid"));
         assertTrue(ais.getTable(tableName).getColumn(0).getType().equals(Types.BIGINT));
@@ -81,12 +78,8 @@ public class EntityParserIT extends ITBase {
     public void testOrders() throws JsonProcessingException, IOException {
         TableName tableName = new TableName ("test", "orders");
         String postInput = "{\"oid\" : 103, \"cid\" : 2, \"odate\": \"2012-12-31 12:00:00\"}";
-        ObjectMapper m = new ObjectMapper();
-        JsonNode node = m.readTree(postInput);
-        parser.parseAndCreate(ddl(), session(), tableName, node);
-        
-        AkibanInformationSchema ais = dxl().ddlFunctions().getAIS(session());
-        assertNotNull(ais.getTable(tableName));
+        AkibanInformationSchema ais = processParse(tableName, postInput);
+
         assertTrue(ais.getTable(tableName).getColumns().size() == 3);
         assertTrue(ais.getTable(tableName).getColumn(0).getType().equals(Types.BIGINT));
     }
@@ -96,12 +89,8 @@ public class EntityParserIT extends ITBase {
         TableName tableName = new TableName ("test", "customers");
         String postInput ="{\"cid\": 6, \"first_name\": \"John\",\"last_name\": \"Smith\"," +
                 "\"test.addresses\": {\"aid\": 104, \"cid\": 6, \"state\": \"MA\", \"city\": \"Boston\"}}";
-        ObjectMapper m = new ObjectMapper();
-        JsonNode node = m.readTree(postInput);
-        parser.parseAndCreate(ddl(), session(), tableName, node);
-        AkibanInformationSchema ais = dxl().ddlFunctions().getAIS(session());
+        AkibanInformationSchema ais = processParse(tableName, postInput);
         
-        assertNotNull (ais.getTable(tableName));
         UserTable c = ais.getUserTable(tableName);
         assertTrue(c.getColumns().size() == 4);
         assertTrue(c.getColumn(3).getName().equals("_customers_id"));
@@ -127,12 +116,8 @@ public class EntityParserIT extends ITBase {
     public void testJsonTypes() throws JsonProcessingException, IOException {
         TableName tableName = new TableName ("test", "customers");
         String postInput ="{\"cid\": 6, \"first_name\": \"John\", \"ordered\": false, \"order_date\": null, \"tax_rate\": 0.01}";
-        ObjectMapper m = new ObjectMapper();
-        JsonNode node = m.readTree(postInput);
-        parser.parseAndCreate(ddl(), session(), tableName, node);
-        AkibanInformationSchema ais = dxl().ddlFunctions().getAIS(session());
+        AkibanInformationSchema ais = processParse(tableName, postInput);
 
-        assertNotNull (ais.getTable(tableName));
         UserTable c = ais.getUserTable(tableName);
         assertTrue(c.getColumns().size() == 5);
         assertTrue(c.getColumn(0).getName().equals("cid"));
@@ -153,12 +138,8 @@ public class EntityParserIT extends ITBase {
         String postInput ="{\"cid\": 6, \"first_name\": \"John\",\"last_name\": \"Smith\"," +
                 "\"addresses\": {\"aid\": 104, \"cid\": 6, \"state\": \"MA\", \"city\": \"Boston\"}," +
                 "\"orders\": {\"oid\" : 103, \"cid\" : 2, \"odate\": \"2012-12-31 12:00:00\"}}";
-        ObjectMapper m = new ObjectMapper();
-        JsonNode node = m.readTree(postInput);
-        parser.parseAndCreate(ddl(), session(), tableName, node);
-        AkibanInformationSchema ais = dxl().ddlFunctions().getAIS(session());
+        AkibanInformationSchema ais = processParse(tableName, postInput);
         
-        assertNotNull(ais.getTable(new TableName("test", "customers")));
         UserTable c = ais.getUserTable(tableName);
         
         assertNotNull (ais.getTable(new TableName("test", "addresses")));
@@ -181,12 +162,7 @@ public class EntityParserIT extends ITBase {
         String postInput ="{\"cid\": 6, \"first_name\": \"John\",\"last_name\": \"Smith\"," +
                 "\"addresses\": [{\"aid\": 104, \"cid\": 6, \"state\": \"MA\", \"city\": \"Boston\"}, " +
                 "{\"aid\": 105, \"cid\": 6, \"state\": \"MA\", \"city\": \"Boston\"}]}";
-        ObjectMapper m = new ObjectMapper();
-        JsonNode node = m.readTree(postInput);
-        parser.parseAndCreate(ddl(), session(), tableName, node);
-        AkibanInformationSchema ais = dxl().ddlFunctions().getAIS(session());
-        
-        assertNotNull (ais.getTable(tableName));
+        AkibanInformationSchema ais = processParse (tableName, postInput);
         UserTable c = ais.getUserTable(tableName);
 
         tableName = new TableName ("test", "addresses");
@@ -196,5 +172,125 @@ public class EntityParserIT extends ITBase {
         Join join = a.getParentJoin();
         assertTrue (join.getParent() == c);
         assertTrue (join.getChild() == a);
+    }
+    
+    @Test
+    public void testEmptyArray() throws JsonProcessingException, IOException {
+        TableName tableName = new TableName ("test", "campaign");
+        String postInput = "{\"next_offset\":20, \"_acl\":[]}";
+        AkibanInformationSchema ais = processParse (tableName, postInput);
+        UserTable c = ais.getUserTable(tableName);
+        
+        UserTable a = ais.getUserTable("test", "_acl");
+        assertNotNull (a);
+        assertNotNull (a.getParentJoin());
+        Join join = a.getParentJoin();
+        assertTrue (join.getParent() == c);
+        assertEquals(2, a.getColumns().size());
+        assertNotNull (a.getColumn("_campaign_id"));
+        assertNotNull (a.getColumn("placeholder"));
+        assertTrue(a.getColumn("placeholder").getType().equals(Types.VARCHAR));
+    }
+    
+    @Test
+    public void testItemArrayInt() throws JsonProcessingException, IOException {
+        TableName tableName = new TableName ("test", "campaign");
+        String postInput = "{\"next_offset\":20, \"_acl\":[1,3,5]}";
+        AkibanInformationSchema ais = processParse (tableName, postInput);
+        UserTable c = ais.getUserTable(tableName);
+        
+        UserTable a = ais.getUserTable("test", "_acl");
+        assertNotNull (a);
+        assertNotNull (a.getParentJoin());
+        Join join = a.getParentJoin();
+        assertTrue (join.getParent() == c);
+        assertEquals(2, a.getColumns().size());
+        assertNotNull (a.getColumn("_campaign_id"));
+        assertNotNull (a.getColumn("value"));
+        assertTrue(a.getColumn("value").getType().equals(Types.BIGINT));
+    }
+
+    @Test
+    public void testItemArrayString() throws JsonProcessingException, IOException {
+        TableName tableName = new TableName ("test", "campaign");
+        String postInput = "{\"next_offset\":20, \"_acl\":[\"1\",\"3\",\"5\"]}";
+        AkibanInformationSchema ais = processParse (tableName, postInput);
+        UserTable c = ais.getUserTable(tableName);
+        
+        UserTable a = ais.getUserTable("test", "_acl");
+        assertNotNull (a);
+        assertNotNull (a.getParentJoin());
+        Join join = a.getParentJoin();
+        assertTrue (join.getParent() == c);
+        assertEquals(2, a.getColumns().size());
+        assertNotNull (a.getColumn("_campaign_id"));
+        assertNotNull (a.getColumn("value"));
+        assertTrue(a.getColumn("value").getType().equals(Types.VARCHAR));
+    }
+    
+    @Test
+    public void testEmptyObject() throws JsonProcessingException, IOException {
+        TableName tableName = new TableName ("test", "campaign");
+        String postInput = "{\"next_offset\":20, \"_acl\":{}}";
+        AkibanInformationSchema ais = processParse (tableName, postInput);
+        UserTable c = ais.getUserTable(tableName);
+        
+        UserTable a = ais.getUserTable("test", "_acl");
+        assertNotNull (a);
+        assertNotNull (a.getParentJoin());
+        Join join = a.getParentJoin();
+        assertTrue (join.getParent() == c);
+        assertEquals(2, a.getColumns().size());
+        assertNotNull (a.getColumn("_campaign_id"));
+        assertNotNull (a.getColumn("placeholder"));
+        assertTrue(a.getColumn("placeholder").getType().equals(Types.VARCHAR));
+        
+    }
+
+    @Test
+    public void testEmptyArrayObject() throws JsonProcessingException, IOException {
+        TableName tableName = new TableName ("test", "campaign");
+        String postInput = "{\"next_offset\":20, \"_acl\":[{}]}";
+        AkibanInformationSchema ais = processParse (tableName, postInput);
+        UserTable c = ais.getUserTable(tableName);
+        
+        UserTable a = ais.getUserTable("test", "_acl");
+        assertNotNull (a);
+        assertNotNull (a.getParentJoin());
+        Join join = a.getParentJoin();
+        assertTrue (join.getParent() == c);
+        assertEquals(2, a.getColumns().size());
+        assertNotNull (a.getColumn("_campaign_id"));
+        assertNotNull (a.getColumn("placeholder"));
+        assertTrue(a.getColumn("placeholder").getType().equals(Types.VARCHAR));
+    }
+
+    @Test
+    public void testTwoNestedJoins() throws JsonProcessingException, IOException {
+        TableName tableName = new TableName ("test", "campaign");
+        String postInput = "{\"next_offset\":20,\"records\":[" +
+                "{\"id\":\"14092603-6cf8-d791-2b72-5138fb3819d7\",\"name\":\"T-Squared Techs\","+
+                "\"_acl\":{\"fields\":{}}}]}";
+        AkibanInformationSchema ais = processParse (tableName, postInput);
+        UserTable c = ais.getUserTable(tableName);
+        UserTable r = ais.getUserTable("test", "records");
+        assertNotNull (r.getParentJoin());
+        UserTable a = ais.getUserTable("test", "_acl");
+        UserTable f = ais.getUserTable("test", "fields");
+        
+        assertTrue (f.getParentJoin().getParent() == a);
+        assertTrue (a.getParentJoin().getParent() == r);
+        assertTrue (r.getParentJoin().getParent() == c);
+        assertNull (c.getParentJoin());
+    }
+
+    private AkibanInformationSchema processParse (TableName tableName, String postInput) throws JsonProcessingException, IOException{
+        ObjectMapper m = new ObjectMapper();
+        JsonNode node = m.readTree(postInput);
+        parser.parseAndCreate(ddl(), session(), tableName, node);
+        AkibanInformationSchema ais = dxl().ddlFunctions().getAIS(session());
+        assertNotNull (ais.getTable(tableName));
+        
+        return ais;
     }
 }

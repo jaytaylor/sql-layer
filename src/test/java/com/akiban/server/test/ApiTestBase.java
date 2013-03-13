@@ -36,7 +36,6 @@ import java.io.File;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -119,6 +118,8 @@ import org.junit.rules.MethodRule;
 import org.junit.rules.TestName;
 import org.junit.rules.TestWatchman;
 import org.junit.runners.model.FrameworkMethod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>Base class for all API tests. Contains a @SetUp that gives you a fresh DDLFunctions and DMLFunctions, plus
@@ -785,35 +786,19 @@ public class ApiTestBase {
 
     protected int createTablesAndIndexesFromDDL(String schema, String ddl) {
         SchemaFactory schemaFactory = new SchemaFactory(schema);
-        AkibanInformationSchema ais = schemaFactory.ais(ddl);
-        List<UserTable> tables = new ArrayList<>(ais.getUserTables().values());
-        // Need to define from root the leaf; repeating definition order should work.
-        Collections.sort(tables, new Comparator<UserTable>() {
-                             @Override
-                             public int compare(UserTable t1, UserTable t2) {
-                                 return t1.getTableId().compareTo(t2.getTableId());
-                             }
-                         });
-        for (UserTable table : tables) {
-            ddl().createTable(session(), table);
-        }
-        for (Group group : ais.getGroups().values()) {
-            Collection<GroupIndex> indexes = group.getIndexes();
-            if (!indexes.isEmpty())
-                ddl().createIndexes(session(), indexes);
-        }
-        for (UserTable table : tables) {
-            Collection<FullTextIndex> indexes = table.getOwnFullTextIndexes();
-            if (!indexes.isEmpty())
-                ddl().createIndexes(session(), indexes);
-        }
-        for (Routine routine : ais.getRoutines().values()) {
-            ddl().createRoutine(session(), routine);
-        }
-        for (View view : ais.getViews().values()) {
-            ddl().createView(session(), view);
-        }
         
+        // Insert DDL into the System 
+        AkibanInformationSchema ais = schemaFactory.ais(ddl(), session(), ddl);
+        
+        // sort DDL to find first root table of the user schema
+        ais = schemaFactory.ais (ddl);
+        List<UserTable> tables = new ArrayList<>(ais.getUserTables().values());
+        Collections.sort(tables, new Comparator<UserTable>() {
+            @Override
+            public int compare(UserTable t1, UserTable t2) {
+                return t1.getTableId().compareTo(t2.getTableId());
+            }
+        });
         updateAISGeneration();
         return ddl().getTableId(session(), tables.get(0).getName());
     }

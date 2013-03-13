@@ -125,6 +125,16 @@ public class AISBBasedBuilder
             return this;
         }
         
+        @Override 
+        public NewUserTableBuilder getUserTable(TableName table) {
+            checkUsable();
+            this.schema = table.getSchemaName();
+            this.userTable = table.getTableName();
+            assert aisb.akibanInformationSchema().getTable(table) != null;
+            uTableColumnPos = aisb.akibanInformationSchema().getTable(table).getColumns().size();
+            return this;
+        }
+        
         @Override
         public NewAISBuilder sequence (String name) {
             return sequence (name, 1, 1, false);

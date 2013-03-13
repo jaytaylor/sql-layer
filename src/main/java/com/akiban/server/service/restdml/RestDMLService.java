@@ -50,7 +50,9 @@ public interface RestDMLService {
     public void explainSQL(PrintWriter writer, HttpServletRequest request, String sql) throws IOException, SQLException;
 
     public void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
-                              TableName procName, Map<String,List<String>> params) throws SQLException;
+                              TableName procName, Map<String,List<String>> queryParams) throws SQLException;
+    public void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
+                              TableName procName, String jsonParams) throws SQLException;
 
     public void fullTextSearch(PrintWriter writer, IndexName indexName, Integer depth, String query, Integer limit);
     // TODO: Temporary.

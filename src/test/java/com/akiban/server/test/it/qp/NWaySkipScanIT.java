@@ -289,7 +289,8 @@ public class NWaySkipScanIT extends OperatorITBase
                 1,
                 ascending(true),
                 JoinType.INNER_JOIN,
-                EnumSet.of(scanType, xyOutput)),
+                EnumSet.of(scanType, xyOutput),
+                null),
             indexScan_Default(
                 tZIndexRowType,
                 zEq(z),
@@ -300,7 +301,8 @@ public class NWaySkipScanIT extends OperatorITBase
             1,
             ascending(true),
             JoinType.INNER_JOIN,
-            EnumSet.of(scanType, xyzOutput));
+            EnumSet.of(scanType, xyzOutput),
+            null);
     }
 
     private Operator unionXXunionX(int x1, int x2, int x3)
@@ -358,7 +360,8 @@ public class NWaySkipScanIT extends OperatorITBase
                 1,
                 ascending(true),
                 JoinType.INNER_JOIN,
-                EnumSet.of(scanType, LEFT)),
+                EnumSet.of(scanType, LEFT),
+                null),
             indexScan_Default(
                 tXIndexRowType,
                 xEq(x2),
@@ -404,7 +407,8 @@ public class NWaySkipScanIT extends OperatorITBase
             1,
             ascending(true),
             JoinType.INNER_JOIN,
-            EnumSet.of(scanType, intersectOutput));
+            EnumSet.of(scanType, intersectOutput),
+            null);
     }
 
     private IndexKeyRange xEq(long x)

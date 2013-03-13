@@ -421,10 +421,42 @@ public class AISMerge {
             }
         }
 
+        if (sourceTable.getPrimaryKey() != null) {
+            TableIndex index = sourceTable.getPrimaryKey().getIndex();
+            final int rootTableID = (targetGroup != null) ? 
+                    targetGroup.getRoot().getTableId() : 
+                        builder.akibanInformationSchema().getUserTable(sourceTable.getName()).getTableId();
+            IndexName indexName = index.getIndexName();
+            builder.index(sourceTable.getName().getSchemaName(), 
+                    sourceTable.getName().getTableName(),
+                    indexName.getName(), 
+                    index.isUnique(), 
+                    index.getConstraint(),
+                    nameGenerator.generateIndexID(rootTableID));
+            for (IndexColumn col : index.getKeyColumns()) {
+                    builder.indexColumn(sourceTable.getName().getSchemaName(), 
+                            sourceTable.getName().getTableName(),
+                            index.getIndexName().getName(),
+                        col.getColumn().getName(), 
+                        col.getPosition(), 
+                        col.isAscending(), 
+                        col.getIndexedLength());
+            }
+        }
 
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
-
+        
+        for (TableIndex index : sourceTable.getIndexes()) {
+            if (!index.isPrimaryKey()) {
+                mergeIndex(index);
+            }
+        }
+        
+        for (FullTextIndex index : sourceTable.getFullTextIndexes()) {
+            mergeIndex(index);
+        }
+        
         builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
         builder.akibanInformationSchema().freeze();
     }
@@ -515,25 +547,6 @@ public class AISMerge {
             // Proactively cache, can go away if Column ever cleans itself up
             newColumn.getMaxStorageSize();
             newColumn.getPrefixSize();
-        }
-        
-        // indexes/constraints
-        final int rootTableID = (targetGroup != null) ? targetGroup.getRoot().getTableId() : targetTable.getTableId();
-        for (TableIndex index : table.getIndexes()) {
-            IndexName indexName = index.getIndexName();
-
-            builder.index(schemaName, tableName,
-                    indexName.getName(), 
-                    index.isUnique(), 
-                    index.getConstraint(),
-                    nameGenerator.generateIndexID(rootTableID));
-            for (IndexColumn col : index.getKeyColumns()) {
-                    builder.indexColumn(schemaName, tableName, index.getIndexName().getName(),
-                        col.getColumn().getName(), 
-                        col.getPosition(), 
-                        col.isAscending(), 
-                        col.getIndexedLength());
-            }
         }
     }
 

@@ -269,7 +269,8 @@ public class SkipScanPerformanceIT extends OperatorITBase
                 JoinType.INNER_JOIN,
                 EnumSet.of(
                     skipScan ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN,
-                    IntersectOption.OUTPUT_LEFT));
+                    IntersectOption.OUTPUT_LEFT),
+                null);
     }
 
     private Operator intersectXYintersectZ(int x, int y, int z, boolean skip)
@@ -297,7 +298,8 @@ public class SkipScanPerformanceIT extends OperatorITBase
                 1,
                 ascending(true),
                 JoinType.INNER_JOIN,
-                EnumSet.of(scanType, LEFT)),
+                EnumSet.of(scanType, LEFT),
+                null),
             indexScan_Default(
                 tZIndexRowType,
                 zEq(z),
@@ -308,7 +310,8 @@ public class SkipScanPerformanceIT extends OperatorITBase
             1,
             ascending(true),
             JoinType.INNER_JOIN,
-            EnumSet.of(scanType, LEFT));
+            EnumSet.of(scanType, LEFT),
+            null);
     }
 
     private Operator unionXXunionX(int x1, int x2, int x3)
@@ -366,7 +369,8 @@ public class SkipScanPerformanceIT extends OperatorITBase
                 1,
                 ascending(true),
                 JoinType.INNER_JOIN,
-                EnumSet.of(scanType, LEFT)),
+                EnumSet.of(scanType, LEFT),
+                null),
             indexScan_Default(
                 tXIndexRowType,
                 xEq(x2),
@@ -412,7 +416,8 @@ public class SkipScanPerformanceIT extends OperatorITBase
             1,
             ascending(true),
             JoinType.INNER_JOIN,
-            EnumSet.of(scanType, intersectOutput));
+            EnumSet.of(scanType, intersectOutput),
+            null);
     }
 
     private IndexKeyRange xEq(long x)

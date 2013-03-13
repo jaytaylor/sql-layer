@@ -40,7 +40,6 @@ import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.ais.model.aisb2.NewUserTableBuilder;
 import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.session.Session;
 
 public final class EntityParser {
@@ -81,34 +80,41 @@ public final class EntityParser {
                     processTable(arrayElement, builder, tableName);
                     first = false;
                 }
+                else if (first && !arrayElement.isContainerNode()) {
+                    NewUserTableBuilder table = builder.userTable(tableName.getSchemaName(), tableName.getTableName());
+                    addColumnToTable (arrayElement, "value", table);
+                    first = false;
+                }
                 // else throw Bad Json Format Exception
+            }
+            // If no elements in the array, add a placeholder column
+            if (first) {
+                NewUserTableBuilder table = builder.userTable(tableName.getSchemaName(), tableName.getTableName());
+                table.colString("placeholder", 128, true);
             }
         }
         // else throw Bad Json Format Exception
     }
 
     private void processTable (JsonNode node, NewAISBuilder builder, TableName tableName) throws IOException {
+        
+        LOG.trace("Creating Table {}", tableName);
         // Pass one, insert fields from the table
+        boolean columnsAdded = false;
         NewUserTableBuilder table = builder.userTable(tableName.getSchemaName(), tableName.getTableName());
         Iterator<Entry<String,JsonNode>> i = node.getFields();
         while (i.hasNext()) {
             Entry<String,JsonNode> field = i.next();
             if (field.getValue().isValueNode()) {
-                
-                if (field.getValue().isTextual()) {
-                    int  len = Math.max(field.getValue().asText().length(), 128);
-                    table.colString(field.getKey(), len, true);
-                } else if (field.getValue().isIntegralNumber()) {
-                    table.colBigInt(field.getKey(), true);
-                } else if (field.getValue().isDouble()) {
-                    table.colDouble(field.getKey(), true);
-                } else if (field.getValue().isBoolean()) {
-                    table.colLong(field.getKey(), true);
-                } else if (field.getValue().isNull()) {
-                    // wild guess
-                    table.colString(field.getKey(), 128, true);
-                }
+                LOG.trace("Column {}", field.getKey());
+                addColumnToTable(field.getValue(), field.getKey(), table);
+                columnsAdded = true;
             }
+        }
+        
+        if (!columnsAdded) {
+            table.colString("placeholder", 128, true);
+            LOG.trace("Column added placeholder");
         }
         // pass 2: insert the child nodes
         boolean first = true;
@@ -117,6 +123,7 @@ public final class EntityParser {
         while (i.hasNext()) {
             Entry<String,JsonNode> field = i.next();
             if (field.getValue().isContainerNode()) {
+                LOG.trace("Creating child table {} - first {}", field.getKey(), first);
                 if (first) {
                     table.autoIncLong(columnName, 0);
                     table.pk(columnName);
@@ -124,10 +131,28 @@ public final class EntityParser {
                 }
                 TableName childTable = TableName.parse(tableName.getSchemaName(), field.getKey());
                 processContainer (field.getValue(), builder, childTable);
-                NewUserTableBuilder child = builder.getUserTable();
+                NewUserTableBuilder child = builder.getUserTable(childTable);
                 child.colLong(columnName);
+                LOG.trace("Column added {}", columnName);
                 child.joinTo(tableName).on(columnName, columnName);
+                builder.getUserTable(tableName);
             }
+        }
+    }
+    
+    private void addColumnToTable (JsonNode node, String name, NewUserTableBuilder table) {
+        if (node.isTextual()) {
+            int  len = Math.max(node.asText().length(), 128);
+            table.colString(name, len, true);
+        } else if (node.isIntegralNumber()) {
+            table.colBigInt(name, true);
+        } else if (node.isDouble()) {
+            table.colDouble(name, true);
+        } else if (node.isBoolean()) {
+            table.colLong(name, true);
+        } else if (node.isNull()) {
+            // wild guess
+            table.colString(name, 128, true);
         }
     }
 }

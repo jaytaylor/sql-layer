@@ -43,6 +43,8 @@ import com.akiban.server.entity.model.diff.JsonDiffPreview;
 import com.akiban.server.service.session.Session;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -137,6 +139,7 @@ public final class ModelResource {
                                 created = parser.parse(tableName, node);
                                 UuidAssigner uuidAssigner = new UuidAssigner();
                                 created.getAIS().traversePostOrder(uuidAssigner);
+                                LOG.error("Table {}", created.toString());
                             }
                             Space currSpace = spaceForAIS(created.getAIS(), tableName.getSchemaName());
                             writer.write(currSpace.toJson());
@@ -216,4 +219,5 @@ public final class ModelResource {
         ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
         return AisToSpace.create(ais, Space.requireUUIDs);
     }
+    private static final Logger LOG = LoggerFactory.getLogger(ModelResource.class);    
 }
