@@ -61,10 +61,12 @@ public class DirectResource {
     private final static String MODULE_ARG_NAME = "module";
     private final static String LANGUAGE = "language";
     private final static String PACKAGE = "com.akiban.direct.entity";
-    private final static String CREATE_PROCEDURE_FORMAT = "CREATE PROCEDURE %s"
-            + " (IN params TEXT,OUT result TEXT) LANGUAGE %sPARAMETER STYLE variables AS $$%s$$;";
+
+    private final static String CREATE_PROCEDURE_FORMAT = "CREATE PROCEDURE %s (IN params VARCHAR(65535), OUT result VARCHAR(65535))"
+            + " LANGUAGE %s PARAMETER STYLE variables AS $$%s$$";
+
     private final static String DROP_PROCEDURE_FORMAT = "DROP PROCEDURE %s";
-    
+
     private final ResourceRequirements reqs;
 
     public DirectResource(ResourceRequirements reqs) {
@@ -129,7 +131,7 @@ public class DirectResource {
 
     @PUT
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("procedure")
+    @Path("/procedure")
     public Response createProcedure(@Context final HttpServletRequest request,
             @QueryParam(MODULE_ARG_NAME) @DefaultValue("DefaultModule") final String module,
             @QueryParam(LANGUAGE) @DefaultValue("Javascript") final String language,
@@ -139,14 +141,14 @@ public class DirectResource {
             public void write(PrintWriter writer) throws Exception {
                 final TableName procName = ResourceHelper.parseTableName(request, module);
                 final String sql = String.format(CREATE_PROCEDURE_FORMAT, procName, language, new String(payload));
-                reqs.restDMLService.runSQL(writer, request, sql);
+                reqs.restDMLService.runSQL(writer, request, sql, procName.getSchemaName());
             }
         }).build();
     }
 
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("procedure")
+    @Path("/procedure")
     public Response deleteProcedure(@Context final HttpServletRequest request,
             @QueryParam(MODULE_ARG_NAME) @DefaultValue("DefaultModule") final String module,
             @QueryParam(JSONP_ARG_NAME) final String jsonp) {
@@ -155,11 +157,10 @@ public class DirectResource {
             public void write(PrintWriter writer) throws Exception {
                 final TableName procName = ResourceHelper.parseTableName(request, module);
                 final String sql = String.format(DROP_PROCEDURE_FORMAT, procName);
-                reqs.restDMLService.runSQL(writer, request, sql);
+                reqs.restDMLService.runSQL(writer, request, sql, procName.getSchemaName());
             }
         }).build();
 
     }
 
-    
 }
