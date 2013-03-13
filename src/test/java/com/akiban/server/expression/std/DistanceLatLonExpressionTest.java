@@ -43,7 +43,7 @@ public class DistanceLatLonExpressionTest {
     @Test
     public void testZero() {
         Expression zero = new LiteralExpression(AkType.DECIMAL, BigDecimal.ZERO);
-        List<Expression> lst = new LinkedList<Expression>(Arrays.asList(zero, zero, zero, zero));
+        List<Expression> lst = new LinkedList<>(Arrays.asList(zero, zero, zero, zero));
         
         test(0.0, lst);
     }

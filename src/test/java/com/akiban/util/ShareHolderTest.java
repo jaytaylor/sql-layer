@@ -34,7 +34,7 @@ public final class ShareHolderTest {
 
     @Test
     public void totallyEmpty() {
-        assertEquals("shared state", false, new ShareHolder<Shareable>().isHolding());
+        assertEquals("shared state", false, new ShareHolder<>().isHolding());
     }
 
     @Test
@@ -42,7 +42,7 @@ public final class ShareHolderTest {
         Shareable shareable = new DummyShareable();
         shareable.acquire();
 
-        ShareHolder<Shareable> holder = new ShareHolder<Shareable>();
+        ShareHolder<Shareable> holder = new ShareHolder<>();
         assertEquals("shared state A", false, holder.isHolding());
         assertEquals("shareable.isShared", false, shareable.isShared());
 
@@ -57,12 +57,12 @@ public final class ShareHolderTest {
 
     @Test
     public void releaseWhenNotHeld() {
-        new ShareHolder<Shareable>().release();
+        new ShareHolder<>().release();
     }
 
     @Test
     public void holdNull() {
-        ShareHolder<Shareable> holder = new ShareHolder<Shareable>();
+        ShareHolder<Shareable> holder = new ShareHolder<>();
         holder.hold(null);
     }
 

@@ -135,7 +135,7 @@ class Intersect_Ordered extends Operator
     @Override
     public List<Operator> getInputOperators()
     {
-        List<Operator> result = new ArrayList<Operator>(2);
+        List<Operator> result = new ArrayList<>(2);
         result.add(left);
         result.add(right);
         return result;
@@ -584,8 +584,8 @@ class Intersect_Ordered extends Operator
         private boolean closed = true;
         private final Cursor leftInput;
         private final Cursor rightInput;
-        private final ShareHolder<Row> leftRow = new ShareHolder<Row>();
-        private final ShareHolder<Row> rightRow = new ShareHolder<Row>();
+        private final ShareHolder<Row> leftRow = new ShareHolder<>();
+        private final ShareHolder<Row> rightRow = new ShareHolder<>();
         private ValuesHolderRow leftSkipRow;
         private ValuesHolderRow rightSkipRow;
     }

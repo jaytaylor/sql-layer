@@ -236,7 +236,7 @@ public abstract class TScalarBase implements TScalar {
 
         List<TInputSet> origInputSets = inputSets();
         if (!origInputSets.isEmpty()) {
-            List<TInputSet> inputSets = new ArrayList<TInputSet>(origInputSets);
+            List<TInputSet> inputSets = new ArrayList<>(origInputSets);
             Collections.sort(inputSets, INPUT_SET_COMPARATOR);
             for (Iterator<TInputSet> iter = inputSets.iterator(); iter.hasNext(); ) {
                 TInputSet inputSet = iter.next();

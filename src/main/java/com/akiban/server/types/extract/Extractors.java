@@ -96,7 +96,7 @@ public final class Extractors {
     }
 
     private static Map<AkType,? extends LongExtractor> createLongExtractorsMap() {
-        Map<AkType,LongExtractor> result = new EnumMap<AkType,LongExtractor>(AkType.class);
+        Map<AkType,LongExtractor> result = new EnumMap<>(AkType.class);
         result.put(AkType.DATE, ExtractorsForDates.DATE);
         result.put(AkType.DATETIME, ExtractorsForDates.DATETIME);
         result.put(AkType.INT, ExtractorsForLong.INT);

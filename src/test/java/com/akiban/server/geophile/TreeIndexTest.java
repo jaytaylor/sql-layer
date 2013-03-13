@@ -74,7 +74,7 @@ public class TreeIndexTest
         int scanned = 0;
         int qualified = 0;
         space.decompose(box, zs);
-        List<Long> actual = new ArrayList<Long>();
+        List<Long> actual = new ArrayList<>();
         for (long z : zs) {
             if (z != -1L) {
                 // System.out.println(String.format("%016x", z));
@@ -94,7 +94,7 @@ public class TreeIndexTest
                 }
             }
         }
-        List<Long> expected = new ArrayList<Long>();
+        List<Long> expected = new ArrayList<>();
         for (long x = 10 * ((xLo + 9) / 10); x <= 10 * (xHi / 10); x += 10) {
             for (long y = 10 * ((yLo + 9) / 10); y <= 10 * (yHi / 10); y += 10) {
                 expected.add((x << 32) | y);

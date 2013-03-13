@@ -171,7 +171,7 @@ public final class IndexEntryCountIT extends ITBase {
         dml().truncateTable(session(), cId);
         dml().truncateTable(session(), oId);
         
-        List<Index> allIndexes = new ArrayList<Index>();
+        List<Index> allIndexes = new ArrayList<>();
         allIndexes.addAll(getUserTable(cId).getIndexes());
         allIndexes.addAll(getUserTable(oId).getIndexes());
         allIndexes.addAll(getUserTable(cId).getGroup().getIndexes());
@@ -183,7 +183,7 @@ public final class IndexEntryCountIT extends ITBase {
 
     private Index getOrdersFk() {
         UserTable orders = getUserTable(oId);
-        List<Index> possible = new ArrayList<Index>(1);
+        List<Index> possible = new ArrayList<>(1);
         for (Index index : orders.getIndexes()) {
             if ("FOREIGN KEY".equals(index.getConstraint()))
                 possible.add(index);

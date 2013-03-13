@@ -49,8 +49,8 @@ import com.akiban.ais.model.TableName;
 final class JoinDescription
 {
     private final TableName childTable;
-    private final List<String> parentColumns = new ArrayList<String>();
-    private final List<String> childColumns = new ArrayList<String>();
+    private final List<String> parentColumns = new ArrayList<>();
+    private final List<String> childColumns = new ArrayList<>();
 
     public JoinDescription(TableName childTable, List<String> childColumns, List<String> parentColumns)
     {
@@ -72,7 +72,7 @@ final class JoinDescription
      * @return a copy of the parent columns; "[bar]" in <tt>table child(foo) references *(bar)</tt>.
      */
     public List<String> getParentColumns() {
-        return new ArrayList<String>(parentColumns);
+        return new ArrayList<>(parentColumns);
     }
 
     /**
@@ -81,7 +81,7 @@ final class JoinDescription
      * @return a copy of the child columns; "[foo]" in <tt>table child(foo) references *(bar)</tt>.
      */
     public List<String> getChildColumns() {
-        return new ArrayList<String>(childColumns);
+        return new ArrayList<>(childColumns);
     }
 
     private void addJoinColumns(List<String> parents, List<String> children, boolean clearFirst) {

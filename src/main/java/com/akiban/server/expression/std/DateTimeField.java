@@ -1258,10 +1258,10 @@ public enum DateTimeField
     }
 
     // class static data DateTimeFields
-    static protected final HashMap<String, Integer> abbWeekday = new HashMap<String, Integer>();
-    static protected final HashMap<String, Integer> weekDay = new HashMap<String, Integer>();
-    static protected final HashMap<String, Integer> abbMonth = new HashMap<String, Integer>();
-    static protected final HashMap<String, Integer> month = new HashMap<String, Integer>();
+    static protected final HashMap<String, Integer> abbWeekday = new HashMap<>();
+    static protected final HashMap<String, Integer> weekDay = new HashMap<>();
+    static protected final HashMap<String, Integer> abbMonth = new HashMap<>();
+    static protected final HashMap<String, Integer> month = new HashMap<>();
     static
     {
         DateFormatSymbols fm = new DateFormatSymbols(new Locale(System.getProperty("user.language")));

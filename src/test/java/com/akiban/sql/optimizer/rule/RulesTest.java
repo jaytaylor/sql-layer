@@ -69,7 +69,7 @@ public class RulesTest extends OptimizerTestBase
 
     @TestParameters
     public static Collection<Parameterization> statements() throws Exception {
-        Collection<Object[]> result = new ArrayList<Object[]>();
+        Collection<Object[]> result = new ArrayList<>();
         for (File subdir : RESOURCE_DIR.listFiles(new FileFilter() {
                 public boolean accept(File file) {
                     return file.isDirectory();
@@ -139,7 +139,7 @@ public class RulesTest extends OptimizerTestBase
 
     @Before
     public void loadDDL() throws Exception {
-        List<File> schemaFiles = new ArrayList<File>(2);
+        List<File> schemaFiles = new ArrayList<>(2);
         schemaFiles.add(schemaFile);
         if (extraDDL != null)
             schemaFiles.add(extraDDL);

@@ -27,6 +27,7 @@
 package com.akiban.server.types3.aksql.aktypes;
 
 import com.akiban.server.types3.Attribute;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TClassBase;
 import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TExecutionContext;
@@ -111,6 +112,11 @@ public class AkResultSet extends TClassBase {
     }
 
     @Override
+    public boolean attributeIsPhysical(int attributeIndex) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     protected DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
         List<Column> columns = (List<Column>)instance.getMetaData();
         String[] columnNames = new String[columns.size()];
@@ -138,4 +144,8 @@ public class AkResultSet extends TClassBase {
         throw new UnsupportedOperationException();
     }
 
+    public TClass widestComparable()
+    {
+        return this;
+    }
 }

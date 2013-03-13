@@ -60,7 +60,7 @@ public final class ListUtils {
     }
 
     public static void removeDuplicates(List<?> list) {
-        Set<Object> elems = new HashSet<Object>(list.size());
+        Set<Object> elems = new HashSet<>(list.size());
         for(Iterator<?> iter = list.iterator(); iter.hasNext();) {
             Object next = iter.next();
             if (!elems.add(next))

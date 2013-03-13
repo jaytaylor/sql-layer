@@ -38,27 +38,27 @@ public class MultiIteratorTest extends TestCase
     public void testEmptyIterators()
     {
         checkIteration(new MultiIterator<Integer>());
-        checkIteration(new MultiIterator<Integer>(iterator()));
-        checkIteration(new MultiIterator<Integer>(iterator(), iterator()));
-        checkIteration(new MultiIterator<Integer>(iterator(), iterator(), iterator()));
+        checkIteration(new MultiIterator<>(iterator()));
+        checkIteration(new MultiIterator<>(iterator(), iterator()));
+        checkIteration(new MultiIterator<>(iterator(), iterator(), iterator()));
     }
 
     @Test
     public void testNonEmptyIterators()
     {
-        checkIteration(new MultiIterator<Integer>(iterator(1)),
+        checkIteration(new MultiIterator<>(iterator(1)),
                        1);
-        checkIteration(new MultiIterator<Integer>(iterator(1), iterator(2, 3)),
+        checkIteration(new MultiIterator<>(iterator(1), iterator(2, 3)),
                        1, 2, 3);
-        checkIteration(new MultiIterator<Integer>(iterator(1), iterator(2, 3), iterator(4, 5, 6)),
+        checkIteration(new MultiIterator<>(iterator(1), iterator(2, 3), iterator(4, 5, 6)),
                        1, 2, 3, 4, 5, 6);
-        checkIteration(new MultiIterator<Integer>(iterator(1), iterator(2, 3), iterator(4, 5, 6), iterator()),
+        checkIteration(new MultiIterator<>(iterator(1), iterator(2, 3), iterator(4, 5, 6), iterator()),
                        1, 2, 3, 4, 5, 6);
-        checkIteration(new MultiIterator<Integer>(iterator(1), iterator(2, 3), iterator(4, 5, 6), iterator(), iterator()),
+        checkIteration(new MultiIterator<>(iterator(1), iterator(2, 3), iterator(4, 5, 6), iterator(), iterator()),
                        1, 2, 3, 4, 5, 6);
-        checkIteration(new MultiIterator<Integer>(iterator(), iterator(1), iterator(2, 3), iterator(4, 5, 6)),
+        checkIteration(new MultiIterator<>(iterator(), iterator(1), iterator(2, 3), iterator(4, 5, 6)),
                        1, 2, 3, 4, 5, 6);
-        checkIteration(new MultiIterator<Integer>(iterator(), iterator(), iterator(1), iterator(2, 3), iterator(4, 5, 6)),
+        checkIteration(new MultiIterator<>(iterator(), iterator(), iterator(1), iterator(2, 3), iterator(4, 5, 6)),
                        1, 2, 3, 4, 5, 6);
     }
 

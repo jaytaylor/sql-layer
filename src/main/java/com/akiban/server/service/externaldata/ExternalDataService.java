@@ -28,7 +28,9 @@ package com.akiban.server.service.externaldata;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.service.session.Session;
 
 import java.io.IOException;
@@ -45,7 +47,7 @@ public interface ExternalDataService {
      */
     void dumpAllAsJson(Session session, PrintWriter writer,
                        String schemaName, String tableName,
-                       int depth, boolean withTransaction) throws IOException;
+                       int depth, boolean withTransaction);
 
     /**
      * Dump selected branches, identified by a list of PRIMARY KEY files, in JSON format.
@@ -57,7 +59,15 @@ public interface ExternalDataService {
     void dumpBranchAsJson(Session session, PrintWriter writer,
                           String schemaName, String tableName, 
                           List<List<String>> keys, int depth,
-                          boolean withTransaction) throws IOException;
+                          boolean withTransaction);
+
+    /**
+     * Dump selected branches, given a generator of branch rows.
+     */
+    void dumpBranchAsJson(Session session, PrintWriter writer,
+                          String schemaName, String tableName, 
+                          Operator scan, RowType scanType, int depth,
+                          boolean withTransaction);
 
     long loadTableFromCsv(Session session, InputStream inputStream, 
                           CsvFormat format, long skipRows,

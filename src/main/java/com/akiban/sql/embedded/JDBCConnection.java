@@ -27,7 +27,9 @@
 package com.akiban.sql.embedded;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.TableName;
 import com.akiban.server.AkServerInterface;
+import com.akiban.sql.optimizer.rule.ExplainPlanContext;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerSessionBase;
 import com.akiban.sql.server.ServerSessionMonitor;
@@ -53,6 +55,8 @@ import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.SQLParseException;
 import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
+import com.akiban.server.explain.Explainable;
+import com.akiban.server.explain.Explainer;
 import com.akiban.server.service.monitor.MonitorStage;
 import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 
@@ -71,7 +75,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     private Properties clientInfo = new Properties();
     private String schema;
     private EmbeddedOperatorCompiler compiler;
-    private List<JDBCResultSet> openResultSets = new ArrayList<JDBCResultSet>();
+    private List<JDBCResultSet> openResultSets = new ArrayList<>();
 
     private static final Logger logger = LoggerFactory.getLogger(JDBCConnection.class);
     protected static final String SERVER_TYPE = "JDBC";
@@ -84,7 +88,8 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
             (info.getProperty("database") == null))
             info.put("database", defaultSchemaName);
         setProperties(info);
-        session = reqs.sessionService().createSession();
+        if (session == null)
+            session = reqs.sessionService().createSession();
         commitMode = (transaction != null) ? CommitMode.INHERITED : CommitMode.AUTO;
     }
 
@@ -170,6 +175,43 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
         }
     }
 
+    public Explainer explain(String sql) {
+        logger.debug("Explain: {}", sql);
+        sessionMonitor.startStatement(sql);
+        updateAIS(new EmbeddedQueryContext(this));
+        ServerTransaction localTransaction = null;
+        sessionMonitor.enterStage(MonitorStage.PARSE);
+        try {
+            StatementNode sqlStmt;
+            SQLParser parser = getParser();
+            try {
+                sqlStmt = parser.parseStatement(sql);
+            } 
+            catch (SQLParserException ex) {
+                throw new SQLParseException(ex);
+            }
+            catch (StandardException ex) {
+                throw new SQLParserInternalException(ex);
+            }
+            sessionMonitor.enterStage(MonitorStage.OPTIMIZE);
+            if (transaction == null)
+                localTransaction = new ServerTransaction(this, true);
+            ExplainPlanContext context = new ExplainPlanContext(compiler, reqs.serviceManager(), session);
+            Explainable explainable;
+            if ((sqlStmt instanceof DMLStatementNode) && 
+                !(sqlStmt instanceof CallStatementNode))
+                explainable = compiler.compile((DMLStatementNode)sqlStmt, parser.getParameterList(), context).getPlannable();
+            else
+                throw new UnsupportedSQLException("Statement not supported for EXPLAIN", sqlStmt);
+            return explainable.getExplainer(context.getExplainContext());
+        }
+        finally {
+            sessionMonitor.leaveStage();
+            if (localTransaction != null)
+                localTransaction.rollback();
+        }
+    }
+
     protected void updateAIS(EmbeddedQueryContext context) {
         boolean locked = false;
         try {
@@ -199,6 +241,9 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     // remains open when a until its read result set is closed.
     protected void beforeExecuteStatement(ExecutableStatement stmt) {
         sessionMonitor.enterStage(MonitorStage.EXECUTE);
+        // If there is already a transaction and not auto-commit, transaction mode needs to allow writes if appropriate
+        if (transaction != null && commitMode == CommitMode.MANUAL)
+            transaction.setReadOnly(transactionDefaultReadOnly);
         ServerTransaction localTransaction = super.beforeExecute(stmt);
         if (localTransaction != null) {
             logger.debug("Auto BEGIN TRANSACTION");
@@ -255,6 +300,12 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
 
     protected AkServerInterface getAkServer() {
         return reqs.akServer();
+    }
+
+    public JDBCCallableStatement prepareCall(TableName routineName) throws SQLException {
+        EmbeddedQueryContext context = new EmbeddedQueryContext(this);
+        updateAIS(context);
+        return new JDBCCallableStatement(this, ExecutableCallStatement.executableStatement(routineName, context));
     }
 
     /* Wrapper */
@@ -352,7 +403,7 @@ public class JDBCConnection extends ServerSessionBase implements Connection {
     @Override
     public void close() throws SQLException {
         if (isTransactionActive())
-            rollback();
+            rollbackTransaction();
         while (!openResultSets.isEmpty()) {
             openResultSets.get(0).close();
         }

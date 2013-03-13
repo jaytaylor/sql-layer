@@ -100,7 +100,7 @@ public class IndexStatisticsYamlLoader
     }
     
     public Map<Index,IndexStatistics> load(File file, boolean statsIgnoreMissingIndexes) throws IOException {
-        Map<Index,IndexStatistics> result = new TreeMap<Index,IndexStatistics>(INDEX_NAME_COMPARATOR);
+        Map<Index,IndexStatistics> result = new TreeMap<>(INDEX_NAME_COMPARATOR);
         Yaml yaml = new Yaml();
         FileInputStream istr = new FileInputStream(file);
         try {
@@ -161,7 +161,7 @@ public class IndexStatisticsYamlLoader
     protected Histogram parseHistogram(Object obj, Index index, int firstColumn, int columnCount) {
         if (!(obj instanceof Iterable))
             throw new AkibanInternalException("Histogram not in expected format");
-        List<HistogramEntry> entries = new ArrayList<HistogramEntry>();
+        List<HistogramEntry> entries = new ArrayList<>();
         for (Object eobj : (Iterable)obj) {
             if (!(eobj instanceof Map))
                 throw new AkibanInternalException("Entry not in expected format");
@@ -280,7 +280,7 @@ public class IndexStatisticsYamlLoader
     }
 
     public void dump(Map<Index,IndexStatistics> stats, Writer writer) throws IOException {
-        List<Object> docs = new ArrayList<Object>(stats.size());
+        List<Object> docs = new ArrayList<>(stats.size());
         for (Map.Entry<Index,IndexStatistics> stat : stats.entrySet()) {
             docs.add(buildStatistics(stat.getKey(), stat.getValue()));
         }
@@ -290,13 +290,13 @@ public class IndexStatisticsYamlLoader
     }
 
     protected Object buildStatistics(Index index, IndexStatistics indexStatistics) {
-        Map<String, Object> map = new TreeMap<String, Object>();
+        Map<String, Object> map = new TreeMap<>();
         map.put(INDEX_NAME_KEY, index.getIndexName().getName());
         map.put(TABLE_NAME_KEY, index.getIndexName().getTableName());
         map.put(TIMESTAMP_KEY, new Date(indexStatistics.getAnalysisTimestamp()));
         map.put(ROW_COUNT_KEY, indexStatistics.getRowCount());
         map.put(SAMPLED_COUNT_KEY, indexStatistics.getSampledCount());
-        List<Object> stats = new ArrayList<Object>();
+        List<Object> stats = new ArrayList<>();
         int nkeys = index.getKeyColumns().size();
         if (index.isSpatial()) nkeys -= index.dimensions() - 1;
         // Multi-column histograms
@@ -316,14 +316,14 @@ public class IndexStatisticsYamlLoader
     }
 
     protected Object buildHistogram(Index index, Histogram histogram) {
-        Map<String, Object> map = new TreeMap<String, Object>();
+        Map<String, Object> map = new TreeMap<>();
         int columnCount = histogram.getColumnCount();
         int firstColumn = histogram.getFirstColumn();
         map.put(STATISTICS_COLUMN_COUNT_KEY, columnCount);
         map.put(STATISTICS_COLUMN_FIRST_COLUMN_KEY, firstColumn);
-        List<Object> entries = new ArrayList<Object>();
+        List<Object> entries = new ArrayList<>();
         for (HistogramEntry entry : histogram.getEntries()) {
-            Map<String, Object> emap = new TreeMap<String, Object>();
+            Map<String, Object> emap = new TreeMap<>();
             emap.put(HISTOGRAM_EQUAL_COUNT_KEY, entry.getEqualCount());
             emap.put(HISTOGRAM_LESS_COUNT_KEY, entry.getLessCount());
             emap.put(HISTOGRAM_DISTINCT_COUNT_KEY, entry.getDistinctCount());
@@ -341,7 +341,7 @@ public class IndexStatisticsYamlLoader
         if (index.isSpatial()) {
             firstSpatialColumn = index.firstSpatialArgument();
         }
-        List<Object> result = new ArrayList<Object>(columnCount);
+        List<Object> result = new ArrayList<>(columnCount);
         if (Types3Switch.ON) {
             for (int i = 0; i < columnCount; i++) {
                 TInstance tInstance;

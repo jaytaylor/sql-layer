@@ -45,8 +45,8 @@ public class TableGroup extends BasePlanElement
 
     public TableGroup(Group group) {
         this.group = group;
-        tables = new HashSet<TableSource>();
-        joins = new ArrayList<TableGroupJoin>();
+        tables = new HashSet<>();
+        joins = new ArrayList<>();
     }
 
     public Group getGroup() {
@@ -74,7 +74,7 @@ public class TableGroup extends BasePlanElement
     public void rejectJoin(TableGroupJoin join) {
         joins.remove(join);
         if (rejectedJoins == null)
-            rejectedJoins = new ArrayList<TableGroupJoin>();
+            rejectedJoins = new ArrayList<>();
         rejectedJoins.add(join);
     }
 

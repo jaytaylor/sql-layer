@@ -251,7 +251,7 @@ public abstract class Tap
      */
     public static TapReport[] getReport(String regExPattern)
     {
-        List<TapReport> reports = new ArrayList<TapReport>();
+        List<TapReport> reports = new ArrayList<>();
         Pattern pattern = Pattern.compile(regExPattern);
         for (Dispatch dispatch : dispatchesCopy()) {
             if (pattern.matcher(dispatch.getName()).matches() && !dispatch.isSubsidiary()) {
@@ -394,7 +394,7 @@ public abstract class Tap
     private static Collection<Dispatch> dispatchesCopy()
     {
         synchronized (DISPATCHES) {
-            return new ArrayList<Dispatch>(DISPATCHES.values());
+            return new ArrayList<>(DISPATCHES.values());
         }
     }
 
@@ -411,7 +411,7 @@ public abstract class Tap
             return x.getName().compareTo(y.getName());
         }
     };
-    static final Map<String, Dispatch> DISPATCHES = new TreeMap<String, Dispatch>();
+    static final Map<String, Dispatch> DISPATCHES = new TreeMap<>();
     static volatile BadNestingHandler badNestingHandler =
         new BadNestingHandler()
         {

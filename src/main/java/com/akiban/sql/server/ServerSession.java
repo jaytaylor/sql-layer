@@ -39,11 +39,13 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.error.ErrorCode;
+import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.externaldata.ExternalDataService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.monitor.SessionMonitor;
 import com.akiban.server.service.routines.RoutineLoader;
+import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeService;
@@ -167,4 +169,13 @@ public interface ServerSession
 
     /** Get the external data loader / dumper */
     public ExternalDataService getExternalDataService();
+
+    /** Get the security service */
+    public SecurityService getSecurityService();
+
+    /** Get the service manager */
+    public ServiceManager getServiceManager();
+
+    /** Check access to given schema */
+    public boolean isSchemaAccessible(String schemaName);
 }

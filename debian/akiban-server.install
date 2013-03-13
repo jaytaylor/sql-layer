@@ -6,5 +6,5 @@ bin/akserver usr/sbin
 debian/akdump usr/bin
 debian/server/* usr/share/akiban/server
 debian/client/* usr/share/akiban/client
-debian/plugins/* usr/share/akiban/plugins
+#debian/plugins/* usr/share/akiban/plugins
 debian/LICENSE.txt usr/share/akiban

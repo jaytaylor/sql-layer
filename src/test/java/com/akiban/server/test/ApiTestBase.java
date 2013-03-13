@@ -36,7 +36,6 @@ import java.io.File;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -119,6 +118,8 @@ import org.junit.rules.MethodRule;
 import org.junit.rules.TestName;
 import org.junit.rules.TestWatchman;
 import org.junit.runners.model.FrameworkMethod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>Base class for all API tests. Contains a @SetUp that gives you a fresh DDLFunctions and DMLFunctions, plus
@@ -142,7 +143,7 @@ public class ApiTestBase {
     }
 
     public static class ListRowOutput implements TestRowOutput {
-        private final List<NewRow> rows = new ArrayList<NewRow>();
+        private final List<NewRow> rows = new ArrayList<>();
         private final List<NewRow> rowsUnmodifiable = Collections.unmodifiableList(rows);
         private int mark = 0;
 
@@ -219,11 +220,11 @@ public class ApiTestBase {
     private static ServiceManager sm;
     private Session session;
     private int aisGeneration;
-    private final Set<RowUpdater> unfinishedRowUpdaters = new HashSet<RowUpdater>();
+    private final Set<RowUpdater> unfinishedRowUpdaters = new HashSet<>();
     private static Map<String,String> lastStartupConfigProperties = null;
     private static boolean needServicesRestart = false;
     private boolean types3SwitchSave;
-    protected static Set<Callable<Void>> beforeStopServices = new HashSet<Callable<Void>>();
+    protected static Set<Callable<Void>> beforeStopServices = new HashSet<>();
 
     @Rule
     public static final TestName testName = new TestName();
@@ -311,7 +312,7 @@ public class ApiTestBase {
         Types3Switch.ON = types3SwitchSave;
         if (lastStartupConfigProperties == null)
             return; // services never started up
-        Set<RowUpdater> localUnfinishedUpdaters = new HashSet<RowUpdater>(unfinishedRowUpdaters);
+        Set<RowUpdater> localUnfinishedUpdaters = new HashSet<>(unfinishedRowUpdaters);
         unfinishedRowUpdaters.clear();
         dropAllTables();
         assertTrue("not all updaters were used: " + localUnfinishedUpdaters, localUnfinishedUpdaters.isEmpty());
@@ -458,7 +459,12 @@ public class ApiTestBase {
     }
 
     protected final QueryContext queryContext(PersistitAdapter adapter) {
-        return new SimpleQueryContext(adapter);
+        return new SimpleQueryContext(adapter) {
+                @Override
+                public ServiceManager getServiceManager() {
+                    return sm;
+                }
+            };
     }
 
     protected final AkibanInformationSchema ais() {
@@ -511,7 +517,7 @@ public class ApiTestBase {
 
     // Property.equals() does not include the value.
     protected Map<String,String> propertiesForEquality(Map<String, String> properties) {
-        Map<String,String> result = new HashMap<String,String>(properties.size());
+        Map<String,String> result = new HashMap<>(properties.size());
         for (Map.Entry<String, String> p : properties.entrySet()) {
             result.put(p.getKey(), p.getValue());
         }
@@ -770,25 +776,29 @@ public class ApiTestBase {
         return ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);
     }
 
+    protected final FullTextIndex createFullTextIndex(String schema, String table, String indexName, String... indexCols) {
+        AkibanInformationSchema tempAIS = createIndexInternal(schema, table, indexName, "FULL_TEXT(" + Strings.join(Arrays.asList(indexCols), ",") + ")");
+        Index tempIndex = tempAIS.getUserTable(schema, table).getFullTextIndex(indexName);
+        ddl().createIndexes(session(), Collections.singleton(tempIndex));
+        updateAISGeneration();
+        return ddl().getUserTable(session(), new TableName(schema, table)).getFullTextIndex(indexName);
+    }
+
     protected int createTablesAndIndexesFromDDL(String schema, String ddl) {
         SchemaFactory schemaFactory = new SchemaFactory(schema);
-        AkibanInformationSchema ais = schemaFactory.ais(ddl);
-        List<UserTable> tables = new ArrayList<UserTable>(ais.getUserTables().values());
-        // Need to define from root the leaf; repeating definition order should work.
+        
+        // Insert DDL into the System 
+        AkibanInformationSchema ais = schemaFactory.ais(ddl(), session(), ddl);
+        
+        // sort DDL to find first root table of the user schema
+        ais = schemaFactory.ais (ddl);
+        List<UserTable> tables = new ArrayList<>(ais.getUserTables().values());
         Collections.sort(tables, new Comparator<UserTable>() {
-                             @Override
-                             public int compare(UserTable t1, UserTable t2) {
-                                 return t1.getTableId().compareTo(t2.getTableId());
-                             }
-                         });
-        for (UserTable table : tables) {
-            ddl().createTable(session(), table);
-        }
-        for (Group group : ais.getGroups().values()) {
-            Collection<GroupIndex> indexes = group.getIndexes();
-            if (!indexes.isEmpty())
-                ddl().createIndexes(session(), indexes);
-        }
+            @Override
+            public int compare(UserTable t1, UserTable t2) {
+                return t1.getTableId().compareTo(t2.getTableId());
+            }
+        });
         updateAISGeneration();
         return ddl().getTableId(session(), tables.get(0).getName());
     }
@@ -846,7 +856,7 @@ public class ApiTestBase {
     }
 
     protected final ScanRequest scanAllIndexRequest(TableIndex index)  throws InvalidOperationException {
-        final Set<Integer> columns = new HashSet<Integer>();
+        final Set<Integer> columns = new HashSet<>();
         for(IndexColumn icol : index.getKeyColumns()) {
             columns.add(icol.getColumn().getPosition());
         }
@@ -881,7 +891,7 @@ public class ApiTestBase {
     }
 
     protected final void deleteRow(int tableId, Object... values) {
-        dml().deleteRow(session(), createNewRow(tableId, values));
+        dml().deleteRow(session(), createNewRow(tableId, values), false);
     }
 
     protected final void expectRows(ScanRequest request, NewRow... expectedRows) throws InvalidOperationException {
@@ -894,7 +904,7 @@ public class ApiTestBase {
 
     protected final ScanAllRequest scanAllRequest(int tableId, boolean includingInternal) {
         Table uTable = ddl().getTable(session(), tableId);
-        Set<Integer> allCols = new HashSet<Integer>();
+        Set<Integer> allCols = new HashSet<>();
         int MAX = includingInternal ? uTable.getColumnsIncludingInternal().size() : uTable.getColumns().size();
         for (int i=0; i < MAX; ++i) {
             allCols.add(i);
@@ -927,7 +937,7 @@ public class ApiTestBase {
 
     protected final CursorId openFullScan(int tableId, int indexId) throws InvalidOperationException {
         Table uTable = ddl().getTable(session(), tableId);
-        Set<Integer> allCols = new HashSet<Integer>();
+        Set<Integer> allCols = new HashSet<>();
         for (int i=0, MAX=uTable.getColumns().size(); i < MAX; ++i) {
             allCols.add(i);
         }
@@ -938,7 +948,7 @@ public class ApiTestBase {
     }
 
     protected static <T> Set<T> set(T... items) {
-        return new HashSet<T>(Arrays.asList(items));
+        return new HashSet<>(Arrays.asList(items));
     }
 
     protected static <T> T[] array(Class<T> ofClass, T... items) {
@@ -1066,7 +1076,7 @@ public class ApiTestBase {
     }
 
     protected final List<NewRow> convertRowDatas(List<RowData> rowDatas) {
-        List<NewRow> ret = new ArrayList<NewRow>(rowDatas.size());
+        List<NewRow> ret = new ArrayList<>(rowDatas.size());
         for(RowData rowData : rowDatas) {
             NewRow newRow = NiceRow.fromRowData(rowData, ddl().getRowDef(session(), rowData.getRowDefId()));
             ret.add(newRow);
@@ -1075,7 +1085,7 @@ public class ApiTestBase {
     }
 
     protected static Set<CursorId> cursorSet(CursorId... cursorIds) {
-        Set<CursorId> set = new HashSet<CursorId>();
+        Set<CursorId> set = new HashSet<>();
         for (CursorId id : cursorIds) {
             if(!set.add(id)) {
                 fail(String.format("while adding %s to %s", id, set));
@@ -1107,7 +1117,8 @@ public class ApiTestBase {
         for(Routine routine : ddl().getAIS(session).getRoutines().values()) {
             TableName name = routine.getName();
             if (!name.getSchemaName().equals(TableName.SQLJ_SCHEMA) &&
-                !name.getSchemaName().equals(TableName.SYS_SCHEMA)) {
+                !name.getSchemaName().equals(TableName.SYS_SCHEMA) &&
+                !name.getSchemaName().equals(TableName.SECURITY_SCHEMA)) {
                 routineLoader().unloadRoutine(session(), name);
                 ddl().dropRoutine(session(), name);
             }
@@ -1125,9 +1136,11 @@ public class ApiTestBase {
         }
 
         // Note: Group names, being derived, can change across DDL. Save root names instead.
-        Set<TableName> groupRoots = new HashSet<TableName>();
+        Set<TableName> groupRoots = new HashSet<>();
         for(UserTable table : ddl().getAIS(session).getUserTables().values()) {
-            if(table.getParentJoin() == null && !TableName.INFORMATION_SCHEMA.equals(table.getName().getSchemaName())) {
+            if(table.getParentJoin() == null && 
+               !TableName.INFORMATION_SCHEMA.equals(table.getName().getSchemaName()) &&
+               !TableName.SECURITY_SCHEMA.equals(table.getName().getSchemaName())) {
                 groupRoots.add(table.getName());
             }
         }
@@ -1136,15 +1149,17 @@ public class ApiTestBase {
         }
 
         // Now sanity check
-        Set<TableName> uTables = new HashSet<TableName>(ddl().getAIS(session).getUserTables().keySet());
+        Set<TableName> uTables = new HashSet<>(ddl().getAIS(session).getUserTables().keySet());
         for (Iterator<TableName> iter = uTables.iterator(); iter.hasNext();) {
-            if (TableName.INFORMATION_SCHEMA.equals(iter.next().getSchemaName())) {
+            String schemaName = iter.next().getSchemaName();
+            if (TableName.INFORMATION_SCHEMA.equals(schemaName) ||
+                TableName.SECURITY_SCHEMA.equals(schemaName)) {
                 iter.remove();
             }
         }
         Assert.assertEquals("user table count", Collections.<TableName>emptySet(), uTables);
 
-        Set<TableName> views = new HashSet<TableName>(ddl().getAIS(session).getViews().keySet());
+        Set<TableName> views = new HashSet<>(ddl().getAIS(session).getViews().keySet());
         Assert.assertEquals("user table count", Collections.<TableName>emptySet(), views);
     }
 
@@ -1234,7 +1249,7 @@ public class ApiTestBase {
     }
 
     private static <T extends Table> Map<TableName,T> stripAISTables(Map<TableName,T> map) {
-        final Map<TableName,T> ret = new HashMap<TableName, T>(map);
+        final Map<TableName,T> ret = new HashMap<>(map);
         for(Iterator<TableName> iter=ret.keySet().iterator(); iter.hasNext(); ) {
             if(TableName.INFORMATION_SCHEMA.equals(iter.next().getSchemaName())) {
                 iter.remove();
@@ -1245,8 +1260,8 @@ public class ApiTestBase {
 
     protected void expectIndexes(int tableId, String... expectedIndexNames) {
         UserTable table = getUserTable(tableId);
-        Set<String> expectedIndexesSet = new TreeSet<String>(Arrays.asList(expectedIndexNames));
-        Set<String> actualIndexes = new TreeSet<String>();
+        Set<String> expectedIndexesSet = new TreeSet<>(Arrays.asList(expectedIndexNames));
+        Set<String> actualIndexes = new TreeSet<>();
         for (Index index : table.getIndexes()) {
             String indexName = index.getIndexName().getName();
             boolean added = actualIndexes.add(indexName);
@@ -1260,7 +1275,7 @@ public class ApiTestBase {
         List<String> expectedColumnsList = Arrays.asList(expectedColumns);
         Index index = table.getIndex(indexName);
         assertNotNull(indexName + " was null", index);
-        List<String> actualColumns = new ArrayList<String>();
+        List<String> actualColumns = new ArrayList<>();
         for (IndexColumn indexColumn : index.getKeyColumns()) {
             actualColumns.add(indexColumn.getColumn().getName());
         }

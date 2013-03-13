@@ -1,0 +1,26 @@
+{
+    "entities" : {
+        "customer" : {
+            "entity" : "2a57b59e-e1b7-4377-996e-a5c04e0abf29",
+            "attributes" : {
+                "id" : {
+                    "scalar" : "8644c36b-f881-4369-a06b-59e3fc580309",
+                    "type" : "integer",
+                    "spinal_pos" : 0
+                },
+                "name" : {
+                    "scalar" : "d160a748-03ca-4497-b906-4bf0efb32618",
+                    "type" : "text"
+                }
+            },
+            "validation" : [
+                { "unique" : "name" }
+            ],
+            "indexes" : {
+                "name" : [ ["customer", "name"] ],
+                "id" : [ ["customer", "id"] ]
+            }
+        }
+    }
+}
+

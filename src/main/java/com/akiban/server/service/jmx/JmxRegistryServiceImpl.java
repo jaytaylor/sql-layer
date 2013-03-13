@@ -43,8 +43,8 @@ public class JmxRegistryServiceImpl implements JmxRegistryService, JmxManageable
     private static final String FORMATTER = "com.akiban:type=%s";
 
     private boolean started = false;
-    private final Map<JmxManageable,ObjectName> serviceToName = new HashMap<JmxManageable, ObjectName>();
-    private final Map<ObjectName,JmxManageable> nameToService = new HashMap<ObjectName,JmxManageable>();
+    private final Map<JmxManageable,ObjectName> serviceToName = new HashMap<>();
+    private final Map<ObjectName,JmxManageable> nameToService = new HashMap<>();
 
     private final Object INTERNAL_LOCK = new Object();
 

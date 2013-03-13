@@ -65,7 +65,7 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
     private int t;
     private RowType tRowType;
     private IndexRowType idxRowType;
-    private Map<Long, TestRow> indexRowMap = new HashMap<Long, TestRow>();
+    private Map<Long, TestRow> indexRowMap = new HashMap<>();
 
     @Override
     protected void setupCreateSchema()
@@ -229,13 +229,13 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
         cursor.jump(indexRow(targetId), INDEX_ROW_SELECTOR);
 
         Row row;
-        List<Row> actualRows = new ArrayList<Row>();
-        List<ShareHolder<Row>> rowHolders = new ArrayList<ShareHolder<Row>>();
+        List<Row> actualRows = new ArrayList<>();
+        List<ShareHolder<Row>> rowHolders = new ArrayList<>();
         while ((row = cursor.next()) != null)
         {
             // Prevent sharing of rows since verification accumulates them
             actualRows.add(row);
-            rowHolders.add(new ShareHolder<Row>(row));
+            rowHolders.add(new ShareHolder<>(row));
         }
         cursor.close();
 
@@ -246,7 +246,7 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
     private void checkRows(List<Row> actual, long expected[])
     {
         List<Long> actualList = toListOfLong(actual);
-        List<Long> expectedList = new ArrayList<Long>(expected.length);
+        List<Long> expectedList = new ArrayList<>(expected.length);
         for (long val : expected)
             expectedList.add(val);
 
@@ -255,7 +255,7 @@ public class UniqueIndexScanJumpUnboundedWithNullsIT extends OperatorITBase
 
     private List<Long> toListOfLong(List<Row> rows)
     {
-        List<Long> ret = new ArrayList<Long>(rows.size());
+        List<Long> ret = new ArrayList<>(rows.size());
 
         for (Row row : rows)
             ret.add(getLong(row, 3));

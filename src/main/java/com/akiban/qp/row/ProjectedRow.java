@@ -162,7 +162,7 @@ public class ProjectedRow extends AbstractRow
         else
         {
             int size = evaluations.size();
-            List<ValueSource> ret = new ArrayList<ValueSource>(size);
+            List<ValueSource> ret = new ArrayList<>(size);
             for (int i = 0; i < size; ++i)
                 ret.add(eval(i));
             return ret.iterator();
@@ -176,7 +176,7 @@ public class ProjectedRow extends AbstractRow
         else
         {
             int size = pEvaluatableExpressions.size();
-            List<PValueSource> ret = new ArrayList<PValueSource>(size);
+            List<PValueSource> ret = new ArrayList<>(size);
             for (int i = 0; i < size; ++i)
                 ret.add(pvalue(i));
             return ret.iterator();
@@ -190,7 +190,7 @@ public class ProjectedRow extends AbstractRow
         if (expressions == null)
             return null;
         int n = expressions.size();
-        List<ExpressionEvaluation> result = new ArrayList<ExpressionEvaluation>(n);
+        List<ExpressionEvaluation> result = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
             ExpressionEvaluation evaluation = expressions.get(i).evaluation();
             evaluation.of(context);
@@ -206,7 +206,7 @@ public class ProjectedRow extends AbstractRow
         if (pExpressions == null)
             return null;
         int n = pExpressions.size();
-        List<TEvaluatableExpression> result = new ArrayList<TEvaluatableExpression>(n);
+        List<TEvaluatableExpression> result = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
             TEvaluatableExpression eval = pExpressions.get(i).build();
             result.add(eval);

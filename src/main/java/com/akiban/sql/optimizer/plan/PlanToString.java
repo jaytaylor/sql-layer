@@ -38,7 +38,7 @@ public class PlanToString implements PlanVisitor, ExpressionVisitor
     }
     
     private StringBuilder string = new StringBuilder();
-    private Deque<PlanNode> pending = new ArrayDeque<PlanNode>();
+    private Deque<PlanNode> pending = new ArrayDeque<>();
     private int planDepth = 0, expressionDepth = 0;
 
     protected void add(PlanNode n) {

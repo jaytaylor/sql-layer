@@ -1,0 +1,66 @@
+{
+    "entities" : {
+        "customer_new" : {
+            "entity" : "2a57b59e-e1b7-4377-996e-a5c04e0abf29",
+            "attributes" : {
+                "spine" : {
+                    "scalar" : "8644c36b-f881-4369-a06b-59e3fc580309",
+                    "type" : "integer",
+                    "spinal_pos" : 0
+                },
+                "first_name" : {
+                    "scalar" : "177400c6-7662-11e2-8057-2afbf046605f",
+                    "type" : "varchar",
+                    "validation" : [
+                        { "max_length" : 64 },
+                        { "required" : false }
+                    ]
+                },
+                "last_name_new" : {
+                    "scalar" : "257e9b59-e77f-4a4d-a5da-00c7c2261875",
+                    "type" : "varchar",
+                    "properties" : {
+                        "charset" : "utf16"
+                    },
+                    "validation" : [
+                        { "max_length" : 128 },
+                        { "required" : true }
+                    ]
+                },
+                "orders_new" : {
+                    "collection" : "c5cedd91-9751-41c2-9417-8c29117ca2c9",
+                    "attributes" : {
+                        "spine" : {
+                            "scalar" : "58dd53b7-e8a1-488b-a751-c83f9beca04c",
+                            "type" : "integer",
+                            "spinal_pos" : 0
+                        },
+                        "placed_new" : {
+                            "scalar" : "ff49b16c-7661-11e2-a7bf-525b7188419e",
+                            "type" : "datetime"
+                        },
+                        "items_new" : {
+                            "collection" : "99edbd9e-7662-11e2-bfaf-2afbf046605f",
+                            "attributes" : {
+                                "spine" : {
+                                    "scalar" : "a006a1b4-7662-11e2-81f0-525b7188419e",
+                                    "type" : "integer",
+                                    "spinal_pos" : 0
+                                },
+                                "sku_new" : {
+                                    "scalar" : "a4d0f94c-7662-11e2-ae58-525b7188419e",
+                                    "type" : "double"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "indexes" : {
+                "last_first" : [ ["customer_new", "last_name_new"], ["customer_new", "first_name"] ],
+                "placed" : [ ["orders_new", "placed_new"] ],
+                "orderplaced_sku" : [ ["orders_new", "placed_new"], ["items_new", "sku_new"] ]
+            }
+        }
+    }
+}

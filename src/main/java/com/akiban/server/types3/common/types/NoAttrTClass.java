@@ -26,10 +26,6 @@
 
 package com.akiban.server.types3.common.types;
 
-import com.akiban.server.types3.Attribute;
-import com.akiban.server.types3.TBundleID;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TParser;
 import com.akiban.server.types3.*;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.sql.types.TypeId;
@@ -60,6 +56,11 @@ public class NoAttrTClass extends SimpleDtdTClass {
     }
 
     @Override
+    public boolean attributeIsPhysical(int attributeIndex) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     protected TInstance doPickInstance(TInstance left, TInstance right, boolean suggestedNullability) {
         return right; // doesn't matter which!
     }
@@ -68,6 +69,11 @@ public class NoAttrTClass extends SimpleDtdTClass {
     protected void validate(TInstance instance) {
     }
 
+    public TClass widestComparable()
+    {
+        return this;
+    }
+    
     public NoAttrTClass(TBundleID bundle, String name, Enum<?> category, TClassFormatter formatter, int internalRepVersion,
                            int serializationVersion, int serializationSize, PUnderlying pUnderlying, TParser parser,
                            int defaultVarcharLen, TypeId typeId) {

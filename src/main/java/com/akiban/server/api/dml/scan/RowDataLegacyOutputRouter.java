@@ -39,7 +39,7 @@ public final class RowDataLegacyOutputRouter implements LegacyRowOutput {
         void handleRow(RowData rowData);
     }
 
-    private final List<Handler> handlers = new ArrayList<Handler>();
+    private final List<Handler> handlers = new ArrayList<>();
     private int rows = 0;
     private int markedRows = rows;
 

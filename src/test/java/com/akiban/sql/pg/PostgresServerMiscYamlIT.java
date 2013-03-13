@@ -33,6 +33,8 @@ import com.akiban.server.service.is.BasicInfoSchemaTablesService;
 import com.akiban.server.service.is.BasicInfoSchemaTablesServiceImpl;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.sql.NamedParamsTestBase;
+import com.akiban.sql.embedded.EmbeddedJDBCService;
+import com.akiban.sql.embedded.EmbeddedJDBCServiceImpl;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -83,7 +85,8 @@ public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase {
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
-                .bindAndRequire(BasicInfoSchemaTablesService.class, BasicInfoSchemaTablesServiceImpl.class);
+                .bindAndRequire(BasicInfoSchemaTablesService.class, BasicInfoSchemaTablesServiceImpl.class)
+                .bindAndRequire(EmbeddedJDBCService.class, EmbeddedJDBCServiceImpl.class);
     }
 
     @Override
@@ -98,7 +101,7 @@ public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase {
 
     @TestParameters
     public static Collection<Parameterization> queries() throws Exception {
-	Collection<Object[]> params = new ArrayList<Object[]>();
+	Collection<Object[]> params = new ArrayList<>();
 	collectParams(RESOURCE_DIR,
 		      Pattern.compile(CASE_NAME_REGEXP + "[.]yaml"), params);
 	return NamedParamsTestBase.namedCases(params);

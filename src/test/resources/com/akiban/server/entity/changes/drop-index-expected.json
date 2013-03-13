@@ -1,0 +1,7 @@
+[
+    {
+        "action": "drop_index",
+        "destructive": true, 
+        "name": "name"
+    }
+]

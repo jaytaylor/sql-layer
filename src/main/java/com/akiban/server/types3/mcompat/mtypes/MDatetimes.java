@@ -29,6 +29,7 @@ package com.akiban.server.types3.mcompat.mtypes;
 import com.akiban.server.error.InvalidDateFormatException;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types3.TBundleID;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TParsers;
@@ -58,7 +59,13 @@ public class MDatetimes
     private static final TBundleID MBundleID = MBundle.INSTANCE.id();
     
     public static final NoAttrTClass DATE = new NoAttrTClass(MBundleID,
-            "date", AkCategory.DATE_TIME, FORMAT.DATE, 1, 1, 4, PUnderlying.INT_32, TParsers.DATE, 10, TypeId.DATE_ID);
+            "date", AkCategory.DATE_TIME, FORMAT.DATE, 1, 1, 4, PUnderlying.INT_32, TParsers.DATE, 10, TypeId.DATE_ID)
+    {
+        public TClass widestComparable()
+        {
+            return DATETIME;
+        }
+    };
     public static final NoAttrTClass DATETIME = new NoAttrTClass(MBundleID,
             "datetime", AkCategory.DATE_TIME, FORMAT.DATETIME,  1, 1, 8, PUnderlying.INT_64, TParsers.DATETIME, 19, TypeId.DATETIME_ID);
     public static final NoAttrTClass TIME = new NoAttrTClass(MBundleID,
@@ -68,7 +75,7 @@ public class MDatetimes
     public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(MBundleID,
             "timestamp", AkCategory.DATE_TIME, FORMAT.TIMESTAMP, 1, 1, 4, PUnderlying.INT_32, TParsers.TIMESTAMP, 19, TypeId.TIMESTAMP_ID);
 
-    public static final List<String> SUPPORTED_LOCALES = new LinkedList<String>();
+    public static final List<String> SUPPORTED_LOCALES = new LinkedList<>();
     
     public static final Map<String, String[]> MONTHS;
     public static final Map<String, String[]> SHORT_MONTHS;
@@ -160,10 +167,10 @@ public class MDatetimes
         // TODO: add all supported LOCALES here
         SUPPORTED_LOCALES.add(Locale.ENGLISH.getLanguage());
         
-       Map<String, String[]> months = new HashMap<String, String[]>();
-       Map<String, String[]> shortMonths = new HashMap<String, String[]>();
-       Map<String, String[]>weekDays = new HashMap<String, String[]>();
-       Map<String, String[]>shortWeekdays = new HashMap<String, String[]>();
+       Map<String, String[]> months = new HashMap<>();
+       Map<String, String[]> shortMonths = new HashMap<>();
+       Map<String, String[]>weekDays = new HashMap<>();
+       Map<String, String[]>shortWeekdays = new HashMap<>();
 
        for (String locale : SUPPORTED_LOCALES)
        {

@@ -80,7 +80,7 @@ class Filter_Default extends Operator
     @Override
     public String toString()
     {
-        TreeSet<String> keepTypesStrings = new TreeSet<String>();
+        TreeSet<String> keepTypesStrings = new TreeSet<>();
         for (RowType keepType : keepTypes) {
             keepTypesStrings.add(String.valueOf(keepType));
         }
@@ -119,7 +119,7 @@ class Filter_Default extends Operator
     {
         ArgumentValidation.notEmpty("keepTypes", keepTypes);
         this.inputOperator = inputOperator;
-        this.keepTypes = new HashSet<RowType>(keepTypes);
+        this.keepTypes = new HashSet<>(keepTypes);
     }
     
     // Class state

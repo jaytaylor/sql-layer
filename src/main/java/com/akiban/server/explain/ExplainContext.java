@@ -31,7 +31,7 @@ import java.util.Map;
 
 public class ExplainContext
 {
-    private final Map<Explainable,CompoundExplainer> extraInfo = new HashMap<Explainable,CompoundExplainer>();
+    private final Map<Explainable,CompoundExplainer> extraInfo = new HashMap<>();
 
     public ExplainContext() {
     }

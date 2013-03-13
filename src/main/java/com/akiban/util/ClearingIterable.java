@@ -48,7 +48,7 @@ public final class ClearingIterable<T> implements Iterable<T>
 
     public static <T> ClearingIterable<T> from(Collection<T> collection)
     {
-        return new ClearingIterable<T>(collection);
+        return new ClearingIterable<>(collection);
     }
 
     private ClearingIterable(Collection<T> collection)
@@ -59,7 +59,7 @@ public final class ClearingIterable<T> implements Iterable<T>
     @Override
     public Iterator<T> iterator()
     {
-        return new ClearAtEndIterator<T>( collection );
+        return new ClearAtEndIterator<>( collection );
     }
 
     private static class ClearAtEndIterator<T> implements Iterator<T>

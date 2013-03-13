@@ -129,7 +129,7 @@ class IndexCursorSpatial_InBox extends IndexCursor
             IndexScanRowState rowState = new IndexScanRowState(adapter, keyRange.indexRowType());
             if (Types3Switch.ON) {
                 IndexCursorUnidirectional<PValueSource> zIntervalCursor =
-                    new IndexCursorUnidirectional<PValueSource>(context,
+                    new IndexCursorUnidirectional<>(context,
                                                                 rowState,
                                                                 zKeyRange,
                                                                 zOrdering,
@@ -138,7 +138,7 @@ class IndexCursorSpatial_InBox extends IndexCursor
             }
             else {
                 IndexCursorUnidirectional<ValueSource> zIntervalCursor =
-                    new IndexCursorUnidirectional<ValueSource>(context,
+                    new IndexCursorUnidirectional<>(context,
                                                                rowState,
                                                                zKeyRange,
                                                                zOrdering,
@@ -150,7 +150,7 @@ class IndexCursorSpatial_InBox extends IndexCursor
 
     private List<IndexKeyRange> zKeyRanges(QueryContext context, IndexKeyRange keyRange)
     {
-        List<IndexKeyRange> zKeyRanges = new ArrayList<IndexKeyRange>();
+        List<IndexKeyRange> zKeyRanges = new ArrayList<>();
         Index index = keyRange.indexRowType().index();
         IndexBound loBound = keyRange.lo();
         IndexBound hiBound = keyRange.hi();

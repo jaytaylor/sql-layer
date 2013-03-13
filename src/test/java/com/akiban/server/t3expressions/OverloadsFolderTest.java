@@ -205,7 +205,7 @@ public final class OverloadsFolderTest {
         public Cases overloads(String... overloads) {
             flush();
             this.overloadDefs = overloads;
-            this.expectations = new HashMap<Integer, Boolean>();
+            this.expectations = new HashMap<>();
             return this;
         }
 
@@ -234,7 +234,7 @@ public final class OverloadsFolderTest {
                 assert expectations == null : expectations;
                 return; // must have been the first call to start()
             }
-            Collection<TValidatedScalar> overloads = new ArrayList<TValidatedScalar>();
+            Collection<TValidatedScalar> overloads = new ArrayList<>();
             for (String overloadDef : overloadDefs) {
                 TScalar scalar = parse(overloadDef);
                 TValidatedScalar validated = new TValidatedScalar(scalar);
@@ -313,7 +313,7 @@ public final class OverloadsFolderTest {
         }
 
         private final ParameterizationBuilder pb = new ParameterizationBuilder();
-        private final Map<String,TClass> tClasses = new HashMap<String, TClass>();
+        private final Map<String,TClass> tClasses = new HashMap<>();
         private String[] overloadDefs;
         private Map<Integer, Boolean> expectations;
     }

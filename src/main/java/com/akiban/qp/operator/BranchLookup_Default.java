@@ -179,7 +179,7 @@ public class BranchLookup_Default extends Operator
     @Override
     public List<Operator> getInputOperators()
     {
-        List<Operator> result = new ArrayList<Operator>(1);
+        List<Operator> result = new ArrayList<>(1);
         result.add(inputOperator);
         return result;
     }
@@ -474,9 +474,9 @@ public class BranchLookup_Default extends Operator
         // Object state
 
         private final Cursor inputCursor;
-        private final ShareHolder<Row> inputRow = new ShareHolder<Row>();
+        private final ShareHolder<Row> inputRow = new ShareHolder<>();
         private final GroupCursor lookupCursor;
-        private final ShareHolder<Row> lookupRow = new ShareHolder<Row>();
+        private final ShareHolder<Row> lookupRow = new ShareHolder<>();
         private final HKey lookupRowHKey;
         private LookupState lookupState;
         private boolean idle = true;

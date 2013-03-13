@@ -67,7 +67,7 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
     }
 
     private List<PopularitySplit<T>> splitStreamsByPopularity() {
-        List<PopularitySplit<T>> results = new ArrayList<PopularitySplit<T>>(segments);
+        List<PopularitySplit<T>> results = new ArrayList<>(segments);
         for (BucketSampler<T> sampler : bucketSamplerList) {
             PopularitySplit<T> popularitySplit = splitByPopularity(sampler);
             results.add(popularitySplit);
@@ -77,7 +77,7 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
 
     private PopularitySplit<T> splitByPopularity(BucketSampler<T> sampler) {
         List<Bucket<T>> samples = sampler.buckets();
-        Deque<Bucket<T>> popular = new ArrayDeque<Bucket<T>>(samples.size());
+        Deque<Bucket<T>> popular = new ArrayDeque<>(samples.size());
         int popularsCount = 0;
         int regularsCount = 0;
 
@@ -96,11 +96,11 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
                 regularsCount += sampleCount;
             }
         }
-        return new PopularitySplit<T>(regularsCount, samples, popularsCount, popular);
+        return new PopularitySplit<>(regularsCount, samples, popularsCount, popular);
     }
 
     private List<List<Bucket<T>>> mergePopularitySplitStreams(List<PopularitySplit<T>> popularitySplits) {
-        List<List<Bucket<T>>> results = new ArrayList<List<Bucket<T>>>(popularitySplits.size());
+        List<List<Bucket<T>>> results = new ArrayList<>(popularitySplits.size());
         for (PopularitySplit<T> split : popularitySplits) {
             List<Bucket<T>> merged = mergePopularitySplit(split);
             results.add(merged);
@@ -123,7 +123,7 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
         Deque<Bucket<T>> populars = split.popularBuckets;
         assert populars.size() < maxSize : "failed populars.size[" + populars.size() + "] < maxSize[" + maxSize + "]";
         int unpopularsNeeded = maxSize - populars.size();
-        BucketSampler<T> sampler = new BucketSampler<T>(unpopularsNeeded, split.regularsCount, false);
+        BucketSampler<T> sampler = new BucketSampler<>(unpopularsNeeded, split.regularsCount, false);
         for (Bucket<T> regularBucket : split.regularBuckets) {
             assert !regularBucket.isMinKeyBucket(); // Min-key buckets were deemed popular
             T regularValue = regularBucket.value();
@@ -147,8 +147,8 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
         Deque<Bucket<T>> populars = split.popularBuckets;
         assert populars.size() >= maxSize : "failed  populars.size[" + populars.size() + "] >= maxSize[" + maxSize + "]";
         PeekingIterator<Bucket<T>> unpopulars = Iterators.peekingIterator(split.regularBuckets.iterator());
-        List<Bucket<T>> results = new ArrayList<Bucket<T>>(populars.size());
-        BucketSampler<T> sampler = new BucketSampler<T>(maxSize, split.popularsCount, false);
+        List<Bucket<T>> results = new ArrayList<>(populars.size());
+        BucketSampler<T> sampler = new BucketSampler<>(maxSize, split.popularsCount, false);
         for (Bucket<T> popular : populars) {
             if (sampler.add(popular)) {
                 // merge in all the unpopulars less than this one
@@ -182,14 +182,14 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
         super(splitter);
         int segments = splitter.segments();
         ArgumentValidation.isGT("segments", segments, 0);
-        bucketSamplerList =  new ArrayList<BucketSampler<T>>(segments);
+        bucketSamplerList =  new ArrayList<>(segments);
         this.maxSize = maxSize;
         int oversampleSize = maxSize * OVERSAMPLE_FACTOR;
         for (int i=0; i < segments; ++i) {
             bucketSamplerList.add(new BucketSampler<T>(oversampleSize, expectedInputs));
         }
         this.segments = segments;
-        this.bucketsFlywheel = new BucketFlywheel<T>(oversampleSize, segments, recycler);
+        this.bucketsFlywheel = new BucketFlywheel<>(oversampleSize, segments, recycler);
     }
 
     private final List<BucketSampler<T>> bucketSamplerList;
@@ -221,7 +221,7 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
         protected Bucket<T> createNew() {
             ++created;
             assert created <= createdLimit : created + " > " + createdLimit;
-            return new Bucket<T>();
+            return new Bucket<>();
         }
 
         @Override

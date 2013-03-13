@@ -158,8 +158,8 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
         PostgresModifyOperatorStatement pmstmt = (PostgresModifyOperatorStatement)pstmt;
         if (update.isReturning()) {
             int ncols = update.getResultColumns().size();
-            List<String> columnNames = new ArrayList<String>(ncols);
-            List<PostgresType> columnTypes = new ArrayList<PostgresType>(ncols);
+            List<String> columnNames = new ArrayList<>(ncols);
+            List<PostgresType> columnTypes = new ArrayList<>(ncols);
             for (PhysicalResultColumn physColumn : update.getResultColumns()) {
                 PostgresResultColumn resultColumn = (PostgresResultColumn)physColumn;
                 columnNames.add(resultColumn.getName());
@@ -197,8 +197,8 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
         PostgresOperatorStatement postmt = (PostgresOperatorStatement)pstmt;
 
         int ncols = select.getResultColumns().size();
-        List<String> columnNames = new ArrayList<String>(ncols);
-        List<PostgresType> columnTypes = new ArrayList<PostgresType>(ncols);
+        List<String> columnNames = new ArrayList<>(ncols);
+        List<PostgresType> columnTypes = new ArrayList<>(ncols);
         for (PhysicalResultColumn physColumn : select.getResultColumns()) {
             PostgresResultColumn resultColumn = (PostgresResultColumn)physColumn;
             columnNames.add(resultColumn.getName());

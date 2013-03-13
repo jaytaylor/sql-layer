@@ -58,7 +58,7 @@ public final class IfNull extends TScalarBase {
     public static final TScalar[] instances = createInstances();
 
     private static TScalar[] createInstances() {
-        List<TScalar> resultsList = new ArrayList<TScalar>();
+        List<TScalar> resultsList = new ArrayList<>();
         Collection<? extends TClass> strings = Arrays.asList(
                 MString.VARCHAR, MString.CHAR, MString.TINYTEXT, MString.TEXT, MString.MEDIUMTEXT, MString.LONGTEXT
         );

@@ -60,13 +60,13 @@ public final class MKeyComparables {
                 MNumeric.INT_UNSIGNED
                 // BIGINT UNSIGNED is not here, because its representation is not a signed long
         );
-        Set<Set<TClass>> alreadyCreated = new HashSet<Set<TClass>>();
-        List<TKeyComparable> results = new ArrayList<TKeyComparable>();
+        Set<Set<TClass>> alreadyCreated = new HashSet<>();
+        List<TKeyComparable> results = new ArrayList<>();
         for (TClass outer : candidates) {
             for (TClass inner : candidates) {
                 if (inner == outer)
                     continue;
-                Set<TClass> pair = new HashSet<TClass>(Arrays.asList(inner, outer));
+                Set<TClass> pair = new HashSet<>(Arrays.asList(inner, outer));
                 if (alreadyCreated.add(pair)) {
                     results.add(new TKeyComparable(outer, inner, integerComparison));
                 }

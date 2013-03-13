@@ -44,9 +44,9 @@ public abstract class Table extends Columnar implements Traversable, HasGroup
         super(ais, schemaName, tableName);
         this.tableId = tableId;
 
-        this.groupIndexes = new HashSet<GroupIndex>();
+        this.groupIndexes = new HashSet<>();
         this.unmodifiableGroupIndexes = Collections.unmodifiableCollection(groupIndexes);
-        this.indexMap = new TreeMap<String, TableIndex>();
+        this.indexMap = new TreeMap<>();
         this.unmodifiableIndexMap = Collections.unmodifiableMap(indexMap);
     }
 

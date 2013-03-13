@@ -34,6 +34,7 @@ import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.akiban.server.types3.texpressions.TValidatedScalar;
@@ -51,6 +52,7 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ParameterNode;
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
@@ -102,6 +104,9 @@ import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.expression.UnboundExpressions;
+
+import com.akiban.server.service.text.FullTextQueryBuilder;
+import com.akiban.server.service.text.FullTextQueryExpression;
 
 import com.akiban.server.explain.*;
 
@@ -272,7 +277,7 @@ public class OperatorAssembler extends BaseRule
             @Override
             public List<T> assembleExpressions(List<ExpressionNode> expressions,
                                                            ColumnExpressionToIndex fieldOffsets) {
-                List<T> result = new ArrayList<T>(expressions.size());
+                List<T> result = new ArrayList<>(expressions.size());
                 for (ExpressionNode expr : expressions) {
                     result.add(assembleExpression(expr, fieldOffsets));
                 }
@@ -290,7 +295,7 @@ public class OperatorAssembler extends BaseRule
             @Override
             public List<T> assembleExpressionsA(List<? extends AnnotatedExpression> expressions,
                                                             ColumnExpressionToIndex fieldOffsets) {
-                List<T> result = new ArrayList<T>(expressions.size());
+                List<T> result = new ArrayList<>(expressions.size());
                 for (AnnotatedExpression aexpr : expressions) {
                     result.add(assembleExpression(aexpr.getExpression(), fieldOffsets));
                 }
@@ -332,7 +337,7 @@ public class OperatorAssembler extends BaseRule
 
             protected List<? extends T> createNulls(RowType rowType) {
                 int nfields = rowType.nFields();
-                List<T> result = new ArrayList<T>(nfields);
+                List<T> result = new ArrayList<>(nfields);
                 for (int i = 0; i < nfields; ++i)
                     result.add(nullExpression(rowType, i));
                 return result;
@@ -469,7 +474,7 @@ public class OperatorAssembler extends BaseRule
                 if (expression != null && 
                         column.getDefaultIdentity() != null &&
                         column.getDefaultIdentity().booleanValue()) { 
-                    List<Expression> expr = new ArrayList<Expression>(2);
+                    List<Expression> expr = new ArrayList<>(2);
                     expr.add(expression);
                     expr.add(seqExpr);
                     seqExpr = new IfNullExpression (expr);
@@ -619,13 +624,13 @@ public class OperatorAssembler extends BaseRule
                 OverloadResolver<TValidatedScalar> resolver = registry.getScalarsResolver();
                 TInstance instance = column.tInstance();
                 
-                List<TPreptimeValue> input = new ArrayList<TPreptimeValue>(2);
+                List<TPreptimeValue> input = new ArrayList<>(2);
                 input.add(PValueSources.fromObject(sequence.getSequenceName().getSchemaName(), AkType.VARCHAR));
                 input.add(PValueSources.fromObject(sequence.getSequenceName().getTableName(), AkType.VARCHAR));
 
                 TValidatedScalar overload = resolver.get("NEXTVAL", input).getOverload();
 
-                List<TPreparedExpression> arguments = new ArrayList<TPreparedExpression>(2);
+                List<TPreparedExpression> arguments = new ArrayList<>(2);
                 arguments.add(new TPreparedLiteral(input.get(0).instance(), input.get(0).value()));
                 arguments.add(new TPreparedLiteral(input.get(1).instance(), input.get(1).value()));
 
@@ -644,13 +649,13 @@ public class OperatorAssembler extends BaseRule
                 if (expression != null && 
                         column.getDefaultIdentity() != null &&
                         column.getDefaultIdentity().booleanValue()) { 
-                    List<TPreptimeValue> ifNullInput = new ArrayList<TPreptimeValue>(2);
+                    List<TPreptimeValue> ifNullInput = new ArrayList<>(2);
                     ifNullInput.add(new TNullExpression(expression.resultType()).evaluateConstant(planContext.getQueryContext()));
                     ifNullInput.add(new TNullExpression(seqExpr.resultType()).evaluateConstant(planContext.getQueryContext()));
 
                     OverloadResult<TValidatedScalar> ifNullResult = resolver.get("IFNULL", ifNullInput);
                     TValidatedScalar ifNullOverload = ifNullResult.getOverload();
-                    List<TPreparedExpression> ifNullArgs = new ArrayList<TPreparedExpression>(2);
+                    List<TPreparedExpression> ifNullArgs = new ArrayList<>(2);
                     ifNullArgs.add(expression);
                     ifNullArgs.add(seqExpr);
                     seqExpr = new TPreparedFunction(ifNullOverload, ifNullResult.getPickedInstance(),
@@ -797,13 +802,13 @@ public class OperatorAssembler extends BaseRule
                 // VALUES just needs each field, which will get rearranged below.
                 int nfields = input.rowType.nFields();
                 if (usePValues) {
-                    insertsP = new ArrayList<TPreparedExpression>(nfields);
+                    insertsP = new ArrayList<>(nfields);
                     for (int i = 0; i < nfields; ++i) {
                         insertsP.add(new TPreparedField(input.rowType.typeInstanceAt(i), i));
                     }
                 }
                 else {
-                    inserts = new ArrayList<Expression>(nfields);
+                    inserts = new ArrayList<>(nfields);
                     for (int i = 0; i < nfields; i++) {
                         inserts.add(Expressions.field(input.rowType, i));
                     }
@@ -967,7 +972,7 @@ public class OperatorAssembler extends BaseRule
             //stream = assembleDeleteProjectTable (stream, projectFields, delete);
             UserTableRowType targetRowType = tableRowType(delete.getTargetTable());
             
-            stream.operator = API.delete_Returning(stream.operator, usePValues);
+            stream.operator = API.delete_Returning(stream.operator, usePValues, false);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(delete.getTable(), targetRowType);
             
             if (explainContext != null)
@@ -1054,6 +1059,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleUsingBloomFilter((UsingBloomFilter) node);
             else if (node instanceof BloomFilterFilter)
                 return assembleBloomFilterFilter((BloomFilterFilter) node);
+            else if (node instanceof FullTextScan)
+                return assembleFullTextScan((FullTextScan) node);
             else if (node instanceof InsertStatement) 
                 return assembleInsertStatement((InsertStatement)node);
             else if (node instanceof DeleteStatement)
@@ -1271,7 +1278,7 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleExpressionsSource(ExpressionsSource expressionsSource) {
             RowStream stream = new RowStream();
             stream.rowType = partialAssembler.valuesRowType(expressionsSource);
-            List<BindableRow> bindableRows = new ArrayList<BindableRow>();
+            List<BindableRow> bindableRows = new ArrayList<>();
             for (List<ExpressionNode> exprs : expressionsSource.getExpressions()) {
                 List<Expression> expressions = oldPartialAssembler.assembleExpressions(exprs, stream.fieldOffsets);
                 List<TPreparedExpression> tExprs = newPartialAssembler.assembleExpressions(exprs, stream.fieldOffsets);
@@ -1390,7 +1397,7 @@ public class OperatorAssembler extends BaseRule
             RowStream stream;
             Group group = ancestorLookup.getDescendant().getGroup();
             List<UserTableRowType> ancestorTypes =
-                new ArrayList<UserTableRowType>(ancestorLookup.getAncestors().size());
+                new ArrayList<>(ancestorLookup.getAncestors().size());
             for (TableNode table : ancestorLookup.getAncestors()) {
                 ancestorTypes.add(tableRowType(table));
             }
@@ -1407,7 +1414,7 @@ public class OperatorAssembler extends BaseRule
                 stream = assembleStream(ancestorLookup.getInput());
                 RowType inputRowType = stream.rowType; // The index row type.
                 API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
-                if (!(inputRowType instanceof IndexRowType)) {
+                if (!isIndexRowType(inputRowType)) {
                     // Getting from branch lookup.
                     inputRowType = tableRowType(ancestorLookup.getDescendant());
                     flag = API.InputPreservationOption.KEEP_INPUT;
@@ -1456,7 +1463,7 @@ public class OperatorAssembler extends BaseRule
                 stream = assembleStream(branchLookup.getInput());
                 RowType inputRowType = stream.rowType; // The index row type.
                 API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
-                if (!(inputRowType instanceof IndexRowType)) {
+                if (!isIndexRowType(inputRowType)) {
                     // Getting from ancestor lookup.
                     inputRowType = tableRowType(branchLookup.getSource());
                     flag = API.InputPreservationOption.KEEP_INPUT;
@@ -1471,6 +1478,11 @@ public class OperatorAssembler extends BaseRule
             stream.unknownTypesPresent = true;
             stream.fieldOffsets = null;
             return stream;
+        }
+
+        protected static boolean isIndexRowType(RowType rowType) {
+            return ((rowType instanceof IndexRowType) ||
+                    (rowType instanceof HKeyRowType));
         }
 
         protected RowStream assembleMapJoin(MapJoin mapJoin) {
@@ -1636,14 +1648,14 @@ public class OperatorAssembler extends BaseRule
             } else if (node instanceof MapJoin) {
                 return findCollators(((MapJoin)node).getInner());
             } else if (node instanceof Project) {
-                List<AkCollator> collators = new ArrayList<AkCollator>();
+                List<AkCollator> collators = new ArrayList<>();
                 Project project = (Project) node;
                 for (ExpressionNode expressionNode : project.getFields()) {
                     collators.add(expressionNode.getCollator());
                 }
                 return collators;
             } else if (node instanceof IndexScan) {
-                List<AkCollator> collators = new ArrayList<AkCollator>();
+                List<AkCollator> collators = new ArrayList<>();
                 IndexScan indexScan = (IndexScan) node;
                 for (IndexColumn indexColumn : indexScan.getIndexColumns()) {
                     collators.add(indexColumn.getColumn().getCollator());
@@ -1750,7 +1762,7 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = assembleStream(usingBloomFilter.getInput());
             List<AkCollator> collators = null;
             if (usingBloomFilter.getLoader() instanceof IndexScan) {
-                collators = new ArrayList<AkCollator>();
+                collators = new ArrayList<>();
                 IndexScan indexScan = (IndexScan) usingBloomFilter.getLoader();
                 for (IndexColumn indexColumn : indexScan.getIndexColumns()) {
                     collators.add(indexColumn.getColumn().getCollator());
@@ -1778,7 +1790,7 @@ public class OperatorAssembler extends BaseRule
                     stream.fieldOffsets);
             List<TPreparedExpression> tFields = newPartialAssembler.assembleExpressions(bloomFilterFilter.getLookupExpressions(),
                     stream.fieldOffsets);
-            List<AkCollator> collators = new ArrayList<AkCollator>();
+            List<AkCollator> collators = new ArrayList<>();
             for (ExpressionNode expressionNode : bloomFilterFilter.getLookupExpressions()) {
                 collators.add(expressionNode.getCollator());
             }
@@ -1816,7 +1828,7 @@ public class OperatorAssembler extends BaseRule
         // Get a list of result columns based on ResultSet expression names.
         protected List<PhysicalResultColumn> getResultColumns(List<ResultField> fields) {
             List<PhysicalResultColumn> columns = 
-                new ArrayList<PhysicalResultColumn>(fields.size());
+                new ArrayList<>(fields.size());
             for (ResultField field : fields) {
                 columns.add(rulesContext.getResultColumn(field));
             }
@@ -1828,7 +1840,7 @@ public class OperatorAssembler extends BaseRule
         // does not currently support.
         protected List<PhysicalResultColumn> getResultColumns(int ncols) {
             List<PhysicalResultColumn> columns = 
-                new ArrayList<PhysicalResultColumn>(ncols);
+                new ArrayList<>(ncols);
             for (int i = 0; i < ncols; i++) {
                 columns.add(rulesContext.getResultColumn(new ResultField("column" + (i+1))));
             }
@@ -2143,11 +2155,64 @@ public class OperatorAssembler extends BaseRule
             return result;
         }
 
+        protected RowStream assembleFullTextScan(FullTextScan textScan) {
+            RowStream stream = new RowStream();
+            FullTextQueryBuilder builder = new FullTextQueryBuilder(textScan.getIndex(),
+                                                                    schema.ais(),
+                                                                    planContext.getQueryContext());
+            FullTextQueryExpression queryExpression = assembleFullTextQuery(textScan.getQuery(),
+                                                                            builder);
+            stream.operator = builder.scanOperator(queryExpression, textScan.getLimit());
+            stream.rowType = stream.operator.rowType();
+            return stream;
+        }
+
+        protected FullTextQueryExpression assembleFullTextQuery(FullTextQuery query,
+                                                                FullTextQueryBuilder builder) {
+            if (query instanceof FullTextField) {
+                FullTextField field = (FullTextField)query;
+                ExpressionNode key = field.getKey();
+                TPreparedExpression expr = null;
+                String constant = null;
+                boolean isConstant = false;
+                if (key.isConstant()) {
+                    PValueSource pValueSource = key.getPreptimeValue().value();
+                    constant = (pValueSource == null || pValueSource.isNull()) ? null : pValueSource.getString();
+                    isConstant = true;
+                }
+                else {
+                    expr = newPartialAssembler.assembleExpression(key, null);
+                }
+                switch (field.getType()) {
+                case PARSE:
+                    if (isConstant)
+                        return builder.parseQuery(field.getIndexColumn(), constant);
+                    else
+                        return builder.parseQuery(field.getIndexColumn(), expr);
+                case MATCH:
+                    if (isConstant)
+                        return builder.matchQuery(field.getIndexColumn(), constant);
+                    else
+                        return builder.matchQuery(field.getIndexColumn(), expr);
+                }
+            }
+            else if (query instanceof FullTextBoolean) {
+                FullTextBoolean bquery = (FullTextBoolean)query;
+                List<FullTextQuery> operands = bquery.getOperands();
+                List<FullTextQueryExpression> queries = new ArrayList<>(operands.size());
+                for (FullTextQuery operand : operands) {
+                    queries.add(assembleFullTextQuery(operand, builder));
+                }
+                return builder.booleanQuery(queries, bquery.getTypes());
+            }
+            throw new UnsupportedSQLException("Full text query " + query, null);
+        }
+
         /* Bindings-related state */
 
         protected int expressionBindingsOffset, loopBindingsOffset;
-        protected Stack<ColumnExpressionToIndex> boundRows = new Stack<ColumnExpressionToIndex>(); // Needs to be List<>.
-        protected Map<BaseHashTable,Integer> hashTablePositions = new HashMap<BaseHashTable,Integer>();
+        protected Stack<ColumnExpressionToIndex> boundRows = new Stack<>(); // Needs to be List<>.
+        protected Map<BaseHashTable,Integer> hashTablePositions = new HashMap<>();
 
         protected void computeBindingsOffsets() {
             expressionBindingsOffset = 0;
@@ -2330,7 +2395,7 @@ public class OperatorAssembler extends BaseRule
 
     // Flattened row.
     static class Flattened extends BaseColumnExpressionToIndex {
-        Map<TableSource,Integer> tableOffsets = new HashMap<TableSource,Integer>();
+        Map<TableSource,Integer> tableOffsets = new HashMap<>();
         int nfields;
             
         Flattened() {
@@ -2358,7 +2423,7 @@ public class OperatorAssembler extends BaseRule
         // Tack on another flattened using product rules.
         public void product(final Flattened other) {
             List<TableSource> otherTables = 
-                new ArrayList<TableSource>(other.tableOffsets.keySet());
+                new ArrayList<>(other.tableOffsets.keySet());
             Collections.sort(otherTables,
                              new Comparator<TableSource>() {
                                  @Override

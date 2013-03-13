@@ -35,6 +35,7 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -43,6 +44,7 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.Service;
+import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.externaldata.JsonRowWriter.WriteTableRow;
@@ -61,6 +63,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.util.Collections;
 import java.util.List;
 
 public class ExternalDataServiceImpl implements ExternalDataService, Service {
@@ -69,6 +72,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     private final Store store;
     private final TransactionService transactionService;
     private final TreeService treeService;
+    private final ServiceManager serviceManager;
     
     private static final Logger logger = LoggerFactory.getLogger(ExternalDataServiceImpl.class);
 
@@ -85,12 +89,14 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     public ExternalDataServiceImpl(ConfigurationService configService,
                                    DXLService dxlService, Store store,
                                    TransactionService transactionService,
-                                   TreeService treeService) {
+                                   TreeService treeService,
+                                   ServiceManager serviceManager) {
         this.configService = configService;
         this.dxlService = dxlService;
         this.store = store;
         this.transactionService = transactionService;
         this.treeService = treeService;
+        this.serviceManager = serviceManager;
     }
 
     private UserTable getTable(AkibanInformationSchema ais, String schemaName, String tableName) {
@@ -118,10 +124,15 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
                             int depth,
                             boolean withTransaction,
                             Schema schema,
-                            Operator plan) throws IOException {
+                            Operator plan) {
         StoreAdapter adapter = getAdapter(session, table, schema);
-        QueryContext queryContext = new SimpleQueryContext(adapter);
-        JsonRowWriter json = new JsonRowWriter(table, depth);
+        QueryContext queryContext = new SimpleQueryContext(adapter) {
+                @Override
+                public ServiceManager getServiceManager() {
+                    return serviceManager;
+                }
+            };
+        JsonRowWriter json = new JsonRowWriter(new TableRowTracker(table, depth));
         WriteTableRow rowWriter = new WriteTableRow();
         AkibanAppender appender = AkibanAppender.of(writer);
         boolean transaction = false;
@@ -169,8 +180,7 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     @Override
     public void dumpAllAsJson(Session session, PrintWriter writer,
                               String schemaName, String tableName,
-                              int depth, boolean withTransaction)
-            throws IOException {
+                              int depth, boolean withTransaction) {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
         UserTable table = getTable(ais, schemaName, tableName);
         logger.debug("Writing all of {}", table);
@@ -183,14 +193,26 @@ public class ExternalDataServiceImpl implements ExternalDataService, Service {
     public void dumpBranchAsJson(Session session, PrintWriter writer,
                                  String schemaName, String tableName, 
                                  List<List<String>> keys, int depth,
-                                 boolean withTransaction)
-            throws IOException {
+                                 boolean withTransaction) {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
         UserTable table = getTable(ais, schemaName, tableName);
         logger.debug("Writing from {}: {}", table, keys);
         PlanGenerator generator = ais.getCachedValue(this, CACHED_PLAN_GENERATOR);
         Operator plan = generator.generateBranchPlan(table);
         dumpAsJson(session, writer, table, keys, depth, withTransaction, generator.getSchema(), plan);
+    }
+
+    @Override
+    public void dumpBranchAsJson(Session session, PrintWriter writer,
+                                 String schemaName, String tableName, 
+                                 Operator scan, RowType scanType, int depth,
+                                 boolean withTransaction) {
+        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+        UserTable table = getTable(ais, schemaName, tableName);
+        logger.debug("Writing from {}: {}", table, scan);
+        PlanGenerator generator = ais.getCachedValue(this, CACHED_PLAN_GENERATOR);
+        Operator plan = generator.generateBranchPlan(table, scan, scanType);
+        dumpAsJson(session, writer, table, Collections.singletonList(Collections.<String>emptyList()), depth, withTransaction, generator.getSchema(), plan);
     }
 
     @Override

@@ -35,8 +35,10 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index.JoinType;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.IndexTableNotInGroupException;
@@ -352,6 +354,29 @@ public class IndexDDLIT extends AISDDLITBase {
         
         String sql = "CREATE INDEX t1_t2 ON test.t1(c1, test.t2.c1) USING LEFT JOIN";
         executeDDL(sql);
+    }
+    
+    @Test
+    public void createSpatialIndex() throws Exception {
+        String sql = "CREATE TABLE test.t16 (c1 decimal(11,7), c2 decimal(11,7))";
+        executeDDL(sql);
+        sql = "CREATE INDEX t16_space on test.t16(z_order_lat_lon(c1, c2))";
+        executeDDL(sql);
+        TableIndex index = ais().getUserTable("test", "t16").getIndex("t16_space");
+        assertNotNull(index);
+        assertTrue(index.isSpatial());
+        
+    }
+    
+    @Test 
+    public void createFullTextIndex() throws Exception {
+        String sql = "CREATE TABLE test.t17 (c1 varchar(1000))";
+        executeDDL(sql);
+        sql = "CREATE INDEX t17_ft on test.t17 (FULL_TEXT(c1))";
+        executeDDL(sql);
+        FullTextIndex index = ais().getUserTable("test", "t17").getFullTextIndex("t17_ft");
+        assertNotNull(index);
+        assertNull (ais().getUserTable("test","t17").getIndex("t17_ft"));
     }
     
     private void createTable () throws Exception {

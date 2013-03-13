@@ -92,12 +92,12 @@ public class AISBuilder {
         identityGenerator.setTreeName(nameGenerator.generateSequenceTreeName(identityGenerator));
     }
     
-    public void userTable(String schemaName, String tableName) {
+    public UserTable userTable(String schemaName, String tableName) {
         LOG.trace("userTable: " + schemaName + "." + tableName);
-        UserTable.create(ais, schemaName, tableName, nameGenerator.generateTableID(new TableName(schemaName, tableName)));
+        return UserTable.create(ais, schemaName, tableName, nameGenerator.generateTableID(new TableName(schemaName, tableName)));
     }
 
-    public void userTableInitialAutoIncrement(String schemaName,
+    public UserTable userTableInitialAutoIncrement(String schemaName,
             String tableName, Long initialAutoIncrementValue) {
         LOG.trace("userTableInitialAutoIncrement: " + schemaName + "."
                 + tableName + " = " + initialAutoIncrementValue);
@@ -105,6 +105,7 @@ public class AISBuilder {
         checkFound(table, "setting initial autoincrement value", "user table",
                 concat(schemaName, tableName));
         table.setInitialAutoIncrementValue(initialAutoIncrementValue);
+        return table;
     }
 
     public void view(String schemaName, String tableName,
@@ -115,15 +116,15 @@ public class AISBuilder {
                     definition, definitionProperties, tableColumnReferences);
     }
 
-    public void column(String schemaName, String tableName, String columnName,
+    public Column column(String schemaName, String tableName, String columnName,
             Integer position, String typeName, Long typeParameter1,
             Long typeParameter2, Boolean nullable, Boolean autoIncrement,
             String charset, String collation) {
-        column(schemaName, tableName, columnName, position, typeName, typeParameter1, typeParameter2, nullable,
+        return column(schemaName, tableName, columnName, position, typeName, typeParameter1, typeParameter2, nullable,
                autoIncrement, charset, collation, null);
     }
 
-    public void column(String schemaName, String tableName, String columnName,
+    public Column column(String schemaName, String tableName, String columnName,
                 Integer position, String typeName, Long typeParameter1,
                 Long typeParameter2, Boolean nullable, Boolean autoIncrement,
                 String charset, String collation, String defaultValue) {
@@ -142,6 +143,7 @@ public class AISBuilder {
         column.setCollation(collation);
         column.setDefaultValue(defaultValue);
         column.finishCreating();
+        return column;
     }
 
     public void columnAsIdentity (String schemaName, String tableName, String columnName,
@@ -223,6 +225,30 @@ public class AISBuilder {
         checkFound(table, "creating group index column", "table", concat(schemaName, tableName));
         Column column = table.getColumn(columnName);
         checkFound(column, "creating group index column", "column", concat(schemaName, tableName, columnName));
+        IndexColumn.create(index, column, position, true, null);
+    }
+
+    public void fullTextIndex(TableName tableName, String indexName)
+    {
+        LOG.trace("fullTextIndex: " + tableName + "." + indexName);
+        UserTable table = ais.getUserTable(tableName);
+        checkFound(table, "creating full text index", "table", tableName);
+        int indexID = nameGenerator.generateIndexID(getRooTableID(table));
+        Index index = FullTextIndex.create(ais, table, indexName, indexID);
+    }
+
+    public void fullTextIndexColumn(TableName indexedTableName, String indexName, 
+                                    String schemaName, String tableName, String columnName, Integer position)
+    {
+        LOG.trace("fullTextIndexColumn: " + indexedTableName + "." + indexName + ":" + columnName);
+        UserTable indexedTable = ais.getUserTable(indexedTableName);
+        checkFound(indexedTable, "creating full text index column", "table", indexedTableName);
+        Index index = indexedTable.getFullTextIndex(indexName);
+        checkFound(index, "creating full text index column", "index", concat(tableName.toString(), indexName));
+        Table table = ais.getTable(schemaName, tableName);
+        checkFound(table, "creating full text index column", "table", concat(schemaName, tableName));
+        Column column = table.getColumn(columnName);
+        checkFound(column, "creating full text index column", "column", concat(schemaName, tableName, columnName));
         IndexColumn.create(index, column, position, true, null);
     }
 
@@ -835,7 +861,7 @@ public class AISBuilder {
     private Map<String, ForwardTableReference> forwardReferences = // join name
                                                                    // ->
                                                                    // ForwardTableReference
-    new LinkedHashMap<String, ForwardTableReference>();
+    new LinkedHashMap<>();
     private NameGenerator nameGenerator;
 
     // Inner classes
@@ -873,7 +899,7 @@ public class AISBuilder {
         private final String joinName;
         private final UserTable childTable;
         private final TableName parentTableName;
-        private final List<ForwardColumnReference> forwardColumnReferences = new ArrayList<ForwardColumnReference>();
+        private final List<ForwardColumnReference> forwardColumnReferences = new ArrayList<>();
     }
 
     private class ForwardColumnReference {

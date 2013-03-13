@@ -101,7 +101,7 @@ public class JMXInterpreter {
             echo("MBean count = " + mbsc.getMBeanCount());
             echo("Query MBeanServer MBeans:");
             Set<ObjectName> names = null;
-            names = new TreeSet<ObjectName>(mbsc.queryNames(null, null));
+            names = new TreeSet<>(mbsc.queryNames(null, null));
             for (ObjectName name : names) {
                 echo("----------------------------");
                 echo("* ObjectName = " + name + " * ");

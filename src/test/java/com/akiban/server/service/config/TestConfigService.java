@@ -67,9 +67,10 @@ public class TestConfigService extends ConfigurationServiceImpl {
 
     @Override
     protected Map<String, String> loadProperties() {
-        Map<String, String> ret = new HashMap<String, String>(super.loadProperties());
+        Map<String, String> ret = new HashMap<>(super.loadProperties());
         makeDataDirectory();
         ret.put(DATA_PATH_KEY, dataDirectory.getAbsolutePath());
+        ret.put(TEXT_INDEX_PATH_KEY, dataDirectory.getAbsolutePath());
         final int bufferSize = Integer.parseInt(ret.get(BUFFER_SIZE_KEY));
         String memoryKey = BUFFER_MEMORY_KEY_PREFIX + "." + bufferSize;
         ret.put(memoryKey, UNIT_TEST_PERSISTIT_MEMORY);
@@ -144,8 +145,9 @@ public class TestConfigService extends ConfigurationServiceImpl {
     }
 
     private static final AtomicReference<Map<String, String>> startupConfigPropertiesRef
-            = new AtomicReference<Map<String, String>>();
+            = new AtomicReference<>();
     public final static String DATA_PATH_KEY = "akserver.datapath";
+    public final static String TEXT_INDEX_PATH_KEY = "akserver.text.indexpath";
     private final static String COMMIT_POLICY_KEY = "persistit.txnpolicy";
     private final static String BUFFER_SIZE_KEY = "persistit.buffersize";
     private final static String BUFFER_MEMORY_KEY_PREFIX = "persistit.buffer.memory";

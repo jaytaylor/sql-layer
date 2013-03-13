@@ -83,8 +83,8 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     private int t;
     private RowType tRowType;
     private IndexRowType idxRowType;
-    private Map<Long, TestRow> indexRowMap = new HashMap<Long, TestRow>();
-    private Map<Long, TestRow> indexRowWithIdMap = new HashMap<Long, TestRow>(); // use for jumping
+    private Map<Long, TestRow> indexRowMap = new HashMap<>();
+    private Map<Long, TestRow> indexRowWithIdMap = new HashMap<>(); // use for jumping
 
     @Override
     protected void setupCreateSchema()
@@ -2870,14 +2870,14 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
         cursor.jump(indexRowWithId(targetId1, targetId2), INDEX_ROW_SELECTOR);
 
         Row row;
-        List<Row> actualRows = new ArrayList<Row>();
-        List<ShareHolder<Row>> rowHolders = new ArrayList<ShareHolder<Row>>();
+        List<Row> actualRows = new ArrayList<>();
+        List<ShareHolder<Row>> rowHolders = new ArrayList<>();
         
         while ((row = cursor.next()) != null)
         {
             // Prevent sharing of rows since verification accumulates them
             actualRows.add(row);
-            rowHolders.add(new ShareHolder<Row>(row));
+            rowHolders.add(new ShareHolder<>(row));
         }
         cursor.close();
 
@@ -2887,12 +2887,12 @@ public class UniqueIndexJumpUnboundedCompositeKeyIT extends OperatorITBase
     
     private void checkRows(List<Row> actual, long expected[][])
     {
-        List<List<Long>> actualList = new ArrayList<List<Long>>();
+        List<List<Long>> actualList = new ArrayList<>();
         for (Row row : actual)
             actualList.add(Arrays.asList(getLong(row, ID1),
                                          getLong(row, ID2)));
         
-        List<List<Long>> expectedList = new ArrayList<List<Long>>();
+        List<List<Long>> expectedList = new ArrayList<>();
         for (long idPair[] : expected)
             expectedList.add(Arrays.asList(idPair[0], idPair[1]));
         

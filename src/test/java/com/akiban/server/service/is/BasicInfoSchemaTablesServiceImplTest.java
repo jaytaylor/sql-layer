@@ -45,6 +45,7 @@ import com.akiban.qp.memoryadapter.MemoryAdapter;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;
@@ -81,7 +82,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
     public void setUp() throws Exception {
         ais = BasicInfoSchemaTablesServiceImpl.createTablesToRegister();
         createTables();
-        bist = new BasicInfoSchemaTablesServiceImpl(new MockSchemaManager(ais));
+        bist = new BasicInfoSchemaTablesServiceImpl(new MockSchemaManager(ais), null);
         bist.attachFactories(ais, false);
         adapter = new MemoryAdapter(new Schema(ais), null, null);
     }
@@ -239,8 +240,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
 
-        Map<Table, Integer> ordinalMap = new HashMap<Table, Integer>();
-        List<UserTable> remainingTables = new ArrayList<UserTable>();
+        Map<Table, Integer> ordinalMap = new HashMap<>();
+        List<UserTable> remainingTables = new ArrayList<>();
         // Add all roots
         for(UserTable userTable : ais.getUserTables().values()) {
             if(userTable.isRoot()) {
@@ -270,7 +271,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         {
         String schema = "test";
         String view = "voo";
-        Map<TableName,Collection<String>> refs = new HashMap<TableName,Collection<String>>();
+        Map<TableName,Collection<String>> refs = new HashMap<>();
         refs.put(TableName.create(schema, "foo"), Arrays.asList("c1", "c2"));
         builder.view(schema, view,
                      "CREATE VIEW voo(c1,c2) AS SELECT c2,c1 FROM foo", new Properties(),
@@ -818,6 +819,10 @@ public class BasicInfoSchemaTablesServiceImplTest {
         @Override
         public boolean hasTableChanged(Session session, int tableID) {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setSecurityService(SecurityService securityService) {
         }
     }
 }

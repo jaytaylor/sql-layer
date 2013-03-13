@@ -44,7 +44,7 @@ public class ConditionDependencyAnalyzer implements PlanVisitor, ExpressionVisit
     /** Make an analyzer using the upstream tables that input to the
      * given node. */
     public ConditionDependencyAnalyzer(PlanNode node) {
-        upstreamTables = new HashSet<ColumnSource>();
+        upstreamTables = new HashSet<>();
         state = State.GATHER;
         node.accept(this);
     }
@@ -52,7 +52,7 @@ public class ConditionDependencyAnalyzer implements PlanVisitor, ExpressionVisit
     /** Make an analyzer that recognizes tables from either of two sources. */
     public ConditionDependencyAnalyzer(ConditionDependencyAnalyzer a1,
                                        ConditionDependencyAnalyzer a2) {
-        upstreamTables = new HashSet<ColumnSource>(a1.upstreamTables);
+        upstreamTables = new HashSet<>(a1.upstreamTables);
         upstreamTables.addAll(a2.upstreamTables);
     }
 
@@ -66,8 +66,8 @@ public class ConditionDependencyAnalyzer implements PlanVisitor, ExpressionVisit
      * table, return that.  Otherwise, return <code>null</code>.
      */
     public ColumnSource analyze(ConditionExpression cond) {
-        referencedTables = new HashSet<ColumnSource>();
-        referencedColumns = new HashSet<ColumnExpression>();
+        referencedTables = new HashSet<>();
+        referencedColumns = new HashSet<>();
         state = State.ANALYZE;
         cond.accept(this);
         if (referencedTables.size() == 1)

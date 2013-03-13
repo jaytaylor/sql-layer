@@ -71,7 +71,7 @@ public abstract class Index implements Traversable
         this.constraint = constraint;
         this.joinType = joinType;
         this.isValid = isValid;
-        keyColumns = new ArrayList<IndexColumn>();
+        keyColumns = new ArrayList<>();
     }
 
     protected Index(TableName tableName, String indexName, Integer idAndFlags, Boolean isUnique, String constraint) {
@@ -270,7 +270,7 @@ public abstract class Index implements Traversable
         this.indexDef = indexDef;
     }
 
-    public final IndexType getIndexType()
+    public IndexType getIndexType()
     {
         return isTableIndex() ? IndexType.TABLE : IndexType.GROUP;
     }
@@ -318,8 +318,8 @@ public abstract class Index implements Traversable
             return array;
         }
 
-        private List<Integer> list1 = new ArrayList<Integer>();
-        private List<Integer> list2 = new ArrayList<Integer>();
+        private List<Integer> list1 = new ArrayList<>();
+        private List<Integer> list2 = new ArrayList<>();
     }
     
     private static JoinType extractJoinType(Integer idAndFlags) {
@@ -522,7 +522,8 @@ public abstract class Index implements Traversable
 
     public static enum IndexType {
         TABLE("TABLE"),
-        GROUP("GROUP")
+        GROUP("GROUP"),
+        FULL_TEXT("FULL_TEXT")
         ;
 
         private IndexType(String asString) {
@@ -538,7 +539,7 @@ public abstract class Index implements Traversable
     }
 
     public enum IndexMethod {
-        NORMAL, Z_ORDER_LAT_LON
+        NORMAL, Z_ORDER_LAT_LON, FULL_TEXT
     }
 
     public String getTreeName() {

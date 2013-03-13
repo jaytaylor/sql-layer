@@ -77,7 +77,7 @@ public final class Converters {
     }
 
     private static Map<AkType,AbstractConverter> createConvertersMap() {
-        Map<AkType,AbstractConverter> result = new EnumMap<AkType, AbstractConverter>(AkType.class);
+        Map<AkType,AbstractConverter> result = new EnumMap<>(AkType.class);
         result.put(DATE, LongConverter.DATE);
         result.put(DATETIME, LongConverter.DATETIME);
         result.put(DECIMAL, ConverterForBigDecimal.INSTANCE);

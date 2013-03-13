@@ -82,7 +82,7 @@ public final class KeyUpdateAcrossTransactionsIT extends ITBase
         TestThread t2 = createThread(barrier, tableId, 101, 999);
         t1.join();
         t2.join();
-        final Set<Long> uniqueKeys = new HashSet<Long>();
+        final Set<Long> uniqueKeys = new HashSet<>();
         transactionally(new Callable<Void>()
         {
             public Void call() throws Exception

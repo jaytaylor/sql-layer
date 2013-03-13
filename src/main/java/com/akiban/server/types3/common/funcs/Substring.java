@@ -120,7 +120,7 @@ public abstract class Substring extends TScalarBase
             @Override
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
             {
-                int strLength = inputs.get(0).instance().attribute(StringAttribute.LENGTH);
+                int strLength = inputs.get(0).instance().attribute(StringAttribute.MAX_LENGTH);
 
                 // SUBSTR (<STRING> , <OFFSET>[, <LENGTH>]
                 

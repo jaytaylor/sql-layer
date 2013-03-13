@@ -146,7 +146,7 @@ public class CompareExpression extends AbstractBinaryExpression {
 
      // consts
     
-    private static final EnumMap<Comparison, Op> OPS= new EnumMap<Comparison, Op>(Comparison.class);
+    private static final EnumMap<Comparison, Op> OPS= new EnumMap<>(Comparison.class);
     
     static
     {

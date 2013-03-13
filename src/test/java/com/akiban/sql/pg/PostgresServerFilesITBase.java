@@ -32,7 +32,6 @@ import com.akiban.server.rowdata.RowDef;
 
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanFlag;
@@ -40,14 +39,8 @@ import com.akiban.sql.RegexFilenameFilter;
 
 import org.junit.Ignore;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
-import java.io.IOException;
-import java.io.Reader;
 import java.util.EnumSet;
-import java.util.regex.Pattern;
 
 /**
  * A base class for integration tests that use data from files to specify the

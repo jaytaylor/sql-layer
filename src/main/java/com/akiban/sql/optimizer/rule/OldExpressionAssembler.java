@@ -87,7 +87,7 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
         List<Expression> arguments = 
             assembleExpressions(argumentNodes, columnContext, subqueryAssembler);
         int nargs = arguments.size();
-        List<ExpressionType> types = new ArrayList<ExpressionType>(nargs + 1);
+        List<ExpressionType> types = new ArrayList<>(nargs + 1);
         for (int i = 0; i < nargs; i++) {
             types.add(TypesTranslation.toExpressionType(argumentNodes.get(i).getSQLtype()));
         }
@@ -222,6 +222,7 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
         case JAVA:
             return new ServerJavaMethodExpression(routine, inputs);
         case SCRIPT_FUNCTION_JAVA:
+        case SCRIPT_FUNCTION_JSON:
             return new ScriptFunctionJavaRoutineExpression(routine, inputs);
         case SCRIPT_BINDINGS:
             return new ScriptBindingsRoutineExpression(routine, inputs);

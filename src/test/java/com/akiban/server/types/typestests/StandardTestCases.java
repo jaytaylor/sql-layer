@@ -50,7 +50,7 @@ final class StandardTestCases {
     }
 
     private static Collection<TestCase<?>> make() {
-        List<TestCase<?>> list = new ArrayList<TestCase<?>>();
+        List<TestCase<?>> list = new ArrayList<>();
         
         // TODO need to figure out upper and lower limits, test those
 

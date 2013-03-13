@@ -55,7 +55,7 @@ public class AggregateToDistinctMapper extends BaseRule
     }
 
     static class AggregateSourceFinder implements PlanVisitor, ExpressionVisitor {
-        List<AggregateSource> result = new ArrayList<AggregateSource>();
+        List<AggregateSource> result = new ArrayList<>();
 
         public List<AggregateSource> find(PlanNode root) {
             root.accept(this);

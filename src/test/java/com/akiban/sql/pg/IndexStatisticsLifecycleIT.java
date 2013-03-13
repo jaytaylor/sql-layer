@@ -70,7 +70,7 @@ public class IndexStatisticsLifecycleIT extends PostgresServerFilesITBase
     // information_schema instead of any IndexStatistics API so
     // as to detect problems with the loader / caches, etc.
     protected Map<Index,Integer> check() throws Exception {
-        Map<Index,Integer> result = new HashMap<Index,Integer>();
+        Map<Index,Integer> result = new HashMap<>();
         AkibanInformationSchema ais = ddl().getAIS(session());
         ResultSet rs = checkStatement.executeQuery(CHECK_SQL);
         while (rs.next()) {

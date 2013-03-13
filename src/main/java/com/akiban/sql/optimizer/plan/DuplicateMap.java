@@ -35,8 +35,8 @@ public class DuplicateMap
     private Map<TableTree,TableTree> trees;
 
     public DuplicateMap() {
-        map = new HashMap<Duplicatable,Duplicatable>();
-        trees = new HashMap<TableTree,TableTree>();
+        map = new HashMap<>();
+        trees = new HashMap<>();
     }
 
     public <T extends Duplicatable> T get(T duplicatable) {

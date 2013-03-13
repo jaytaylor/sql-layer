@@ -90,5 +90,5 @@ public class SQLJJar
     protected final AkibanInformationSchema ais;
     protected final TableName name;
     protected URL url;
-    protected transient final Collection<Routine> routines = new ArrayList<Routine>();
+    protected transient final Collection<Routine> routines = new ArrayList<>();
 }

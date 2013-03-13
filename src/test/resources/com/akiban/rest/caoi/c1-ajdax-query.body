@@ -1,0 +1,9 @@
+{
+    "first_name": [],
+    "orders": {
+        "@fields": "all",
+        "items": {
+            "@fields": "all"
+        }
+    }
+}

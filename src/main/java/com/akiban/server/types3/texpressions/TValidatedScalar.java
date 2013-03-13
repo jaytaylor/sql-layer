@@ -72,7 +72,7 @@ public final class TValidatedScalar extends TValidatedOverload implements TScala
     }
 
     public <T> LazyList<? extends T> filterInputs(LazyList<? extends T> inputs) {
-        return commuted ? new ReversedLazyList<T>(inputs) : inputs;
+        return commuted ? new ReversedLazyList<>(inputs) : inputs;
     }
 
     public TValidatedScalar createCommuted() {

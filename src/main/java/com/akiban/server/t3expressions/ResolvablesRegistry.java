@@ -97,7 +97,7 @@ final class ResolvablesRegistry<V extends TValidatedOverload> implements Iterabl
     {
         ListMultimap<String, ScalarsGroup<V>> overloadsByName = createScalars(finder, castResolver, plainClass,
                                                                               validator, commutor);
-        return new ResolvablesRegistry<V>(overloadsByName);
+        return new ResolvablesRegistry<>(overloadsByName);
     }
 
     ResolvablesRegistry(ListMultimap<String, ScalarsGroup<V>> overloadsByName) {
@@ -114,7 +114,7 @@ final class ResolvablesRegistry<V extends TValidatedOverload> implements Iterabl
 
         Set<TOverload> commutedOverloads;
         if (commutor != null) {
-            commutedOverloads = new HashSet<TOverload>();
+            commutedOverloads = new HashSet<>();
             for (TCommutativeOverloads commutativeOverloads : finder.find(TCommutativeOverloads.class)) {
                 commutativeOverloads.addTo(commutedOverloads);
             }
@@ -167,7 +167,7 @@ final class ResolvablesRegistry<V extends TValidatedOverload> implements Iterabl
             String overloadName = entry.getKey();
             Collection<V> allOverloads = entry.getValue();
             for (Collection<V> priorityGroup : scalarsByPriority(allOverloads)) {
-                ScalarsGroup<V> scalarsGroup = new ScalarsGroupImpl<V>(priorityGroup, castResolver);
+                ScalarsGroup<V> scalarsGroup = new ScalarsGroupImpl<>(priorityGroup, castResolver);
                 results.put(overloadName, scalarsGroup);
             }
         }
@@ -183,19 +183,19 @@ final class ResolvablesRegistry<V extends TValidatedOverload> implements Iterabl
         // an unmodifiable Collection (so that users of the iterator() can't modify the Collections).
         // Finally, we'll wrap the result in an unmodifiable Collection (so that users can't remove Collections
         // from it via the Iterator).
-        SortedMap<Integer, ArrayList<V>> byPriority = new TreeMap<Integer, ArrayList<V>>();
+        SortedMap<Integer, ArrayList<V>> byPriority = new TreeMap<>();
         for (V overload : overloads) {
             for (int priority : overload.getPriorities()) {
                 ArrayList<V> thisPriorityOverloads = byPriority.get(priority);
                 if (thisPriorityOverloads == null) {
-                    thisPriorityOverloads = new ArrayList<V>();
+                    thisPriorityOverloads = new ArrayList<>();
                     byPriority.put(priority, thisPriorityOverloads);
                 }
                 thisPriorityOverloads.add(overload);
             }
         }
 
-        List<Collection<V>> results = new ArrayList<Collection<V>>(byPriority.size());
+        List<Collection<V>> results = new ArrayList<>(byPriority.size());
         for (ArrayList<V> priorityGroup : byPriority.values()) {
             priorityGroup.trimToSize();
             results.add(Collections.unmodifiableCollection(priorityGroup));

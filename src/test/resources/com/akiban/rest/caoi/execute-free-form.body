@@ -1,0 +1,21 @@
+INSERT INTO
+    test.orders
+    VALUES (210, 2, '2013-02-11 15:50');
+
+INSERT INTO
+    test.items
+    VALUES (2210, 210, 4242);
+
+SELECT test.customers.*,
+       (
+           SELECT test.orders.oid,
+                  (
+                      SELECT test.items.iid
+                      FROM test.items
+                      WHERE test.items.oid=test.orders.oid
+                  ) AS iid
+           FROM test.orders
+           WHERE test.orders.cid=test.customers.cid
+       ) AS o_info
+FROM test.customers
+WHERE cid=2;

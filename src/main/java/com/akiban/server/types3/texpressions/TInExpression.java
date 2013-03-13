@@ -50,7 +50,7 @@ public final class TInExpression {
     public static TPreparedExpression prepare(TPreparedExpression lhs, List<? extends TPreparedExpression> rhs,
                                               TInstance rhsInstance, TKeyComparable comparable,
                                               QueryContext queryContext) {
-        List<TPreparedExpression> all = new ArrayList<TPreparedExpression>(rhs.size() + 1);
+        List<TPreparedExpression> all = new ArrayList<>(rhs.size() + 1);
         boolean nullable = lhs.resultType().nullability();
         all.add(lhs);
         for (TPreparedExpression r : rhs) {

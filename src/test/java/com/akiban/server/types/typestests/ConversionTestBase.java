@@ -138,7 +138,7 @@ public abstract class ConversionTestBase {
     }
 
     private static Collection<ConversionSuite<?>> normalize(ConversionSuite<?>[] suites) {
-        List<ConversionSuite<?>> list = new ArrayList<ConversionSuite<?>>();
+        List<ConversionSuite<?>> list = new ArrayList<>();
 
         for (ConversionSuite<?> suite : suites) {
             // the suite itself

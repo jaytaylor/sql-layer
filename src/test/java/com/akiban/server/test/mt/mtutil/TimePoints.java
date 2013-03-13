@@ -32,13 +32,13 @@ import java.util.List;
 import java.util.Map;
 
 public final class TimePoints {
-    private final Map<Long,List<String>> marks = new HashMap<Long, List<String>>();
+    private final Map<Long,List<String>> marks = new HashMap<>();
 
     public void mark(String message) {
         long time = System.currentTimeMillis();
         List<String> nowMarks = marks.get(time);
         if (nowMarks == null) {
-            nowMarks = new ArrayList<String>();
+            nowMarks = new ArrayList<>();
             marks.put(time, nowMarks);
         }
         nowMarks.add(message);

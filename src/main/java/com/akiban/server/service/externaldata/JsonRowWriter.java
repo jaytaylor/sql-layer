@@ -28,11 +28,8 @@ package com.akiban.server.service.externaldata;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.NopVisitor;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.AkibanAppender;
 
@@ -46,49 +43,28 @@ import java.util.Map;
 
 public class JsonRowWriter
 {
-    private int minDepth, maxDepth;
-    // This is not sufficient if orphans are possible (when
-    // ancestor keys are repeated in descendants). In that case, we
-    // have to save rows and check that they are ancestors of new
-    // rows, discarding any that are not.
-    private RowType[] openTypes;
-
-    public JsonRowWriter(UserTable table, int addlDepth) {
-        minDepth = maxDepth = table.getDepth();
-        if (addlDepth < 0) {
-            table.traverseTableAndDescendants(new NopVisitor() {
-                    @Override
-                    public void visitUserTable(UserTable userTable) {
-                        maxDepth = Math.max(maxDepth, userTable.getDepth());
-                    }
-                });
-        }
-        else {
-            maxDepth += addlDepth;
-        }
-        openTypes = new RowType[maxDepth+1];
-    }
-
     private static final Logger logger = LoggerFactory.getLogger(JsonRowWriter.class);
 
-    public boolean writeRows(Cursor cursor, AkibanAppender appender, String prefix, WriteRow rowWriter)
-            throws IOException {
+    private final RowTracker tracker;
+
+    public JsonRowWriter(RowTracker tracker) {
+        this.tracker = tracker;
+    }
+
+    public boolean writeRows(Cursor cursor, AkibanAppender appender, String prefix, WriteRow rowWriter) {
         cursor.open();
-        int depth = minDepth-1;
+        tracker.reset();
+        final int minDepth = tracker.getMinDepth();
+        final int maxDepth = tracker.getMaxDepth();
+        int depth = minDepth - 1;
         Row row;
         while ((row = cursor.next()) != null) {
             logger.trace("Row {}", row);
-            RowType rowType;
-            UserTable table; 
-            
-            assert row.rowType().hasUserTable() : "Invalid row type for JsonRowWriter#writeRows()";
-            rowType = row.rowType();
-            table = rowType.userTable();
-            
-            int rowDepth = table.getDepth();
+            tracker.beginRow(row);
+            int rowDepth = tracker.getRowDepth();
             boolean begun = false;
             if (depth >= rowDepth) {
-                if (rowType == openTypes[rowDepth])
+                if (tracker.isSameRowType())
                     begun = true;
                 do {
                     appender.append((depth > rowDepth || !begun) ? "}]" : "}");
@@ -99,13 +75,13 @@ public class JsonRowWriter
                 continue;
             assert (rowDepth == depth+1);
             depth = rowDepth;
-            openTypes[depth] = rowType;
+            tracker.pushRowType();
             if (begun) {
                 appender.append(',');
             }
             else if (depth > minDepth) {
                 appender.append(",\"");
-                appender.append(table.getName().toString());
+                appender.append(tracker.getRowName());
                 appender.append("\":[");
             }
             else {
@@ -123,66 +99,52 @@ public class JsonRowWriter
         } while (depth >= minDepth);
         return true;
     }
-    
+
+    public static void writeValue(String name, PValueSource pvalue, AkibanAppender appender, boolean first) {
+        if(!first) {
+            appender.append(',');
+        }
+        appender.append('"');
+        appender.append(name);
+        appender.append("\":");
+        pvalue.tInstance().formatAsJson(pvalue, appender);
+    }
+
     /**
      * Write the name:value pairs of the data from a row into Json format.
      * Current implementations take names from the table columns or the
      * table's primary key columns. 
      * @author tjoneslo
-     *
      */
-    public static abstract class WriteRow {
-        public abstract void write(Row row, AkibanAppender appender);
-        protected void writeValue (String name, PValueSource pvalue, AkibanAppender appender) {
-            appender.append('"');
-            appender.append(name);
-            appender.append("\":");
-            pvalue.tInstance().formatAsJson(pvalue, appender);
-        }
+    public interface WriteRow {
+        public void write(Row row, AkibanAppender appender);
+
     }
     
-    public static class WriteTableRow extends WriteRow {
-        public WriteTableRow () {}
-        
+    public static class WriteTableRow implements WriteRow {
         @Override
         public void write(Row row, AkibanAppender appender) {
             List<Column> columns = row.rowType().userTable().getColumns();
             for (int i = 0; i < columns.size(); i++) {
-                if (i > 0) appender.append(',');
-                writeValue (columns.get(i).getName(), row.pvalue(i), appender);
+                writeValue(columns.get(i).getName(), row.pvalue(i), appender, i == 0);
              }
         }
     }
-    
-    public static class WritePKRow extends WriteRow {
-        public WritePKRow () {}
-        
-        @Override
-        public void write(Row row, AkibanAppender appender) {
-            List<IndexColumn> columns = row.rowType().userTable().getPrimaryKey().getIndex().getKeyColumns();
-            for (int i = 0; i < columns.size(); i++) {
-                if (i > 0) appender.append(',');
-                Column column = columns.get(i).getColumn();
-                writeValue(column.getName(), row.pvalue(column.getPosition()), appender);
-            }
-        }
-    }
-    
-    public static class WriteCapturePKRow extends WriteRow {
 
+    public static class WriteCapturePKRow implements WriteRow {
         private Map<Column, PValueSource> pkValues = new HashMap<>();
-        public WriteCapturePKRow () {}
+
         @Override
         public void write(Row row, AkibanAppender appender) {
             List<IndexColumn> columns = row.rowType().userTable().getPrimaryKey().getIndex().getKeyColumns();
             for (int i = 0; i < columns.size(); i++) {
-                if (i > 0) appender.append(',');
                 Column column = columns.get(i).getColumn();
-                writeValue(column.getName(), row.pvalue(column.getPosition()), appender);
+                writeValue(column.getName(), row.pvalue(column.getPosition()), appender, i == 0);
                 pkValues.put(column, row.pvalue(column.getPosition()));
             }
         }
-        public  Map<Column, PValueSource> getPKValues() {
+
+        public Map<Column, PValueSource> getPKValues() {
             return pkValues;
         }
     }

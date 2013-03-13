@@ -37,15 +37,18 @@ import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Index.JoinType;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
 import com.akiban.server.geophile.Space;
+import com.akiban.server.service.text.FullTextQueryBuilder;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.Types3Switch;
@@ -157,7 +160,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     }
     
     public void setJoinConditions(Collection<JoinOperator> queryJoins, Collection<JoinOperator> joins, ConditionList extraConditions) {
-        conditionSources = new ArrayList<ConditionList>();
+        conditionSources = new ArrayList<>();
         if ((queryGoal.getWhereConditions() != null) && !hasOuterJoin(queryJoins)) {
             conditionSources.add(queryGoal.getWhereConditions());
         }
@@ -177,7 +180,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             conditions = conditionSources.get(0);
             break;
         default:
-            conditions = new ArrayList<ConditionExpression>();
+            conditions = new ArrayList<>();
             for (ConditionList conditionSource : conditionSources) {
                 conditions.addAll(conditionSource);
             }
@@ -255,7 +258,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
 
     public static InListCondition semiJoinToInList(ExpressionsSource values,
                                                    ComparisonCondition ccond) {
-        List<ExpressionNode> expressions = new ArrayList<ExpressionNode>(values.getExpressions().size());
+        List<ExpressionNode> expressions = new ArrayList<>(values.getExpressions().size());
         for (List<ExpressionNode> row : values.getExpressions()) {
             expressions.add(row.get(0));
         }
@@ -392,14 +395,14 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             dimensions = 0;
             spatialFunction = null;
         }
-        List<OrderByExpression> orderBy = new ArrayList<OrderByExpression>(ncols);
-        List<ExpressionNode> indexExpressions = new ArrayList<ExpressionNode>(ncols);
+        List<OrderByExpression> orderBy = new ArrayList<>(ncols);
+        List<ExpressionNode> indexExpressions = new ArrayList<>(ncols);
         int i = 0;
         while (i < ncols) {
             ExpressionNode indexExpression;
             boolean ascending;
             if (i == firstSpatialColumn) {
-                List<ExpressionNode> operands = new ArrayList<ExpressionNode>(dimensions);
+                List<ExpressionNode> operands = new ArrayList<>(dimensions);
                 for (int j = 0; j < dimensions; j++) {
                     operands.add(getIndexExpression(index, indexColumns.get(i++)));
                 }
@@ -721,14 +724,19 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     public BaseScan pickBestScan() {
         logger.debug("Picking for {}", this);
 
-        Set<TableSource> required = tables.getRequired();
         BaseScan bestScan = null;
+
+        bestScan = pickFullText();
+        if (bestScan != null) {
+            return bestScan;    // TODO: Always wins for now.
+        }
 
         if (tables.getGroup().getRejectedJoins() != null) {
             bestScan = pickBestGroupLoop();
         }
 
         IntersectionEnumerator intersections = new IntersectionEnumerator();
+        Set<TableSource> required = tables.getRequired();
         for (TableGroupJoinNode table : tables) {
             IndexScan tableIndex = pickBestIndex(table, required, intersections);
             if ((tableIndex != null) &&
@@ -793,9 +801,9 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         if (isAncestor(scan.getOutputIndexScan().getLeafMostTable(),
                        scan.getSelectorIndexScan().getLeafMostTable())) {
             // More conditions up the same branch are safely implied by the output row.
-            ConditionsCounter<ConditionExpression> counter = new ConditionsCounter<ConditionExpression>(conditions.size());
+            ConditionsCounter<ConditionExpression> counter = new ConditionsCounter<>(conditions.size());
             scan.incrementConditionsCounter(counter);
-            scan.setConditions(new ArrayList<ConditionExpression>(counter.getCountedConditions()));
+            scan.setConditions(new ArrayList<>(counter.getCountedConditions()));
         }
         else {
             // Otherwise only those for the output row are safe and
@@ -837,7 +845,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             List<ExpressionNode> firstOrdering = orderingCols(first);
             List<ExpressionNode> secondOrdering = orderingCols(second);
             int ncols = Math.min(firstOrdering.size(), secondOrdering.size());
-            List<Column> result = new ArrayList<Column>(ncols);
+            List<Column> result = new ArrayList<>(ncols);
             for (int i=0; i < ncols; ++i) {
                 ExpressionNode firstCol = firstOrdering.get(i);
                 ExpressionNode secondCol = secondOrdering.get(i);
@@ -984,7 +992,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     private GroupLoopScan pickBestGroupLoop() {
         GroupLoopScan bestScan = null;
         
-        Set<TableSource> outsideSameGroup = new HashSet<TableSource>(tables.getGroup().getTables());
+        Set<TableSource> outsideSameGroup = new HashSet<>(tables.getGroup().getTables());
         outsideSameGroup.retainAll(boundTables);
 
         for (TableGroupJoin join : tables.getGroup().getRejectedJoins()) {
@@ -1076,7 +1084,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         // since may not use it that way.
         {
             Collection<TableSource> joined = index.getTables();
-            Set<TableSource> required = new HashSet<TableSource>();
+            Set<TableSource> required = new HashSet<>();
             boolean moreTables = false;
             for (TableSource table : requiredAfter.getTables()) {
                 if (!joined.contains(table)) {
@@ -1138,7 +1146,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         }
         // The only table we can exclude is the one initially joined to, in the case
         // where all the data comes from elsewhere on that branch.
-        Set<TableSource> required = new HashSet<TableSource>(requiredAfter.getTables());
+        Set<TableSource> required = new HashSet<>(requiredAfter.getTables());
         if (!requiredAfter.hasColumns(scan.getInsideTable()))
             required.remove(scan.getInsideTable());
         scan.setRequiredTables(required);
@@ -1161,7 +1169,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         }
 
         Collection<ConditionExpression> unhandledConditions = 
-            new HashSet<ConditionExpression>(conditions);
+            new HashSet<>(conditions);
         if (index.getConditions() != null)
             unhandledConditions.removeAll(index.getConditions());
         if (!unhandledConditions.isEmpty()) {
@@ -1219,7 +1227,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         estimator.groupLoop(scan, tables, requiredTables);
 
         Collection<ConditionExpression> unhandledConditions = 
-            new HashSet<ConditionExpression>(conditions);
+            new HashSet<>(conditions);
         unhandledConditions.removeAll(scan.getJoinConditions());
         if (!unhandledConditions.isEmpty()) {
             estimator.select(unhandledConditions,
@@ -1302,7 +1310,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             return true;
         if (index.isGroupIndex())
             return false;
-        Set<Column> equalityColumns = new HashSet<Column>(nequals);
+        Set<Column> equalityColumns = new HashSet<>(nequals);
         for (int i = 0; i < nequals; i++) {
             ExpressionNode equalityExpr = indexScan.getColumns().get(i);
             if (equalityExpr instanceof ColumnExpression) {
@@ -1343,6 +1351,10 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         else {
             if (scan instanceof GroupLoopScan) {
                 installConditions(((GroupLoopScan)scan).getJoinConditions(), 
+                                  conditionSources);
+            }
+            else if (scan instanceof FullTextScan) {
+                installConditions(((FullTextScan)scan).getConditions(), 
                                   conditionSources);
             }
             if (sortAllowed)
@@ -1396,7 +1408,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
     protected ColumnRanges rangeForIndex(ExpressionNode expressionNode) {
         if (expressionNode instanceof ColumnExpression) {
             if (columnsToRanges == null) {
-                columnsToRanges = new HashMap<ColumnExpression, ColumnRanges>();
+                columnsToRanges = new HashMap<>();
                 for (ConditionExpression condition : conditions) {
                     ColumnRanges range = ColumnRanges.rangeAtNode(condition);
                     if (range != null) {
@@ -1432,16 +1444,16 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         private Map<TableSource,Set<ColumnExpression>> map;
         
         public RequiredColumns(TableGroupJoinTree tables) {
-            map = new HashMap<TableSource,Set<ColumnExpression>>();
+            map = new HashMap<>();
             for (TableGroupJoinNode table : tables) {
                 map.put(table.getTable(), new HashSet<ColumnExpression>());
             }
         }
 
         public RequiredColumns(RequiredColumns other) {
-            map = new HashMap<TableSource,Set<ColumnExpression>>(other.map.size());
+            map = new HashMap<>(other.map.size());
             for (Map.Entry<TableSource,Set<ColumnExpression>> entry : other.map.entrySet()) {
-                map.put(entry.getKey(), new HashSet<ColumnExpression>(entry.getValue()));
+                map.put(entry.getKey(), new HashSet<>(entry.getValue()));
             }
         }
 
@@ -1488,7 +1500,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         private RequiredColumns requiredColumns;
         private Map<PlanNode,Void> excludedPlanNodes, includedPlanNodes;
         private Map<ExpressionNode,Void> excludedExpressions;
-        private Deque<Boolean> excludeNodeStack = new ArrayDeque<Boolean>();
+        private Deque<Boolean> excludeNodeStack = new ArrayDeque<>();
         private boolean excludeNode = false;
         private int excludeDepth = 0;
         private int subqueryDepth = 0;
@@ -1501,16 +1513,16 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                                      Collection<PlanNode> excludedPlanNodes,
                                      Collection<ConditionExpression> excludedExpressions) {
             this.requiredColumns = requiredColumns;
-            this.excludedPlanNodes = new IdentityHashMap<PlanNode,Void>();
+            this.excludedPlanNodes = new IdentityHashMap<>();
             for (PlanNode planNode : excludedPlanNodes)
                 this.excludedPlanNodes.put(planNode, null);
-            this.excludedExpressions = new IdentityHashMap<ExpressionNode,Void>();
+            this.excludedExpressions = new IdentityHashMap<>();
             for (ConditionExpression condition : excludedExpressions)
                 this.excludedExpressions.put(condition, null);
         }
 
         public void setIncludedPlanNodes(Collection<PlanNode> includedPlanNodes) {
-            this.includedPlanNodes = new IdentityHashMap<PlanNode,Void>();
+            this.includedPlanNodes = new IdentityHashMap<>();
             for (PlanNode planNode : includedPlanNodes)
                 this.includedPlanNodes.put(planNode, null);
         }
@@ -1737,7 +1749,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
             estimator.flatten(tables, index.getLeafMostTable(), requiredTables);
         }
 
-        Collection<ConditionExpression> unhandledConditions = new HashSet<ConditionExpression>(conditions);
+        Collection<ConditionExpression> unhandledConditions = new HashSet<>(conditions);
         if (index.getConditions() != null)
             unhandledConditions.removeAll(index.getConditions());
         if (!unhandledConditions.isEmpty()) {
@@ -1752,6 +1764,291 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         estimator.setLimit(queryGoal.getLimit());
 
         return estimator.getCostEstimate();
+    }
+
+    protected FullTextScan pickFullText() {
+        List<ConditionExpression> textConditions = new ArrayList<>(0);
+
+        for (ConditionExpression condition : conditions) {
+            if ((condition instanceof FunctionExpression) &&
+                ((FunctionExpression)condition).getFunction().equalsIgnoreCase("full_text_search")) {
+                textConditions.add(condition);
+            }
+        }
+
+        if (textConditions.isEmpty())
+            return null;
+
+        List<FullTextField> textFields = new ArrayList<>(0);
+        FullTextQuery query = null;
+        for (ConditionExpression condition : textConditions) {
+            List<ExpressionNode> operands = ((FunctionExpression)condition).getOperands();
+            FullTextQuery clause = null;
+            switch (operands.size()) {
+            case 1:
+                clause = fullTextBoolean(operands.get(0), textFields);
+                if (clause == null) continue;
+                break;
+            case 2:
+                if ((operands.get(0) instanceof ColumnExpression) &&
+                    constantOrBound(operands.get(1))) {
+                    ColumnExpression column = (ColumnExpression)operands.get(0);
+                    if (column.getTable() instanceof TableSource) {
+                        if (!tables.containsTable((TableSource)column.getTable()))
+                            continue;
+                        FullTextField field = new FullTextField(column, 
+                                                                FullTextField.Type.PARSE,
+                                                                operands.get(1));
+                        textFields.add(field);
+                        clause = field;
+                    }
+                }
+                break;
+            }
+            if (clause == null)
+                throw new UnsupportedSQLException("Unrecognized FULL_TEXT_SEARCH call",
+                                                  condition.getSQLsource());
+            if (query == null) {
+                query = clause;
+            }
+            else {
+                query = fullTextBoolean(Arrays.asList(query, clause),
+                                        Arrays.asList(FullTextQueryBuilder.BooleanType.MUST,
+                                                      FullTextQueryBuilder.BooleanType.MUST));
+            }
+        }
+        if (query == null) 
+            return null;
+
+        FullTextIndex foundIndex = null;
+        TableSource foundTable = null;
+        find_index:
+        for (FullTextIndex index : textFields.get(0).getColumn().getColumn().getUserTable().getFullTextIndexes()) {
+            TableSource indexTable = null;
+            for (FullTextField textField : textFields) {
+                Column column = textField.getColumn().getColumn();
+                boolean found = false;
+                for (IndexColumn indexColumn : index.getKeyColumns()) {
+                    if (indexColumn.getColumn() == column) {
+                        if (foundIndex == null) {
+                            textField.setIndexColumn(indexColumn);
+                        }
+                        found = true;
+                        if ((indexTable == null) &&
+                            (indexColumn.getColumn().getUserTable() == index.getIndexedTable())) {
+                            indexTable = (TableSource)textField.getColumn().getTable();
+                        }
+                        break;
+                    }
+                }
+                if (!found) {
+                    continue find_index;
+                }
+            }
+            if (foundIndex == null) {
+                foundIndex = index;
+                foundTable = indexTable;
+            }
+            else {
+                throw new UnsupportedSQLException("Ambiguous full text index: " +
+                                                  foundIndex + " and " + index);
+            }
+        }
+        if (foundIndex == null) {
+            StringBuilder str = new StringBuilder("No full text index for: ");
+            boolean first = true;
+            for (FullTextField textField : textFields) {
+                if (first)
+                    first = false;
+                else
+                    str.append(", ");
+                str.append(textField.getColumn());
+            }
+            throw new UnsupportedSQLException(str.toString());
+        }
+        if (foundTable == null) {
+            for (TableGroupJoinNode node : tables) {
+                if (node.getTable().getTable().getTable() == foundIndex.getIndexedTable()) {
+                    foundTable = node.getTable();
+                    break;
+                }
+            }
+        }
+
+        query = normalizeFullTextQuery(query);
+        FullTextScan scan = new FullTextScan(foundIndex, query, (int)queryGoal.getLimit(),
+                                             foundTable, textConditions);
+        determineRequiredTables(scan);
+        scan.setCostEstimate(estimateCostFullText(scan));
+        return scan;
+    }
+
+    protected FullTextQuery fullTextBoolean(ExpressionNode condition,
+                                            List<FullTextField> textFields) {
+        if (condition instanceof ComparisonCondition) {
+            ComparisonCondition ccond = (ComparisonCondition)condition;
+            if ((ccond.getLeft() instanceof ColumnExpression) &&
+                constantOrBound(ccond.getRight())) {
+                ColumnExpression column = (ColumnExpression)ccond.getLeft();
+                if (column.getTable() instanceof TableSource) {
+                    if (!tables.containsTable((TableSource)column.getTable()))
+                        return null;
+                    FullTextField field = new FullTextField(column, 
+                                                            FullTextField.Type.MATCH,
+                                                            ccond.getRight());
+                    textFields.add(field);
+                    switch (ccond.getOperation()) {
+                    case EQ:
+                        return field;
+                    case NE:
+                        return fullTextBoolean(Arrays.<FullTextQuery>asList(field),
+                                               Arrays.asList(FullTextQueryBuilder.BooleanType.NOT));
+                    }
+                }
+            }
+        }
+        else if (condition instanceof LogicalFunctionCondition) {
+            LogicalFunctionCondition lcond = (LogicalFunctionCondition)condition;
+            String op = lcond.getFunction();
+            if ("and".equals(op)) {
+                FullTextQuery left = fullTextBoolean(lcond.getLeft(), textFields);
+                FullTextQuery right = fullTextBoolean(lcond.getRight(), textFields);
+                if ((left == null) && (right == null)) return null;
+                if ((left != null) && (right != null))
+                    return fullTextBoolean(Arrays.asList(left, right),
+                                           Arrays.asList(FullTextQueryBuilder.BooleanType.MUST,
+                                                         FullTextQueryBuilder.BooleanType.MUST));
+            }
+            else if ("or".equals(op)) {
+                FullTextQuery left = fullTextBoolean(lcond.getLeft(), textFields);
+                FullTextQuery right = fullTextBoolean(lcond.getRight(), textFields);
+                if ((left == null) && (right == null)) return null;
+                if ((left != null) && (right != null))
+                    return fullTextBoolean(Arrays.asList(left, right),
+                                           Arrays.asList(FullTextQueryBuilder.BooleanType.SHOULD,
+                                                         FullTextQueryBuilder.BooleanType.SHOULD));
+            }
+            else if ("not".equals(op)) {
+                FullTextQuery inner = fullTextBoolean(lcond.getOperand(), textFields);
+                if (inner == null) 
+                    return null;
+                else
+                    return fullTextBoolean(Arrays.asList(inner),
+                                           Arrays.asList(FullTextQueryBuilder.BooleanType.NOT));
+            }
+        }
+        // TODO: LIKE
+        throw new UnsupportedSQLException("Cannot convert to full text query" +
+                                          condition);
+    }
+
+    protected FullTextQuery fullTextBoolean(List<FullTextQuery> operands, 
+                                            List<FullTextQueryBuilder.BooleanType> types) {
+        // Make modifiable copies for normalize.
+        return new FullTextBoolean(new ArrayList<>(operands),
+                                   new ArrayList<>(types));
+    }
+
+    protected FullTextQuery normalizeFullTextQuery(FullTextQuery query) {
+        if (query instanceof FullTextBoolean) {
+            FullTextBoolean bquery = (FullTextBoolean)query;
+            List<FullTextQuery> operands = bquery.getOperands();
+            List<FullTextQueryBuilder.BooleanType> types = bquery.getTypes();
+            int i = 0;
+            while (i < operands.size()) {
+                FullTextQuery opQuery = operands.get(i);
+                opQuery = normalizeFullTextQuery(opQuery);
+                if (opQuery instanceof FullTextBoolean) {
+                    FullTextBoolean opbquery = (FullTextBoolean)opQuery;
+                    List<FullTextQuery> opOperands = opbquery.getOperands();
+                    List<FullTextQueryBuilder.BooleanType> opTypes = opbquery.getTypes();
+                    // Fold in the simplest cases: 
+                    //  [MUST(x), [MUST(y), MUST(z)]] -> [MUST(x), MUST(y), MUST(z)]
+                    //  [MUST(x), [NOT(y)]] -> [MUST(x), NOT(y)]
+                    //  [SHOULD(x), [SHOULD(y), SHOULD(z)]] -> [SHOULD(x), SHOULD(y), SHOULD(z)]
+                    boolean fold = true;
+                    switch (types.get(i)) {
+                    case MUST:
+                    check_must:
+                        for (FullTextQueryBuilder.BooleanType opType : opTypes) {
+                            switch (opType) {
+                            case MUST:
+                            case NOT:
+                                break;
+                            default:
+                                fold = false;
+                                break check_must;
+                            }
+                        }
+                        break;
+                    case SHOULD:
+                    check_should:
+                        for (FullTextQueryBuilder.BooleanType opType : opTypes) {
+                            switch (opType) {
+                            case SHOULD:
+                                break;
+                            default:
+                                fold = false;
+                                break check_should;
+                            }
+                        }
+                        break;
+                    default:
+                        fold = false;
+                        break;
+                    }
+                    if (fold) {
+                        for (int j = 0; j < opOperands.size(); j++) {
+                            FullTextQuery opOperand = opOperands.get(j);
+                            FullTextQueryBuilder.BooleanType opType = opTypes.get(j);
+                            if (j == 0) {
+                                operands.set(i, opOperand);
+                                types.set(i, opType);
+                            }
+                            else {
+                                operands.add(i, opOperand);
+                                types.add(i, opType);
+                            }
+                            i++;
+                        }
+                        continue;
+                    }
+                }
+                operands.set(i, opQuery);
+                i++;
+            }
+        }
+        return query;
+    }
+
+    protected void determineRequiredTables(FullTextScan scan) {
+        // Include the non-condition requirements.
+        RequiredColumns requiredAfter = new RequiredColumns(requiredColumns);
+        RequiredColumnsFiller filler = new RequiredColumnsFiller(requiredAfter);
+        // Add in any non-full-text conditions.
+        for (ConditionExpression condition : conditions) {
+            boolean found = false;
+            for (ConditionExpression scanCondition : scan.getConditions()) {
+                if (scanCondition == condition) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+                condition.accept(filler);
+        }
+        // Does not sort.
+        if (queryGoal.getOrdering() != null) {
+            // Only this node, not its inputs.
+            filler.setIncludedPlanNodes(Collections.<PlanNode>singletonList(queryGoal.getOrdering()));
+            queryGoal.getOrdering().accept(filler);
+        }
+        Set<TableSource> required = new HashSet<>(requiredAfter.getTables());
+        scan.setRequiredTables(required);
+    }
+
+    public CostEstimate estimateCostFullText(FullTextScan scan) {
+        return new CostEstimate(Math.max(scan.getLimit(), 1), 1.0);
     }
 
 }

@@ -51,7 +51,6 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.lock.LockService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.statistics.Histogram;
@@ -104,7 +103,8 @@ public class PersistitStore implements Store, Service {
     private static final String BULKLOAD_TMPDIRS_CONFIG = "akserver.bulkload.tmpdirs";
     private static final String BULKLOAD_PK_BUFFER_ALLOC = "akserver.bulkload.bufferalloc.pk";
     private static final String BULKLOAD_GROUP_BUFFER_ALLOC = "akserver.bulkload.bufferalloc.group";
-
+    private static final String WRITE_LOCK_ENABLED_CONFIG = "akserver.write_lock_enabled";
+    
     private final static int MAX_ROW_SIZE = 5000000;
 
     private final static int MAX_INDEX_TRANCHE_SIZE = 10 * 1024 * 1024;
@@ -112,6 +112,8 @@ public class PersistitStore implements Store, Service {
     private final static int KEY_STATE_SIZE_OVERHEAD = 50;
 
     private final static byte[] EMPTY_BYTE_ARRAY = new byte[0];
+    
+    private boolean writeLockEnabled;
 
     private boolean updateGroupIndexes;
 
@@ -127,13 +129,11 @@ public class PersistitStore implements Store, Service {
 
     private final TransactionService transactionService;
 
-    private TableStatusCache tableStatusCache;
-
     private DisplayFilter originalDisplayFilter;
 
     private volatile IndexStatisticsService indexStatistics;
 
-    private final Map<Tree, SortedSet<KeyState>> deferredIndexKeys = new HashMap<Tree, SortedSet<KeyState>>();
+    private final Map<Tree, SortedSet<KeyState>> deferredIndexKeys = new HashMap<>();
 
     private int deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
 
@@ -162,7 +162,6 @@ public class PersistitStore implements Store, Service {
 
     @Override
     public synchronized void start() {
-        tableStatusCache = treeService.getTableStatusCache();
         try {
             CoderManager cm = getDb().getCoderManager();
             Management m = getDb().getManagement();
@@ -178,6 +177,8 @@ public class PersistitStore implements Store, Service {
             config.getProperty(BULKLOAD_TMPDIRS_CONFIG).trim();
             pkBlBufferAllocation = Float.parseFloat(config.getProperty(BULKLOAD_PK_BUFFER_ALLOC));
             groupBlBufferAllocation = Float.parseFloat(config.getProperty(BULKLOAD_GROUP_BUFFER_ALLOC));
+            writeLockEnabled = Boolean.parseBoolean(config.getProperty(WRITE_LOCK_ENABLED_CONFIG));
+
         }
         else {
             pkBlBufferAllocation = .5f;
@@ -423,6 +424,7 @@ public class PersistitStore implements Store, Service {
         final RowDef rowDef = writeRowCheck(session, rowData, false);
         Exchange hEx;
         hEx = getExchange(session, rowDef);
+        
         lockKeys(adapter(session), rowDef, rowData, hEx);
         WRITE_ROW_TAP.in();
         try {
@@ -492,7 +494,7 @@ public class PersistitStore implements Store, Service {
                         }
                     }
                 }
-                propagateDownGroup(session, hEx, tablesRequiringHKeyMaintenance, indexRow, true);
+                propagateDownGroup(session, hEx, tablesRequiringHKeyMaintenance, indexRow, true, false);
             }
 
             if (deferredIndexKeyLimit <= 0) {
@@ -658,21 +660,12 @@ public class PersistitStore implements Store, Service {
     }
 
     @Override
-    public void deleteRow(Session session, RowData rowData)
-        throws PersistitException
+    public void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete) throws PersistitException
     {
-        deleteRow(session, rowData, true);
-        // TODO: It should be possible to optimize propagateDownGroup for inserts too
-        // deleteRow(session, rowData, hKeyDependentTableOrdinals(rowData.getRowDefId()));
+        deleteRow(session, rowData, deleteIndexes, cascadeDelete, null, true);
     }
-
-    @Override
-    public void deleteRow(Session session, RowData rowData, boolean deleteIndexes) throws PersistitException
-    {
-        deleteRow(session, rowData, deleteIndexes, null, true);
-    }
-
-    private void deleteRow(Session session, RowData rowData, boolean deleteIndexes,
+    
+    private void deleteRow(Session session, RowData rowData, boolean deleteIndexes, boolean cascadeDelete, 
                            BitSet tablesRequiringHKeyMaintenance, boolean propagateHKeyChanges)
         throws PersistitException
     {
@@ -681,6 +674,7 @@ public class PersistitStore implements Store, Service {
         DELETE_ROW_TAP.in();
         try {
             hEx = getExchange(session, rowDef);
+            
             lockKeys(adapter(session), rowDef, rowData, hEx);
             constructHKey(session, hEx, rowDef, rowData, false);
             hEx.fetch();
@@ -707,7 +701,7 @@ public class PersistitStore implements Store, Service {
             // now become orphans. The hkeys
             // of these rows need to be maintained.
             if(propagateHKeyChanges && hasChildren(rowDef.userTable())) {
-                propagateDownGroup(session, hEx, tablesRequiringHKeyMaintenance, indexRow, deleteIndexes);
+                propagateDownGroup(session, hEx, tablesRequiringHKeyMaintenance, indexRow, deleteIndexes, cascadeDelete);
             }
         } finally {
             DELETE_ROW_TAP.out();
@@ -793,7 +787,7 @@ public class PersistitStore implements Store, Service {
                 // A PK or FK field has changed. The row has to be deleted and reinserted, and hkeys of descendent
                 // rows maintained. tablesRequiringHKeyMaintenance contains the ordinals of the tables whose hkeys
                 // could possible be affected.
-                deleteRow(session, oldRowData, true, tablesRequiringHKeyMaintenance, true);
+                deleteRow(session, oldRowData, true, false, tablesRequiringHKeyMaintenance, true);
                 writeRowStandard(session, mergedRowData, tablesRequiringHKeyMaintenance, true); // May throw DuplicateKeyException
             }
         } finally {
@@ -860,7 +854,8 @@ public class PersistitStore implements Store, Service {
                                     Exchange exchange,
                                     BitSet tablesRequiringHKeyMaintenance,
                                     PersistitIndexRowBuffer indexRowBuffer,
-                                    boolean deleteIndexes)
+                                    boolean deleteIndexes,
+                                    boolean cascadeDelete)
             throws PersistitException
     {
         // exchange is positioned at a row R that has just been replaced by R', (because we're processing an update
@@ -891,8 +886,10 @@ public class PersistitStore implements Store, Service {
                         deleteIndex(session, index, descendentRowData, exchange.getKey(), indexRowBuffer);
                     }
                 }
-                // Reinsert it, recomputing the hkey and maintaining indexes
-                writeRowStandard(session, descendentRowData, tablesRequiringHKeyMaintenance, false);
+                if (!cascadeDelete) {
+                    // Reinsert it, recomputing the hkey and maintaining indexes
+                    writeRowStandard(session, descendentRowData, tablesRequiringHKeyMaintenance, false);
+                }
             }
         }
     }
@@ -909,7 +906,7 @@ public class PersistitStore implements Store, Service {
 
     @Override
     public void truncateGroup(final Session session, final Group group) throws PersistitException {
-        List<Index> indexes = new ArrayList<Index>();
+        List<Index> indexes = new ArrayList<>();
         // Collect indexes, truncate table statuses
         for(UserTable table : group.getRoot().getAIS().getUserTables().values()) {
             if(table.getGroup() == group) {
@@ -1005,7 +1002,7 @@ public class PersistitStore implements Store, Service {
             final int tableId) {
         List<RowCollector> list = session.get(COLLECTORS, tableId);
         if (list == null) {
-            list = new ArrayList<RowCollector>();
+            list = new ArrayList<>();
             session.put(COLLECTORS, tableId, list);
         }
         return list;
@@ -1234,7 +1231,7 @@ public class PersistitStore implements Store, Service {
             synchronized (deferredIndexKeys) {
                 SortedSet<KeyState> keySet = deferredIndexKeys.get(iEx.getTree());
                 if (keySet == null) {
-                    keySet = new TreeSet<KeyState>();
+                    keySet = new TreeSet<>();
                     deferredIndexKeys.put(iEx.getTree(), keySet);
                 }
                 KeyState ks = new KeyState(iEx.getKey());
@@ -1344,6 +1341,7 @@ public class PersistitStore implements Store, Service {
         //     key of the index row. There may be duplicates due to nulls, and they will have different null separator
         //     values and the hkeys will differ. Look through these until the desired hkey is found, and delete that
         //     row. If the hkey is missing, then the row is already not present.
+        boolean deleted = false;
         PersistitAdapter adapter = adapter(session);
         if (index.isUniqueAndMayContainNulls()) {
             // Can't use a PIRB, because we need to get the hkey. Need a PersistitIndexRow.
@@ -1355,7 +1353,7 @@ public class PersistitStore implements Store, Service {
                 indexRow.copyFromExchange(exchange); // Gets the current state of the exchange into oldIndexRow
                 PersistitHKey rowHKey = (PersistitHKey) indexRow.hKey();
                 if (rowHKey.key().compareTo(hKey) == 0) {
-                    exchange.remove();
+                    deleted = exchange.remove();
                     break;
                 }
                 direction = Key.Direction.GT;
@@ -1363,8 +1361,9 @@ public class PersistitStore implements Store, Service {
             adapter.returnIndexRow(indexRow);
         } else {
             constructIndexRow(exchange, rowData, index, hKey, indexRowBuffer, false);
-            exchange.remove();
+            deleted = exchange.remove();
         }
+        assert deleted : "Exchange remove on deleteIndexRow";
     }
 
     private void deleteIndex(Session session,
@@ -1452,9 +1451,9 @@ public class PersistitStore implements Store, Service {
 
     public void buildIndexes(Session session, Collection<? extends Index> indexes, boolean defer) {
         flushIndexes(session);
-        Set<Group> groups = new HashSet<Group>();
-        Map<Integer,RowDef> userRowDefs = new HashMap<Integer,RowDef>();
-        Set<Index> indexesToBuild = new HashSet<Index>();
+        Set<Group> groups = new HashSet<>();
+        Map<Integer,RowDef> userRowDefs = new HashMap<>();
+        Set<Index> indexesToBuild = new HashSet<>();
         for(Index index : indexes) {
             IndexDef indexDef = index.indexDef();
             if(indexDef == null) {
@@ -1516,7 +1515,7 @@ public class PersistitStore implements Store, Service {
 
     @Override
     public void removeTrees(Session session, Table table) {
-        Collection<TreeLink> treeLinks = new ArrayList<TreeLink>();
+        Collection<TreeLink> treeLinks = new ArrayList<>();
         // Add all index trees
         final Collection<TableIndex> tableIndexes = table.isUserTable() ? ((UserTable)table).getIndexesIncludingInternal() : table.getIndexes();
         final Collection<GroupIndex> groupIndexes = table.getGroupIndexes();
@@ -1556,7 +1555,7 @@ public class PersistitStore implements Store, Service {
     }
 
     public void deleteIndexes(final Session session, final Collection<? extends Index> indexes) {
-        List<TreeLink> links = new ArrayList<TreeLink>(indexes.size());
+        List<TreeLink> links = new ArrayList<>(indexes.size());
         for(Index index : indexes) {
             final IndexDef indexDef = index.indexDef();
             if(indexDef == null) {
@@ -1727,8 +1726,11 @@ public class PersistitStore implements Store, Service {
     private void lockKeys(PersistitAdapter adapter, RowDef rowDef, RowData rowData, Exchange exchange)
         throws PersistitException
     {
+        // Temporary fix for #1118871 and #1078331 
+        // disable the  lock used to prevent write skew for some cases of data loading
+        if (!writeLockEnabled) return;
         UserTable table = rowDef.userTable();
-        // Make fieldDefs big enough to accomodate PK field defs and FK field defs
+        // Make fieldDefs big enough to accommodate PK field defs and FK field defs
         FieldDef[] fieldDefs = new FieldDef[table.getColumnsIncludingInternal().size()];
         Key lockKey = adapter.newKey();
         PersistitKeyAppender lockKeyAppender = PersistitKeyAppender.create(lockKey);
@@ -1795,7 +1797,7 @@ public class PersistitStore implements Store, Service {
         public final AkibanInformationSchema ais;
         public final ThreadLocal<Key> groupTableKey;
         public final ThreadLocal<Value> groupTableValue;
-        public final Set<RowDef> seenTables = new HashSet<RowDef>();
+        public final Set<RowDef> seenTables = new HashSet<>();
         public final Map<RowDef, AtomicLong> rowsByRowDef =
                 Collections.synchronizedMap(new HashMap<RowDef, AtomicLong>());
         public final Map<RowDef, AtomicLong> hiddenPks =

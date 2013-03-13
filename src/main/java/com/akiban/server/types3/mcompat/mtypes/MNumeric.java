@@ -29,6 +29,7 @@ package com.akiban.server.types3.mcompat.mtypes;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.*;
 import com.akiban.server.types3.aksql.AkCategory;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.common.types.NumericAttribute;
 import com.akiban.server.types3.common.NumericFormatter;
 import com.akiban.server.types3.common.types.SimpleDtdTClass;
@@ -75,6 +76,11 @@ public class MNumeric extends SimpleDtdTClass {
     }
 
     @Override
+    public boolean attributeIsPhysical(int attributeIndex) {
+        return false;
+    }
+
+    @Override
     public TInstance instance(boolean nullable) {
         return instance(defaultWidth, nullable);
     }
@@ -85,7 +91,7 @@ public class MNumeric extends SimpleDtdTClass {
         if (m < 0 || m > 255)
             throw new TypeDeclarationException("width must be 0 < M < 256");
     }
-
+    
     @Override
     protected TInstance doPickInstance(TInstance left, TInstance right, boolean suggestedNullability) {
         int leftWidth = left.attribute(NumericAttribute.WIDTH);
@@ -93,6 +99,38 @@ public class MNumeric extends SimpleDtdTClass {
         return instance(Math.max(leftWidth, rightWidth), suggestedNullability);
     }
 
+    public TClass widestComparable()
+    {
+        return BIGINT;
+    }
+
+    @Override
+    protected boolean tryFromObject(TExecutionContext context, PValueSource in, PValueTarget out) {
+        if (in.tInstance().typeClass() == AkBool.INSTANCE) {
+            byte asInt = (byte)(in.getBoolean() ? 1 : 0);
+            switch (out.tInstance().typeClass().underlyingType()) {
+            case INT_8:
+                out.putInt8(asInt);
+                return true;
+            case INT_16:
+                out.putInt16(asInt);
+                return true;
+            case UINT_16:
+                out.putUInt16((char)asInt);
+                return true;
+            case INT_32:
+                out.putInt32(asInt);
+                return true;
+            case INT_64:
+                out.putInt64(asInt);
+                return true;
+            default:
+                // fall through and keep trying the standard ways
+            }
+        }
+        return super.tryFromObject(context, in, out);
+    }
+    
     public boolean isUnsigned() {
         return isUnsigned;
     }
@@ -127,18 +165,36 @@ public class MNumeric extends SimpleDtdTClass {
             = new MNumeric("integer unsigned", NumericFormatter.FORMAT.INT_64, 8, PUnderlying.INT_64, 10, TParsers.UNSIGNED_INT);
 
     public static final MNumeric BIGINT
-            = new MNumeric("bigint", NumericFormatter.FORMAT.INT_64, 8, PUnderlying.INT_64, 21, TParsers.BIGINT);
+            = new MNumeric("bigint", NumericFormatter.FORMAT.INT_64, 8, PUnderlying.INT_64, 21, TParsers.BIGINT)
+            {
+                public TClass widestComparable()
+                {
+                    return DECIMAL;
+                }
+            };
 
     public static final MNumeric BIGINT_UNSIGNED
             = new MNumeric("bigint unsigned", NumericFormatter.FORMAT.UINT_64, 8, PUnderlying.INT_64, 20, TParsers.UNSIGNED_BIGINT)
     {
+        public TClass widestComparable()
+        {
+            return DECIMAL;
+        }
+        
         @Override
         protected PValueIO getPValueIO() {
             return bigintUnsignedIO;
         }
     };
 
-    public static final TClass DECIMAL_UNSIGNED = new MBigDecimal("decimal unsigned", 10);
+    public static final TClass DECIMAL_UNSIGNED = new MBigDecimal("decimal unsigned", 10)
+    {
+        public TClass widestComparable()
+        {
+            return DECIMAL;
+        }
+    };
+    
     public static long getAsLong(TClass tClass, PValueSource source) {
         assert tClass instanceof MNumeric : "not an MNumeric: " + tClass;
         long result;

@@ -471,7 +471,7 @@ public class MySqlStatementSplitter implements Iterable<String> {
      * @return a List of Strings that haven't been read before
      */
     public List<String> asList() {
-        LinkedList<String> ret = new LinkedList<String>();
+        LinkedList<String> ret = new LinkedList<>();
         for (String line : this) {
             ret.add(line);
         }

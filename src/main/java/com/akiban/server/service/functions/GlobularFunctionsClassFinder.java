@@ -57,7 +57,7 @@ final class GlobularFunctionsClassFinder implements FunctionsClassFinder {
     @Override
     public Set<Class<?>> findClasses() {
         try {
-            Set<Class<?>> results = new HashSet<Class<?>>();
+            Set<Class<?>> results = new HashSet<>();
             List<String> includes = Strings.dumpResource(GlobularFunctionsClassFinder.class, configFile);
             for (String include : includes) {
                 int lastDot = include.lastIndexOf(".");

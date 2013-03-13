@@ -316,7 +316,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
     }
 
     private Collection<? extends BindableRow> bindableExpressions(Row... rows) {
-        List<BindableRow> result = new ArrayList<BindableRow>();
+        List<BindableRow> result = new ArrayList<>();
         for (Row row : rows) {
             result.add(BindableRow.of(row, Types3Switch.ON));
         }

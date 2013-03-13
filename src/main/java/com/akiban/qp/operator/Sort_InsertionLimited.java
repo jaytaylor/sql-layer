@@ -202,7 +202,7 @@ class Sort_InsertionLimited extends Operator
                     for (ExpressionEvaluation eval : oEvaluations)
                         eval.of(context);
                 }
-                sorted = new TreeSet<Holder>();
+                sorted = new TreeSet<>();
             } finally {
                 TAP_OPEN.out();
             }
@@ -364,7 +364,7 @@ class Sort_InsertionLimited extends Operator
             this.input = input;
             int nsort = ordering.sortColumns();
             if (ordering.usingPVals()) {
-                tEvaluations = new ArrayList<TEvaluatableExpression>(nsort);
+                tEvaluations = new ArrayList<>(nsort);
                 for (int i = 0; i < nsort; ++i) {
                     TEvaluatableExpression evaluation = ordering.tExpression(i).build();
                     tEvaluations.add(evaluation);
@@ -373,7 +373,7 @@ class Sort_InsertionLimited extends Operator
             }
             else {
                 tEvaluations = null;
-                oEvaluations = new ArrayList<ExpressionEvaluation>(nsort);
+                oEvaluations = new ArrayList<>(nsort);
                 for (int i = 0; i < nsort; i++) {
                     ExpressionEvaluation evaluation = ordering.expression(i).evaluation();
                     oEvaluations.add(evaluation);
@@ -405,7 +405,7 @@ class Sort_InsertionLimited extends Operator
         public Holder(int index, Row arow, List<TEvaluatableExpression> evaluations, Void usingPValues) {
             this.index = index;
 
-            row = new ShareHolder<Row>();
+            row = new ShareHolder<>();
             row.hold(arow);
 
             values = new Comparable[ordering.sortColumns()];
@@ -420,7 +420,7 @@ class Sort_InsertionLimited extends Operator
         public Holder(int index, Row arow, List<ExpressionEvaluation> evaluations) {
             this.index = index;
 
-            row = new ShareHolder<Row>();
+            row = new ShareHolder<>();
             row.hold(arow);
 
             ToObjectValueTarget target = new ToObjectValueTarget();

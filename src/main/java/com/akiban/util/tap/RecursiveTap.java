@@ -160,7 +160,7 @@ abstract class RecursiveTap extends Tap
             for (Subsidiary subsidiaryTap : subsidiaryTaps) {
                 subsidiaryTap.reset();
             }
-            tapStack = new ArrayDeque<RecursiveTap>();
+            tapStack = new ArrayDeque<>();
         }
 
         @Override
@@ -203,7 +203,7 @@ abstract class RecursiveTap extends Tap
         }
 
         private volatile Deque<RecursiveTap> tapStack;
-        private final List<Subsidiary> subsidiaryTaps = new ArrayList<Subsidiary>();
+        private final List<Subsidiary> subsidiaryTaps = new ArrayList<>();
     }
 
     static class Subsidiary extends RecursiveTap

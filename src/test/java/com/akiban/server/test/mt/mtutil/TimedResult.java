@@ -61,7 +61,7 @@ public final class TimedResult<T> {
 
     @SuppressWarnings("unused") // useful for debugging
     public static TimedResult<Void> ofNull(TimePoints timePoints) {
-        return new TimedResult<Void>(null, timePoints);
+        return new TimedResult<>(null, timePoints);
     }
 
     public T getItem() {
@@ -82,7 +82,7 @@ public final class TimedResult<T> {
     }
 
     private String toString(long baseTimestamp) {
-        TreeMap<Long,List<String>> marksSorted = new TreeMap<Long, List<String>>();
+        TreeMap<Long,List<String>> marksSorted = new TreeMap<>();
         for (Map.Entry<Long,List<String>> entry :  timePoints().getMarks().entrySet()) {
             marksSorted.put(entry.getKey() - baseTimestamp, entry.getValue());
         }
@@ -91,14 +91,14 @@ public final class TimedResult<T> {
     }
 
     public static String toString(TimedResult... timedResults) {
-        TreeMap<Long,TimedResult> resultsByLowest = new TreeMap<Long, TimedResult>();
+        TreeMap<Long,TimedResult> resultsByLowest = new TreeMap<>();
 
         for (TimedResult timedResult : timedResults) {
             resultsByLowest.put(timedResult.getLowestTimeStamp(), timedResult);
         }
 
         long lowest = resultsByLowest.firstKey();
-        List<String> strings = new ArrayList<String>();
+        List<String> strings = new ArrayList<>();
         for (TimedResult timedResult : resultsByLowest.values()) {
             strings.add( timedResult.toString(lowest) );
         }

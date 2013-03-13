@@ -47,7 +47,7 @@ public class GwtLogging
     {
         TRACE, DEBUG, INFO, WARN, ERROR, FATAL
     }
-    private final static List<GwtLogFactory> installed = new ArrayList<GwtLogFactory>();
+    private final static List<GwtLogFactory> installed = new ArrayList<>();
 
     public static GwtLogger getLogger(Class<?> clazz) {
         return installed.size() == 1
@@ -71,7 +71,7 @@ public class GwtLogging
         private final List<GwtLogger> loggers;
 
         public DelegatingLogger(Class<?> clazz, List<GwtLogFactory> factories) {
-            loggers = new ArrayList<GwtLogger>(factories.size());
+            loggers = new ArrayList<>(factories.size());
             for (GwtLogFactory factory : factories) {
                 loggers.add( factory.getLogger(clazz) );
             }

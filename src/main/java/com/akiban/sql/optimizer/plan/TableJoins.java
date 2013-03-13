@@ -41,7 +41,7 @@ public class TableJoins extends BasePlanWithInput implements Joinable
     public TableJoins(Joinable joins, TableGroup group) {
         super(joins);
         this.group = group;
-        tables = new HashSet<TableSource>();
+        tables = new HashSet<>();
     }
 
     public TableGroup getGroup() {

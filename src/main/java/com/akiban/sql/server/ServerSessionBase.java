@@ -26,6 +26,7 @@
 
 package com.akiban.sql.server;
 
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
@@ -38,11 +39,13 @@ import com.akiban.server.error.NoTransactionInProgressException;
 import com.akiban.server.error.TransactionAbortedException;
 import com.akiban.server.error.TransactionInProgressException;
 import com.akiban.server.error.TransactionReadOnlyException;
+import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.externaldata.ExternalDataService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.monitor.SessionMonitor;
 import com.akiban.server.service.routines.RoutineLoader;
+import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.KeyCreator;
@@ -59,11 +62,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
 
     protected final ServerServiceRequirements reqs;
     protected Properties compilerProperties;
-    protected Map<String,Object> attributes = new HashMap<String,Object>();
+    protected Map<String,Object> attributes = new HashMap<>();
     
     protected Session session;
     protected Map<StoreAdapter.AdapterType, StoreAdapter> adapters = 
-        new HashMap<StoreAdapter.AdapterType, StoreAdapter>();
+        new HashMap<>();
     protected ServerTransaction transaction;
     protected boolean transactionDefaultReadOnly = false;
     protected ServerSessionMonitor sessionMonitor;
@@ -281,6 +284,16 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     @Override
+    public SecurityService getSecurityService() {
+        return reqs.securityService();
+    }
+
+    @Override
+    public ServiceManager getServiceManager() {
+        return reqs.serviceManager();
+    }
+
+    @Override
     public Date currentTime() {
         return new Date();
     }
@@ -397,6 +410,7 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         if (call != null) {
             ServerSessionBase server = (ServerSessionBase)call.getContext().getServer();
             defaultSchemaName = server.defaultSchemaName;
+            session = server.session;
             transaction = server.transaction;
             transactionDefaultReadOnly = server.transactionDefaultReadOnly;
             sessionMonitor.setCallerSessionId(server.getSessionMonitor().getSessionId());
@@ -405,6 +419,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
 
     public boolean shouldNotify(QueryContext.NotificationLevel level) {
         return (level.ordinal() <= maxNotificationLevel.ordinal());
+    }
+
+    @Override
+    public boolean isSchemaAccessible(String schemaName) {
+        return reqs.securityService().isAccessible(session, schemaName);
     }
 
 }

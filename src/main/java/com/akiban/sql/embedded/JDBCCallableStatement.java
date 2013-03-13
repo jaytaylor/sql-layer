@@ -26,6 +26,9 @@
 
 package com.akiban.sql.embedded;
 
+import com.akiban.ais.model.Routine;
+import com.akiban.util.AkibanAppender;
+
 import java.sql.*;
 
 import java.io.InputStream;
@@ -50,6 +53,15 @@ public class JDBCCallableStatement extends JDBCPreparedStatement implements Call
             }
         }
         throw new JDBCException("Parameter not found: " + parameterName);
+    }
+
+    public Routine getRoutine() {
+        return ((ExecutableCallStatement)
+                executableStatement).getInvocation().getRoutine();
+    }
+
+    public void formatAsJson(int parameterIndex, AkibanAppender appender) {
+        values.formatAsJson(parameterIndex - 1, appender);
     }
 
     /* CallableStatement */

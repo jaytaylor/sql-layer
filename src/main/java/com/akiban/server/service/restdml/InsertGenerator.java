@@ -28,9 +28,7 @@ package com.akiban.server.service.restdml;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
@@ -38,18 +36,13 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.row.BindableRow;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
-import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.t3expressions.OverloadResolver;
-import com.akiban.server.t3expressions.T3RegistryService;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TCast;
@@ -68,48 +61,18 @@ import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.akiban.server.types3.texpressions.TPreparedParameter;
 import com.akiban.server.types3.texpressions.TValidatedScalar;
 
-public  class InsertGenerator {
+public class InsertGenerator extends OperatorGenerator{
 
-    private Schema schema;
-    private AkibanInformationSchema ais;
     private UserTable table;
-    private QueryContext queryContext;
-    private T3RegistryService registryService;
     
-    private Map<TableName,Operator> insertPlans = new HashMap<>();
- 
-
     public InsertGenerator (AkibanInformationSchema ais) {
-        this.ais = ais;
-        this.schema = SchemaCache.globalSchema(ais);
-        queryContext = new SimpleQueryContext(null);
+        super(ais);
     }
     
-    public void setT3Registry(T3RegistryService registryService) {
-        this.registryService = registryService;
-    }
-    
-    
-    public Operator createInsert (TableName tableName) {
-        Operator plan = null;
-        if (insertPlans.containsKey(tableName)) {
-            plan = insertPlans.get(tableName);
-        } else {
-            plan = create (tableName);
-            insertPlans.put(tableName, plan);
-        }
-        return plan;
-    }
-
-    static class RowStream {
-        Operator operator;
-        RowType rowType;
-        boolean unknownTypesPresent;
-    }
-    
-    private Operator create(TableName tableName) {
+    @Override
+    protected Operator create(TableName tableName) {
         
-        table = ais.getUserTable(tableName);
+        table = ais().getUserTable(tableName);
 
         RowStream stream = assembleValueScan (table);
         stream = assembleProjectTable (stream, table);
@@ -119,14 +82,14 @@ public  class InsertGenerator {
         if (table.getPrimaryKey() != null) {
             PrimaryKey key = table.getPrimaryKey();
             int size  = key.getIndex().getKeyColumns().size();
-            pExpressions = new ArrayList<TPreparedExpression>(size);
+            pExpressions = new ArrayList<>(size);
             for (IndexColumn column : key.getIndex().getKeyColumns()) {
                 int fieldIndex = column.getColumn().getPosition();
                 pExpressions.add (new TPreparedField(stream.rowType.typeInstanceAt(fieldIndex), fieldIndex));
             }
             stream.operator = API.project_Table(stream.operator,
                     stream.rowType,
-                    schema.userTableRowType(table),
+                    schema().userTableRowType(table),
                     null,
                     pExpressions);
         }
@@ -135,19 +98,18 @@ public  class InsertGenerator {
     
     protected RowStream assembleValueScan(UserTable table) {
         RowStream stream = new RowStream();
-        List<BindableRow> bindableRows = new ArrayList<BindableRow>();
+        List<BindableRow> bindableRows = new ArrayList<>();
         
         int nfields = table.getColumns().size();
         TInstance[] types = new TInstance[nfields];
-        int index = 0;
-        List<TPreparedExpression> tExprs = new ArrayList<TPreparedExpression>();
-        for (Column column : table.getColumns()) {
-            tExprs.add(index, new TPreparedParameter(index, column.tInstance()));
-            types[index] = column.tInstance();
-            index++;
+        TInstance varchar = Column.generateTInstance(null, Types.VARCHAR, 65535L, null, false);
+        List<TPreparedExpression> tExprs = new ArrayList<>();
+        for (int index = 0; index < table.getColumns().size(); index++) {
+            tExprs.add(index, new TPreparedParameter(index, varchar));
+            types[index] = varchar;
         }
-        stream.rowType =  schema.newValuesType(types);
-        bindableRows.add(BindableRow.of(stream.rowType, null, tExprs, queryContext));
+        stream.rowType =  schema().newValuesType(types);
+        bindableRows.add(BindableRow.of(stream.rowType, null, tExprs, queryContext()));
         stream.operator = API.valuesScan_Default(bindableRows, stream.rowType);
         return stream;
     }
@@ -156,8 +118,8 @@ public  class InsertGenerator {
         
         int nfields = input.rowType.nFields();
         List<TPreparedExpression> insertsP = null;
-        UserTableRowType targetRowType = schema.userTableRowType(table);
-        insertsP = new ArrayList<TPreparedExpression>(targetRowType.nFields());
+        UserTableRowType targetRowType = schema().userTableRowType(table);
+        insertsP = new ArrayList<>(targetRowType.nFields());
         
         for (int i = 0; i < nfields; ++i) {
             insertsP.add(new TPreparedField(input.rowType.typeInstanceAt(i), i));
@@ -170,6 +132,18 @@ public  class InsertGenerator {
         // Insert the sequence generator and column default values
         for (int i = 0, len = targetRowType.nFields(); i < len; ++i) {
             Column column = table.getColumnsIncludingInternal().get(i);
+
+            if (row[i] == null) {
+                TInstance tinst = targetRowType.typeInstanceAt(i);
+                final PValue defaultValueSource = new PValue(tinst);
+                defaultValueSource.putNull();
+                row[i] = new TPreparedLiteral(tinst, defaultValueSource);
+            } else if (!column.tInstance().equals(row[i].resultType())) {
+                TCast cast = registryService().getCastsResolver().cast(row[i].resultType().typeClass(), 
+                        column.tInstance().typeClass()); 
+                row[i] = new TCastExpression(row[i], cast, column.tInstance(), queryContext());
+            }
+            
             if (column.getIdentityGenerator() != null) {
                 Sequence sequence = table.getColumn(i).getIdentityGenerator();
                 row[i] = sequenceGenerator(sequence, column, row[i]);
@@ -183,7 +157,7 @@ public  class InsertGenerator {
                     TInstance valInst = MString.VARCHAR.instance(defaultValue.length(), false);
                     TExecutionContext executionContext = new TExecutionContext(
                             Collections.singletonList(valInst),
-                            tinst, queryContext);
+                            tinst, queryContext());
                     cast.evaluate(executionContext,
                                   new PValue(MString.varcharFor(defaultValue), defaultValue),
                                   defaultValueSource);
@@ -191,11 +165,6 @@ public  class InsertGenerator {
                     defaultValueSource = new PValue (tinst, defaultValue);
                 }
                 row[i] = generateIfNull (insertsP.get(i), new TPreparedLiteral(tinst, defaultValueSource));
-            } else if (row[i] == null) {
-                TInstance tinst = targetRowType.typeInstanceAt(i);
-                final PValue defaultValueSource = new PValue(tinst);
-                defaultValueSource.putNull();
-                row[i] = new TPreparedLiteral(tinst, defaultValueSource);
             }
         }
         insertsP = Arrays.asList(row);
@@ -207,28 +176,27 @@ public  class InsertGenerator {
     }
 
     public TPreparedExpression sequenceGenerator(Sequence sequence, Column column, TPreparedExpression expression) {
-        //T3RegistryService registry = rulesContext.getT3Registry();
-        OverloadResolver<TValidatedScalar> resolver = registryService.getScalarsResolver();
+        OverloadResolver<TValidatedScalar> resolver = registryService().getScalarsResolver();
         TInstance instance = column.tInstance();
         
-        List<TPreptimeValue> input = new ArrayList<TPreptimeValue>(2);
+        List<TPreptimeValue> input = new ArrayList<>(2);
         input.add(PValueSources.fromObject(sequence.getSequenceName().getSchemaName(), AkType.VARCHAR));
         input.add(PValueSources.fromObject(sequence.getSequenceName().getTableName(), AkType.VARCHAR));
     
         TValidatedScalar overload = resolver.get("NEXTVAL", input).getOverload();
     
-        List<TPreparedExpression> arguments = new ArrayList<TPreparedExpression>(2);
+        List<TPreparedExpression> arguments = new ArrayList<>(2);
         arguments.add(new TPreparedLiteral(input.get(0).instance(), input.get(0).value()));
         arguments.add(new TPreparedLiteral(input.get(1).instance(), input.get(1).value()));
     
         TInstance overloadResultInstance = overload.resultStrategy().fixed(column.getNullable());
         TPreparedExpression seqExpr =  new TPreparedFunction(overload, overloadResultInstance,
-                        arguments, queryContext);
+                        arguments, queryContext());
     
         if (!instance.equals(overloadResultInstance)) {
-            TCast tcast = registryService.getCastsResolver().cast(seqExpr.resultType(), instance);
+            TCast tcast = registryService().getCastsResolver().cast(seqExpr.resultType(), instance);
             seqExpr = 
-                    new TCastExpression(seqExpr, tcast, instance, queryContext);
+                    new TCastExpression(seqExpr, tcast, instance, queryContext());
         }
         // If the row expression is not null (i.e. the user supplied values for this column)
         // and the column is has "BY DEFAULT" as the identity generator
@@ -243,18 +211,17 @@ public  class InsertGenerator {
     }
     
     private TPreparedExpression generateIfNull(TPreparedExpression expr1, TPreparedExpression expr2 ) {
-        List<TPreptimeValue> ifNullInput = new ArrayList<TPreptimeValue>(2);
-        ifNullInput.add(new TNullExpression(expr1.resultType()).evaluateConstant(queryContext));
-        ifNullInput.add(new TNullExpression(expr2.resultType()).evaluateConstant(queryContext));
+        List<TPreptimeValue> ifNullInput = new ArrayList<>(2);
+        ifNullInput.add(new TNullExpression(expr1.resultType()).evaluateConstant(queryContext()));
+        ifNullInput.add(new TNullExpression(expr2.resultType()).evaluateConstant(queryContext()));
 
-        OverloadResult<TValidatedScalar> ifNullResult = registryService.getScalarsResolver().get("IFNULL", ifNullInput);
+        OverloadResult<TValidatedScalar> ifNullResult = registryService().getScalarsResolver().get("IFNULL", ifNullInput);
         TValidatedScalar ifNullOverload = ifNullResult.getOverload();
-        List<TPreparedExpression> ifNullArgs = new ArrayList<TPreparedExpression>(2);
+        List<TPreparedExpression> ifNullArgs = new ArrayList<>(2);
         ifNullArgs.add(expr1);
         ifNullArgs.add(expr2);
         return new TPreparedFunction(ifNullOverload, ifNullResult.getPickedInstance(),
-                ifNullArgs, queryContext);
+                ifNullArgs, queryContext());
         
     }
-
 }

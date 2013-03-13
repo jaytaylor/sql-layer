@@ -47,7 +47,7 @@ public class MultiVolumeStoreIT extends ITBase {
     @Override
     protected Map<String, String> startupConfigProperties() {
         // Set up multi-volume treespace policy so we can be sure schema is properly distributed.
-        final Map<String, String> properties = new HashMap<String, String>();
+        final Map<String, String> properties = new HashMap<>();
         properties.put("akserver.treespace.1",
                                     "test2/_akiban_customer:${datapath}/${schema}_customer.v0,create,pageSize:"+
                                     "${buffersize},initialSize:10K,extensionSize:1K,maximumSize:10G");

@@ -42,7 +42,7 @@ public final class TimePointsComparison {
     private final List<Collection<String>> marks;
 
     public TimePointsComparison(TimedResult<?>... timedResults) {
-        List<TimedResult.TimeMarks> timeMarks = new ArrayList<TimedResult.TimeMarks>();
+        List<TimedResult.TimeMarks> timeMarks = new ArrayList<>();
         for (TimedResult<?> timedResult : timedResults) {
             timeMarks.add(timedResult.timePoints());
         }
@@ -77,7 +77,7 @@ public final class TimePointsComparison {
      * @return see description
      */
     static List<Collection<String>> compileMarks(Collection<TimedResult.TimeMarks> timeMarkses) {
-        Map<Long,List<List<String>>> all = new TreeMap<Long, List<List<String>>>();
+        Map<Long,List<List<String>>> all = new TreeMap<>();
 
         for (TimedResult.TimeMarks timeMarks : timeMarkses) {
             for (Map.Entry<Long,List<String>> marksEntry : timeMarks.getMarks().entrySet()) {
@@ -90,7 +90,7 @@ public final class TimePointsComparison {
                 int i = 0;
                 for (String mark : marks) {
                     if (listsList.size() <= i) {
-                        List<String> single = new ArrayList<String>();
+                        List<String> single = new ArrayList<>();
                         single.add(mark);
                         listsList.add(single);
                     }
@@ -103,7 +103,7 @@ public final class TimePointsComparison {
             }
         }
 
-        List<Collection<String>> compiled = new ArrayList<Collection<String>>();
+        List<Collection<String>> compiled = new ArrayList<>();
         for (List<List<String>> segment : all.values()) {
             compiled.addAll(segment);
         }
@@ -111,7 +111,7 @@ public final class TimePointsComparison {
     }
 
     public void verify(String... expectedMessages) {
-        List<Collection<String>> expected = new ArrayList<Collection<String>>();
+        List<Collection<String>> expected = new ArrayList<>();
         for (String expectedMessage : expectedMessages) {
             expected.add(Collections.singletonList(expectedMessage));
         }
@@ -123,7 +123,7 @@ public final class TimePointsComparison {
     }
 
     public List<String> getMarkNames() {
-        List<String> markNames = new ArrayList<String>();
+        List<String> markNames = new ArrayList<>();
         for (Collection<String> marksList : marks) {
             assertEquals("individual marks lists must be singletons; size ", 1, marksList.size());
             markNames.addAll(marksList);

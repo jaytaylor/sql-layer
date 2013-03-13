@@ -64,11 +64,11 @@ public class ReadWriteMap<K,V> implements Map<K,V> {
     }
 
     public static <K,V> ReadWriteMap<K,V> wrapNonFair(Map<K,V> map) {
-        return new ReadWriteMap<K,V>(map, false);
+        return new ReadWriteMap<>(map, false);
     }
 
     public static <K,V> ReadWriteMap<K,V> wrapFair(Map<K,V> map) {
-        return new ReadWriteMap<K,V>(map, true);
+        return new ReadWriteMap<>(map, true);
     }
 
 

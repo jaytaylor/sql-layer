@@ -26,19 +26,23 @@
 
 package com.akiban.http;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.security.SecurityService;
 import com.google.inject.Inject;
+import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.eclipse.jetty.util.security.Constraint;
+import org.eclipse.jetty.security.Authenticator;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.JDBCLoginService;
-import org.eclipse.jetty.security.SecurityHandler;
+import org.eclipse.jetty.security.LoginService;
 import org.eclipse.jetty.security.authentication.BasicAuthenticator;
+import org.eclipse.jetty.security.authentication.DigestAuthenticator;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandler;
-import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
@@ -46,27 +50,39 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.FilterRegistration;
+import javax.servlet.ServletException;
+import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.logging.LogManager;
 
 public final class HttpConductorImpl implements HttpConductor, Service {
     private static final Logger logger = LoggerFactory.getLogger(HttpConductorImpl.class);
-    private static final String PORT_PROPERTY = "akserver.http.port";
-    private static final String SSL_PROPERTY = "akserver.http.ssl";
-    private static final String LOGIN_PROPERTY = "akserver.http.login";
+
+    private static final String CONFIG_HTTP_PREFIX = "akserver.http.";
+    private static final String CONFIG_PORT_PROPERTY = CONFIG_HTTP_PREFIX + "port";
+    private static final String CONFIG_SSL_PROPERTY = CONFIG_HTTP_PREFIX + "ssl";
+    private static final String CONFIG_LOGIN_PROPERTY = CONFIG_HTTP_PREFIX + "login";
+    private static final String CONFIG_XORIGIN_PREFIX = CONFIG_HTTP_PREFIX + "cross_origin.";
+    private static final String CONFIG_XORIGIN_ENABLED = CONFIG_XORIGIN_PREFIX + "enabled";
+    private static final String CONFIG_XORIGIN_ORIGINS = CONFIG_XORIGIN_PREFIX + "allowed_origins";
+    private static final String CONFIG_XORIGIN_METHODS = CONFIG_XORIGIN_PREFIX + "allowed_methods";
+    private static final String CONFIG_XORIGIN_HEADERS = CONFIG_XORIGIN_PREFIX + "allowed_headers";
+    private static final String CONFIG_XORIGIN_MAX_AGE = CONFIG_XORIGIN_PREFIX + "preflight_max_age";
+    private static final String CONFIG_XORIGIN_CREDENTIALS = CONFIG_XORIGIN_PREFIX + "allow_credentials";
 
     private static final String REST_ROLE = "rest-user";
-    private static final String LOGIN_REALM = "AkServer";
-    private static final String JDBC_REALM_RESOURCE = "jdbcRealm.properties";
 
     private final ConfigurationService configurationService;
+    private final SecurityService securityService;
 
     private final Object lock = new Object();
-    private HandlerCollection handlerCollection;
+    private SimpleHandlerList handlerList;
     private Server server;
     private Set<String> registeredPaths;
+    private boolean xOriginFilterEnabled;
     private volatile int port = -1;
 
     // Need reference to prevent GC and setting loss
@@ -74,8 +90,10 @@ public final class HttpConductorImpl implements HttpConductor, Service {
 
     @Inject
     public HttpConductorImpl(ConfigurationService configurationService,
-                             com.akiban.sql.embedded.EmbeddedJDBCService jdbcService) {
+                             SecurityService securityService) {
         this.configurationService = configurationService;
+        this.securityService = securityService;
+
         jerseyLogging = java.util.logging.Logger.getLogger("com.sun.jersey");
         jerseyLogging.setLevel(java.util.logging.Level.OFF);
     }
@@ -88,14 +106,16 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                 registeredPaths = new HashSet<>();
             if (!registeredPaths.add(contextBase))
                 throw new IllegalPathRequest("context already reserved: " + contextBase);
-            handlerCollection.addHandler(handler);
-            if (!handler.isStarted()) {
-                try {
-                    handler.start();
+            try {
+                if(xOriginFilterEnabled) {
+                    addCrossOriginFilter(handler);
                 }
-                catch (Exception e) {
-                    throw new HttpConductorException(e);
+                handlerList.addHandler(handler);
+                if (!handler.isStarted()) {
+                        handler.start();
                 }
+            } catch (Exception e) {
+                throw new HttpConductorException(e);
             }
         }
     }
@@ -113,11 +133,8 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                 logger.warn("Path not registered (for " + handler + "): " + contextBase);
             }
             else {
-                handlerCollection.removeHandler(handler);
+                handlerList.removeHandler(handler);
                 if (!handler.isStopped()) {
-                    // As of the current version of jetty, HandlerCollection#removeHandler stops the handler -- so
-                    // this block won't get executed. This is really here for future-proofing, in case that auto-stop
-                    // goes away for some reason.
                     try {
                         handler.stop();
                     }
@@ -129,13 +146,18 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         }
     }
 
+    static enum AuthenticationType {
+        NONE, BASIC, DIGEST
+    }
+
     @Override
     public void start() {
-        String portProperty = configurationService.getProperty(PORT_PROPERTY);
-        String sslProperty = configurationService.getProperty(SSL_PROPERTY);
-        String loginProperty = configurationService.getProperty(LOGIN_PROPERTY);
+        String portProperty = configurationService.getProperty(CONFIG_PORT_PROPERTY);
+        String sslProperty = configurationService.getProperty(CONFIG_SSL_PROPERTY);
+        String loginProperty = configurationService.getProperty(CONFIG_LOGIN_PROPERTY);
         int portLocal;
-        boolean ssl, login;
+        boolean ssl;
+        AuthenticationType login;
         try {
             portLocal = Integer.parseInt(portProperty);
         }
@@ -144,10 +166,23 @@ public final class HttpConductorImpl implements HttpConductor, Service {
             throw e;
         }
         ssl = Boolean.parseBoolean(sslProperty);
-        login = Boolean.parseBoolean(loginProperty);
-        logger.info("Starting {} service on port {}", 
-                    ssl ? "HTTPS" : "HTTP", portProperty);
-
+        if ("none".equals(loginProperty)) {
+            login = AuthenticationType.NONE;
+        }
+        else if ("basic".equals(loginProperty)) {
+            login = AuthenticationType.BASIC;
+        }
+        else if ("digest".equals(loginProperty)) {
+            login = AuthenticationType.DIGEST;
+        }
+        else {
+            throw new IllegalArgumentException("Invalid " + CONFIG_LOGIN_PROPERTY +
+                                               " property: " + loginProperty);
+        }
+        xOriginFilterEnabled = Boolean.parseBoolean(configurationService.getProperty(CONFIG_XORIGIN_ENABLED));
+        logger.info("Starting {} service on port {} with authentication {} and CORS {}",
+                    new Object[] { ssl ? "HTTPS" : "HTTP", portProperty, login, xOriginFilterEnabled ? "on" : "off"});
+                    
         Server localServer = new Server();
         SelectChannelConnector connector;
         if (!ssl) {
@@ -166,16 +201,34 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         connector.setMaxIdleTime(300000);
         connector.setAcceptQueueSize(12000);
         connector.setLowResourcesConnections(25000);
+
         localServer.setConnectors(new Connector[]{connector});
 
-        HandlerCollection localHandlerCollection = new HandlerCollection(true);
+        SimpleHandlerList localHandlerList = new SimpleHandlerList();
 
         try {
-            if (!login) {
-                localServer.setHandler(localHandlerCollection);
+            if (login == AuthenticationType.NONE) {
+                localServer.setHandler(localHandlerList);
             }
             else {
-                Constraint constraint = new Constraint(Constraint.__BASIC_AUTH, REST_ROLE);
+                String resource;
+                Authenticator authenticator;
+                switch (login) {
+                case BASIC:
+                    resource = "basic.properties";
+                    authenticator = new BasicAuthenticator();
+                    break;
+                case DIGEST:
+                    resource = "digest.properties";
+                    authenticator = new DigestAuthenticator();
+                    break;
+                default:
+                    assert false : "Unexpected authentication type " + login;
+                    resource = null;
+                    authenticator = null;
+                }
+                Constraint constraint = new Constraint(authenticator.getAuthMethod(),
+                                                       REST_ROLE);
                 constraint.setAuthenticate(true);
 
                 ConstraintMapping cm = new ConstraintMapping();
@@ -183,17 +236,18 @@ public final class HttpConductorImpl implements HttpConductor, Service {
                 cm.setConstraint(constraint);
 
                 ConstraintSecurityHandler sh = new ConstraintSecurityHandler();
-                sh.setAuthenticator(new BasicAuthenticator());
+                sh.setAuthenticator(authenticator);
                 sh.setConstraintMappings(Collections.singletonList(cm));
 
-                JDBCLoginService loginService =
-                    new JDBCLoginService(LOGIN_REALM, 
-                                         HttpConductorImpl.class.getResource(JDBC_REALM_RESOURCE).toString());
+                LoginService loginService =
+                    new SingleThreadJDBCLoginService(SecurityService.REALM, 
+                                                     HttpConductorImpl.class.getResource(resource).toString());
                 sh.setLoginService(loginService);
 
-                sh.setHandler(localHandlerCollection);
+                sh.setHandler(localHandlerList);
                 localServer.setHandler(sh);
             }
+            localHandlerList.addDefaultHandler(new NoResourceHandler());
             localServer.start();
         }
         catch (Exception e) {
@@ -203,7 +257,7 @@ public final class HttpConductorImpl implements HttpConductor, Service {
 
         synchronized (lock) {
             this.server = localServer;
-            this.handlerCollection = localHandlerCollection;
+            this.handlerList = localHandlerList;
             this.registeredPaths = null;
             this.port = portLocal;
         }
@@ -213,9 +267,10 @@ public final class HttpConductorImpl implements HttpConductor, Service {
     public void stop() {
         Server localServer;
         synchronized (lock) {
+            xOriginFilterEnabled = false;
             localServer = server;
             server = null;
-            handlerCollection = null;
+            handlerList = null;
             registeredPaths = null;
             port = -1;
         }
@@ -233,6 +288,21 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         stop();
     }
 
+    private void addCrossOriginFilter(ContextHandler handler) throws ServletException {
+        FilterRegistration reg = handler.getServletContext().addFilter("CrossOriginFilter", CrossOriginFilter.class);
+        reg.addMappingForServletNames(null /*default = REQUEST*/, false, "*");
+        reg.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM,
+                             configurationService.getProperty(CONFIG_XORIGIN_ORIGINS));
+        reg.setInitParameter(CrossOriginFilter.ALLOWED_METHODS_PARAM,
+                             configurationService.getProperty(CONFIG_XORIGIN_METHODS));
+        reg.setInitParameter(CrossOriginFilter.ALLOWED_HEADERS_PARAM,
+                             configurationService.getProperty(CONFIG_XORIGIN_HEADERS));
+        reg.setInitParameter(CrossOriginFilter.PREFLIGHT_MAX_AGE_PARAM,
+                             configurationService.getProperty(CONFIG_XORIGIN_MAX_AGE));
+        reg.setInitParameter(CrossOriginFilter.ALLOW_CREDENTIALS_PARAM,
+                             configurationService.getProperty(CONFIG_XORIGIN_CREDENTIALS));
+    }
+
     static String getContextPathPrefix(String contextPath) {
         if (!contextPath.startsWith("/"))
             throw new IllegalPathRequest("registered paths must start with '/'");
@@ -243,5 +313,41 @@ public final class HttpConductorImpl implements HttpConductor, Service {
         if (result.contains("*"))
             throw new IllegalPathRequest("can't ask for a glob within the first URL segment");
         return result;
+    }
+
+    // Embedded JDBC is single-threaded, but login service assumes it
+    // is thread-safe.  Also, it does not close its ResultSet, which
+    // leaves a transaction active. So just close connection around
+    // each use.  Login service is already
+    // synchronized. Unfortunately, this needs a private method.
+    static class SingleThreadJDBCLoginService extends JDBCLoginService {
+        private Method closeMethod;
+
+        public SingleThreadJDBCLoginService(String name, String config)
+                throws IOException {
+            super(name, config);
+            try {
+                closeMethod = JDBCLoginService.class.getDeclaredMethod("closeConnection", null);
+                closeMethod.setAccessible(true);
+            }
+            catch (Exception ex) {
+                throw new AkibanInternalException("Cannot get JDBC close method", ex);
+            }
+        }
+
+        @Override
+        protected org.eclipse.jetty.server.UserIdentity loadUser(String username) {
+            try {
+                return super.loadUser(username);
+            }
+            finally {
+                try {
+                    closeMethod.invoke(this);
+                }
+                catch (Exception ex) {
+                    logger.warn("Cannot call JDBC close method", ex);
+                }
+            }
+        }
     }
 }

@@ -46,6 +46,8 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueCacher;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.Serialization;
+import com.akiban.server.types3.texpressions.SerializeAs;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 import com.akiban.util.AkibanAppender;
@@ -56,7 +58,8 @@ import java.math.BigDecimal;
 public class MBigDecimal extends TClassBase {
 
     public enum Attrs implements Attribute {
-        PRECISION, SCALE
+        @SerializeAs(Serialization.LONG_1) PRECISION,
+        @SerializeAs(Serialization.LONG_2) SCALE
     }
 
     public static final int MAX_INDEX = 0;
@@ -108,6 +111,11 @@ public class MBigDecimal extends TClassBase {
     }
 
     @Override
+    public boolean attributeIsPhysical(int attributeIndex) {
+        return true;
+    }
+
+    @Override
     protected PValueIO getPValueIO() {
         return valueIO;
     }
@@ -152,6 +160,11 @@ public class MBigDecimal extends TClassBase {
                 DataTypeDescriptor.computeMaxWidth(precision, scale));
     }
 
+    public TClass widestComparable()
+    {
+        return this;
+    }
+    
     @Override
     public PValueCacher cacher() {
         return cacher;
@@ -288,4 +301,17 @@ public class MBigDecimal extends TClassBase {
             out.putObject(wrapper);
         }
     };
+
+    @Override
+    protected boolean tryFromObject(TExecutionContext context, PValueSource in, PValueTarget out) {
+        // If the incoming PValueSource is a DECIMAL, *and* it has a cache value (ie an BigDecimalWrapper), then
+        // we can just copy the wrapper into the output. If the incoming is a DECIMAL with bytes (its raw form), we
+        // can only copy those bytes if the TInstance match -- and super.tryFromObject already makes that check.
+        if (in.tInstance().typeClass() instanceof MBigDecimal && in.hasCacheValue()) {
+            BigDecimalWrapper cached = (BigDecimalWrapper) in.getObject();
+            out.putObject(new MBigDecimalWrapper(cached.asBigDecimal()));
+            return true;
+        }
+        return super.tryFromObject(context, in, out);
+    }
 }

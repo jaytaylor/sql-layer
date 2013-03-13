@@ -37,7 +37,7 @@ public final class GlobularFunctionsClassFinderTest {
     @Test
     public void findClasses() {
         FunctionsClassFinder finder = new GlobularFunctionsClassFinder("testfunctionpath.txt");
-        Set<Class<?>> expected = new HashSet<Class<?>>();
+        Set<Class<?>> expected = new HashSet<>();
         expected.add(PathOneClass.class);
         expected.add(PathTwoClass.class);
         assertEquals(expected, finder.findClasses());

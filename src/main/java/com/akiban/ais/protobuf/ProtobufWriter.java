@@ -36,6 +36,7 @@ import com.google.protobuf.MessageLite;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 
 public class ProtobufWriter {
     public static interface WriteSelector {
@@ -337,6 +338,11 @@ public class ProtobufWriter {
                 setCharColl(convertCharAndCol(table.getCharsetAndCollation()));
                 // Not yet in AIS: ordinal, description, protected
 
+        UUID tableUuid = table.getUuid();
+        if (tableUuid != null) {
+            tableBuilder.setUuid(tableUuid.toString());
+        }
+
         if(table.hasVersion()) {
             tableBuilder.setVersion(table.getVersion());
         }
@@ -374,6 +380,12 @@ public class ProtobufWriter {
 
         if (table.getPendingOSC() != null) {
             writePendingOSC(tableBuilder, table.getPendingOSC());
+        }
+
+        for(FullTextIndex index : table.getOwnFullTextIndexes()) {
+            if(selector.isSelected(index)) {
+                writeFullTextIndex(tableBuilder, index);
+            }
         }
 
         schemaBuilder.addTables(tableBuilder.build());
@@ -426,8 +438,16 @@ public class ProtobufWriter {
                 setColumnName(column.getName()).
                 setTypeName(column.getType().name()).
                 setIsNullable(column.getNullable()).
-                setPosition(column.getPosition()).
-                setCharColl(convertCharAndCol(column.getCharsetAndCollation()));
+                setPosition(column.getPosition());
+
+        if(Types.isTextType(column.getType())) {
+            columnBuilder.setCharColl(convertCharAndCol(column.getCharsetAndCollation()));
+        }
+
+        UUID columnUuid = column.getUuid();
+        if (columnUuid != null) {
+            columnBuilder.setUuid(columnUuid.toString());
+        }
 
         if(column.getTypeParameter1() != null) {
             columnBuilder.setTypeParam1(column.getTypeParameter1());
@@ -472,9 +492,11 @@ public class ProtobufWriter {
                 setIsPK(index.isPrimaryKey()).
                 setIsUnique(index.isUnique()).
                 setIsAkFK(index.isAkibanForeignKey()).
-                setJoinType(convertJoinType(index.getJoinType())).
                 setIndexMethod(convertIndexMethod(index.getIndexMethod()));
                 // Not yet in AIS: description
+        if(index.isGroupIndex()) {
+            indexBuilder.setJoinType(convertJoinType(index.getJoinType()));
+        }
         if(index.getTreeName() != null) {
             indexBuilder.setTreeName(index.getTreeName());
         }
@@ -498,6 +520,10 @@ public class ProtobufWriter {
 
     private static void writeGroupIndex(AISProtobuf.Group.Builder groupBuilder, Index index) {
         groupBuilder.addIndexes(writeIndexCommon(index, true));
+    }
+
+    private static void writeFullTextIndex(AISProtobuf.Table.Builder tableBuilder, FullTextIndex index) {
+        tableBuilder.addFullTextIndexes(writeIndexCommon(index, true));
     }
 
     private static void writeIndexColumn(AISProtobuf.Index.Builder indexBuilder, IndexColumn indexColumn, boolean withTableName) {
@@ -549,6 +575,8 @@ public class ProtobufWriter {
             return AISProtobuf.IndexMethod.NORMAL;
         case Z_ORDER_LAT_LON: 
             return AISProtobuf.IndexMethod.Z_ORDER_LAT_LON;
+        case FULL_TEXT: 
+            return AISProtobuf.IndexMethod.FULL_TEXT;
         }
     }
 
@@ -667,6 +695,8 @@ public class ProtobufWriter {
             return AISProtobuf.RoutineCallingConvention.SCRIPT_FUNCTION_JAVA;
         case SCRIPT_BINDINGS: 
             return AISProtobuf.RoutineCallingConvention.SCRIPT_BINDINGS;
+        case SCRIPT_FUNCTION_JSON: 
+            return AISProtobuf.RoutineCallingConvention.SCRIPT_FUNCTION_JSON;
         }
     }
 

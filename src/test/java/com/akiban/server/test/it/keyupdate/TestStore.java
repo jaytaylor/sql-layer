@@ -28,7 +28,6 @@ package com.akiban.server.test.it.keyupdate;
 
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
-import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.IndexKeyVisitor;
@@ -56,7 +55,7 @@ public class TestStore
     public void deleteRow(Session session, TestRow row)
         throws Exception
     {
-        mainDelegate.deleteRow(session, row.toRowData());
+        mainDelegate.deleteRow(session, row.toRowData(), true, false);
         map.remove(row.hKey());
     }
 
@@ -133,7 +132,7 @@ public class TestStore
 
     // Object state
 
-    private final SortedMap<HKey, TestRow> map = new TreeMap<HKey, TestRow>();
+    private final SortedMap<HKey, TestRow> map = new TreeMap<>();
     private final Store mainDelegate;
     private final PersistitStore persistitStore;
 }

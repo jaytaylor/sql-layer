@@ -151,7 +151,7 @@ public class Types {
     private final static Map<Type,TypesEnum> asEnums = mapToEnumTypes();
 
     private static List<Type> listOfTypes() {
-        List<Type> types = new ArrayList<Type>();
+        List<Type> types = new ArrayList<>();
         types.add(BIGINT);
         types.add(U_BIGINT);
         types.add(BINARY);
@@ -200,7 +200,7 @@ public class Types {
 	}
 
     private static Map<Type,TypesEnum> mapToEnumTypes() {
-        Map<Type,TypesEnum> result = new HashMap<Type, TypesEnum>(TypesEnum.values().length);
+        Map<Type,TypesEnum> result = new HashMap<>(TypesEnum.values().length);
         for (TypesEnum asEnum : TypesEnum.values()) {
             String fieldName = asEnum.name().substring(2);
             try {
@@ -264,7 +264,7 @@ public class Types {
     }
 
     private static Set<Type> setOfUnsupportedTypes() {
-        Set<Type> unsupported = new HashSet<Type>();
+        Set<Type> unsupported = new HashSet<>();
         unsupported.add(null);
         unsupported.add(BIT);
         unsupported.add(ENUM);
@@ -281,7 +281,7 @@ public class Types {
     }
 
     private static Set<Type> setOfUnsupportedIndexTypes() {
-        Set<Type> unsupported = new HashSet<Type>();
+        Set<Type> unsupported = new HashSet<>();
         unsupported.add(TINYBLOB);
         unsupported.add(BLOB);
         unsupported.add(MEDIUMBLOB);
@@ -294,7 +294,7 @@ public class Types {
     }
 
     private static Map<Type,Long[]> mapOfDefaults() {
-        Map<Type,Long[]> map = new HashMap<Type,Long[]>();
+        Map<Type,Long[]> map = new HashMap<>();
         map.put(BIT, new Long[]{1L,null});
         map.put(BINARY, new Long[]{1L,null});
         map.put(CHAR, new Long[]{1L,null});
@@ -347,6 +347,6 @@ public class Types {
                type.equals(SMALLINT) || type.equals(U_SMALLINT) ||
                type.equals(INT) || type.equals(U_INT) ||
                type.equals(MEDIUMINT) || type.equals(U_MEDIUMINT) ||
-               type.equals(BIGINT) || type.equals(U_BIGINT);
+               type.equals(BIGINT);
     }
 }

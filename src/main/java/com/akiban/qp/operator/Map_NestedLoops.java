@@ -109,7 +109,7 @@ class Map_NestedLoops extends Operator
     @Override
     public List<Operator> getInputOperators()
     {
-        List<Operator> result = new ArrayList<Operator>(2);
+        List<Operator> result = new ArrayList<>(2);
         result.add(outerInputOperator);
         result.add(innerInputOperator);
         return result;
@@ -293,7 +293,7 @@ class Map_NestedLoops extends Operator
 
         private final Cursor outerInput;
         private final Cursor innerInput;
-        private final ShareHolder<Row> outerRow = new ShareHolder<Row>();
+        private final ShareHolder<Row> outerRow = new ShareHolder<>();
         private boolean closed = true;
     }
 }

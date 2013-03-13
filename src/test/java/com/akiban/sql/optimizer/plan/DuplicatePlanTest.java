@@ -58,7 +58,7 @@ public class DuplicatePlanTest extends OptimizerTestBase
 
     @TestParameters
     public static Collection<Parameterization> statements() throws Exception {
-        Collection<Object[]> result = new ArrayList<Object[]>();
+        Collection<Object[]> result = new ArrayList<>();
         for (File sqlFile : listSQLFiles(RESOURCE_DIR)) {
             String caseName = sqlFile.getName().replace(".sql", "");
             String sql = fileContents(sqlFile);

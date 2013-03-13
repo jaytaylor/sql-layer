@@ -91,7 +91,7 @@ public final class SplitHandlerTest {
             }
         };
 
-        List<List<SplitPair>> expected = new ArrayList<List<SplitPair>>();
+        List<List<SplitPair>> expected = new ArrayList<>();
         expected.add(firstStream);
         expected.add(secondStream);
 
@@ -131,7 +131,7 @@ public final class SplitHandlerTest {
             }
         };
 
-        List<List<SplitPair>> expected = new ArrayList<List<SplitPair>>();
+        List<List<SplitPair>> expected = new ArrayList<>();
         expected.add(firstStream);
         expected.add(secondStream);
 
@@ -202,7 +202,7 @@ public final class SplitHandlerTest {
         private ToArraySplitHandler(Splitter<String> objectSplitter) {
             super(objectSplitter);
             int segments = objectSplitter.segments();
-            splitPairStreams = new ArrayList<List<SplitPair>>(segments);
+            splitPairStreams = new ArrayList<>(segments);
             for (int i = 0; i < segments; ++i) {
                 splitPairStreams.add(new ArrayList<SplitPair>());
             }

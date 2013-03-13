@@ -508,7 +508,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
 
     private int npgsqlTypeQuery(PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
-        List<String> types = new ArrayList<String>();
+        List<String> types = new ArrayList<>();
         for (String type : groups.get(1).split(",")) {
             if ((type.charAt(0) == '\'') && (type.charAt(type.length()-1) == '\''))
                 type = type.substring(1, type.length()-1);
@@ -535,7 +535,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     private int psqlListSchemasQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         AkibanInformationSchema ais = server.getAIS();
-        List<String> names = new ArrayList<String>(ais.getSchemas().keySet());
+        List<String> names = new ArrayList<>(ais.getSchemas().keySet());
         boolean noIS = (groups.get(1) != null);
         Pattern pattern = null;
         if (groups.get(2) != null)
@@ -544,9 +544,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         while (iter.hasNext()) {
             String name = iter.next();
             if ((noIS &&
-                 name.equals(TableName.INFORMATION_SCHEMA)) ||
+                 name.equals(TableName.INFORMATION_SCHEMA) ||
+                 name.equals(TableName.SECURITY_SCHEMA)) ||
                 ((pattern != null) && 
-                 !pattern.matcher(name).find()))
+                 !pattern.matcher(name).find()) ||
+                !server.isSchemaAccessible(name))
                 iter.remove();
         }
         Collections.sort(names);
@@ -569,7 +571,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     private int psqlListTablesQuery(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         List<String> types = Arrays.asList(groups.get(1).split(","));
-        List<Columnar> tables = new ArrayList<Columnar>();
+        List<Columnar> tables = new ArrayList<>();
         AkibanInformationSchema ais = server.getAIS();
         if (types.contains("'r'"))
             tables.addAll(ais.getUserTables().values());
@@ -588,11 +590,14 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         while (iter.hasNext()) {
             TableName name = iter.next().getName();
             boolean keep = true;
-            if ((name.getSchemaName().equals(TableName.INFORMATION_SCHEMA) ? noIS : onlyIS) ||
+            if (((name.getSchemaName().equals(TableName.INFORMATION_SCHEMA) ||
+                  name.getSchemaName().equals(TableName.SECURITY_SCHEMA))
+                 ? noIS : onlyIS) ||
                 ((schemaPattern != null) && 
                  !schemaPattern.matcher(name.getSchemaName()).find()) ||
                 ((tablePattern != null) && 
-                 !tablePattern.matcher(name.getTableName()).find()))
+                 !tablePattern.matcher(name.getTableName()).find()) ||
+                !server.isSchemaAccessible(name.getSchemaName()))
                 iter.remove();
         }
         Collections.sort(tables, LIST_TABLES_BY_GROUP ? tablesByGroup : tablesByName);
@@ -680,7 +685,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     private int psqlDescribeTables1Query(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         Map<Integer,TableName> nonTableNames = null;
-        List<TableName> names = new ArrayList<TableName>();
+        List<TableName> names = new ArrayList<>();
         AkibanInformationSchema ais = server.getAIS();
         names.addAll(ais.getUserTables().keySet());
         names.addAll(ais.getViews().keySet());
@@ -697,7 +702,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             if (((schemaPattern != null) && 
                  !schemaPattern.matcher(name.getSchemaName()).find()) ||
                 ((tablePattern != null) && 
-                 !tablePattern.matcher(name.getTableName()).find()))
+                 !tablePattern.matcher(name.getTableName()).find()) ||
+                !server.isSchemaAccessible(name.getSchemaName()))
                 iter.remove();
         }
         Collections.sort(names);
@@ -708,7 +714,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 id = ((Table)table).getTableId();
             else {
                 if (nonTableNames == null)
-                    nonTableNames = new HashMap<Integer,TableName>(); 
+                    nonTableNames = new HashMap<>();
                 id = - (nonTableNames.size() + 1);
                 nonTableNames.put(id, name);
             }
@@ -742,11 +748,14 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                     return ais.getColumnar(name);
                 }
             }
-            return null;
         }
         else {
-            return ais.getUserTable(id);
+            UserTable table = ais.getUserTable(id);
+            if (server.isSchemaAccessible(table.getName().getSchemaName())) {
+                return table;
+            }
         }
+        return null;
     }
 
     private int psqlDescribeTables2Query(PostgresServerSession server, PostgresMessenger messenger, ServerValueEncoder encoder, int maxrows, boolean usePVals) throws IOException {
@@ -854,15 +863,18 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         Columnar columnar = getTableById(server, groups.get(4));
         if ((columnar == null) || !columnar.isTable()) return 0;
         UserTable table = (UserTable)columnar;
-        Map<String,Index> indexes = new TreeMap<String,Index>();
+        Map<String,Index> indexes = new TreeMap<>();
         for (Index index : table.getIndexesIncludingInternal()) {
             if (isAkibanPKIndex(index)) continue;
             indexes.put(index.getIndexName().getName(), index);
         }
-        for (Index index : table.getGroup().getIndexes()) {
-            if (table == index.leafMostTable()) {
+        for (Index index : table.getGroupIndexes()) {
+            if (isTableReferenced(table, index)) {
                 indexes.put(index.getIndexName().getName(), index);
             }
+        }
+        for (Index index : table.getFullTextIndexes()) {
+            indexes.put(index.getIndexName().getName(), index);
         }
         int ncols;
         if (groups.get(1) == null) {
@@ -993,6 +1005,17 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 indexColumns.get(0).getColumn().isAkibanPKColumn());
     }
 
+    private boolean isTableReferenced(UserTable table, Index groupIndex) {
+        for (IndexColumn indexColumn : groupIndex.getKeyColumns()) {
+            // A table may only be referenced by hKey components, in
+            // which case we don't want to display it.
+            if (indexColumn.getColumn().getTable() == table) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private String formatIndexdef(Index index, UserTable table) {
         StringBuilder str = new StringBuilder();
         // Postgres CREATE INDEX has USING method, btree|hash|gist|gin|...
@@ -1000,11 +1023,20 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         // Only issue is that for PRIMARY KEY, it prints a comma in
         // anticipation of some method word before the column.
         str.append(" USING ");
-        int firstSpatialColumn = Integer.MAX_VALUE;
-        int lastSpatialColumn = Integer.MIN_VALUE;
-        if (index.getIndexMethod() == Index.IndexMethod.Z_ORDER_LAT_LON) {
-            firstSpatialColumn = index.firstSpatialArgument();
-            lastSpatialColumn = firstSpatialColumn + index.dimensions() - 1;
+        int firstFunctionColumn = Integer.MAX_VALUE;
+        int lastFunctionColumn = Integer.MIN_VALUE;
+        switch (index.getIndexMethod()) {
+        case NORMAL:
+            break;
+        case Z_ORDER_LAT_LON:
+            firstFunctionColumn = index.firstSpatialArgument();
+            lastFunctionColumn = firstFunctionColumn + index.dimensions() - 1;
+            break;
+        case FULL_TEXT:
+        default:
+            firstFunctionColumn = 0;
+            lastFunctionColumn = index.getKeyColumns().size() - 1;
+            break;
         }
         str.append("(");
         boolean first = true;
@@ -1017,7 +1049,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 str.append(", ");
             }
             int positionInIndex = icolumn.getPosition();
-            if (positionInIndex == firstSpatialColumn) {
+            if (positionInIndex == firstFunctionColumn) {
                 str.append(index.getIndexMethod().name());
                 str.append('(');
             }
@@ -1026,7 +1058,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                    .append(".");
             }
             str.append(column.getName());
-            if (positionInIndex == lastSpatialColumn) {
+            if (positionInIndex == lastFunctionColumn) {
                 str.append(')');
             }
         }

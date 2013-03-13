@@ -30,6 +30,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.akiban.ais.model.DefaultIndexNameGenerator;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexNameGenerator;
@@ -45,6 +48,9 @@ import com.akiban.sql.parser.DefaultNode;
 import com.akiban.sql.parser.DropGroupNode;
 import com.akiban.sql.parser.DropTableNode;
 import com.akiban.sql.parser.FKConstraintDefinitionNode;
+import com.akiban.sql.parser.IndexColumnList;
+import com.akiban.sql.parser.IndexConstraintDefinitionNode;
+import com.akiban.sql.parser.IndexDefinition;
 import com.akiban.sql.parser.RenameNode;
 import com.akiban.sql.parser.ResultColumn;
 import com.akiban.sql.parser.ResultColumnList;
@@ -59,6 +65,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Table;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.TableName;
@@ -307,11 +314,16 @@ public class TableDDL
         return builderType;
     }
 
+    private static final Logger logger = LoggerFactory.getLogger(TableDDL.class);
+
+
     public static String addIndex(IndexNameGenerator namer, AISBuilder builder, ConstraintDefinitionNode cdn,
                                   String schemaName, String tableName)  {
         // We don't (yet) have a constraint representation so override any provided
+        UserTable table = builder.akibanInformationSchema().getUserTable(schemaName, tableName);
         final String constraint;
         String indexName = cdn.getName();
+        int colPos = 0;
 
         if (cdn.getConstraintType() == ConstraintDefinitionNode.ConstraintType.CHECK) {
             throw new UnsupportedCheckConstraintException ();
@@ -321,9 +333,12 @@ public class TableDDL
         }
         else if (cdn.getConstraintType() == ConstraintDefinitionNode.ConstraintType.UNIQUE) {
             constraint = Index.UNIQUE_KEY_CONSTRAINT;
-        }
-        else {
-            constraint = Index.KEY_CONSTRAINT;
+        } 
+        // Indexes do things a little differently because they need to support Group indexes, Full Text and Geospacial
+        else if (cdn.getConstraintType() == ConstraintDefinitionNode.ConstraintType.INDEX) {
+            return generateTableIndex(namer, builder, cdn, table);
+        } else {
+            throw new UnsupportedCheckConstraintException ();
         }
 
         if(indexName == null) {
@@ -332,8 +347,6 @@ public class TableDDL
         
         builder.index(schemaName, tableName, indexName, true, constraint);
         
-        UserTable table = builder.akibanInformationSchema().getUserTable(schemaName, tableName);
-        int colPos = 0;
         for (ResultColumn col : cdn.getColumnList()) {
             if(table.getColumn(col.getName()) == null) {
                 throw new NoSuchColumnException(col.getName());
@@ -463,11 +476,42 @@ public class TableDDL
         }
         return names;
     }
+    
+    private static String generateTableIndex(IndexNameGenerator namer, 
+            AISBuilder builder, 
+            ConstraintDefinitionNode cdn, 
+            Table table) {
+        IndexDefinition id = ((IndexConstraintDefinitionNode)cdn);
+        IndexColumnList columnList = id.getIndexColumnList();
+        Index tableIndex;
+        String indexName = ((IndexConstraintDefinitionNode)cdn).getIndexName();
+        if(indexName == null) {
+            indexName = namer.generateIndexName(null, columnList.get(0).getColumnName(), Index.KEY_CONSTRAINT);
+        }
+
+        if (columnList.functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
+            logger.debug ("Building Full text index on table {}", table.getName()) ;
+            tableIndex = IndexDDL.buildFullTextIndex (builder, table.getName(), indexName, id);
+        } else if (IndexDDL.checkIndexType (id, table.getName()) == Index.IndexType.TABLE) {
+            logger.debug ("Building Table index on table {}", table.getName()) ;
+            tableIndex = IndexDDL.buildTableIndex (builder, table.getName(), indexName, id);
+        } else {
+            logger.debug ("Building Group index on table {}", table.getName());
+            tableIndex = IndexDDL.buildGroupIndex (builder, table.getName(), indexName, id);
+        }
+
+        boolean indexIsSpatial = columnList.functionType() == IndexColumnList.FunctionType.Z_ORDER_LAT_LON;
+        // Can't check isSpatialCompatible before the index columns have been added.
+        if (indexIsSpatial && !Index.isSpatialCompatible(tableIndex)) {
+            throw new BadSpatialIndexException(tableIndex.getIndexName().getTableName(), null);
+        }
+        return tableIndex.getIndexName().getName();
+    }
 
     private final static Map<TypeId, Type> typeMap  = typeMapping();
     
     private static Map<TypeId, Type> typeMapping() {
-        HashMap<TypeId, Type> types = new HashMap<TypeId, Type>();
+        HashMap<TypeId, Type> types = new HashMap<>();
         types.put(TypeId.BOOLEAN_ID, Types.TINYINT);
         types.put(TypeId.TINYINT_ID, Types.TINYINT);
         types.put(TypeId.SMALLINT_ID, Types.SMALLINT);

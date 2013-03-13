@@ -50,7 +50,7 @@ class TypesAreFromStatic implements AISValidation {
     }
 
     private static Map<String,Type> staticTypesByName() {
-        Map<String,Type> results = new HashMap<String, Type>();
+        Map<String,Type> results = new HashMap<>();
         for (Type type : Types.types()) {
             results.put(type.name(), type);
         }

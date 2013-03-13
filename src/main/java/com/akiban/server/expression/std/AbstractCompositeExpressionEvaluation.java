@@ -67,7 +67,7 @@ public abstract class AbstractCompositeExpressionEvaluation extends ExpressionEv
     public AbstractCompositeExpressionEvaluation(List<? extends ExpressionEvaluation> children) {
         this.children = children.isEmpty()
                 ? Collections.<ExpressionEvaluation>emptyList()
-                : Collections.unmodifiableList(new ArrayList<ExpressionEvaluation>(children));
+                : Collections.unmodifiableList(new ArrayList<>(children));
         this.nChildren = this.children.size();
     }
 

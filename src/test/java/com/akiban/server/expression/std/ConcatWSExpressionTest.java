@@ -91,7 +91,7 @@ public class ConcatWSExpressionTest extends ComposedExpressionTestBase
     {
         alreadyExc = true;
 
-        List<Expression> inputs = new ArrayList<Expression>();
+        List<Expression> inputs = new ArrayList<>();
 
         if (args != null)
             for (String st : args)

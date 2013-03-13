@@ -53,7 +53,7 @@ abstract class OverloadsFolder {
                 anyVarargs = true;
         }
 
-        List<TClass> finitesList = new ArrayList<TClass>(nFinites);
+        List<TClass> finitesList = new ArrayList<>(nFinites);
         for (int pos = 0; pos < nFinites; ++pos) {
             TClass result = foldBy(overloads, new FoldByPositionalArity(pos));
             finitesList.add(result);
@@ -69,7 +69,7 @@ abstract class OverloadsFolder {
             infiniteArityElement = null;
             hasInfiniteArityElement = false;
         }
-        return new Result<TClass>(finitesList, infiniteArityElement, hasInfiniteArityElement);
+        return new Result<>(finitesList, infiniteArityElement, hasInfiniteArityElement);
     }
 
     private TClass foldBy(Collection<? extends TValidatedOverload> overloads, Function<TValidatedOverload, TInputSet> f) {
@@ -140,7 +140,7 @@ abstract class OverloadsFolder {
         public <M> Result<M> transform(Function<? super T, ? extends M> mapFunction) {
             List<M> mappedFinites = Lists.transform(finiteArityList, mapFunction);
             M mappedInfinite = hasInfiniteArityElement ? mapFunction.apply(infiniteArityElement) : null;
-            return new Result<M>(mappedFinites, mappedInfinite, hasInfiniteArityElement);
+            return new Result<>(mappedFinites, mappedInfinite, hasInfiniteArityElement);
         }
 
         public InputSetFlags toInputSetFlags(Predicate<? super T> predicate) {

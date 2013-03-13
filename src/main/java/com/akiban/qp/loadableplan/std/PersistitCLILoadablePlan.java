@@ -75,7 +75,7 @@ public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan
         boolean done = false;
         boolean delivered = false;
         long taskId;
-        ArrayList<String> messages = new ArrayList<String>();
+        ArrayList<String> messages = new ArrayList<>();
 
         public PersistitCliDirectObjectCursor(QueryContext context) {
             this.context = context;

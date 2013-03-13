@@ -148,8 +148,8 @@ public final class FunctionsRegistryImplTest {
     };
 
     static Map<String, Map<AkType, AggregatorFactory>> expectedAggregatorFactories() {
-        Map<String,Map<AkType,AggregatorFactory>> expected = new HashMap<String, Map<AkType, AggregatorFactory>>();
-        Map<AkType,AggregatorFactory> expectedInner = new EnumMap<AkType, AggregatorFactory>(AkType.class);
+        Map<String,Map<AkType,AggregatorFactory>> expected = new HashMap<>();
+        Map<AkType,AggregatorFactory> expectedInner = new EnumMap<>(AkType.class);
         expectedInner.put(AkType.LONG, AGGREGATOR_FACTORY);
         expected.put("afoo", expectedInner);
         return expected;
@@ -186,7 +186,7 @@ public final class FunctionsRegistryImplTest {
 
     private static class InternalClassFinder implements FunctionsClassFinder {
         private InternalClassFinder(Class<?>... classes) {
-            this.classes = new HashSet<Class<?>>(Arrays.asList(classes));
+            this.classes = new HashSet<>(Arrays.asList(classes));
         }
 
         @Override
