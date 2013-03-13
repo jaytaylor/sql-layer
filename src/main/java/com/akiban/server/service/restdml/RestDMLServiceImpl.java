@@ -234,6 +234,10 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                               TableName procName, Map<String,List<String>> params) throws SQLException {
         try (JDBCConnection conn = jdbcConnection(request);
              JDBCCallableStatement call = conn.prepareCall(procName)) {
+            
+            // TODO - review this
+            conn.setDefaultSchemaName(procName.getSchemaName());
+            
             for (Map.Entry<String,List<String>> entry : params.entrySet()) {
                 if (jsonpArgName.equals(entry.getKey()))
                     continue;
