@@ -30,18 +30,12 @@ SETLOCAL
 
 FOR /F "usebackq" %%v IN (`bzr revno`) DO SET BZR_REVNO=%%v
 
-IF NOT DEFINED AKIBAN_DE_FLAG (
-  SET TARGET=enterprise
-  SET LICENSE=LICENSE-EE.txt
-) ELSE (
-  SET TARGET=developer
-  SET LICENSE=LICENSE-DE.txt
-)
+SET LICENSE=LICENSE.txt
 
 IF NOT DEFINED CERT_FILE SET CERT_FILE=%~dp0\windows\testcert\testcert.pfx
 IF NOT DEFINED CERT_PASSWORD SET CERT_PASSWORD=test
 
-ECHO "Building Akiban Server for ##### %TARGET% #####"
+ECHO "Building Akiban Server"
 
 call mvn -Dmaven.test.skip clean install -DBZR_REVISION=%BZR_REVNO%
 IF ERRORLEVEL 1 GOTO EOF
@@ -72,7 +66,7 @@ COPY %LICENSE% target\isstage\LICENSE.TXT
 XCOPY /E windows target\isstage
 COPY bin\*.cmd target\isstage\bin
 COPY target\client-tools\bin\*.cmd target\isstage\bin
-COPY windows\%TARGET%\* target\isstage\config
+COPY windows\config-files\* target\isstage\config
 ECHO -tests.jar >target\xclude
 ECHO -sources.jar >>target\xclude
 XCOPY target\akiban-server-*.jar target\isstage\lib /EXCLUDE:target\xclude

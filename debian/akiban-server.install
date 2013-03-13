@@ -8,4 +8,3 @@ debian/server/* usr/share/akiban/server
 debian/client/* usr/share/akiban/client
 #debian/plugins/* usr/share/akiban/plugins
 debian/LICENSE.txt usr/share/akiban
-debian/*.tag usr/share/akiban
