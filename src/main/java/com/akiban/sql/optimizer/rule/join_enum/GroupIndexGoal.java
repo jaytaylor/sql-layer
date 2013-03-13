@@ -1354,8 +1354,11 @@ public class GroupIndexGoal implements Comparator<BaseScan>
                                   conditionSources);
             }
             else if (scan instanceof FullTextScan) {
-                installConditions(((FullTextScan)scan).getConditions(), 
-                                  conditionSources);
+                FullTextScan textScan = (FullTextScan)scan;
+                installConditions(textScan.getConditions(), conditionSources);
+                if (conditions.isEmpty()) {
+                    textScan.setLimit((int)queryGoal.getLimit());
+                }
             }
             if (sortAllowed)
                 queryGoal.installOrderEffectiveness(IndexScan.OrderEffectiveness.NONE);
@@ -1876,7 +1879,7 @@ public class GroupIndexGoal implements Comparator<BaseScan>
         }
 
         query = normalizeFullTextQuery(query);
-        FullTextScan scan = new FullTextScan(foundIndex, query, (int)queryGoal.getLimit(),
+        FullTextScan scan = new FullTextScan(foundIndex, query,
                                              foundTable, textConditions);
         determineRequiredTables(scan);
         scan.setCostEstimate(estimateCostFullText(scan));

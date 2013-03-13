@@ -40,11 +40,10 @@ public class FullTextScan extends BaseScan
     private List<ConditionExpression> conditions;
     private Set<TableSource> requiredTables;
 
-    public FullTextScan(FullTextIndex index, FullTextQuery query, int limit,
+    public FullTextScan(FullTextIndex index, FullTextQuery query,
                         TableSource indexTable, List<ConditionExpression> conditions) {
         this.index = index;
         this.query = query;
-        this.limit = limit;
         this.indexTable = indexTable;
         this.conditions = conditions;
     }
@@ -59,6 +58,9 @@ public class FullTextScan extends BaseScan
 
     public int getLimit() {
         return limit;
+    }
+    public void setLimit(int limit) {
+        this.limit = limit;
     }
 
     public TableSource getIndexTable() {
