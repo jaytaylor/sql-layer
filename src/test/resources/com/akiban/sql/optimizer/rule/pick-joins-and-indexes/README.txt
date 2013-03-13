@@ -130,6 +130,10 @@ index-is-null: IS NULL condition
 
 full-text-1: single parsed query
 
+full-text-1l: with limit
+
+full-text-1lp: with limit and other predicate
+
 full-text-1v: from variable
 
 full-text-2: terms on multiple branches
