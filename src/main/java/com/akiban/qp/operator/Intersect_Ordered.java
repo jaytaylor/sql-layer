@@ -166,7 +166,7 @@ class Intersect_Ordered extends Operator
                              JoinType joinType,
                              EnumSet<IntersectOption> options,
                              boolean usePValues,
-                             List<TComparison> reg)
+                             List<TComparison> comparisons)
     {
         ArgumentValidation.notNull("left", left);
         ArgumentValidation.notNull("right", right);
@@ -221,7 +221,7 @@ class Intersect_Ordered extends Operator
         leftSkipRowColumnSelector = new IndexRowPrefixSelector(leftFixedFields + fieldsToCompare);
         rightSkipRowColumnSelector = new IndexRowPrefixSelector(rightFixedFields + fieldsToCompare);
         this.usePValues = usePValues;
-        this.comparisons = reg;
+        this.comparisons = comparisons;
     }
 
     // For use by this class

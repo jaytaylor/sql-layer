@@ -47,7 +47,7 @@ public final class PValueTargets {
                 target.putInt32((int)val);
                 break;
             case INT_64:
-                target.putInt64((long)val);
+                target.putInt64(val);
                 break;
             default:
                 throw new AkibanInternalException("Cannot put LONG into " + target.tInstance());
