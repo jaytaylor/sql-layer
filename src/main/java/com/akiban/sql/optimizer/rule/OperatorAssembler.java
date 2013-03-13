@@ -111,6 +111,8 @@ import com.akiban.server.service.text.FullTextQueryExpression;
 import com.akiban.server.explain.*;
 
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TComparison;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
@@ -1094,11 +1096,30 @@ public class OperatorAssembler extends BaseRule
                                                      (forIntersection == IntersectionMode.SELECT) ? IntersectionMode.SELECT : IntersectionMode.OUTPUT, useSkipScan);
             RowStream selectorScan = assembleIndexScan(index.getSelectorIndexScan(), 
                                                        IntersectionMode.SELECT, useSkipScan);
+
+            RowType selectorRowType = selectorScan.rowType;
+            RowType outputRowType = outputScan.rowType;
+ 
+            int nFieldsToCompare = index.getComparisonFields();
+ 
+            List<TComparison> comparisons = new ArrayList<>(nFieldsToCompare);
+            T3RegistryService reg = rulesContext.getT3Registry();
+           
+            for (int n = 0; n < nFieldsToCompare; ++n)
+            {
+                TClass left = selectorRowType.typeInstanceAt(index.getPeggedCount() + n).typeClass();
+                TClass right = outputRowType.typeInstanceAt(index.getPeggedCount() + n).typeClass();
+                if (left != right)
+                    comparisons.add(n, reg.getKeyComparable(left, right).getComparison());
+                else
+                    comparisons.add(n, null);
+            }
+            
             stream.operator = API.intersect_Ordered(
                     outputScan.operator,
                     selectorScan.operator,
-                    (IndexRowType) outputScan.rowType,
-                    (IndexRowType) selectorScan.rowType,
+                    (IndexRowType) outputRowType,
+                    (IndexRowType) selectorRowType,
                     index.getOutputOrderingFields(),
                     index.getSelectorOrderingFields(),
                     index.getComparisonFieldDirections(),
@@ -1109,7 +1130,7 @@ public class OperatorAssembler extends BaseRule
                     EnumSet.of(API.IntersectOption.OUTPUT_LEFT, 
                                API.IntersectOption.SEQUENTIAL_SCAN),
                     usePValues,
-                    rulesContext.getT3Registry());
+                    comparisons);
             stream.rowType = outputScan.rowType;
             stream.fieldOffsets = new IndexFieldOffsets(index, stream.rowType);
 

@@ -166,7 +166,7 @@ class Intersect_Ordered extends Operator
                              JoinType joinType,
                              EnumSet<IntersectOption> options,
                              boolean usePValues,
-                             T3RegistryService reg)
+                             List<TComparison> reg)
     {
         ArgumentValidation.notNull("left", left);
         ArgumentValidation.notNull("right", right);
@@ -221,7 +221,7 @@ class Intersect_Ordered extends Operator
         leftSkipRowColumnSelector = new IndexRowPrefixSelector(leftFixedFields + fieldsToCompare);
         rightSkipRowColumnSelector = new IndexRowPrefixSelector(rightFixedFields + fieldsToCompare);
         this.usePValues = usePValues;
-        this.reg = reg;
+        this.comparisons = reg;
     }
 
     // For use by this class
@@ -250,7 +250,7 @@ class Intersect_Ordered extends Operator
     private final ColumnSelector leftSkipRowColumnSelector;
     private final ColumnSelector rightSkipRowColumnSelector;
     private final boolean usePValues;
-    private final T3RegistryService reg;;
+    private final List<TComparison> comparisons;
     
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
@@ -526,14 +526,10 @@ class Intersect_Ordered extends Operator
                 for (int f = 0; f < fieldsToCompare; f++) {
                     if (usingPValues)
                     {
-                        PValueSource source = jumpRow.pvalue(jumpRowFixedFields + f);
-                        PValueTarget target =  skipRow.pvalueAt(skipRowFixedFields + f);
-                        
-                        TKeyComparable comparable = reg.getKeyComparable(source.tInstance().typeClass(),
-                                                                         target.tInstance().typeClass());
-                        if (comparable != null)
-                            comparable.getComparison().copyComparables(source,
-                                                                       target);
+                        TComparison comparison = null;
+                        if (comparisons != null && (comparison = comparisons.get(f)) != null)
+                            comparison.copyComparables(jumpRow.pvalue(jumpRowFixedFields + f),
+                                                       skipRow.pvalueAt(skipRowFixedFields + f));
                         else
                             PValueTargets.copyFrom(
                                     jumpRow.pvalue(jumpRowFixedFields + f),
