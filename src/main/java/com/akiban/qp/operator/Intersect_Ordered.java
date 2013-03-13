@@ -26,6 +26,12 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TKeyComparable;
+import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.server.types3.TComparison;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -33,6 +39,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.IndexRowPrefixSelector;
 import com.akiban.server.explain.*;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
@@ -158,7 +165,8 @@ class Intersect_Ordered extends Operator
                              boolean[] ascending,
                              JoinType joinType,
                              EnumSet<IntersectOption> options,
-                             boolean usePValues)
+                             boolean usePValues,
+                             List<TComparison> comparisons)
     {
         ArgumentValidation.notNull("left", left);
         ArgumentValidation.notNull("right", right);
@@ -213,6 +221,7 @@ class Intersect_Ordered extends Operator
         leftSkipRowColumnSelector = new IndexRowPrefixSelector(leftFixedFields + fieldsToCompare);
         rightSkipRowColumnSelector = new IndexRowPrefixSelector(rightFixedFields + fieldsToCompare);
         this.usePValues = usePValues;
+        this.comparisons = comparisons;
     }
 
     // For use by this class
@@ -241,7 +250,8 @@ class Intersect_Ordered extends Operator
     private final ColumnSelector leftSkipRowColumnSelector;
     private final ColumnSelector rightSkipRowColumnSelector;
     private final boolean usePValues;
-
+    private final List<TComparison> comparisons;
+    
     @Override
     public CompoundExplainer getExplainer(ExplainContext context)
     {
@@ -515,9 +525,16 @@ class Intersect_Ordered extends Operator
             } else {
                 for (int f = 0; f < fieldsToCompare; f++) {
                     if (usingPValues)
-                        PValueTargets.copyFrom(
-                                jumpRow.pvalue(jumpRowFixedFields + f),
-                                skipRow.pvalueAt(skipRowFixedFields + f));
+                    {
+                        TComparison comparison = null;
+                        if (comparisons != null && (comparison = comparisons.get(f)) != null)
+                            comparison.copyComparables(jumpRow.pvalue(jumpRowFixedFields + f),
+                                                       skipRow.pvalueAt(skipRowFixedFields + f));
+                        else
+                            PValueTargets.copyFrom(
+                                    jumpRow.pvalue(jumpRowFixedFields + f),
+                                    skipRow.pvalueAt(skipRowFixedFields + f));
+                    }
                     else
                         skipRow.holderAt(skipRowFixedFields + f).copyFrom(jumpRow.eval(jumpRowFixedFields + f));
                 }
@@ -533,9 +550,11 @@ class Intersect_Ordered extends Operator
                 int f = 0;
                 while (f < leftFixedFields) {
                     if (usingPValues)
+                    {
                         PValueTargets.copyFrom(
                                 leftRow.get().pvalue(f),
                                 leftSkipRow.pvalueAt(f));
+                    }
                     else
                         leftSkipRow.holderAt(f).copyFrom(leftRow.get().eval(f));
                     f++;

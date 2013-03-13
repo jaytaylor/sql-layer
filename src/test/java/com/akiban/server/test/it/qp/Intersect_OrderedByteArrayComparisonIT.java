@@ -326,7 +326,8 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
                 ascending,
                 JoinType.INNER_JOIN,
                 EnumSet.of(side, 
-                           skipScan ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN));
+                           skipScan ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN),
+                null);
         return plan;
     }
 

@@ -130,7 +130,8 @@ public class IntersectCT extends CostModelBase
                 5,
                 5,
                 JoinType.INNER_JOIN,
-                IntersectOption.OUTPUT_LEFT);
+                IntersectOption.OUTPUT_LEFT,
+                null);
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
             Cursor cursor = cursor(intersect, queryContext);

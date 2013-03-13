@@ -421,7 +421,8 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
                            : IntersectOption.SEQUENTIAL_SCAN,
                            leftOutput
                            ? IntersectOption.OUTPUT_LEFT
-                           : IntersectOption.OUTPUT_RIGHT));
+                           : IntersectOption.OUTPUT_RIGHT),
+                null);
         return plan;
     }
 
@@ -447,7 +448,8 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
                     EnumSet.of(skipScan
                                ? IntersectOption.SKIP_SCAN
                                : IntersectOption.SEQUENTIAL_SCAN,
-                               IntersectOption.OUTPUT_RIGHT));
+                               IntersectOption.OUTPUT_RIGHT),
+                    null);
         return plan;
     }
 
