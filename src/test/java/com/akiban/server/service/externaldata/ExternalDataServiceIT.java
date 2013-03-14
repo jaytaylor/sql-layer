@@ -171,4 +171,29 @@ public class ExternalDataServiceIT extends ITBase
         assertEquals("[]", str.toString());
     }
 
+
+    static final String fooA1BarB1 = "[\n" +
+            "{\"aid\":1,\"bar.b\":[{\"bid\":10,\"aid\":1}]}\n" +
+            "]";
+
+    @Test
+    public void dumpJsonCrossSchemaGroup() {
+        ExternalDataService external =
+                serviceManager().getServiceByClass(ExternalDataService.class);
+        int aid = createTable("foo", "a",
+                              "aid INT PRIMARY KEY NOT NULL");
+        int bid = createTable("bar", "b",
+                              "bid INT PRIMARY KEY NOT NULL",
+                              "aid INT NOT NULL",
+                              "GROUPING FOREIGN KEY(aid) REFERENCES foo.a(aid)");
+        writeRow(aid, 1L);
+        writeRow(bid, 10L, 1L);
+        StringWriter str = new StringWriter();
+        PrintWriter pw = new PrintWriter(str);
+        external.dumpBranchAsJson(session(), pw, "foo", "a",
+                                  Collections.singletonList(Collections.singletonList("1")),
+                                  -1,
+                                  WITH_TXN);
+        assertEquals(fooA1BarB1, str.toString());
+    }
 }
