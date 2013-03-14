@@ -225,6 +225,7 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
         case SCRIPT_FUNCTION_JSON:
             return new ScriptFunctionJavaRoutineExpression(routine, inputs);
         case SCRIPT_BINDINGS:
+        case SCRIPT_BINDINGS_JSON:
             return new ScriptBindingsRoutineExpression(routine, inputs);
         default:
             throw new AkibanInternalException("Unimplemented routine " + routine);

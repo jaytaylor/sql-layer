@@ -252,6 +252,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             Routine routine = call.getRoutine();
             switch (routine.getCallingConvention()) {
             case SCRIPT_FUNCTION_JSON:
+            case SCRIPT_BINDINGS_JSON:
                 callJsonProcedure(writer, request, jsonpArgName, call, queryParams, jsonParams);
                 break;
             default:

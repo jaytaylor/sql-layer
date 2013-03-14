@@ -33,7 +33,7 @@ import java.util.*;
 public class Routine 
 {
     public static enum CallingConvention {
-        JAVA, LOADABLE_PLAN, SQL_ROW, SCRIPT_FUNCTION_JAVA, SCRIPT_BINDINGS, SCRIPT_FUNCTION_JSON
+        JAVA, LOADABLE_PLAN, SQL_ROW, SCRIPT_FUNCTION_JAVA, SCRIPT_BINDINGS, SCRIPT_FUNCTION_JSON, SCRIPT_BINDINGS_JSON
     }
 
     public static enum SQLAllowed {

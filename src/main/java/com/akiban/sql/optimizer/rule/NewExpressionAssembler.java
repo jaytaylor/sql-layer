@@ -252,6 +252,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
         case SCRIPT_FUNCTION_JSON:
             return new ScriptFunctionJavaRoutineTExpression(routine, inputs);
         case SCRIPT_BINDINGS:
+        case SCRIPT_BINDINGS_JSON:
             return new ScriptBindingsRoutineTExpression(routine, inputs);
         default:
             throw new AkibanInternalException("Unimplemented routine " + routine);
