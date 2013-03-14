@@ -43,6 +43,7 @@ import com.akiban.ajdax.JoinStrategy;
 import com.akiban.ajdax.actions.Action;
 import com.akiban.server.Quote;
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.explain.format.JsonFormatter;
 import com.akiban.server.service.Service;
@@ -87,6 +88,7 @@ import java.sql.Statement;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -269,6 +271,8 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             json = jsonParams;
         }
         else if (queryParams != null) {
+            // Stringify query params as JSON.
+            // TODO: Is this even a good idea? Or just keep them separate?
             try {
                 StringWriter str = new StringWriter();
                 JsonGenerator jg = factory.createJsonGenerator(str);
@@ -308,7 +312,41 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             }
         }
         if (jsonParams != null) {
-            call.setString(1, jsonParams);
+            JsonNode parsed;
+            try {
+                parsed = factory.createJsonParser(jsonParams).readValueAsTree();
+            }
+            catch (IOException ex) {
+                throw new AkibanInternalException("Error reading from string", ex);
+            }
+            if (parsed.isObject()) {
+                Iterator<String> iter = parsed.getFieldNames();
+                while (iter.hasNext()) {
+                    String field = iter.next();
+                    JsonNode value = parsed.get(field);
+                    if (value.isBigDecimal()) {
+                        call.setBigDecimal(field, value.getDecimalValue());
+                    }
+                    else if (value.isBoolean()) {
+                        call.setBoolean(field, value.asBoolean());
+                    }
+                    else if (value.isDouble()) {
+                        call.setDouble(field, value.asDouble());
+                    }
+                    else if (value.isInt()) {
+                        call.setInt(field, value.asInt());
+                    }
+                    else if (value.isLong()) {
+                        call.setLong(field, value.asLong());
+                    }
+                    else {
+                        call.setString(field, value.getTextValue());
+                    }
+                }
+            }
+            else {
+                throw new InvalidArgumentTypeException("JSON must be object or array");
+            }
         }
         boolean results = call.execute();
         AkibanAppender appender = AkibanAppender.of(writer);
