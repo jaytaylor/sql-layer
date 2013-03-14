@@ -1,0 +1,105 @@
+com.akiban.sql.parser.CursorNode@450f897f
+name: null
+updateMode: UNSPECIFIED
+statementType: SELECT
+resultSet: 	
+	com.akiban.sql.parser.SelectNode@7f0c1444
+	isDistinct: false
+	resultColumns: 		
+		com.akiban.sql.parser.ResultColumnList@7206bd85
+
+		[0]:		
+		com.akiban.sql.parser.ResultColumn@1884a13f
+		exposedName: aid
+		name: aid
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ColumnReference@2b763bac
+			columnName: aid
+			tableName: foo.a
+			type: null
+			userData: a.aid from com.akiban.sql.parser.FromBaseTable@74dcfce0
+		[1]:		
+		com.akiban.sql.parser.ResultColumn@5f47af7e
+		exposedName: bar.b
+		name: bar.b
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.SubqueryNode@5b52aa10
+			subqueryType: EXPRESSION
+			type: null
+			resultSet: 				
+				com.akiban.sql.parser.SelectNode@101b2f47
+				isDistinct: false
+				resultColumns: 					
+					com.akiban.sql.parser.ResultColumnList@68bce693
+
+					[0]:					
+					com.akiban.sql.parser.ResultColumn@49c5f29d
+					exposedName: bid
+					name: bid
+					tableName: null
+					isDefaultColumn: false
+					type: null
+					expression: 						
+						com.akiban.sql.parser.ColumnReference@62bb4741
+						columnName: bid
+						tableName: b
+						type: null
+						userData: b.bid from com.akiban.sql.parser.FromBaseTable@424e3f28
+					[1]:					
+					com.akiban.sql.parser.ResultColumn@75432f0a
+					exposedName: aid
+					name: aid
+					tableName: null
+					isDefaultColumn: false
+					type: null
+					expression: 						
+						com.akiban.sql.parser.ColumnReference@dc575ab
+						columnName: aid
+						tableName: b
+						type: null
+						userData: b.aid from com.akiban.sql.parser.FromBaseTable@424e3f28
+				fromList: 					
+					com.akiban.sql.parser.FromList@1eb0349d
+
+					[0]:					
+					com.akiban.sql.parser.FromBaseTable@424e3f28
+					tableName: bar.b
+					updateOrDelete: null
+					null
+					correlation Name: b
+					b
+					userData: bar.b
+				whereClause: 					
+					com.akiban.sql.parser.BinaryRelationalOperatorNode@1f147d1a
+					operator: =
+					methodName: equals
+					type: null
+					leftOperand: 						
+						com.akiban.sql.parser.ColumnReference@7a2145e6
+						columnName: aid
+						tableName: foo.a
+						type: null
+						userData: a.aid from com.akiban.sql.parser.FromBaseTable@74dcfce0
+					rightOperand: 						
+						com.akiban.sql.parser.ColumnReference@1e743dae
+						columnName: aid
+						tableName: bar.b
+						type: null
+						userData: b.aid from com.akiban.sql.parser.FromBaseTable@424e3f28
+	fromList: 		
+		com.akiban.sql.parser.FromList@617d7a20
+
+		[0]:		
+		com.akiban.sql.parser.FromBaseTable@74dcfce0
+		tableName: foo.a
+		updateOrDelete: null
+		null
+		correlation Name: null
+		null
+		userData: foo.a

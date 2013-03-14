@@ -54,6 +54,8 @@ select-9a: Nested result set (hard way)
 
 select-9b: Easy way
 
+select-10: Nested easy way, cross schema child name fully qualified
+
 update-1: Columns of target table.
 
 update-2: Returning columns and functions
