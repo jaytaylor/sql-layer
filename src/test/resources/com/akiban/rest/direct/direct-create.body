@@ -1,6 +1,6 @@
 var extent = com.akiban.direct.Direct.context.extent;
-var result = params;
+var result = param;
 for (customer in Iterator(extent.customers)) {
   result += "," + customer.name;
 }
-result;
+result = JSON.stringify(result);
