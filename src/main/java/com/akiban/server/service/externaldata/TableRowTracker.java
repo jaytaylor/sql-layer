@@ -49,7 +49,7 @@ public class TableRowTracker implements RowTracker {
 
     private RowType curRowType;
     private UserTable curTable;
-    private boolean curNeedsFulLName;
+    private boolean curNeedsFullName;
 
     public TableRowTracker(UserTable table, int addlDepth) {
         minDepth = table.getDepth();
@@ -96,7 +96,7 @@ public class TableRowTracker implements RowTracker {
         assert row.rowType().hasUserTable() : "Invalid row type for TableRowTracker";
         curRowType = row.rowType();
         curTable = curRowType.userTable();
-        curNeedsFulLName = (tablesNeedingFullName != null) && tablesNeedingFullName.contains(curTable);
+        curNeedsFullName = (tablesNeedingFullName != null) && tablesNeedingFullName.contains(curTable);
     }
 
     @Override
@@ -106,7 +106,7 @@ public class TableRowTracker implements RowTracker {
 
     @Override
     public String getRowName() {
-        return curNeedsFulLName ? curTable.getName().toString() : curTable.getName().getTableName();
+        return curNeedsFullName ? curTable.getName().toString() : curTable.getName().getTableName();
     }
 
     @Override
