@@ -36,7 +36,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.pvalue.PValueTargets;
 
-public class MMinMax extends TAggregatorBase {
+public class MMinMaxAggregation extends TAggregatorBase {
 
     private final MType mType;
     
@@ -56,10 +56,10 @@ public class MMinMax extends TAggregatorBase {
         abstract boolean condition (int a);
     }
 
-    public static final TAggregator MIN = new MMinMax(MType.MIN);
-    public static final TAggregator MAX = new MMinMax(MType.MAX);
+    public static final TAggregator MIN = new MMinMaxAggregation(MType.MIN);
+    public static final TAggregator MAX = new MMinMaxAggregation(MType.MAX);
     
-    private MMinMax(MType mType) {
+    private MMinMaxAggregation(MType mType) {
         super(mType.name(), null);
         this.mType = mType;
     }
