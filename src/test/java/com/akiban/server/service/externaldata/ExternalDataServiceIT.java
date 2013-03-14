@@ -89,17 +89,17 @@ public class ExternalDataServiceIT extends ITBase
     }
 
     static final String C13 = "[\n" +
-        "{\"cid\":1,\"name\":\"Smith\",\"test.o\":[{\"oid\":101,\"cid\":1,\"order_date\":\"2012-12-12\",\"test.i\":[{\"iid\":10101,\"oid\":101,\"sku\":\"ABCD\"},{\"iid\":10102,\"oid\":101,\"sku\":\"1234\"}]},{\"oid\":102,\"cid\":1,\"order_date\":\"2013-01-01\"}],\"test.a\":[{\"aid\":101,\"cid\":1,\"state\":\"MA\"}]},\n" +
-        "{\"cid\":3,\"name\":\"Adams\",\"test.o\":[{\"oid\":301,\"cid\":3,\"order_date\":\"2010-04-01\"}]}\n" +
+        "{\"cid\":1,\"name\":\"Smith\",\"o\":[{\"oid\":101,\"cid\":1,\"order_date\":\"2012-12-12\",\"i\":[{\"iid\":10101,\"oid\":101,\"sku\":\"ABCD\"},{\"iid\":10102,\"oid\":101,\"sku\":\"1234\"}]},{\"oid\":102,\"cid\":1,\"order_date\":\"2013-01-01\"}],\"a\":[{\"aid\":101,\"cid\":1,\"state\":\"MA\"}]},\n" +
+        "{\"cid\":3,\"name\":\"Adams\",\"o\":[{\"oid\":301,\"cid\":3,\"order_date\":\"2010-04-01\"}]}\n" +
         "]";
 
     @Test
     public void dumpJsonC13() throws IOException {
-        ExternalDataService external = 
+        ExternalDataService external =
             serviceManager().getServiceByClass(ExternalDataService.class);
         StringWriter str = new StringWriter();
         PrintWriter pw = new PrintWriter(str);
-        external.dumpBranchAsJson(session(), pw, SCHEMA, "c", 
+        external.dumpBranchAsJson(session(), pw, SCHEMA, "c",
                                   Arrays.asList(Collections.singletonList("1"),
                                                 Collections.singletonList("3")),
                                   -1,
@@ -108,16 +108,16 @@ public class ExternalDataServiceIT extends ITBase
     }
 
     static final String O101 = "[\n" +
-        "{\"oid\":101,\"cid\":1,\"order_date\":\"2012-12-12\",\"test.i\":[{\"iid\":10101,\"oid\":101,\"sku\":\"ABCD\"},{\"iid\":10102,\"oid\":101,\"sku\":\"1234\"}]}\n" +
+        "{\"oid\":101,\"cid\":1,\"order_date\":\"2012-12-12\",\"i\":[{\"iid\":10101,\"oid\":101,\"sku\":\"ABCD\"},{\"iid\":10102,\"oid\":101,\"sku\":\"1234\"}]}\n" +
         "]";
 
     @Test
     public void dumpJsonO101() throws IOException {
-        ExternalDataService external = 
+        ExternalDataService external =
             serviceManager().getServiceByClass(ExternalDataService.class);
         StringWriter str = new StringWriter();
         PrintWriter pw = new PrintWriter(str);
-        external.dumpBranchAsJson(session(), pw, SCHEMA, "o", 
+        external.dumpBranchAsJson(session(), pw, SCHEMA, "o",
                                   Collections.singletonList(Collections.singletonList("101")),
                                   -1,
                                   WITH_TXN);
@@ -142,7 +142,7 @@ public class ExternalDataServiceIT extends ITBase
     }
 
     static final String C1d1 = "[\n" +
-        "{\"cid\":1,\"name\":\"Smith\",\"test.o\":[{\"oid\":101,\"cid\":1,\"order_date\":\"2012-12-12\"},{\"oid\":102,\"cid\":1,\"order_date\":\"2013-01-01\"}],\"test.a\":[{\"aid\":101,\"cid\":1,\"state\":\"MA\"}]}\n" +
+        "{\"cid\":1,\"name\":\"Smith\",\"o\":[{\"oid\":101,\"cid\":1,\"order_date\":\"2012-12-12\"},{\"oid\":102,\"cid\":1,\"order_date\":\"2013-01-01\"}],\"a\":[{\"aid\":101,\"cid\":1,\"state\":\"MA\"}]}\n" +
         "]";
 
     @Test
@@ -171,4 +171,29 @@ public class ExternalDataServiceIT extends ITBase
         assertEquals("[]", str.toString());
     }
 
+
+    static final String fooA1BarB1 = "[\n" +
+            "{\"aid\":1,\"bar.b\":[{\"bid\":10,\"aid\":1}]}\n" +
+            "]";
+
+    @Test
+    public void dumpJsonCrossSchemaGroup() {
+        ExternalDataService external =
+                serviceManager().getServiceByClass(ExternalDataService.class);
+        int aid = createTable("foo", "a",
+                              "aid INT PRIMARY KEY NOT NULL");
+        int bid = createTable("bar", "b",
+                              "bid INT PRIMARY KEY NOT NULL",
+                              "aid INT NOT NULL",
+                              "GROUPING FOREIGN KEY(aid) REFERENCES foo.a(aid)");
+        writeRow(aid, 1L);
+        writeRow(bid, 10L, 1L);
+        StringWriter str = new StringWriter();
+        PrintWriter pw = new PrintWriter(str);
+        external.dumpBranchAsJson(session(), pw, "foo", "a",
+                                  Collections.singletonList(Collections.singletonList("1")),
+                                  -1,
+                                  WITH_TXN);
+        assertEquals(fooA1BarB1, str.toString());
+    }
 }

@@ -1,6 +1,6 @@
 [
     {
         "cid":1,
-        "test.addresses":[{"aid":104}]
+        "addresses":[{"aid":104}]
     }
 ]

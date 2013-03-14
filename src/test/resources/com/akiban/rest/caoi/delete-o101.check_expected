@@ -3,7 +3,7 @@
         "cid": 1,
         "first_name": "John",
         "last_name": "Smith",
-        "test.addresses": [
+        "addresses": [
             {
                 "aid": 101,
                 "cid": 1,
@@ -11,7 +11,7 @@
                 "city": "Boston"
             }
         ],
-        "test.orders": [
+        "orders": [
             {
                 "oid": 102,
                 "cid": 1,

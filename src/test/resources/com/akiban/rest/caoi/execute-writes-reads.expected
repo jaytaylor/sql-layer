@@ -24,14 +24,14 @@
             "cid": 5,
             "first_name": "Sally",
             "last_name": "Smith",
-            "test.orders": [
+            "orders": [
                 {
                     "oid": 501,
                     "cid": 5,
                     "odate": "2011-03-03 00:00:00"
                 }
             ],
-            "test.addresses": [
+            "addresses": [
                 {
                     "aid": 501,
                     "cid": 5,

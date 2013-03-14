@@ -491,6 +491,16 @@ public class UserTable extends Table
     public void setVersion(Integer version) {
         this.version = version;
     }
+
+    public boolean isSchemaNameSameAsParent() {
+        Join parentJoin = getParentJoin();
+        return (parentJoin != null) &&
+                parentJoin.getParent().getName().getSchemaName().equals(getName().getSchemaName());
+    }
+
+    public String getNameForOutput() {
+        return isSchemaNameSameAsParent() ? getName().getTableName() : getName().toString();
+    }
     
     private void addTableAndDescendents(UserTable table, List<UserTable> accumulator)
     {

@@ -164,7 +164,7 @@ public class InsertProcessor extends DMLProcessor {
                 InsertContext newContext = new InsertContext(tableName, table, context.session);
                 newContext.pkValues = context.pkValues;
                 appender.append(",\"");
-                appender.append(tableName.getDescription());
+                appender.append(table.getNameForOutput());
                 appender.append("\":");
                 processContainer (field.getValue(), appender, newContext);
             }

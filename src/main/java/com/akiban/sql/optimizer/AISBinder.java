@@ -1092,9 +1092,9 @@ public class AISBinder implements Visitor
                                 selectNode, SubqueryNode.SubqueryType.EXPRESSION,
                                 null, null, null, null,
                                 parserContext);
-        ResultColumn resultColumn = (ResultColumn) 
+        ResultColumn resultColumn = (ResultColumn)
             nodeFactory.getNode(NodeTypes.RESULT_COLUMN,
-                                childUserTable.getName().toString(),
+                                childUserTable.getNameForOutput(),
                                 subquery,
                                 parserContext);
         return resultColumn;

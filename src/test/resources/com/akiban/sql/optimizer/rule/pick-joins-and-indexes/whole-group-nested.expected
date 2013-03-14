@@ -1,5 +1,5 @@
 SelectQuery@7c252278
-  ResultSet@69fa33f4[cid, name, test.addresses, test.orders]
+  ResultSet@69fa33f4[cid, name, addresses, orders]
     Project@29690e87[customers.cid, customers.name, Subquery@265be339, Subquery@606fd8d3]
       Select@3038d64e[]
         TableGroupJoinTree@637db39d(TableGroup@39dfd9d8(customers), customers - SingleIndexScan@17571197(Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740))
@@ -13,7 +13,7 @@ Subquery@265be339
           TableSource@5f995b60(addresses - TableGroup@39dfd9d8(customers))
 
 Subquery@606fd8d3
-  ResultSet@4f04361b[oid, cid, order_date, test.items]
+  ResultSet@4f04361b[oid, cid, order_date, items]
     Project@cdcd94[orders.oid, orders.cid, orders.order_date, Subquery@2c8ed069]
       Select@1d7c4f24[]
         TableGroupJoinTree@4c2fd39b(TableGroup@39dfd9d8(customers), orders - GroupLoopScan@5a3fb7aa(customers - orders, rows = 10, cost = 24.8948))

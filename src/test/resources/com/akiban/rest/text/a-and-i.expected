@@ -1,8 +1,8 @@
 [
   {
-    "test.orders": [
+    "orders": [
       {
-        "test.items": [
+        "items": [
           {
             "sku": "1234",
             "oid": 101,
@@ -24,7 +24,7 @@
         "oid": 102
       }
     ],
-    "test.addresses": [
+    "addresses": [
       {
         "city": "Boston",
         "state": "MA",
