@@ -31,6 +31,9 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class TableRowTracker implements RowTracker {
     private final int minDepth;
     private final int maxDepth;
@@ -40,8 +43,13 @@ public class TableRowTracker implements RowTracker {
     // rows, discarding any that are not.
     private final RowType[] openTypes;
 
+    // Tracks child tables where the schema name does not match the parent.
+    // Will almost always be empty, so use null as empty.
+    private Set<UserTable> tablesNeedingFullName = null;
+
     private RowType curRowType;
     private UserTable curTable;
+    private boolean curNeedsFulLName;
 
     public TableRowTracker(UserTable table, int addlDepth) {
         minDepth = table.getDepth();
@@ -51,6 +59,12 @@ public class TableRowTracker implements RowTracker {
                 @Override
                 public void visitUserTable(UserTable userTable) {
                     max[0] = Math.max(max[0], userTable.getDepth());
+                    if(!userTable.isSchemaNameSameAsParent()) {
+                        if(tablesNeedingFullName == null) {
+                            tablesNeedingFullName = new HashSet<>();
+                        }
+                        tablesNeedingFullName.add(userTable);
+                    }
                 }
             });
         }
@@ -82,6 +96,7 @@ public class TableRowTracker implements RowTracker {
         assert row.rowType().hasUserTable() : "Invalid row type for TableRowTracker";
         curRowType = row.rowType();
         curTable = curRowType.userTable();
+        curNeedsFulLName = (tablesNeedingFullName != null) && tablesNeedingFullName.contains(curTable);
     }
 
     @Override
@@ -91,7 +106,7 @@ public class TableRowTracker implements RowTracker {
 
     @Override
     public String getRowName() {
-        return curTable.getName().toString();
+        return curNeedsFulLName ? curTable.getName().toString() : curTable.getName().getTableName();
     }
 
     @Override
