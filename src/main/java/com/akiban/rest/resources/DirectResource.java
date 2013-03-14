@@ -62,8 +62,8 @@ public class DirectResource {
     private final static String LANGUAGE = "language";
     private final static String PACKAGE = "com.akiban.direct.entity";
 
-    private final static String CREATE_PROCEDURE_FORMAT = "CREATE PROCEDURE %s (IN param VARCHAR(65535), OUT result VARCHAR(65535))"
-            + " LANGUAGE %s PARAMETER STYLE variables AS $$%s$$";
+    private final static String CREATE_PROCEDURE_FORMAT = "CREATE PROCEDURE %s (IN json_in VARCHAR(65535), OUT json_out VARCHAR(65535))"
+            + " LANGUAGE %s PARAMETER STYLE json AS $$%s$$";
 
     private final static String DROP_PROCEDURE_FORMAT = "DROP PROCEDURE %s";
 
