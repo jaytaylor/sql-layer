@@ -541,6 +541,8 @@ public class ProtobufReader {
             return Routine.CallingConvention.SCRIPT_BINDINGS;
         case SCRIPT_FUNCTION_JSON: 
             return Routine.CallingConvention.SCRIPT_FUNCTION_JSON;
+        case SCRIPT_BINDINGS_JSON: 
+            return Routine.CallingConvention.SCRIPT_BINDINGS_JSON;
         }
     }
 
