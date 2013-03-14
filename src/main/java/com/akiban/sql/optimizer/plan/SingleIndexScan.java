@@ -28,11 +28,13 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.ConditionsCount.HowMany;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
+import com.akiban.sql.optimizer.rule.OverloadAndTInstanceResolver;
+import com.akiban.sql.optimizer.rule.PlanContext;
+import com.akiban.sql.optimizer.rule.ConstantFolder.NewFolder;
 import com.akiban.sql.optimizer.rule.range.ColumnRanges;
 
 import java.util.ArrayList;
@@ -64,25 +66,26 @@ public final class SingleIndexScan extends IndexScan {
     // TODO: This doesn't work for merging: consider x < ? AND x <= ?.
     // May need building of index keys in the expressions subsystem.
     private boolean lowInclusive, highInclusive;
+    
+    private PlanContext context; 
 
-    public SingleIndexScan(Index index, TableSource table)
+    public SingleIndexScan(Index index, TableSource table, PlanContext context)
     {
         super(table);
         this.index = index;
-    }
-    
-    public SingleIndexScan(Index index, TableSource rootMost, TableSource leafMost) {
-        this(index, rootMost, rootMost, leafMost, leafMost);
+        this.context = context;
     }
 
     public SingleIndexScan(Index index,
                      TableSource rootMostTable,
                      TableSource rootMostInnerTable,
                      TableSource leafMostInnerTable,
-                     TableSource leafMostTable)
+                     TableSource leafMostTable,
+                     PlanContext context)
     {
         super(rootMostTable, rootMostInnerTable, leafMostInnerTable, leafMostTable);
         this.index = index;
+        this.context = context;
     }
 
     public Index getIndex() {
@@ -136,6 +139,7 @@ public final class SingleIndexScan extends IndexScan {
                         operands,
                         lowComparand.getSQLtype(),
                         null);
+                setPreptimeValue (lowComparand);
             }
             else
                 // TODO: Could do the MAX anyway and test the conditions later.
@@ -156,6 +160,7 @@ public final class SingleIndexScan extends IndexScan {
                         operands,
                         highComparand.getSQLtype(),
                         null);
+                setPreptimeValue (highComparand);
             }
             else
                 // Not really an inequality.
@@ -166,6 +171,12 @@ public final class SingleIndexScan extends IndexScan {
         }
 
         internalGetConditions().add(condition);
+    }
+
+    private void setPreptimeValue (ExpressionNode expression) {
+        OverloadAndTInstanceResolver.ResolvingVisitor visitor = 
+                new OverloadAndTInstanceResolver.ResolvingVisitor(context, new NewFolder(context));
+        visitor.visit(expression);
     }
 
     @Override
