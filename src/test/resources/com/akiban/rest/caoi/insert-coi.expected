@@ -1,9 +1,9 @@
 [{"cid": 6, 
-    "test.addresses":[{"aid":106}], 
-    "test.orders": [{"oid": 106, 
-        "test.items": [{"iid": 1016}, { "iid": 1017}]},
+    "addresses":[{"aid":106}],
+    "orders": [{"oid": 106,
+        "items": [{"iid": 1016}, { "iid": 1017}]},
     {"oid": 107},
     {"oid": 108,
-        "test.items":[{"iid": 1018}]}]
+        "items":[{"iid": 1018}]}]
 }]
         
