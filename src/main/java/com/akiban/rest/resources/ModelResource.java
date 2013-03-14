@@ -116,9 +116,11 @@ public final class ModelResource {
     public Response parse(@Context HttpServletRequest request,
                           @PathParam("table") String table,
                           @QueryParam("create") final String create,
+                          @QueryParam("defaultWidth") final String defaultWidth,
                           final InputStream postInput) {
         final TableName tableName = ResourceHelper.parseTableName(request, table);
         checkTableAccessible(reqs.securityService, request, tableName);
+        
         return RestResponseBuilder
                 .forRequest(request)
                 .body(new RestResponseBuilder.BodyGenerator() {
@@ -128,6 +130,7 @@ public final class ModelResource {
                         ObjectMapper m = new ObjectMapper();
                         JsonNode node = m.readTree(postInput);
                         EntityParser parser = new EntityParser();
+                        parser.setStringWidth(parseInt(defaultWidth, DEFAULT_STRING_WIDTH));
                         try (Session session = reqs.sessionService.createSession()) {
                             final UserTable created;
                             if(doCreate) {
@@ -139,7 +142,6 @@ public final class ModelResource {
                                 created = parser.parse(tableName, node);
                                 UuidAssigner uuidAssigner = new UuidAssigner();
                                 created.getAIS().traversePostOrder(uuidAssigner);
-                                LOG.error("Table {}", created.toString());
                             }
                             Space currSpace = spaceForAIS(created.getAIS(), tableName.getSchemaName());
                             writer.write(currSpace.toJson());
@@ -218,6 +220,15 @@ public final class ModelResource {
     private Space spaceForAIS(AkibanInformationSchema ais, String schema) {
         ais = AISCloner.clone(ais, new ProtobufWriter.SingleSchemaSelector(schema));
         return AisToSpace.create(ais, Space.requireUUIDs);
+    }
+
+    private static final int DEFAULT_STRING_WIDTH = 128;
+    private static  int parseInt(String number, int defaultValue) {
+        try {
+            return Integer.parseInt(number);
+        } catch (NumberFormatException ex) {
+            return defaultValue;
+        }
     }
     private static final Logger LOG = LoggerFactory.getLogger(ModelResource.class);    
 }

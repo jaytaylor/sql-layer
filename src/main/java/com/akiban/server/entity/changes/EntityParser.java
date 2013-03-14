@@ -44,10 +44,14 @@ import com.akiban.server.service.session.Session;
 
 public final class EntityParser {
     private static final Logger LOG = LoggerFactory.getLogger(EntityParser.class);
+    private int stringWidth = 128;
     
     public EntityParser () {
     }
         
+    public void setStringWidth(int width) {
+        stringWidth = width;
+    }
     public UserTable parse (TableName tableName, JsonNode node) throws IOException {
         NewAISBuilder builder = AISBBasedBuilder.create(tableName.getSchemaName());
         processContainer (node, builder, tableName);
@@ -90,7 +94,7 @@ public final class EntityParser {
             // If no elements in the array, add a placeholder column
             if (first) {
                 NewUserTableBuilder table = builder.userTable(tableName.getSchemaName(), tableName.getTableName());
-                table.colString("placeholder", 128, true);
+                table.colString("placeholder", stringWidth, true);
             }
         }
         // else throw Bad Json Format Exception
@@ -113,7 +117,7 @@ public final class EntityParser {
         }
         
         if (!columnsAdded) {
-            table.colString("placeholder", 128, true);
+            table.colString("placeholder", stringWidth, true);
             LOG.trace("Column added placeholder");
         }
         // pass 2: insert the child nodes
@@ -142,7 +146,7 @@ public final class EntityParser {
     
     private void addColumnToTable (JsonNode node, String name, NewUserTableBuilder table) {
         if (node.isTextual()) {
-            int  len = Math.max(node.asText().length(), 128);
+            int  len = Math.max(node.asText().length(), stringWidth);
             table.colString(name, len, true);
         } else if (node.isIntegralNumber()) {
             table.colBigInt(name, true);
@@ -152,7 +156,7 @@ public final class EntityParser {
             table.colLong(name, true);
         } else if (node.isNull()) {
             // wild guess
-            table.colString(name, 128, true);
+            table.colString(name, stringWidth, true);
         }
     }
 }
