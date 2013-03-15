@@ -38,6 +38,9 @@ import java.util.List;
 import java.util.Map;
 
 public interface RestDMLService {
+    final static String DEFAULT_PARAM_NAME = "param";
+    final static String DEFAULT_RESUlT_NAME = "result"; 
+    
     public void getAllEntities(PrintWriter writer, TableName tableName, Integer depth);
     public void getEntities(PrintWriter writer, TableName tableName, Integer depth, String pks);
     public void insert(PrintWriter writer, TableName tableName, JsonNode node);

@@ -31,7 +31,10 @@ import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
 import java.io.PrintWriter;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -40,11 +43,13 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.TableName;
 import com.akiban.direct.ClassBuilder;
 import com.akiban.direct.ClassSourceWriter;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.rest.RestResponseBuilder.BodyGenerator;
+import com.akiban.server.error.NoSuchSchemaException;
 
 /**
  * Easy access to the server version
@@ -52,9 +57,15 @@ import com.akiban.rest.RestResponseBuilder.BodyGenerator;
 @Path("/direct")
 public class DirectResource {
 
-    private final static String SPACE_ARG_NAME = "space";
     private final static String TABLE_ARG_NAME = "table";
+    private final static String MODULE_ARG_NAME = "module";
+    private final static String LANGUAGE = "language";
     private final static String PACKAGE = "com.akiban.direct.entity";
+
+    private final static String CREATE_PROCEDURE_FORMAT = "CREATE PROCEDURE %s (IN json_in VARCHAR(65535), OUT json_out VARCHAR(65535))"
+            + " LANGUAGE %s PARAMETER STYLE json AS $$%s$$";
+
+    private final static String DROP_PROCEDURE_FORMAT = "DROP PROCEDURE %s";
 
     private final ResourceRequirements reqs;
 
@@ -62,32 +73,35 @@ public class DirectResource {
         this.reqs = reqs;
     }
 
+    /**
+     * Derive and return code-generated a set of Java interfaces describing
+     * created from a schema. The supplied table is
+     * 
+     * @param request
+     * @param table
+     * @param jsonp
+     * @return
+     * @throws Exception
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/igen")
-    public Response get(@Context HttpServletRequest request, @QueryParam(SPACE_ARG_NAME) final String space,
-            @QueryParam(JSONP_ARG_NAME) String jsonp) throws Exception {
+    public Response get(@Context final HttpServletRequest request, @QueryParam(TABLE_ARG_NAME) final String table,
+            @QueryParam(JSONP_ARG_NAME) final String jsonp) throws Exception {
 
-        /*
-         * Generate Java interfaces in text form
-         */
         return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
-
             @Override
             public void write(PrintWriter writer) throws Exception {
-
+                final TableName tableName = ResourceHelper.parseTableName(request, table == null ? "*" : table);
+                final String schemaName = tableName.getSchemaName();
                 final AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(
                         reqs.sessionService.createSession());
-                if (ais.getSchema(space) == null) {
-                    throw new RuntimeException("No such space: " + space);
+                if (ais.getSchema(schemaName) == null) {
+                    throw new NoSuchSchemaException(schemaName);
                 }
-                ClassBuilder helper = new ClassSourceWriter(writer, PACKAGE, ClassBuilder.schemaClassName(space), false);
-                try {
-                    helper.writeGeneratedInterfaces(ais, space);
-                } catch (Exception e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
+                ClassBuilder helper = new ClassSourceWriter(writer, PACKAGE, false);
+                helper.writeGeneratedInterfaces(ais, tableName);
+                helper.close();
             }
         }).build();
     }
@@ -95,31 +109,58 @@ public class DirectResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/cgen")
-    public Response cgen(@Context HttpServletRequest request, @QueryParam(SPACE_ARG_NAME) final String space,
-            @QueryParam(TABLE_ARG_NAME) final String tableName, @QueryParam(JSONP_ARG_NAME) String jsonp)
-            throws Exception {
+    public Response cgen(@Context final HttpServletRequest request, @QueryParam(TABLE_ARG_NAME) final String table,
+            @QueryParam(JSONP_ARG_NAME) final String jsonp) throws Exception {
 
-        /*
-         * Generate Java interfaces in text form
-         */
         return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
-
             @Override
             public void write(PrintWriter writer) throws Exception {
+                final TableName tableName = ResourceHelper.parseTableName(request, table == null ? "*" : table);
+                final String schemaName = tableName.getSchemaName();
                 final AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(
                         reqs.sessionService.createSession());
-                if (ais.getSchema(space) == null) {
-                    throw new RuntimeException("No such space: " + space);
+                if (ais.getSchema(schemaName) == null) {
+                    throw new NoSuchSchemaException(schemaName);
                 }
-                ClassBuilder helper = new ClassSourceWriter(writer, PACKAGE, ClassBuilder.schemaClassName(space), false);
-                try {
-                    helper.writeGeneratedClass(ais, space, tableName);
-                } catch (Exception e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
+                ClassBuilder helper = new ClassSourceWriter(writer, PACKAGE, false);
+                helper.writeGeneratedClass(ais, tableName);
+                helper.close();
             }
         }).build();
+    }
+
+    @PUT
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/procedure")
+    public Response createProcedure(@Context final HttpServletRequest request,
+            @QueryParam(MODULE_ARG_NAME) @DefaultValue("DefaultModule") final String module,
+            @QueryParam(LANGUAGE) @DefaultValue("Javascript") final String language,
+            @QueryParam(JSONP_ARG_NAME) final String jsonp, final byte[] payload) {
+        return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
+            @Override
+            public void write(PrintWriter writer) throws Exception {
+                final TableName procName = ResourceHelper.parseTableName(request, module);
+                final String sql = String.format(CREATE_PROCEDURE_FORMAT, procName, language, new String(payload));
+                reqs.restDMLService.runSQL(writer, request, sql, procName.getSchemaName());
+            }
+        }).build();
+    }
+
+    @DELETE
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/procedure")
+    public Response deleteProcedure(@Context final HttpServletRequest request,
+            @QueryParam(MODULE_ARG_NAME) @DefaultValue("DefaultModule") final String module,
+            @QueryParam(JSONP_ARG_NAME) final String jsonp) {
+        return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
+            @Override
+            public void write(PrintWriter writer) throws Exception {
+                final TableName procName = ResourceHelper.parseTableName(request, module);
+                final String sql = String.format(DROP_PROCEDURE_FORMAT, procName);
+                reqs.restDMLService.runSQL(writer, request, sql, procName.getSchemaName());
+            }
+        }).build();
+
     }
 
 }

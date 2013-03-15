@@ -82,6 +82,7 @@ abstract class ExecutableCallStatement extends ExecutableStatement
         case SCRIPT_FUNCTION_JSON:
             return ExecutableScriptFunctionJavaRoutine.executableStatement(invocation, parameterMetaData, context);
         case SCRIPT_BINDINGS:
+        case SCRIPT_BINDINGS_JSON:
             return ExecutableScriptBindingsRoutine.executableStatement(invocation, parameterMetaData, context);
         default:
             throw new UnsupportedSQLException("Unknown routine", call);
