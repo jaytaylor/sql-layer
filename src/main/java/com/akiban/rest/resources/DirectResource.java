@@ -46,6 +46,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
 import com.akiban.direct.ClassBuilder;
 import com.akiban.direct.ClassSourceWriter;
+import com.akiban.direct.ClassXRefWriter;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.rest.RestResponseBuilder.BodyGenerator;
@@ -86,7 +87,7 @@ public class DirectResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/igen")
-    public Response get(@Context final HttpServletRequest request, @QueryParam(TABLE_ARG_NAME) final String table,
+    public Response igen(@Context final HttpServletRequest request, @QueryParam(TABLE_ARG_NAME) final String table,
             @QueryParam(JSONP_ARG_NAME) final String jsonp) throws Exception {
 
         return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
@@ -124,6 +125,51 @@ public class DirectResource {
                 }
                 ClassBuilder helper = new ClassSourceWriter(writer, PACKAGE, false);
                 helper.writeGeneratedClass(ais, tableName);
+                helper.close();
+            }
+        }).build();
+    }
+
+    /**
+     * Create a JSON-formatted set of nested arrays in the form <code><pre>
+     * [className1,[
+     *     [methodName1,returnType1],
+     *     [methodName2,returnType2]],
+     * className2,[
+     *      ...]]
+     * </pre></code This information can be used in an editor to support
+     * context-specific code-completion. Note that:
+     * <ul>
+     * <li>a methodName with parentheses also includes formal parameter names (which may be convenient for code-completion</li>
+     * <li>a methodName without parentheses is actually a property name</li>
+     * <li>returnType is either a className or is the empty string.</li>
+     * </ul>
+     * For example, ["getItem( 
+     * 
+     * @param request
+     * @param table
+     * @param jsonp
+     * @return
+     * @throws Exception
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/xgen")
+    public Response xgen(@Context final HttpServletRequest request, @QueryParam(TABLE_ARG_NAME) final String table,
+            @QueryParam(JSONP_ARG_NAME) final String jsonp) throws Exception {
+
+        return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
+            @Override
+            public void write(PrintWriter writer) throws Exception {
+                final TableName tableName = ResourceHelper.parseTableName(request, table == null ? "*" : table);
+                final String schemaName = tableName.getSchemaName();
+                final AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(
+                        reqs.sessionService.createSession());
+                if (ais.getSchema(schemaName) == null) {
+                    throw new NoSuchSchemaException(schemaName);
+                }
+                ClassBuilder helper = new ClassXRefWriter(writer, PACKAGE, false);
+                helper.writeGeneratedXrefs(ais, tableName);
                 helper.close();
             }
         }).build();

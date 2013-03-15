@@ -181,7 +181,24 @@ public abstract class ClassBuilder {
         }
     }
 
-    public void generateInterfaceClass(UserTable table, String scn) throws CannotCompileException, NotFoundException {
+    public void writeGeneratedXrefs(final AkibanInformationSchema ais, final TableName tableName)
+            throws CannotCompileException, NotFoundException {
+        final String schema = tableName.getSchemaName();
+        String scn = schemaClassName(schema);
+        if ("*".equals(tableName.getTableName())) {
+            for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
+                generateInterfaceClass(table, scn);
+            }
+        } else {
+            final UserTable table = ais.getUserTable(tableName);
+            if (table == null) {
+                throw new NoSuchTableException(tableName);
+            }
+            generateInterfaceClass(table, scn);
+        }
+    }
+
+    void generateInterfaceClass(UserTable table, String scn) throws CannotCompileException, NotFoundException {
         table.getName().getTableName();
         String typeName = scn + "$" + asJavaName(table.getName().getTableName(), true);
         startClass(typeName, true, null, null, null);
@@ -231,8 +248,8 @@ public abstract class ClassBuilder {
             Class<?> javaClass = javaClass(column);
             String[] getBody = new String[] { "return __get" + column.getType().akType() + "(" + column.getPosition()
                     + ")" };
-            String expr = addProperty(column.getName(), javaClass.getName(), null, iface ? null : getBody, iface ? null
-                    : UNSUPPORTED);
+            String expr = addProperty(column.getName(), javaClass.getName(), asJavaName(column.getName(), false),
+                    iface ? null : getBody, iface ? null : UNSUPPORTED);
             getterMethods.put(column.getName(), expr);
         }
 
@@ -277,10 +294,12 @@ public abstract class ClassBuilder {
                  * Add a child accessor by primary key value
                  */
                 String[] types = new String[primaryKeyColumns.size()];
+                String[] names = new String[primaryKeyColumns.size()];
                 for (int i = 0; i < types.length; i++) {
                     types[i] = javaClass(primaryKeyColumns.get(i)).getName();
+                    names[i] = asJavaName(primaryKeyColumns.get(i).getName(), false);
                 }
-                addMethod("get" + asJavaName(childTableName, true), childClassName, types, null, iface ? null
+                addMethod("get" + asJavaName(childTableName, true), childClassName, types, names, iface ? null
                         : UNSUPPORTED);
             }
             if (!primaryKeyColumns.isEmpty()) {
