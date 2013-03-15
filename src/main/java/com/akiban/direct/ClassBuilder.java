@@ -76,13 +76,15 @@ public abstract class ClassBuilder {
      * java.lang.String)
      */
     public String addProperty(final String name, final String type, final String argName, final String[] getBody,
-            final String[] setBody) {
+            final String[] setBody, final boolean hasSetter) {
         String caseConverted = asJavaName(name, true);
         boolean b = "boolean".equals(type);
         String getName = (b ? "is" : "get") + caseConverted;
         addMethod((b ? "is" : "get") + caseConverted, type, new String[0], null, getBody);
-        addMethod("set" + caseConverted, "void", new String[] { type },
-                new String[] { argName == null ? "v" : argName }, setBody);
+        if (hasSetter) {
+            addMethod("set" + caseConverted, "void", new String[] { type }, new String[] { argName == null ? "v"
+                    : argName }, setBody);
+        }
         return getName + "()";
     }
 
@@ -153,12 +155,18 @@ public abstract class ClassBuilder {
         startClass(scn, true, null, null, IMPORTS);
         if ("*".equals(tableName.getTableName())) {
             for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
+                if (table.isRoot()) {
+                    addExtentAccessor(table, scn, true);
+                }
                 generateInterfaceClass(table, scn);
             }
         } else {
             final UserTable table = ais.getUserTable(tableName);
             if (table == null) {
                 throw new NoSuchTableException(tableName);
+            }
+            if (table.isRoot()) {
+                addExtentAccessor(table, scn, true);
             }
             generateInterfaceClass(table, scn);
         }
@@ -172,6 +180,15 @@ public abstract class ClassBuilder {
             for (final UserTable table : schema.getUserTables().values()) {
                 generateImplementationClass(table, tableName.getSchemaName());
             }
+            String scn = schemaClassName(tableName.getSchemaName());
+            startExtentClass(tableName.getSchemaName(), scn);
+            for (final UserTable table : schema.getUserTables().values()) {
+                if (table.isRoot()) {
+                    addExtentAccessor(table, scn, false);
+                }
+            }
+            end();
+
         } else {
             UserTable table = ais.getUserTable(tableName);
             if (table == null) {
@@ -189,6 +206,14 @@ public abstract class ClassBuilder {
             for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
                 generateInterfaceClass(table, scn);
             }
+            startClass("_extent_", true, null, null, null);
+            for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
+                if (table.isRoot()) {
+                    addExtentAccessor(table, scn, false);
+                }
+            }
+            end();
+
         } else {
             final UserTable table = ais.getUserTable(tableName);
             if (table == null) {
@@ -237,6 +262,29 @@ public abstract class ClassBuilder {
         addMethod("get" + asJavaCollectionName(tableName, true), "com.akiban.direct.DirectIterable<" + className + ">",
                 NONE, null, body);
 
+        List<Column> primaryKeyColumns = table.getPrimaryKey().getColumns();
+
+        if (primaryKeyColumns.size() <= 1) {
+            /*
+             * Add a child accessor by primary key value
+             */
+            String[] types = new String[primaryKeyColumns.size()];
+            String[] names = new String[primaryKeyColumns.size()];
+            for (int i = 0; i < types.length; i++) {
+                types[i] = javaClass(primaryKeyColumns.get(i)).getName();
+                names[i] = asJavaName(primaryKeyColumns.get(i).getName(), false);
+            }
+
+            StringBuilder sb = new StringBuilder(buildDirectIterableExpr(className, tableName));
+            for (int i = 0; i < primaryKeyColumns.size(); i++) {
+                sb.append(String.format(".where(\"%s\", %s)", primaryKeyColumns.get(i).getName(),
+                        literal(javaClass(primaryKeyColumns.get(i)), "$" + (i + 1)), false));
+            }
+            sb.append(".single()");
+            body = new String[] { "return " + sb.toString() };
+
+            addMethod("get" + asJavaName(tableName, true), className, types, names, iface ? null : body);
+        }
     }
 
     private void addMethods(UserTable table, String scn, String typeName, String className, boolean iface) {
@@ -249,7 +297,7 @@ public abstract class ClassBuilder {
             String[] getBody = new String[] { "return __get" + column.getType().akType() + "(" + column.getPosition()
                     + ")" };
             String expr = addProperty(column.getName(), javaClass.getName(), asJavaName(column.getName(), false),
-                    iface ? null : getBody, iface ? null : UNSUPPORTED);
+                    iface ? null : getBody, iface ? null : UNSUPPORTED, true);
             getterMethods.put(column.getName(), expr);
         }
 
@@ -269,7 +317,7 @@ public abstract class ClassBuilder {
                 }
                 body = new String[] { "return " + sb.toString() + ".single()" };
             }
-            addMethod("get" + asJavaName(parentTableName, true), parentClassName, NONE, null, body);
+            addProperty(asJavaName(parentTableName, false), parentClassName, null, body, NONE, false);
         }
 
         /*
@@ -299,8 +347,21 @@ public abstract class ClassBuilder {
                     types[i] = javaClass(primaryKeyColumns.get(i)).getName();
                     names[i] = asJavaName(primaryKeyColumns.get(i).getName(), false);
                 }
-                addMethod("get" + asJavaName(childTableName, true), childClassName, types, names, iface ? null
-                        : UNSUPPORTED);
+                String[] body = null;
+                if (!iface) {
+                    StringBuilder sb = new StringBuilder(buildDirectIterableExpr(childClassName, childTableName));
+                    for (final JoinColumn jc : join.getJoinColumns()) {
+                        sb.append(String.format(".where(\"%s\", %s)", jc.getChild().getName(),
+                                literal(getterMethods, jc.getParent())));
+                    }
+                    for (int i = 0; i < primaryKeyColumns.size(); i++) {
+                        sb.append(String.format(".where(\"%s\", %s)", primaryKeyColumns.get(i).getName(),
+                                literal(javaClass(primaryKeyColumns.get(i)), "$" + (i + 1)), false));
+                    }
+                    sb.append(".single()");
+                    body = new String[] { "return " + sb.toString() };
+                }
+                addMethod("get" + asJavaName(childTableName, true), childClassName, types, names, iface ? null : body);
             }
             if (!primaryKeyColumns.isEmpty()) {
                 String[] body = null;
@@ -386,8 +447,10 @@ public abstract class ClassBuilder {
      * @return
      */
     private String literal(Map<String, String> getterMethods, Column column) {
-        String getter = getterMethods.get(column.getName());
-        Class<?> type = javaClass(column);
+        return literal(javaClass(column), getterMethods.get(column.getName()));
+    }
+
+    private String literal(Class<?> type, final String getter) {
         if (type.isPrimitive()) {
             return literalWrapper(type) + ".valueOf(" + getter + ")";
         } else {
