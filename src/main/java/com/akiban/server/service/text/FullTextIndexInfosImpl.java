@@ -35,6 +35,7 @@ import com.akiban.server.error.FullTextQueryParseException;
 import com.akiban.server.service.session.Session;
 
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
+import org.apache.lucene.queryparser.flexible.standard.StandardQueryParser;
 import org.apache.lucene.search.Query;
 
 import java.io.File;
@@ -53,8 +54,11 @@ public abstract class FullTextIndexInfosImpl implements FullTextIndexInfos
         if (defaultField == null) {
             defaultField = index.getDefaultFieldName();
         }
+        StandardQueryParser parser = index.getParser();
         try {
-            return index.getParser().parse(query, defaultField);
+            synchronized (parser) {
+                return parser.parse(query, defaultField);
+            }
         }
         catch (QueryNodeException ex) {
             throw new FullTextQueryParseException(ex);
