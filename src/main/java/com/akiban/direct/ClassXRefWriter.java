@@ -27,9 +27,6 @@
 package com.akiban.direct;
 
 import java.io.PrintWriter;
-import java.util.Stack;
-
-import com.akiban.server.Quote;
 
 /**
  * Helper methods for writing a Java class to a AkibanAppender. This implementation
@@ -40,16 +37,12 @@ import com.akiban.server.Quote;
  * @author peter
  * 
  */
-public class ClassXRefWriter extends ClassBuilder {
+public class ClassXRefWriter extends ClassSourceWriterBase {
 
-    private final PrintWriter writer;
-    private final Stack<String> classNames = new Stack<String>();
-    private int indentation = 0;
     boolean first = true;
 
     public ClassXRefWriter(final PrintWriter writer, final String packageName) {
-        super(packageName);
-        this.writer = writer;
+        super(writer, packageName);
         append("{");
     }
 
@@ -146,32 +139,6 @@ public class ClassXRefWriter extends ClassBuilder {
         newLine();
         append("}");
         newLine();
-    }
-
-    private void print(String... strings) {
-        for (int i = 0; i < indentation; i++) {
-            writer.append("    ");
-        }
-        append(strings);
-    }
-
-    private void append(final String... strings) {
-        for (final String s : strings) {
-            writer.write(s);
-        }
-    }
-
-    private void newLine() {
-        writer.println();
-    }
-
-    private String shortName(String fqn) {
-        final int index = Math.max(fqn.lastIndexOf('$'), fqn.lastIndexOf('.'));
-        if (index < 0) {
-            return fqn;
-        } else {
-            return fqn.substring(index + 1);
-        }
     }
 
     private void appendq(final String s) {
