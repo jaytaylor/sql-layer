@@ -263,6 +263,8 @@ public class PostgresType extends ServerType
 
         if ("VARCHAR".equals(encoding))
             oid = TypeOid.VARCHAR_TYPE_OID;
+        else if ("BOOLEAN".equals(encoding))
+            oid = TypeOid.BOOL_TYPE_OID;
         else if ("INT".equals(encoding)) {
             switch (aisType.maxSizeBytes().intValue()) {
             case 1:

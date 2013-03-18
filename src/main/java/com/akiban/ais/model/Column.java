@@ -31,6 +31,7 @@ import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.common.types.StringFactory;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
@@ -686,6 +687,9 @@ public class Column implements ColumnContainer
             break;
         case T_YEAR:
             tinst = MDatetimes.YEAR.instance(nullable);
+            break;
+        case T_BOOLEAN:
+            tinst = AkBool.INSTANCE.instance(nullable);
             break;
         default:
             throw new UnsupportedOperationException("unknown type: " + type);
