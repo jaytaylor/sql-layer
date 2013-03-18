@@ -83,6 +83,14 @@ public interface NewUserTableBuilder extends NewAISBuilder {
     NewUserTableBuilder autoIncLong(String name, int initialValue);
 
     /**
+     * Adds an optionally nullable boolean column
+     * @param name the column's name
+     * @param nullable whether the column is nullable
+     * @return this
+     */
+    NewUserTableBuilder colBoolean(String name, boolean nullable);
+
+    /**
      * Adds a non-nullable varchar with UTF-8 encoding
      * @param name the column's name
      * @param length the varchar's max length

@@ -125,7 +125,7 @@ public class EntityParserIT extends ITBase {
         assertTrue(c.getColumn(1).getName().equals("first_name"));
         assertTrue(c.getColumn(1).getType().equals(Types.VARCHAR));
         assertTrue(c.getColumn(2).getName().equals("ordered"));
-        assertTrue(c.getColumn(2).getType().equals(Types.INT));
+        assertTrue(c.getColumn(2).getType().equals(Types.BOOLEAN));
         assertTrue(c.getColumn(3).getName().equals("order_date"));
         assertTrue(c.getColumn(3).getType().equals(Types.VARCHAR));
         assertTrue(c.getColumn(4).getName().equals("tax_rate"));
@@ -282,6 +282,19 @@ public class EntityParserIT extends ITBase {
         assertTrue (a.getParentJoin().getParent() == r);
         assertTrue (r.getParentJoin().getParent() == c);
         assertNull (c.getParentJoin());
+    }
+
+    @Test
+    public void testBoolean() throws IOException {
+        TableName tableName = new TableName ("test", "customers");
+
+        String postInput = "{\"b1\": false, \"b2\": true}";
+        AkibanInformationSchema ais = processParse(tableName, postInput);
+        assertTrue(ais.getTable(tableName).getColumns().size() == 2);
+        assertTrue(ais.getTable(tableName).getColumn(0).getName().equals("b1"));
+        assertTrue(ais.getTable(tableName).getColumn(0).getType().equals(Types.BOOLEAN));
+        assertTrue(ais.getTable(tableName).getColumn(1).getName().equals("b2"));
+        assertTrue(ais.getTable(tableName).getColumn(1).getType().equals(Types.BOOLEAN));
     }
 
     private AkibanInformationSchema processParse (TableName tableName, String postInput) throws JsonProcessingException, IOException{
