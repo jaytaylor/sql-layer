@@ -36,7 +36,6 @@ import com.akiban.util.AkibanAppender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -136,6 +135,9 @@ public class JsonRowWriter
 
         @Override
         public void write(Row row, AkibanAppender appender) {
+            // tables with hidden PK (noPK tables) return no values
+            if (row.rowType().userTable().getPrimaryKey() == null) return;
+            
             List<IndexColumn> columns = row.rowType().userTable().getPrimaryKey().getIndex().getKeyColumns();
             for (int i = 0; i < columns.size(); i++) {
                 Column column = columns.get(i).getColumn();
