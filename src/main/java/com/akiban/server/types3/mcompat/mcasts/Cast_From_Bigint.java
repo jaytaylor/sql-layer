@@ -160,13 +160,4 @@ public class Cast_From_Bigint
                 target.putInt32((int)CastUtils.getInRange(MDatetimes.TIME_MAX, MDatetimes.TIME_MIN, raw, context));
         }
     };
-    
-    public static final TCast TO_AK_BOOLEAN = new TCastBase(MNumeric.BIGINT, AkBool.INSTANCE, Constantness.UNKNOWN) {
-
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
-            boolean value = source.getInt64() != 0;
-            target.putBool(value);
-        }
-    };
 }

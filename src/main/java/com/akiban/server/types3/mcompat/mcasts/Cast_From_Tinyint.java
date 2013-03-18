@@ -83,15 +83,4 @@ public class Cast_From_Tinyint
     public static final TCast TO_DECIMAL = new FromInt8ToDecimal(MNumeric.TINYINT, MNumeric.DECIMAL, false, Constantness.UNKNOWN);
     
     public static final TCast TO_DOUBLE = new FromInt8ToDouble(MNumeric.TINYINT, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN);
-    
-    public static final TCast TO_AK_BOOLEAN = new TCastBase(MNumeric.TINYINT, AkBool.INSTANCE, Constantness.UNKNOWN)
-    {
-        @Override
-        public void doEvaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            boolean value = source.getInt8() != 0;
-            target.putBool(value);
-        }
-    };
-    
 }
