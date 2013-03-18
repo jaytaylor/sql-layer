@@ -26,3 +26,9 @@ CREATE TABLE c4
     items int not null,
     primary key (cid, oid)
 );    
+
+CREATE TABLE c5
+(
+	cid int not null,
+	oid int not null
+);
