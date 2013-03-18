@@ -1,0 +1,17 @@
+{"Order":[
+    ["oid",""],
+    ["getOid()",""],
+    ["setOid(oid)",""],
+    ["cid",""],
+    ["getCid()",""],
+    ["setCid(cid)",""],
+    ["odate",""],
+    ["getOdate()",""],
+    ["setOdate(odate)",""],
+    ["customer","Customer"],
+    ["getCustomer()","Customer"],
+    ["getItem(iid)","Item"],
+    ["getItems()",""],
+    ["copy()","Order"],
+    ["save()",""]]
+}

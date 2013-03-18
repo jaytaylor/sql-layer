@@ -168,7 +168,7 @@ public class DirectResource {
                 if (ais.getSchema(schemaName) == null) {
                     throw new NoSuchSchemaException(schemaName);
                 }
-                ClassBuilder helper = new ClassXRefWriter(writer, PACKAGE, false);
+                ClassBuilder helper = new ClassXRefWriter(writer, PACKAGE);
                 helper.writeGeneratedXrefs(ais, tableName);
                 helper.close();
             }
