@@ -1,1 +1,1 @@
-SELECT first_name, (SELECT oid, cid, odate, (SELECT sku FROM items WHERE sku=123 AND orders.oid = items.oid) "items" FROM orders WHERE customers.cid = orders.cid) "orders" FROM customers
+SELECT "first_name", (SELECT "oid", "cid", "odate", (SELECT "sku" FROM "items" WHERE "sku"='123' AND "orders"."oid" = "items"."oid") "items" FROM "orders" WHERE "customers"."cid" = "orders"."cid") "orders" FROM "customers"
