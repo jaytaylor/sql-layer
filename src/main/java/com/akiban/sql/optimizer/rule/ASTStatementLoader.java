@@ -1222,10 +1222,9 @@ public class ASTStatementLoader extends BaseRule
                     throw new UnsupportedSQLException("SELECT DISTINCT requires that ORDER BY expressions be in the select list",
                                                       expr.getSQLsource());
                 }
-                ExpressionNode cexpr = new ColumnExpression(project, idx,
+                adjustedOrderBys[i] = new ColumnExpression(project, idx,
                                                             expr.getSQLtype(),
                                                             expr.getSQLsource());
-                adjustedOrderBys[i] = cexpr;
                 used.set(idx);
             }
             // If we got here, it means each orderBy's expression is in the exprs list. As such, nSorts <= exprs.size
