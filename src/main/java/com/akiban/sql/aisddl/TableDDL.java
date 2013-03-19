@@ -298,6 +298,10 @@ public class TableDDL
     static Type columnType(DataTypeDescriptor type, Long[] typeParameters,
                            String schemaName, String tableName, String columnName) {
         Type builderType = typeMap.get(type.getTypeId());
+        // TODO: Parser doesn't map tinyint properly
+        if (builderType == null && Types.TINYINT.name().equalsIgnoreCase(type.getTypeName())) {
+            builderType = typeMap.get(TypeId.TINYINT_ID);
+        }
         if (builderType == null) {
             throw new UnsupportedDataTypeException(new TableName(schemaName, tableName), columnName, type.getTypeName());
         }
