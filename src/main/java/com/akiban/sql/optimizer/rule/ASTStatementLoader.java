@@ -1230,7 +1230,7 @@ public class ASTStatementLoader extends BaseRule
             }
             // If we got here, it means each orderBy's expression is in the exprs list. As such, nSorts <= exprs.size
             for (int i = 0; i < exprs.size(); i++) {
-                if (nSorts < i)
+                if (i < nSorts)
                     sorts.get(i).setExpression(adjustedOrderBys[i]);
                 if (!used.get(i)) {
                     ExpressionNode expr = exprs.get(i);
