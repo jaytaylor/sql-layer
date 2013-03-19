@@ -1220,11 +1220,11 @@ public class ASTStatementLoader extends BaseRule
                     if (isDistinctSortNotSelectGroupBy())
                         return false;
                     throw new UnsupportedSQLException("SELECT DISTINCT requires that ORDER BY expressions be in the select list",
-                            expr.getSQLsource());
+                                                      expr.getSQLsource());
                 }
                 ExpressionNode cexpr = new ColumnExpression(project, idx,
-                        expr.getSQLtype(),
-                        expr.getSQLsource());
+                                                            expr.getSQLtype(),
+                                                            expr.getSQLsource());
                 adjustedOrderBys[i] = cexpr;
                 used.set(idx);
             }
