@@ -177,17 +177,31 @@ public final class Session implements AutoCloseable
         private final Class<?> owner;
         private final String name;
 
+        /** Create a new Key with the given name. Looks up owning class, see {@link #named(String,Class)}. **/
         public static <T> Key<T> named(String name) {
             return new Key<>(name, 1);
         }
 
-        private Key(String name, int stackFramesToOwner) {
+        /** Create a new Key with given name an class. This <i>must</i> be used for isolated classes, such as plugins */
+        public static <T> Key<T> named(String name, Class<?> owner) {
+            return new Key<>(name, owner);
+        }
+
+        private static Class<?> lookupOwner(int stackFramesToOwner) {
             try {
-                owner = Class.forName(Thread.currentThread().getStackTrace()[stackFramesToOwner + 2].getClassName());
+                return Class.forName(Thread.currentThread().getStackTrace()[stackFramesToOwner + 2].getClassName());
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
+        }
+
+        private Key(String name, int stackFramesToOwner) {
+            this(name, lookupOwner(stackFramesToOwner));
+        }
+
+        private Key(String name, Class owner) {
             this.name = String.format("%s<%s>", owner.getSimpleName(), name);
+            this.owner = owner;
         }
 
         @Override
