@@ -1210,22 +1210,28 @@ public class ASTStatementLoader extends BaseRule
                 throws StandardException {
             List<ExpressionNode> exprs = project.getFields();
             BitSet used = new BitSet(exprs.size());
-            for (OrderByExpression orderBy : sorts) {
+            int nSorts = sorts.size();
+            ExpressionNode[] adjustedOrderBys = new ExpressionNode[nSorts];
+            for (int i = 0; i < nSorts; i++) {
+                OrderByExpression orderBy = sorts.get(i);
                 ExpressionNode expr = orderBy.getExpression();
                 int idx = exprs.indexOf(expr);
                 if (idx < 0) {
                     if (isDistinctSortNotSelectGroupBy())
                         return false;
                     throw new UnsupportedSQLException("SELECT DISTINCT requires that ORDER BY expressions be in the select list",
-                                                      expr.getSQLsource());
+                            expr.getSQLsource());
                 }
                 ExpressionNode cexpr = new ColumnExpression(project, idx,
-                                                            expr.getSQLtype(),
-                                                            expr.getSQLsource());
-                orderBy.setExpression(cexpr);
+                        expr.getSQLtype(),
+                        expr.getSQLsource());
+                adjustedOrderBys[i] = cexpr;
                 used.set(idx);
             }
+            // If we got here, it means each orderBy's expression is in the exprs list. As such, nSorts <= exprs.size
             for (int i = 0; i < exprs.size(); i++) {
+                if (nSorts < i)
+                    sorts.get(i).setExpression(adjustedOrderBys[i]);
                 if (!used.get(i)) {
                     ExpressionNode expr = exprs.get(i);
                     ExpressionNode cexpr = new ColumnExpression(project, i,

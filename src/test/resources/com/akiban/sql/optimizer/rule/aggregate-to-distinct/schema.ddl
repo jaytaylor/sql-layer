@@ -3,7 +3,8 @@ CREATE TABLE customers
 (
   cid int NOT NULL, 
   PRIMARY KEY(cid),
-  name varchar(32) NOT NULL
+  name varchar(32) NOT NULL,
+  dob date NOT NULL
 );
 CREATE INDEX name ON customers(name);
 
