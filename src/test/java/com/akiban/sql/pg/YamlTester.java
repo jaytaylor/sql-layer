@@ -184,7 +184,7 @@ class YamlTester {
 	addTypeNameAndNumber("VARBINARY", Types.BINARY); // name to number overwritten below
 	addTypeNameAndNumber("BIGINT", Types.BIGINT);
 	addTypeNameAndNumber("BLOB", Types.BLOB);
-	addTypeNameAndNumber("BOOLEAN", Types.BOOLEAN);
+	addTypeNameAndNumber("BOOLEAN", -7); // postgres jdbc claims it is -7 instead of Types.BOOLEAN (16)
 	addTypeNameAndNumber("CHAR", Types.CHAR);
 	addTypeNameAndNumber("CLOB", Types.CLOB);
 	addTypeNameAndNumber("DATE", Types.DATE);
