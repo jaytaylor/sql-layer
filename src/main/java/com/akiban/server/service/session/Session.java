@@ -196,7 +196,7 @@ public final class Session implements AutoCloseable
         }
 
         private Key(String name, int stackFramesToOwner) {
-            this(name, lookupOwner(stackFramesToOwner));
+            this(name, lookupOwner(stackFramesToOwner + 1));
         }
 
         private Key(String name, Class owner) {
