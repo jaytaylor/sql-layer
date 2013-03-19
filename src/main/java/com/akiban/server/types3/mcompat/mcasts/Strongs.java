@@ -240,6 +240,7 @@ public final class Strongs {
             MDatetimes.TIME,
             MDatetimes.YEAR,
             MDatetimes.TIMESTAMP,
+            MNumeric.TINYINT,
             MNumeric.TINYINT_UNSIGNED,
             MNumeric.SMALLINT,
             MNumeric.SMALLINT_UNSIGNED,
