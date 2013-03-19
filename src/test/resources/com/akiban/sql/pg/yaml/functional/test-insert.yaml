@@ -45,11 +45,11 @@
 - Statement: DELETE from all_types
 
 ---
-- Statement: INSERT INTO all_types (boolean_field) VALUES (1)
+- Statement: INSERT INTO all_types (boolean_field) VALUES (true)
 ---
 - Statement: SELECT (boolean_field) from all_types
-- output: [[1]]
-- output_types: [SMALLINT]
+- output: [[true]]
+- output_types: [BOOLEAN]
 ---
 - Statement: DELETE from all_types
 
@@ -215,7 +215,7 @@
 - Statement: INSERT INTO all_types (year_field, bigint_field) VALUES (null, 1234)
 ---
 - Statement: SELECT * from all_types
-- output: [[null, 1234, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]]
+- output: [[null, 1234, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null]]
 ---
 - Statement: DELETE from all_types
 

@@ -11,7 +11,7 @@
 # Test with no rows => null
 ---
 - Statement: SELECT MAX(bigint_field), MAX(bigint_unsigned_field),
-    MAX(blob_field), MAX(boolean_field), MAX(char_field),
+    MAX(blob_field), MAX(tinyint_field), MAX(char_field),
     MAX(char_multi_field), MAX(clob_field), MAX(date_field),
     MAX(decimal_field), MAX(double_field), MAX(float_field),
     MAX(integer_field), MAX(numeric_field), MAX(real_field),
@@ -23,7 +23,7 @@
 # Test with null row => null
 ---
 - Statement: INSERT INTO all_types (bigint_field, bigint_unsigned_field,
-    blob_field, boolean_field, char_field, char_multi_field, clob_field,
+    blob_field, tinyint_field, char_field, char_multi_field, clob_field,
     date_field, decimal_field, double_field, float_field, integer_field,
     numeric_field, real_field, smallint_field, time_field,
     timestamp_field)
@@ -31,7 +31,7 @@
     null, null, null, null, null, null, null)
 ---
 - Statement: SELECT MAX(bigint_field), MAX(bigint_unsigned_field),
-    MAX(blob_field), MAX(boolean_field), MAX(char_field),
+    MAX(blob_field), MAX(tinyint_field), MAX(char_field),
     MAX(char_multi_field), MAX(clob_field), MAX(date_field),
     MAX(decimal_field), MAX(double_field), MAX(float_field),
     MAX(integer_field), MAX(numeric_field), MAX(real_field),
@@ -43,7 +43,7 @@
 # Insert single row
 ---
 - Statement: INSERT INTO all_types (bigint_field, bigint_unsigned_field,
-    blob_field, boolean_field, char_field, char_multi_field, clob_field,
+    blob_field, tinyint_field, char_field, char_multi_field, clob_field,
     decimal_field, double_field, float_field, integer_field,
     numeric_field, real_field, smallint_field, time_field,
     timestamp_field)
@@ -51,7 +51,7 @@
     1.0, 1, '01:01:01', '1000-01-01 01:01:01')
 ---
 - Statement: SELECT MAX(bigint_field), MAX(bigint_unsigned_field),
-    MAX(blob_field), MAX(boolean_field), MAX(char_field),
+    MAX(blob_field), MAX(tinyint_field), MAX(char_field),
     MAX(char_multi_field), MAX(clob_field), MAX(decimal_field),
     MAX(double_field), MAX(float_field), MAX(integer_field),
     MAX(numeric_field), MAX(real_field), MAX(smallint_field),
@@ -62,7 +62,7 @@
 # Insert another row
 ---
 - Statement: INSERT INTO all_types (bigint_field, bigint_unsigned_field,
-    blob_field, boolean_field, char_field, char_multi_field, clob_field,
+    blob_field, tinyint_field, char_field, char_multi_field, clob_field,
     decimal_field, double_field, float_field, integer_field,
     numeric_field, real_field, smallint_field, time_field,
     timestamp_field)
@@ -70,7 +70,7 @@
     2, '02:02:02', '2000-02-02 02:02:02')
 ---
 - Statement: SELECT MAX(bigint_field), MAX(bigint_unsigned_field),
-    MAX(blob_field), MAX(boolean_field), MAX(char_field),
+    MAX(blob_field), MAX(tinyint_field), MAX(char_field),
     MAX(char_multi_field), MAX(clob_field), MAX(decimal_field),
     MAX(double_field), MAX(float_field), MAX(integer_field),
     MAX(numeric_field), MAX(real_field), MAX(smallint_field),

@@ -156,7 +156,7 @@ public final class PValueSources {
             tClass = MDatetimes.YEAR;
             break;
         case BOOL:
-            tInstance = MNumeric.TINYINT.instance(1, nullable);
+            tClass = AkBool.INSTANCE;
             break;
         case NULL:
             tInstance = null;

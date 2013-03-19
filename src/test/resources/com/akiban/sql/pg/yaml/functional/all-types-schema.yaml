@@ -5,6 +5,7 @@
       bigint_field bigint,
       bigint_unsigned_field bigint unsigned,
       blob_field blob,
+      tinyint_field tinyint,
       boolean_field boolean,
       char_field char,
       char_multi_field char(32),
@@ -21,11 +22,13 @@
       timestamp_field timestamp,
       varchar_field varchar(32),
       datetime_field datetime)",
+
       sys-mysql: "all_types (
       year_field year,
       bigint_field bigint,
       bigint_unsigned_field bigint unsigned,
       blob_field blob,
+      tinyint_field tinyint,
       boolean_field boolean,
       char_field char,
       char_multi_field char(32),

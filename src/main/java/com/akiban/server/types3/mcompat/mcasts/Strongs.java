@@ -27,6 +27,7 @@
 package com.akiban.server.types3.mcompat.mcasts;
 
 import com.akiban.server.types3.TStrongCasts;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
@@ -220,5 +221,44 @@ public final class Strongs {
 
     public static final TStrongCasts fromDoubleUnsigned = TStrongCasts.from(MApproximateNumber.DOUBLE_UNSIGNED).to(
             MApproximateNumber.DOUBLE
+    );
+
+    // Not generally loss-less, but MySQL allows anything to be cast to bool (e.g. WHERE <type>)
+    public static final TStrongCasts toBoolean = TStrongCasts.from(
+            MApproximateNumber.FLOAT,
+            MApproximateNumber.FLOAT_UNSIGNED,
+            MApproximateNumber.DOUBLE,
+            MApproximateNumber.DOUBLE_UNSIGNED,
+            MBinary.VARBINARY,
+            MBinary.BINARY,
+            MBinary.TINYBLOB,
+            MBinary.MEDIUMBLOB,
+            MBinary.BLOB,
+            MBinary.LONGBLOB,
+            MDatetimes.DATE,
+            MDatetimes.DATETIME,
+            MDatetimes.TIME,
+            MDatetimes.YEAR,
+            MDatetimes.TIMESTAMP,
+            MNumeric.TINYINT,
+            MNumeric.TINYINT_UNSIGNED,
+            MNumeric.SMALLINT,
+            MNumeric.SMALLINT_UNSIGNED,
+            MNumeric.MEDIUMINT,
+            MNumeric.MEDIUMINT_UNSIGNED,
+            MNumeric.INT,
+            MNumeric.INT_UNSIGNED,
+            MNumeric.BIGINT,
+            MNumeric.BIGINT_UNSIGNED,
+            MNumeric.DECIMAL,
+            MNumeric.DECIMAL_UNSIGNED,
+            MString.CHAR,
+            MString.VARCHAR,
+            MString.TINYTEXT,
+            MString.MEDIUMTEXT,
+            MString.TEXT,
+            MString.LONGTEXT
+    ).to(
+            AkBool.INSTANCE
     );
 }

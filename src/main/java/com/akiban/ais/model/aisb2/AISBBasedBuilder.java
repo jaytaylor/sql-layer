@@ -257,6 +257,13 @@ public class AISBBasedBuilder
         }
 
         @Override
+        public NewUserTableBuilder colBoolean(String name, boolean nullable) {
+            checkUsable();
+            aisb.column(schema, userTable, name, uTableColumnPos++, "BOOLEAN", null, null, nullable, false, null, null);
+            return this;
+        }
+
+        @Override
         public NewUserTableBuilder colString(String name, int length) {
             return colString(name, length, NULLABLE_DEFAULT);
         }

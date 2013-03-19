@@ -55,10 +55,10 @@
 ---
 - Statement: INSERT INTO all_types (boolean_field) VALUES (null)
 ---
-- Statement: INSERT INTO all_types (boolean_field) VALUES (0), (1)
+- Statement: INSERT INTO all_types (boolean_field) VALUES (false), (true)
 ---
 - Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS NOT NULL
-- output: [[0], [1]]
+- output: [[false], [true]]
 ---
 - Statement: DELETE FROM all_types
 
