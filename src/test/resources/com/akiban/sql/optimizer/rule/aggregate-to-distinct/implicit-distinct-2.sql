@@ -1,0 +1,1 @@
+SELECT DISTINCT name, dob FROM customers ORDER BY name
