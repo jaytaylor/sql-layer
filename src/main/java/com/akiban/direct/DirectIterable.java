@@ -34,15 +34,15 @@ package com.akiban.direct;
  */
 public interface DirectIterable<T> extends Iterable<T> {
 
-    public DirectIterableImpl<T> where(String predicate);
+    public DirectIterable<T> where(String predicate);
 
-    public DirectIterableImpl<T> where(String columnName, Object literal);
+    public DirectIterable<T> where(String columnName, Object literal);
 
-    public DirectIterableImpl<T> sort(String sort);
+    public DirectIterable<T> sort(String sort);
     
-    public DirectIterableImpl<T> sort(String sort, String direction);
+    public DirectIterable<T> sort(String sort, String direction);
     
-    public DirectIterableImpl<T> limit(String limit);
+    public DirectIterable<T> limit(String limit);
     
     
 }

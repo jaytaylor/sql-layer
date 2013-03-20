@@ -27,7 +27,6 @@
 package com.akiban.direct;
 
 import java.io.PrintWriter;
-import java.util.Stack;
 
 /**
  * Helper methods for writing a Java class to a PrintWriter
@@ -35,17 +34,13 @@ import java.util.Stack;
  * @author peter
  * 
  */
-public class ClassSourceWriter extends ClassBuilder {
+public class ClassSourceWriter extends ClassSourceWriterBase {
 
-    private final PrintWriter writer;
     private final boolean isAbstract;
-    private final Stack<String> classNames = new Stack<String>();
     private String[] imports;
-    private int indentation = 0;
 
     public ClassSourceWriter(final PrintWriter writer, final String packageName, boolean isAbstract) {
-        super(packageName);
-        this.writer = writer;
+        super(writer, packageName);
         this.isAbstract = isAbstract;
     }
 
@@ -187,32 +182,6 @@ public class ClassSourceWriter extends ClassBuilder {
         classNames.pop();
     }
     
-    @Override
-    public void close() {
-        writer.close();
-    }
-
-    private void print(String... strings) {
-        for (int i = 0; i < indentation; i++) {
-            writer.print("    ");
-        }
-        append(strings);
-    }
-
-    private void append(final String... strings) {
-        for (final String s : strings) {
-            writer.print(s);
-        }
-    }
-
-    private void println(String... strings) {
-        print(strings);
-        newLine();
-    }
-
-    private void newLine() {
-        writer.println();
-    }
 
     private String localName(String fqn, String className) {
         int ltIndex = fqn.indexOf('<');
@@ -247,16 +216,4 @@ public class ClassSourceWriter extends ClassBuilder {
         }
     }
 
-    private String shortName(String fqn) {
-        final int index = Math.max(fqn.lastIndexOf('$'), fqn.lastIndexOf('.'));
-        if (index < 0) {
-            return fqn;
-        } else {
-            return fqn.substring(index + 1);
-        }
-    }
-    
-    private String externalName(String fqn) {
-        return fqn.replace('$', '.');
-    }
 }
