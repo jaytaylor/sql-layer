@@ -143,7 +143,9 @@ public class Types {
     public static final Type MULTILINESTRING =    new Type("multilinestring", 0, false, 0L, "MULTILINESTRING", AkType.UNSUPPORTED);
     public static final Type POLYGON =            new Type("polygon", 0, false, 0L, "POLYGON", AkType.UNSUPPORTED);
     public static final Type MULTIPOLYGON =       new Type("multipolygon", 0, false, 0L, "MULTIPOLYGON", AkType.UNSUPPORTED);
-    
+
+    public static final Type BOOLEAN = new Type("boolean", 0, true, 1L, "BOOLEAN", AkType.BOOL);
+
     private final static List<Type> types = listOfTypes();
     private final static Set<Type> unsupported = setOfUnsupportedTypes();
     private final static Set<Type> unsupportedInIndex = setOfUnsupportedIndexTypes();
@@ -196,6 +198,7 @@ public class Types {
         types.add(VARBINARY);
         types.add(VARCHAR);
         types.add(YEAR);
+        types.add(BOOLEAN);
         return Collections.unmodifiableList(types);
 	}
 
@@ -260,7 +263,8 @@ public class Types {
         T_TINYTEXT,
         T_VARBINARY,
         T_VARCHAR,
-        T_YEAR
+        T_YEAR,
+        T_BOOLEAN
     }
 
     private static Set<Type> setOfUnsupportedTypes() {

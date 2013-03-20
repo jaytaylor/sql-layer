@@ -14,11 +14,11 @@
 ---
 - Statement: Delete from all_types;
 ---
-- Statement: INSERT INTO all_types (boolean_field) VALUES (1)
+- Statement: INSERT INTO all_types (boolean_field) VALUES (true)
 ---
 - Statement: Update all_types set char_field = 'A' RETURNING boolean_field
-- output: [[1]]
-- output_types: [SMALLINT]
+- output: [[true]]
+- output_types: [BOOLEAN]
 ---
 - Statement: Delete from all_types;
 ---

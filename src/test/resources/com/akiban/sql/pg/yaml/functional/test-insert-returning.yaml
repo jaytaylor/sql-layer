@@ -17,9 +17,9 @@
 ---
 - Statement: DELETE from all_types
 ---
-- Statement: INSERT INTO all_types (boolean_field) VALUES (1) returning boolean_field
-- output: [[1]]
-- output_types: [SMALLINT]
+- Statement: INSERT INTO all_types (boolean_field) VALUES (true) returning boolean_field
+- output: [[true]]
+- output_types: [BOOLEAN]
 ---
 - Statement: DELETE from all_types
 ---

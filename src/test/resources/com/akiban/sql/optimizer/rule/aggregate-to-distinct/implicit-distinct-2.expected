@@ -1,0 +1,7 @@
+SelectQuery@762024dd
+  ResultSet@385465c1[name, dob]
+    Distinct@2ce47ecb
+      Sort@4d405873[PROJECT[0], PROJECT[1]]
+        Project@3b6f0da4[customers.name, customers.dob]
+          Select@77e8a877[]
+            TableSource@4b8c5a21(customers)

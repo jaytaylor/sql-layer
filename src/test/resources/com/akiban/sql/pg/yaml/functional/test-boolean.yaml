@@ -1,25 +1,174 @@
-# test boolean vs tinyint
 ---
 - Statement: SET newtypes to 'true';
+
+#
+# Miscellaneous behavior: string/double to boolean, bool to string, bool to int
+#
 ---
-- CreateTable: t (c boolean, d double, e varchar(32));
+- CreateTable: t (b boolean, d double, v varchar(32))
 ---
-- Statement: INSERT into t values (1, 2.4, 'abc');
+- Statement: INSERT into t values (true, 2.4, '1.0string'), (false, 0.0, 'def')
 ---
-- Statement: SELECT c IS TRUE, d IS TRUE, e IS TRUE from t;
-- output: [['true', 'true', 'false']]
+- Statement: SELECT b FROM t where b IS TRUE
+- output: [[true]]
 ---
-- Message: Commented out tests due to bug described in the pivotal story 38991813
-########
-#--- bug: IS TRUE/FALSE/UNKNOWN is tranformed to == TRUE/FALSE/UKNOWN
-#- Statement: SELECT c from t where c IS TRUE;
-#- output: [[1]]
-#---
-#- Statement: SELECT d from t WHERE d     IS TRUE;
-#- output: [['2.4']]
-#---
-#- Statement: SELECT e from t WHERE e IS FALSE;
-#- output: [['abc']]
+- Statement: SELECT d FROM t WHERE d IS TRUE
+- output: [['2.4']]
+---
+- Statement: SELECT v FROM t WHERE v IS FALSE
+- output: [['def']]
+---
+- Statement: SELECT b,CAST(b AS CHAR(5)) FROM t
+- output: [[true, 'true'], [false, 'false']]
+---
+- Statement: SELECT b,CAST(b AS INT) FROM t
+- output: [[true, 1], [false, 0]]
+
+#
+# Test conversion of all types to boolean in WHERE clause
+#
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types
+    (year_field, bigint_field, bigint_unsigned_field, blob_field, tinyint_field, boolean_field, char_field, char_multi_field,
+     clob_field, date_field, decimal_field, double_field, float_field, integer_field, numeric_field, real_field, smallint_field,
+     time_field, timestamp_field, varchar_field, datetime_field)
+    VALUES
+    ('1970', 1, 1, '1', 1, true, '1', '1', '1', '0001-01-01', 1, 1, 1, 1, 1, 1, 1, '11:11:11', '1970-01-01 00:00:00', '1', '1970-01-01 00:00:00'),
+    ('0000', 0, 0,  '', 0, false, '',  '',  '', '0000-00-00', 0, 0, 0, 0, 0, 0, 0, '00:00:00', '0000-00-00 00:00:00',  '', '0000-00-00 00:00:00')
+
+# TRUE cases
+---
+- Statement: SELECT boolean_field, year_field FROM all_types WHERE year_field IS TRUE;
+- output: [[true, '1970']]
+---
+- Statement: SELECT boolean_field, bigint_field FROM all_types WHERE bigint_field IS TRUE;
+- output: [[true, 1]]
+---
+- Statement: SELECT boolean_field, bigint_unsigned_field FROM all_types WHERE bigint_unsigned_field IS TRUE;
+- output: [[true, 1]]
+---
+- Statement: SELECT boolean_field, blob_field FROM all_types WHERE blob_field IS TRUE;
+- output: [[true, '1']]
+---
+- Statement: SELECT boolean_field, tinyint_field FROM all_types WHERE tinyint_field IS TRUE;
+- output: [[true, 1]]
+---
+- Statement: SELECT boolean_field, boolean_field FROM all_types WHERE boolean_field IS TRUE;
+- output: [[true, true]]
+---
+- Statement: SELECT boolean_field, char_field FROM all_types WHERE char_field IS TRUE;
+- output: [[true, '1']]
+---
+- Statement: SELECT boolean_field, char_multi_field FROM all_types WHERE char_multi_field IS TRUE;
+- output: [[true, '1']]
+---
+- Statement: SELECT boolean_field, clob_field FROM all_types WHERE clob_field IS TRUE;
+- output: [[true, '1']]
+---
+- Statement: SELECT boolean_field, date_field FROM all_types WHERE date_field IS TRUE;
+- output: [[true, '0001-01-01']]
+---
+- Statement: SELECT boolean_field, decimal_field FROM all_types WHERE decimal_field IS TRUE;
+- output: [[true, 1]]
+---
+- Statement: SELECT boolean_field, double_field FROM all_types WHERE double_field IS TRUE;
+- output: [[true, 1.0]]
+---
+- Statement: SELECT boolean_field, float_field FROM all_types WHERE float_field IS TRUE;
+- output: [[true, 1.0]]
+---
+- Statement: SELECT boolean_field, integer_field FROM all_types WHERE integer_field IS TRUE;
+- output: [[true, 1]]
+---
+- Statement: SELECT boolean_field, numeric_field FROM all_types WHERE numeric_field IS TRUE;
+- output: [[true, 1]]
+---
+- Statement: SELECT boolean_field, real_field FROM all_types WHERE real_field IS TRUE;
+- output: [[true, 1.0]]
+---
+- Statement: SELECT boolean_field, smallint_field FROM all_types WHERE smallint_field IS TRUE;
+- output: [[true, 1]]
+---
+- Statement: SELECT boolean_field, time_field FROM all_types WHERE time_field IS TRUE;
+- output: [[true, '11:11:11']]
+---
+- Statement: SELECT boolean_field, timestamp_field FROM all_types WHERE timestamp_field IS TRUE;
+- output: [[true, !re '1970-01-01 00:00:00([.]0)?']]
+---
+- Statement: SELECT boolean_field, varchar_field FROM all_types WHERE varchar_field IS TRUE;
+- output: [[true, '1']]
+---
+- Statement: SELECT boolean_field, datetime_field FROM all_types WHERE datetime_field IS TRUE;
+- output: [[true,!re '1970-01-01 00:00:00([.]0)?']]
+
+# FALSE cases
+---
+- Statement: SELECT boolean_field, CONCAT('', year_field) AS year_field FROM all_types WHERE year_field IS FALSE;
+- output: [[false, '0000']]
+---
+- Statement: SELECT boolean_field, bigint_field FROM all_types WHERE bigint_field IS FALSE;
+- output: [[false, 0]]
+---
+- Statement: SELECT boolean_field, bigint_unsigned_field FROM all_types WHERE bigint_unsigned_field IS FALSE;
+- output: [[false, 0]]
+---
+- Statement: SELECT boolean_field, blob_field FROM all_types WHERE blob_field IS FALSE;
+- output: [[false, '']]
+---
+- Statement: SELECT boolean_field, tinyint_field FROM all_types WHERE tinyint_field IS FALSE;
+- output: [[false, 0]]
+---
+- Statement: SELECT boolean_field, boolean_field FROM all_types WHERE boolean_field IS FALSE;
+- output: [[false, false]]
+---
+- Statement: SELECT boolean_field, char_field FROM all_types WHERE char_field IS FALSE;
+- output: [[false, '']]
+---
+- Statement: SELECT boolean_field, char_multi_field FROM all_types WHERE char_multi_field IS FALSE;
+- output: [[false, '']]
+---
+- Statement: SELECT boolean_field, clob_field FROM all_types WHERE clob_field IS FALSE;
+- output: [[false, '']]
+---
+- Statement: SELECT boolean_field, CONCAT('', date_field) FROM all_types WHERE date_field IS FALSE;
+- output: [[false, '0000-00-00']]
+---
+- Statement: SELECT boolean_field, decimal_field FROM all_types WHERE decimal_field IS FALSE;
+- output: [[false, 0]]
+---
+- Statement: SELECT boolean_field, double_field FROM all_types WHERE double_field IS FALSE;
+- output: [[false, 0.0]]
+---
+- Statement: SELECT boolean_field, float_field FROM all_types WHERE float_field IS FALSE;
+- output: [[false, 0.0]]
+---
+- Statement: SELECT boolean_field, integer_field FROM all_types WHERE integer_field IS FALSE;
+- output: [[false, 0]]
+---
+- Statement: SELECT boolean_field, numeric_field FROM all_types WHERE numeric_field IS FALSE;
+- output: [[false, 0]]
+---
+- Statement: SELECT boolean_field, real_field FROM all_types WHERE real_field IS FALSE;
+- output: [[false, 0.0]]
+---
+- Statement: SELECT boolean_field, smallint_field FROM all_types WHERE smallint_field IS FALSE;
+- output: [[false, 0]]
+---
+- Statement: SELECT boolean_field, time_field FROM all_types WHERE time_field IS FALSE;
+- output: [[false, '00:00:00']]
+---
+- Statement: SELECT boolean_field, CONCAT('', timestamp_field) FROM all_types WHERE timestamp_field IS FALSE;
+- output: [[false, '0000-00-00 00:00:00']]
+---
+- Statement: SELECT boolean_field, varchar_field FROM all_types WHERE varchar_field IS FALSE;
+- output: [[false, '']]
+---
+- Statement: SELECT boolean_field, CONCAT('', datetime_field) FROM all_types WHERE datetime_field IS FALSE;
+- output: [[false, '0000-00-00 00:00:00']]
+
 ---
 - Statement: SET newtypes to DEFAULT;
+
 ...

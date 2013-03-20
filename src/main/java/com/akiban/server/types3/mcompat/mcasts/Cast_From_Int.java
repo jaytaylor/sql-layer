@@ -56,7 +56,7 @@ public class Cast_From_Int
      * LONTTEXT
      * 
      */
-    
+
     public static final TCast TO_TINYINT = new FromInt32ToInt8(MNumeric.INT, MNumeric.TINYINT, false, Constantness.UNKNOWN);
     
     public static final TCast TO_UNSIGNED_TINYINT = new FromInt32ToUnsignedInt8(MNumeric.INT, MNumeric.TINYINT_UNSIGNED, false, Constantness.UNKNOWN);

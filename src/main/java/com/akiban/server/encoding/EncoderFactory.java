@@ -61,6 +61,7 @@ public final class EncoderFactory {
     public static final Encoding DATETIME = LongEncoder.INSTANCE;
     public static final Encoding TIMESTAMP = LongEncoder.INSTANCE;
     public static final Encoding YEAR = LongEncoder.INSTANCE;
+    public static final Encoding BOOLEAN = LongEncoder.INSTANCE;
 
     private static final Object ENCODING_MAP_LOCK = EncoderFactory.class;
     private static Map<String,Encoding> encodingMap = null;

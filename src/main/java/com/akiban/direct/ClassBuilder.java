@@ -40,6 +40,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -262,28 +263,30 @@ public abstract class ClassBuilder {
         addMethod("get" + asJavaCollectionName(tableName, true), "com.akiban.direct.DirectIterable<" + className + ">",
                 NONE, null, body);
 
-        List<Column> primaryKeyColumns = table.getPrimaryKey().getColumns();
+        PrimaryKey pk = table.getPrimaryKey();
+        if (pk != null) {
+            List<Column> primaryKeyColumns = pk.getColumns();
+            if (primaryKeyColumns.size() <= 1) {
+                /*
+                 * Add a child accessor by primary key value
+                 */
+                String[] types = new String[primaryKeyColumns.size()];
+                String[] names = new String[primaryKeyColumns.size()];
+                for (int i = 0; i < types.length; i++) {
+                    types[i] = javaClass(primaryKeyColumns.get(i)).getName();
+                    names[i] = asJavaName(primaryKeyColumns.get(i).getName(), false);
+                }
 
-        if (primaryKeyColumns.size() <= 1) {
-            /*
-             * Add a child accessor by primary key value
-             */
-            String[] types = new String[primaryKeyColumns.size()];
-            String[] names = new String[primaryKeyColumns.size()];
-            for (int i = 0; i < types.length; i++) {
-                types[i] = javaClass(primaryKeyColumns.get(i)).getName();
-                names[i] = asJavaName(primaryKeyColumns.get(i).getName(), false);
+                StringBuilder sb = new StringBuilder(buildDirectIterableExpr(className, tableName));
+                for (int i = 0; i < primaryKeyColumns.size(); i++) {
+                    sb.append(String.format(".where(\"%s\", %s)", primaryKeyColumns.get(i).getName(),
+                            literal(javaClass(primaryKeyColumns.get(i)), "$" + (i + 1)), false));
+                }
+                sb.append(".single()");
+                body = new String[] { "return " + sb.toString() };
+
+                addMethod("get" + asJavaName(tableName, true), className, types, names, iface ? null : body);
             }
-
-            StringBuilder sb = new StringBuilder(buildDirectIterableExpr(className, tableName));
-            for (int i = 0; i < primaryKeyColumns.size(); i++) {
-                sb.append(String.format(".where(\"%s\", %s)", primaryKeyColumns.get(i).getName(),
-                        literal(javaClass(primaryKeyColumns.get(i)), "$" + (i + 1)), false));
-            }
-            sb.append(".single()");
-            body = new String[] { "return " + sb.toString() };
-
-            addMethod("get" + asJavaName(tableName, true), className, types, names, iface ? null : body);
         }
     }
 

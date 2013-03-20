@@ -324,8 +324,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     }
 
     private static boolean keyIsInteresting(String key) {
-        return key.startsWith("akiban") || key.startsWith("persistit")
-                || key.startsWith("akserver");
+        return true;
     }
 
     private Map<String, String> internalGetProperties() {

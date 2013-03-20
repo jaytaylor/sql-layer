@@ -153,7 +153,7 @@ public final class EntityParser {
         } else if (node.isDouble()) {
             table.colDouble(name, true);
         } else if (node.isBoolean()) {
-            table.colLong(name, true);
+            table.colBoolean(name, true);
         } else if (node.isNull()) {
             // wild guess
             table.colString(name, stringWidth, true);

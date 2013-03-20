@@ -14,7 +14,7 @@
 #Test with no rows => null
 ---
 - Statement: SELECT AVG(bigint_field), AVG(bigint_unsigned_field),
-    AVG(boolean_field), AVG(decimal_field), AVG(double_field),
+    AVG(tinyint_field), AVG(decimal_field), AVG(double_field),
     AVG(float_field), AVG(integer_field), AVG(numeric_field),
     AVG(real_field), AVG(smallint_field) FROM all_types
 - output: [[null, null, null, null, null, null, null, null, null, null]]
@@ -22,12 +22,12 @@
 # Test with null row => null
 ---
 - Statement: INSERT INTO all_types (bigint_field, bigint_unsigned_field,
-    boolean_field, decimal_field, double_field, float_field,
+    tinyint_field, decimal_field, double_field, float_field,
     integer_field, numeric_field, real_field, smallint_field)
     VALUES (null, null, null, null, null, null, null, null, null, null)
 ---
 - Statement: SELECT AVG(bigint_field), AVG(bigint_unsigned_field),
-    AVG(boolean_field), AVG(decimal_field), AVG(double_field),
+    AVG(tinyint_field), AVG(decimal_field), AVG(double_field),
     AVG(float_field), AVG(integer_field), AVG(numeric_field),
     AVG(real_field), AVG(smallint_field) FROM all_types
 - output: [[null, null, null, null, null, null, null, null, null, null]]
@@ -35,13 +35,13 @@
 # Insert single row
 ---
 - Statement: INSERT INTO all_types
-    (bigint_field, bigint_unsigned_field, boolean_field, decimal_field,
+    (bigint_field, bigint_unsigned_field, tinyint_field, decimal_field,
      double_field, float_field, integer_field, numeric_field,
      real_field, smallint_field)
     VALUES (1, 1, 1, 1.0, 1.0, 1.0, 1, 1.0, 1.0, 1)
 --- #bug this always trigger error: {expected [expected] but got [expected]!
 - Statement: SELECT AVG(bigint_field), AVG(bigint_unsigned_field),
-    AVG(boolean_field), AVG(decimal_field), AVG(double_field),
+    AVG(tinyint_field), AVG(decimal_field), AVG(double_field),
     AVG(float_field), AVG(integer_field), AVG(numeric_field),
     AVG(real_field), AVG(smallint_field) FROM all_types
 - output: !select-engine {
@@ -52,13 +52,13 @@
 # Insert duplicate row
 ---
 - Statement: INSERT INTO all_types
-    (bigint_field, bigint_unsigned_field, boolean_field, decimal_field,
+    (bigint_field, bigint_unsigned_field, tinyint_field, decimal_field,
      double_field, float_field, integer_field, numeric_field,
      real_field, smallint_field)
     VALUES (1, 1, 1, 1.0, 1.0, 1.0, 1, 1.0, 1.0, 1)
 ---
 - Statement: SELECT AVG(bigint_field), AVG(bigint_unsigned_field),
-    AVG(boolean_field), AVG(decimal_field), AVG(double_field),
+    AVG(tinyint_field), AVG(decimal_field), AVG(double_field),
     AVG(float_field), AVG(integer_field), AVG(numeric_field),
     AVG(real_field), AVG(smallint_field) FROM all_types
 - output: !select-engine {
@@ -100,17 +100,17 @@
     newtypes: [[0.0, '0.0000', 0.0, 0.0, 0.0, '0.0000', 0.0, 0.0]]
     }
 
-# Do boolean specially
+# Do tinyint specially
 # BUGS: 905492
 ---
-- Statement: INSERT INTO all_types (boolean_field) VALUES (0)
+- Statement: INSERT INTO all_types (tinyint_field) VALUES (0)
 --- 
-- Statement: SELECT AVG(boolean_field) FROM all_types
+- Statement: SELECT AVG(tinyint_field) FROM all_types
 - output: [[0.6666666666666666]]
 ---
-- Statement: INSERT INTO all_types (boolean_field) VALUES (0), (0)
+- Statement: INSERT INTO all_types (tinyint_field) VALUES (0), (0)
 ---
-- Statement: SELECT AVG(boolean_field) FROM all_types
+- Statement: SELECT AVG(tinyint_field) FROM all_types
 - output: [[0.4]]
 ---
 - Statement: DELETE FROM all_types

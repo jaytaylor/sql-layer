@@ -7,7 +7,7 @@
 - Statement: INSERT INTO t4 (c1) values  (0)
 ---
 - Statement: INSERT INTO t4 (c1) values (-1)
-- warnings: [[22001, "String data right-truncated: '-1' truncated to '0'" ]]
+- warnings: [[22001, "WARN:  String data right-truncated: '-1' truncated to '0'"]]
 ---
 - Statement: select * from t4
 - output: [[0],[0]]
@@ -29,7 +29,7 @@
 - Statement: INSERT INTO t1 (c1) values  (0)
 ---
 - Statement: INSERT INTO t1 (c1) values (-1)
-- warnings: [[22001, "String data right-truncated: '-1' truncated to '0'" ]]
+- warnings: [[22001, "WARN:  String data right-truncated: '-1' truncated to '0'"]]
 ---
 - Statement: select * from t1
 - output: [[0],[0]]

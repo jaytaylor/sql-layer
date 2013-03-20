@@ -11,11 +11,11 @@
 - output: [[0], [1], [-1], [9223372036854775807], [-9223372036854775808]]
 - output_types: [BIGINT]
 ---
-- Statement: INSERT INTO all_types (boolean_field) VALUES (1)
+- Statement: INSERT INTO all_types (boolean_field) VALUES (true)
 ---
-- Statement: DELETE FROM all_types WHERE boolean_field = 1 returning boolean_field
-- output: [[1]]
-- output_types: [SMALLINT]
+- Statement: DELETE FROM all_types WHERE boolean_field = true returning boolean_field
+- output: [[true]]
+- output_types: [BOOLEAN]
 ---
 - Statement: INSERT INTO all_types (char_field) VALUES ('d')
 ---
