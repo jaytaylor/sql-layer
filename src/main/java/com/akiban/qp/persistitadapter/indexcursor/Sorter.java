@@ -94,6 +94,7 @@ public class Sorter
 
     private void loadTree() throws PersistitException
     {
+        boolean loaded = false;
         try {
             loadTap.in();
             try {
@@ -106,6 +107,7 @@ public class Sorter
                     loadTap.out();
                     loadTap.in();
                     row = input.next();
+                    loaded = true;
                 }
             } finally {
                 loadTap.out();
@@ -113,8 +115,11 @@ public class Sorter
         } catch (PersistitException e) {
             if (!PersistitAdapter.isFromInterruption(e))
                 LOG.error("Caught exception while loading tree for sort", e);
-            exchange.removeAll();
             adapter.handlePersistitException(e);
+        } finally {
+            if (!loaded) {
+                close();
+            }
         }
     }
 
