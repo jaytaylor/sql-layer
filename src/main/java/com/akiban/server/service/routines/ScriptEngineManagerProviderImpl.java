@@ -51,35 +51,12 @@ public final class ScriptEngineManagerProviderImpl implements ScriptEngineManage
 
     @Override
     public void start() {
-        logger.debug("Initializing script engine manager");
-        String classPath = configService.getProperty(CLASS_PATH);
-        // TODO: The idea should be to restrict scripts to standard Java
-        // classes
-        // without the rest of the Akiban server. But note
-        // java.sql.DriverManager.isDriverAllowed(), which requires that a
-        // registered driver's class by accessible to its caller by name.
-        // May
-        // need a JDBCDriver proxy get just to register without putting all
-        // of
-        // com.akiban.sql.embedded into the parent.
-        String[] paths = classPath.split(File.pathSeparator);
-        URL[] urls = new URL[paths.length];
-        try {
-            for (int i = 0; i < paths.length; i++) {
-                urls[i] = new File(paths[i]).toURI().toURL();
-            }
-        } catch (MalformedURLException ex) {
-            logger.warn("Error setting script class loader", ex);
-            urls = new URL[0];
-        }
-        ClassLoader classLoader = new ScriptClassLoader(urls, getClass().getClassLoader());
-        if(!manager.compareAndSet(null, new ScriptEngineManager(classLoader)))
-            throw new ServiceStartupException(ScriptEngineManagerProviderImpl.class.getSimpleName());
+        manager = new ThreadLocalScriptEngineManager();
     }
 
     @Override
     public void stop() {
-        manager.set(null);
+        manager = null;
     }
 
     @Override
@@ -93,7 +70,36 @@ public final class ScriptEngineManagerProviderImpl implements ScriptEngineManage
     }
 
     private final ConfigurationService configService;
-    private final AtomicReference<ScriptEngineManager> manager = new AtomicReference<>();
+    private volatile ThreadLocalScriptEngineManager manager;
+
+    private class ThreadLocalScriptEngineManager extends ThreadLocal<ScriptEngineManager>{
+        @Override
+        protected ScriptEngineManager initialValue() {
+            logger.debug("Initializing script engine manager");
+            String classPath = configService.getProperty(CLASS_PATH);
+            // TODO: The idea should be to restrict scripts to standard Java
+            // classes
+            // without the rest of the Akiban server. But note
+            // java.sql.DriverManager.isDriverAllowed(), which requires that a
+            // registered driver's class by accessible to its caller by name.
+            // May
+            // need a JDBCDriver proxy get just to register without putting all
+            // of
+            // com.akiban.sql.embedded into the parent.
+            String[] paths = classPath.split(File.pathSeparator);
+            URL[] urls = new URL[paths.length];
+            try {
+                for (int i = 0; i < paths.length; i++) {
+                    urls[i] = new File(paths[i]).toURI().toURL();
+                }
+            } catch (MalformedURLException ex) {
+                logger.warn("Error setting script class loader", ex);
+                urls = new URL[0];
+            }
+            ClassLoader classLoader = new ScriptClassLoader(urls, getClass().getClassLoader());
+            return new ScriptEngineManager(classLoader);
+        }
+    }
 
     private static final Logger logger = LoggerFactory.getLogger(ScriptEngineManagerProviderImpl.class);
 
