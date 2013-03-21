@@ -86,7 +86,7 @@ public final class JsonUtils {
     public static String normalizeJson(String json) {
         try {
             JsonNode node = mapper.readTree(new StringReader(json));
-            return mapper.defaultPrettyPrintingWriter().writeValueAsString(node);
+            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(node);
         }
         catch (IOException e) {
             throw new RuntimeException(e);
