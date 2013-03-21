@@ -73,10 +73,11 @@ public final class RoutineLoaderImpl implements RoutineLoader, Service {
     @Inject @SuppressWarnings("unused")
     public RoutineLoaderImpl(DXLService dxlService,
                              SchemaManager schemaManager,
-                             ConfigurationService configService) {
+                             ConfigurationService configService,
+                             ScriptEngineManagerProvider engineProvider) {
         this.dxlService = dxlService;
         this.schemaManager = schemaManager;
-        scripts = new ScriptCache(dxlService, configService);
+        scripts = new ScriptCache(dxlService, engineProvider);
     }
 
     private AkibanInformationSchema ais(Session session) {

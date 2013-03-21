@@ -30,36 +30,28 @@ import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.error.ExternalRoutineInvocationException;
 import com.akiban.server.error.NoSuchRoutineException;
-import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.store.SchemaManager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.script.*;
-import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 
 public class ScriptCache {
-    public static final String CLASS_PATH = "akserver.routines.script_class_path";
     private final DXLService dxlService;
-    private final ConfigurationService configService;
     private final Map<TableName, CacheEntry> cache = new HashMap<>();
     // Script engine discovery can be fairly expensive, so it is deferred.
-    private ScriptEngineManager manager = null;
+    private final ScriptEngineManagerProvider engineProvider;
     private final static Logger logger = LoggerFactory.getLogger(ScriptCache.class);
 
-    public ScriptCache(DXLService dxlService, ConfigurationService configService) {
+    public ScriptCache(DXLService dxlService, ScriptEngineManagerProvider engineProvider) {
         this.dxlService = dxlService;
-        this.configService = configService;
+        this.engineProvider = engineProvider;
     }
 
     public synchronized void clear() {
@@ -83,35 +75,7 @@ public class ScriptCache {
     }
 
     protected ScriptEngineManager getManager(Session session) {
-        if (manager == null) {
-            logger.debug("Initializing script engine manager");
-            String classPath = configService.getProperty(CLASS_PATH);
-            // TODO: The idea should be to restrict scripts to standard Java
-            // classes
-            // without the rest of the Akiban server. But note
-            // java.sql.DriverManager.isDriverAllowed(), which requires that a
-            // registered driver's class by accessible to its caller by name.
-            // May
-            // need a JDBCDriver proxy get just to register without putting all
-            // of
-            // com.akiban.sql.embedded into the parent.
-            String[] paths = classPath.split(File.pathSeparator);
-            URL[] urls = new URL[paths.length];
-            try {
-                for (int i = 0; i < paths.length; i++) {
-                    urls[i] = new File(paths[i]).toURL();
-                }
-            } catch (MalformedURLException ex) {
-                logger.warn("Error setting script class loader", ex);
-                urls = new URL[0];
-            }
-            ClassLoader classLoader = new ScriptClassLoader(urls, getClass().getClassLoader());
-            synchronized (this) {
-                if (manager == null)
-                    manager = new ScriptEngineManager(classLoader);
-            }
-        }
-        return manager;
+        return engineProvider.getManager();
     }
 
     protected synchronized CacheEntry getEntry(Session session, TableName routineName) {
@@ -488,49 +452,5 @@ public class ScriptCache {
                 throw new ExternalRoutineInvocationException(routineName, ex);
             }
         }
-    }
-
-    /**
-     * Extended URLClassLoader that uses a thread-private context class loader
-     * to load generated classes. There is one ScriptClassLoader per
-     * ScriptEngineManager.
-     */
-    static class ScriptClassLoader extends URLClassLoader {
-
-        
-        public ScriptClassLoader(URL[] urls, ClassLoader parent) {
-            super(urls, parent);
-        }
-
-        protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-            synchronized (getClassLoadingLock(name)) {
-
-                Class<?> cl = findLoadedClass(name);
-                if (cl == null) {
-                    try {
-                        // delegate to parent
-                        cl = getParent().loadClass(name);
-                    } catch (ClassNotFoundException e1) {
-                        ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
-                        if (contextLoader != this) {
-                            try {
-                                // Attempt to load generated class
-                                cl = contextLoader.loadClass(name);
-                            } catch (ClassNotFoundException e2) {
-                                // fall through
-                            }
-                        }
-                    }
-                }
-                if (cl == null) {
-                    cl = findClass(name);
-                }
-                if (resolve) {
-                    resolveClass(cl);
-                }
-                return cl;
-            }
-        }
-
     }
 }
