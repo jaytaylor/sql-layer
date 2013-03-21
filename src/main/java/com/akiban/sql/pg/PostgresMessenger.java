@@ -96,10 +96,12 @@ public class PostgresMessenger implements DataInput, DataOutput
     }
     public void setEncoding(String encoding) {
         String newEncoding = encoding;
-        if ((newEncoding == null) || newEncoding.equals("UNICODE"))
+        if ((newEncoding == null) || newEncoding.equalsIgnoreCase("UNICODE"))
             newEncoding = "UTF-8";
         else if (newEncoding.startsWith("WIN") && newEncoding.matches("WIN\\d+"))
             newEncoding = "Cp" + newEncoding.substring(3);
+        else if (newEncoding.startsWith("'") && newEncoding.endsWith("'"))
+            newEncoding = newEncoding.substring(1, newEncoding.length()-1);
         try {
             Charset.forName(newEncoding);
         }
