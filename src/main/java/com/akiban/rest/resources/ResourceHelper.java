@@ -47,10 +47,13 @@ public class ResourceHelper {
 
     public static final String JSONP_ARG_NAME = "callback";
 
+    public static String getSchema(HttpServletRequest request) {
+        Principal user = request.getUserPrincipal();
+        return (user == null) ? "" : user.getName();
+    }
 
     public static TableName parseTableName(HttpServletRequest request, String name) {
-        Principal user = request.getUserPrincipal();
-        String schema = (user == null) ? "" : user.getName();
+        String schema = getSchema(request);
         return TableName.parse(schema, name);
     }
 

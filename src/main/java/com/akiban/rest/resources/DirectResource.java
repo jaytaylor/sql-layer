@@ -27,8 +27,12 @@
 package com.akiban.rest.resources;
 
 import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
+import static com.akiban.rest.resources.ResourceHelper.checkSchemaAccessible;
+import static com.akiban.rest.resources.ResourceHelper.checkTableAccessible;
 
 import java.io.PrintWriter;
+import java.util.Arrays;
+import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DELETE;
@@ -60,6 +64,7 @@ public class DirectResource {
 
     private final static String TABLE_ARG_NAME = "table";
     private final static String MODULE_ARG_NAME = "module";
+    private final static String SCHEMA_ARG_NAME = "schema";
     private final static String LANGUAGE = "language";
     private final static String PACKAGE = "com.akiban.direct.entity";
 
@@ -67,6 +72,11 @@ public class DirectResource {
             + " LANGUAGE %s PARAMETER STYLE json AS $$%s$$";
 
     private final static String DROP_PROCEDURE_FORMAT = "DROP PROCEDURE %s";
+
+    private final static String GET_SCHEMA_PROCEDURES
+            = "SELECT routine_name, routine_definition, language FROM information_schema.routines "
+            + "WHERE routine_schema = ?";
+    private final static String GET_ONE_PROCEDURE = GET_SCHEMA_PROCEDURES + " AND routine_name = ?";
 
     private final ResourceRequirements reqs;
 
@@ -207,6 +217,34 @@ public class DirectResource {
             }
         }).build();
 
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/procedure/")
+    public Response getProcedures(@Context final HttpServletRequest request,
+            @QueryParam(SCHEMA_ARG_NAME) @DefaultValue("") String schema,
+            @QueryParam(MODULE_ARG_NAME) @DefaultValue("") String module) {
+        final String sql;
+        final List<String> params;
+        if (schema.isEmpty())
+            schema = ResourceHelper.getSchema(request);
+        if (module.isEmpty()) {
+            checkSchemaAccessible(reqs.securityService, request, schema);
+            sql = GET_SCHEMA_PROCEDURES;
+            params = Arrays.asList(schema);
+        }
+        else {
+            checkTableAccessible(reqs.securityService, request, new TableName(schema, module));
+            sql = GET_ONE_PROCEDURE;
+            params = Arrays.asList(schema, module);
+        }
+        return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
+            @Override
+            public void write(PrintWriter writer) throws Exception {
+                reqs.restDMLService.runSQLParameter(writer, request, sql, params);
+            }
+        }).build();
     }
 
 }

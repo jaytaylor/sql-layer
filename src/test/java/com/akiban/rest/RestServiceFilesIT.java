@@ -29,6 +29,8 @@ package com.akiban.rest;
 import com.akiban.http.HttpConductor;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
+import com.akiban.server.service.is.BasicInfoSchemaTablesService;
+import com.akiban.server.service.is.BasicInfoSchemaTablesServiceImpl;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.sql.RegexFilenameFilter;
@@ -53,6 +55,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -64,6 +67,9 @@ public class RestServiceFilesIT extends ITBase {
             "src/test/resources/" + RestServiceFilesIT.class.getPackage().getName().replace('.', '/')
     );
     public static final String SCHEMA_NAME = "test";
+
+
+
 
     private static class Postcondition {
         public final String URI;
@@ -90,12 +96,12 @@ public class RestServiceFilesIT extends ITBase {
         public final String expectedHeader;
         public final String expectedResponse;
         public final boolean expectedIgnore;
-        public final Collection<Postcondition> checks;
+        public final List<Postcondition> checks;
 
         private CaseParams(String subDir, String caseName,
                            String requestMethod, String requestURI, String requestBody,
                            String expectedHeader, String expectedResponse, boolean expectedIgnore,
-                           Collection<Postcondition> checks) {
+                           List<Postcondition> checks) {
             this.subDir = subDir;
             this.caseName = caseName;
             this.requestMethod = requestMethod;
@@ -116,7 +122,9 @@ public class RestServiceFilesIT extends ITBase {
 
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
-        return super.serviceBindingsProvider().bindAndRequire(RestService.class, RestServiceImpl.class);
+        return super.serviceBindingsProvider()
+                .bindAndRequire(RestService.class, RestServiceImpl.class)
+                .bindAndRequire(BasicInfoSchemaTablesService.class, BasicInfoSchemaTablesServiceImpl.class);
     }
 
     @Override
@@ -166,11 +174,11 @@ public class RestServiceFilesIT extends ITBase {
                 String header = dumpFileIfExists(new File(basePath + ".expected_header"));
                 String expected = dumpFileIfExists(new File(basePath + ".expected"));
                 boolean expectedIgnore = new File(basePath + ".expected_ignore").exists();
-                Collection<Postcondition> checks = new ArrayList<>();
+                List<Postcondition> checks = new ArrayList<>();
                 String infix = "";
                 for (int i = 1; ; ++i) {
-                    String checkURI = dumpFileIfExists(new File(basePath + '-' + infix + ".check"));
-                    String checkExpected = dumpFileIfExists(new File(basePath + '-' + infix + ".check_expected"));
+                    String checkURI = dumpFileIfExists(new File(basePath + infix + ".check"));
+                    String checkExpected = dumpFileIfExists(new File(basePath + infix + ".check_expected"));
                     Postcondition check = Postcondition.create(checkURI, checkExpected);
                     if (check == null)
                         break;
@@ -240,12 +248,16 @@ public class RestServiceFilesIT extends ITBase {
     }
     
     public void checkRequest() throws Exception {
-        for (Postcondition check : caseParams.checks) {
+        for (int i = 0; i < caseParams.checks.size(); i++) {
+            Postcondition check = caseParams.checks.get(i);
             if (check.URI != null && check.expected != null) {
                 HttpURLConnection httpConn = openConnection(getRestURL(check.URI.trim()), "GET");
                 try {
-                    String actual = getOutput (httpConn);
-                    compareExpected (caseParams.caseName + " check expected response ", check.expected, actual);
+                    String actual = getOutput(httpConn);
+                    String name = " check ";
+                    if (i > 0)
+                        name += (i + " ");
+                    compareExpected(caseParams.caseName + name + "expected response ", check.expected, actual);
                 } finally {
                     httpConn.disconnect();
                 }
