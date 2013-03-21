@@ -69,7 +69,7 @@ public final class SchemaTableServiceIT extends ITBase {
     
     @Test
     public void baseInfoExamine() {
-        assertEquals ("Table count", 17, BasicInfoSchemaTablesServiceImpl.createTablesToRegister().getUserTables().size());
+        assertEquals ("Table count", 19, BasicInfoSchemaTablesServiceImpl.createTablesToRegister().getUserTables().size());
         assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.SCHEMATA));
         assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.TABLES));
         assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.COLUMNS));
