@@ -69,12 +69,10 @@ import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
-import org.codehaus.jackson.map.ObjectMapper;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -95,6 +93,8 @@ import java.util.NoSuchElementException;
 import java.util.Properties;
 
 import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
+import static com.akiban.util.JsonUtils.createJsonGenerator;
+import static com.akiban.util.JsonUtils.jsonParser;
 
 public class RestDMLServiceImpl implements Service, RestDMLService {
     private final SessionService sessionService;
@@ -154,11 +154,11 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         int realDepth = (depth != null) ? Math.max(depth, 0) : -1;
         try (Session session = sessionService.createSession()) {
             extDataService.dumpAllAsJson(session,
-                                         writer,
-                                         tableName.getSchemaName(),
-                                         tableName.getTableName(),
-                                         realDepth,
-                                         true);
+                    writer,
+                    tableName.getSchemaName(),
+                    tableName.getTableName(),
+                    realDepth,
+                    true);
         }
     }
 
@@ -171,12 +171,12 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             Index pkIndex = uTable.getPrimaryKeyIncludingInternal().getIndex();
             List<List<String>> pks = PrimaryKeyParser.parsePrimaryKeys(identifiers, pkIndex);
             extDataService.dumpBranchAsJson(session,
-                                            writer,
-                                            tableName.getSchemaName(),
-                                            tableName.getTableName(),
-                                            pks,
-                                            realDepth,
-                                            false);
+                    writer,
+                    tableName.getSchemaName(),
+                    tableName.getTableName(),
+                    pks,
+                    realDepth,
+                    false);
             txn.commit();
         }
     }
@@ -275,7 +275,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             // TODO: Is this even a good idea? Or just keep them separate?
             try {
                 StringWriter str = new StringWriter();
-                JsonGenerator jg = factory.createJsonGenerator(str);
+                JsonGenerator jg = createJsonGenerator(str);
                 jg.writeStartObject();
                 for (Map.Entry<String,List<String>> entry : queryParams.entrySet()) {
                     if (jsonpArgName.equals(entry.getKey()))
@@ -315,7 +315,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         if (jsonParams != null) {
             JsonNode parsed;
             try {
-                parsed = factory.createJsonParser(jsonParams).readValueAsTree();
+                parsed = jsonParser(jsonParams).readValueAsTree();
             }
             catch (IOException ex) {
                 throw new AkibanInternalException("Error reading from string", ex);
@@ -392,7 +392,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             ais = dxlService.ddlFunctions().getAIS(session);
             txn.commit();
         }
-        JsonParser json = factory.createJsonParser(ajdax);
+        JsonParser json = jsonParser(ajdax);
         final String schema = tableName.getSchemaName();
         // the JoinStrategy will assume all tables are in the same schema
         JoinStrategy joinStrategy = new JoinStrategy() {
@@ -647,14 +647,5 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             count = fullTextService.createIndex(session, indexName);
         }
         writer.write(String.format("{\"count\":%d}", count));
-    }
-
-
-    private static JsonFactory factory = createFactory();
-
-    private static JsonFactory createFactory() {
-        JsonFactory factory = new JsonFactory();
-        factory.setCodec(new ObjectMapper());
-        return factory;
     }
 }

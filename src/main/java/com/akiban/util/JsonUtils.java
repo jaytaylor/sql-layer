@@ -24,22 +24,39 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.entity.model;
+package com.akiban.util;
 
-import java.util.UUID;
+import org.codehaus.jackson.JsonEncoding;
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.map.ObjectMapper;
 
-public final class Util {
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.Writer;
 
-    public static UUID parseUUID(String string) {
-        if (string == null)
-            return null;
-        UUID uuid;
-        try {
-            uuid = UUID.fromString(string);
-        }
-        catch (IllegalArgumentException e) {
-            throw new IllegalEntityDefinition("invalid uuid");
-        }
-        return uuid;
+public final class JsonUtils {
+
+    public static JsonGenerator createJsonGenerator(Writer out) throws IOException {
+        return jsonFactory.createJsonGenerator(out);
     }
+
+    public static JsonGenerator createJsonGenerator(OutputStream stream, JsonEncoding encoding) throws IOException {
+        return jsonFactory.createJsonGenerator(stream, encoding);
+    }
+
+    public static JsonParser jsonParser(String string) throws IOException {
+        return JsonUtils.jsonFactory.createJsonParser(string);
+    }
+
+    private static final JsonFactory jsonFactory = createJsonFactory();
+
+    private static JsonFactory createJsonFactory() {
+        JsonFactory factory = new JsonFactory();
+        factory.setCodec(new ObjectMapper());
+        return factory;
+    }
+
+    private JsonUtils() {}
 }
