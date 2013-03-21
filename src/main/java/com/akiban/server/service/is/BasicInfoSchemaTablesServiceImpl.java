@@ -1410,7 +1410,6 @@ public class BasicInfoSchemaTablesServiceImpl
 
         private class Scan extends BaseScan {
             final ListIterator<ScriptEngineFactory> factories;
-            String engineName;
             Iterator<String> names;
 
             public Scan(ListIterator<ScriptEngineFactory> factories, RowType rowType) {
@@ -1424,9 +1423,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 while (!names.hasNext()) {
                     if (!factories.hasNext())
                         return null;
-                    ScriptEngineFactory nextFactory = factories.next();
-                    engineName = nextFactory.getEngineName();
-                    names = nextFactory.getNames().iterator();
+                    names = factories.next().getNames().iterator();
                 }
                 String nextName = names.next();
                 return new ValuesRow(
