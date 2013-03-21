@@ -37,7 +37,6 @@ import com.akiban.sql.RegexFilenameFilter;
 import com.akiban.util.Strings;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -57,6 +56,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
 
+import static com.akiban.util.JsonUtils.readTree;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(NamedParameterizedRunner.class)
@@ -289,7 +289,6 @@ public class RestServiceFilesIT extends ITBase {
     }
     
     private void compareExpected(String assertMsg, String expected, String actual) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
         JsonNode expectedNode = null;
         JsonNode actualNode = null;
         boolean skipNodeCheck = false;
@@ -297,10 +296,10 @@ public class RestServiceFilesIT extends ITBase {
         String actualTrimmed = (actual != null) ? actual.trim() : "";
         try {
             if(!expectedTrimmed.isEmpty()) {
-                expectedNode = mapper.readTree(expected);
+                expectedNode = readTree(expected);
             }
             if(!actualTrimmed.isEmpty()) {
-                actualNode = mapper.readTree(actual);
+                actualNode = readTree(actual);
             }
         } catch(JsonParseException e) {
             // Note: This case handles the jsonp tests. Somewhat fragile, but not horrible yet.

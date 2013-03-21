@@ -34,7 +34,6 @@ import com.akiban.util.JUnitUtils;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -49,6 +48,7 @@ import java.util.Collection;
 import java.util.Properties;
 import java.util.UUID;
 
+import static com.akiban.util.JsonUtils.readTree;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(NamedParameterizedRunner.class)
@@ -100,12 +100,12 @@ public final class SpaceDiffTest {
         }
         Space orig = Space.readSpace(testName + ORIG_SUFFIX, SpaceDiffTest.class, null);
         Space updated = Space.readSpace(testName + UPDATE_SUFFIX, SpaceDiffTest.class, uuidGenerator);
-        JsonNode expected = new ObjectMapper().readTree(new File(dir, testName + EXPECTED_SUFFIX));
+        JsonNode expected = readTree(new File(dir, testName + EXPECTED_SUFFIX));
         StringWriter writer = new StringWriter();
         JsonDiffPreview diff = new JsonDiffPreview(writer);
         new SpaceDiff(orig, updated).apply(diff);
         diff.finish();
-        JsonNode actual = new ObjectMapper().readTree(new StringReader(writer.toString()));
+        JsonNode actual = readTree(new StringReader(writer.toString()));
         assertEquals("changes", expected, actual);
     }
 

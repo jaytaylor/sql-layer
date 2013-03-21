@@ -32,7 +32,6 @@ import com.akiban.server.entity.model.Attribute;
 import com.akiban.server.entity.model.Entity;
 import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.JsonEntityFormatter;
-import com.akiban.server.entity.model.Util;
 import com.akiban.server.entity.model.Validation;
 import java.io.IOException;
 import java.io.Writer;
@@ -42,6 +41,8 @@ import java.util.UUID;
 
 import com.google.common.collect.Maps;
 import org.codehaus.jackson.JsonGenerator;
+
+import static com.akiban.util.JsonUtils.createJsonGenerator;
 
 /**
  * 
@@ -60,7 +61,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         this.writer = writer;
         try
         {
-            jsonGen = Util.createJsonGenerator(writer);
+            jsonGen = createJsonGenerator(writer);
             jsonGen.writeStartArray();
         }
         catch (IOException ex)

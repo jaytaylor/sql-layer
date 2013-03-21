@@ -30,7 +30,6 @@ import com.akiban.ais.model.TableName;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -51,6 +50,7 @@ import java.io.PrintWriter;
 import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 import static com.akiban.rest.resources.ResourceHelper.checkTableAccessible;
 import static com.akiban.rest.resources.ResourceHelper.parseTableName;
+import static com.akiban.util.JsonUtils.readTree;
 
 /**
  * Entity based access (GET), creation (PUT, POST), and modification (PUT, DELETE)
@@ -154,8 +154,7 @@ public class EntityResource {
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
-                        ObjectMapper m = new ObjectMapper();
-                        final JsonNode node = m.readTree(entityBytes);
+                        final JsonNode node = readTree(entityBytes);
                         reqs.restDMLService.insert(writer, tableName, node);
                     }
                 })
@@ -176,8 +175,7 @@ public class EntityResource {
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
-                        ObjectMapper m = new ObjectMapper();
-                        JsonNode node = m.readTree(entityBytes);
+                        JsonNode node = readTree(entityBytes);
                         reqs.restDMLService.update(writer, tableName, getPKString(uri), node);
                     }
                 })

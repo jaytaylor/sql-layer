@@ -33,7 +33,6 @@ import com.akiban.util.Strings;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -43,6 +42,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static com.akiban.util.JsonUtils.readTree;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(NamedParameterizedRunner.class)
@@ -71,9 +71,8 @@ public final class SpaceToJsonTest {
         String actual = space.toJson();
         String expected = Strings.dumpFileToString(new File(testDir, testName + ".json"));
 
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode actualNode = mapper.readTree(actual);
-        JsonNode expectedNode = mapper.readTree(expected);
+        JsonNode actualNode = readTree(actual);
+        JsonNode expectedNode = readTree(expected);
 
         assertEquals("space to json", expectedNode, actualNode);
     }

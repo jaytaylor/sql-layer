@@ -29,11 +29,16 @@ package com.akiban.util;
 import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
+import java.io.StringReader;
 import java.io.Writer;
 
 public final class JsonUtils {
@@ -50,13 +55,46 @@ public final class JsonUtils {
         return JsonUtils.jsonFactory.createJsonParser(string);
     }
 
-    private static final JsonFactory jsonFactory = createJsonFactory();
-
-    private static JsonFactory createJsonFactory() {
-        JsonFactory factory = new JsonFactory();
-        factory.setCodec(new ObjectMapper());
-        return factory;
+    public static JsonNode readTree(String json) throws IOException {
+        return mapper.readTree(json);
     }
+
+    public static JsonNode readTree(byte[] json) throws IOException {
+        return mapper.readTree(json);
+    }
+
+    public static JsonNode readTree(InputStream json) throws IOException {
+        return mapper.readTree(json);
+    }
+
+    public static JsonNode readTree(Reader json) throws IOException {
+        return mapper.readTree(json);
+    }
+
+    public static JsonNode readTree(File source) throws IOException {
+        return mapper.readTree(source);
+    }
+
+    public static <T> T readValue(File file, Class<? extends T> cls) throws IOException {
+        return mapper.readValue(file, cls);
+    }
+
+    public static <T> T readValue(Reader source, Class<? extends T> cls) throws IOException {
+        return mapper.readValue(source, cls);
+    }
+
+    public static String normalizeJson(String json) {
+        try {
+            JsonNode node = mapper.readTree(new StringReader(json));
+            return mapper.defaultPrettyPrintingWriter().writeValueAsString(node);
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static final ObjectMapper mapper = new ObjectMapper();
+    private static final JsonFactory jsonFactory = new JsonFactory(mapper);
 
     private JsonUtils() {}
 }

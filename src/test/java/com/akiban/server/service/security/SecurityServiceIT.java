@@ -44,15 +44,14 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static com.akiban.util.JsonUtils.readTree;
 import static org.junit.Assert.*;
 
-import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -194,7 +193,7 @@ public class SecurityServiceIT extends ITBase
         assertNotNull(securityService.getUser("user3"));
 
         // Check returned id
-        JsonNode idNode = new ObjectMapper().readTree(content).get("id");
+        JsonNode idNode = readTree(content).get("id");
         assertNotNull("Has id field", idNode);
         assertEquals("id is integer", true, idNode.isInt());
 
