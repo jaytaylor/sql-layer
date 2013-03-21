@@ -74,8 +74,8 @@ public class DirectResource {
     private final static String DROP_PROCEDURE_FORMAT = "DROP PROCEDURE %s";
 
     private final static String GET_SCHEMA_PROCEDURES
-            = "SELECT routine_name, routine_definition, language FROM information_schema.routines "
-            + "WHERE routine_schema = ?";
+            = "SELECT routine_name, routine_definition, language, calling_convention, max_dynamic_result_sets "
+            + "FROM information_schema.routines WHERE routine_schema = ?";
     private final static String GET_ONE_PROCEDURE = GET_SCHEMA_PROCEDURES + " AND routine_name = ?";
 
     private final ResourceRequirements reqs;
