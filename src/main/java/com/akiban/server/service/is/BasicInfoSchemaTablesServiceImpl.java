@@ -54,17 +54,21 @@ import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.Service;
+import com.akiban.server.service.routines.ScriptEngineManagerProvider;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
+import com.google.common.collect.Iterators;
 import com.google.inject.Inject;
 
+import javax.script.ScriptEngineFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 
 public class BasicInfoSchemaTablesServiceImpl
@@ -88,17 +92,22 @@ public class BasicInfoSchemaTablesServiceImpl
     static final TableName PARAMETERS = new TableName(SCHEMA_NAME, "parameters");
     static final TableName JARS = new TableName(SCHEMA_NAME, "jars");
     static final TableName ROUTINE_JAR_USAGE = new TableName(SCHEMA_NAME, "routine_jar_usage");
+    static final TableName SCRIPT_ENGINES = new TableName(SCHEMA_NAME, "script_engines");
+    static final TableName SCRIPT_ENGINE_NAMES = new TableName(SCHEMA_NAME, "script_engine_names");
 
     private static final String CHARSET_SCHEMA = SCHEMA_NAME;
     private static final String COLLATION_SCHEMA = SCHEMA_NAME;
 
     private final SecurityService securityService;
+    private final ScriptEngineManagerProvider scriptEngineManagerProvider;
 
     @Inject
     public BasicInfoSchemaTablesServiceImpl(SchemaManager schemaManager,
-                                            SecurityService securityService) {
+                                            SecurityService securityService,
+                                            ScriptEngineManagerProvider scriptEngineManagerProvider) {
         super(schemaManager);
         this.securityService = securityService;
+        this.scriptEngineManagerProvider = scriptEngineManagerProvider;
     }
 
     @Override
@@ -125,6 +134,10 @@ public class BasicInfoSchemaTablesServiceImpl
 
     protected boolean isAccessible(Session session, TableName name) {
         return isAccessible(session, name.getSchemaName());
+    }
+
+    private List<ScriptEngineFactory> getScriptEngineFactories() {
+        return scriptEngineManagerProvider.getManager().getEngineFactories();
     }
 
     private class SchemataFactory extends BasicFactoryBase {
@@ -1338,6 +1351,89 @@ public class BasicInfoSchemaTablesServiceImpl
         }
     }
 
+    private class ScriptEnginesISFactory extends BasicFactoryBase {
+        public ScriptEnginesISFactory(TableName sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public long rowCount() {
+            return getScriptEngineFactories().size();
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan(getScriptEngineFactories().listIterator(), getRowType(adapter));
+        }
+
+        private class Scan extends BaseScan {
+            final ListIterator<ScriptEngineFactory> it;
+
+            public Scan(ListIterator<ScriptEngineFactory> it, RowType rowType) {
+                super(rowType);
+                this.it = it;
+            }
+
+            @Override
+            public Row next() {
+                if (!it.hasNext())
+                    return null;
+                ScriptEngineFactory factory = it.next();
+                return new ValuesRow(
+                        rowType,
+                        it.nextIndex(), // use nextIndex so that the IDs are 1-based
+                        factory.getEngineName(),
+                        factory.getEngineVersion(),
+                        factory.getLanguageName(),
+                        factory.getLanguageVersion());
+            }
+        }
+    }
+
+    private class ScriptEngineNamesISFactory extends BasicFactoryBase {
+        public ScriptEngineNamesISFactory(TableName sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public long rowCount() {
+            int c = 0;
+            for (ScriptEngineFactory factory : getScriptEngineFactories())
+                c += factory.getNames().size();
+            return c;
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan(getScriptEngineFactories().listIterator(), getRowType(adapter));
+        }
+
+        private class Scan extends BaseScan {
+            final ListIterator<ScriptEngineFactory> factories;
+            Iterator<String> names;
+
+            public Scan(ListIterator<ScriptEngineFactory> factories, RowType rowType) {
+                super(rowType);
+                this.factories = factories;
+                this.names = Iterators.emptyIterator();
+            }
+
+            @Override
+            public Row next() {
+                while (!names.hasNext()) {
+                    if (!factories.hasNext())
+                        return null;
+                    names = factories.next().getNames().iterator();
+                }
+                String nextName = names.next();
+                return new ValuesRow(
+                        rowType,
+                        nextName,
+                        factories.nextIndex()); // use nextIndex so that the IDs are 1-based
+            }
+        }
+    }
+
     //
     // Package, for testing
     //
@@ -1540,6 +1636,19 @@ public class BasicInfoSchemaTablesServiceImpl
         //foreign key(routine_schema, routine_name) references ROUTINES (routine_schema, routine_name)
         //foreign key(jar_schema, jar_name) references JARS (jar_schema, jar_name)
 
+        builder.userTable(SCRIPT_ENGINES)
+                .colLong("engine_id", false)
+                .colString("engine_name", IDENT_MAX, false)
+                .colString("engine_version", IDENT_MAX, false)
+                .colString("language_name", IDENT_MAX, false)
+                .colString("language_version", IDENT_MAX, false);
+        //primary key(engine_id)
+
+        builder.userTable(SCRIPT_ENGINE_NAMES)
+                .colString("name", IDENT_MAX, false)
+                .colString("engine_id", IDENT_MAX, false);
+        //foreign key (engine_id) references SCRIPT_ENGINES (engine_id)
+
         return builder.ais(false);
     }
 
@@ -1561,5 +1670,7 @@ public class BasicInfoSchemaTablesServiceImpl
         attach(ais, doRegister, PARAMETERS, ParametersFactory.class);
         attach(ais, doRegister, JARS, JarsFactory.class);
         attach(ais, doRegister, ROUTINE_JAR_USAGE, RoutineJarUsageFactory.class);
+        attach(ais, doRegister, SCRIPT_ENGINES, ScriptEnginesISFactory.class);
+        attach(ais, doRegister, SCRIPT_ENGINE_NAMES, ScriptEngineNamesISFactory.class);
     }
 }

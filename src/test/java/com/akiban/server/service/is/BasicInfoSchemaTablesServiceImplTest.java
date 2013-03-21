@@ -82,7 +82,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
     public void setUp() throws Exception {
         ais = BasicInfoSchemaTablesServiceImpl.createTablesToRegister();
         createTables();
-        bist = new BasicInfoSchemaTablesServiceImpl(new MockSchemaManager(ais), null);
+        bist = new BasicInfoSchemaTablesServiceImpl(new MockSchemaManager(ais), null, null);
         bist.attachFactories(ais, false);
         adapter = new MemoryAdapter(new Schema(ais), null, null);
     }
@@ -417,7 +417,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skip I_S tables", 17, skipped);
+        assertEquals("Skip I_S tables", 19, skipped);
     }
 
     @Test
@@ -454,7 +454,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S columns", 128, skipped);
+        assertEquals("Skipped I_S columns", 135, skipped);
     }
 
     @Test
@@ -512,7 +512,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
 
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.GROUPING_CONSTRAINTS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S grouping_constraints", 17, skipped);
+        assertEquals("Skipped I_S grouping_constraints", 19, skipped);
     }
 
     @Test
