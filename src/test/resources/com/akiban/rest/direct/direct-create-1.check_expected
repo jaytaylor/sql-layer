@@ -1,3 +1,0 @@
-[
-{"routine_name":"proc1","routine_definition":"var params = JSON.parse(json_in);\nvar result = params.param;\nvar extent = com.akiban.direct.Direct.context.extent;\nfor (customer in Iterator(extent.customers)) {\n  result += \",\" + customer.name;\n}\nresult;\n\n","language":"javascript"}
-]

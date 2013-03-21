@@ -55,7 +55,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -68,25 +67,6 @@ public class RestServiceFilesIT extends ITBase {
     );
     public static final String SCHEMA_NAME = "test";
 
-
-
-
-    private static class Postcondition {
-        public final String URI;
-        public final String expected;
-
-        private Postcondition(String URI, String expected) {
-            this.URI = URI;
-            this.expected = expected;
-        }
-
-        public static Postcondition create(String URI, String expected) {
-            return (URI == null || expected == null)
-                    ? null
-                    : new Postcondition(URI, expected);
-        }
-    }
-
     private static class CaseParams {
         public final String subDir;
         public final String caseName;
@@ -96,12 +76,13 @@ public class RestServiceFilesIT extends ITBase {
         public final String expectedHeader;
         public final String expectedResponse;
         public final boolean expectedIgnore;
-        public final List<Postcondition> checks;
+        public final String checkURI;
+        public final String checkExpected;
 
         private CaseParams(String subDir, String caseName,
                            String requestMethod, String requestURI, String requestBody,
                            String expectedHeader, String expectedResponse, boolean expectedIgnore,
-                           List<Postcondition> checks) {
+                           String checkURI, String checkExpected) {
             this.subDir = subDir;
             this.caseName = caseName;
             this.requestMethod = requestMethod;
@@ -110,7 +91,8 @@ public class RestServiceFilesIT extends ITBase {
             this.expectedHeader = expectedHeader;
             this.expectedResponse = expectedResponse;
             this.expectedIgnore = expectedIgnore;
-            this.checks = checks;
+            this.checkURI = checkURI;
+            this.checkExpected = checkExpected;
         }
     }
 
@@ -174,17 +156,8 @@ public class RestServiceFilesIT extends ITBase {
                 String header = dumpFileIfExists(new File(basePath + ".expected_header"));
                 String expected = dumpFileIfExists(new File(basePath + ".expected"));
                 boolean expectedIgnore = new File(basePath + ".expected_ignore").exists();
-                List<Postcondition> checks = new ArrayList<>();
-                String infix = "";
-                for (int i = 1; ; ++i) {
-                    String checkURI = dumpFileIfExists(new File(basePath + infix + ".check"));
-                    String checkExpected = dumpFileIfExists(new File(basePath + infix + ".check_expected"));
-                    Postcondition check = Postcondition.create(checkURI, checkExpected);
-                    if (check == null)
-                        break;
-                    checks.add(check);
-                    infix = "-" + i;
-                }
+                String checkURI = dumpFileIfExists(new File(basePath + ".check"));
+                String checkExpected = dumpFileIfExists(new File(basePath + ".check_expected"));
 
                 if("QUERY".equals(method)) {
                     method = "GET";
@@ -198,7 +171,7 @@ public class RestServiceFilesIT extends ITBase {
                         subDirName + File.separator + caseName,
                         new CaseParams(subDirName, caseName, method, uri, body,
                                        header, expected, expectedIgnore,
-                                       checks)
+                                       checkURI, checkExpected)
                 ));
             }
         }
@@ -248,19 +221,13 @@ public class RestServiceFilesIT extends ITBase {
     }
     
     public void checkRequest() throws Exception {
-        for (int i = 0; i < caseParams.checks.size(); i++) {
-            Postcondition check = caseParams.checks.get(i);
-            if (check.URI != null && check.expected != null) {
-                HttpURLConnection httpConn = openConnection(getRestURL(check.URI.trim()), "GET");
-                try {
-                    String actual = getOutput(httpConn);
-                    String name = " check ";
-                    if (i > 0)
-                        name += (i + " ");
-                    compareExpected(caseParams.caseName + name + "expected response ", check.expected, actual);
-                } finally {
-                    httpConn.disconnect();
-                }
+        if (caseParams.checkURI != null && caseParams.checkExpected != null) {
+            HttpURLConnection httpConn = openConnection(getRestURL(caseParams.checkURI.trim()), "GET");
+            try {
+                String actual = getOutput (httpConn);
+                compareExpected (caseParams.caseName + " check expected response ", caseParams.checkExpected, actual);
+            } finally {
+                httpConn.disconnect();
             }
         }
     }
