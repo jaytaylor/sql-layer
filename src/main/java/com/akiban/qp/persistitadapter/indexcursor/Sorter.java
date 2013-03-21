@@ -107,11 +107,11 @@ public class Sorter
                     loadTap.out();
                     loadTap.in();
                     row = input.next();
-                    loaded = true;
                 }
             } finally {
                 loadTap.out();
             }
+            loaded = true;
         } catch (PersistitException e) {
             if (!PersistitAdapter.isFromInterruption(e))
                 LOG.error("Caught exception while loading tree for sort", e);
