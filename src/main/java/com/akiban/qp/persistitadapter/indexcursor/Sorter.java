@@ -39,6 +39,7 @@ import com.akiban.util.tap.InOutTap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Value;
+import com.persistit.exception.KeyTooLongException;
 import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +55,6 @@ public class Sorter
                   API.SortOption sortOption,
                   InOutTap loadTap,
                   boolean usePValues)
-        throws PersistitException
     {
         this.context = context;
         this.adapter = (PersistitAdapter)context.getStore();
@@ -66,8 +66,8 @@ public class Sorter
         this.key = exchange.getKey();
         this.value = exchange.getValue();
         this.rowFields = rowType.nFields();
-        sorterAdapter = usePValues
-                ? new PValueSorterAdapter()
+        sorterAdapter = usePValues 
+                ? new PValueSorterAdapter() 
                 : new OldSorterAdapter();
         sorterAdapter.init(this.rowType, this.ordering, key, value, this.context, sortOption);
         iterationHelper = new SorterIterationHelper(sorterAdapter.createValueAdapter());
@@ -131,14 +131,21 @@ public class Sorter
 
     private void createKey(Row row)
     {
-        key.clear();
-        boolean preserveDuplicates = sorterAdapter.preserveDuplicates();
-        int sortFields = ordering.sortColumns() - (preserveDuplicates ? 1 : 0);
-        for (int i = 0; i < sortFields; i++) {
-            sorterAdapter.evaluateToKey(row, i);
-        }
-        if (preserveDuplicates) {
-            key.append(rowCount++);
+        while (true) {
+            try {
+                key.clear();
+                boolean preserveDuplicates = sorterAdapter.preserveDuplicates();
+                int sortFields = ordering.sortColumns() - (preserveDuplicates ? 1 : 0);
+                for (int i = 0; i < sortFields; i++) {
+                    sorterAdapter.evaluateToKey(row, i);
+                }
+                if (preserveDuplicates) {
+                    key.append(rowCount++);
+                }
+                break;
+            } catch (KeyTooLongException e) {
+                key.setMaximumSize(key.getMaximumSize() * 8);
+            }
         }
     }
 
@@ -171,7 +178,7 @@ public class Sorter
     Exchange exchange;
     long rowCount = 0;
     private final InOutTap loadTap;
-    private final SorterAdapter<?,?,?> sorterAdapter;
+    private final SorterAdapter<?, ?, ?> sorterAdapter;
     private final IterationHelper iterationHelper;
 
     // Inner classes

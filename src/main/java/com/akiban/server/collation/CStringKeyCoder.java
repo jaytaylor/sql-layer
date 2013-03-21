@@ -31,6 +31,7 @@ import com.persistit.encoding.CoderContext;
 import com.persistit.encoding.KeyDisplayer;
 import com.persistit.encoding.KeyRenderer;
 import com.persistit.exception.ConversionException;
+import com.persistit.exception.KeyTooLongException;
 import com.persistit.util.Util;
 
 /**
@@ -65,7 +66,7 @@ public class CStringKeyCoder implements KeyDisplayer, KeyRenderer {
             byte[] keyBytes = key.getEncodedBytes();
             int size = key.getEncodedSize();
             if (size + sortBytes.length + 1 > key.getMaximumSize()) {
-                throw new IllegalArgumentException("Too long: " + size + sortBytes.length);
+                throw new KeyTooLongException("Too long: " + size + sortBytes.length);
             }
             assert cs.getCollationId() > 0 && cs.getCollationId() < AkCollatorFactory.MAX_COLLATION_ID;
             Util.putByte(keyBytes, size, cs.getCollationId());

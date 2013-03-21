@@ -28,7 +28,6 @@ package com.akiban.sql.pg;
 
 import static junit.framework.Assert.assertEquals;
 
-import java.io.File;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -38,7 +37,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class PostgresServerLargeSortKeysIT extends PostgresServerFilesITBase {
-    private final static int MAX_STRING_LENGTH = 1000;
+    private final static int MAX_STRING_LENGTH = 2500;
 
     private final static int D = 2;
     private final static int[] LENGTHS = { 60, 200, 255, 256, 257, MAX_STRING_LENGTH };
