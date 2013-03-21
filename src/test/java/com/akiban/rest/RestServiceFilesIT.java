@@ -29,6 +29,8 @@ package com.akiban.rest;
 import com.akiban.http.HttpConductor;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
+import com.akiban.server.service.is.BasicInfoSchemaTablesService;
+import com.akiban.server.service.is.BasicInfoSchemaTablesServiceImpl;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.sql.RegexFilenameFilter;
@@ -102,7 +104,9 @@ public class RestServiceFilesIT extends ITBase {
 
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
-        return super.serviceBindingsProvider().bindAndRequire(RestService.class, RestServiceImpl.class);
+        return super.serviceBindingsProvider()
+                .bindAndRequire(RestService.class, RestServiceImpl.class)
+                .bindAndRequire(BasicInfoSchemaTablesService.class, BasicInfoSchemaTablesServiceImpl.class);
     }
 
     @Override
