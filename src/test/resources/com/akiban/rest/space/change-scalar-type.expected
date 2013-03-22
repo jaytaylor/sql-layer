@@ -18,8 +18,8 @@
     {
         "action": "change_scalar_properties", 
         "new_properties": {
-            "scale": null,
-            "precision": null
+            "scale": -1,
+            "precision": -1
         }, 
         "destructive": true, 
         "uuid": "33563d56-7737-11e2-a970-980e7188419e"
@@ -32,8 +32,8 @@
                         "scalar": "33563d56-7737-11e2-a970-980e7188419e", 
                         "type": "double",
                         "properties" : {
-                            "scale" : null,
-                            "precision" : null
+                            "scale" : -1,
+                            "precision" : -1
                         },
                         "validation": [
                             {

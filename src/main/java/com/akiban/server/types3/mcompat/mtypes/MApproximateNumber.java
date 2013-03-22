@@ -65,11 +65,6 @@ public class MApproximateNumber extends SimpleDtdTClass
     }
 
     @Override
-    protected Object attributeToObject(int attributeIndex, int value) {
-        return (value < 0) ? null : value;
-    }
-
-    @Override
     public boolean attributeIsPhysical(int attributeIndex) {
         return true;
     }
