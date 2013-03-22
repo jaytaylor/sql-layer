@@ -56,6 +56,7 @@ import javax.ws.rs.core.Response;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
+import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.TableName;
 import com.akiban.direct.ClassBuilder;
 import com.akiban.direct.ClassSourceWriter;
@@ -253,22 +254,17 @@ public class DirectResource {
 
                     if (procName.isEmpty()) {
                         // Get all routines in the schema.
-                        // First, filter and sort them by name. This makes for deterministic tests, as well as easier
-                        // viewing in raw form (if anyone cares about that).
-                        TreeMap<String, Routine> routinesByName = new TreeMap<>();
-                        for (Map.Entry<TableName, Routine> routineEntry : ais.getRoutines().entrySet()) {
-                            TableName routineName = routineEntry.getKey();
-                            if (routineName.getSchemaName().equals(schemaResolved))
-                                routinesByName.put(routineName.getTableName(), routineEntry.getValue());
-                        }
-                        // Now, write them all out.
                         json.writeStartObject(); {
-                            for (Map.Entry<String, Routine> routineEntry : routinesByName.entrySet()) {
-                                json.writeFieldName(routineEntry.getKey());
-                                writeProc(routineEntry.getValue(), json);
+                            Schema schemaAIS = ais.getSchema(schemaResolved);
+                            if (schemaAIS != null) {
+                                for (Map.Entry<String, Routine> routineEntry : schemaAIS.getRoutines().entrySet()) {
+                                    json.writeFieldName(routineEntry.getKey());
+                                    writeProc(routineEntry.getValue(), json);
+                                }
                             }
                         } json.writeEndObject();
-                    } else {
+                    }
+                    else {
                         // Get just the one routine.
                         Routine routine = ais.getRoutine(schemaResolved, procName);
                         if (routine == null)
