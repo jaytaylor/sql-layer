@@ -262,12 +262,12 @@ public class DirectResource {
                                 routinesByName.put(routineName.getTableName(), routineEntry.getValue());
                         }
                         // Now, write them all out.
-                        json.writeStartObject();
-                        for (Map.Entry<String, Routine> routineEntry : routinesByName.entrySet()) {
-                            json.writeFieldName(routineEntry.getKey());
-                            writeProc(routineEntry.getValue(), json);
-                        }
-                        json.writeEndObject();
+                        json.writeStartObject(); {
+                            for (Map.Entry<String, Routine> routineEntry : routinesByName.entrySet()) {
+                                json.writeFieldName(routineEntry.getKey());
+                                writeProc(routineEntry.getValue(), json);
+                            }
+                        } json.writeEndObject();
                     } else {
                         // Get just the one routine.
                         Routine routine = ais.getRoutine(schemaResolved, procName);
@@ -296,40 +296,40 @@ public class DirectResource {
     private void writeProcParams(String label, List<Parameter> parameters, Parameter.Direction direction,
                                  JsonGenerator json) throws IOException
     {
-        json.writeArrayFieldStart(label);
-        for (int i = 0; i < parameters.size(); i++) {
-            Parameter param = parameters.get(i);
-            Parameter.Direction paramDir = param.getDirection();
-            final boolean isInteresting;
-            switch (paramDir) {
-            case RETURN:
-                paramDir = Parameter.Direction.OUT;
-            case IN:
-            case OUT:
-                isInteresting = (paramDir == direction);
-                break;
-            case INOUT:
-                isInteresting = true;
-                break;
-            default:
-                throw new IllegalStateException("don't know how to handle parameter " + param);
-            }
-            if (isInteresting) {
-                json.writeStartObject(); {
-                    json.writeStringField("name", param.getName());
-                    json.writeNumberField("position", i);
-                    TInstance tInstance = param.tInstance();
-                    TClass tClass = param.tInstance().typeClass();
-                    json.writeStringField("type", tClass.name().unqualifiedName());
-                    json.writeObjectFieldStart("type_options"); {
-                        for (Attribute attr : tClass.attributes())
-                            json.writeObjectField(attr.name().toLowerCase(), tInstance.attributeToObject(attr));
+        json.writeArrayFieldStart(label); {
+            for (int i = 0; i < parameters.size(); i++) {
+                Parameter param = parameters.get(i);
+                Parameter.Direction paramDir = param.getDirection();
+                final boolean isInteresting;
+                switch (paramDir) {
+                case RETURN:
+                    paramDir = Parameter.Direction.OUT;
+                case IN:
+                case OUT:
+                    isInteresting = (paramDir == direction);
+                    break;
+                case INOUT:
+                    isInteresting = true;
+                    break;
+                default:
+                    throw new IllegalStateException("don't know how to handle parameter " + param);
+                }
+                if (isInteresting) {
+                    json.writeStartObject(); {
+                        json.writeStringField("name", param.getName());
+                        json.writeNumberField("position", i);
+                        TInstance tInstance = param.tInstance();
+                        TClass tClass = param.tInstance().typeClass();
+                        json.writeStringField("type", tClass.name().unqualifiedName());
+                        json.writeObjectFieldStart("type_options"); {
+                            for (Attribute attr : tClass.attributes())
+                                json.writeObjectField(attr.name().toLowerCase(), tInstance.attributeToObject(attr));
+                        } json.writeEndObject();
+                        json.writeBooleanField("is_inout", paramDir == Parameter.Direction.INOUT);
+                        json.writeBooleanField("is_result", param.getDirection() == Parameter.Direction.RETURN);
                     } json.writeEndObject();
-                    json.writeBooleanField("is_inout", paramDir == Parameter.Direction.INOUT);
-                    json.writeBooleanField("is_result", param.getDirection() == Parameter.Direction.RETURN);
-                } json.writeEndObject();
+                }
             }
-        }
-        json.writeEndArray();
+        } json.writeEndArray();
     }
 }
