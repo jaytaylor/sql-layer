@@ -29,10 +29,17 @@ package com.akiban.rest.resources;
 import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
 import static com.akiban.rest.resources.ResourceHelper.checkSchemaAccessible;
 import static com.akiban.rest.resources.ResourceHelper.checkTableAccessible;
+import static com.akiban.util.JsonUtils.createJsonGenerator;
 
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DELETE;
@@ -47,6 +54,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Parameter;
+import com.akiban.ais.model.Routine;
+import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.TableName;
 import com.akiban.direct.ClassBuilder;
 import com.akiban.direct.ClassSourceWriter;
@@ -54,7 +64,14 @@ import com.akiban.direct.ClassXRefWriter;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.rest.RestResponseBuilder.BodyGenerator;
+import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchSchemaException;
+import com.akiban.server.service.session.Session;
+import com.akiban.server.service.transaction.TransactionService;
+import com.akiban.server.types3.Attribute;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TInstance;
+import org.codehaus.jackson.JsonGenerator;
 
 /**
  * Easy access to the server version
@@ -72,11 +89,6 @@ public class DirectResource {
             + " LANGUAGE %s PARAMETER STYLE json AS $$%s$$";
 
     private final static String DROP_PROCEDURE_FORMAT = "DROP PROCEDURE %s";
-
-    private final static String GET_SCHEMA_PROCEDURES
-            = "SELECT routine_name, routine_definition, language, calling_convention, max_dynamic_result_sets "
-            + "FROM information_schema.routines WHERE routine_schema = ?";
-    private final static String GET_ONE_PROCEDURE = GET_SCHEMA_PROCEDURES + " AND routine_name = ?";
 
     private final ResourceRequirements reqs;
 
@@ -223,28 +235,97 @@ public class DirectResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/procedure/")
     public Response getProcedures(@Context final HttpServletRequest request,
-            @QueryParam(SCHEMA_ARG_NAME) @DefaultValue("") String schema,
-            @QueryParam(MODULE_ARG_NAME) @DefaultValue("") String module) {
-        final String sql;
-        final List<String> params;
-        if (schema.isEmpty())
-            schema = ResourceHelper.getSchema(request);
-        if (module.isEmpty()) {
-            checkSchemaAccessible(reqs.securityService, request, schema);
-            sql = GET_SCHEMA_PROCEDURES;
-            params = Arrays.asList(schema);
-        }
-        else {
-            checkTableAccessible(reqs.securityService, request, new TableName(schema, module));
-            sql = GET_ONE_PROCEDURE;
-            params = Arrays.asList(schema, module);
-        }
+            @QueryParam(SCHEMA_ARG_NAME) @DefaultValue("") final String schema,
+            @QueryParam(MODULE_ARG_NAME) @DefaultValue("") final String procName) {
+        final String schemaResolved = schema.isEmpty() ? ResourceHelper.getSchema(request) : schema;
+        if (procName.isEmpty())
+            checkSchemaAccessible(reqs.securityService, request, schemaResolved);
+        else
+            checkTableAccessible(reqs.securityService, request, new TableName(schemaResolved, procName));
         return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
             @Override
             public void write(PrintWriter writer) throws Exception {
-                reqs.restDMLService.runSQLParameter(writer, request, sql, params);
+                try (Session session
+                             = reqs.sessionService.createSession();
+                     TransactionService.CloseableTransaction txn
+                             = reqs.transactionService.beginCloseableTransaction(session)) {
+                    JsonGenerator json = createJsonGenerator(writer);
+                    AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(session);
+
+                    if (procName.isEmpty()) {
+                        // Get all routines in the schema.
+                        json.writeStartObject(); {
+                            Schema schemaAIS = ais.getSchema(schemaResolved);
+                            if (schemaAIS != null) {
+                                for (Map.Entry<String, Routine> routineEntry : schemaAIS.getRoutines().entrySet()) {
+                                    json.writeFieldName(routineEntry.getKey());
+                                    writeProc(routineEntry.getValue(), json);
+                                }
+                            }
+                        } json.writeEndObject();
+                    }
+                    else {
+                        // Get just the one routine.
+                        Routine routine = ais.getRoutine(schemaResolved, procName);
+                        if (routine == null)
+                            throw new NoSuchRoutineException(schemaResolved, procName);
+                        writeProc(routine, json);
+                    }
+                    json.flush();
+                    txn.commit();
+                }
             }
         }).build();
     }
 
+    private void writeProc(Routine routine, JsonGenerator json) throws IOException {
+        json.writeStartObject(); {
+            json.writeStringField("language", routine.getLanguage());
+            json.writeStringField("calling_convention", routine.getCallingConvention().name());
+            json.writeNumberField("max_dynamic_result_sets", routine.getDynamicResultSets());
+            json.writeStringField("definition", routine.getDefinition());
+            writeProcParams("parameters_in", routine.getParameters(), Parameter.Direction.IN, json);
+            writeProcParams("parameters_out", routine.getParameters(), Parameter.Direction.OUT, json);
+        } json.writeEndObject();
+    }
+
+    private void writeProcParams(String label, List<Parameter> parameters, Parameter.Direction direction,
+                                 JsonGenerator json) throws IOException
+    {
+        json.writeArrayFieldStart(label); {
+            for (int i = 0; i < parameters.size(); i++) {
+                Parameter param = parameters.get(i);
+                Parameter.Direction paramDir = param.getDirection();
+                final boolean isInteresting;
+                switch (paramDir) {
+                case RETURN:
+                    paramDir = Parameter.Direction.OUT;
+                case IN:
+                case OUT:
+                    isInteresting = (paramDir == direction);
+                    break;
+                case INOUT:
+                    isInteresting = true;
+                    break;
+                default:
+                    throw new IllegalStateException("don't know how to handle parameter " + param);
+                }
+                if (isInteresting) {
+                    json.writeStartObject(); {
+                        json.writeStringField("name", param.getName());
+                        json.writeNumberField("position", i);
+                        TInstance tInstance = param.tInstance();
+                        TClass tClass = param.tInstance().typeClass();
+                        json.writeStringField("type", tClass.name().unqualifiedName());
+                        json.writeObjectFieldStart("type_options"); {
+                            for (Attribute attr : tClass.attributes())
+                                json.writeObjectField(attr.name().toLowerCase(), tInstance.attributeToObject(attr));
+                        } json.writeEndObject();
+                        json.writeBooleanField("is_inout", paramDir == Parameter.Direction.INOUT);
+                        json.writeBooleanField("is_result", param.getDirection() == Parameter.Direction.RETURN);
+                    } json.writeEndObject();
+                }
+            }
+        } json.writeEndArray();
+    }
 }
