@@ -45,13 +45,13 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
+import static com.akiban.util.JsonUtils.readTree;
 
 /**
  * Security operations via REST.
@@ -74,7 +74,7 @@ public class SecurityResource {
         if (!request.isUserInRole(SecurityService.ADMIN_ROLE)) {
             return response.status(Response.Status.FORBIDDEN).build();
         }
-        JsonNode node = new ObjectMapper().readTree(userBytes);
+        JsonNode node = readTree(userBytes);
         JsonNode userNode = node.get("user");
         JsonNode passwordNode = node.get("password");
         JsonNode rolesNode = node.get("roles");

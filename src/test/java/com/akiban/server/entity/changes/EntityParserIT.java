@@ -25,6 +25,7 @@
  */
 package com.akiban.server.entity.changes;
 
+import static com.akiban.util.JsonUtils.readTree;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -34,7 +35,6 @@ import java.io.IOException;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -298,8 +298,7 @@ public class EntityParserIT extends ITBase {
     }
 
     private AkibanInformationSchema processParse (TableName tableName, String postInput) throws JsonProcessingException, IOException{
-        ObjectMapper m = new ObjectMapper();
-        JsonNode node = m.readTree(postInput);
+        JsonNode node = readTree(postInput);
         parser.parseAndCreate(ddl(), session(), tableName, node);
         AkibanInformationSchema ais = dxl().ddlFunctions().getAIS(session());
         assertNotNull (ais.getTable(tableName));

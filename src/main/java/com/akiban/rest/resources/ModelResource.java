@@ -42,7 +42,6 @@ import com.akiban.server.entity.model.Space;
 import com.akiban.server.entity.model.diff.JsonDiffPreview;
 import com.akiban.server.service.session.Session;
 import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,6 +65,7 @@ import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT
 import static com.akiban.rest.resources.ResourceHelper.checkSchemaAccessible;
 import static com.akiban.rest.resources.ResourceHelper.checkTableAccessible;
 import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
+import static com.akiban.util.JsonUtils.readTree;
 
 @Path("/model")
 public final class ModelResource {
@@ -127,8 +127,7 @@ public final class ModelResource {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
                         boolean doCreate = Boolean.parseBoolean(create);
-                        ObjectMapper m = new ObjectMapper();
-                        JsonNode node = m.readTree(postInput);
+                        JsonNode node = readTree(postInput);
                         EntityParser parser = new EntityParser();
                         parser.setStringWidth(parseInt(defaultWidth, DEFAULT_STRING_WIDTH));
                         try (Session session = reqs.sessionService.createSession()) {

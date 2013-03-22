@@ -29,7 +29,6 @@ package com.akiban.server.entity.model;
 import com.google.common.base.Function;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -44,12 +43,15 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
+import static com.akiban.util.JsonUtils.createJsonGenerator;
+import static com.akiban.util.JsonUtils.readValue;
+
 public final class Space {
 
     public static Space create(Reader reader, Function<String, UUID> uuidGenerator) throws IOException {
         Space result;
         try {
-            result = new ObjectMapper().readValue(reader, Space.class);
+            result = readValue(reader, Space.class);
         } catch (JsonMappingException e) {
             if (e.getCause() instanceof IllegalEntityDefinition)
                 throw (IllegalEntityDefinition) e.getCause();
@@ -111,7 +113,7 @@ public final class Space {
     public String toJson() {
         try {
             StringWriter writer = new StringWriter();
-            JsonGenerator generator = Util.createJsonGenerator(writer);
+            JsonGenerator generator = createJsonGenerator(writer);
             generateJson(generator);
             generator.flush();
             writer.flush();

@@ -34,7 +34,6 @@ import com.akiban.server.explain.Label;
 import com.akiban.server.error.AkibanInternalException;
 
 import org.codehaus.jackson.JsonEncoding;
-import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 
 import java.io.Writer;
@@ -44,15 +43,16 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
 
+import static com.akiban.util.JsonUtils.createJsonGenerator;
+
 public class JsonFormatter
 {
-    private final JsonFactory factory = new JsonFactory();
     private final boolean pretty = true;
 
     public String format(Explainer explainer) {
         StringWriter str = new StringWriter();
         try {
-            JsonGenerator generator = factory.createJsonGenerator(str);
+            JsonGenerator generator = createJsonGenerator(str);
             if (pretty) {
                 generator.useDefaultPrettyPrinter();
             }
@@ -66,11 +66,11 @@ public class JsonFormatter
     }
 
     public void format(Explainer explainer, Writer writer) throws IOException {
-        format(explainer, factory.createJsonGenerator(writer));
+        format(explainer, createJsonGenerator(writer));
     }
 
     public void format(Explainer explainer, OutputStream stream) throws IOException {
-        format(explainer, factory.createJsonGenerator(stream, JsonEncoding.UTF8));
+        format(explainer, createJsonGenerator(stream, JsonEncoding.UTF8));
     }
 
     public void format(Explainer explainer, JsonGenerator generator) throws IOException {

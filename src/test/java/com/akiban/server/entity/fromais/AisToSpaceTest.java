@@ -38,7 +38,6 @@ import com.akiban.util.JUnitUtils;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Maps;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -51,7 +50,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.akiban.util.JUnitUtils.normalizeJson;
+import static com.akiban.util.JsonUtils.normalizeJson;
+import static com.akiban.util.JsonUtils.readValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -106,8 +106,7 @@ public final class AisToSpaceTest {
             String fileName = testName + "-uuids.json";
             Map<String, String> asStrings;
             try {
-                ObjectMapper mapper = new ObjectMapper();
-                Map asMap = mapper.readValue(new File(testDir, fileName), Map.class);
+                Map asMap = readValue(new File(testDir, fileName), Map.class);
                 asStrings = Collections.checkedMap(asMap, String.class, String.class);
             }
             catch (IOException e) {

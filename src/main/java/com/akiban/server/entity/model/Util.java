@@ -26,12 +26,6 @@
 
 package com.akiban.server.entity.model;
 
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.map.ObjectMapper;
-
-import java.io.IOException;
-import java.io.Writer;
 import java.util.UUID;
 
 public final class Util {
@@ -47,17 +41,5 @@ public final class Util {
             throw new IllegalEntityDefinition("invalid uuid");
         }
         return uuid;
-    }
-    
-    public static JsonGenerator createJsonGenerator(Writer out) throws IOException {
-        return jsonFactory.createJsonGenerator(out);
-    }
-
-    private static final JsonFactory jsonFactory = createJsonFactory();
-
-    private static JsonFactory createJsonFactory() {
-        JsonFactory factory = new JsonFactory();
-        factory.setCodec(new ObjectMapper());
-        return factory;
     }
 }
