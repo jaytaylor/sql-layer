@@ -1,11 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project>
     <modelVersion>4.0.0</modelVersion>
+
     <groupId>com.akiban</groupId>
     <artifactId>akiban-server</artifactId>
-    <packaging>jar</packaging>
     <version>1.5.2-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
     <name>akiban-server</name>
+    <inceptionYear>2009</inceptionYear>
+    <url>http://www.akiban.com/</url>
+    <organization>
+        <name>Akiban Technologies, Inc</name>
+        <url>http://www.akiban.com</url>
+    </organization>
+
+    <licenses>
+        <license>
+            <name>GNU Affero General Public License v3</name>
+            <url>https://www.gnu.org/licenses/agpl</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <connection>scm:bazaar:https://code.launchpad.net/akiban-server</connection>
+        <url>https://code.launchpad.net/akiban-server</url>
+    </scm>
+
     <properties>
         <!-- this is the default version number, hudson job sets this to the official number -->
         <BZR_REVISION></BZR_REVISION>
@@ -14,6 +36,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
+    
     <distributionManagement>
         <snapshotRepository>
             <id>akiban</id>
@@ -26,6 +49,7 @@
             <url>http://akiban.artifactoryonline.com/akiban/libs-releases-local</url>
         </repository>
     </distributionManagement>
+    
     <dependencies>
         <dependency>
             <groupId>com.akiban</groupId>
@@ -187,10 +211,10 @@
             <version>4.0.0</version>
         </dependency>
         <dependency>
-	    <groupId>org.apache.httpcomponents</groupId>
-	    <artifactId>httpclient</artifactId>
-	    <version>4.2.3</version>
-            <scope>test</scope>
+          <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpclient</artifactId>
+          <version>4.2.3</version>
+          <scope>test</scope>
         </dependency>
         <!-- Akiban Direct -->
          <dependency>
@@ -198,8 +222,8 @@
             <artifactId>javassist</artifactId>
             <version>3.16.1-GA</version>
         </dependency>
-        
     </dependencies>
+
     <build>
         <resources>
             <resource>
@@ -394,8 +418,10 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- Earlier version of eclipse plugin to avoid resource filtering bug. 
-         (See http://stackoverflow.com/questions/1397903/setting-project-for-eclipse-using-maven)-->
+            <!--
+                 Earlier version of eclipse plugin to avoid resource filtering bug.
+                 (See http://stackoverflow.com/questions/1397903/setting-project-for-eclipse-using-maven
+            )-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-eclipse-plugin</artifactId>
