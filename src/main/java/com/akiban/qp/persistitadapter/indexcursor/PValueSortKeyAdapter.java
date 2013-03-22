@@ -46,6 +46,8 @@ import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.persistit.Key;
 
 public class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPreparedExpression> {
+    
+    private final static int SORT_KEY_MAX_SEGMENT_SIZE = 256;
 
     private PValueSortKeyAdapter() {}
     
@@ -182,7 +184,7 @@ public class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPrepared
             append(source, null, tInstance, collator);
         }
 
-        protected final PersistitKeyPValueTarget target = new PersistitKeyPValueTarget();
+        protected final PersistitKeyPValueTarget target = new PersistitKeyPValueTarget(SORT_KEY_MAX_SEGMENT_SIZE);
     }
     
     private static class PValueSortKeySource implements SortKeySource<PValueSource> {
