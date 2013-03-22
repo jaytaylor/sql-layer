@@ -1,11 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project>
     <modelVersion>4.0.0</modelVersion>
+
     <groupId>com.akiban</groupId>
     <artifactId>akiban-server</artifactId>
-    <packaging>jar</packaging>
     <version>1.5.2-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
     <name>akiban-server</name>
+    <inceptionYear>2009</inceptionYear>
+    <url>http://www.akiban.com/</url>
+    <organization>
+        <name>Akiban Technologies, Inc</name>
+        <url>http://www.akiban.com</url>
+    </organization>
+
+    <licenses>
+        <license>
+            <name>GNU Affero General Public License v3</name>
+            <url>https://www.gnu.org/licenses/agpl</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <connection>scm:bazaar:https://code.launchpad.net/akiban-server</connection>
+        <url>https://code.launchpad.net/akiban-server</url>
+    </scm>
+
     <properties>
         <!-- this is the default version number, hudson job sets this to the official number -->
         <BZR_REVISION></BZR_REVISION>
@@ -14,6 +36,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
+    
     <distributionManagement>
         <snapshotRepository>
             <id>akiban</id>
@@ -26,6 +49,7 @@
             <url>http://akiban.artifactoryonline.com/akiban/libs-releases-local</url>
         </repository>
     </distributionManagement>
+    
     <dependencies>
         <dependency>
             <groupId>com.akiban</groupId>
@@ -187,10 +211,10 @@
             <version>4.0.0</version>
         </dependency>
         <dependency>
-	    <groupId>org.apache.httpcomponents</groupId>
-	    <artifactId>httpclient</artifactId>
-	    <version>4.2.3</version>
-            <scope>test</scope>
+          <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpclient</artifactId>
+          <version>4.2.3</version>
+          <scope>test</scope>
         </dependency>
         <!-- Akiban Direct -->
          <dependency>
@@ -198,8 +222,8 @@
             <artifactId>javassist</artifactId>
             <version>3.16.1-GA</version>
         </dependency>
-        
     </dependencies>
+
     <build>
         <resources>
             <resource>
@@ -363,51 +387,26 @@
                     <failIfMissing>true</failIfMissing>
                     <excludes>
                         <!-- General files that can't have or don't need header -->
-                        <exclude>**/*.ddl</exclude>
-                        <exclude>**/*.sql</exclude>
-                        <exclude>**/*.tag</exclude>
-                        <exclude>**/*.expected</exclude>
-                        <exclude>**/*.t3expected</exclude>
-                        <exclude>**/*.error</exclude>
-                        <exclude>**/*.dat</exclude>
-                        <exclude>**/*.fail</exclude>
-                        <exclude>**/*.params</exclude>
-                        <exclude>**/*.test</exclude>
-                        <exclude>**/*.yaml</exclude>
-                        <exclude>**/*.yml</exclude>
-                        <exclude>src/test/bin/*.sh</exclude>
-                        <exclude>src/test/bin/*.cmd</exclude>
-                        <exclude>.idea/**</exclude>
-                        <exclude>**/*.proto</exclude>
                         <exclude>.bzrignore</exclude>
+                        <exclude>.idea/**</exclude>
                         <!-- No extension. Manually add header and ignore -->
-                        <exclude>bin/*</exclude>
-                        <exclude>src/test/bin/*</exclude>
-                        <exclude>conf/config/jvm.options</exclude>
-                        <exclude>**/jvm.options</exclude>
-                        <exclude>conf/config/jvm-options.cmd</exclude>
+                        <exclude>bin/akserver</exclude>
+                        <exclude>**/*.options</exclude>
                         <!-- Files requiring a specific format (packaging control, test output, etc) -->
                         <exclude>debian/**</exclude>
                         <exclude>redhat/**</exclude>
                         <exclude>macosx/**</exclude>
                         <exclude>windows/**</exclude>
-                        <exclude>build_installer.cmd</exclude>
-                        <exclude>**/LICENSE*.txt</exclude>
+                        <exclude>**/*.txt</exclude>
+                        <exclude>**/services-config.yaml</exclude>
+                        <exclude>**/default-services.yaml</exclude>
+                        <exclude>src/main/protobuf/*.proto</exclude>
                         <exclude>src/main/resources/version/akserver_version</exclude>
-                        <exclude>src/test/resources/com/akiban/**/README*</exclude>
-                        <exclude>src/test/resources/com/akiban/**/*.properties</exclude>
-                        <exclude>src/test/resources/com/akiban/ais/model/staticgrouping/*</exclude>
-                        <exclude>src/test/resources/com/akiban/rest/**</exclude>
-                        <exclude>src/main/resources/com/akiban/server/service/functions/functionpath.txt</exclude>
-                        <exclude>src/test/resources/com/akiban/server/service/functions/testfunctionpath.txt</exclude>
-                        <exclude>src/test/resources/com/akiban/server/service/servicemanager/configuration/yaml/test-composite.yaml.1</exclude>
-                        <exclude>src/main/resources/com/akiban/server/types3/service/t3s.txt</exclude>
-			<exclude>src/test/resources/com/akiban/server/entity/changes/*.*</exclude>
-			<exclude>src/test/resources/com/akiban/server/entity/fromais/*.*</exclude>
-			<exclude>src/test/resources/com/akiban/server/entity/model/*.*</exclude>
+                        <exclude>src/test/bin/*</exclude>
+                        <exclude>src/test/resources/**</exclude>
                     </excludes>
                     <mapping>
-                        <g>JAVADOC_STYLE</g>
+                        <yaml>SCRIPT_STYLE</yaml>
                         <yml>SCRIPT_STYLE</yml>
                     </mapping>
                 </configuration>
@@ -419,8 +418,10 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- Earlier version of eclipse plugin to avoid resource filtering bug. 
-         (See http://stackoverflow.com/questions/1397903/setting-project-for-eclipse-using-maven)-->
+            <!--
+                 Earlier version of eclipse plugin to avoid resource filtering bug.
+                 (See http://stackoverflow.com/questions/1397903/setting-project-for-eclipse-using-maven
+            )-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-eclipse-plugin</artifactId>
