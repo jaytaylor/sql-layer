@@ -363,51 +363,26 @@
                     <failIfMissing>true</failIfMissing>
                     <excludes>
                         <!-- General files that can't have or don't need header -->
-                        <exclude>**/*.ddl</exclude>
-                        <exclude>**/*.sql</exclude>
-                        <exclude>**/*.tag</exclude>
-                        <exclude>**/*.expected</exclude>
-                        <exclude>**/*.t3expected</exclude>
-                        <exclude>**/*.error</exclude>
-                        <exclude>**/*.dat</exclude>
-                        <exclude>**/*.fail</exclude>
-                        <exclude>**/*.params</exclude>
-                        <exclude>**/*.test</exclude>
-                        <exclude>**/*.yaml</exclude>
-                        <exclude>**/*.yml</exclude>
-                        <exclude>src/test/bin/*.sh</exclude>
-                        <exclude>src/test/bin/*.cmd</exclude>
-                        <exclude>.idea/**</exclude>
-                        <exclude>**/*.proto</exclude>
                         <exclude>.bzrignore</exclude>
+                        <exclude>.idea/**</exclude>
                         <!-- No extension. Manually add header and ignore -->
-                        <exclude>bin/*</exclude>
-                        <exclude>src/test/bin/*</exclude>
-                        <exclude>conf/config/jvm.options</exclude>
-                        <exclude>**/jvm.options</exclude>
-                        <exclude>conf/config/jvm-options.cmd</exclude>
+                        <exclude>bin/akserver</exclude>
+                        <exclude>**/*.options</exclude>
                         <!-- Files requiring a specific format (packaging control, test output, etc) -->
                         <exclude>debian/**</exclude>
                         <exclude>redhat/**</exclude>
                         <exclude>macosx/**</exclude>
                         <exclude>windows/**</exclude>
-                        <exclude>build_installer.cmd</exclude>
-                        <exclude>**/LICENSE*.txt</exclude>
+                        <exclude>**/*.txt</exclude>
+                        <exclude>**/services-config.yaml</exclude>
+                        <exclude>**/default-services.yaml</exclude>
+                        <exclude>src/main/protobuf/*.proto</exclude>
                         <exclude>src/main/resources/version/akserver_version</exclude>
-                        <exclude>src/test/resources/com/akiban/**/README*</exclude>
-                        <exclude>src/test/resources/com/akiban/**/*.properties</exclude>
-                        <exclude>src/test/resources/com/akiban/ais/model/staticgrouping/*</exclude>
-                        <exclude>src/test/resources/com/akiban/rest/**</exclude>
-                        <exclude>src/main/resources/com/akiban/server/service/functions/functionpath.txt</exclude>
-                        <exclude>src/test/resources/com/akiban/server/service/functions/testfunctionpath.txt</exclude>
-                        <exclude>src/test/resources/com/akiban/server/service/servicemanager/configuration/yaml/test-composite.yaml.1</exclude>
-                        <exclude>src/main/resources/com/akiban/server/types3/service/t3s.txt</exclude>
-                        <exclude>src/test/resources/com/akiban/server/entity/changes/*.*</exclude>
-                        <exclude>src/test/resources/com/akiban/server/entity/fromais/*.*</exclude>
-                        <exclude>src/test/resources/com/akiban/server/entity/model/*.*</exclude>
+                        <exclude>src/test/bin/*</exclude>
+                        <exclude>src/test/resources/**</exclude>
                     </excludes>
                     <mapping>
-                        <g>JAVADOC_STYLE</g>
+                        <yaml>SCRIPT_STYLE</yaml>
                         <yml>SCRIPT_STYLE</yml>
                     </mapping>
                 </configuration>
