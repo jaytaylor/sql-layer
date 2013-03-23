@@ -4,7 +4,7 @@
 
     <groupId>com.akiban</groupId>
     <artifactId>akiban-server</artifactId>
-    <version>1.5.2-SNAPSHOT</version>
+    <version>1.6.0</version>
     <packaging>jar</packaging>
 
     <name>akiban-server</name>
@@ -100,12 +100,12 @@
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-persistit</artifactId>
-            <version>3.2.7-SNAPSHOT</version>
+            <version>3.2.7</version>
         </dependency>
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-sql-parser</artifactId>
-            <version>1.0.14-SNAPSHOT</version>
+            <version>1.0.14</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -127,7 +127,7 @@
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-sql-parser</artifactId>
-            <version>1.0.14-SNAPSHOT</version>
+            <version>1.0.14</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -397,6 +397,7 @@
                         <exclude>redhat/**</exclude>
                         <exclude>macosx/**</exclude>
                         <exclude>windows/**</exclude>
+                        <exclude>packages-common/**</exclude>
                         <exclude>**/*.txt</exclude>
                         <exclude>**/services-config.yaml</exclude>
                         <exclude>**/default-services.yaml</exclude>
