@@ -42,30 +42,38 @@ public class TParsers
         @Override
         public void parse(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            // parse source is a string representing a number-ish, where '0' is false, any other integer is true.
-            // We're looking for an optional negative, followed by an optional dot, followed by any number of digits,
-            // followed by anything. If any of those digits is not 0, the result is true; otherwise it's false.
             String s = source.getString();
-            boolean negativeAllowed = true;
-            boolean periodAllowed = true;
             boolean result = false;
-            for (int i = 0, len = s.length(); i < len; ++i) {
-                char c = s.charAt(i);
-                if (negativeAllowed && c == '-') {
-                    negativeAllowed = false;
-                }
-                else if (periodAllowed && c == '.') {
-                    periodAllowed = false;
-                    negativeAllowed = false;
-                }
-                else if (Character.isDigit(c)) {
-                    if (c != '0') {
-                        result = true;
+            if (s.equalsIgnoreCase("true") || s.equalsIgnoreCase("t")) {
+                result = true;
+            }
+            else if (s.equalsIgnoreCase("false") || s.equalsIgnoreCase("f")) {
+                result = false;
+            }
+            else {
+                // parse source is a string representing a number-ish, where '0' is false, any other integer is true.
+                // We're looking for an optional negative, followed by an optional dot, followed by any number of digits,
+                // followed by anything. If any of those digits is not 0, the result is true; otherwise it's false.
+                boolean negativeAllowed = true;
+                boolean periodAllowed = true;
+                for (int i = 0, len = s.length(); i < len; ++i) {
+                    char c = s.charAt(i);
+                    if (negativeAllowed && c == '-') {
+                        negativeAllowed = false;
+                    }
+                    else if (periodAllowed && c == '.') {
+                        periodAllowed = false;
+                        negativeAllowed = false;
+                    }
+                    else if (Character.isDigit(c)) {
+                        if (c != '0') {
+                            result = true;
+                            break;
+                        }
+                    }
+                    else {
                         break;
                     }
-                }
-                else {
-                    break;
                 }
             }
             target.putBool(result);
