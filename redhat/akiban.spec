@@ -1,5 +1,5 @@
 Name:           akiban
-Version:        1.6.0
+Version:        1.6.1
 Release:        1
 Summary:        Akiban Technologies stack.
 Group:          Applications/Databases
