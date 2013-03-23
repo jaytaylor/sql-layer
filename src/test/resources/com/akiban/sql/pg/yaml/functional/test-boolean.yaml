@@ -24,6 +24,16 @@
 - Statement: SELECT b,CAST(b AS INT) FROM t
 - output: [[true, 1], [false, 0]]
 
+---
+- Statement: DELETE FROM t
+---
+- Statement: INSERT into t(v) values ('false'), ('true'), ('0'), ('1'), ('f'), ('t'), ('1.0');
+---
+- Statement: UPDATE t SET b = v
+---
+- Statement: SELECT v FROM t WHERE b IS TRUE ORDER BY v
+- output: [['1'],['1.0'],['t'],['true']]
+
 #
 # Test conversion of all types to boolean in WHERE clause
 #
