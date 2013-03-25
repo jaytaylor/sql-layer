@@ -49,8 +49,6 @@ public interface RestDMLService {
                               TableName procName, String jsonParams) throws SQLException;
 
     public void fullTextSearch(PrintWriter writer, IndexName indexName, Integer depth, String query, Integer limit);
-    // TODO: Temporary.
-    public void refreshFullTextIndex(PrintWriter writer, IndexName indexName);
 
     public String ajdaxToSQL(TableName tableName, String ajdax) throws IOException;
 }

@@ -1,18 +1,27 @@
 /**
- * Copyright (C) 2009-2013 Akiban Technologies, Inc.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.service.text;
@@ -39,12 +48,17 @@ import java.util.*;
 public class FullTextIndexServiceIT extends ITBase
 {
     public static final String SCHEMA = "test";
-
+    private static final long updateInterval = 1000L; // for testing
     protected FullTextIndexService fullText;
     protected Schema schema;
     protected PersistitAdapter adapter;
     protected QueryContext queryContext;
 
+    private int c;
+    private int o;
+    private int i;
+    private int a;
+    
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider()
@@ -55,29 +69,30 @@ public class FullTextIndexServiceIT extends ITBase
     protected Map<String, String> startupConfigProperties() {
         Map<String, String> properties = new HashMap<>();
         properties.put("akserver.text.indexpath", "/tmp/aktext");
+        properties.put(FullTextIndexServiceImpl.UPDATE_INTERVAL, Long.toString(updateInterval));
         return properties;
     }
 
     @Before
     public void createData() {
-        int c = createTable(SCHEMA, "c",
-                            "cid INT PRIMARY KEY NOT NULL",
-                            "name VARCHAR(128) COLLATE en_us_ci");
-        int o = createTable(SCHEMA, "o",
-                            "oid INT PRIMARY KEY NOT NULL",
-                            "cid INT NOT NULL",
-                            "GROUPING FOREIGN KEY(cid) REFERENCES c(cid)",
-                            "order_date DATE");
-        int i = createTable(SCHEMA, "i",
-                            "iid INT PRIMARY KEY NOT NULL",
-                            "oid INT NOT NULL",
-                            "GROUPING FOREIGN KEY(oid) REFERENCES o(oid)",
-                            "sku VARCHAR(10) NOT NULL");
-        int a = createTable(SCHEMA, "a",
-                            "aid INT PRIMARY KEY NOT NULL",
-                            "cid INT NOT NULL",
-                            "GROUPING FOREIGN KEY(cid) REFERENCES c(cid)",
-                            "state CHAR(2)");
+        c = createTable(SCHEMA, "c",
+                        "cid INT PRIMARY KEY NOT NULL",
+                        "name VARCHAR(128) COLLATE en_us_ci");
+        o = createTable(SCHEMA, "o",
+                        "oid INT PRIMARY KEY NOT NULL",
+                        "cid INT NOT NULL",
+                        "GROUPING FOREIGN KEY(cid) REFERENCES c(cid)",
+                        "order_date DATE");
+        i = createTable(SCHEMA, "i",
+                        "iid INT PRIMARY KEY NOT NULL",
+                        "oid INT NOT NULL",
+                        "GROUPING FOREIGN KEY(oid) REFERENCES o(oid)",
+                        "sku VARCHAR(10) NOT NULL");
+        a = createTable(SCHEMA, "a",
+                        "aid INT PRIMARY KEY NOT NULL",
+                        "cid INT NOT NULL",
+                        "GROUPING FOREIGN KEY(cid) REFERENCES c(cid)",
+                        "state CHAR(2)");
         writeRow(c, 1, "Fred Flintstone");
         writeRow(o, 101, 1, "2012-12-12");
         writeRow(i, 10101, 101, "ABCD");
@@ -96,6 +111,74 @@ public class FullTextIndexServiceIT extends ITBase
         schema = SchemaCache.globalSchema(ais());
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
+    }
+
+    @Test
+    public void testUpdate() throws InterruptedException
+    {
+        /*
+            Test plans:
+            1 - do a search, confirm that the rows come back as expected
+            2 - (With update worker enabled)
+                + insert new rows
+                + sleep for sometime
+                + do the search again and confirm that the new rows are found
+            3 - (With update worker NOT enable)
+                + disable update worker
+                + insert new rows
+                + do the search again and confirm that the new rows are NOT found
+
+         */
+        
+        // part 1
+        FullTextIndex index = createFullTextIndex(SCHEMA, "c", "idx_c", 
+                                                  "name", "i.sku", "a.state");
+        fullText.createIndex(session(), index.getIndexName());
+
+        RowType rowType = rowType("c");
+        RowBase[] expected1 = new RowBase[]
+        {
+            row(rowType, 1L),
+            row(rowType, 3L)
+        };
+        FullTextQueryBuilder builder = new FullTextQueryBuilder(index, ais(), queryContext);
+        Operator plan = builder.scanOperator("flintstone", 10);
+        compareRows(expected1, cursor(plan, queryContext));
+
+        plan = builder.scanOperator("state:MA", 10);
+        compareRows(expected1, cursor(plan, queryContext));
+        
+        // part 2
+        // write new rows
+        writeRow(c, 4, "John Watson");
+        writeRow(c, 5, "Sherlock Flintstone");
+        writeRow(c, 6, "Mycroft Holmes");
+        writeRow(c, 7, "Flintstone Lestrade");
+        
+        // sleep a bit (wait for the worker to do the update)
+        Thread.sleep(updateInterval * 2);
+
+        // confirm new changes
+        RowBase expected2[] = new RowBase[]
+        {
+            row(rowType, 1L),
+            row(rowType, 3L),
+            row(rowType, 5L),
+            row(rowType, 7L)
+        };
+        
+        compareRows(expected2, cursor(plan, queryContext));
+        
+        // part 3
+        ((FullTextIndexServiceImpl)fullText).disableUpdateWorker();
+        
+        writeRow(c, 8, "Flintstone Hudson");
+        writeRow(c, 9, "Jim Flintstone");
+        
+        Thread.sleep(updateInterval * 2);
+        
+        // confirm that new rows are not found (ie., expected2 still works)
+        compareRows(expected2, cursor(plan, queryContext));
     }
 
     @Test

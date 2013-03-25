@@ -25,6 +25,7 @@ import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.row.HKeyRow;
 import com.akiban.qp.rowtype.HKeyRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -138,6 +139,42 @@ public class FullTextIndexInfo
         Set<RowType> rowTypes = getRowTypes();
         plan = API.filter_Default(plan, rowTypes);
         return plan;
+    }
+
+    private Operator branchLookup_Nested(HKeyRow row)
+    {
+        Operator plan = null;
+        RowType rowType = row.rowType();
+        for (IndexColumn ic : index.getAllColumns())
+        {
+            if (ic.getColumn().getUserTable().isDescendantOf(index.getIndexedTable()))
+            {
+                
+                plan = API.branchLookup_Nested(rowType.userTable().getGroup(), 
+                                               rowType,
+                                               schema.userTableRowType(rowType.userTable()),
+                                               API.InputPreservationOption.DISCARD_INPUT,
+                                               0);
+                break;
+            }   
+        }
+
+        return plan;
+    }
+    
+    /**
+     * 
+     * @param row
+     * @return the operator plan to get to every row related to this index row
+     */
+    public Operator getOperator(HKeyRow row)
+    {
+        Operator plan = branchLookup_Nested(row);
+        RowType rowType = plan != null ? plan.rowType() : row.rowType();
+        return API.ancestorLookup_Nested(indexedRowType.userTable().getGroup(), 
+                                         rowType,
+                                         Arrays.asList(schema.userTableRowType(rowType.userTable())), 
+                                         0);
     }
 
     public Analyzer getAnalyzer() {

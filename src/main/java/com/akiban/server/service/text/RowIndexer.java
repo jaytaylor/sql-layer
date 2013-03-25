@@ -134,6 +134,26 @@ public class RowIndexer implements Closeable
         return documentCount;
     }
 
+    protected void updateDocument(Cursor cursor, byte hkeyBytes[]) throws IOException
+    {
+        cursor.open();
+        Row row = cursor.next();
+        if (row == null) // no rows found
+        {
+            writer.deleteDocuments(new Term(IndexedField.KEY_FIELD, new BytesRef(hkeyBytes)));
+        }
+        else
+        {
+            do
+            {
+                updating = true;
+                indexRow(row);
+            }
+            while ((row = cursor.next()) != null);
+        }
+        cursor.close();
+    }
+
     protected void addDocument() throws IOException {
         if (currentDocument != null) {
             if (updating) {

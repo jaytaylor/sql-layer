@@ -95,7 +95,9 @@ public class PersistitStore implements Store, Service {
     private static final String BULKLOAD_PK_BUFFER_ALLOC = "akserver.bulkload.bufferalloc.pk";
     private static final String BULKLOAD_GROUP_BUFFER_ALLOC = "akserver.bulkload.bufferalloc.group";
     private static final String WRITE_LOCK_ENABLED_CONFIG = "akserver.write_lock_enabled";
-    
+    private static final String MAINTENANCE_SCHEMA = "maintenance";
+    private static final String FULL_TEXT_TABLE = "full_text";
+
     private final static int MAX_ROW_SIZE = 5000000;
 
     private final static int MAX_INDEX_TRANCHE_SIZE = 10 * 1024 * 1024;
@@ -130,6 +132,10 @@ public class PersistitStore implements Store, Service {
 
     private RowDataValueCoder valueCoder;
 
+    // Each row change has a 'uniqueChangeId', stored in the 'maintenance.full_text' table
+    // The number would be reset after all maintenance is done
+    private volatile AtomicLong uniqueChangeId = new AtomicLong(Long.MAX_VALUE);
+    
     private static final StorageAction DIRECT_STORAGE = new StorageAction() {
         @Override
         public void doStore(Exchange exchange) throws PersistitException {
@@ -150,6 +156,318 @@ public class PersistitStore implements Store, Service {
         this.lockService = lockService;
         this.transactionService = transactionService;
     }
+
+     // --- for tracking changes 
+    private Exchange getChangeEntry(Session session) throws PersistitException
+    {   
+        Exchange ret = treeService.getExchange(session,
+                                               treeService.treeLink(MAINTENANCE_SCHEMA,
+                                                                    FULL_TEXT_TABLE));
+        // skipping over existing keys
+        while (ret.hasNext(true))
+            ret.next();
+        return ret;
+    }
+
+    private void addChange(Session session,
+                           String schema,
+                           String table,
+                           String index,
+                           Integer indexId,
+                           Key rowHKey) throws PersistitException
+    {
+        Exchange ex = getChangeEntry(session);
+
+        // KEY: schema | table | indexName | indexId | unique_num 
+        ex.clear().append(schema).append(table).append(index).append(indexId).append(uniqueChangeId.getAndIncrement());
+
+        // VALUE: rowHKey's bytes | indexId
+        ex.getValue().clear().putByteArray(rowHKey.getEncodedBytes(),
+                                           0,
+                                           rowHKey.getEncodedSize());
+    }
+
+    // --- for reporting changes
+    /**
+     * Collect all 'HKeyRow's from the list of key-value pairs that have
+     * the same schema.table.indexName,
+     * also fill schema[0],
+     *           table[0],
+     *      and  indexName[0]
+     *  with correct values
+     * 
+     * @param schema
+     * @param table
+     * @param indexName
+     * @param ex
+     * @return 
+     */
+    public HKeyBytesStream getChangedRows(Session session)
+    {
+        return new HKeyBytesStream(treeService.getExchange(session,
+                                                           treeService.treeLink(MAINTENANCE_SCHEMA,
+                                                                                FULL_TEXT_TABLE)));
+    }
+
+ 
+    /**
+     * 
+     * This is supposed to behave similar* to Scheme's stream,
+     * (ie., each element is not computed until it absolutely has to be.)
+     * 
+     * In other words, the byte arrays are not decoded before hand
+     */
+    public static class HKeyBytesStream implements Iterable<byte[]>
+    {
+
+        private final Exchange ex;
+        private int size = 0;
+        private IndexName indexName;
+        private int modCount = 0;
+        private boolean moreRows = true; // more rows of this index?
+
+        private HKeyBytesStream()
+        {
+            ex = null;
+        }
+
+        // 'private' because this should not be constructed
+        // anywhere other than PersistitStore.getChangedRows()
+        // The class itself, however, is public, as it can be used anywhere
+        private HKeyBytesStream (Exchange ex)
+        {
+            this.ex = ex;
+            indexName = buildName(ex);
+        }
+
+        public boolean nextIndex() throws PersistitException
+        {
+            boolean nextIndex = ex.next();
+            if (nextIndex)
+            {
+                size = 0;
+                modCount = 0;
+                indexName = buildName(ex);
+                if (!ignoreDeleted(ex, indexName, true)) // reach the end after ignoring all deleted indexId
+                    return moreRows = false;             // hence no more rows (or indices)
+            }
+            return nextIndex;
+        }
+
+        public IndexName getIndexName()
+        {
+            return indexName;
+        }
+
+        public int size()
+        {
+            return size;
+        }
+
+        @Override
+        public Iterator<byte[]> iterator()
+        {
+            return new StreamIterator(moreRows);
+        }
+
+        /**
+         * remove all entries about the change in this index
+         * (ie., all entries with the same schema.table.indexName)
+         * 
+         * `ex` currently points at the last key-value pair in the
+         *  list of all pairs that have the same indexname
+         *  and we now that there are 'count' such entries
+         *  so just remove them from tail --> head
+         * 
+         */
+        public void removeAll() throws PersistitException
+        {
+            while (size-- >= 0)
+                ex.fetchAndRemove();
+            ++modCount;
+        }
+
+        private class StreamIterator implements Iterator<byte[]>
+        {
+
+            private boolean hasNext;
+            private int innerModCount = modCount;
+
+            private StreamIterator (boolean hasNext)
+            {
+                this.hasNext = hasNext;
+            }
+
+            @Override
+            public boolean hasNext()
+            {
+                return hasNext;
+            }
+
+            @Override
+            public byte[] next()
+            {
+                try
+                {
+                    if (innerModCount != modCount)
+                        throw new ConcurrentModificationException();
+
+                    byte ret[] = ex.getValue().getByteArray();
+                    boolean seeNewIndex = false;
+
+                    hasNext = ex.next() && !(seeNewIndex = seeNewIndex(indexName.getSchemaName(),
+                                                                       indexName.getTableName(),
+                                                                       indexName.getName(),
+                                                                       ex.getKey())
+                                        // and following this row is at one row of
+                                        // this index whose index-id is not 'dead'
+                                        && ignoreDeleted(ex, indexName, false));
+            
+                    
+                    // Take caution in order NOT to go to the next index (ie., different name)
+                    if (seeNewIndex)  
+                        // back up one entry, because we have read past the last
+                        // entry that has the same schema.table.indexName
+                        ex.previous(); 
+                    ++innerModCount;
+                    ++modCount;
+                    ++size;
+
+                    return ret;
+                }
+                catch (PersistitException ex)
+                {
+                    throw new AkibanInternalException("Error retrieving rows from Exchange", ex);
+                }
+            }
+
+            @Override
+            public void remove()
+            {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }   
+        }
+
+        /**
+         * Skip all entries whose indexName is that of a non-existing index,
+         * or whose indexId is not the same as that of the the current index (with the same name)
+         * 
+         * @param ex
+         * @param indexName
+         * @param lookPastNewIndex whether to go beyond the current index
+         * @return <FALSE> iff after ignoring all deleted indices, there's nothing left
+         *         <TRUE> otherwise
+         * @throws PersistitException 
+         */
+        private boolean ignoreDeleted(Exchange ex, IndexName indexName, boolean lookPastNewIndex) throws PersistitException
+        {
+            // KEY: Schema | Table | indexName | indexID | ...
+            Key key = ex.getKey();
+            assert indexName.getSchemaName().equals(key.decodeString()) 
+                    : "Unexpected schema" ;
+            assert indexName.getTableName().equals(key.decodeString())
+                    : "Unexpected table";
+            assert indexName.getName().equals(key.decodeString())
+                    : "Unexpected name";
+
+            Integer indexId = key.decodeInt();
+            int flag;
+            while (sameIdAsCurrent(indexName, indexId) != NOCHANGE)
+            // there was a DELETE (and possibly RECREATE)
+            // ignore all changes in the old id(s)
+            {
+                boolean hasMore = true;
+                boolean seeNewIndex = false;
+
+                do
+                    ;// do nothing (skipping deleted 'index')
+                     // TODO: remove the entry here?
+                while ((hasMore = ex.next())
+                                 && !(seeNewIndex = seeNewIndex(indexName.getSchemaName(),
+                                                                indexName.getTableName(),
+                                                                indexName.getName(),
+                                                                ex.getKey()))
+                                 && !seeNewIndexId(ex, indexId));
+
+                if (!hasMore)
+                    return false;     // reach the end! (no more rows or indices!)
+
+                else if (seeNewIndex) // back up one entry in order not to 
+                {                     // go past the last pair
+                    ex.previous();
+                    // See new index
+                    // hence do the checking again, if we're allowed to look past new index
+                    // (otherwise, meaning no more rows with good ids of this
+                    //   index, return false)
+                    return lookPastNewIndex ? nextIndex() : false;
+
+                }
+                else // ie., see new IndexId
+                {
+                    Key k = ex.getKey();
+                    k.decodeString();
+                    k.decodeString();
+                    k.decodeString();
+
+                    indexId = k.decodeInt();
+                }
+            }
+         
+            return true;
+        }
+
+        private static boolean seeNewIndexId(Exchange ex, Integer oldId)
+        {
+            Key key = ex.getKey();
+            // skip uninteresting parts
+            key.decodeString();
+            key.decodeString();
+            key.decodeString();
+
+            return !oldId.equals(key.decodeInt());
+            
+        }
+
+        /**
+         * Check if the given id is the same as the current index's id.
+         * 
+         * (If the index with the given name no longer exists, return false)
+         * @param schema
+         * @param table
+         * @param indexName
+         * @param id
+         * @return 
+         */
+        private static int sameIdAsCurrent(IndexName indexName, Integer id)
+        {
+            //TODO:
+            // <0> locate the index by name
+            // <1> check if that index has the same id as the given id
+            return NOCHANGE;
+        }
+        private boolean seeNewIndex(String schema, String table, String indexName, Key k)
+        {
+            return !k.decodeString().equals(schema)
+                    || !k.decodeString().equals(table)
+                    || !k.decodeString().equals(indexName);
+        }
+
+        private static IndexName buildName(Exchange e)
+        {
+            Key key = e.getKey();
+            return new IndexName(new TableName(key.decodeString(),
+                                               key.decodeString()),
+                                 key.decodeString());
+        }
+        
+        // status of index
+        private static final int NOCHANGE = 0;
+        private static final int DELETE = 1;
+        private static final int RECREATE = 2;
+        
+    }
+
+    //------ end fulltext index maintenance services ------
 
     @Override
     public synchronized void start() {
@@ -662,6 +980,11 @@ public class PersistitStore implements Store, Service {
     {
         RowDef rowDef = writeCheck(session, rowData, false);
         Exchange hEx = null;
+        
+         // for tracking changes
+        String schema = rowDef.getSchemaName(), table = rowDef.getTableName();
+        Key hKey;
+
         DELETE_ROW_TAP.in();
         try {
             hEx = getExchange(session, rowDef);
@@ -684,6 +1007,10 @@ public class PersistitStore implements Store, Service {
             PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
             if(deleteIndexes) {
                 for (Index index : rowDef.getIndexes()) {
+                     if (index.getIndexType() == IndexType.FULL_TEXT)
+                        addChange(session, schema, table, index.getIndexName().getName(),
+                                           index.getIndexId(), hKey);
+
                     deleteIndex(session, index, rowData, hEx.getKey(), indexRow);
                 }
             }
@@ -732,6 +1059,11 @@ public class PersistitStore implements Store, Service {
         RowDef newRowDef = rowDefFromExplicitOrId(session, newRowData);
         PersistitAdapter adapter = adapter(session);
         Exchange hEx = null;
+
+        // for tracking changes;
+        String schema = rowDef.getSchemaName(), table = rowDef.getTableName();
+        Key hKey;
+
         UPDATE_ROW_TAP.in();
         try {
             hEx = getExchange(session, rowDef);
@@ -745,6 +1077,7 @@ public class PersistitStore implements Store, Service {
             if (!hEx.getValue().isDefined()) {
                 throw new NoSuchRowException (hEx.getKey());
             }
+            hKey = hEx.getKey();
             // Combine current version of row with the version coming in
             // on the update request.
             // This is done by taking only the values of columns listed
@@ -768,6 +1101,10 @@ public class PersistitStore implements Store, Service {
                 PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(adapter);
                 Index[] indexes = (indexesToMaintain == null) ? rowDef.getIndexes() : indexesToMaintain;
                 for (Index index : indexes) {
+                     if (index.getIndexType() == IndexType.FULL_TEXT)
+                        addChange(session, schema, table, index.getIndexName().getName(),
+                                           index.getIndexId(), hKey);
+
                     if(indexesAsInsert) {
                         insertIntoIndex(session, index, mergedRowData, hEx.getKey(), indexRowBuffer, deferIndexes);
                     } else {
