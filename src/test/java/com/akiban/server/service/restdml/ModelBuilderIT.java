@@ -174,8 +174,8 @@ public class ModelBuilderIT extends ITBase {
     @Test
     public void implodeEmptyTable() {
         createTable(SCHEMA, TABLE, "foo int, bar int, zap int");
-        builder.implode(TABLE_NAME);
-        assertEquals("Tables in schema", "["+TABLE+"]", ais().getSchema(SCHEMA).getUserTables().keySet().toString());
+        builder.implode(NULL_WRITER, TABLE_NAME);
+        assertEquals("Tables in schema", "[" + TABLE + "]", ais().getSchema(SCHEMA).getUserTables().keySet().toString());
         assertTrue("Is builder table", builder.isBuilderTable(TABLE_NAME));
     }
 
@@ -185,7 +185,7 @@ public class ModelBuilderIT extends ITBase {
         writeRow(id, "foo");
         writeRow(id, new Object[]{null});
         writeRow(id, "bar");
-        builder.implode(TABLE_NAME);
+        builder.implode(NULL_WRITER, TABLE_NAME);
         updateAISGeneration();
         assertTrue("Is builder table", builder.isBuilderTable(TABLE_NAME));
         id = tableId(TABLE_NAME);
@@ -200,12 +200,12 @@ public class ModelBuilderIT extends ITBase {
     @Test(expected=ModelBuilderException.class)
     public void implodeBuilderTable() {
         builder.create(TABLE_NAME);
-        builder.implode(TABLE_NAME);
+        builder.implode(NULL_WRITER, TABLE_NAME);
     }
 
     @Test(expected=NoSuchTableException.class)
     public void implodeNoSuchTable() {
-        builder.implode(TABLE_NAME);
+        builder.implode(NULL_WRITER, TABLE_NAME);
     }
 
     @Test(expected=ModelBuilderException.class)

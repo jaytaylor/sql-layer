@@ -207,7 +207,7 @@ public class ModelBuilder {
         }
     }
 
-    public void implode(TableName tableName) {
+    public void implode(PrintWriter writer, TableName tableName) {
         try (Session session = sessionService.createSession()) {
             UserTable curTable = ddlFunctions.getUserTable(session, tableName);
             if(!curTable.isRoot()) {
