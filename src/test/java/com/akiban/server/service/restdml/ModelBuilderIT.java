@@ -171,6 +171,43 @@ public class ModelBuilderIT extends ITBase {
         );
     }
 
+    @Test
+    public void implodeEmptyTable() {
+        createTable(SCHEMA, TABLE, "foo int, bar int, zap int");
+        builder.implode(TABLE_NAME);
+        assertEquals("Tables in schema", "["+TABLE+"]", ais().getSchema(SCHEMA).getUserTables().keySet().toString());
+        assertTrue("Is builder table", builder.isBuilderTable(TABLE_NAME));
+    }
+
+    @Test
+    public void implodeWithRows() {
+        int id = createTable(SCHEMA, TABLE, "name varchar(32)");
+        writeRow(id, "foo");
+        writeRow(id, new Object[]{null});
+        writeRow(id, "bar");
+        builder.implode(TABLE_NAME);
+        updateAISGeneration();
+        assertTrue("Is builder table", builder.isBuilderTable(TABLE_NAME));
+        id = tableId(TABLE_NAME);
+        expectFullRows(
+                id,
+                createNewRow(id, 1L, "{\"name\":\"foo\"}"),
+                createNewRow(id, 2L, "{\"name\":null}"),
+                createNewRow(id, 3L, "{\"name\":\"bar\"}")
+        );
+    }
+
+    @Test(expected=ModelBuilderException.class)
+    public void implodeBuilderTable() {
+        builder.create(TABLE_NAME);
+        builder.implode(TABLE_NAME);
+    }
+
+    @Test(expected=NoSuchTableException.class)
+    public void implodeNoSuchTable() {
+        builder.implode(TABLE_NAME);
+    }
+
     @Test(expected=ModelBuilderException.class)
     public void explodeEmpty() throws IOException {
         builder.create(TABLE_NAME);

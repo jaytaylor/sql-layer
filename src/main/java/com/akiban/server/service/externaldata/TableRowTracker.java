@@ -109,4 +109,8 @@ public class TableRowTracker implements RowTracker {
     public void pushRowType() {
         openTypes[getRowDepth()] = curRowType;
     }
+
+    @Override
+    public void popRowType() {
+    }
 }

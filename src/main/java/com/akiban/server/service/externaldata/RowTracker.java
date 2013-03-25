@@ -30,4 +30,5 @@ public interface RowTracker {
 
     void pushRowType();
     boolean isSameRowType();
+    void popRowType();
 }

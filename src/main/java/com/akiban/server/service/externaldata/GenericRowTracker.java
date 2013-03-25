@@ -69,4 +69,8 @@ public abstract class GenericRowTracker implements RowTracker {
     public void pushRowType() {
         openTypes.add(curRowType);
     }
+
+    @Override
+    public void popRowType() {
+    }
 }

@@ -41,17 +41,23 @@ import com.akiban.server.error.ModelBuilderException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.externaldata.ExternalDataService;
+import com.akiban.server.service.externaldata.JsonRowWriter;
+import com.akiban.server.service.externaldata.RowTracker;
+import com.akiban.server.service.externaldata.TableRowTracker;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
+import com.akiban.util.AkibanAppender;
 import com.akiban.util.JsonUtils;
 import org.codehaus.jackson.node.ObjectNode;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collections;
+import java.util.Iterator;
 
 import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 
@@ -82,7 +88,6 @@ public class ModelBuilder {
         this.treeService = treeService;
         this.configService = configService;
         this.restDMLService = restDMLService;
-
     }
 
     public void create(TableName tableName) {
@@ -168,7 +173,7 @@ public class ModelBuilder {
             UserTable explodedTable = builder.unvalidatedAIS().getUserTable(tableName);
             explodedTable.getColumn(ID_COL_NAME).setNullable(false);
 
-            TableName tempName = new TableName(tableName.getSchemaName(), "___" + tableName.getTableName());
+            TableName tempName = new TableName(tableName.getSchemaName(), "__" + tableName.getTableName());
             ddlFunctions.renameTable(session, tableName, tempName);
             ddlFunctions.createTable(session, explodedTable);
 
@@ -184,6 +189,14 @@ public class ModelBuilder {
                 while((row = cursor.next()) != null) {
                     node = (ObjectNode)JsonUtils.readTree(row.pvalue(1).getString());
                     node.put(ID_COL_NAME, row.pvalue(0).getInt64());
+                    // TODO: Recursive
+                    Iterator<String> it = node.getFieldNames();
+                    while(it.hasNext()) {
+                        String name = it.next();
+                        if(explodedTable.getColumn(name) == null) {
+                            it.remove();
+                        }
+                    }
                     restDMLService.insertNoTxn(session, null, tableName, node);
                 }
                 cursor.close();
@@ -195,7 +208,38 @@ public class ModelBuilder {
     }
 
     public void implode(TableName tableName) {
-        throw new UnsupportedOperationException();
+        try (Session session = sessionService.createSession()) {
+            UserTable curTable = ddlFunctions.getUserTable(session, tableName);
+            if(!curTable.isRoot()) {
+                throw new ModelBuilderException(tableName, "Cannot implode non-root table");
+            }
+
+            if(isBuilderTable(curTable)) {
+                throw new ModelBuilderException(tableName, "Table is already imploded");
+            }
+
+
+            // Rename current
+            TableName tempName = new TableName(tableName.getSchemaName(), "__" + tableName.getTableName());
+            ddlFunctions.renameTable(session, tableName, tempName);
+
+            // Create new
+            createInternal(session, tableName);
+
+            // Scan old into new
+            UserTable newTable = ddlFunctions.getUserTable(session, tableName);
+            AkibanInformationSchema ais = ddlFunctions.getAIS(session);
+            PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), store, treeService, session, configService);
+            SimpleQueryContext queryContext = new SimpleQueryContext(adapter);
+            Operator plan = API.groupScan_Default(ais.getUserTable(tempName).getGroup());
+            Cursor cursor = API.cursor(plan, queryContext);
+            ImplodeTracker tracker = new ImplodeTracker(newTable, -1);
+            JsonRowWriter rowWriter = new JsonRowWriter(tracker);
+            rowWriter.writeRows(cursor, AkibanAppender.of(tracker.getStringBuilder()), "", new JsonRowWriter.WriteTableRow());
+
+            // drop old
+            ddlFunctions.dropTable(session, tempName);
+        }
     }
 
 
@@ -220,5 +264,37 @@ public class ModelBuilder {
         return (table.getColumns().size() == 2) &&
                 ID_COL_NAME.equals(table.getColumn(0).getName()) &&
                 DATA_COL_NAME.equals(table.getColumn(1).getName());
+    }
+
+    private class ImplodeTracker extends TableRowTracker {
+        private final StringBuilder builder;
+        private final UserTable rootTable;
+        private int curDepth = 0;
+
+        public ImplodeTracker(UserTable table, int addlDepth) {
+            super(table, addlDepth);
+            this.builder = new StringBuilder();
+            this.rootTable = table;
+        }
+
+        public StringBuilder getStringBuilder() {
+            return builder;
+        }
+
+        @Override
+        public void pushRowType() {
+            super.pushRowType();
+            ++curDepth;
+        }
+
+        @Override
+        public void popRowType() {
+            super.popRowType();
+            if(--curDepth == 0) {
+                String json = (builder.charAt(0) == ',') ? builder.substring(1) : builder.toString();
+                ModelBuilder.this.insert(null, rootTable.getName(), json);
+                builder.setLength(0);
+            }
+        }
     }
 }
