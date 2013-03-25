@@ -38,6 +38,7 @@ import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.entity.changes.EntityParser;
 import com.akiban.server.error.ModelBuilderException;
+import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.session.Session;
@@ -128,6 +129,10 @@ public class ModelBuilder {
             AkibanInformationSchema ais = ddlFunctions.getAIS(session);
             Schema schema = SchemaCache.globalSchema(ais);
             UserTable builderTable = ais.getUserTable(tableName);
+            if(builderTable == null) {
+                throw new NoSuchTableException(tableName);
+            }
+
             StoreAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), store, treeService, session, configService);
             QueryContext queryContext = new SimpleQueryContext(adapter);
 

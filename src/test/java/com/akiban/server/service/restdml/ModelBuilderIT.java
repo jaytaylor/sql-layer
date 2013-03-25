@@ -18,6 +18,7 @@
 package com.akiban.server.service.restdml;
 
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.ModelBuilderException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
@@ -30,6 +31,7 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -136,6 +138,48 @@ public class ModelBuilderIT extends ITBase {
         updateAISGeneration();
         int id = tableId(TABLE_NAME);
         expectFullRows(id, createNewRow(id, 1L, SIMPLE_JSON_2));
+    }
+
+    @Test
+    public void explodeSingleRow() throws IOException {
+        builder.insert(NULL_WRITER, TABLE_NAME, SIMPLE_JSON_1);
+        builder.explode(NULL_WRITER, TABLE_NAME);
+        updateAISGeneration();
+        assertEquals("Tables in schema", "["+TABLE+"]", ais().getSchema(SCHEMA).getUserTables().keySet().toString());
+        UserTable table = getUserTable(TABLE_NAME);
+        assertEquals("Column count", 2, table.getColumns().size());
+        assertEquals("Column 0", "name", table.getColumn(0).getName());
+        assertEquals("Column 1", ModelBuilder.ID_COL_NAME, table.getColumn(1).getName());
+        expectFullRows(table.getTableId(), createNewRow(table.getTableId(), "foo", 1L));
+    }
+
+    @Test
+    public void explodeMultiRowDifferentShapes() throws IOException {
+        builder.insert(NULL_WRITER, TABLE_NAME, SIMPLE_JSON_1);
+        builder.insert(NULL_WRITER, TABLE_NAME, SIMPLE_JSON_2);
+        builder.explode(NULL_WRITER, TABLE_NAME);
+        updateAISGeneration();
+        assertEquals("Tables in schema", "["+TABLE+"]", ais().getSchema(SCHEMA).getUserTables().keySet().toString());
+        UserTable table = getUserTable(TABLE_NAME);
+        assertEquals("Column count", 2, table.getColumns().size());
+        assertEquals("Column 0", "year", table.getColumn(0).getName());
+        assertEquals("Column 1", ModelBuilder.ID_COL_NAME, table.getColumn(1).getName());
+        expectFullRows(
+                table.getTableId(),
+                createNewRow(table.getTableId(), null, 1L),
+                createNewRow(table.getTableId(), "2013", 2L)
+        );
+    }
+
+    @Test(expected=ModelBuilderException.class)
+    public void explodeEmpty() throws IOException {
+        builder.create(TABLE_NAME);
+        builder.explode(NULL_WRITER, TABLE_NAME);
+    }
+
+    @Test(expected=NoSuchTableException.class)
+    public void explodeNoSuchTable() throws IOException {
+        builder.explode(NULL_WRITER, TABLE_NAME);
     }
 
     @Test(expected=NoSuchTableException.class)
