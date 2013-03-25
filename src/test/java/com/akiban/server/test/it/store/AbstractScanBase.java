@@ -93,7 +93,7 @@ public abstract class AbstractScanBase extends ITBase {
         }
 
         SchemaFactory schemaFactory = new SchemaFactory(schema);
-        AkibanInformationSchema tempAIS = schemaFactory.ais(allStatements.toArray(new String[allStatements.size()]));
+        AkibanInformationSchema tempAIS = schemaFactory.ais(null, allStatements.toArray(new String[allStatements.size()]));
         Set<TableName> created = new HashSet<>();
         for(UserTable table : tempAIS.getUserTables().values()) {
             ddl.createTable(session(), table);

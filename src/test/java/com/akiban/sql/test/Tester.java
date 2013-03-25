@@ -177,7 +177,7 @@ public class Tester
 
     public void setSchema(String sql) throws Exception {
         SchemaFactory schemaFactory = new SchemaFactory(DEFAULT_SCHEMA);
-        ais = schemaFactory.ais(sql);
+        ais = schemaFactory.ais(null, sql);
         if (actions.contains(Action.BIND))
             binder = new AISBinder(ais, DEFAULT_SCHEMA);
         if (actions.contains(Action.OPERATORS))

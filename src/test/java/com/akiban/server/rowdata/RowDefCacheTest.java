@@ -51,7 +51,7 @@ public class RowDefCacheTest
             "    GROUPING FOREIGN KEY (bb0,bb2,bb1,bb3) REFERENCES b (b3,b2,b4,b1)",
             ");",
         };
-        AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(null, ddl);
         RowDef b = ais.getTable(tableName("b")).rowDef();
         UserTable bTable = b.userTable();
         checkHKey(bTable.hKey(), bTable, bTable, "b3", bTable, "b2", bTable, "b4", bTable, "b1");
@@ -96,7 +96,7 @@ public class RowDefCacheTest
             "   GROUPING FOREIGN KEY (id) references parent(id)",
             ");"
         };
-        AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(null, ddl);
         RowDef parent = ais.getTable(tableName("parent")).rowDef();
         UserTable p = parent.userTable();
         checkHKey(p.hKey(), p, p, "id");
@@ -126,7 +126,7 @@ public class RowDefCacheTest
             ");",
             "create index e_d on t(e, d);"
         };
-        AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(null, ddl);
         RowDef t = ais.getTable(tableName("t")).rowDef();
         assertEquals(3, t.getHKeyDepth()); // t ordinal, c, a
         Index index;
@@ -174,7 +174,7 @@ public class RowDefCacheTest
             "create index iid_oid on item(iid, oid);",
             "create index oid_iid_ix on item(oid, iid, ix);",
         };
-        AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(null, ddl);
         TableIndex index;
         int[] fields;
         IndexRowComposition rowComp;
@@ -405,7 +405,7 @@ public class RowDefCacheTest
             "create index \"__akiban_io\" on item(cid, oid);",
             "create index ix_iid_oid_cid on item(ix, iid, oid, cid);",
         };
-        AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(null, ddl);
         TableIndex index;
         int[] fields;
         IndexRowComposition rowComp;
@@ -541,7 +541,7 @@ public class RowDefCacheTest
                          "create index cName_oDate on orders(customer.name, orders.date) using left join;"
         };
 
-        final AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
+        final AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(null, ddl);
 
         GroupIndex index;
         IndexRowComposition rowComp;
@@ -587,7 +587,7 @@ public class RowDefCacheTest
                          "create index cName_oDate_iSku on items(customer.name, orders.date, items.sku) using left join;"
         };
 
-        final AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
+        final AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(null, ddl);
 
         GroupIndex index;
         IndexRowComposition rowComp;
@@ -645,7 +645,7 @@ public class RowDefCacheTest
 
         final AkibanInformationSchema ais;
         {
-            ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
+            ais = SCHEMA_FACTORY.aisWithRowDefs(null, ddl);
         }
 
         GroupIndex index;

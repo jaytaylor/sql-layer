@@ -49,7 +49,7 @@ public final class CsvRowReaderTest {
     @Test
     public void reader() throws Exception {
         SchemaFactory schemaFactory = new SchemaFactory("test");
-        AkibanInformationSchema ais = schemaFactory.aisWithRowDefs(DDL);
+        AkibanInformationSchema ais = schemaFactory.aisWithRowDefs(null, DDL);
         UserTable t1 = ais.getUserTable("test", "t1");
         InputStream istr = new ByteArrayInputStream(Strings.join(CSV).getBytes("UTF-8"));
         CsvRowReader reader = new CsvRowReader(t1, t1.getColumns(),

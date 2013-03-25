@@ -49,7 +49,7 @@ public final class MysqlDumpRowReaderTest {
     @Test
     public void reader() throws Exception {
         SchemaFactory schemaFactory = new SchemaFactory("test");
-        AkibanInformationSchema ais = schemaFactory.aisWithRowDefs(DDL);
+        AkibanInformationSchema ais = schemaFactory.aisWithRowDefs(null, DDL);
         UserTable t1 = ais.getUserTable("test", "t1");
         InputStream istr = new FileInputStream(DUMP_FILE);
         MysqlDumpRowReader reader = new MysqlDumpRowReader(t1, t1.getColumns(), 

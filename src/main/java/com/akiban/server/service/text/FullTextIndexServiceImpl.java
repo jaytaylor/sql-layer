@@ -79,12 +79,12 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     private File indexPath;
 
     private final Timer maintenanceTimer = new Timer();
-    private final long maintenanceInterval;
-    private final TimerTask updateWorker;
-    private final PersistitStore persistitStore;
+    private long maintenanceInterval;
+    private TimerTask updateWorker;
+    private PersistitStore persistitStore;
 
     private final Timer populateTimer = new Timer();
-    private final long populateDelayInterval;
+    private long populateDelayInterval;
     private final TimerTask populateWorker;
 
     private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceImpl.class);
@@ -99,13 +99,8 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         this.store = store;
         this.transactionService = transactionService;
         this.treeService = treeService;
-        persistitStore = store.getPersistitStore();
 
-        maintenanceInterval = Long.parseLong(configService.getProperty(UPDATE_INTERVAL));
         updateWorker = DEFAULT_UPDATE_WORKER;
-        maintenanceTimer.scheduleAtFixedRate(updateWorker, maintenanceInterval, maintenanceInterval);
-        
-        populateDelayInterval = Long.parseLong(configService.getProperty(POPULATE_DELAY_INTERVAL));
         populateWorker = DEFAULT_POPULATE_WORKER;
 
     }
@@ -150,6 +145,9 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     
     @Override
     public void start() {
+        persistitStore = store.getPersistitStore();
+        enableUpdateWorker();
+        enablePopulateWorker();
     }
 
     @Override
@@ -303,21 +301,22 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             Session session = sessionService.createSession();
             try
             {
-                transactionService.beginTransaction(session);
+               // transactionService.beginTransaction(session);
                 HKeyBytesStream rows = persistitStore.getChangedRows(session);
-                do
-                {
-                    // do the update
-                    updateIndex(session,
-                                rows.getIndexName(),
-                                rows);
+                if (rows != null)
+                    do
+                    {
+                        // do the update
+                        updateIndex(session,
+                                    rows.getIndexName(),
+                                    rows);
 
-                    // remove the entries (relating to this index)
-                    // that have been taken care of
-                    rows.removeAll();
-                }
-                while (rows.nextIndex());
-                transactionService.commitTransaction(session);
+                        // remove the entries (relating to this index)
+                        // that have been taken care of
+                        rows.removeAll();
+                    }
+                    while (rows.nextIndex());
+               // transactionService.commitTransaction(session);
             }
             catch(PersistitException e)
             {
@@ -325,7 +324,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             }
             finally
             {
-                transactionService.rollbackTransaction(session);
+                //transactionService.rollbackTransaction(session);
                 session.close();
             }
         }
@@ -333,11 +332,11 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     
  
     @Override
-    public void schedulePopulate(IndexName name)
+    public void schedulePopulate(String schema, String table, String index)
     {
         try
         {
-            addChange(sessionService.createSession(), name);
+            addChange(sessionService.createSession(), schema, table, index);
             populateTimer.schedule(populateWorker, populateDelayInterval);
         }
         catch (PersistitException ex)
@@ -384,9 +383,15 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         
     }
     
-    void enableUpdateWorker()
+    protected void enableUpdateWorker()
     {
+        maintenanceInterval = 3000; //Long.parseLong(configService.getProperty(UPDATE_INTERVAL));
         maintenanceTimer.scheduleAtFixedRate(updateWorker, maintenanceInterval, maintenanceInterval);
+    }
+    
+    protected void enablePopulateWorker()
+    {
+        populateDelayInterval = 1000; //Long.parseLong(configService.getProperty(POPULATE_DELAY_INTERVAL));
     }
     
     void disablePopulateWorker()
@@ -394,12 +399,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         populateWorker.cancel();
         populateTimer.cancel();
         populateTimer.purge();
-    }
-    
-    void enablePopulateWorker()
-    {
-        // TODO:
-        //populateWorker.run();
     }
     
     //----------- private helpers -----------
@@ -425,39 +424,45 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                                                                    FULL_TEXT_TABLE));
     }
     
-    private Exchange nextPopulateEntry(Session session, IndexName indexName) throws PersistitException
+    private Exchange nextPopulateEntry(Session session,
+                                       String schema,
+                                       String table,
+                                       String index) throws PersistitException
     {   
         Exchange ret = getPopulateExchange(session);
-        do
-        {
-            Key key = ret.getKey();
-            String schema = key.decodeString();
-            String table = key.decodeString();
-            String index = key.decodeString();
-            
-            if (schema.equals(indexName.getSchemaName())
-                    && table.equals(indexName.getTableName())
-                    && index.equals(indexName.getName()))
-                return null;
-        }
-        while (ret.next());
+        if (ret.getKey() != null)
+            do
+            {
+                Key key = ret.getKey();
+                String keySchema = key.decodeString();
+                String keyTable = key.decodeString();
+                String keyIndex = key.decodeString();
 
+                if (schema.equals(keySchema)
+                        && table.equals(keyTable)
+                        && index.equals(keyIndex))
+                    return null;
+            }
+            while (ret.next());
+       
         return ret;
     }
 
     private void addChange(Session session,
-                           IndexName indexName) throws PersistitException
+                           String schema,
+                           String table,
+                           String index) throws PersistitException
     {
-        Exchange ex = nextPopulateEntry(session, indexName);
+        Exchange ex = nextPopulateEntry(session, schema, table, index);
 
         // 'promise' for populating this index already exists
         if (ex == null)
             return;
         
         // KEY: schema | table | indexName
-        ex.clear().append(indexName.getSchemaName())
-                  .append(indexName.getTableName())
-                  .append(indexName.getName());
+        ex.clear().append(schema)
+                  .append(table)
+                  .append(index);
 
         // VALUE: <empty>
     }

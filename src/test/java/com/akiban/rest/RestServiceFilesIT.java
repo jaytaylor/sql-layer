@@ -179,7 +179,7 @@ public class RestServiceFilesIT extends ITBase {
         File subDir = new File(RESOURCE_DIR, subDirName);
         File schemaFile = new File(subDir, "schema.ddl");
         if(schemaFile.exists()) {
-            loadSchemaFile(SCHEMA_NAME, schemaFile);
+            loadSchemaFile(null, SCHEMA_NAME, schemaFile);
         }
         File spaceFile = new File(subDir, "space.json");
         if(spaceFile.exists()) {

@@ -145,7 +145,7 @@ public final class NiceRowTest {
         String str = new String(bytes, "utf8");
 
         String ddl = "create table test.t(id int not null primary key, v varchar(255) character set utf8)";
-        RowDef rowDef = SCHEMA_FACTORY.aisWithRowDefs(ddl).getTable("test", "t").rowDef();
+        RowDef rowDef = SCHEMA_FACTORY.aisWithRowDefs(null, ddl).getTable("test", "t").rowDef();
 
         Object[] objects = { 1L, str };
         RowData rowData = create(rowDef, objects);
@@ -170,7 +170,7 @@ public final class NiceRowTest {
         assertEquals("utf8 byte length", 12, TEST_STR.getBytes("UTF-8").length);
 
         String ddl = "create table test.t(id int not null primary key, v varchar(32) character set utf8)";
-        RowDef rowDef = SCHEMA_FACTORY.aisWithRowDefs(ddl).getTable("test", "t").rowDef();
+        RowDef rowDef = SCHEMA_FACTORY.aisWithRowDefs(null, ddl).getTable("test", "t").rowDef();
 
         Object[] objects = { 1L, TEST_STR };
         RowData rowData = create(rowDef, objects);
@@ -199,7 +199,7 @@ public final class NiceRowTest {
             ddl[i++] = String.format(", field_%s int", c);
         }
         ddl[i] = ");";
-        return SCHEMA_FACTORY.aisWithRowDefs(ddl).getTable("test_schema", "test_table").rowDef();
+        return SCHEMA_FACTORY.aisWithRowDefs(null, ddl).getTable("test_schema", "test_table").rowDef();
     }
 
     private RowData create(RowDef rowDef, Object[] objects) {

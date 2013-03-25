@@ -203,11 +203,14 @@ public class PersistitStore implements Store, Service {
      * @param ex
      * @return 
      */
-    public HKeyBytesStream getChangedRows(Session session)
+    public HKeyBytesStream getChangedRows(Session session) throws PersistitException
     {
-        return new HKeyBytesStream(treeService.getExchange(session,
-                                                           treeService.treeLink(MAINTENANCE_SCHEMA,
-                                                                                FULL_TEXT_TABLE)));
+        Exchange ex = treeService.getExchange(session,
+                                              treeService.treeLink(MAINTENANCE_SCHEMA,
+                                                                   FULL_TEXT_TABLE));
+        if (ex == null || ex.getKey() == null || !ex.isValueDefined())
+            return null;
+        return new HKeyBytesStream(ex, session);
     }
 
  
@@ -218,7 +221,7 @@ public class PersistitStore implements Store, Service {
      * 
      * In other words, the byte arrays are not decoded before hand
      */
-    public static class HKeyBytesStream implements Iterable<byte[]>
+    public class HKeyBytesStream implements Iterable<byte[]>
     {
 
         private final Exchange ex;
@@ -226,18 +229,20 @@ public class PersistitStore implements Store, Service {
         private IndexName indexName;
         private int modCount = 0;
         private boolean moreRows = true; // more rows of this index?
-
+        private final Session session;
         private HKeyBytesStream()
         {
             ex = null;
+            session = null;
         }
 
         // 'private' because this should not be constructed
         // anywhere other than PersistitStore.getChangedRows()
         // The class itself, however, is public, as it can be used anywhere
-        private HKeyBytesStream (Exchange ex)
+        private HKeyBytesStream (Exchange ex, Session session)
         {
             this.ex = ex;
+            this.session = session;
             indexName = buildName(ex);
         }
 
@@ -360,7 +365,10 @@ public class PersistitStore implements Store, Service {
          *         <TRUE> otherwise
          * @throws PersistitException 
          */
-        private boolean ignoreDeleted(Exchange ex, IndexName indexName, boolean lookPastNewIndex) throws PersistitException
+        private boolean ignoreDeleted(Exchange ex,
+                                      IndexName indexName,
+                                      boolean lookPastNewIndex)
+                        throws PersistitException
         {
             // KEY: Schema | Table | indexName | indexID | ...
             Key key = ex.getKey();
@@ -373,7 +381,7 @@ public class PersistitStore implements Store, Service {
 
             Integer indexId = key.decodeInt();
             int flag;
-            while (sameIdAsCurrent(indexName, indexId) != NOCHANGE)
+            while (sameIdAsCurrent(session, indexName, indexId) != NOCHANGE)
             // there was a DELETE (and possibly RECREATE)
             // ignore all changes in the old id(s)
             {
@@ -381,7 +389,8 @@ public class PersistitStore implements Store, Service {
                 boolean seeNewIndex = false;
 
                 do
-                    ;// do nothing (skipping deleted 'index')
+                    ++size;
+                    //;// do nothing (skipping deleted 'index')
                      // TODO: remove the entry here?
                 while ((hasMore = ex.next())
                                  && !(seeNewIndex = seeNewIndex(indexName.getSchemaName(),
@@ -417,7 +426,7 @@ public class PersistitStore implements Store, Service {
             return true;
         }
 
-        private static boolean seeNewIndexId(Exchange ex, Integer oldId)
+        private boolean seeNewIndexId(Exchange ex, Integer oldId)
         {
             Key key = ex.getKey();
             // skip uninteresting parts
@@ -439,13 +448,17 @@ public class PersistitStore implements Store, Service {
          * @param id
          * @return 
          */
-        private static int sameIdAsCurrent(IndexName indexName, Integer id)
+        private int sameIdAsCurrent(Session session, IndexName indexName, Integer id)
         {
-            //TODO:
-            // <0> locate the index by name
-            // <1> check if that index has the same id as the given id
-            return NOCHANGE;
+            AkibanInformationSchema ais = getAIS(session);
+            UserTable table = ais.getUserTable(indexName.getFullTableName());
+            Index index;
+            if (table == null || (index = table.getFullTextIndex(indexName.getName())) == null)
+                return DELETED;
+            
+            return index.getIndexId() != id ? RECREATED : NOCHANGE;
         }
+
         private boolean seeNewIndex(String schema, String table, String indexName, Key k)
         {
             return !k.decodeString().equals(schema)
@@ -453,7 +466,7 @@ public class PersistitStore implements Store, Service {
                     || !k.decodeString().equals(indexName);
         }
 
-        private static IndexName buildName(Exchange e)
+        private IndexName buildName(Exchange e)
         {
             Key key = e.getKey();
             return new IndexName(new TableName(key.decodeString(),
@@ -463,8 +476,8 @@ public class PersistitStore implements Store, Service {
         
         // status of index
         private static final int NOCHANGE = 0;
-        private static final int DELETE = 1;
-        private static final int RECREATE = 2;
+        private static final int DELETED = 1;
+        private static final int RECREATED = 2;
         
     }
 

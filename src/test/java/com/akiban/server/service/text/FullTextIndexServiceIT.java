@@ -120,9 +120,9 @@ public class FullTextIndexServiceIT extends ITBase
                 + do the search again and confirm that the new rows are NOT found
 
          */
-        
+        //CREATE INDEX cust_ft ON customers(FULL_TEXT(name, addresses.state, items.sku))
         // part 1
-        FullTextIndex index = createFullTextIndex(SCHEMA, "c", "idx_c", 
+        FullTextIndex index = createFullTextIndex(queryContext, SCHEMA, "c", "idx_c", 
                                                   "name", "i.sku", "a.state");
         fullText.createIndex(session(), index.getIndexName());
 
@@ -174,7 +174,7 @@ public class FullTextIndexServiceIT extends ITBase
 
     @Test
     public void cDown() {
-        FullTextIndex index = createFullTextIndex(SCHEMA, "c", "idx_c", 
+        FullTextIndex index = createFullTextIndex(queryContext, SCHEMA, "c", "idx_c", 
                                                   "name", "i.sku", "a.state");
         fullText.createIndex(session(), index.getIndexName());
 
@@ -193,7 +193,7 @@ public class FullTextIndexServiceIT extends ITBase
 
     @Test
     public void oUpDown() {
-        FullTextIndex index = createFullTextIndex(SCHEMA, "o", "idx_o",
+        FullTextIndex index = createFullTextIndex(queryContext, SCHEMA, "o", "idx_o",
                                                   "c.name", "i.sku");
         fullText.createIndex(session(), index.getIndexName());
 

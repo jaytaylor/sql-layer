@@ -42,7 +42,7 @@ public class AISTest
             "    col0 int not null ",
             ");"
         };
-        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(null, ddl);
         UserTable table = ais.getUserTable("s", "t");
         int expectedPosition = 0;
         for (Column column : table.getColumns()) {
@@ -65,7 +65,7 @@ public class AISTest
             ");",
             "create index i on s.t(col5, col4, col3);"
         };
-        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(null, ddl);
         UserTable table = ais.getUserTable("s", "t");
         Index index = table.getIndex("i");
         Iterator<IndexColumn> indexColumnScan = index.getKeyColumns().iterator();
@@ -95,7 +95,7 @@ public class AISTest
             "    primary key (col5, col4, col3) ",
             ");"
         };
-        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(null, ddl);
         UserTable table = ais.getUserTable("s", "t");
         PrimaryKey pk = table.getPrimaryKey();
         Iterator<Column> indexColumnScan = pk.getColumns().iterator();
@@ -124,7 +124,7 @@ public class AISTest
             "    grouping foreign key (c0, c1) references parent(p1, p0)",
             ");",
         };
-        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(null, ddl);
         Join join = ais.getUserTable("s", "child").getParentJoin();
         Iterator<JoinColumn> joinColumns = join.getJoinColumns().iterator();
         JoinColumn joinColumn = joinColumns.next();
@@ -157,7 +157,7 @@ public class AISTest
             "    grouping foreign key (oid) references \"order\"(oid)",
             ");",
         };
-        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(null, ddl);
         // ---------------- Customer -------------------------------------
         UserTable customer = ais.getUserTable("s", "customer");
         checkHKey(customer.hKey(),
@@ -201,7 +201,7 @@ public class AISTest
             "    grouping foreign key (oid0, oid1) references \"order\"(oid0, oid1)",
             ");",
         };
-        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(null, ddl);
         // ---------------- Customer -------------------------------------
         UserTable customer = ais.getUserTable("s", "customer");
         checkHKey(customer.hKey(),
@@ -241,7 +241,7 @@ public class AISTest
             "    grouping foreign key (cid, oid) references \"order\"(cid, oid)",
             ");",
         };
-        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(null, ddl);
         // ---------------- Customer -------------------------------------
         UserTable customer = ais.getUserTable("s", "customer");
         checkHKey(customer.hKey(),
@@ -287,7 +287,7 @@ public class AISTest
             "    grouping foreign key (cid0, cid1, oid0, oid1) references \"order\"(cid0, cid1, oid0, oid1)",
             ");",
         };
-        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(null, ddl);
         // ---------------- Customer -------------------------------------
         UserTable customer = ais.getUserTable("s", "customer");
         checkHKey(customer.hKey(),
@@ -332,7 +332,7 @@ public class AISTest
             "    grouping foreign key (cid) references customer(cid)",
             ");",
         };
-        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(null, ddl);
         // ---------------- Customer -------------------------------------
         UserTable customer = ais.getUserTable("s", "customer");
         checkHKey(customer.hKey(),
@@ -364,7 +364,7 @@ public class AISTest
             "    b int",
             ");"
         };
-        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(null, ddl);
         UserTable table = (UserTable) ais.getTable("s", "t");
         // check columns
         checkColumns(table.getColumns(), "a", "b");

@@ -165,7 +165,7 @@ public class RowDefTest extends TestCase {
         SchemaFactory schemaFactory = new SchemaFactory("schema");
         for (int def = 0; def < TEST_CASES.length; def++) {
             String[] ddl = TEST_CASES[def];
-            AkibanInformationSchema ais = schemaFactory.aisWithRowDefs(ddl);
+            AkibanInformationSchema ais = schemaFactory.aisWithRowDefs(null, ddl);
             RowDef rowDef = ais.getTable("schema", "test").rowDef();
             FieldDef[] fieldDefs = rowDef.getFieldDefs();
             if (VERBOSE) {

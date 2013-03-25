@@ -57,7 +57,7 @@ public class BoundNodeToStringTest extends NamedParamsTestBase
 
         String sql = fileContents(new File(RESOURCE_DIR, "schema.ddl"));
         SchemaFactory schemaFactory = new SchemaFactory(OptimizerTestBase.DEFAULT_SCHEMA);
-        AkibanInformationSchema ais = schemaFactory.ais(sql);
+        AkibanInformationSchema ais = schemaFactory.ais(null, sql);
         binder = new AISBinder(ais, OptimizerTestBase.DEFAULT_SCHEMA);
     }
 
