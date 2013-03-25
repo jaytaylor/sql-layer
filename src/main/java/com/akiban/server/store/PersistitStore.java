@@ -18,6 +18,7 @@
 package com.akiban.server.store;
 
 import com.akiban.ais.model.*;
+import com.akiban.ais.model.Index.IndexType;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -992,6 +993,7 @@ public class PersistitStore implements Store, Service {
             lockKeys(adapter(session), rowDef, rowData, hEx);
             constructHKey(session, hEx, rowDef, rowData, false);
             hEx.fetch();
+            hKey = hEx.getKey();
             //
             // Verify that the row exists
             //

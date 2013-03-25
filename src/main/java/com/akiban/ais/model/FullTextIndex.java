@@ -142,7 +142,7 @@ public class FullTextIndex extends Index
     {
         super(indexedTable.getName(), indexName, indexId, false, FULL_TEXT_CONSTRAINT);
         this.indexedTable = indexedTable;
-        fullTextService.schedulePopulate(getIndexName());
+        //fullTextService.schedulePopulate(getIndexName());
     }
     
     private final UserTable indexedTable;
