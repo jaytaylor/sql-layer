@@ -56,10 +56,10 @@ public final class EntityParser {
     public void setStringWidth(int width) {
         stringWidth = width;
     }
-    public NewAISBuilder parse (TableName tableName, JsonNode node) throws IOException {
+    public UserTable parse (TableName tableName, JsonNode node) throws IOException {
         NewAISBuilder builder = AISBBasedBuilder.create(tableName.getSchemaName());
         processContainer (node, builder, tableName);
-        return builder;
+        return builder.ais().getUserTable(tableName);
     }
 
     public UserTable create (final DDLFunctions ddlFunctions, final Session session, UserTable newRoot) throws IOException {
@@ -74,8 +74,7 @@ public final class EntityParser {
 
     public UserTable parseAndCreate (final DDLFunctions ddlFunctions, final Session session,
                                      TableName tableName, JsonNode node) throws IOException {
-        UserTable table = parse(tableName, node).ais().getUserTable(tableName);
-        return create(ddlFunctions, session, table);
+        return create(ddlFunctions, session, parse(tableName, node));
     }
     
     private void processContainer (JsonNode node, NewAISBuilder builder, TableName tableName) throws IOException {

@@ -129,7 +129,7 @@ public final class ModelResource {
                                                                 tableName,
                                                                 node);
                             } else {
-                                created = parser.parse(tableName, node).ais().getUserTable(tableName);
+                                created = parser.parse(tableName, node);
                                 UuidAssigner uuidAssigner = new UuidAssigner();
                                 created.getAIS().traversePostOrder(uuidAssigner);
                             }

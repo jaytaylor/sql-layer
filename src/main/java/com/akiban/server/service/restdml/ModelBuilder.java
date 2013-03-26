@@ -34,12 +34,10 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.entity.changes.EntityParser;
 import com.akiban.server.error.ModelBuilderException;
-import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.externaldata.JsonRowWriter;
@@ -131,70 +129,50 @@ public class ModelBuilder {
 
     public void explode(PrintWriter writer, TableName tableName) throws IOException {
         try (Session session = sessionService.createSession()) {
-            AkibanInformationSchema ais = ddlFunctions.getAIS(session);
-            Schema schema = SchemaCache.globalSchema(ais);
-            UserTable builderTable = ais.getUserTable(tableName);
-            if(builderTable == null) {
-                throw new NoSuchTableException(tableName);
-            }
-
-            StoreAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), store, treeService, session, configService);
-            QueryContext queryContext = new SimpleQueryContext(adapter);
-
-            // Just take the data from the last row, laziest way possible
-            IndexRowType indexType = schema.indexRowType(builderTable.getPrimaryKey().getIndex());
-            UserTableRowType tableType = schema.userTableRowType(builderTable);
-            Operator plan = API.ancestorLookup_Default(
-                API.indexScan_Default(
-                    indexType,
-                    true,
-                    IndexKeyRange.unbounded(indexType)
-                ),
-                builderTable.getGroup(),
-                indexType,
-                Collections.singleton(tableType),
-                API.InputPreservationOption.DISCARD_INPUT
-            );
-            Cursor cursor = API.cursor(plan, queryContext);
-            cursor.open();
-            Row row = cursor.next();
-            cursor.destroy();
-
+            // Find the last row
+            Row row = getLastRow(session, tableName);
             if(row == null) {
                 throw new ModelBuilderException(tableName, "Entity has no rows");
             }
 
+            // Parse that row
             ObjectNode node = (ObjectNode)JsonUtils.readTree(row.pvalue(1).getString());
             node.remove(EntityParser.PK_COL_NAME);
 
+            // Move builder out of the way and create exploded table(s)
             EntityParser parser = new EntityParser(true);
-            NewAISBuilder builder = parser.parse(tableName, node);
-            UserTable explodedTable = builder.unvalidatedAIS().getUserTable(tableName);
-
+            UserTable explodedTable = parser.parse(tableName, node);
             TableName tempName = new TableName(tableName.getSchemaName(), "__" + tableName.getTableName());
             ddlFunctions.renameTable(session, tableName, tempName);
             parser.create(ddlFunctions, session, explodedTable);
 
-            ais = ddlFunctions.getAIS(session);
-            adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), store, treeService, session, configService);
-            queryContext = new SimpleQueryContext(adapter);
-            plan = API.groupScan_Default(ais.getUserTable(tempName).getGroup());
-            cursor = API.cursor(plan, queryContext);
-
+            // Convert builder rows
+            int convertedRows = 0;
             try(CloseableTransaction txn = txnService.beginCloseableTransaction(session)) {
-                // Copy existing values
+                Cursor cursor = groupScanCursor(session, tempName);
                 cursor.open();
-                while((row = cursor.next()) != null) {
-                    node = (ObjectNode)JsonUtils.readTree(row.pvalue(1).getString());
-                    node.put(EntityParser.PK_COL_NAME, row.pvalue(0).getInt64());
-                    removeUnknownFields(explodedTable, node);
-                    restDMLService.insertNoTxn(session, null, tableName, node);
+                try {
+                    while((row = cursor.next()) != null) {
+                        node = (ObjectNode)JsonUtils.readTree(row.pvalue(1).getString());
+                        node.put(EntityParser.PK_COL_NAME, row.pvalue(0).getInt64());
+                        removeUnknownFields(explodedTable, node);
+                        restDMLService.insertNoTxn(session, null, tableName, node);
+                        ++convertedRows;
+                    }
+                    cursor.close();
+                } finally {
+                    cursor.destroy();
                 }
-                cursor.close();
                 txn.commit();
             }
 
+            // Remove builder table
             ddlFunctions.dropTable(session, tempName);
+
+            ObjectNode summaryNode = JsonUtils.mapper.createObjectNode();
+            summaryNode.put("exploded", tableName.getTableName());
+            summaryNode.put("rows", convertedRows);
+            writer.append(summaryNode.toString());
         }
     }
 
@@ -204,7 +182,6 @@ public class ModelBuilder {
             if(!curTable.isRoot()) {
                 throw new ModelBuilderException(tableName, "Cannot implode non-root table");
             }
-
             if(isBuilderTable(curTable)) {
                 throw new ModelBuilderException(tableName, "Table is already imploded");
             }
@@ -217,18 +194,22 @@ public class ModelBuilder {
             createInternal(session, tableName);
 
             // Scan old into new
-            UserTable newTable = ddlFunctions.getUserTable(session, tableName);
-            AkibanInformationSchema ais = ddlFunctions.getAIS(session);
-            PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), store, treeService, session, configService);
-            SimpleQueryContext queryContext = new SimpleQueryContext(adapter);
-            Operator plan = API.groupScan_Default(ais.getUserTable(tempName).getGroup());
-            Cursor cursor = API.cursor(plan, queryContext);
-            ImplodeTracker tracker = new ImplodeTracker(newTable, -1);
-            JsonRowWriter rowWriter = new JsonRowWriter(tracker);
-            rowWriter.writeRows(cursor, AkibanAppender.of(tracker.getStringBuilder()), "", new JsonRowWriter.WriteTableRow());
+            ImplodeTracker tracker = new ImplodeTracker(ddlFunctions.getUserTable(session, tableName), -1);
+            Cursor cursor = groupScanCursor(session, tempName);
+            try {
+                JsonRowWriter rowWriter = new JsonRowWriter(tracker);
+                rowWriter.writeRows(cursor, AkibanAppender.of(tracker.getStringBuilder()), "", new JsonRowWriter.WriteTableRow());
+            } finally {
+                cursor.destroy();
+            }
 
             // drop old
             ddlFunctions.dropTable(session, tempName);
+
+            ObjectNode summaryNode = JsonUtils.mapper.createObjectNode();
+            summaryNode.put("imploded", tableName.getTableName());
+            summaryNode.put("rows", tracker.getRowCount());
+            writer.append(summaryNode.toString());
         }
     }
 
@@ -248,6 +229,40 @@ public class ModelBuilder {
                 throw new ModelBuilderException(tableName, "Entity already exists as non-builder table");
             }
         }
+    }
+
+    private Row getLastRow(Session session, TableName tableName) {
+        UserTable table = ddlFunctions.getUserTable(session, tableName);
+        Schema schema = SchemaCache.globalSchema(table.getAIS());
+        IndexRowType indexRowType = schema.indexRowType(table.getPrimaryKey().getIndex());
+        Operator plan = API.ancestorLookup_Default(
+            API.indexScan_Default(
+                indexRowType,
+                true,
+                IndexKeyRange.unbounded(indexRowType)
+            ),
+            table.getGroup(),
+            indexRowType,
+            Collections.singleton(schema.userTableRowType(table)),
+            API.InputPreservationOption.DISCARD_INPUT
+        );
+        StoreAdapter adapter = new PersistitAdapter(schema, store, treeService, session, configService);
+        QueryContext queryContext = new SimpleQueryContext(adapter);
+        Cursor cursor = API.cursor(plan, queryContext);
+        cursor.open();
+        try {
+            return cursor.next();
+        } finally {
+            cursor.destroy();
+        }
+    }
+
+    private Cursor groupScanCursor(Session session, TableName tableName) {
+        UserTable table = ddlFunctions.getUserTable(session, tableName);
+        Operator plan = API.groupScan_Default(table.getGroup());
+        PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(table.getAIS()), store, treeService, session, configService);
+        QueryContext queryContext = new SimpleQueryContext(adapter);
+        return API.cursor(plan, queryContext);
     }
 
 
@@ -299,16 +314,22 @@ public class ModelBuilder {
     private class ImplodeTracker extends TableRowTracker {
         private final StringBuilder builder;
         private final UserTable rootTable;
+        private int rowCount = 0;
         private int curDepth = 0;
 
         public ImplodeTracker(UserTable table, int addlDepth) {
             super(table, addlDepth);
+            assert table.isRoot() : "Expected root: "  + table;
             this.builder = new StringBuilder();
             this.rootTable = table;
         }
 
         public StringBuilder getStringBuilder() {
             return builder;
+        }
+
+        public int getRowCount() {
+            return rowCount;
         }
 
         @Override
@@ -324,6 +345,7 @@ public class ModelBuilder {
                 String json = (builder.charAt(0) == ',') ? builder.substring(1) : builder.toString();
                 ModelBuilder.this.insert(null, rootTable.getName(), json);
                 builder.setLength(0);
+                ++rowCount;
             }
         }
     }
