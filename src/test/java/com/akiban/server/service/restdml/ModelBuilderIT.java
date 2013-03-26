@@ -227,6 +227,26 @@ public class ModelBuilderIT extends ITBase {
         );
     }
 
+    @Test
+    public void insertExplodeImplode() throws IOException {
+        builder.insert(NULL_WRITER, TABLE_NAME, SIMPLE_JSON_1);
+        int tid = tableId(TABLE_NAME);
+        updateAISGeneration();
+        expectFullRows(tid, createNewRow(tid, 1L, SIMPLE_JSON_1));
+
+        builder.explode(NULL_WRITER, TABLE_NAME);
+        tid = tableId(TABLE_NAME);
+        updateAISGeneration();
+        expectFullRows(tid, createNewRow(tid, 1L, "foo"));
+
+        builder.implode(NULL_WRITER, TABLE_NAME);
+        tid = tableId(TABLE_NAME);
+        updateAISGeneration();
+        // Same contents, but ID is present and server didn't output spaces
+        String expected = ("{\"_id\": 1," + SIMPLE_JSON_1.substring(1)).replaceAll(" ", "");
+        expectFullRows(tid, createNewRow(tid, 1L, expected));
+    }
+
     @Test(expected=ModelBuilderException.class)
     public void implodeBuilderTable() {
         builder.create(TABLE_NAME);
