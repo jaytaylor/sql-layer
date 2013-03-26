@@ -22,12 +22,13 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
-import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.entity.model.Attribute;
 import com.akiban.server.entity.model.Entity;
+import com.akiban.server.entity.model.EntityCollection;
 import com.akiban.server.entity.model.EntityColumn;
+import com.akiban.server.entity.model.EntityContainer;
+import com.akiban.server.entity.model.EntityField;
 import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Validation;
 import com.akiban.server.types3.TClass;
@@ -40,7 +41,6 @@ import com.google.common.collect.Lists;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -51,42 +51,21 @@ final class EntityBuilder {
 
     public EntityBuilder(UserTable rootTable) {
         entity = Entity.modifiableEntity(uuidOrCreate(rootTable));
-        buildScalars(entity.getAttributes(), rootTable);
-        buildCollections(entity.getAttributes(), rootTable);
+        buildContainer(entity, rootTable);
         Set<String> uniques = buildIndexes(entity.getIndexes());
         buildUniques(entity.getValidation(), uniques);
     }
 
-    private void buildScalars(Map<String, Attribute> attributes, UserTable table) {
-        PrimaryKey primaryKey = table.getPrimaryKey();
-        List<Column> pkColumns = primaryKey == null ? null : primaryKey.getColumns();
-        Join parentJoin = table.getParentJoin();
-        Set<Column> parentJoinColumns;
-        if (parentJoin == null) {
-            parentJoinColumns = Collections.emptySet();
-        }
-        else {
-            List<JoinColumn> joinColumns = parentJoin.getJoinColumns();
-            parentJoinColumns = new HashSet<>(joinColumns.size());
-            for (JoinColumn joinColumn : joinColumns)
-                parentJoinColumns.add(joinColumn.getChild());
-        }
-
+    private void buildScalars(List<EntityField> fields, UserTable table) {
         for (Column column : table.getColumns()) {
             TInstance tInstance = column.tInstance();
             TClass tClass = tInstance.typeClass();
             String type = tClass.name().unqualifiedName().toLowerCase();
-            Attribute scalar = Attribute.modifiableScalar(uuidOrCreate(column), type);
-            if (pkColumns != null) {
-                int pkPos = pkColumns.indexOf(column);
-                if (pkPos >= 0)
-                    scalar.setSpinalPos(pkPos);
-            }
-            if ((!scalar.isSpinal()) && parentJoinColumns.contains(column))
-                continue;
+            EntityField scalar = EntityField.modifiableScalar(uuidOrCreate(column), type);
+            scalar.setName(column.getName());
 
             Map<String, Object> properties = scalar.getProperties();
-            Collection<Validation> validations = scalar.getValidation();
+            Collection<Validation> validations = scalar.getValidations();
             validations.add(new Validation("required", !tInstance.nullability()));
             for (com.akiban.server.types3.Attribute t3Attr : tClass.attributes()) {
                 String attrName = t3Attr.name().toLowerCase();
@@ -96,17 +75,23 @@ final class EntityBuilder {
                 else
                     validations.add(new Validation(attrName, attrValue));
             }
-            attributes.put(column.getName(), scalar);
+            fields.add(scalar);
         }
     }
 
-    private void buildCollections(Map<String, Attribute> attributes, UserTable table) {
+    private void buildIdentifying(List<String> identifying, UserTable rootTable) {
+        PrimaryKey pk = rootTable.getPrimaryKey();
+        if (pk != null) {
+            for (Column c : pk.getColumns())
+                identifying.add(c.getName());
+        }
+    }
+
+    private void buildCollections(List<EntityCollection> collections, UserTable table) {
         List<Join> childJoins = table.getChildJoins();
         for (Join childJoin : childJoins) {
             UserTable child = childJoin.getChild();
-            String childName = child.getName().getTableName();
-            Attribute collection = buildCollection(child);
-            addAttribute(attributes, childName, collection);
+            collections.add(buildCollection(child));
         }
         // while we're here...
         indexes.addAll(Collections2.filter(table.getIndexes(), nonPks));
@@ -118,17 +103,17 @@ final class EntityBuilder {
         }
     }
 
-    private Attribute buildCollection(UserTable table) {
-        Attribute collection = Attribute.modifiableCollection(uuidOrCreate(table));
-        buildScalars(collection.getAttributes(), table);
-        buildCollections(collection.getAttributes(), table);
+    private EntityCollection buildCollection(UserTable table) {
+        EntityCollection collection = EntityCollection.modifiableCollection(uuidOrCreate(table));
+        buildContainer(collection, table);
         return collection;
     }
 
-    private void addAttribute(Map<String, Attribute> attributes, String name, Attribute attribute) {
-        if (attributes.containsKey(name))
-            throw new InconvertibleAisException("duplicate attribute name: " + name);
-        attributes.put(name, attribute);
+    private void buildContainer(EntityContainer container, UserTable table) {
+        buildScalars(container.getFields(), table);
+        buildIdentifying(container.getIdentifying(), table);
+        buildCollections(container.getCollections(), table);
+        container.setName(table.getName().getTableName());
     }
 
     /**

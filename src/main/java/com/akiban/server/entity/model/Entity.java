@@ -27,35 +27,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 
-public final class Entity {
-    public UUID uuid() {
-        return uuid;
-    }
-
-    void setUuid(UUID uuid) {
-        if (this.uuid != null)
-            throw new IllegalStateException("uuid already set: " + this.uuid);
-        this.uuid = uuid;
-    }
-
-
-    @SuppressWarnings("unused")
-    void setEntity(String entity) {
-        this.uuid = Util.parseUUID(entity);
-    }
-
-    public Map<String, Attribute> getAttributes() {
-        return attributes;
-    }
-
-    @SuppressWarnings("unused")
-    void setAttributes(Map<String, Attribute> attributes) {
-        this.attributes = Collections.unmodifiableMap(new TreeMap<>(attributes));
-    }
+public final class Entity extends EntityContainer {
 
     public Collection<Validation> getValidation() {
         return validations;
@@ -84,18 +59,15 @@ public final class Entity {
 
     @Override
     public String toString() {
-        return String.format("entity {%s}", uuid());
+        return String.format("entity {%s}", getUuid());
     }
 
-    private UUID uuid;
-    private Map<String, Attribute> attributes = Collections.emptyMap();
     private Set<Validation> validations = Collections.emptySet();
     private BiMap<String, EntityIndex> indexes = ImmutableBiMap.of();
 
     public static Entity modifiableEntity(UUID uuid) {
         Entity entity = new Entity();
-        entity.uuid = uuid;
-        entity.attributes = new TreeMap<>();
+        entity.makeModifiable(uuid);
         entity.validations = new TreeSet<>();
         entity.indexes = HashBiMap.create();
         return entity;
@@ -103,10 +75,10 @@ public final class Entity {
 
     Entity() {}
 
-    public <E extends Exception> void accept(String myName, EntityVisitor<E>  visitor) throws E {
-        visitor.visitEntity(myName, this);
-        for (Map.Entry<String, Attribute> entry : attributes.entrySet()) {
-            entry.getValue().accept(entry.getKey(), visitor);
+    public <E extends Exception> void accept(EntityVisitor<E>  visitor) throws E {
+        visitor.visitEntity(this);
+        for (EntityCollection collection : getCollections()) {
+            collection.accept(visitor);
         }
         visitor.leaveEntityAttributes();
         visitor.visitEntityValidations(validations);
