@@ -23,6 +23,8 @@ import com.akiban.rest.RestResponseBuilder;
 import com.akiban.server.service.restdml.ModelBuilder;
 import com.akiban.server.service.restdml.RestDMLService;
 import com.akiban.server.service.security.SecurityService;
+import com.akiban.util.JsonUtils;
+import org.codehaus.jackson.node.ObjectNode;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DELETE;
@@ -156,6 +158,28 @@ public class BuilderResource {
                     public void write(PrintWriter writer) throws Exception {
                         modelBuilder.create(tableName);
                         restDMLService.delete(writer, tableName, getPKString(uri));
+                    }
+                })
+                .build();
+    }
+
+    @GET
+    @Path("/is_builder/{entity}")
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
+    public Response isBuilder(@Context HttpServletRequest request,
+                              @PathParam("entity") final String entityName) {
+        final TableName tableName = parseTableName(request, entityName);
+        checkTableAccessible(securityService, request, tableName);
+        return RestResponseBuilder
+                .forRequest(request)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        boolean isBuilder = modelBuilder.isBuilderTable(tableName);
+                        ObjectNode node = JsonUtils.mapper.createObjectNode();
+                        node.put("entity", entityName);
+                        node.put("is_builder", isBuilder);
+                        writer.append(node.toString());
                     }
                 })
                 .build();
