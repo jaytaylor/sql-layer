@@ -84,7 +84,7 @@ public class EntityParserIT extends ITBase {
         
         UserTable c = ais.getUserTable(tableName);
         assertTrue(c.getColumns().size() == 4);
-        assertTrue(c.getColumn(3).getName().equals("_customers_id"));
+        assertTrue(c.getColumn(3).getName().equals(EntityParser.PK_COL_NAME));
         assertTrue(c.getColumn(3).getType().equals(Types.INT));
 
         tableName = new TableName ("test", "addresses");
