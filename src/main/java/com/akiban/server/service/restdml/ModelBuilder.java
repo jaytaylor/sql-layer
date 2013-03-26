@@ -18,6 +18,7 @@
 package com.akiban.server.service.restdml;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
@@ -41,9 +42,7 @@ import com.akiban.server.error.ModelBuilderException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.externaldata.ExternalDataService;
 import com.akiban.server.service.externaldata.JsonRowWriter;
-import com.akiban.server.service.externaldata.RowTracker;
 import com.akiban.server.service.externaldata.TableRowTracker;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
@@ -52,17 +51,18 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.JsonUtils;
+import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ObjectNode;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
 
 import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
 
 public class ModelBuilder {
-    public static final String ID_COL_NAME = "_id";
     public static final String DATA_COL_NAME = "_data";
 
 
@@ -122,7 +122,7 @@ public class ModelBuilder {
              CloseableTransaction txn = txnService.beginCloseableTransaction(session)) {
             createInternal(session, tableName);
             ObjectNode node = JsonUtils.mapper.createObjectNode();
-            node.put(ModelBuilder.ID_COL_NAME, id);
+            node.put(EntityParser.PK_COL_NAME, id);
             node.put(ModelBuilder.DATA_COL_NAME, data);
             restDMLService.updateNoTxn(session, writer, tableName, id, node);
             txn.commit();
@@ -165,17 +165,15 @@ public class ModelBuilder {
             }
 
             ObjectNode node = (ObjectNode)JsonUtils.readTree(row.pvalue(1).getString());
-            node.remove(ID_COL_NAME);
+            node.remove(EntityParser.PK_COL_NAME);
 
-            EntityParser parser = new EntityParser();
+            EntityParser parser = new EntityParser(true);
             NewAISBuilder builder = parser.parse(tableName, node);
-            builder.getUserTable().autoIncLong(ID_COL_NAME, 1).pk(ID_COL_NAME);
             UserTable explodedTable = builder.unvalidatedAIS().getUserTable(tableName);
-            explodedTable.getColumn(ID_COL_NAME).setNullable(false);
 
             TableName tempName = new TableName(tableName.getSchemaName(), "__" + tableName.getTableName());
             ddlFunctions.renameTable(session, tableName, tempName);
-            ddlFunctions.createTable(session, explodedTable);
+            parser.create(ddlFunctions, session, explodedTable);
 
             ais = ddlFunctions.getAIS(session);
             adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), store, treeService, session, configService);
@@ -188,15 +186,8 @@ public class ModelBuilder {
                 cursor.open();
                 while((row = cursor.next()) != null) {
                     node = (ObjectNode)JsonUtils.readTree(row.pvalue(1).getString());
-                    node.put(ID_COL_NAME, row.pvalue(0).getInt64());
-                    // TODO: Recursive
-                    Iterator<String> it = node.getFieldNames();
-                    while(it.hasNext()) {
-                        String name = it.next();
-                        if(explodedTable.getColumn(name) == null) {
-                            it.remove();
-                        }
-                    }
+                    node.put(EntityParser.PK_COL_NAME, row.pvalue(0).getInt64());
+                    removeUnknownFields(explodedTable, node);
                     restDMLService.insertNoTxn(session, null, tableName, node);
                 }
                 cursor.close();
@@ -217,7 +208,6 @@ public class ModelBuilder {
             if(isBuilderTable(curTable)) {
                 throw new ModelBuilderException(tableName, "Table is already imploded");
             }
-
 
             // Rename current
             TableName tempName = new TableName(tableName.getSchemaName(), "__" + tableName.getTableName());
@@ -249,9 +239,9 @@ public class ModelBuilder {
         if(curTable == null) {
             NewAISBuilder builder = AISBBasedBuilder.create();
             builder.userTable(tableName)
-                    .autoIncLong(ID_COL_NAME, 1)
+                    .autoIncLong(EntityParser.PK_COL_NAME, 1)
                     .colString(DATA_COL_NAME, 65535, true)
-                    .pk(ID_COL_NAME);
+                    .pk(EntityParser.PK_COL_NAME);
             ddlFunctions.createTable(session, builder.ais().getUserTable(tableName));
         } else {
             if(!isBuilderTable(curTable)) {
@@ -260,9 +250,49 @@ public class ModelBuilder {
         }
     }
 
-    private boolean isBuilderTable(UserTable table) {
+
+    private static UserTable findChildTable(UserTable parent, String childName) {
+        for(Join j : parent.getChildJoins()) {
+            UserTable child = j.getChild();
+            if(child.getName().getTableName().equals(childName)) {
+                return child;
+            }
+        }
+        return null;
+    }
+
+    private static void removeUnknownFields(UserTable table, JsonNode node) {
+        if(node.isArray()) {
+            Iterator<JsonNode> it = node.getElements();
+            while(it.hasNext()) {
+                removeUnknownFields(table, it.next());
+            }
+        }
+        else {
+            Iterator<Map.Entry<String,JsonNode>> fieldIt = node.getFields();
+            while(fieldIt.hasNext()) {
+                Map.Entry<String,JsonNode> pair = fieldIt.next();
+                String itName = pair.getKey();
+                JsonNode itNode = pair.getValue();
+                if(itNode.isContainerNode()) {
+                    UserTable child = findChildTable(table, itName);
+                    if(child != null) {
+                        removeUnknownFields(child, itNode);
+                    } else {
+                        fieldIt.remove();
+                    }
+                } else {
+                    if(table.getColumn(itName) == null) {
+                        fieldIt.remove();
+                    }
+                }
+            }
+        }
+    }
+
+    private static boolean isBuilderTable(UserTable table) {
         return (table.getColumns().size() == 2) &&
-                ID_COL_NAME.equals(table.getColumn(0).getName()) &&
+                EntityParser.PK_COL_NAME.equals(table.getColumn(0).getName()) &&
                 DATA_COL_NAME.equals(table.getColumn(1).getName());
     }
 

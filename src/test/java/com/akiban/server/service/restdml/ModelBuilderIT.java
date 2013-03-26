@@ -19,17 +19,22 @@ package com.akiban.server.service.restdml;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.entity.changes.EntityParser;
 import com.akiban.server.error.ModelBuilderException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.util.Strings;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -145,12 +150,12 @@ public class ModelBuilderIT extends ITBase {
         builder.insert(NULL_WRITER, TABLE_NAME, SIMPLE_JSON_1);
         builder.explode(NULL_WRITER, TABLE_NAME);
         updateAISGeneration();
-        assertEquals("Tables in schema", "["+TABLE+"]", ais().getSchema(SCHEMA).getUserTables().keySet().toString());
+        expectTables(TABLE);
         UserTable table = getUserTable(TABLE_NAME);
         assertEquals("Column count", 2, table.getColumns().size());
-        assertEquals("Column 0", "name", table.getColumn(0).getName());
-        assertEquals("Column 1", ModelBuilder.ID_COL_NAME, table.getColumn(1).getName());
-        expectFullRows(table.getTableId(), createNewRow(table.getTableId(), "foo", 1L));
+        assertEquals("Column 0", EntityParser.PK_COL_NAME, table.getColumn(0).getName());
+        assertEquals("Column 1", "name", table.getColumn(1).getName());
+        expectFullRows(table.getTableId(), createNewRow(table.getTableId(), 1L, "foo"));
     }
 
     @Test
@@ -159,15 +164,40 @@ public class ModelBuilderIT extends ITBase {
         builder.insert(NULL_WRITER, TABLE_NAME, SIMPLE_JSON_2);
         builder.explode(NULL_WRITER, TABLE_NAME);
         updateAISGeneration();
-        assertEquals("Tables in schema", "["+TABLE+"]", ais().getSchema(SCHEMA).getUserTables().keySet().toString());
+        expectTables(TABLE);
         UserTable table = getUserTable(TABLE_NAME);
         assertEquals("Column count", 2, table.getColumns().size());
-        assertEquals("Column 0", "year", table.getColumn(0).getName());
-        assertEquals("Column 1", ModelBuilder.ID_COL_NAME, table.getColumn(1).getName());
+        assertEquals("Column 0", EntityParser.PK_COL_NAME, table.getColumn(0).getName());
+        assertEquals("Column 1", "year", table.getColumn(1).getName());
         expectFullRows(
                 table.getTableId(),
-                createNewRow(table.getTableId(), null, 1L),
-                createNewRow(table.getTableId(), "2013", 2L)
+                createNewRow(table.getTableId(), 1L, null),
+                createNewRow(table.getTableId(), 2L, "2013")
+        );
+    }
+
+    @Test
+    public void explodeMultiLevelDifferentShapes() throws IOException {
+        builder.insert(NULL_WRITER, TABLE_NAME, "{\"a\": 5}");
+        builder.insert(NULL_WRITER, TABLE_NAME, "{\"a\": \"five\", \"b\": 10}");
+        builder.insert(NULL_WRITER, TABLE_NAME, "{\"a\": \"six\", \"bs\": [{ \"x\" : 10}]}");
+        builder.insert(NULL_WRITER, TABLE_NAME, "{\"a\": \"seven\", \"bs\": [{ \"y\" : 20}]}");
+        builder.explode(NULL_WRITER, TABLE_NAME);
+        updateAISGeneration();
+        expectTables("bs", TABLE);
+        int tid = tableId(TABLE_NAME);
+        expectFullRows(
+            tid,
+            createNewRow(tid, 1L, "5"),
+            createNewRow(tid, 2L, "five"),
+            createNewRow(tid, 3L, "six"),
+            createNewRow(tid, 4L, "seven")
+        );
+        int bsid = tableId(SCHEMA, "bs");
+        expectFullRows(
+            bsid,
+            createNewRow(bsid, 1L, null, 3L),
+            createNewRow(bsid, 2L, 20L, 4L)
         );
     }
 
@@ -175,7 +205,7 @@ public class ModelBuilderIT extends ITBase {
     public void implodeEmptyTable() {
         createTable(SCHEMA, TABLE, "foo int, bar int, zap int");
         builder.implode(NULL_WRITER, TABLE_NAME);
-        assertEquals("Tables in schema", "[" + TABLE + "]", ais().getSchema(SCHEMA).getUserTables().keySet().toString());
+        expectTables(TABLE);
         assertTrue("Is builder table", builder.isBuilderTable(TABLE_NAME));
     }
 
@@ -228,5 +258,16 @@ public class ModelBuilderIT extends ITBase {
     public void createConflictsExisting() {
         createTable(SCHEMA, TABLE, "foo int");
         builder.create(TABLE_NAME);
+    }
+
+
+    private void expectTables(String... names) {
+        Set<String> nameSet = new TreeSet<>();
+        nameSet.addAll(Arrays.asList(names));
+        assertEquals(
+                "Tables in schema",
+                nameSet.toString(),
+                ais().getSchema(SCHEMA).getUserTables().keySet().toString()
+        );
     }
 }
