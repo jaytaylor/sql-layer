@@ -34,10 +34,13 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 import java.io.PrintWriter;
 
+import static com.akiban.rest.resources.ResourceHelper.IDENTIFIERS_MULTI;
 import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 import static com.akiban.rest.resources.ResourceHelper.checkTableAccessible;
+import static com.akiban.rest.resources.ResourceHelper.getPKString;
 import static com.akiban.rest.resources.ResourceHelper.parseTableName;
 
 @Path("/builder")
@@ -80,11 +83,11 @@ public class BuilderResource {
     }
 
     @GET
-    @Path("/entity/{entity}/{id}")
+    @Path("/entity/{entity}/" + IDENTIFIERS_MULTI)
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response getSingle(@Context HttpServletRequest request,
                               @PathParam("entity") String entityName,
-                              @PathParam("id") final String entityID) {
+                              @Context final UriInfo uri) {
         final TableName tableName = parseTableName(request, entityName);
         checkTableAccessible(securityService, request, tableName);
         return RestResponseBuilder
@@ -93,7 +96,7 @@ public class BuilderResource {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
                         modelBuilder.create(tableName);
-                        restDMLService.getEntities(writer, tableName, 0, entityID);
+                        restDMLService.getEntities(writer, tableName, 0, getPKString(uri));
                     }
                 })
                 .build();
@@ -119,11 +122,11 @@ public class BuilderResource {
     }
 
     @PUT
-    @Path("/entity/{entity}/{id}")
+    @Path("/entity/{entity}/" + IDENTIFIERS_MULTI)
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response put(@Context HttpServletRequest request,
                         @PathParam("entity") String entityName,
-                        @PathParam("id") final String entityID,
+                        @Context final UriInfo uri,
                         final String entityData) {
         final TableName tableName = parseTableName(request, entityName);
         checkTableAccessible(securityService, request, tableName);
@@ -132,18 +135,18 @@ public class BuilderResource {
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
-                        modelBuilder.update(writer, tableName, entityID, entityData);
+                        modelBuilder.update(writer, tableName, getPKString(uri), entityData);
                     }
                 })
                 .build();
     }
 
     @DELETE
-    @Path("/entity/{entity}/{id}")
+    @Path("/entity/{entity}/" + IDENTIFIERS_MULTI)
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response delete(@Context HttpServletRequest request,
                            @PathParam("entity") String entityName,
-                           @PathParam("id") final String entityID) {
+                           @Context final UriInfo uri) {
         final TableName tableName = parseTableName(request, entityName);
         checkTableAccessible(securityService, request, tableName);
         return RestResponseBuilder
@@ -152,7 +155,7 @@ public class BuilderResource {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
                         modelBuilder.create(tableName);
-                        restDMLService.delete(writer, tableName, entityID);
+                        restDMLService.delete(writer, tableName, getPKString(uri));
                     }
                 })
                 .build();
