@@ -85,7 +85,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
     private final Timer populateTimer = new Timer();
     private long populateDelayInterval;
-    private final TimerTask populateWorker;
 
     private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceImpl.class);
 
@@ -101,7 +100,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         this.treeService = treeService;
 
         updateWorker = DEFAULT_UPDATE_WORKER;
-        populateWorker = DEFAULT_POPULATE_WORKER;
 
     }
 
@@ -251,7 +249,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             boolean success = false;
             try
             {
-                writer.deleteAll();
                 transactionService.beginTransaction(session);
                 transaction = true;
                 for (byte row[] : rows)
@@ -334,42 +331,65 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     @Override
     public void schedulePopulate(String schema, String table, String index)
     {
+        Session session = sessionService.createSession();
+        boolean success = false;
         try
         {
-            addChange(sessionService.createSession(), schema, table, index);
-            populateTimer.schedule(populateWorker, populateDelayInterval);
+            transactionService.beginTransaction(session);
+            if(addPopulate(session, schema, table, index) && !hasScheduled)
+            {
+                populateTimer.schedule(populateWorker(), populateDelayInterval);
+                hasScheduled = true;
+            }
+
+            success = true;            
         }
         catch (PersistitException ex)
         {
             throw new AkibanInternalException("Error while scheduling index population", ex);
         }
+        finally
+        {
+            if (success)
+                transactionService.commitTransaction(session);
+            else
+                transactionService.rollbackTransaction(session);
+            session.close();
+        }
     }
     
-    private final TimerTask DEFAULT_POPULATE_WORKER = new TimerTask()
+    private class DefaultPopulateWorker extends TimerTask
     {
         @Override
         public synchronized void run()
         {
+            boolean success = false;
+            Session session = sessionService.createSession();
             try
             {
-                Session session = sessionService.createSession();
+                transactionService.beginTransaction(session);
                 Exchange ex = getPopulateExchange(session);
                 
                 IndexName toPopulate;
-                //createIndex(Session session, IndexName name)
                 while ((toPopulate = nextInQueue(ex)) != null)
                 {
                     createIndex(session, toPopulate);
                     ex.fetchAndRemove();
                 }
-                
-                // All indices have been populated
-                // so cancel future task(s) now
-                populateTimer.cancel();
+                success = true;
             }
             catch (PersistitException ex1)
             {
                 throw new AkibanInternalException("Error while populating full_text indices", ex1);
+            }
+            finally
+            {
+                hasScheduled = false;
+                if (success)
+                    transactionService.commitTransaction(session);
+                else
+                    transactionService.rollbackTransaction(session);
+                session.close();
             }
         }
         
@@ -385,27 +405,32 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     
     protected void enableUpdateWorker()
     {
-        maintenanceInterval = 3000; //Long.parseLong(configService.getProperty(UPDATE_INTERVAL));
+        maintenanceInterval = Long.parseLong(configService.getProperty(UPDATE_INTERVAL));
         maintenanceTimer.scheduleAtFixedRate(updateWorker, maintenanceInterval, maintenanceInterval);
     }
     
     protected void enablePopulateWorker()
     {
-        populateDelayInterval = 1000; //Long.parseLong(configService.getProperty(POPULATE_DELAY_INTERVAL));
+        populateDelayInterval = Long.parseLong(configService.getProperty(POPULATE_DELAY_INTERVAL));
     }
     
     void disablePopulateWorker()
     {
-        populateWorker.cancel();
         populateTimer.cancel();
         populateTimer.purge();
     }
     
+    private TimerTask populateWorker()
+    {
+        return new DefaultPopulateWorker();
+    }
+
     //----------- private helpers -----------
     private IndexName nextInQueue(Exchange ex) throws PersistitException
     {
         Key key = ex.getKey();
-        if (key == null) // empty tree?
+
+        if (key.getEncodedSize() == 0) // empty tree?
             return null;
         else
         {
@@ -420,20 +445,22 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     private Exchange getPopulateExchange(Session session)
     {
         return treeService.getExchange(session,
-                                              treeService.treeLink(POPULATE_SCHEMA,
-                                                                   FULL_TEXT_TABLE));
+                                       treeService.treeLink(POPULATE_SCHEMA,
+                                                            FULL_TEXT_TABLE));
     }
     
-    private Exchange nextPopulateEntry(Session session,
+    private synchronized Exchange nextPopulateEntry(Session session,
                                        String schema,
                                        String table,
                                        String index) throws PersistitException
     {   
         Exchange ret = getPopulateExchange(session);
-        if (ret.getKey() != null)
+        Key key = ret.getKey();
+
+        if (key.getEncodedSize() != 0 && !key.isRightEdge())
+        {
             do
             {
-                Key key = ret.getKey();
                 String keySchema = key.decodeString();
                 String keyTable = key.decodeString();
                 String keyIndex = key.decodeString();
@@ -442,13 +469,15 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                         && table.equals(keyTable)
                         && index.equals(keyIndex))
                     return null;
+                key = ret.getKey();
             }
             while (ret.next());
-       
+        }
         return ret;
     }
 
-    private void addChange(Session session,
+    private volatile boolean hasScheduled = false;
+    private synchronized boolean addPopulate(Session session,
                            String schema,
                            String table,
                            String index) throws PersistitException
@@ -457,14 +486,16 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
         // 'promise' for populating this index already exists
         if (ex == null)
-            return;
+            return false;
         
         // KEY: schema | table | indexName
-        ex.clear().append(schema)
-                  .append(table)
-                  .append(index);
+        ex.getKey().append(schema)
+                   .append(table)
+                   .append(index);
 
         // VALUE: <empty>
+
+        return true;
     }
     
     private HKeyRow toHKeyRow(byte rowBytes[], HKeyRowType hKeyRowType,
