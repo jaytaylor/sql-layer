@@ -47,6 +47,7 @@ import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
+import com.akiban.sql.optimizer.rule.PlanGenerator;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.JsonUtils;
 import org.codehaus.jackson.JsonNode;
@@ -194,7 +195,9 @@ public class ModelBuilder {
             createInternal(session, tableName);
 
             // Scan old into new
-            ImplodeTracker tracker = new ImplodeTracker(ddlFunctions.getUserTable(session, tableName), -1);
+            UserTable oldTable = ddlFunctions.getUserTable(session, tempName);
+            UserTable newTable = ddlFunctions.getUserTable(session, tableName);
+            ImplodeTracker tracker = new ImplodeTracker(newTable, oldTable, -1);
             Cursor cursor = groupScanCursor(session, tempName);
             try {
                 JsonRowWriter rowWriter = new JsonRowWriter(tracker);
@@ -204,7 +207,7 @@ public class ModelBuilder {
             }
 
             // drop old
-            ddlFunctions.dropTable(session, tempName);
+            ddlFunctions.dropGroup(session, tempName);
 
             ObjectNode summaryNode = JsonUtils.mapper.createObjectNode();
             summaryNode.put("imploded", tableName.getTableName());
@@ -236,15 +239,15 @@ public class ModelBuilder {
         Schema schema = SchemaCache.globalSchema(table.getAIS());
         IndexRowType indexRowType = schema.indexRowType(table.getPrimaryKey().getIndex());
         Operator plan = API.ancestorLookup_Default(
-            API.indexScan_Default(
+                API.indexScan_Default(
+                        indexRowType,
+                        true,
+                        IndexKeyRange.unbounded(indexRowType)
+                ),
+                table.getGroup(),
                 indexRowType,
-                true,
-                IndexKeyRange.unbounded(indexRowType)
-            ),
-            table.getGroup(),
-            indexRowType,
-            Collections.singleton(schema.userTableRowType(table)),
-            API.InputPreservationOption.DISCARD_INPUT
+                Collections.singleton(schema.userTableRowType(table)),
+                API.InputPreservationOption.DISCARD_INPUT
         );
         StoreAdapter adapter = new PersistitAdapter(schema, store, treeService, session, configService);
         QueryContext queryContext = new SimpleQueryContext(adapter);
@@ -259,7 +262,7 @@ public class ModelBuilder {
 
     private Cursor groupScanCursor(Session session, TableName tableName) {
         UserTable table = ddlFunctions.getUserTable(session, tableName);
-        Operator plan = API.groupScan_Default(table.getGroup());
+        Operator plan = PlanGenerator.generateScanPlan(table.getAIS(), table);
         PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(table.getAIS()), store, treeService, session, configService);
         QueryContext queryContext = new SimpleQueryContext(adapter);
         return API.cursor(plan, queryContext);
@@ -313,15 +316,15 @@ public class ModelBuilder {
 
     private class ImplodeTracker extends TableRowTracker {
         private final StringBuilder builder;
-        private final UserTable rootTable;
+        private final UserTable outTable;
         private int rowCount = 0;
         private int curDepth = 0;
 
-        public ImplodeTracker(UserTable table, int addlDepth) {
-            super(table, addlDepth);
-            assert table.isRoot() : "Expected root: "  + table;
+        public ImplodeTracker(UserTable outTable, UserTable inTable, int addlDepth) {
+            super(inTable, addlDepth);
+            assert inTable.isRoot() : "Expected root: "  + inTable;
             this.builder = new StringBuilder();
-            this.rootTable = table;
+            this.outTable = outTable;
         }
 
         public StringBuilder getStringBuilder() {
@@ -343,7 +346,7 @@ public class ModelBuilder {
             super.popRowType();
             if(--curDepth == 0) {
                 String json = (builder.charAt(0) == ',') ? builder.substring(1) : builder.toString();
-                ModelBuilder.this.insert(null, rootTable.getName(), json);
+                ModelBuilder.this.insert(null, outTable.getName(), json);
                 builder.setLength(0);
                 ++rowCount;
             }
