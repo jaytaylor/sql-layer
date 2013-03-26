@@ -79,6 +79,20 @@ public abstract class PostgresDMLStatement extends PostgresBaseStatement
             throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
+        if (always) {
+            PostgresType[] parameterTypes = getParameterTypes();
+            messenger.beginMessage(PostgresMessages.PARAMETER_DESCRIPTION_TYPE.code());
+            if (parameterTypes == null) {
+                messenger.writeShort(0);
+            }
+            else {
+                messenger.writeShort((short)parameterTypes.length);
+                for (PostgresType type : parameterTypes) {
+                    messenger.writeInt(type.getOid());
+                }
+            }
+            messenger.sendMessage();
+        }
         List<PostgresType> columnTypes = getColumnTypes();
         if (columnTypes == null) {
             if (!always) return;
