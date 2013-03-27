@@ -17,16 +17,30 @@
 
 package com.akiban.server.entity.model;
 
-import com.google.common.collect.ImmutableList;
 import org.codehaus.jackson.annotate.JsonCreator;
 import org.codehaus.jackson.annotate.JsonValue;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public final class EntityIndex {
 
-    public List<EntityColumn> getColumns() {
-        return columns;
+    public List<IndexField> getFields() {
+        return fields;
+    }
+
+    public void setFields(List<IndexField> fields) {
+        this.fields = fields;
+    }
+
+    public IndexType getType() {
+        return type;
+    }
+
+    public void setType(IndexType type) {
+        this.type = type;
     }
 
     @Override
@@ -35,33 +49,74 @@ public final class EntityIndex {
         if (o == null || getClass() != o.getClass()) return false;
 
         EntityIndex that = (EntityIndex) o;
-        return columns.equals(that.columns);
+        return fields.equals(that.fields);
 
     }
 
     @Override
     public int hashCode() {
-        return columns.hashCode();
+        return fields.hashCode();
     }
 
     @Override
     public String toString() {
-        return columns.toString();
+        return fields.toString();
     }
 
     @JsonValue
     public Object asJsonValue() {
-        return columns;
+        if (type == null)
+            return fields;
+        Map<String, Object> asMap = new HashMap<>();
+        asMap.put("fields", fields);
+        asMap.put("type", type.name().toLowerCase());
+        return fields;
     }
 
     @JsonCreator
-    public EntityIndex(List<EntityColumn> columns) {
-        this.columns = ImmutableList.copyOf(columns);
+    public static EntityIndex create(Object def) {
+        EntityIndex result = new EntityIndex();
+        if (def instanceof List) {
+            createIndexFields(def, result);
+        }
+        else if (def instanceof Map) {
+            Map<?,?> asMap = cast(def, Map.class);
+            Object fieldObj = asMap.get("fields");
+            String typeObj = cast(asMap.get("type"), String.class);
+            createIndexFields(fieldObj, result);
+            result.type = IndexType.valueOf(typeObj.toUpperCase());
+        }
+        else {
+            throw new IllegalEntityDefinition("expected index definition");
+        }
+        return result;
     }
 
-    public static EntityIndex create(List<EntityColumn> columns) {
-        return new EntityIndex(columns);
+    private static void createIndexFields(Object def, EntityIndex result) {
+        List<?> defList = cast(def, List.class);
+        result.fields = new ArrayList<>(defList.size());
+        for (Object field : defList)
+            result.fields.add(IndexField.create(field));
     }
 
-    private final List<EntityColumn> columns;
+    private static <T> T cast(Object o, Class<T> target) {
+        if (o == null)
+            throw new IllegalEntityDefinition("expected " + target.getSimpleName() + " but found null");
+        try {
+            return target.cast(o);
+        } catch (ClassCastException e) {
+            throw new IllegalEntityDefinition("expected " + target.getSimpleName()
+                    + " but found found " + o.getClass().getSimpleName());
+        }
+    }
+
+    public EntityIndex() {
+    }
+
+    private List<IndexField> fields;
+    private IndexType type;
+
+    public enum IndexType {
+        LEFT, RIGHT, FULL_TEXT
+    }
 }

@@ -30,7 +30,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.entity.model.AbstractEntityVisitor;
 import com.akiban.server.entity.model.Attribute;
 import com.akiban.server.entity.model.Entity;
-import com.akiban.server.entity.model.EntityColumn;
+import com.akiban.server.entity.model.IndexField;
 import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Validation;
 import com.akiban.server.types3.TClass;
@@ -154,7 +154,7 @@ public class EntityToAIS extends AbstractEntityVisitor {
     public void visitIndexes(BiMap<String, EntityIndex> indexes) {
         for(Map.Entry<String,EntityIndex> entry : indexes.entrySet()) {
             String indexName = entry.getKey();
-            List<EntityColumn> columns = entry.getValue().getColumns();
+            List<IndexField> columns = entry.getValue().getFields();
             boolean isGI = isMultiTable(columns);
             boolean isUnique = uniqueValidations.contains(indexName);
             if(isGI) {
@@ -163,13 +163,13 @@ public class EntityToAIS extends AbstractEntityVisitor {
                 }
                 builder.groupIndex(groupName, indexName, false, GI_JOIN_TYPE_DEFAULT);
                 int pos = 0;
-                for(EntityColumn col : columns) {
+                for(IndexField col : columns) {
                     builder.groupIndexColumn(groupName, indexName, schemaName, col.getTable(), col.getColumn(), pos++);
                 }
             } else {
                 builder.index(schemaName, columns.get(0).getTable(), indexName, isUnique, Index.KEY_CONSTRAINT);
                 int pos = 0;
-                for(EntityColumn col : columns) {
+                for(IndexField col : columns) {
                     builder.indexColumn(schemaName, col.getTable(), indexName, col.getColumn(), pos++, true, null);
                 }
             }
@@ -313,7 +313,7 @@ public class EntityToAIS extends AbstractEntityVisitor {
         return info;
     }
 
-    private static boolean isMultiTable(List<EntityColumn> columns) {
+    private static boolean isMultiTable(List<IndexField> columns) {
         for(int i = 1; i < columns.size(); ++i) {
             if(!columns.get(0).getTable().equals(columns.get(i).getTable())) {
                 return true;

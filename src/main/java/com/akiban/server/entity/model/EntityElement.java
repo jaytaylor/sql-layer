@@ -26,8 +26,14 @@
 
 package com.akiban.server.entity.model;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Collections2;
 import org.codehaus.jackson.annotate.JsonIgnore;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 
 abstract class EntityElement {
@@ -64,4 +70,26 @@ abstract class EntityElement {
 
     private UUID uuid;
     private String name;
+
+    public static final Comparator<? super EntityElement> byName = new Comparator<EntityElement>() {
+        @Override
+        public int compare(EntityElement o1, EntityElement o2) {
+            return o1.getName().compareTo(o2.getName());
+        }
+    };
+
+    public static final Function<? super EntityElement, String> toName = new Function<EntityElement, String>() {
+        @Override
+        public String apply(EntityElement input) {
+            return input.getName();
+        }
+    };
+
+    public static final Function<? super Collection<? extends EntityElement>, List<String>> toNames
+            = new Function<Collection<? extends EntityElement>, List<String>>() {
+        @Override
+        public List<String> apply(Collection<? extends EntityElement> input) {
+            return new ArrayList<>(Collections2.transform(input, toName));
+        }
+    };
 }

@@ -26,8 +26,7 @@ import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.entity.model.Entity;
 import com.akiban.server.entity.model.EntityCollection;
-import com.akiban.server.entity.model.EntityColumn;
-import com.akiban.server.entity.model.EntityContainer;
+import com.akiban.server.entity.model.IndexField;
 import com.akiban.server.entity.model.EntityField;
 import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Validation;
@@ -53,7 +52,7 @@ final class EntityBuilder {
         entity = Entity.modifiableEntity(uuidOrCreate(rootTable));
         buildContainer(entity, rootTable);
         Set<String> uniques = buildIndexes(entity.getIndexes());
-        buildUniques(entity.getValidation(), uniques);
+        buildUniques(entity.getValidations(), uniques);
     }
 
     private void buildScalars(List<EntityField> fields, UserTable table) {
@@ -109,7 +108,7 @@ final class EntityBuilder {
         return collection;
     }
 
-    private void buildContainer(EntityContainer container, UserTable table) {
+    private void buildContainer(Entity container, UserTable table) {
         buildScalars(container.getFields(), table);
         buildIdentifying(container.getIdentifying(), table);
         buildCollections(container.getCollections(), table);
@@ -170,12 +169,12 @@ final class EntityBuilder {
         }
     };
 
-    private static final Function<? super IndexColumn, EntityColumn> toEntityColumn =
-            new Function<IndexColumn, EntityColumn>() {
+    private static final Function<? super IndexColumn, IndexField> toEntityColumn =
+            new Function<IndexColumn, IndexField>() {
         @Override
-        public EntityColumn apply(IndexColumn indexColumn) {
+        public IndexField apply(IndexColumn indexColumn) {
             Column column = indexColumn.getColumn();
-            return new EntityColumn(column.getTable().getName().getTableName(), column.getName());
+            return new IndexField(column.getTable().getName().getTableName(), column.getName());
         }
     };
 }

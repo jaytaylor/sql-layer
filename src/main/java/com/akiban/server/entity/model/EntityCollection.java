@@ -32,7 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public final class EntityCollection extends EntityContainer {
+public final class EntityCollection extends Entity {
 
     @JsonProperty("parent_cols")
     public List<String> getParentColumns() {
@@ -42,14 +42,6 @@ public final class EntityCollection extends EntityContainer {
     @JsonProperty("parent_cols")
     public void setParentColumns(List<String> parentColumns) {
         this.parentColumns = parentColumns;
-    }
-
-    public List<EntityIndex> getIndexes() {
-        return indexes;
-    }
-
-    public void setIndexes(List<EntityIndex> indexes) {
-        this.indexes = indexes;
     }
 
     public <E extends Exception> void accept(EntityVisitor<E>  visitor) throws E {
@@ -67,5 +59,4 @@ public final class EntityCollection extends EntityContainer {
     }
 
     private List<String> parentColumns;
-    private List<EntityIndex> indexes;
 }

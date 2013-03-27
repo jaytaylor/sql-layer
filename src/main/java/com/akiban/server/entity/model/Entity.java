@@ -1,18 +1,27 @@
 /**
- * Copyright (C) 2009-2013 Akiban Technologies, Inc.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.entity.model;
@@ -21,24 +30,39 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableBiMap;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 
-public final class Entity extends EntityContainer {
+public abstract class Entity extends EntityElement {
 
-    public Collection<Validation> getValidations() {
-        return validations;
+    public List<EntityField> getFields() {
+        return fields;
     }
 
-    void setValidations(Collection<Validation> validations) {
-        Set<Validation> validationsSet = new TreeSet<>(validations);
-        if (validationsSet.size() != validations.size())
-            throw new IllegalEntityDefinition("duplicate validations given: " + validations);
-        this.validations = validationsSet;
+    public void setFields(List<EntityField> fields) {
+        this.fields = fields;
+    }
+
+    public Collection<EntityCollection> getCollections() {
+        return collections;
+    }
+
+    public void setCollections(List<EntityCollection> collections) {
+        this.collections = collections;
+    }
+
+    public List<String> getIdentifying() {
+        return identifying;
+    }
+
+    public void setIdentifying(List<String> identifying) {
+        this.identifying = identifying;
     }
 
     public BiMap<String, EntityIndex> getIndexes() {
@@ -55,32 +79,29 @@ public final class Entity extends EntityContainer {
         this.indexes = ImmutableBiMap.copyOf(this.indexes);
     }
 
-    @Override
-    public String toString() {
-        return String.format("entity {%s}", getUuid());
+    public Set<Validation> getValidations() {
+        return validations;
     }
 
-    private Set<Validation> validations = Collections.emptySet();
+    void setValidations(Collection<Validation> validations) {
+        Set<Validation> validationsSet = new TreeSet<>(validations);
+        if (validationsSet.size() != validations.size())
+            throw new IllegalEntityDefinition("duplicate validations given: " + validations);
+        this.validations = validationsSet;
+    }
+
+    void makeModifiable(UUID uuid) {
+        setUuid(uuid);
+        fields = new ArrayList<>();
+        collections = new ArrayList<>();
+        identifying = new ArrayList<>();
+        indexes = HashBiMap.create();
+        validations = new TreeSet<>();
+    }
+
+    private List<EntityField> fields = Collections.emptyList();
+    private List<EntityCollection> collections = Collections.emptyList();
+    private List<String> identifying = Collections.emptyList();
     private BiMap<String, EntityIndex> indexes = ImmutableBiMap.of();
-
-    public static Entity modifiableEntity(UUID uuid) {
-        Entity entity = new Entity();
-        entity.makeModifiable(uuid);
-        entity.validations = new TreeSet<>();
-        entity.indexes = HashBiMap.create();
-        return entity;
-    }
-
-    Entity() {}
-
-    public <E extends Exception> void accept(EntityVisitor<E>  visitor) throws E {
-        visitor.visitEntity(this);
-        for (EntityCollection collection : getCollections()) {
-            collection.accept(visitor);
-        }
-        visitor.leaveEntityAttributes();
-        visitor.visitEntityValidations(validations);
-        visitor.visitIndexes(indexes);
-        visitor.leaveEntity();
-    }
+    private Set<Validation> validations = Collections.emptySet();
 }

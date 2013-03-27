@@ -41,7 +41,7 @@ public final class SpaceTest {
         // space
         Space space = Space.readSpace("coi.json", SpaceTest.class, null);
         isUnmodifiable("space", space.getEntities());
-        assertEquals("space keys", set("customer"), space.getEntities().keySet());
+        assertEquals("space keys", set("customer"), space.getEntities());
 
         Entity customer = space.getEntities().get("customer");
         assertEquals("customer uuid", UUID.fromString("2a57b59e-e1b7-4377-996e-a5c04e0abf29"), customer.uuid());
@@ -53,11 +53,11 @@ public final class SpaceTest {
                 set("orderplaced_lastname"),
                 set(customer.getIndexes().keySet()));
         EntityIndex index = customer.getIndexes().get("orderplaced_lastname");
-        List<EntityColumn> expectedColumns = asList(
-                new EntityColumn("orders", "placed"), new EntityColumn("customer", "last_name")
+        List<IndexField> expectedColumns = asList(
+                new IndexField("orders", "placed"), new IndexField("customer", "last_name")
         );
-        isUnmodifiable("index columns", index.getColumns());
-        assertEquals("index columns", expectedColumns, index.getColumns());
+        isUnmodifiable("index columns", index.getFields());
+        assertEquals("index columns", expectedColumns, index.getFields());
         equalsIncludingHash("index", EntityIndex.create(expectedColumns), index);
 
         isUnmodifiable("customer validation", customer.getValidation());

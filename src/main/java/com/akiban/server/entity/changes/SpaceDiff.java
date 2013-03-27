@@ -17,7 +17,6 @@
 
 package com.akiban.server.entity.changes;
 
-import com.akiban.server.entity.model.Attribute;
 import com.akiban.server.entity.model.Entity;
 import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Space;

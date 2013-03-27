@@ -28,6 +28,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -71,7 +72,7 @@ public final class Space {
         }
     }
 
-    public List<Entity> getEntities() {
+    public Collection<Entity> getEntities() {
         return entities;
     }
 
@@ -138,7 +139,7 @@ public final class Space {
             visitContainer(collection);
         }
 
-        private void visitContainer(EntityContainer container) {
+        private void visitContainer(Entity container) {
             visitElement(container);
             String name = container.getName();
             if (!collectionNames.add(name))

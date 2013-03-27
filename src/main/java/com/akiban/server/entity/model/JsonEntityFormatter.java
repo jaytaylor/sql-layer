@@ -81,7 +81,7 @@ public final class JsonEntityFormatter implements EntityVisitor<IOException> {
             json.writeObjectFieldStart("indexes");
             for (Map.Entry<String, EntityIndex> indexEntry : indexes.entrySet()) {
                 json.writeArrayFieldStart(indexEntry.getKey());
-                for (EntityColumn column : indexEntry.getValue().getColumns()) {
+                for (IndexField column : indexEntry.getValue().getFields()) {
                     json.writeStartArray();
                     json.writeString(column.getTable());
                     json.writeString(column.getColumn());
