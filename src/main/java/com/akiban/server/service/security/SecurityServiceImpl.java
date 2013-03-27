@@ -428,9 +428,6 @@ public class SecurityServiceImpl implements SecurityService, Service {
         }
     }
 
-    //protected final char[] HEX_UC = "0123456789ABCDEF".toCharArray();
-    //protected final char[] HEX_LC = "0123456789abcdef".toCharArray();
-
     protected String formatMD5(byte[] md5, boolean forDigest) {
         StringBuilder str = new StringBuilder();
         str.append(forDigest ? "MD5:" : "md5");
