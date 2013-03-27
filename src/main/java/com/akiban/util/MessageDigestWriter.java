@@ -18,54 +18,35 @@ package com.akiban.util;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class MessageDigestWriter extends Writer {
 
     private final MessageDigest digest;
-    private byte[] digestResults = null;
     
     public MessageDigestWriter () throws NoSuchAlgorithmException {
         digest = MessageDigest.getInstance("MD5");
+        digest.reset();
     }
     @Override
     public void write(char[] cbuf, int off, int len) throws IOException {
-        byte[] bytes = new byte[len * 2];
-        int j = 0;
-        for(int i=off; i<(len+off); i++) {
-            bytes[j] = (byte) ((cbuf[i]&0xFF00)>>8); 
-            bytes[j+1] = (byte) (cbuf[i]&0x00FF);
-            j += 2;
-        }
+        byte[] bytes = String.valueOf(cbuf).substring(off, (len+off)).getBytes("UTF-8");
         digest.update(bytes, 0, bytes.length);
     }
 
     @Override
     public void flush() throws IOException {
-        digestResults = digest.digest();
     }
 
     @Override
     public void close() throws IOException {
-        digestResults = digest.digest();
     }
 
     public MessageDigest getDigest() { 
         return digest;
     }
-    
-    @Override
-    public String toString() {
-        String output = null;
-        if (digestResults != null) {
-            BigInteger bigInt = new BigInteger(1, digestResults);
-            output = bigInt.toString(16);
-            if ( output.length() == 31 ) {
-               output = "0"+output;
-            }
-        }
-        return output;
+    public String getFormatMD5() {
+        return Strings.formatMD5(digest.digest());
     }
 }

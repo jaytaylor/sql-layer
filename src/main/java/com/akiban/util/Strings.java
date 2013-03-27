@@ -33,6 +33,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -419,5 +420,14 @@ public abstract class Strings {
         } catch(UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
+    }
+    
+    public static String formatMD5 (byte[] md5hash) {
+        BigInteger bigInt = new BigInteger(1, md5hash);
+        String output = bigInt.toString(16);
+        if ( output.length() == 31 ) {
+           output = "0"+output;
+        }
+        return output;
     }
 }

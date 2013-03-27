@@ -105,16 +105,20 @@ public final class Space {
     }
 
     public String toJson() {
-        return jsonGenerate (new StringWriter());
+        StringWriter writer = new StringWriter(); 
+        jsonGenerate (writer);
+        return writer.toString();
     }
 
     public String toHash () {
         try {
-            StringWriter writer = new StringWriter(); 
+            StringWriter writer = new StringWriter();
+            MessageDigestWriter md5writer = new MessageDigestWriter();
             JsonGenerator generator = createJsonGenerator(writer);
             generator.writeStartObject();
             generator.writeFieldName("hash");
-            generator.writeString(jsonGenerate (new MessageDigestWriter()));
+            jsonGenerate (md5writer);
+            generator.writeString(md5writer.getFormatMD5());
             generator.writeEndObject();
             generator.flush();
             writer.toString();
@@ -126,13 +130,12 @@ public final class Space {
         }
     }
     
-    private String jsonGenerate(Writer writer) {
+    private void jsonGenerate(Writer writer) {
         try {
             JsonGenerator generator = createJsonGenerator(writer);
             generateJson(generator);
             generator.flush();
             writer.flush();
-            return writer.toString();
         }
         catch (IOException e) {
             throw new RuntimeException(e);

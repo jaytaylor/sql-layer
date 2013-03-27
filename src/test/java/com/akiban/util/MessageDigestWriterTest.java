@@ -39,7 +39,7 @@ public class MessageDigestWriterTest {
         MessageDigestWriter writer = new MessageDigestWriter();
         writer.write(test);
         writer.close();
-        assertEquals(writer.toString(), "9a5b26fef4c9f4fb07181f3e4efbc986");
+        assertEquals(writer.getFormatMD5(), "c639efc1e98762233743a75e7798dd9c");
     }
     
     @Test
@@ -52,14 +52,14 @@ public class MessageDigestWriterTest {
         
         writerA.write(test2);
         writerA.close();
-        String digest1 = writerA.toString();
+        String digest1 = writerA.getFormatMD5();
         
         MessageDigestWriter writerB = new MessageDigestWriter();
         char[] chars = test1.toCharArray();
         writerB.write(chars, 10, 11);
         writerB.close();
-        String digest2 = writerB.toString();
-        assertEquals(digest1, "94528964c80801e2826a50d617d8ed76");
+        String digest2 = writerB.getFormatMD5();
+        assertEquals(digest1, "6f8db599de986fab7a21625b7916589c");
         assertEquals(digest1, digest2);
                
     }
