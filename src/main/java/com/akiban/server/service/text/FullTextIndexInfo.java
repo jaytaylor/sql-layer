@@ -142,31 +142,6 @@ public class FullTextIndexInfo
         plan = API.filter_Default(plan, rowTypes);
         return plan;
     }
-
-    private Operator branchLookup_Nested(HKeyRow row)
-    {
-        Operator plan = null;
-        RowType rowType = row.rowType();
-        for (IndexColumn ic : index.getAllColumns())
-        {
-            // if any column in the index def belongs a a table
-            // that is a descendant of this row's table
-            // (meaning this indexed row has descendants)
-            // then do branchlookup_nested
-            if (ic.getColumn().getUserTable().isDescendantOf(rowType.userTable()))
-            {
-                
-                plan = API.branchLookup_Nested(rowType.userTable().getGroup(), 
-                                               rowType,
-                                               schema.userTableRowType(rowType.userTable()),
-                                               API.InputPreservationOption.DISCARD_INPUT,
-                                               0);
-                break;
-            }   
-        }
-
-        return plan;
-    }
     
     /**
      * 
