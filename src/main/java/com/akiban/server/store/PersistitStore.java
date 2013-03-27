@@ -164,6 +164,10 @@ public class PersistitStore implements Store, Service {
         Exchange ret = treeService.getExchange(session,
                                                treeService.treeLink(MAINTENANCE_SCHEMA,
                                                                     FULL_TEXT_TABLE));
+        // start at the first entry
+        ret.append(Key.BEFORE);
+        ret.next();
+
         // skipping over existing keys
         while (ret.hasNext(true))
             ret.next();
@@ -186,6 +190,8 @@ public class PersistitStore implements Store, Service {
         ex.getValue().clear().putByteArray(rowHKey.getEncodedBytes(),
                                            0,
                                            rowHKey.getEncodedSize());
+        
+        ex.store();
     }
 
     // --- for reporting changes

@@ -394,6 +394,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         }
         
     };
+
     // ---------- for testing ---------------
     void disableUpdateWorker()
     {
@@ -405,13 +406,13 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     
     protected void enableUpdateWorker()
     {
-        maintenanceInterval = 2000; //Long.parseLong(configService.getProperty(UPDATE_INTERVAL));
+        maintenanceInterval = Long.parseLong(configService.getProperty(UPDATE_INTERVAL));
         maintenanceTimer.scheduleAtFixedRate(updateWorker, maintenanceInterval, maintenanceInterval);
     }
     
     protected void enablePopulateWorker()
     {
-        populateDelayInterval = 1000; //Long.parseLong(configService.getProperty(POPULATE_DELAY_INTERVAL));
+        populateDelayInterval = Long.parseLong(configService.getProperty(POPULATE_DELAY_INTERVAL));
     }
     
     void disablePopulateWorker()
@@ -442,11 +443,15 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         }
     }
     
-    private Exchange getPopulateExchange(Session session)
+    private Exchange getPopulateExchange(Session session) throws PersistitException
     {
-        return treeService.getExchange(session,
-                                       treeService.treeLink(POPULATE_SCHEMA,
-                                                            FULL_TEXT_TABLE));
+        Exchange ret = treeService.getExchange(session,
+                                               treeService.treeLink(POPULATE_SCHEMA,
+                                                                    FULL_TEXT_TABLE));
+        // start at the frist entry
+        ret.append(Key.BEFORE);
+        ret.next();
+        return ret;
     }
     
     private synchronized Exchange nextPopulateEntry(Session session,
@@ -489,12 +494,15 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             return false;
         
         // KEY: schema | table | indexName
-        ex.getKey().append(schema)
+        ex.getKey().clear()
+                   .append(schema)
                    .append(table)
                    .append(index);
 
+        
         // VALUE: <empty>
 
+        ex = ex.store();
         return true;
     }
     

@@ -23,10 +23,12 @@ import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.HKeyRow;
 import com.akiban.qp.rowtype.HKeyRowType;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
@@ -147,7 +149,11 @@ public class FullTextIndexInfo
         RowType rowType = row.rowType();
         for (IndexColumn ic : index.getAllColumns())
         {
-            if (ic.getColumn().getUserTable().isDescendantOf(index.getIndexedTable()))
+            // if any column in the index def belongs a a table
+            // that is a descendant of this row's table
+            // (meaning this indexed row has descendants)
+            // then do branchlookup_nested
+            if (ic.getColumn().getUserTable().isDescendantOf(rowType.userTable()))
             {
                 
                 plan = API.branchLookup_Nested(rowType.userTable().getGroup(), 
@@ -169,20 +175,46 @@ public class FullTextIndexInfo
      */
     public Operator getOperator(HKeyRow row)
     {
-        Operator plan = branchLookup_Nested(row);
+        Operator plan = null;
         
-        if (plan == null) // if there descs
+        
+        RowType rowType = row.rowType();
+        for (IndexColumn ic : index.getAllColumns())
         {
+            // if any column in the index def belongs a a table
+            // that is a descendant of this row's table
+            // (meaning this indexed row has descendants)
+            // then do branchlookup_nested
+            if (ic.getColumn().getUserTable().isDescendantOf(rowType.userTable()))
+            {
+                plan = API.branchLookup_Nested(rowType.userTable().getGroup(), 
+                                               rowType,
+                                               indexedRowType,
+                                               API.InputPreservationOption.DISCARD_INPUT,
+                                               0);
+                
+                plan = API.ancestorLookup_Nested(indexedRowType.userTable().getGroup(), 
+                                         plan.rowType(),
+                                         Arrays.asList(indexedRowType), 
+                                         0);
+                break;
+            }   
+        }
+        
+        if (plan == null) // no descendants
+        {
+            // Do ancestor_lookup_default
+            IndexRowType indexRowType = indexedRowType.indexRowType(index);
+
+            plan = API.indexScan_Default(indexRowType,
+                                        IndexKeyRange.unbounded(indexRowType),
+                                        new API.Ordering(),
+                                        indexedRowType);
+
             
         }
-        //if (plan != nu)
-        {
-            RowType rowType = plan != null ? plan.rowType() : row.rowType();
-            return API.ancestorLookup_Nested(indexedRowType.userTable().getGroup(), 
-                                             rowType,
-                                             Arrays.asList(schema.userTableRowType(rowType.userTable())), 
-                                             0);
-        }
+        
+        return plan;
     }
 
     public Analyzer getAnalyzer() {
