@@ -80,9 +80,9 @@ public final class EntityIndex {
             createIndexFields(def, result);
         }
         else if (def instanceof Map) {
-            Map<?,?> asMap = cast(def, Map.class);
+            Map<?,?> asMap = EntityUtil.cast(def, Map.class);
             Object fieldObj = asMap.get("fields");
-            String typeObj = cast(asMap.get("type"), String.class);
+            String typeObj = EntityUtil.cast(asMap.get("type"), String.class);
             createIndexFields(fieldObj, result);
             result.type = IndexType.valueOf(typeObj.toUpperCase());
         }
@@ -93,21 +93,10 @@ public final class EntityIndex {
     }
 
     private static void createIndexFields(Object def, EntityIndex result) {
-        List<?> defList = cast(def, List.class);
+        List<?> defList = EntityUtil.cast(def, List.class);
         result.fields = new ArrayList<>(defList.size());
         for (Object field : defList)
             result.fields.add(IndexField.create(field));
-    }
-
-    private static <T> T cast(Object o, Class<T> target) {
-        if (o == null)
-            throw new IllegalEntityDefinition("expected " + target.getSimpleName() + " but found null");
-        try {
-            return target.cast(o);
-        } catch (ClassCastException e) {
-            throw new IllegalEntityDefinition("expected " + target.getSimpleName()
-                    + " but found found " + o.getClass().getSimpleName());
-        }
     }
 
     public EntityIndex() {
