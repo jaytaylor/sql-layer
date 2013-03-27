@@ -192,7 +192,7 @@ public class RestServiceFilesIT extends ITBase {
                 Strings.readStreamTo(httpConn.getErrorStream(), builder, true);
                 throw new RuntimeException("Failing creating initial space: " + builder.toString(), e);
             }
-            httpConn.disconnect();
+            fullyDisconnect(httpConn);
         }
         for (File data : subDir.listFiles(new RegexFilenameFilter(".*\\.dat"))) {
             loadDataFile(SCHEMA_NAME, data);
@@ -218,7 +218,7 @@ public class RestServiceFilesIT extends ITBase {
                 String actual = getOutput (httpConn);
                 compareExpected (caseParams.caseName + " check expected response ", caseParams.checkExpected, actual);
             } finally {
-                httpConn.disconnect();
+                fullyDisconnect(httpConn);
             }
         }
     }
@@ -228,6 +228,7 @@ public class RestServiceFilesIT extends ITBase {
         httpConn.setFixedLengthStreamingMode(request.length);
         httpConn.setRequestProperty("Content-Type", "application/json");
         httpConn.setRequestProperty("Accept", "application/json");
+        httpConn.connect();
         httpConn.getOutputStream().write(request);
     }
 
@@ -253,7 +254,7 @@ public class RestServiceFilesIT extends ITBase {
                 compareExpected(caseParams.requestMethod + " response", caseParams.expectedResponse, actual);
             }
         } finally {
-            httpConn.disconnect();
+            fullyDisconnect(httpConn);
         }
         checkRequest();
     }
@@ -303,5 +304,23 @@ public class RestServiceFilesIT extends ITBase {
         } else if(!skipNodeCheck) {
             assertEquals(assertMsg, expectedNode, actualNode);
         }
+    }
+
+    private void fullyDisconnect(HttpURLConnection httpConn) {
+        // If there is a failure, leaving junk in any of the streams can cause cascading issues.
+        // Get rid of anything left and disconnect.
+        try {
+            httpConn.getErrorStream().close();
+        } catch(Exception e) {
+        }
+        try {
+            httpConn.getInputStream().close();
+        } catch(Exception e) {
+        }
+        try {
+            httpConn.getOutputStream().close();
+        } catch(Exception e) {
+        }
+        httpConn.disconnect();
     }
 }

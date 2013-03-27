@@ -67,7 +67,7 @@ public interface NewUserTableBuilder extends NewAISBuilder {
     NewUserTableBuilder colLong(String name, boolean nullable);
 
     /**
-     * Adds a non-nullable auto-incrementing column
+     * Adds a non-nullable, sequence backed, auto-incrementing column
      * @param name the column's name
      * @return this
      */

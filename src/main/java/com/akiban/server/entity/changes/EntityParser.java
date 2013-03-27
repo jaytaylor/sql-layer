@@ -34,10 +34,23 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.service.session.Session;
 
 public final class EntityParser {
+    public static final String PK_COL_NAME = "_id";
+
+    public static String parentRefColName(String parentName) {
+        return "_" + parentName + PK_COL_NAME;
+    }
+
+
     private static final Logger LOG = LoggerFactory.getLogger(EntityParser.class);
+    private final boolean alwaysWithPK;
     private int stringWidth = 128;
-    
-    public EntityParser () {
+
+    public EntityParser() {
+        this(false);
+    }
+
+    public EntityParser(boolean alwaysWithPK) {
+        this.alwaysWithPK = alwaysWithPK;
     }
         
     public void setStringWidth(int width) {
@@ -97,6 +110,12 @@ public final class EntityParser {
         // Pass one, insert fields from the table
         boolean columnsAdded = false;
         NewUserTableBuilder table = builder.userTable(tableName.getSchemaName(), tableName.getTableName());
+
+        if(alwaysWithPK) {
+            addPK(table);
+            columnsAdded = true;
+        }
+
         Iterator<Entry<String,JsonNode>> i = node.getFields();
         while (i.hasNext()) {
             Entry<String,JsonNode> field = i.next();
@@ -113,23 +132,22 @@ public final class EntityParser {
         }
         // pass 2: insert the child nodes
         boolean first = true;
-        String columnName = "_" + tableName.getTableName() + "_id";
         i = node.getFields();
         while (i.hasNext()) {
             Entry<String,JsonNode> field = i.next();
             if (field.getValue().isContainerNode()) {
                 LOG.trace("Creating child table {} - first {}", field.getKey(), first);
-                if (first) {
-                    table.autoIncLong(columnName, 0);
-                    table.pk(columnName);
-                    first = false;
+                if (first && !alwaysWithPK) {
+                    addPK(table);
                 }
+                first = false;
                 TableName childTable = TableName.parse(tableName.getSchemaName(), field.getKey());
                 processContainer (field.getValue(), builder, childTable);
                 NewUserTableBuilder child = builder.getUserTable(childTable);
-                child.colLong(columnName);
-                LOG.trace("Column added {}", columnName);
-                child.joinTo(tableName).on(columnName, columnName);
+                String parentRefName = parentRefColName(tableName.getTableName());
+                child.colLong(parentRefName);
+                LOG.trace("Column added {}", parentRefName);
+                child.joinTo(tableName).on(parentRefName, PK_COL_NAME);
                 builder.getUserTable(tableName);
             }
         }
@@ -149,5 +167,10 @@ public final class EntityParser {
             // wild guess
             table.colString(name, stringWidth, true);
         }
+    }
+
+    private void addPK(NewUserTableBuilder builder) {
+        builder.autoIncLong(PK_COL_NAME, 1);
+        builder.pk(PK_COL_NAME);
     }
 }

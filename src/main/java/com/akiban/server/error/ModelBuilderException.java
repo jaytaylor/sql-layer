@@ -15,20 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.externaldata;
+package com.akiban.server.error;
 
-import com.akiban.qp.row.Row;
+import com.akiban.ais.model.TableName;
 
-public interface RowTracker {
-    void reset();
-    int getMinDepth();
-    int getMaxDepth();
-
-    void beginRow(Row row);
-    int getRowDepth();
-    String getRowName();
-
-    void pushRowType();
-    boolean isSameRowType();
-    void popRowType();
+public class ModelBuilderException extends InvalidOperationException {
+    public ModelBuilderException(TableName tableName, String message) {
+        super(ErrorCode.MODEL_BUILDER_ERROR,
+              tableName.getSchemaName(),
+              tableName.getTableName(),
+              message
+        );
+    }
 }

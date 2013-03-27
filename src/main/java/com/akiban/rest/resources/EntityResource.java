@@ -38,8 +38,10 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.PrintWriter;
 
+import static com.akiban.rest.resources.ResourceHelper.IDENTIFIERS_MULTI;
 import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT;
 import static com.akiban.rest.resources.ResourceHelper.checkTableAccessible;
+import static com.akiban.rest.resources.ResourceHelper.getPKString;
 import static com.akiban.rest.resources.ResourceHelper.parseTableName;
 import static com.akiban.util.JsonUtils.readTree;
 
@@ -48,7 +50,6 @@ import static com.akiban.util.JsonUtils.readTree;
  */
 @Path("/entity/{entity}")
 public class EntityResource {
-    private static final String IDENTIFIERS_MULTI = "{identifiers:.*}";
     private final ResourceRequirements reqs;
     
     public EntityResource(ResourceRequirements reqs) {
@@ -190,12 +191,5 @@ public class EntityResource {
                     }
                 })
                 .build();
-    }
-
-
-    private static String getPKString(UriInfo uri) {
-        String pks[] = uri.getPath(false).split("/");
-        assert pks.length > 0: uri;
-        return pks[pks.length - 1];
     }
 }

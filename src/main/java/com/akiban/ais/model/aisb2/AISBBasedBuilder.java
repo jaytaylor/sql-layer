@@ -216,22 +216,22 @@ public class AISBBasedBuilder
 
         @Override
         public NewUserTableBuilder colLong(String name) {
-            return colLong(name, false, NULLABLE_DEFAULT, null);
+            return colLong(name, NULLABLE_DEFAULT, null);
         }
 
         @Override
         public NewUserTableBuilder colLong(String name, boolean nullable) {
-            return colLong(name, nullable, false, null);
+            return colLong(name, nullable, null);
         }
 
         @Override
         public NewUserTableBuilder autoIncLong(String name, int initialValue) {
-            return colLong(name, false, true, initialValue);
+            return colLong(name, false, initialValue);
         }
 
-        private NewUserTableBuilder colLong(String name, boolean nullable, boolean autoIncrement, Integer initialAutoInc) {
+        private NewUserTableBuilder colLong(String name, boolean nullable, Integer initialAutoInc) {
             checkUsable();
-            aisb.column(schema, userTable, name, uTableColumnPos++, "INT", 10L, null, nullable, autoIncrement, null, null);
+            aisb.column(schema, userTable, name, uTableColumnPos++, "INT", 10L, null, nullable, false, null, null);
             if (initialAutoInc != null) {
                 String sequenceName = "temp-seq-" + userTable + "-" + name;
                 long initValue = initialAutoInc.longValue();
