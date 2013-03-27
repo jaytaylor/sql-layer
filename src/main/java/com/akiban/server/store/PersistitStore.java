@@ -214,8 +214,13 @@ public class PersistitStore implements Store, Service {
         Exchange ex = treeService.getExchange(session,
                                               treeService.treeLink(MAINTENANCE_SCHEMA,
                                                                    FULL_TEXT_TABLE));
-        if (ex == null || ex.getKey() == null || !ex.isValueDefined())
+
+        ex.append(Key.BEFORE);
+        ex.next();
+
+        if (ex.getKey() == null || !ex.isValueDefined())
             return null;
+        
         return new HKeyBytesStream(ex, session);
     }
 
