@@ -502,7 +502,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         
         // VALUE: <empty>
 
-        ex = ex.store();
+        ex.store();
         return true;
     }
     
