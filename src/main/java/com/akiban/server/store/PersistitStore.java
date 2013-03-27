@@ -169,8 +169,8 @@ public class PersistitStore implements Store, Service {
         ret.next();
 
         // skipping over existing keys
-        while (ret.hasNext(true))
-            ret.next();
+        while (ret.next(true))
+            ;
         return ret;
     }
 
@@ -216,12 +216,10 @@ public class PersistitStore implements Store, Service {
                                                                    FULL_TEXT_TABLE));
 
         ex.append(Key.BEFORE);
-        ex.next();
-
-        if (ex.getKey() == null || !ex.isValueDefined())
+        if (ex.next())
+            return new HKeyBytesStream(ex, session);
+        else
             return null;
-        
-        return new HKeyBytesStream(ex, session);
     }
 
  
@@ -259,7 +257,7 @@ public class PersistitStore implements Store, Service {
 
         public boolean nextIndex() throws PersistitException
         {
-            boolean nextIndex = ex.next();
+            boolean nextIndex = ex.next(true);
             if (nextIndex)
             {
                 size = 0;
@@ -332,7 +330,8 @@ public class PersistitStore implements Store, Service {
                     byte ret[] = ex.getValue().getByteArray();
                     boolean seeNewIndex = false;
 
-                    hasNext = ex.next() && !(seeNewIndex = seeNewIndex(indexName.getSchemaName(),
+                    hasNext = ex.next(true) 
+                                        && !(seeNewIndex = seeNewIndex(indexName.getSchemaName(),
                                                                        indexName.getTableName(),
                                                                        indexName.getName(),
                                                                        ex.getKey())
@@ -391,7 +390,6 @@ public class PersistitStore implements Store, Service {
                     : "Unexpected name";
 
             Integer indexId = key.decodeInt();
-            int flag;
             while (sameIdAsCurrent(session, indexName, indexId) != NOCHANGE)
             // there was a DELETE (and possibly RECREATE)
             // ignore all changes in the old id(s)
@@ -402,8 +400,7 @@ public class PersistitStore implements Store, Service {
                 do
                     ++size;
                     //;// do nothing (skipping deleted 'index')
-                     // TODO: remove the entry here?
-                while ((hasMore = ex.next())
+                while ((hasMore = ex.next(true))
                                  && !(seeNewIndex = seeNewIndex(indexName.getSchemaName(),
                                                                 indexName.getTableName(),
                                                                 indexName.getName(),

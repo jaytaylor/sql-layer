@@ -369,12 +369,14 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             {
                 transactionService.beginTransaction(session);
                 Exchange ex = getPopulateExchange(session);
-                
-                IndexName toPopulate;
-                while ((toPopulate = nextInQueue(ex)) != null)
+                if (ex.next())
                 {
-                    createIndex(session, toPopulate);
-                    ex.fetchAndRemove();
+                    IndexName toPopulate;
+                    while ((toPopulate = nextInQueue(ex)) != null)
+                    {
+                        createIndex(session, toPopulate);
+                        ex.fetchAndRemove();
+                    }
                 }
                 success = true;
             }
@@ -438,7 +440,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             IndexName ret = new IndexName(new TableName(key.decodeString(),
                                                         key.decodeString()),
                                           key.decodeString());
-            ex.next();
+            ex.next(true);
             return ret;
         }
     }
@@ -450,7 +452,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                                                                     FULL_TEXT_TABLE));
         // start at the frist entry
         ret.append(Key.BEFORE);
-        ret.next();
         return ret;
     }
     
@@ -460,12 +461,12 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                                        String index) throws PersistitException
     {   
         Exchange ret = getPopulateExchange(session);
-        Key key = ret.getKey();
 
-        if (key.getEncodedSize() != 0 && !key.isRightEdge())
+        if (ret.next())
         {
             do
             {
+                Key key = ret.getKey();
                 String keySchema = key.decodeString();
                 String keyTable = key.decodeString();
                 String keyIndex = key.decodeString();
@@ -476,7 +477,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                     return null;
                 key = ret.getKey();
             }
-            while (ret.next());
+            while (ret.next(true));
         }
         return ret;
     }
