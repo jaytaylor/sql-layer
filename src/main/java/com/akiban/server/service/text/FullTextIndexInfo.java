@@ -170,11 +170,19 @@ public class FullTextIndexInfo
     public Operator getOperator(HKeyRow row)
     {
         Operator plan = branchLookup_Nested(row);
-        RowType rowType = plan != null ? plan.rowType() : row.rowType();
-        return API.ancestorLookup_Nested(indexedRowType.userTable().getGroup(), 
-                                         rowType,
-                                         Arrays.asList(schema.userTableRowType(rowType.userTable())), 
-                                         0);
+        
+        if (plan == null) // if there descs
+        {
+            
+        }
+        //if (plan != nu)
+        {
+            RowType rowType = plan != null ? plan.rowType() : row.rowType();
+            return API.ancestorLookup_Nested(indexedRowType.userTable().getGroup(), 
+                                             rowType,
+                                             Arrays.asList(schema.userTableRowType(rowType.userTable())), 
+                                             0);
+        }
     }
 
     public Analyzer getAnalyzer() {
