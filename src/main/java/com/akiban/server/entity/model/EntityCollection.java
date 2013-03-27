@@ -26,18 +26,30 @@
 
 package com.akiban.server.entity.model;
 
+import org.codehaus.jackson.annotate.JsonProperty;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 public final class EntityCollection extends EntityContainer {
 
-    public List<String> getParent_cols() {
-        return parent_cols;
+    @JsonProperty("parent_cols")
+    public List<String> getParentColumns() {
+        return parentColumns;
     }
 
-    public void setParent_cols(List<String> parent_cols) {
-        this.parent_cols = parent_cols;
+    @JsonProperty("parent_cols")
+    public void setParentColumns(List<String> parentColumns) {
+        this.parentColumns = parentColumns;
+    }
+
+    public List<EntityIndex> getIndexes() {
+        return indexes;
+    }
+
+    public void setIndexes(List<EntityIndex> indexes) {
+        this.indexes = indexes;
     }
 
     public <E extends Exception> void accept(EntityVisitor<E>  visitor) throws E {
@@ -50,9 +62,10 @@ public final class EntityCollection extends EntityContainer {
     public static EntityCollection modifiableCollection(UUID uuid) {
         EntityCollection collection = new EntityCollection();
         collection.makeModifiable(uuid);
-        collection.parent_cols = new ArrayList<>();
+        collection.parentColumns = new ArrayList<>();
         return collection;
     }
 
-    private List<String> parent_cols;
+    private List<String> parentColumns;
+    private List<EntityIndex> indexes;
 }

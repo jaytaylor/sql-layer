@@ -18,7 +18,10 @@
 package com.akiban.server.entity.model;
 
 import com.google.common.base.Function;
+import org.codehaus.jackson.annotate.JsonCreator;
+import org.codehaus.jackson.annotate.JsonValue;
 
+import java.util.Arrays;
 import java.util.List;
 
 public final class EntityColumn {
@@ -57,6 +60,12 @@ public final class EntityColumn {
         this.column = column;
     }
 
+    @JsonValue
+    public Object asJsonValue() {
+        return Arrays.asList(table, column);
+    }
+
+    @JsonCreator
     EntityColumn(List<String> names) {
         if (names.size() != 2)
             throw new IllegalEntityDefinition("column names must be 2-long");

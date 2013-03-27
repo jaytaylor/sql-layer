@@ -18,6 +18,8 @@
 package com.akiban.server.entity.model;
 
 import com.google.common.collect.ImmutableList;
+import org.codehaus.jackson.annotate.JsonCreator;
+import org.codehaus.jackson.annotate.JsonValue;
 
 import java.util.List;
 
@@ -47,6 +49,12 @@ public final class EntityIndex {
         return columns.toString();
     }
 
+    @JsonValue
+    public Object asJsonValue() {
+        return columns;
+    }
+
+    @JsonCreator
     public EntityIndex(List<EntityColumn> columns) {
         this.columns = ImmutableList.copyOf(columns);
     }

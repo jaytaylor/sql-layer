@@ -27,11 +27,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.UUID;
 
 import static com.akiban.util.JsonUtils.createJsonGenerator;
@@ -66,17 +66,17 @@ public final class Space {
     }
 
     public <E extends Exception> void visit(EntityVisitor<E> visitor) throws E {
-        for (Map.Entry<String, Entity> entry : entities.entrySet()) {
-            entry.getValue().accept(entry.getKey(), visitor);
+        for (Entity entity : entities) {
+            entity.accept(visitor);
         }
     }
 
-    public Map<String, Entity> getEntities() {
+    public List<Entity> getEntities() {
         return entities;
     }
 
-    void setEntities(Map<String, Entity> entities) {
-        this.entities = Collections.unmodifiableMap(new TreeMap<>(entities));
+    void setEntities(List<Entity> entities) {
+        this.entities = Collections.unmodifiableList(new ArrayList<>(entities));
     }
 
     @Override
@@ -84,7 +84,7 @@ public final class Space {
         return entities.toString();
     }
 
-    public static Space create(Map<String, Entity> entities, Function<String, UUID> uuidGenerator) {
+    public static Space create(List<Entity> entities, Function<String, UUID> uuidGenerator) {
         Space space = new Space();
         space.setEntities(entities);
         space.visit(new Validator(uuidGenerator));
@@ -117,53 +117,44 @@ public final class Space {
 
     Space() {}
 
-    private Map<String, Entity> entities = Collections.emptyMap();
+    private List<Entity> entities = Collections.emptyList();
 
     private static class Validator extends AbstractEntityVisitor {
 
         @Override
-        public void visitEntity(String name, Entity entity) {
-            if (entity.uuid() == null)
-                entity.setUuid(uuidGenerator.apply(name));
-            validateUUID(entity.uuid());
-            ensureUnique(name);
-            if (entity.getAttributes() == null || entity.getAttributes().isEmpty())
-                throw new IllegalEntityDefinition("no attributes set for entity: " + name);
+        public void visitEntity(Entity entity) {
+            visitContainer(entity);
         }
 
         @Override
-        public void visitScalar(String name, Attribute scalar) {
-            if (scalar.getUUID() == null)
-                scalar.setUuid(uuidGenerator.apply(name));
-            validateUUID(scalar.getUUID());
+        public void visitField(EntityField scalar) {
+            visitElement(scalar);
             if (scalar.getType() == null)
                 throw new IllegalEntityDefinition("no type set for scalar");
-            if (scalar.getAttributes() != null)
-                throw new IllegalEntityDefinition("attributes can't be set for scalar");
         }
 
         @Override
-        public void visitCollection(String name, Attribute collection) {
-            if (collection.getUUID() == null)
-                collection.setUuid(uuidGenerator.apply(name));
-            validateUUID(collection.getUUID());
-            ensureUnique(name);
-            if (collection.getType() != null)
-                throw new IllegalEntityDefinition("type can't be set for collection");
-            if (collection.getAttributes() == null || collection.getAttributes().isEmpty())
-                throw new IllegalEntityDefinition("no attributes set for collection");
+        public void visitCollection(EntityCollection collection) {
+            visitContainer(collection);
         }
 
-        private void validateUUID(UUID uuid) {
+        private void visitContainer(EntityContainer container) {
+            visitElement(container);
+            String name = container.getName();
+            if (!collectionNames.add(name))
+                throw new IllegalEntityDefinition("duplicate name within entity and collections: " + name);
+            if (container.getFields() == null || container.getFields().isEmpty())
+                throw new IllegalEntityDefinition("no attributes set for entity: " + container.getName());
+        }
+
+        private void visitElement(EntityElement element) {
+            if (element.getUuid() == null)
+                element.setUuid(uuidGenerator.apply(element.getName()));
+            UUID uuid = element.getUuid();
             if (uuid == null)
                 throw new IllegalEntityDefinition("no uuid specified");
             if (!uuids.add(uuid))
                 throw new IllegalEntityDefinition("duplicate uuid found: " + uuid);
-        }
-
-        private void ensureUnique(String name) {
-            if (!collectionNames.add(name))
-                throw new IllegalEntityDefinition("duplicate name within entity and collections: " + name);
         }
 
         private Validator(Function<String, UUID> uuidGenerator) {

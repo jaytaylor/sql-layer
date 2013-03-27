@@ -23,7 +23,7 @@ import java.util.Set;
 
 public abstract class AbstractEntityVisitor implements EntityVisitor<RuntimeException> {
     @Override
-    public void visitEntity(String name, Entity entity) {
+    public void visitEntity(Entity entity) {
     }
 
     @Override
@@ -31,11 +31,11 @@ public abstract class AbstractEntityVisitor implements EntityVisitor<RuntimeExce
     }
 
     @Override
-    public void visitScalar(String name, Attribute scalar) {
+    public void visitField(EntityField scalar) {
     }
 
     @Override
-    public void visitCollection(String name, Attribute collection) {
+    public void visitCollection(EntityCollection collection) {
     }
 
     @Override

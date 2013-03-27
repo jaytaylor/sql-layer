@@ -26,6 +26,8 @@
 
 package com.akiban.server.entity.model;
 
+import org.codehaus.jackson.annotate.JsonIgnore;
+
 import java.util.UUID;
 
 abstract class EntityElement {
@@ -45,6 +47,7 @@ abstract class EntityElement {
         setUuid(uuid);
     }
 
+    @JsonIgnore
     void setUuid(UUID uuid) {
         if (this.uuid != null)
             throw new IllegalStateException("uuid already set: " + this.uuid);

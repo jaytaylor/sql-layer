@@ -20,11 +20,9 @@ package com.akiban.server.entity.model;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableBiMap;
-import com.google.common.collect.Lists;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -32,13 +30,15 @@ import java.util.UUID;
 
 public final class Entity extends EntityContainer {
 
-    public Collection<Validation> getValidation() {
+    public Collection<Validation> getValidations() {
         return validations;
     }
 
-    @SuppressWarnings("unused")
-    void setValidation(List<Map<String, ?>> validations) {
-        this.validations = Validation.createValidations(validations);
+    void setValidations(Collection<Validation> validations) {
+        Set<Validation> validationsSet = new TreeSet<>(validations);
+        if (validationsSet.size() != validations.size())
+            throw new IllegalEntityDefinition("duplicate validations given: " + validations);
+        this.validations = validationsSet;
     }
 
     public BiMap<String, EntityIndex> getIndexes() {
@@ -46,13 +46,11 @@ public final class Entity extends EntityContainer {
     }
 
     @SuppressWarnings("unused")
-    void setIndexes(Map<String, List<List<String>>> indexes) {
+    void setIndexes(Map<String, EntityIndex> indexes) {
         this.indexes = HashBiMap.create(indexes.size());
-        for (Map.Entry<String, List<List<String>>> entry : indexes.entrySet()) {
-            List<EntityColumn> columns = Lists.transform(entry.getValue(), EntityColumn.namesToColumn);
-            EntityIndex index = new EntityIndex(columns);
-            if (this.indexes.put(entry.getKey(), index) != null)
-                throw new IllegalEntityDefinition("multiple names given for index: " + index);
+        for (Map.Entry<String, EntityIndex> entry : indexes.entrySet()) {
+            if (this.indexes.put(entry.getKey(), entry.getValue()) != null)
+                throw new IllegalEntityDefinition("multiple names given for index: " + entry);
         }
         this.indexes = ImmutableBiMap.copyOf(this.indexes);
     }
