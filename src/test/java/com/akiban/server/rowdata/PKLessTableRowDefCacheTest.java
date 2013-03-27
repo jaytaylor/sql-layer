@@ -39,7 +39,7 @@ public class PKLessTableRowDefCacheTest
             ");",
             "create index e_d on test(e, d);"
         };
-        AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(null, ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
         RowDef test = ais.getTable(tableName("test")).rowDef();
         UserTable t = (UserTable) test.table();
         Assert.assertEquals(2, test.getHKeyDepth()); // test ordinal, test row counter
@@ -88,7 +88,7 @@ public class PKLessTableRowDefCacheTest
             ");",
             "create index c2_c1 on child(c2, c1);"
         };
-        AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(null, ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.aisWithRowDefs(ddl);
         TableIndex index;
         IndexRowComposition rowComp;
         IndexToHKey indexToHKey;

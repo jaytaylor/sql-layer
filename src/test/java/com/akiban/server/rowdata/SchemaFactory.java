@@ -27,11 +27,11 @@ import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.MemoryOnlyTableStatusCache;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.ddl.DDLFunctionsMockBase;
 import com.akiban.server.error.PersistitAdapterException;
+import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.routines.MockRoutineLoader;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.StandardException;
@@ -70,31 +70,40 @@ public class SchemaFactory {
         this.defaultSchema = defaultSchema;
     }
 
-    public AkibanInformationSchema aisWithRowDefs(QueryContext context, String... ddl) {
-        AkibanInformationSchema ais = ais(context, ddl);
+    public AkibanInformationSchema aisWithRowDefs(String... ddl) {
+        AkibanInformationSchema ais = ais(ddl);
         buildRowDefs(ais);
         return ais;
     }
 
-    public AkibanInformationSchema ais(QueryContext context, String... ddl) {
-        return ais(new AkibanInformationSchema(), context, ddl);
+    public AkibanInformationSchema ais(String... ddl) {
+        return ais(new AkibanInformationSchema(), ddl);
     }
     
-    public static AkibanInformationSchema loadAIS(File fromFile, String defaultSchema, QueryContext context) {
+    public static AkibanInformationSchema loadAIS(File fromFile, String defaultSchema) {
         try {
             List<String> ddl = Strings.dumpFile(fromFile);
             SchemaFactory schemaFactory = new SchemaFactory(defaultSchema);
-            return schemaFactory.ais(context, ddl.toArray(new String[ddl.size()]));
+            return schemaFactory.ais(ddl.toArray(new String[ddl.size()]));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
     
-    public AkibanInformationSchema ais(AkibanInformationSchema baseAIS, QueryContext context, String... ddl) {
-        return ais(new CreateOnlyDDLMock(baseAIS), null, context, ddl);
+    public AkibanInformationSchema ais(ServiceManager sm, AkibanInformationSchema baseAIS, String... ddl)
+    {
+        return ais(sm, new CreateOnlyDDLMock(baseAIS), null, ddl);
+    }
+    public AkibanInformationSchema ais(AkibanInformationSchema baseAIS, String... ddl) {
+        return ais(new CreateOnlyDDLMock(baseAIS), null, ddl);
     }
 
-    public AkibanInformationSchema ais(DDLFunctions ddlFunctions, Session session, QueryContext context, String... ddl) {
+    public AkibanInformationSchema ais(DDLFunctions ddlFunctions, Session session, String... ddl)
+    {
+        return ais(null, ddlFunctions, session, ddl);
+    }
+    
+    public AkibanInformationSchema ais(ServiceManager sm,DDLFunctions ddlFunctions, Session session, String... ddl) {
         StringBuilder buffer = new StringBuilder();
         for (String line : ddl) {
             buffer.append(line);
@@ -111,8 +120,7 @@ public class SchemaFactory {
             if (stmt instanceof CreateTableNode) {
                 TableDDL.createTable(ddlFunctions , session , defaultSchema, (CreateTableNode) stmt, null);
             } else if (stmt instanceof CreateIndexNode) {
-                //session.
-                IndexDDL.createIndex(ddlFunctions, session, defaultSchema, (CreateIndexNode) stmt, context); // TODO: need a 'real' queryContext
+                IndexDDL.createIndex(ddlFunctions, session, defaultSchema, (CreateIndexNode) stmt, sm);
             } else if (stmt instanceof CreateViewNode) {
                 ViewDDL.createView(ddlFunctions, session, defaultSchema, (CreateViewNode) stmt,
                                    new AISBinderContext(ddlFunctions.getAIS(session), defaultSchema), null);

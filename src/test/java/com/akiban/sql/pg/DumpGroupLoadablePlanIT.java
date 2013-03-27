@@ -71,7 +71,7 @@ public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
 
     @Before
     public void loadDatabase() throws Exception {
-        loadSchemaFile(null, SCHEMA_NAME, SCHEMA_FILE);
+        loadSchemaFile(SCHEMA_NAME, SCHEMA_FILE);
     }
 
     @Test

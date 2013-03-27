@@ -527,9 +527,9 @@ public class ApiTestBase {
         );
     }
 
-    protected AkibanInformationSchema createFromDDL(QueryContext context, String schema, String ddl) {
+    protected AkibanInformationSchema createFromDDL(ServiceManager sm, String schema, String ddl) {
         SchemaFactory schemaFactory = new SchemaFactory(schema);
-        return schemaFactory.ais(ddl().getAIS(session()), context, ddl);
+        return schemaFactory.ais(sm, ddl().getAIS(session()), ddl);
     }
 
     protected static final class SimpleColumn {
@@ -600,9 +600,9 @@ public class ApiTestBase {
         return createTableFromTypes(schema, table, firstIsPk, createIndexes, simpleColumns);
     }
 
-    protected final int createTable(QueryContext context, String schema, String table, String definition) throws InvalidOperationException {
+    protected final int createTable(String schema, String table, String definition) throws InvalidOperationException {
         String ddl = String.format("CREATE TABLE \"%s\" (%s)", table, definition);
-        AkibanInformationSchema tempAIS = createFromDDL(context, schema, ddl);
+        AkibanInformationSchema tempAIS = createFromDDL(serviceManager(), schema, ddl);
         UserTable tempTable = tempAIS.getUserTable(schema, table);
         ddl().createTable(session(), tempTable);
         updateAISGeneration();
@@ -616,12 +616,12 @@ public class ApiTestBase {
             unifiedDef.append(definition).append(',');
         }
         unifiedDef.setLength(unifiedDef.length() - 1);
-        return createTable(null, schema, table, unifiedDef.toString());
+        return createTable(schema, table, unifiedDef.toString());
     }
     
     protected final void createSequence (String schema, String name, String definition) {
         String ddl = String.format("CREATE SEQUENCE %s %s", name, definition);
-        AkibanInformationSchema tempAIS = createFromDDL(null, schema, ddl);
+        AkibanInformationSchema tempAIS = createFromDDL(serviceManager(), schema, ddl);
         Sequence sequence = tempAIS.getSequence(new TableName(schema, name));
         ddl().createSequence(session(), sequence);
         updateAISGeneration();
@@ -629,7 +629,7 @@ public class ApiTestBase {
 
     protected final void createView(String schema, String name, String definition) {
         String ddl = String.format("CREATE VIEW %s AS %s", name, definition);
-        AkibanInformationSchema tempAIS = createFromDDL(null, schema, ddl);
+        AkibanInformationSchema tempAIS = createFromDDL(serviceManager(), schema, ddl);
         View view = tempAIS.getView(new TableName(schema, name));
         ddl().createView(session(), view);
         updateAISGeneration();
@@ -643,19 +643,17 @@ public class ApiTestBase {
                                                               String table,
                                                               String indexName,
                                                               String... indexCols) {
-        return createIndexInternal(null, schema, table, indexName, true, indexCols);
+        return createIndexInternal(schema, table, indexName, true, indexCols);
     }
 
-    private AkibanInformationSchema createIndexInternal(QueryContext context,
-                                                        String schema,
+    private AkibanInformationSchema createIndexInternal(String schema,
                                                         String table,
                                                         String indexName,
                                                         String... indexCols) {
-        return createIndexInternal(context, schema, table, indexName, false, indexCols);
+        return createIndexInternal(schema, table, indexName, false, indexCols);
     }
 
-    private AkibanInformationSchema createIndexInternal(QueryContext context,
-                                                        String schema,
+    private AkibanInformationSchema createIndexInternal(String schema,
                                                         String table,
                                                         String indexName,
                                                         boolean unique,
@@ -666,11 +664,11 @@ public class ApiTestBase {
                                    schema,
                                    table,
                                    Strings.join(Arrays.asList(indexCols), ","));
-        return createFromDDL(context, schema, ddl);
+        return createFromDDL(serviceManager(), schema, ddl);
     }
 
     protected final TableIndex createIndex(String schema, String table, String indexName, String... indexCols) {
-        AkibanInformationSchema tempAIS = createIndexInternal(null, schema, table, indexName, indexCols);
+        AkibanInformationSchema tempAIS = createIndexInternal(schema, table, indexName, indexCols);
         Index tempIndex = tempAIS.getUserTable(schema, table).getIndex(indexName);
         ddl().createIndexes(session(), Collections.singleton(tempIndex));
         updateAISGeneration();
@@ -688,7 +686,7 @@ public class ApiTestBase {
     protected final TableIndex createSpatialTableIndex(String schema, String table, String indexName,
                                                        int firstSpatialArgument, int dimensions,
                                                        String... indexCols) {
-        AkibanInformationSchema tempAIS = AISCloner.clone(createIndexInternal(null, schema, table, indexName, indexCols));
+        AkibanInformationSchema tempAIS = AISCloner.clone(createIndexInternal(schema, table, indexName, indexCols));
         TableIndex tempIndex = tempAIS.getUserTable(schema, table).getIndex(indexName);
         tempIndex.markSpatial(firstSpatialArgument, dimensions);
         ddl().createIndexes(session(), Collections.singleton(tempIndex));
@@ -703,7 +701,7 @@ public class ApiTestBase {
      */
     protected final TableIndex createGroupingFKIndex(String schema, String table, String indexName, String... indexCols) {
         assertTrue("grouping fk index must start with __akiban", indexName.startsWith("__akiban"));
-        AkibanInformationSchema tempAIS = AISCloner.clone(createIndexInternal(null, schema, table, indexName, indexCols));
+        AkibanInformationSchema tempAIS = AISCloner.clone(createIndexInternal(schema, table, indexName, indexCols));
         UserTable userTable = tempAIS.getUserTable(schema, table);
         TableIndex tempIndex = userTable.getIndex(indexName);
         userTable.removeIndexes(Collections.singleton(tempIndex));
@@ -769,22 +767,22 @@ public class ApiTestBase {
         return ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);
     }
 
-    protected final FullTextIndex createFullTextIndex(QueryContext context, String schema, String table, String indexName, String... indexCols) {
-        AkibanInformationSchema tempAIS = createIndexInternal(context, schema, table, indexName, "FULL_TEXT(" + Strings.join(Arrays.asList(indexCols), ",") + ")");
+    protected final FullTextIndex createFullTextIndex(ServiceManager sm, String schema, String table, String indexName, String... indexCols) {
+        AkibanInformationSchema tempAIS = createIndexInternal(schema, table, indexName, "FULL_TEXT(" + Strings.join(Arrays.asList(indexCols), ",") + ")");
         Index tempIndex = tempAIS.getUserTable(schema, table).getFullTextIndex(indexName);
         ddl().createIndexes(session(), Collections.singleton(tempIndex));
         updateAISGeneration();
         return ddl().getUserTable(session(), new TableName(schema, table)).getFullTextIndex(indexName);
     }
 
-    protected int createTablesAndIndexesFromDDL(String schema, QueryContext context, String ddl) {
+    protected int createTablesAndIndexesFromDDL(String schema, String ddl) {
         SchemaFactory schemaFactory = new SchemaFactory(schema);
         
         // Insert DDL into the System 
-        AkibanInformationSchema ais = schemaFactory.ais(ddl(), session(), context, ddl);
+        AkibanInformationSchema ais = schemaFactory.ais(ddl(), session(), ddl);
         
         // sort DDL to find first root table of the user schema
-        ais = schemaFactory.ais (context, ddl);
+        ais = schemaFactory.ais (ddl);
         List<UserTable> tables = new ArrayList<>(ais.getUserTables().values());
         Collections.sort(tables, new Comparator<UserTable>() {
             @Override
@@ -796,9 +794,9 @@ public class ApiTestBase {
         return ddl().getTableId(session(), tables.get(0).getName());
     }
 
-    protected int loadSchemaFile(QueryContext context, String schemaName, File file) throws Exception {
+    protected int loadSchemaFile(String schemaName, File file) throws Exception {
         String sql = Strings.dumpFileToString(file);
-        return createTablesAndIndexesFromDDL(schemaName, context, sql);
+        return createTablesAndIndexesFromDDL(schemaName, sql);
     }
 
     protected void loadDataFile(String schemaName, File file) throws Exception {

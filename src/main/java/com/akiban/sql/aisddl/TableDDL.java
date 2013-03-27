@@ -487,7 +487,7 @@ public class TableDDL
 
         if (columnList.functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
             logger.debug ("Building Full text index on table {}", table.getName()) ;
-            tableIndex = IndexDDL.buildFullTextIndex (builder, table.getName(), indexName, id, context);
+            tableIndex = IndexDDL.buildFullTextIndex (builder, table.getName(), indexName, id, context.getServiceManager());
         } else if (IndexDDL.checkIndexType (id, table.getName()) == Index.IndexType.TABLE) {
             logger.debug ("Building Table index on table {}", table.getName()) ;
             tableIndex = IndexDDL.buildTableIndex (builder, table.getName(), indexName, id);

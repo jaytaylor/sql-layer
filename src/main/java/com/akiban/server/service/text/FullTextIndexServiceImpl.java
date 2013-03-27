@@ -405,13 +405,13 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     
     protected void enableUpdateWorker()
     {
-        maintenanceInterval = Long.parseLong(configService.getProperty(UPDATE_INTERVAL));
+        maintenanceInterval = 2000; //Long.parseLong(configService.getProperty(UPDATE_INTERVAL));
         maintenanceTimer.scheduleAtFixedRate(updateWorker, maintenanceInterval, maintenanceInterval);
     }
     
     protected void enablePopulateWorker()
     {
-        populateDelayInterval = Long.parseLong(configService.getProperty(POPULATE_DELAY_INTERVAL));
+        populateDelayInterval = 1000; //Long.parseLong(configService.getProperty(POPULATE_DELAY_INTERVAL));
     }
     
     void disablePopulateWorker()

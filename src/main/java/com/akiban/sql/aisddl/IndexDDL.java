@@ -151,17 +151,17 @@ public class IndexDDL
                                    Session session,
                                    String defaultSchemaName,
                                    CreateIndexNode createIndex,
-                                   QueryContext context)  {
+                                   ServiceManager sm)  {
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         
         Collection<Index> indexesToAdd = new LinkedList<>();
 
-        indexesToAdd.add(buildIndex(ais, defaultSchemaName, createIndex, context));
+        indexesToAdd.add(buildIndex(ais, defaultSchemaName, createIndex, sm));
         
         ddlFunctions.createIndexes(session, indexesToAdd);
     }
     
-    protected static Index buildIndex (AkibanInformationSchema ais, String defaultSchemaName, CreateIndexNode index, QueryContext context) {
+    protected static Index buildIndex (AkibanInformationSchema ais, String defaultSchemaName, CreateIndexNode index, ServiceManager sm) {
         final String schemaName = index.getObjectName().getSchemaName() != null ? index.getObjectName().getSchemaName() : defaultSchemaName;
         final String indexName = index.getObjectName().getTableName();
 
@@ -176,7 +176,7 @@ public class IndexDDL
         
         if (index.getColumnList().functionType() == IndexColumnList.FunctionType.FULL_TEXT) {
             logger.debug ("Building Full text index on table {}", tableName) ;
-            tableIndex = buildFullTextIndex (builder, tableName, indexName, index, context);
+            tableIndex = buildFullTextIndex (builder, tableName, indexName, index, sm);
         } else if (checkIndexType (index, tableName) == Index.IndexType.TABLE) {
             logger.debug ("Building Table index on table {}", tableName) ;
             tableIndex = buildTableIndex (builder, tableName, indexName, index);
@@ -331,14 +331,9 @@ public class IndexDDL
         return builder.akibanInformationSchema().getGroup(groupName).getIndex(indexName);
     }
 
-    protected static Index buildFullTextIndex (AISBuilder builder, TableName tableName, String indexName, IndexDefinition index, QueryContext context) {
+    protected static Index buildFullTextIndex (AISBuilder builder, TableName tableName, String indexName, IndexDefinition index, ServiceManager sm) {
         UserTable table = builder.akibanInformationSchema().getUserTable(tableName);
-        System.out.println("context == null? " + context);
-        //new Unsupported
-        System.out.println("context.getClass: " + context.getClass());
-        ServiceManager sm = context.getServiceManager();
-        System.out.println("sm is NULL? " + (sm == null));
-        FullTextIndexService fullTextService = context.getServiceManager().getServiceByClass(FullTextIndexService.class);
+        FullTextIndexService fullTextService = sm.getServiceByClass(FullTextIndexService.class);
         
         if (index.getJoinType() != null) {
             throw new TableIndexJoinTypeException();

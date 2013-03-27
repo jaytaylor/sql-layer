@@ -138,7 +138,7 @@ public class HKeyDependentTableTest
             "    grouping foreign key (nnid) references nn(nnid)",
             ");",
         };
-        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(null, ddl);
+        AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         UserTable r = ais.getUserTable("s", "r");
         UserTable c = ais.getUserTable("s", "c");
         UserTable n = ais.getUserTable("s", "n");

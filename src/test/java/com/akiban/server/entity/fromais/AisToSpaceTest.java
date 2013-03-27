@@ -70,7 +70,7 @@ public final class AisToSpaceTest {
     public void test() {
         Space expectedSpace = Space.readSpace(testName + ".json", AisToSpaceTest.class, null);
 
-        AkibanInformationSchema ais = SchemaFactory.loadAIS(new File(testDir, testName + ".ddl"), "test_schema", null);
+        AkibanInformationSchema ais = SchemaFactory.loadAIS(new File(testDir, testName + ".ddl"), "test_schema");
         ais.traversePostOrder(new SetUuidAssigner());
         Space actualSpace = AisToSpace.create(ais, null);
 
