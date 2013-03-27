@@ -495,6 +495,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
         // VALUE: <empty>
 
+	ex.store();
         return true;
     }
     
