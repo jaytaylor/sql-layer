@@ -20,6 +20,8 @@ package com.akiban.util;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+
+import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +35,6 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -422,12 +423,7 @@ public abstract class Strings {
         }
     }
     
-    public static String formatMD5 (byte[] md5hash) {
-        BigInteger bigInt = new BigInteger(1, md5hash);
-        String output = bigInt.toString(16);
-        if ( output.length() == 31 ) {
-           output = "0"+output;
-        }
-        return output;
+    public static String formatMD5(byte[] md5, boolean toLowerCase) {
+        return new String(Hex.encodeHex(md5, toLowerCase));
     }
 }

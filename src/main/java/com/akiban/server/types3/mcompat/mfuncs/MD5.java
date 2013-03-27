@@ -51,7 +51,7 @@ public class MD5 extends TScalarBase
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte ret[] = md.digest(inputs.get(0).getBytes());
             
-            output.putString(Strings.formatMD5(ret), null);
+            output.putString(Strings.formatMD5(ret, true), null);
         }
         catch (NoSuchAlgorithmException ex)
         {

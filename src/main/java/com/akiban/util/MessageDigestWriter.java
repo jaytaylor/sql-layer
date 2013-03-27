@@ -47,6 +47,6 @@ public class MessageDigestWriter extends Writer {
         return digest;
     }
     public String getFormatMD5() {
-        return Strings.formatMD5(digest.digest());
+        return Strings.formatMD5(digest.digest(), true);
     }
 }

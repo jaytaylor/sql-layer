@@ -431,8 +431,9 @@ public class SecurityServiceImpl implements SecurityService, Service {
     protected String formatMD5(byte[] md5, boolean forDigest) {
         StringBuilder str = new StringBuilder();
         str.append(forDigest ? "MD5:" : "md5");
-        str.append(Strings.formatMD5(md5));
-        return forDigest ? str.toString().toUpperCase() : str.toString().toLowerCase();
+        // Strings#formatMD5 wants toLowerCase for second parameter, inverse of the forDigest flag
+        str.append(Strings.formatMD5(md5, !forDigest));
+        return str.toString();
     }
 
     @Override
