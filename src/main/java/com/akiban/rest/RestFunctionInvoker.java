@@ -15,13 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.routines;
+package com.akiban.rest;
 
-public interface ScriptInvoker
-{
-    public String getEngineName();
-    public String getFunctionName();
-    public boolean isCompiled();
-    public Object invoke(Object[] args);
-    public Object invokeNamedFunction(String functionName, Object[] args);
+import java.io.PrintWriter;
+
+import javax.ws.rs.core.MultivaluedMap;
+
+import com.akiban.ais.model.TableName;
+import com.akiban.sql.embedded.JDBCConnection;
+
+public interface RestFunctionInvoker {
+
+    public void invokeRestFunction(final PrintWriter writer, JDBCConnection conn, final String method,
+            final TableName procName, final String pathParams, final MultivaluedMap<String, String> queryParameters,
+            final byte[] content) throws Exception;
+    
 }

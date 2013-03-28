@@ -106,7 +106,7 @@ public class RestServiceFilesIT extends ITBase {
     }
 
     public static File[] gatherRequestFiles(File dir) {
-        File[] result = dir.listFiles(new RegexFilenameFilter(".*\\.(get|put|post|delete|query|explain)"));
+        File[] result = dir.listFiles(new RegexFilenameFilter("direct.*\\.(get|put|post|delete|query|explain)"));
         Arrays.sort(result, new Comparator<File>() {
             public int compare(File f1, File f2) {
                 return f1.getName().compareTo(f2.getName());

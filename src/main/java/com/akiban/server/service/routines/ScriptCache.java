@@ -443,5 +443,17 @@ public class ScriptCache {
                 throw new ExternalRoutineInvocationException(routineName, ex);
             }
         }
+        
+        @Override
+        public Object invokeNamedFunction(String functionName, Object[] args) {
+            logger.debug("Calling {} in {}", function, routineName);
+            try {
+                return invocable.invokeFunction(functionName, args);
+            } catch (ScriptException ex) {
+                throw new ExternalRoutineInvocationException(routineName, ex);
+            } catch (NoSuchMethodException ex) {
+                throw new ExternalRoutineInvocationException(routineName, ex);
+            }
+        }
     }
 }

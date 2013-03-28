@@ -17,55 +17,9 @@
 
 package com.akiban.server.service.restdml;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexName;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.Routine;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
-import com.akiban.ajdax.Ajdax;
-import com.akiban.ajdax.AjdaxException;
-import com.akiban.ajdax.AjdaxWriter;
-import com.akiban.ajdax.JoinFields;
-import com.akiban.ajdax.JoinStrategy;
-import com.akiban.ajdax.actions.Action;
-import com.akiban.server.Quote;
-import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.error.InvalidArgumentTypeException;
-import com.akiban.server.error.WrongExpressionArityException;
-import com.akiban.server.explain.format.JsonFormatter;
-import com.akiban.server.service.Service;
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.externaldata.ExternalDataService;
-import com.akiban.server.service.externaldata.JsonRowWriter;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionService;
-import com.akiban.server.service.text.FullTextIndexService;
-import com.akiban.server.service.text.FullTextQueryBuilder;
-import com.akiban.server.service.transaction.TransactionService;
-import com.akiban.server.service.tree.TreeService;
-import com.akiban.server.store.Store;
-import com.akiban.server.t3expressions.T3RegistryService;
-import com.akiban.sql.embedded.EmbeddedJDBCService;
-import com.akiban.sql.embedded.JDBCCallableStatement;
-import com.akiban.sql.embedded.JDBCConnection;
-import com.akiban.sql.embedded.JDBCParameterMetaData;
-import com.akiban.sql.embedded.JDBCResultSet;
-import com.akiban.util.AkibanAppender;
-import com.google.common.base.Function;
-import com.google.common.base.Functions;
-import com.google.common.collect.Lists;
-import com.google.inject.Inject;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonToken;
+import static com.akiban.util.JsonUtils.createJsonGenerator;
+import static com.akiban.util.JsonUtils.jsonParser;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -83,9 +37,60 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 
-import static com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
-import static com.akiban.util.JsonUtils.createJsonGenerator;
-import static com.akiban.util.JsonUtils.jsonParser;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.MultivaluedMap;
+
+import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.JsonToken;
+
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexName;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.Routine;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
+import com.akiban.ajdax.Ajdax;
+import com.akiban.ajdax.AjdaxException;
+import com.akiban.ajdax.AjdaxWriter;
+import com.akiban.ajdax.JoinFields;
+import com.akiban.ajdax.JoinStrategy;
+import com.akiban.ajdax.actions.Action;
+import com.akiban.rest.RestFunctionInvoker;
+import com.akiban.rest.RestFunctionRegistrar;
+import com.akiban.server.Quote;
+import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.error.InvalidArgumentTypeException;
+import com.akiban.server.error.WrongExpressionArityException;
+import com.akiban.server.explain.format.JsonFormatter;
+import com.akiban.server.service.Service;
+import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.externaldata.ExternalDataService;
+import com.akiban.server.service.externaldata.JsonRowWriter;
+import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.text.FullTextIndexService;
+import com.akiban.server.service.text.FullTextQueryBuilder;
+import com.akiban.server.service.transaction.TransactionService;
+import com.akiban.server.service.transaction.TransactionService.CloseableTransaction;
+import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.Store;
+import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.sql.embedded.EmbeddedJDBCService;
+import com.akiban.sql.embedded.JDBCCallableStatement;
+import com.akiban.sql.embedded.JDBCConnection;
+import com.akiban.sql.embedded.JDBCParameterMetaData;
+import com.akiban.sql.embedded.JDBCResultSet;
+import com.akiban.util.AkibanAppender;
+import com.google.common.base.Function;
+import com.google.common.base.Functions;
+import com.google.common.collect.Lists;
+import com.google.inject.Inject;
 
 public class RestDMLServiceImpl implements Service, RestDMLService {
     private final SessionService sessionService;
@@ -234,12 +239,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
 
     @Override
     public void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
-                              TableName procName, String jsonParams) throws SQLException {
-        callProcedure(writer, request, jsonpArgName, procName, null, jsonParams);
-    }
-
-    protected void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
-                                 TableName procName, Map<String,List<String>> queryParams, String jsonParams) throws SQLException {
+                              TableName procName, Map<String,List<String>> queryParams, String jsonParams) throws SQLException {
         try (JDBCConnection conn = jdbcConnection(request, procName.getSchemaName());
              JDBCCallableStatement call = conn.prepareCall(procName)) {
             Routine routine = call.getRoutine();
@@ -252,6 +252,18 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                 callDefaultProcedure(writer, request, jsonpArgName, call, queryParams, jsonParams);
                 break;
             }
+        }
+    }
+    
+    @Override
+    public void callRegistrationProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
+            TableName procName, RestFunctionRegistrar registrar) throws SQLException {
+        
+        try (JDBCConnection conn = jdbcConnection(request, procName.getSchemaName());
+                JDBCCallableStatement call = conn.prepareCall(procName)) {
+            call.setObject(1, registrar);
+            call.execute();
+            writer.append(call.getObject(2).toString());
         }
     }
 
@@ -289,7 +301,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         }
         call.setString(1, json);
         call.execute();
-        writer.append(call.getString(2));
+        writer.append(call.getObject(2).toString());
     }
 
     protected void callDefaultProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
@@ -373,6 +385,16 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             results = call.getMoreResults();
         }
         appender.append('}');
+    }
+    
+    @Override
+    public void invokeRestEndpoint(final PrintWriter writer, final HttpServletRequest request, final String schema, final String method, final TableName procName,
+            final String pathParams, final MultivaluedMap<String, String> queryParameters, final byte[] content, final RestFunctionInvoker endpointInvoker) throws Exception {
+        try (JDBCConnection conn = jdbcConnection(request, schema);
+                Session session = sessionService.createSession();
+                CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+            endpointInvoker.invokeRestFunction(writer, conn, method, procName, pathParams, queryParameters, content);
+        }
     }
 
     @Override

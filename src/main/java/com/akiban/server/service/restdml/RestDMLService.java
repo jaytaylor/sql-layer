@@ -19,9 +19,14 @@ package com.akiban.server.service.restdml;
 
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.TableName;
+import com.akiban.rest.RestFunctionInvoker;
+import com.akiban.rest.RestFunctionRegistrar;
+
 import org.codehaus.jackson.JsonNode;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.MultivaluedMap;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
@@ -46,11 +51,18 @@ public interface RestDMLService {
     public void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
                               TableName procName, Map<String,List<String>> queryParams) throws SQLException;
     public void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
-                              TableName procName, String jsonParams) throws SQLException;
+                              TableName procName, Map<String,List<String>> queryParams, String jsonParams) throws SQLException;
 
     public void fullTextSearch(PrintWriter writer, IndexName indexName, Integer depth, String query, Integer limit);
     // TODO: Temporary.
     public void refreshFullTextIndex(PrintWriter writer, IndexName indexName);
 
     public String ajdaxToSQL(TableName tableName, String ajdax) throws IOException;
+    
+    public void callRegistrationProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
+            TableName procName, RestFunctionRegistrar registrar) throws SQLException;
+    
+    public void invokeRestEndpoint(PrintWriter writer, HttpServletRequest request, String schema, String method, TableName procName,
+            String pathParams, MultivaluedMap<String, String> queryParameters, byte[] content, RestFunctionInvoker registrar) throws Exception;
+    
 }
