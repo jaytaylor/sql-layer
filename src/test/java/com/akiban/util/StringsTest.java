@@ -45,4 +45,16 @@ public final class StringsTest {
 
         assertEquals("bytes", new WrappingByteSource(expected), actual);
     }
+    
+    @Test
+    public void formatMD5() {
+        byte[] md5 = {0x01, 0x39, (byte) 0xef, (byte) 0xc1, (byte) 0xe9, (byte) 0x86, 0x22, 0x33, 0x74, 0x3a, 0x75, 0x77, (byte) 0x98, (byte) 0xdd, (byte) 0x9c};
+        
+        String expected = "0139efc1e9862233743a757798dd9c";
+        
+        String actual = Strings.formatMD5(md5, true);
+        
+        assertEquals ("bytes", expected, actual);
+        
+    }
 }
