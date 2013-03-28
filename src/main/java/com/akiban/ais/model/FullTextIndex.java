@@ -21,7 +21,6 @@ import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.IndexColNotInGroupException;
 
-import com.akiban.server.service.text.FullTextIndexService;
 import java.util.*;
 
 public class FullTextIndex extends Index
@@ -142,9 +141,7 @@ public class FullTextIndex extends Index
     {
         super(indexedTable.getName(), indexName, indexId, false, FULL_TEXT_CONSTRAINT);
         this.indexedTable = indexedTable;
-        //fullTextService.schedulePopulate(getIndexName());
     }
     
     private final UserTable indexedTable;
-    private FullTextIndexService fullTextService = null; // TODO: obtain the service
 }

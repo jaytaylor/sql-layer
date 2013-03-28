@@ -151,12 +151,11 @@ public class FullTextIndexInfo
     public Operator getOperator(HKeyRow row)
     {
         Operator plan = null;
-        
-        
+
         RowType rowType = row.rowType();
         for (IndexColumn ic : index.getAllColumns())
         {
-            // if any column in the index def belongs a a table
+            // if any column in the index def belongs to a table
             // that is a descendant of this row's table
             // (meaning this indexed row has descendants)
             // then do branchlookup_nested
