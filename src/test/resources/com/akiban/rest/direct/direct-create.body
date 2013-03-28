@@ -1,8 +1,11 @@
-var params = JSON.parse(json_in);
-var result = params.param;
-var extent = com.akiban.direct.Direct.context.extent;
-for (customer in Iterator(extent.customers)) {
-  result += "," + customer.name;
-}
-result;
+function _register(registrar) {
+};
 
+function customerNames(s) {
+    var result = s;
+    var extent = com.akiban.direct.Direct.context.extent;
+    for (customer in Iterator(extent.customers)) {
+      result += "," + customer.name;
+    }
+    result;
+}

@@ -106,7 +106,7 @@ public class DirectResource implements RestFunctionInvoker {
     private final static String IS_INOUT = "is_inout";
     private final static String IS_RESULT = "is_result";
 
-    private final static String CREATE_PROCEDURE_FORMAT = "CREATE PROCEDURE %s (IN json_in VARCHAR(65535), OUT json_out VARCHAR(65535))"
+    private final static String CREATE_PROCEDURE_FORMAT = "CREATE PROCEDURE %s ()"
             + " LANGUAGE %s PARAMETER STYLE json AS $$%s$$";
 
     private final static String DROP_PROCEDURE_FORMAT = "DROP PROCEDURE %s";
