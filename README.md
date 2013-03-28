@@ -2,7 +2,7 @@ Akiban Server
 =============
 
 Overview
-========
+--------
 
 Akiban Server is a new relational database that offers document and SQL style access while eliminating the cost of joins.
 
@@ -10,7 +10,7 @@ It was written from the ground up in Java and utilizes [Persistit](https://githu
 
 
 Building Akiban Server From Source
-==========================================
+----------------------------------
 
 Use [Maven](http://maven.apache.org) to build the project:
 
@@ -45,7 +45,7 @@ The server can then be accessed over a RESTful API on port `8091` or the Postgre
 
 
 Install Akiban Server Packages
-=======================================
+------------------------------
 
 Repositories for Debian/Ubuntu and Centos/RedHat are hosted on software.akiban.com.
 
@@ -68,8 +68,9 @@ CentOS is also straight forward:
 
 Visit [software.akiban.com/releases](http://software.akiban.com/releases) directly for manual download and installation.
 
+
 More Information
-================
+----------------
 
 Documentation overview can be found at [akiban.com/docs.html](http://akiban.com/docs.html). Full documentation is hosted at [akiban.readthedocs.org](https://akiban.readthedocs.org/en/latest/) and generated from [akiban-docs](https://github.com/akiban/akiban-docs).
 
