@@ -123,7 +123,7 @@ public final class Space {
     private static class Validator extends AbstractEntityVisitor {
 
         @Override
-        public void visitEntity(Entity entity) {
+        public void visitTopEntity(Entity entity) {
             visitContainer(entity);
         }
 

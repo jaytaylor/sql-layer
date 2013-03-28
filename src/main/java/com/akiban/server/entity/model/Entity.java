@@ -99,6 +99,26 @@ public abstract class Entity extends EntityElement {
         validations = new TreeSet<>();
     }
 
+    protected <E extends Exception> void acceptStart(EntityVisitor<E> visitor) throws E {
+        visitor.visitTopEntity(this);
+    }
+
+    protected <E extends Exception> void acceptFinish(EntityVisitor<E> visitor) throws E {
+        visitor.leaveTopEntity();
+    }
+
+    public final  <E extends Exception> void accept(EntityVisitor<E> visitor) throws E {
+        acceptStart(visitor);
+        for (EntityField field : getFields())
+            visitor.visitField(field);
+        visitor.visitEntityValidations(getValidations());
+        visitor.visitIndexes(getIndexes());
+        for (EntityCollection collection : getCollections()) {
+            collection.accept(visitor);
+        }
+        acceptFinish(visitor);
+    }
+
     private List<EntityField> fields = Collections.emptyList();
     private List<EntityCollection> collections = Collections.emptyList();
     private List<String> identifying = Collections.emptyList();

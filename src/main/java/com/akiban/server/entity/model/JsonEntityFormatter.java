@@ -35,7 +35,7 @@ public final class JsonEntityFormatter implements EntityVisitor<IOException> {
     }
 
     @Override
-    public void leaveEntity() throws IOException {
+    public void leaveTopEntity() throws IOException {
         json.writeEndObject();
     }
 

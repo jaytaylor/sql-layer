@@ -23,11 +23,11 @@ import java.util.Set;
 
 public abstract class AbstractEntityVisitor implements EntityVisitor<RuntimeException> {
     @Override
-    public void visitEntity(Entity entity) {
+    public void visitTopEntity(Entity entity) {
     }
 
     @Override
-    public void leaveEntity() {
+    public void leaveTopEntity() {
     }
 
     @Override

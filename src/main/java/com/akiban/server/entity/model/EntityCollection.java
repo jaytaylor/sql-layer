@@ -44,11 +44,13 @@ public final class EntityCollection extends Entity {
         this.parentColumns = parentColumns;
     }
 
-    public <E extends Exception> void accept(EntityVisitor<E>  visitor) throws E {
+    @Override
+    protected <E extends Exception> void acceptStart(EntityVisitor<E> visitor) throws E {
         visitor.visitCollection(this);
-        for (EntityCollection collection : getCollections()) {
-            collection.accept(visitor);
-        }
+    }
+
+    @Override
+    protected <E extends Exception> void acceptFinish(EntityVisitor<E> visitor) throws E {
     }
 
     public static EntityCollection modifiableCollection(UUID uuid) {

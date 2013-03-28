@@ -75,7 +75,7 @@ public final class AttributeLookups {
         }
 
         @Override
-        public void leaveEntity() {
+        public void leaveTopEntity() {
             currentPath.pop();
         }
 

@@ -94,7 +94,7 @@ public class EntityToAIS extends AbstractEntityVisitor {
     }
 
     @Override
-    public void leaveEntity() {
+    public void leaveTopEntity() {
         curTable = null;
         groupName = null;
         uniqueValidations.clear();

@@ -31,7 +31,7 @@ class ToStringVisitor extends JUnitUtils.MessageTaker implements EntityVisitor<R
     }
 
     @Override
-    public void leaveEntity() {
+    public void leaveTopEntity() {
         message("leaving entity");
     }
 
