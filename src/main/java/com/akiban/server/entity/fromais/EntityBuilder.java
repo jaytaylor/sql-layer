@@ -32,11 +32,9 @@ import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Validation;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
-import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.Collections2;
-import com.google.common.collect.Lists;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -86,7 +84,7 @@ final class EntityBuilder {
         }
     }
 
-    private void buildCollections(List<EntityCollection> collections, UserTable table) {
+    private void buildCollections(Collection<EntityCollection> collections, UserTable table) {
         List<Join> childJoins = table.getChildJoins();
         for (Join childJoin : childJoins) {
             UserTable child = childJoin.getChild();
@@ -127,7 +125,17 @@ final class EntityBuilder {
             if (index.getIndexName().getName().startsWith("__akiban"))
                 continue;
             String jsonName = index.getIndexName().getName();
-            EntityIndex entityIndex = new EntityIndex(Lists.transform(index.getKeyColumns(), toEntityColumn));
+            List<IndexColumn> keyColumns = index.getKeyColumns();
+            List<IndexField> indexFields = new ArrayList<>(keyColumns.size());
+            for (IndexColumn indexCol : keyColumns) {
+                Column col = indexCol.getColumn();
+                IndexField indexField = new IndexField.QualifiedFieldName(
+                        col.getTable().getName().getTableName(),
+                        col.getName());
+                indexFields.add(indexField);
+            }
+            EntityIndex entityIndex = new EntityIndex();
+            entityIndex.setFields(indexFields);
             EntityIndex old = out.put(jsonName, entityIndex);
             if (old != null)
                 throw new InconvertibleAisException("duplicate index name: " + jsonName);
@@ -166,15 +174,6 @@ final class EntityBuilder {
         @Override
         public boolean apply(Index input) {
             return ! input.isPrimaryKey();
-        }
-    };
-
-    private static final Function<? super IndexColumn, IndexField> toEntityColumn =
-            new Function<IndexColumn, IndexField>() {
-        @Override
-        public IndexField apply(IndexColumn indexColumn) {
-            Column column = indexColumn.getColumn();
-            return new IndexField(column.getTable().getName().getTableName(), column.getName());
         }
     };
 }

@@ -17,13 +17,9 @@
 
 package com.akiban.server.entity.model;
 
-import com.google.common.collect.BiMap;
-
-import java.util.Set;
-
 public abstract class AbstractEntityVisitor implements EntityVisitor<RuntimeException> {
     @Override
-    public void visitTopEntity(Entity entity) {
+    public void enterTopEntity(Entity entity) {
     }
 
     @Override
@@ -31,11 +27,11 @@ public abstract class AbstractEntityVisitor implements EntityVisitor<RuntimeExce
     }
 
     @Override
-    public void visitField(EntityField scalar) {
+    public void enterCollections() {
     }
 
     @Override
-    public void visitCollection(EntityCollection collection) {
+    public void enterCollection(EntityCollection collection) {
     }
 
     @Override
@@ -43,14 +39,6 @@ public abstract class AbstractEntityVisitor implements EntityVisitor<RuntimeExce
     }
 
     @Override
-    public void leaveEntityAttributes() {
-    }
-
-    @Override
-    public void visitEntityValidations(Set<Validation> validations) {
-    }
-
-    @Override
-    public void visitIndexes(BiMap<String, EntityIndex> indexes) {
+    public void leaveCollections() {
     }
 }

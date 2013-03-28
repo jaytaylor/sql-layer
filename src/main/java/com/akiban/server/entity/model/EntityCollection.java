@@ -34,23 +34,24 @@ import java.util.UUID;
 
 public final class EntityCollection extends Entity {
 
-    @JsonProperty("parent_cols")
-    public List<String> getParentColumns() {
+    @JsonProperty("grouping_fields")
+    public List<String> getGroupingFields() {
         return parentColumns;
     }
 
-    @JsonProperty("parent_cols")
-    public void setParentColumns(List<String> parentColumns) {
+    @JsonProperty("grouping_fields")
+    public void setGroupingFields(List<String> parentColumns) {
         this.parentColumns = parentColumns;
     }
 
     @Override
     protected <E extends Exception> void acceptStart(EntityVisitor<E> visitor) throws E {
-        visitor.visitCollection(this);
+        visitor.enterCollection(this);
     }
 
     @Override
     protected <E extends Exception> void acceptFinish(EntityVisitor<E> visitor) throws E {
+        visitor.leaveCollection();
     }
 
     public static EntityCollection modifiableCollection(UUID uuid) {

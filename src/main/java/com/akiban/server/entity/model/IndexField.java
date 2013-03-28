@@ -24,8 +24,15 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
-public class IndexField {
+public abstract class IndexField {
+
+    @Override
+    public abstract int hashCode();
+
+    @Override
+    public abstract boolean equals(Object obj);
 
     @JsonValue
     public Object asJsonValue() {
@@ -82,6 +89,20 @@ public class IndexField {
             return fieldName;
         }
 
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            FieldName other = (FieldName) o;
+            return Objects.equals(fieldName, other.fieldName);
+        }
+
+        @Override
+        public int hashCode() {
+            return fieldName != null ? fieldName.hashCode() : 0;
+        }
+
         public FieldName(String fieldName) {
             this.fieldName = fieldName;
         }
@@ -99,6 +120,23 @@ public class IndexField {
 
         public String getEntityName() {
             return entityName;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            QualifiedFieldName other = (QualifiedFieldName) o;
+            return Objects.equals(entityName, other.entityName)
+                    && Objects.equals(getFieldName(), other.getFieldName());
+        }
+
+        @Override
+        public int hashCode() {
+            int result = super.hashCode();
+            result = 31 * result + (entityName != null ? entityName.hashCode() : 0);
+            return result;
         }
 
         public QualifiedFieldName(String entityName, String fieldName) {
@@ -124,6 +162,22 @@ public class IndexField {
 
         public IndexField getLongitude() {
             return longitude;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            SpatialField other = (SpatialField) o;
+            return Objects.equals(longitude, other.longitude) && Objects.equals(latitude, other.latitude);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = latitude != null ? latitude.hashCode() : 0;
+            result = 31 * result + (longitude != null ? longitude.hashCode() : 0);
+            return result;
         }
 
         public SpatialField(FieldName lat, FieldName lon) {

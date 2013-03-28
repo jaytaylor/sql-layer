@@ -172,31 +172,31 @@ public final class ModelResource {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
                         try (Session session = reqs.sessionService.createSession()) {
-                            // Cannot have transaction when attempting to perform DDL
-                            Space curSpace = spaceForAIS(session, schema);
-                            Space newSpace = Space.create(new InputStreamReader(postInput), Space.randomUUIDs);
-                            SpaceDiff diff = new SpaceDiff(curSpace, newSpace);
-
-                            boolean success = true;
-                            JsonDiffPreview jsonSummary = new JsonDiffPreview(writer);
-                            if(doApply) {
-                                DDLBasedSpaceModifier modifier = new DDLBasedSpaceModifier(reqs.dxlService.ddlFunctions(), session, schema, newSpace);
-                                diff.apply(modifier);
-                                if(modifier.hadError()) {
-                                    success = false;
-                                    for(String err : modifier.getErrors()) {
-                                        jsonSummary.error(err);
-                                    }
-                                }
-                                // re-create the diff against the new AIS
-                                diff = new SpaceDiff(curSpace, spaceForAIS(session, schema));
-                            }
-                            if(success) {
-                                diff.apply(jsonSummary);
-                            }
-                            if (doApply)
-                                jsonSummary.describeModifiedEntities();
-                            jsonSummary.finish();
+//                            // Cannot have transaction when attempting to perform DDL
+//                            Space curSpace = spaceForAIS(session, schema);
+//                            Space newSpace = Space.create(new InputStreamReader(postInput), Space.randomUUIDs);
+//                            SpaceDiff diff = new SpaceDiff(curSpace, newSpace);
+//
+//                            boolean success = true;
+//                            JsonDiffPreview jsonSummary = new JsonDiffPreview(writer);
+//                            if(doApply) {
+//                                DDLBasedSpaceModifier modifier = new DDLBasedSpaceModifier(reqs.dxlService.ddlFunctions(), session, schema, newSpace);
+//                                diff.apply(modifier);
+//                                if(modifier.hadError()) {
+//                                    success = false;
+//                                    for(String err : modifier.getErrors()) {
+//                                        jsonSummary.error(err);
+//                                    }
+//                                }
+//                                // re-create the diff against the new AIS
+//                                diff = new SpaceDiff(curSpace, spaceForAIS(session, schema));
+//                            }
+//                            if(success) {
+//                                diff.apply(jsonSummary);
+//                            }
+//                            if (doApply)
+//                                jsonSummary.describeModifiedEntities();
+//                            jsonSummary.finish();
                         }
                     }
                 })

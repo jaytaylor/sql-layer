@@ -29,6 +29,7 @@ package com.akiban.server.entity.model;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import org.codehaus.jackson.annotate.JsonIgnore;
+import org.codehaus.jackson.annotate.JsonProperty;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,6 +43,7 @@ abstract class EntityElement {
         return uuid;
     }
 
+    @JsonProperty("uuid")
     public void setUuid(String string) {
         UUID uuid;
         try {

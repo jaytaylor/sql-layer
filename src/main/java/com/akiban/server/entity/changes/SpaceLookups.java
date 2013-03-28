@@ -48,13 +48,13 @@ class SpaceLookups {
     }
 
     public SpaceLookups(Space space) {
-        Map<String, Entity> entities = space.getEntities();
-        for (Map.Entry<String, Entity> entry : entities.entrySet()) {
-            String name = entry.getKey();
-            Entity entity = entry.getValue();
-            entriesByUuid.put(entity.uuid(), entity);
-            namesByUuid.put(entity.uuid(), name);
-        }
+//        Map<String, Entity> entities = space.getEntities();
+//        for (Map.Entry<String, Entity> entry : entities.entrySet()) {
+//            String name = entry.getKey();
+//            Entity entity = entry.getValue();
+//            entriesByUuid.put(entity.uuid(), entity);
+//            namesByUuid.put(entity.uuid(), name);
+//        }
     }
 
     private Map<UUID, Entity> entriesByUuid = new HashMap<>();

@@ -76,7 +76,7 @@ public final class Space {
         return entities;
     }
 
-    void setEntities(List<Entity> entities) {
+    void setEntities(Collection<Entity> entities) {
         this.entities = Collections.unmodifiableList(new ArrayList<>(entities));
     }
 
@@ -85,7 +85,7 @@ public final class Space {
         return entities.toString();
     }
 
-    public static Space create(List<Entity> entities, Function<String, UUID> uuidGenerator) {
+    public static Space create(Collection<Entity> entities, Function<String, UUID> uuidGenerator) {
         Space space = new Space();
         space.setEntities(entities);
         space.visit(new Validator(uuidGenerator));
@@ -95,9 +95,10 @@ public final class Space {
     public void generateJson(JsonGenerator json) throws IOException {
         json.writeStartObject();
         if (!entities.isEmpty()) {
-            json.writeObjectFieldStart("entities");
-            visit(new JsonEntityFormatter(json));
-            json.writeEndObject();
+            json.writeArrayFieldStart("entities");
+            for (Entity entity : entities)
+                json.writeObject(entity);
+            json.writeEndArray();
         }
         json.writeEndObject();
     }
@@ -123,19 +124,12 @@ public final class Space {
     private static class Validator extends AbstractEntityVisitor {
 
         @Override
-        public void visitTopEntity(Entity entity) {
+        public void enterTopEntity(Entity entity) {
             visitContainer(entity);
         }
 
         @Override
-        public void visitField(EntityField scalar) {
-            visitElement(scalar);
-            if (scalar.getType() == null)
-                throw new IllegalEntityDefinition("no type set for scalar");
-        }
-
-        @Override
-        public void visitCollection(EntityCollection collection) {
+        public void enterCollection(EntityCollection collection) {
             visitContainer(collection);
         }
 
@@ -146,6 +140,11 @@ public final class Space {
                 throw new IllegalEntityDefinition("duplicate name within entity and collections: " + name);
             if (container.getFields() == null || container.getFields().isEmpty())
                 throw new IllegalEntityDefinition("no attributes set for entity: " + container.getName());
+            for (EntityField field : container.getFields()) {
+                visitElement(field);
+                if (field.getType() == null)
+                    throw new IllegalEntityDefinition("no type set for field " + field.getName());
+            }
         }
 
         private void visitElement(EntityElement element) {

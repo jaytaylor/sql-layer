@@ -26,6 +26,7 @@
 
 package com.akiban.server.entity.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableBiMap;
@@ -39,7 +40,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 
-public abstract class Entity extends EntityElement {
+public class Entity extends EntityElement {
 
     public List<EntityField> getFields() {
         return fields;
@@ -49,6 +50,7 @@ public abstract class Entity extends EntityElement {
         this.fields = fields;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Collection<EntityCollection> getCollections() {
         return collections;
     }
@@ -57,6 +59,7 @@ public abstract class Entity extends EntityElement {
         this.collections = collections;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<String> getIdentifying() {
         return identifying;
     }
@@ -65,6 +68,7 @@ public abstract class Entity extends EntityElement {
         this.identifying = identifying;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public BiMap<String, EntityIndex> getIndexes() {
         return indexes;
     }
@@ -79,6 +83,7 @@ public abstract class Entity extends EntityElement {
         this.indexes = ImmutableBiMap.copyOf(this.indexes);
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Set<Validation> getValidations() {
         return validations;
     }
@@ -100,7 +105,7 @@ public abstract class Entity extends EntityElement {
     }
 
     protected <E extends Exception> void acceptStart(EntityVisitor<E> visitor) throws E {
-        visitor.visitTopEntity(this);
+        visitor.enterTopEntity(this);
     }
 
     protected <E extends Exception> void acceptFinish(EntityVisitor<E> visitor) throws E {
@@ -109,14 +114,19 @@ public abstract class Entity extends EntityElement {
 
     public final  <E extends Exception> void accept(EntityVisitor<E> visitor) throws E {
         acceptStart(visitor);
-        for (EntityField field : getFields())
-            visitor.visitField(field);
-        visitor.visitEntityValidations(getValidations());
-        visitor.visitIndexes(getIndexes());
-        for (EntityCollection collection : getCollections()) {
-            collection.accept(visitor);
+        if (!collections.isEmpty()) {
+            visitor.enterCollections();
+            for (EntityCollection collection : collections)
+                collection.accept(visitor);
+            visitor.enterCollections();
         }
         acceptFinish(visitor);
+    }
+
+    public static Entity modifiableEntity(UUID uuid) {
+        Entity result = new Entity();
+        result.makeModifiable(uuid);
+        return result;
     }
 
     private List<EntityField> fields = Collections.emptyList();

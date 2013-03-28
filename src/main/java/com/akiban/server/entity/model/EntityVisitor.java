@@ -17,15 +17,11 @@
 
 package com.akiban.server.entity.model;
 
-import com.google.common.collect.BiMap;
-
-import java.util.Set;
-
 public interface EntityVisitor<E extends Exception> {
-    void visitTopEntity(Entity entity) throws E;
+    void enterTopEntity(Entity entity) throws E;
     void leaveTopEntity() throws E;
-    void visitField(EntityField field) throws E;
-    void visitCollection(EntityCollection collection) throws E;
-    void visitEntityValidations(Set<Validation> validations) throws E;
-    void visitIndexes(BiMap<String, EntityIndex> indexes) throws E;
+    void enterCollections() throws E;
+    void enterCollection(EntityCollection collection) throws E;
+    void leaveCollection() throws E;
+    void leaveCollections() throws E;
 }

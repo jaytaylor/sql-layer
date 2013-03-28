@@ -88,4 +88,5 @@ public final class JsonUtils {
     private static final JsonFactory jsonFactory = new JsonFactory(mapper);
 
     private JsonUtils() {}
+
 }

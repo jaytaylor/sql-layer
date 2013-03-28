@@ -93,9 +93,10 @@ public final class SpaceDiffTest {
         Space updated = Space.readSpace(testName + UPDATE_SUFFIX, SpaceDiffTest.class, uuidGenerator);
         JsonNode expected = readTree(new File(dir, testName + EXPECTED_SUFFIX));
         StringWriter writer = new StringWriter();
-        JsonDiffPreview diff = new JsonDiffPreview(writer);
-        new SpaceDiff(orig, updated).apply(diff);
-        diff.finish();
+        assert false;
+//        JsonDiffPreview diff = new JsonDiffPreview(writer);
+//        new SpaceDiff(orig, updated).apply(diff);
+//        diff.finish();
         JsonNode actual = readTree(new StringReader(writer.toString()));
         assertEquals("changes", expected, actual);
     }
