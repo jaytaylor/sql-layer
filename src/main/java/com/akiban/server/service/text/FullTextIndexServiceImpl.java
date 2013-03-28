@@ -65,7 +65,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     public static final String POPULATE_DELAY_INTERVAL = "akserver.text.populateDelayInterval";
 
     private static final String POPULATE_SCHEMA = "populate";
-    private static final String FULL_TEXT_TABLE = "full_text";
+    private static final String FULL_TEXT_TABLE = "full_text_populate";
     
     private final SessionService sessionService = new SessionServiceImpl();
 
@@ -264,6 +264,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             }
             finally
             {
+                rowIndexer.close();
                 if (cursor != null)
                     cursor.destroy();
 
@@ -298,7 +299,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             Session session = sessionService.createSession();
             try
             {
-               // transactionService.beginTransaction(session);
                 HKeyBytesStream rows = persistitStore.getChangedRows(session);
                 if (rows != null)
                     do
@@ -313,7 +313,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                         rows.removeAll();
                     }
                     while (rows.nextIndex());
-               // transactionService.commitTransaction(session);
             }
             catch(PersistitException e)
             {
@@ -321,7 +320,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             }
             finally
             {
-                //transactionService.rollbackTransaction(session);
                 session.close();
             }
         }
@@ -363,22 +361,18 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         @Override
         public synchronized void run()
         {
-            boolean success = false;
             Session session = sessionService.createSession();
             try
             {
-                transactionService.beginTransaction(session);
                 Exchange ex = getPopulateExchange(session);
-                if (ex.next())
+                IndexName toPopulate;
+                while ((toPopulate = nextInQueue(ex)) != null)
                 {
-                    IndexName toPopulate;
-                    while ((toPopulate = nextInQueue(ex)) != null)
-                    {
-                        createIndex(session, toPopulate);
-                        ex.fetchAndRemove();
-                    }
+                    createIndex(session, toPopulate);
+                    ex.fetchAndRemove();
                 }
-                success = true;
+
+                hasScheduled = false;
             }
             catch (PersistitException ex1)
             {
@@ -386,11 +380,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             }
             finally
             {
-                hasScheduled = false;
-                if (success)
-                    transactionService.commitTransaction(session);
-                else
-                    transactionService.rollbackTransaction(session);
                 session.close();
             }
         }
@@ -433,16 +422,16 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     {
         Key key = ex.getKey();
 
-        if (key.getEncodedSize() == 0) // empty tree?
-            return null;
-        else
+        if (ex.next(true)) // empty tree?
         {
             IndexName ret = new IndexName(new TableName(key.decodeString(),
                                                         key.decodeString()),
                                           key.decodeString());
-            ex.next(true);
+            ex.fetchAndRemove();
             return ret;
         }
+        else
+            return null;
     }
     
     private Exchange getPopulateExchange(Session session) throws PersistitException
@@ -462,7 +451,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     {   
         Exchange ret = getPopulateExchange(session);
 
-        if (ret.next())
+        if (ret.next(true))
         {
             do
             {

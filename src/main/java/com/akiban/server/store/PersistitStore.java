@@ -166,7 +166,7 @@ public class PersistitStore implements Store, Service {
                                                                     FULL_TEXT_TABLE));
         // start at the first entry
         ret.append(Key.BEFORE);
-        ret.next();
+        ret.next(true);
 
         // skipping over existing keys
         while (ret.next(true))
@@ -190,7 +190,6 @@ public class PersistitStore implements Store, Service {
         ex.getValue().clear().putByteArray(rowHKey.getEncodedBytes(),
                                            0,
                                            rowHKey.getEncodedSize());
-        
         ex.store();
     }
 
@@ -216,10 +215,14 @@ public class PersistitStore implements Store, Service {
                                                                    FULL_TEXT_TABLE));
 
         ex.append(Key.BEFORE);
-        if (ex.next())
+        if (ex.next(true)) // if the tree is not empty
+        {
             return new HKeyBytesStream(ex, session);
+        }
         else
+        {
             return null;
+        }
     }
 
  
@@ -412,9 +415,11 @@ public class PersistitStore implements Store, Service {
 
                 else if (seeNewIndex) // back up one entry in order not to 
                 {                     // go past the last pair
-                    ex.previous();
-                    // See new index
-                    // hence do the checking again, if we're allowed to look past new index
+                    ex.previous(true);
+                    
+                    // Saw new index,
+                    // hence do the checking again,
+                    // if we're allowed to look past new index
                     // (otherwise, meaning no more rows with good ids of this
                     //   index, return false)
                     return lookPastNewIndex ? nextIndex() : false;
