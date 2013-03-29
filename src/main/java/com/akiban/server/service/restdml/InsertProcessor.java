@@ -173,7 +173,7 @@ public class InsertProcessor extends DMLProcessor {
 
     private void runUpdate (InsertContext context, AkibanAppender appender) {
         assert context != null : "Bad Json format";
-        LOG.trace("Insert row into: {}, values {}", context.tableName, context.queryContext.toString());
+        LOG.trace("Insert row into: {}, values {}", context.tableName, context.queryContext);
         Operator insert = insertGenerator.create(context.table.getName());
         // If Child table, write the parent group column values into the 
         // child table join key. 

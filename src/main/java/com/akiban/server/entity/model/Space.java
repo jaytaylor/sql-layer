@@ -17,6 +17,7 @@
 
 package com.akiban.server.entity.model;
 
+import com.akiban.util.MessageDigestWriter;
 import com.google.common.base.Function;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.map.JsonMappingException;
@@ -27,6 +28,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
+import java.io.Writer;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -102,19 +105,43 @@ public final class Space {
     }
 
     public String toJson() {
+        StringWriter writer = new StringWriter(); 
+        jsonGenerate (writer);
+        return writer.toString();
+    }
+
+    public String toHash () {
         try {
             StringWriter writer = new StringWriter();
+            MessageDigestWriter md5writer = new MessageDigestWriter();
+            JsonGenerator generator = createJsonGenerator(writer);
+            generator.writeStartObject();
+            generator.writeFieldName("hash");
+            jsonGenerate (md5writer);
+            generator.writeString(md5writer.getFormatMD5());
+            generator.writeEndObject();
+            generator.flush();
+            writer.toString();
+            return writer.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    private void jsonGenerate(Writer writer) {
+        try {
             JsonGenerator generator = createJsonGenerator(writer);
             generateJson(generator);
             generator.flush();
             writer.flush();
-            return writer.toString();
         }
         catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
-
+    
     Space() {}
 
     private Map<String, Entity> entities = Collections.emptyMap();

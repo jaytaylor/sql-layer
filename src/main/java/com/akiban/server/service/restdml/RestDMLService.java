@@ -22,6 +22,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.rest.RestFunctionInvoker;
 import com.akiban.rest.RestFunctionRegistrar;
 
+import com.akiban.server.service.session.Session;
 import org.codehaus.jackson.JsonNode;
 
 import javax.servlet.http.HttpServletRequest;
@@ -34,14 +35,14 @@ import java.util.List;
 import java.util.Map;
 
 public interface RestDMLService {
-    final static String DEFAULT_PARAM_NAME = "param";
-    final static String DEFAULT_RESUlT_NAME = "result"; 
-    
     public void getAllEntities(PrintWriter writer, TableName tableName, Integer depth);
     public void getEntities(PrintWriter writer, TableName tableName, Integer depth, String pks);
     public void insert(PrintWriter writer, TableName tableName, JsonNode node);
     public void delete(PrintWriter writer, TableName tableName, String pks);
     public void update(PrintWriter writer, TableName tableName, String values, JsonNode node);
+
+    public void insertNoTxn(Session session, PrintWriter writer, TableName tableName, JsonNode node);
+    public void updateNoTxn(Session session, PrintWriter writer, TableName tableName, String values, JsonNode node);
 
     public void runSQL(PrintWriter writer, HttpServletRequest request, String sql, String schema) throws SQLException;
     public void runSQL(PrintWriter writer, HttpServletRequest request, List<String> sql) throws SQLException;

@@ -99,6 +99,30 @@ public final class ModelResource {
                 })
                 .build();
     }
+    
+    @GET
+    @Path("/hash" + OPTIONAL_SCHEMA)
+    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
+    public Response hashOfSpace(@Context HttpServletRequest request,
+                                @PathParam("schema") String schemaParam) {
+        final String schema = getSchemaName(request, schemaParam);
+        checkSchemaAccessible(reqs.securityService, request, schema);
+        return RestResponseBuilder
+                .forRequest(request)
+                .body(new RestResponseBuilder.BodyGenerator() {
+                    @Override
+                    public void write(PrintWriter writer) throws Exception {
+                        try (Session session = reqs.sessionService.createSession();
+                             CloseableTransaction txn = reqs.transactionService.beginCloseableTransaction(session)) {
+                            Space space = spaceForAIS(session, schema);
+                            String json = space.toHash();
+                            writer.write(json);
+                            txn.commit();
+                        }
+                    }
+                })
+                .build();
+    }
 
     @POST
     @Path("/parse/{table}")
