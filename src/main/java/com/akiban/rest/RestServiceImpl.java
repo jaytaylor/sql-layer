@@ -23,6 +23,7 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.restdml.RestDMLService;
+import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
@@ -56,7 +57,8 @@ public class RestServiceImpl implements RestService, Service {
                            SecurityService securityService,
                            DXLService dxlService,
                            Store store,
-                           TreeService treeService) {
+                           TreeService treeService,
+                           RoutineLoader routineLoader) {
         this.configService = configService;
 		this.http = http;
         this.reqs = new ResourceRequirements(
@@ -67,7 +69,8 @@ public class RestServiceImpl implements RestService, Service {
             transactionService,
             store,
             treeService,
-            configService
+            configService,
+            routineLoader
         );
     }
 

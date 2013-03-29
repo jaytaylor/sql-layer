@@ -20,7 +20,6 @@ package com.akiban.server.service.restdml;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.TableName;
 import com.akiban.rest.RestFunctionInvoker;
-import com.akiban.rest.RestFunctionRegistrar;
 
 import com.akiban.server.service.session.Session;
 import org.codehaus.jackson.JsonNode;
@@ -59,9 +58,6 @@ public interface RestDMLService {
     public void refreshFullTextIndex(PrintWriter writer, IndexName indexName);
 
     public String ajdaxToSQL(TableName tableName, String ajdax) throws IOException;
-    
-    public void callRegistrationProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
-            TableName procName, RestFunctionRegistrar registrar) throws SQLException;
     
     public void invokeRestEndpoint(PrintWriter writer, HttpServletRequest request, String method, TableName procName,
             String pathParams, MultivaluedMap<String, String> queryParameters, byte[] content, RestFunctionInvoker registrar) throws Exception;

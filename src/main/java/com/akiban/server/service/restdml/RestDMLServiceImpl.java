@@ -62,7 +62,6 @@ import com.akiban.ajdax.JoinStrategy;
 import com.akiban.ajdax.actions.Action;
 import com.akiban.direct.Direct;
 import com.akiban.rest.RestFunctionInvoker;
-import com.akiban.rest.RestFunctionRegistrar;
 import com.akiban.server.Quote;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.InvalidArgumentTypeException;
@@ -73,7 +72,6 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.externaldata.ExternalDataService;
 import com.akiban.server.service.externaldata.JsonRowWriter;
-import com.akiban.server.service.routines.ScriptInvoker;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.text.FullTextIndexService;
@@ -266,18 +264,6 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                 callDefaultProcedure(writer, request, jsonpArgName, call, queryParams, jsonParams);
                 break;
             }
-        }
-    }
-    
-    @Override
-    public void callRegistrationProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
-            TableName procName, RestFunctionRegistrar registrar) throws SQLException {
-        
-        try (JDBCConnection conn = jdbcConnection(request, procName.getSchemaName());
-                JDBCCallableStatement call = conn.prepareCall(procName)) {
-            final ScriptInvoker invoker = conn.getRoutineLoader()
-                    .getScriptInvoker(conn.getSession(), new TableName(procName.getSchemaName(), procName.getTableName())).get();
-            invoker.invokeNamedFunction("_register", new Object[]{registrar});
         }
     }
 

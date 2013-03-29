@@ -58,13 +58,16 @@ import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonNode;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.CacheValueGenerator;
 import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
+import com.akiban.ais.model.Routine.CallingConvention;
 import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.TableName;
 import com.akiban.direct.ClassBuilder;
 import com.akiban.direct.ClassSourceWriter;
 import com.akiban.direct.ClassXRefWriter;
+import com.akiban.direct.DirectClassLoader;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestFunctionInvoker;
 import com.akiban.rest.RestFunctionRegistrar;
@@ -113,10 +116,11 @@ public class DirectResource implements RestFunctionInvoker {
     private final static String DROP_PROCEDURE_FORMAT = "DROP PROCEDURE %s";
 
     private final static Charset UTF8 = Charset.forName("UTF8");
+    
+    private final static Object ENDPOINT_MAP_CACHE_KEY = new Object();
 
     private final ResourceRequirements reqs;
 
-    final Map<EndpointAddress, List<EndpointMetadata>> endpointMap = new HashMap<>();
 
     public DirectResource(ResourceRequirements reqs) {
         this.reqs = reqs;
@@ -237,14 +241,6 @@ public class DirectResource implements RestFunctionInvoker {
                 final TableName procName = ResourceHelper.parseTableName(request, module);
                 final String sql = String.format(CREATE_PROCEDURE_FORMAT, procName, language, new String(payload));
                 reqs.restDMLService.runSQL(writer, request, sql, procName.getSchemaName());
-                reqs.restDMLService.callRegistrationProcedure(writer, request, jsonp, procName,
-                        new RestFunctionRegistrar() {
-                            @Override
-                            public void register(String jsonSpec) throws Exception {
-                                DirectResource.this.register(procName.getSchemaName(), procName.getTableName(),
-                                        jsonSpec);
-                            }
-                        });
             }
         }).build();
     }
@@ -261,7 +257,6 @@ public class DirectResource implements RestFunctionInvoker {
                 final TableName procName = ResourceHelper.parseTableName(request, module);
                 final String sql = String.format(DROP_PROCEDURE_FORMAT, procName);
                 reqs.restDMLService.runSQL(writer, request, sql, procName.getSchemaName());
-                unregister(procName.getSchemaName(), procName.getTableName());
             }
         }).build();
     }
@@ -435,7 +430,7 @@ public class DirectResource implements RestFunctionInvoker {
         }).build();
     }
 
-    private String text(final JsonNode node, boolean requiredNonEmpty) throws Exception {
+    private static String text(final JsonNode node, boolean requiredNonEmpty) throws Exception {
         String s = null;
         if (node != null) {
             s = node.asText();
@@ -453,8 +448,9 @@ public class DirectResource implements RestFunctionInvoker {
             final TableName procName, final String pathParams, final MultivaluedMap<String, String> queryParameters,
             final byte[] content) throws Exception {
         final List<EndpointMetadata> list;
+        final EndpointMap endpointMap = getEndpointMap(conn.getSession());
         synchronized (endpointMap) {
-            list = endpointMap.get(new EndpointAddress(method, procName));
+            list = endpointMap.getMap().get(new EndpointAddress(method, procName));
         }
         EndpointMetadata md = null;
         ParamCache cache = new ParamCache();
@@ -496,7 +492,7 @@ public class DirectResource implements RestFunctionInvoker {
         }
     }
 
-    private Object convertType(ParamMetadata pm, Object v) throws Exception {
+    private static Object convertType(ParamMetadata pm, Object v) throws Exception {
 
         if (v == null) {
             if (pm.defaultValue != null) {
@@ -544,7 +540,7 @@ public class DirectResource implements RestFunctionInvoker {
             }
         case EndpointMetadata.X_TYPE_DOUBLE:
             if (v instanceof JsonNode) {
-                if (((JsonNode) v).isFloatingPointNumber()) {
+                if (((JsonNode) v).isNumber()) {
                     return ((JsonNode) v).getNumberValue().doubleValue();
                 } else {
                     break;
@@ -568,20 +564,26 @@ public class DirectResource implements RestFunctionInvoker {
         throw new IllegalArgumentException("Type specified by " + pm + " is not supported");
     }
 
-    private String asString(ParamMetadata pm, Object v) {
+    private static String asString(ParamMetadata pm, Object v) {
         if (v instanceof JsonNode) {
             if (((JsonNode) v).isTextual()) {
                 return ((JsonNode) v).getTextValue();
             } else {
                 throw new IllegalArgumentException("JsonNode " + v + " is not textual");
             }
-        } else {
-            assert v instanceof String;
+        } else if (v instanceof String ){
             return (String) v;
+        } else if (v instanceof byte[]) {
+            return new String((byte[])v, UTF8);
+        } else if (v != null) {
+            return v.toString();
+        } else {
+            return null;
         }
+        
     }
 
-    private Date asDate(ParamMetadata pm, Object v) throws ParseException {
+    private static Date asDate(ParamMetadata pm, Object v) throws ParseException {
         String s = asString(pm, v);
         if ("today".equalsIgnoreCase(s)) {
             return new Date(System.currentTimeMillis());
@@ -593,67 +595,8 @@ public class DirectResource implements RestFunctionInvoker {
      * ---------------------------------------------------------------------
      */
 
-    public void register(final String schema, final String routine, final String spec) throws Exception {
-        JsonNode tree = readTree(spec);
 
-        final String function = text(tree.get("function"), true);
-        final String method = text(tree.get("method"), true);
-        final String name = text(tree.get("name"), true);
-        final String pathParams = text(tree.get("pathParams"), false);
-        final String jsonParams = text(tree.get("jsonParams"), false);
-        final String queryParams = text(tree.get("queryParams"), false);
-        final String contentParam = text(tree.get("contentParam"), false);
-        final String inParams = text(tree.get("in"), false);
-        String outParam = text(tree.get("out"), false);
-
-        register(schema, routine, function, method, name, pathParams, jsonParams, queryParams, contentParam, inParams,
-                outParam);
-    }
-
-    public void unregister(final String schemaName, final String routineName) {
-        synchronized (endpointMap) {
-            for (Iterator<Map.Entry<EndpointAddress, List<EndpointMetadata>>> entryIter = endpointMap.entrySet()
-                    .iterator(); entryIter.hasNext();) {
-                final Map.Entry<EndpointAddress, List<EndpointMetadata>> entry = entryIter.next();
-                final EndpointAddress ea = entry.getKey();
-                final List<EndpointMetadata> list = entry.getValue();
-                for (Iterator<EndpointMetadata> mdIter = list.iterator(); mdIter.hasNext();) {
-                    EndpointMetadata md = mdIter.next();
-                    if (routineName.equals(md.routineName) && schemaName.equals(ea.schema)) {
-                        mdIter.remove();
-                    }
-                }
-                if (list.isEmpty()) {
-                    entryIter.remove();
-                }
-            }
-        }
-    }
-
-    void register(final String schema, final String routine, final String function, final String method,
-            final String name, final String pathParams, final String jsonParams, final String queryParams,
-            final String contentParam, final String inParams, final String outParam) throws Exception {
-
-        EndpointMetadata md = createEndpointMetadata(function, pathParams, jsonParams, queryParams, contentParam,
-                inParams, outParam);
-        md.routineName = routine;
-        if (!("GET".equals(method)) && !("POST".equals(method)) && !("PUT".equals(method))
-                && !("DELETE".equals(method))) {
-            throw new IllegalArgumentException("Method must be GET, POST, PUT or DELETE");
-        }
-        EndpointAddress ea = new EndpointAddress(method, new TableName(schema, name));
-
-        synchronized (endpointMap) {
-            List<EndpointMetadata> list = endpointMap.get(ea);
-            if (list == null) {
-                list = new LinkedList<EndpointMetadata>();
-                endpointMap.put(ea, list);
-            }
-            list.add(md);
-        }
-    }
-
-    EndpointMetadata createEndpointMetadata(final String function, final String pathParams, final String jsonParams,
+    static EndpointMetadata createEndpointMetadata(final String function, final String pathParams, final String jsonParams,
             final String queryParams, final String contentParam, final String inParams, final String outParam)
             throws Exception {
         Map<String, ParamSourceMetadata> paramMap = new HashMap<String, ParamSourceMetadata>();
@@ -735,7 +678,7 @@ public class DirectResource implements RestFunctionInvoker {
         return md;
     }
 
-    private void registerContentParam(final String contentParam, Map<String, ParamSourceMetadata> paramMap) {
+    private static void registerContentParam(final String contentParam, Map<String, ParamSourceMetadata> paramMap) {
         String n = contentParam.trim();
         for (int i = 0; i < n.length(); i++) {
             if (!Character.isLetter(n.charAt(i))) {
@@ -749,7 +692,7 @@ public class DirectResource implements RestFunctionInvoker {
         }
     }
 
-    private void registerQueryParams(final String queryParams, Map<String, ParamSourceMetadata> paramMap) {
+    private static void registerQueryParams(final String queryParams, Map<String, ParamSourceMetadata> paramMap) {
         Tokenizer tokens = new Tokenizer(queryParams, ", ");
         String name;
         while (!(name = tokens.nextName(false)).isEmpty()) {
@@ -761,7 +704,7 @@ public class DirectResource implements RestFunctionInvoker {
         }
     }
 
-    private void registerJsonParams(final String jsonParams, Map<String, ParamSourceMetadata> paramMap) {
+    private static void registerJsonParams(final String jsonParams, Map<String, ParamSourceMetadata> paramMap) {
         Tokenizer tokens = new Tokenizer(jsonParams, ", ");
         String name;
         while (!(name = tokens.nextName(false)).isEmpty()) {
@@ -773,7 +716,7 @@ public class DirectResource implements RestFunctionInvoker {
         }
     }
 
-    private String registerPathParams(final String pathParams, Map<String, ParamSourceMetadata> paramMap) {
+    private static String registerPathParams(final String pathParams, Map<String, ParamSourceMetadata> paramMap) {
         StringBuilder pattern = new StringBuilder();
         int startParamName = -1;
         int paramCount = 0;
@@ -1042,9 +985,14 @@ public class DirectResource implements RestFunctionInvoker {
             Object value(final String pathParams, final MultivaluedMap<String, String> queryParams, Object content,
                     ParamCache cache) {
                 if (cache.tree == null) {
-                    assert content instanceof String;
+                    String s;
+                    if (content instanceof byte[]) {
+                        s = new String((byte[])content, UTF8);
+                    } else {
+                        s = (String) content;
+                    }
                     try {
-                        cache.tree = readTree((String) content);
+                        cache.tree = readTree(s);
                     } catch (IOException e) {
                         return null;
                     }
@@ -1192,5 +1140,88 @@ public class DirectResource implements RestFunctionInvoker {
             }
         }
     }
+    
+    private  class EndpointMap  {
+        final Map<EndpointAddress, List<EndpointMetadata>> map = new HashMap<EndpointAddress, List<EndpointMetadata>>();
+        
+        public Map<EndpointAddress, List<EndpointMetadata>> getMap() {
+            return map;
+        }
+        
+        void populate(final AkibanInformationSchema ais, final Session session) {
+            for (final Routine routine : ais.getRoutines().values()) {
+                if (routine.getCallingConvention().equals(CallingConvention.SCRIPT_BINDINGS_JSON) && routine.getDynamicResultSets() == 0) {
+                    final ScriptInvoker invoker = reqs.routineLoader
+                            .getScriptInvoker(session, new TableName(routine.getName().getSchemaName(), routine.getName().getTableName())).get();
+                    try {
+                    invoker.invokeNamedFunction("_register", new Object[]{new RestFunctionRegistrar() {
+                        @Override
+                        public void register(String jsonSpec) throws Exception {
+                            EndpointMap.this.register(routine.getName().getSchemaName(), routine.getName().getTableName(),
+                                    jsonSpec);
+                        }
+                    }});
+                    } catch (Exception e) {
+                        // Failed because there is no _register function, or some other exception
+                        // TODO
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+        
+        public void register(final String schema, final String routine, final String spec) throws Exception {
+            JsonNode tree = readTree(spec);
 
+            final String function = text(tree.get("function"), true);
+            final String method = text(tree.get("method"), true);
+            final String name = text(tree.get("name"), true);
+            final String pathParams = text(tree.get("pathParams"), false);
+            final String jsonParams = text(tree.get("jsonParams"), false);
+            final String queryParams = text(tree.get("queryParams"), false);
+            final String contentParam = text(tree.get("contentParam"), false);
+            final String inParams = text(tree.get("in"), false);
+            String outParam = text(tree.get("out"), false);
+
+            register(schema, routine, function, method, name, pathParams, jsonParams, queryParams, contentParam, inParams,
+                    outParam);
+        }
+        
+        void register(final String schema, final String routine, final String function, final String method,
+                final String name, final String pathParams, final String jsonParams, final String queryParams,
+                final String contentParam, final String inParams, final String outParam) throws Exception {
+
+            EndpointMetadata md = createEndpointMetadata(function, pathParams, jsonParams, queryParams, contentParam,
+                    inParams, outParam);
+            md.routineName = routine;
+            if (!("GET".equals(method)) && !("POST".equals(method)) && !("PUT".equals(method))
+                    && !("DELETE".equals(method))) {
+                throw new IllegalArgumentException("Method must be GET, POST, PUT or DELETE");
+            }
+            EndpointAddress ea = new EndpointAddress(method, new TableName(schema, name));
+
+            synchronized (map) {
+                List<EndpointMetadata> list = map.get(ea);
+                if (list == null) {
+                    list = new LinkedList<EndpointMetadata>();
+                    map.put(ea, list);
+                }
+                list.add(md);
+            }
+        }
+    }
+
+    private EndpointMap getEndpointMap(final Session session) {
+        final AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(session);
+        return ais.getCachedValue(ENDPOINT_MAP_CACHE_KEY, new CacheValueGenerator<EndpointMap>() {
+
+            @Override
+            public EndpointMap valueFor(AkibanInformationSchema ais) {
+                EndpointMap em = new EndpointMap();
+                em.populate(ais, session);
+                return em;
+            }
+            
+        });
+    }
 }

@@ -17,31 +17,73 @@
 
 function _register(registrar) {
 	registrar.register(JSON.stringify(
-			{"method":"GET","name":"totalComp","function":"computeTotalCompensation",
-				"pathParams":"/<empno>", "queryParams":"start","in":"empno int required, start Date default `2000-01-01`","out":"String"}));
+			{"method":"GET", "name":"totalComp", "function":"computeTotalCompensation",
+				"pathParams":"/<empno>", 
+				"queryParams":"start, end",
+				"in":"empno int required, start Date default '1800-01-01', end Date default TODAY",
+				"out":"String"}));
+	
+	registrar.register(JSON.stringify(
+			{"method":"POST", "name":"raiseSalary", "function":"raiseSalary",
+				"pathParams":"/<empno>", 
+				"jsonParams":"percent, effectiveDate",
+				"in":"empno int required, percent double required, effectiveDate Date required",
+				"out":"String"}));
+	
 }
 
 /*
  * Compute the total amount of compensation paid
- * to the specified employee by computing
- * rate * duration for each period of employment.
+ * to the specified employee between dates start and end
+ * by computing (rate * duration) for each period of employment.
  */
-function computeTotalCompensation(empno, start) {
+function computeTotalCompensation(empno, start, end) {
 	var emp = com.akiban.direct.Direct.context.extent.getEmployee(empno);
-	
+	println("Computing total compensation for employee " + empno);
 	var total = 0;
 	var today = new Date();
-	var summary = {from: today, to: today, total: total};
+	var summary = {from: today, to:new Date(0), total:0};
 
-	for (var salary in Iterator(emp.salaries.sort("to_date"),where("to_date > " + start))) {
-		var from = salary.fromDate;
+	for (var salary in Iterator(emp.salaries.sort("to_date"))) {
+		var from = new Date(salary.fromDate.time);
+		if (from < summary.from) {
+			summary.from = from;
+		}
 		var to = salary.toDate.time < 0 
-				? today : salary.toDate;
-		if (from <summary > summary.to) {
+				? today : new Date(salary.toDate.time);
+		if (to > summary.to) {
 			summary.to = to;
 		}
-		var duration = (to.getTime() - from.getTime()) / 86400000 / 365;
-		summary.total += salary.salary * duration;
+		var earliest = Math.max(start.getTime(), from.getTime());
+		var latest = Math.min(end.getTime(), to.getTime());
+		var duration = (latest - earliest) / 86400000 / 365;
+		if (duration > 0) {
+			summary.total += salary.salary * duration;
+		}
 	}
 	return JSON.stringify(summary);
+}
+
+function raiseSalary(empno, percent, effectiveDate) {
+	
+	var emp = com.akiban.direct.Direct.context.extent.getEmployee(empno);
+	var multiplier = 1.0 + (percent / 100.0);
+	println("Multiplier is " + multiplier);
+	var iter = emp.salaries.sort("to_date", "desc").iterator();
+	var salary;
+	if (iter.hasNext()) {
+		salary = iter.next();
+	}
+	if (salary == null) {
+		println("Employee " + emp.lastName + " has no salary records");
+		return;
+	}
+	var newSalary = salary.salary * multiplier;
+	println("Salary for employee " + emp.lastName + " would be raised to " + newSalary + 
+			" on " + effectiveDate + " if Akiban Direct had update support");
+	
+}
+
+function println(s) {
+	java.lang.System.out.println(s);
 }
