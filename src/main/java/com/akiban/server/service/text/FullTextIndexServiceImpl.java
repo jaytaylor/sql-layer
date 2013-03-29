@@ -30,6 +30,7 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
 import com.akiban.qp.row.HKeyRow;
 import com.akiban.qp.rowtype.HKeyRowType;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.util.HKeyCache;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.service.Service;
@@ -486,14 +487,10 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         ex.store();
         return true;
     }
-    
-//    private Row constructRow(byte hkeyBytes[], Group group, Session session)
-//    {
-//        
-//    }
+
     private HKeyRow toHKeyRow(byte rowBytes[], HKeyRowType hKeyRowType,
                               StoreAdapter store, HKeyCache<com.akiban.qp.row.HKey> cache)
-    {
+    {       
         PersistitHKey hkey = (PersistitHKey)store.newHKey(hKeyRowType.hKey());
         Key key = hkey.key();
         key.setEncodedSize(rowBytes.length);

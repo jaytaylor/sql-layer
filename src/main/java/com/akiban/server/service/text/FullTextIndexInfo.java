@@ -156,12 +156,12 @@ public class FullTextIndexInfo
         Group group = indexedRowType.userTable().getGroup();
         Set<UserTableRowType> ancestors = new HashSet<>();
         boolean hasDesc = false;
-        
+
         for (IndexColumn ic : index.getKeyColumns())
         {
             UserTable colUserTable = ic.getColumn().getUserTable();
 
-            if (!hasDesc)
+            if (!hasDesc && !colUserTable.equals(indexedRowType.userTable()))
                 // if any column in the index def belongs to a table
                 // that is a descendant of this indexed row's table
                 // (meaning this indexed row has descendant(s))
@@ -176,14 +176,13 @@ public class FullTextIndexInfo
 
         if (hasDesc)
         {
-            ret = API.branchLookup_Nested(group, 
-                                           indexedRowType, // input
-                                           indexedRowType, // output  (two are the same?)
-                                           ancestors.isEmpty()
-                                               ? API.InputPreservationOption.KEEP_INPUT
-                                               : API.InputPreservationOption.DISCARD_INPUT,
-                                           0);
             ancestors.remove(indexedRowType);
+
+            ret = API.branchLookup_Nested(group, 
+                                           hKeyRowType,
+                                           indexedRowType,
+                                           API.InputPreservationOption.DISCARD_INPUT,
+                                           0);
             if (!ancestors.isEmpty())
             {
                 
@@ -191,7 +190,7 @@ public class FullTextIndexInfo
                                                  group,
                                                  indexedRowType, 
                                                  ancestors, 
-                                                 API.InputPreservationOption.DISCARD_INPUT);
+                                                 API.InputPreservationOption.KEEP_INPUT);
             }
         }
         else
@@ -199,7 +198,7 @@ public class FullTextIndexInfo
             // has at least one ancestor (which is itself)
             ancestors.add(indexedRowType);
             ret = API.ancestorLookup_Nested(group,
-                                            indexedRowType,
+                                            hKeyRowType,
                                             ancestors,
                                             0);
         }
