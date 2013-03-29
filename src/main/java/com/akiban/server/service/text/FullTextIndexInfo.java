@@ -158,37 +158,38 @@ public class FullTextIndexInfo
             // if any column in the index def belongs to a table
             // that is a descendant of this row's table
             // (meaning this indexed row has descendants)
-            // then do branchlookup_nested
+            // then do branchlookup_nested 
             if (ic.getColumn().getUserTable().isDescendantOf(rowType.userTable()))
             {
+                // get everything *from* this row and *beneath*
+                // output ==> (this_row, desc_rows)
                 plan = API.branchLookup_Nested(rowType.userTable().getGroup(), 
                                                rowType,
                                                indexedRowType,
                                                API.InputPreservationOption.DISCARD_INPUT,
                                                0);
                 
-                plan = API.ancestorLookup_Nested(indexedRowType.userTable().getGroup(), 
-                                         plan.rowType(),
-                                         Arrays.asList(indexedRowType), 
-                                         0);
-                break;
-            }   
-        }
-        
-        if (plan == null) // no descendants
-        {
-            // Do ancestor_lookup_default
-            IndexRowType indexRowType = indexedRowType.indexRowType(index);
-
-            plan = API.indexScan_Default(indexRowType,
-                                        IndexKeyRange.unbounded(indexRowType),
-                                        new API.Ordering(),
-                                        indexedRowType);
-
+                // get everything *above* this row 
+                //    ,actually including its input (which is (this_row, desc_rows))
+                //     because x is-an ancestor of x
+                // output ==> (ances_rows, (this_row, desc_rows))
+                plan = API.ancestorLookup_Default(plan, 
+                                                  rowType.userTable().getGroup(), 
+                                                  plan.rowType(),
+                                                  Arrays.asList(indexedRowType),
+                                                  API.InputPreservationOption.DISCARD_INPUT);
+                
+                return plan;
+            }
             
         }
         
-        return plan;
+        // no descendants, 
+        // do lookup_nested to get *this* and anything above it
+        return API.ancestorLookup_Nested(rowType.userTable().getGroup(),
+                                         rowType,
+                                         Arrays.asList(indexedRowType),
+                                         0);
     }
 
     public Analyzer getAnalyzer() {

@@ -164,9 +164,6 @@ public class PersistitStore implements Store, Service {
         Exchange ret = treeService.getExchange(session,
                                                treeService.treeLink(MAINTENANCE_SCHEMA,
                                                                     FULL_TEXT_TABLE));
-        // start at the first entry
-        ret.append(Key.BEFORE);
-        ret.next(true);
 
         return ret;
     }
@@ -335,8 +332,8 @@ public class PersistitStore implements Store, Service {
                                                                        indexName.getTableName(),
                                                                        indexName.getName(),
                                                                        ex.getKey())
-                                        // and following this row is at one row of
-                                        // this index whose index-id is not 'dead'
+                                        // and following this row is at lest one row of
+                                        // this index whose index-id is valid
                                         && ignoreDeleted(ex, indexName, false));
             
                     
