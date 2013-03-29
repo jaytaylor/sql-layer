@@ -173,7 +173,7 @@ public class FullTextIndexInfo
             if (indexedRowType.userTable().isDescendantOf(colUserTable))
                 ancestors.add(schema.userTableRowType(colUserTable));
         }
-        
+
         if (hasDesc)
         {
             ret = API.branchLookup_Nested(group, 
@@ -183,13 +183,16 @@ public class FullTextIndexInfo
                                                ? API.InputPreservationOption.KEEP_INPUT
                                                : API.InputPreservationOption.DISCARD_INPUT,
                                            0);
-            
+            ancestors.remove(indexedRowType);
             if (!ancestors.isEmpty())
+            {
+                
                 ret = API.ancestorLookup_Default(ret,
-                                                  group,
-                                                  ret.rowType(), 
-                                                  ancestors, 
-                                                  API.InputPreservationOption.DISCARD_INPUT);
+                                                 group,
+                                                 indexedRowType, 
+                                                 ancestors, 
+                                                 API.InputPreservationOption.DISCARD_INPUT);
+            }
         }
         else
         {
