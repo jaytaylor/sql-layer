@@ -404,12 +404,15 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     protected void enablePopulateWorker()
     {
         populateDelayInterval = Long.parseLong(configService.getProperty(POPULATE_DELAY_INTERVAL));
+        populateTimer.schedule(populateWorker(), populateDelayInterval);
+        hasScheduled = true;
     }
     
     void disablePopulateWorker()
     {
         populateTimer.cancel();
         populateTimer.purge();
+        hasScheduled = false;
     }
     
     private TimerTask populateWorker()
@@ -427,7 +430,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             IndexName ret = new IndexName(new TableName(key.decodeString(),
                                                         key.decodeString()),
                                           key.decodeString());
-            ex.fetchAndRemove();
             return ret;
         }
         else

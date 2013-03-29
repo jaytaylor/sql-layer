@@ -168,9 +168,6 @@ public class PersistitStore implements Store, Service {
         ret.append(Key.BEFORE);
         ret.next(true);
 
-        // skipping over existing keys
-        while (ret.next(true))
-            ;
         return ret;
     }
 
