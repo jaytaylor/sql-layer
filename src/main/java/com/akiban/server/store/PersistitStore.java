@@ -159,13 +159,11 @@ public class PersistitStore implements Store, Service {
     }
 
      // --- for tracking changes 
-    private Exchange getChangeEntry(Session session) throws PersistitException
+    private Exchange getChangeExchange(Session session) throws PersistitException
     {   
-        Exchange ret = treeService.getExchange(session,
-                                               treeService.treeLink(MAINTENANCE_SCHEMA,
-                                                                    FULL_TEXT_TABLE));
-
-        return ret;
+        return treeService.getExchange(session,
+                                       treeService.treeLink(MAINTENANCE_SCHEMA,
+                                                            FULL_TEXT_TABLE));
     }
 
     private void addChange(Session session,
@@ -175,7 +173,7 @@ public class PersistitStore implements Store, Service {
                            Integer indexId,
                            Key rowHKey) throws PersistitException
     {
-        Exchange ex = getChangeEntry(session);
+        Exchange ex = getChangeExchange(session);
 
         // KEY: schema | table | indexName | indexId | unique_num 
         ex.clear().append(schema).append(table).append(index).append(indexId).append(uniqueChangeId.getAndIncrement());
@@ -187,6 +185,19 @@ public class PersistitStore implements Store, Service {
         ex.store();
     }
 
+    private void addChangeFor(UserTable tb, Session session, Key hKey) throws PersistitException
+    {
+        for (Index index : tb.getFullTextIndexes())
+        {
+            IndexName idxName = index.getIndexName();
+            addChange(session,
+                      idxName.getSchemaName(),
+                      idxName.getTableName(),
+                      idxName.getName(),
+                      index.getIndexId(),
+                      hKey);
+        }
+    }
     // --- for reporting changes
     /**
      * Collect all 'HKeyRow's from the list of key-value pairs that have
@@ -204,9 +215,7 @@ public class PersistitStore implements Store, Service {
      */
     public HKeyBytesStream getChangedRows(Session session) throws PersistitException
     {
-        Exchange ex = treeService.getExchange(session,
-                                              treeService.treeLink(MAINTENANCE_SCHEMA,
-                                                                   FULL_TEXT_TABLE));
+        Exchange ex = getChangeExchange(session);
 
         ex.append(Key.BEFORE);
         if (ex.next(true)) // if the tree is not empty
@@ -396,7 +405,7 @@ public class PersistitStore implements Store, Service {
 
                 do
                     ++size;
-                    //;// do nothing (skipping deleted 'index')
+                    // do nothing (skipping deleted 'index')
                 while ((hasMore = ex.next(true))
                                  && !(seeNewIndex = seeNewIndex(indexName.getSchemaName(),
                                                                 indexName.getTableName(),
@@ -417,7 +426,6 @@ public class PersistitStore implements Store, Service {
                     // (otherwise, meaning no more rows with good ids of this
                     //   index, return false)
                     return lookPastNewIndex ? nextIndex() : false;
-
                 }
                 else // ie., see new IndexId
                 {
@@ -783,6 +791,7 @@ public class PersistitStore implements Store, Service {
             }
 
             PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
+            addChangeFor(rowDef.userTable(), session, hEx.getKey());
             for (Index index : rowDef.getIndexes()) {
                 insertIntoIndex(session, index, rowData, hEx.getKey(), indexRow, deferIndexes);
             }
@@ -1001,10 +1010,6 @@ public class PersistitStore implements Store, Service {
     {
         RowDef rowDef = writeCheck(session, rowData, false);
         Exchange hEx = null;
-        
-         // for tracking changes
-        String schema = rowDef.getSchemaName(), table = rowDef.getTableName();
-        Key hKey;
 
         DELETE_ROW_TAP.in();
         try {
@@ -1013,7 +1018,6 @@ public class PersistitStore implements Store, Service {
             lockKeys(adapter(session), rowDef, rowData, hEx);
             constructHKey(session, hEx, rowDef, rowData, false);
             hEx.fetch();
-            hKey = hEx.getKey();
             //
             // Verify that the row exists
             //
@@ -1026,13 +1030,10 @@ public class PersistitStore implements Store, Service {
             rowDef.getTableStatus().rowDeleted();
 
             // Remove the indexes, including the PK index
+            addChangeFor(rowDef.userTable(), session, hEx.getKey());
             PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
             if(deleteIndexes) {
                 for (Index index : rowDef.getIndexes()) {
-                     if (index.getIndexType() == IndexType.FULL_TEXT)
-                        addChange(session, schema, table, index.getIndexName().getName(),
-                                           index.getIndexId(), hKey);
-
                     deleteIndex(session, index, rowData, hEx.getKey(), indexRow);
                 }
             }
@@ -1083,7 +1084,7 @@ public class PersistitStore implements Store, Service {
         Exchange hEx = null;
 
         // for tracking changes;
-        String schema = rowDef.getSchemaName(), table = rowDef.getTableName();
+        UserTable usrTable = rowDef.userTable(); // old
         Key hKey;
 
         UPDATE_ROW_TAP.in();
@@ -1099,7 +1100,10 @@ public class PersistitStore implements Store, Service {
             if (!hEx.getValue().isDefined()) {
                 throw new NoSuchRowException (hEx.getKey());
             }
-            hKey = hEx.getKey();
+
+            // record a change about the old row (ie., being deleted)
+            addChangeFor(rowDef.userTable(), session, hEx.getKey());
+            
             // Combine current version of row with the version coming in
             // on the update request.
             // This is done by taking only the values of columns listed
@@ -1119,14 +1123,12 @@ public class PersistitStore implements Store, Service {
                 packRowData(hEx, newRowDef, mergedRowData);
                 // Store the h-row
                 hEx.store();
-                // Update the indexes
+                // Update the indexes (new row)
+                addChangeFor(newRowDef.userTable(), session, hEx.getKey());
+                
                 PersistitIndexRowBuffer indexRowBuffer = new PersistitIndexRowBuffer(adapter);
                 Index[] indexes = (indexesToMaintain == null) ? rowDef.getIndexes() : indexesToMaintain;
                 for (Index index : indexes) {
-                     if (index.getIndexType() == IndexType.FULL_TEXT)
-                        addChange(session, schema, table, index.getIndexName().getName(),
-                                           index.getIndexId(), hKey);
-
                     if(indexesAsInsert) {
                         insertIntoIndex(session, index, mergedRowData, hEx.getKey(), indexRowBuffer, deferIndexes);
                     } else {

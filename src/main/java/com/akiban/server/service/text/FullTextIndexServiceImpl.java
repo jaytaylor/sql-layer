@@ -453,23 +453,23 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     {   
         Exchange ret = getPopulateExchange(session);
 
-        if (ret.next(true))
+        // see if the entry for this index already exists
+        // TODO: might not need to iterate....
+        //       maybe ex.append(schema).append(table).append(index).isValueDefined() would work???
+        while (ret.next(true))
         {
-            do
-            {
-                Key key = ret.getKey();
-                String keySchema = key.decodeString();
-                String keyTable = key.decodeString();
-                String keyIndex = key.decodeString();
+            Key key = ret.getKey();
+            String keySchema = key.decodeString();
+            String keyTable = key.decodeString();
+            String keyIndex = key.decodeString();
 
-                if (schema.equals(keySchema)
-                        && table.equals(keyTable)
-                        && index.equals(keyIndex))
-                    return null;
-                key = ret.getKey();
-            }
-            while (ret.next(true));
+            if (schema.equals(keySchema)
+                    && table.equals(keyTable)
+                    && index.equals(keyIndex))
+                return null;
+            key = ret.getKey();
         }
+
         return ret;
     }
 
