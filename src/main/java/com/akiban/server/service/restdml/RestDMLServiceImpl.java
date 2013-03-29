@@ -60,6 +60,7 @@ import com.akiban.ajdax.AjdaxWriter;
 import com.akiban.ajdax.JoinFields;
 import com.akiban.ajdax.JoinStrategy;
 import com.akiban.ajdax.actions.Action;
+import com.akiban.direct.Direct;
 import com.akiban.rest.RestFunctionInvoker;
 import com.akiban.rest.RestFunctionRegistrar;
 import com.akiban.server.Quote;
@@ -389,12 +390,17 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
     
     @Override
-    public void invokeRestEndpoint(final PrintWriter writer, final HttpServletRequest request, final String schema, final String method, final TableName procName,
+    public void invokeRestEndpoint(final PrintWriter writer, final HttpServletRequest request, final String method, final TableName procName,
             final String pathParams, final MultivaluedMap<String, String> queryParameters, final byte[] content, final RestFunctionInvoker endpointInvoker) throws Exception {
-        try (JDBCConnection conn = jdbcConnection(request, schema);
+        try (JDBCConnection conn = jdbcConnection(request, procName.getSchemaName());
                 Session session = sessionService.createSession();
-                CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
-            endpointInvoker.invokeRestFunction(writer, conn, method, procName, pathParams, queryParameters, content);
+                /*CloseableTransaction txn = transactionService.beginCloseableTransaction(session)*/) {
+            Direct.enter( procName.getSchemaName(), dxlService.ddlFunctions().getAIS(session));
+            try {
+                endpointInvoker.invokeRestFunction(writer, conn, method, procName, pathParams, queryParameters, content);
+            } finally {
+                Direct.leave();
+            }
         }
     }
 

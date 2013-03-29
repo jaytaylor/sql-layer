@@ -62,7 +62,7 @@ public interface RestDMLService {
     public void callRegistrationProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
             TableName procName, RestFunctionRegistrar registrar) throws SQLException;
     
-    public void invokeRestEndpoint(PrintWriter writer, HttpServletRequest request, String schema, String method, TableName procName,
+    public void invokeRestEndpoint(PrintWriter writer, HttpServletRequest request, String method, TableName procName,
             String pathParams, MultivaluedMap<String, String> queryParameters, byte[] content, RestFunctionInvoker registrar) throws Exception;
     
 }

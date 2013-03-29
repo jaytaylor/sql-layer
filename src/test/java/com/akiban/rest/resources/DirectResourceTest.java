@@ -29,14 +29,9 @@ public class DirectResourceTest {
     public void createEndpointMetadata() throws Exception {
 
         final DirectResource resource = new DirectResource(null);
-        EndpointMetadata md = resource.createEndpointMetadata(
-                "abc",
-                "/<ppa>/<ppb>",
-                "jpa,jpb",
-                "qp1,qp2",
-                null,
-                Arrays.asList(new String[] { "ppa int required", "ppb Date default '2013-01-02'", "jpb String required",
-                        "jpa int", "qp2 int default 42 ", "qp1 float" }), "String default 'foo'");
+        EndpointMetadata md = resource.createEndpointMetadata("abc", "/<ppa>/<ppb>", "jpa,jpb", "qp1,qp2", null,
+                "ppa int required, ppb Date default '2013-01-02', jpb String required, "
+                        + "jpa int,qp2 int default 42,qp1 float", "String default 'foo'");
         System.out.println(md);
     }
 

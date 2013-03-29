@@ -1,11 +1,16 @@
 function _register(registrar) {
+    java.lang.System.out.println("Executing the _register function");
+    var fun = {"method":"GET","name":"cnames","function":"customerNames","queryParams":"prefix","in":"prefix String required","out":"String"};
+    var s = JSON.stringify(fun);
+    java.lang.System.out.println(" json=" + s);
+    registrar.register(s);
 };
 
 function customerNames(s) {
     var result = s;
-    var extent = com.akiban.direct.Direct.context.extent;
+    var extent = Packages.com.akiban.direct.Direct.context.extent;
     for (customer in Iterator(extent.customers)) {
       result += "," + customer.name;
     }
-    result;
+    return result;
 }

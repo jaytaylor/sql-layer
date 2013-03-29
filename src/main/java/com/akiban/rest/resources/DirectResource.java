@@ -28,6 +28,7 @@ import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.sql.Date;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -373,15 +374,14 @@ public class DirectResource implements RestFunctionInvoker {
     @GET
     @Path("/call/{proc}{params:(/.*)?}")
     public Response callGet(@Context final HttpServletRequest request, @PathParam("proc") final String proc,
-            @PathParam("params") final String pathParams,
-            @QueryParam(SCHEMA_ARG_NAME) @DefaultValue("") final String schema, @Context final UriInfo uri) {
+            @PathParam("params") final String pathParams, @Context final UriInfo uri) {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
 
         return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
             @Override
             public void write(PrintWriter writer) throws Exception {
-                reqs.restDMLService.invokeRestEndpoint(writer, request, schema, "GET", procName, pathParams,
+                reqs.restDMLService.invokeRestEndpoint(writer, request, "GET", procName, pathParams,
                         uri.getQueryParameters(), null, DirectResource.this);
             }
         }).build();
@@ -390,16 +390,14 @@ public class DirectResource implements RestFunctionInvoker {
     @POST
     @Path("/call/{proc}{params:(/.*)?}")
     public Response callPost(@Context final HttpServletRequest request, @PathParam("proc") final String proc,
-            @PathParam("params") final String pathParams,
-            @QueryParam(SCHEMA_ARG_NAME) @DefaultValue("") final String schema, @Context final UriInfo uri,
-            final byte[] content) {
+            @PathParam("params") final String pathParams, @Context final UriInfo uri, final byte[] content) {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
 
         return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
             @Override
             public void write(PrintWriter writer) throws Exception {
-                reqs.restDMLService.invokeRestEndpoint(writer, request, schema, "POST", procName, pathParams,
+                reqs.restDMLService.invokeRestEndpoint(writer, request, "POST", procName, pathParams,
                         uri.getQueryParameters(), content, DirectResource.this);
             }
         }).build();
@@ -408,16 +406,14 @@ public class DirectResource implements RestFunctionInvoker {
     @PUT
     @Path("/call/{proc}{params:(/.*)?}")
     public Response callPut(@Context final HttpServletRequest request, @PathParam("proc") final String proc,
-            @PathParam("params") final String pathParams,
-            @QueryParam(SCHEMA_ARG_NAME) @DefaultValue("") final String schema, @Context final UriInfo uri,
-            final byte[] content) {
+            @PathParam("params") final String pathParams, @Context final UriInfo uri, final byte[] content) {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
 
         return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
             @Override
             public void write(PrintWriter writer) throws Exception {
-                reqs.restDMLService.invokeRestEndpoint(writer, request, schema, "PUT", procName, pathParams,
+                reqs.restDMLService.invokeRestEndpoint(writer, request, "PUT", procName, pathParams,
                         uri.getQueryParameters(), content, DirectResource.this);
             }
         }).build();
@@ -426,16 +422,14 @@ public class DirectResource implements RestFunctionInvoker {
     @DELETE
     @Path("/call/{proc}{params:(/.*)?}")
     public Response callDelete(@Context final HttpServletRequest request, @PathParam("proc") final String proc,
-            @PathParam("params") final String pathParams,
-            @QueryParam(SCHEMA_ARG_NAME) @DefaultValue("") final String schema, @Context final UriInfo uri,
-            final byte[] content) {
+            @PathParam("params") final String pathParams, @Context final UriInfo uri, final byte[] content) {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
 
         return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
             @Override
             public void write(PrintWriter writer) throws Exception {
-                reqs.restDMLService.invokeRestEndpoint(writer, request, schema, "DELETE", procName, pathParams,
+                reqs.restDMLService.invokeRestEndpoint(writer, request, "DELETE", procName, pathParams,
                         uri.getQueryParameters(), content, DirectResource.this);
             }
         }).build();
@@ -464,17 +458,19 @@ public class DirectResource implements RestFunctionInvoker {
         }
         EndpointMetadata md = null;
         ParamCache cache = new ParamCache();
-        for (final EndpointMetadata candidate : list) {
-            if (candidate.pattern != null) {
-                Matcher matcher = candidate.getParamPathMatcher(cache, pathParams);
-                if (matcher.matches()) {
-                    md = candidate;
-                    break;
-                }
-            } else {
-                if (pathParams == null || pathParams.isEmpty()) {
-                    md = candidate;
-                    break;
+        if (list != null) {
+            for (final EndpointMetadata candidate : list) {
+                if (candidate.pattern != null) {
+                    Matcher matcher = candidate.getParamPathMatcher(cache, pathParams);
+                    if (matcher.matches()) {
+                        md = candidate;
+                        break;
+                    }
+                } else {
+                    if (pathParams == null || pathParams.isEmpty()) {
+                        md = candidate;
+                        break;
+                    }
                 }
             }
         }
@@ -489,9 +485,15 @@ public class DirectResource implements RestFunctionInvoker {
         }
 
         final ScriptInvoker invoker = conn.getRoutineLoader()
-                .getScriptInvoker(conn.getSession(), new TableName(conn.getSchema(), md.routineName)).get();
-        invoker.invokeNamedFunction(md.function, args);
-
+                .getScriptInvoker(conn.getSession(), new TableName(procName.getSchemaName(), md.routineName)).get();
+        Object result = invoker.invokeNamedFunction(md.function, args);
+        if (result != null) {
+            if (EndpointMetadata.X_TYPE_JSON.equals(md.outParam.type)) {
+                createJsonGenerator(writer).writeObject(result);
+            } else {
+                writer.write(result.toString());
+            }
+        }
     }
 
     private Object convertType(ParamMetadata pm, Object v) throws Exception {
@@ -593,6 +595,7 @@ public class DirectResource implements RestFunctionInvoker {
 
     public void register(final String schema, final String routine, final String spec) throws Exception {
         JsonNode tree = readTree(spec);
+
         final String function = text(tree.get("function"), true);
         final String method = text(tree.get("method"), true);
         final String name = text(tree.get("name"), true);
@@ -600,15 +603,17 @@ public class DirectResource implements RestFunctionInvoker {
         final String jsonParams = text(tree.get("jsonParams"), false);
         final String queryParams = text(tree.get("queryParams"), false);
         final String contentParam = text(tree.get("contentParam"), false);
-        List<String> inParams = tree.findValuesAsText("in");
+        final String inParams = text(tree.get("in"), false);
         String outParam = text(tree.get("out"), false);
+
         register(schema, routine, function, method, name, pathParams, jsonParams, queryParams, contentParam, inParams,
                 outParam);
     }
-    
+
     public void unregister(final String schemaName, final String routineName) {
-        synchronized(endpointMap) {
-            for (Iterator<Map.Entry<EndpointAddress, List<EndpointMetadata>>> entryIter = endpointMap.entrySet().iterator(); entryIter.hasNext();) {
+        synchronized (endpointMap) {
+            for (Iterator<Map.Entry<EndpointAddress, List<EndpointMetadata>>> entryIter = endpointMap.entrySet()
+                    .iterator(); entryIter.hasNext();) {
                 final Map.Entry<EndpointAddress, List<EndpointMetadata>> entry = entryIter.next();
                 final EndpointAddress ea = entry.getKey();
                 final List<EndpointMetadata> list = entry.getValue();
@@ -627,7 +632,7 @@ public class DirectResource implements RestFunctionInvoker {
 
     void register(final String schema, final String routine, final String function, final String method,
             final String name, final String pathParams, final String jsonParams, final String queryParams,
-            final String contentParam, final List<String> inParams, final String outParam) throws Exception {
+            final String contentParam, final String inParams, final String outParam) throws Exception {
 
         EndpointMetadata md = createEndpointMetadata(function, pathParams, jsonParams, queryParams, contentParam,
                 inParams, outParam);
@@ -649,7 +654,7 @@ public class DirectResource implements RestFunctionInvoker {
     }
 
     EndpointMetadata createEndpointMetadata(final String function, final String pathParams, final String jsonParams,
-            final String queryParams, final String contentParam, final List<String> inParams, final String outParam)
+            final String queryParams, final String contentParam, final String inParams, final String outParam)
             throws Exception {
         Map<String, ParamSourceMetadata> paramMap = new HashMap<String, ParamSourceMetadata>();
         String pathParamsPattern = null;
@@ -672,34 +677,44 @@ public class DirectResource implements RestFunctionInvoker {
             md.pattern = Pattern.compile(pathParamsPattern);
         }
         md.function = function;
-        md.inParams = new ParamMetadata[inParams.size()];
-        for (int index = 0; index < md.inParams.length; index++) {
-            final ParamMetadata pm = new ParamMetadata();
-            final Tokenizer tokens = new Tokenizer(inParams.get(index), " ");
-            final String paramName = tokens.next(true);
 
-            final ParamSourceMetadata psm = paramMap.get(paramName);
-            if (psm == null) {
-                throw new IllegalArgumentException("In param does not specify source: " + inParams.get(index));
-            }
-            String type = tokens.next(true);
-            if (!EndpointMetadata.X_TYPES.contains(type)) {
-                throw new IllegalArgumentException("Unknown parameter type " + type);
-            }
-            pm.source = psm;
-            pm.name = paramName;
-            pm.type = type;
-            String qualifier;
-            while (!(qualifier = tokens.next(false)).isEmpty()) {
-                if ("required".equals(qualifier)) {
-                    pm.required = true;
-                } else if ("default".equals(qualifier)) {
-                    String v = tokens.next(true);
-                    pm.defaultValue = convertType(pm, v);
+        List<ParamMetadata> params = new ArrayList<ParamMetadata>();
+
+        if (inParams != null) {
+            Tokenizer tokens = new Tokenizer(inParams, ", ");
+            while (tokens.getLastDelimiter() != 0) {
+                ParamMetadata pm = new ParamMetadata();
+                final String paramName = tokens.next(true);
+                final ParamSourceMetadata psm = paramMap.get(paramName);
+                if (psm == null) {
+                    throw new IllegalArgumentException("IN parameter does not specify source: " + inParams);
                 }
+                if (tokens.getLastDelimiter() == ',') {
+                    throw new IllegalArgumentException("Missing type: " + inParams);
+                }
+                String type = tokens.next(true);
+                if (!EndpointMetadata.X_TYPES.contains(type)) {
+                    throw new IllegalArgumentException("Unknown parameter type " + type);
+                }
+                pm.source = psm;
+                pm.name = paramName;
+                pm.type = type;
+                String qualifier;
+                while (tokens.getLastDelimiter() == ' ' && !(qualifier = tokens.next(false)).isEmpty()) {
+                    if ("required".equals(qualifier)) {
+                        pm.required = true;
+                    } else if ("default".equals(qualifier)) {
+                        String v = tokens.next(true);
+                        pm.defaultValue = convertType(pm, v);
+                    } else {
+                        throw new IllegalArgumentException("Unknown qualifier '" + qualifier + "' in " + inParams);
+                    }
+                }
+                params.add(pm);
             }
-            md.inParams[index] = pm;
+            md.inParams = params.toArray(new ParamMetadata[params.size()]);
         }
+
         if (outParam != null) {
             final Tokenizer tokens = new Tokenizer(outParam, " ");
             final ParamMetadata pm = new ParamMetadata();
@@ -915,6 +930,7 @@ public class DirectResource implements RestFunctionInvoker {
         abstract static class ParamSourceMetadata {
             abstract Object value(final String pathParams, final MultivaluedMap<String, String> queryParams,
                     Object content, ParamCache cache);
+
         }
 
         /**
@@ -929,6 +945,7 @@ public class DirectResource implements RestFunctionInvoker {
                 this.paramName = paramName;
             }
 
+            @Override
             Object value(final String pathParams, final MultivaluedMap<String, String> queryParams, Object content,
                     ParamCache cache) {
                 List<String> values = queryParams.get(paramName);
@@ -1096,6 +1113,7 @@ public class DirectResource implements RestFunctionInvoker {
         final StringBuilder result = new StringBuilder();
         final String delimiters;
         int index = 0;
+        char delimiter = (char) -1;
 
         Tokenizer(String source, String delimiters) {
             this.source = source;
@@ -1107,6 +1125,7 @@ public class DirectResource implements RestFunctionInvoker {
             boolean quoted = false;
             boolean literal = false;
             boolean first = true;
+            delimiter = 0;
             for (; index < source.length(); index++) {
                 char c = source.charAt(index);
                 if (quoted) {
@@ -1114,17 +1133,16 @@ public class DirectResource implements RestFunctionInvoker {
                     result.append(c);
                 } else if (c == '\\') {
                     quoted = true;
+                } else if (!literal && delimiters.indexOf(c) >= 0) {
+                    delimiter = c;
+                    index++;
+                    break;
                 } else if (c == '\'') {
                     if (first) {
                         literal = true;
                     } else if (literal) {
                         literal = false;
-                        index++;
-                        break;
                     }
-                } else if (!literal && delimiters.indexOf(c) >= 0) {
-                    index++;
-                    break;
                 } else {
                     result.append(c);
                 }
@@ -1140,9 +1158,11 @@ public class DirectResource implements RestFunctionInvoker {
         String nextName(final boolean required) {
             result.setLength(0);
             boolean first = true;
+            delimiter = 0;
             for (; index < source.length(); index++) {
                 char c = source.charAt(index);
                 if (delimiters.indexOf(c) >= 0) {
+                    delimiter = c;
                     index++;
                     break;
                 }
@@ -1159,9 +1179,16 @@ public class DirectResource implements RestFunctionInvoker {
             return result.toString();
         }
 
+        char getLastDelimiter() {
+            return delimiter;
+        }
+
         private void eatExtraSpaces() {
             while (index < source.length() && source.charAt(index) == ' ') {
                 index++;
+            }
+            if (index == source.length()) {
+                delimiter = 0;
             }
         }
     }
