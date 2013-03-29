@@ -441,7 +441,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         Exchange ret = treeService.getExchange(session,
                                                treeService.treeLink(POPULATE_SCHEMA,
                                                                     FULL_TEXT_TABLE));
-        // start at the frist entry
+        // start at the first entry
         ret.append(Key.BEFORE);
         return ret;
     }
@@ -454,23 +454,11 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         Exchange ret = getPopulateExchange(session);
 
         // see if the entry for this index already exists
-        // TODO: might not need to iterate....
-        //       maybe ex.append(schema).append(table).append(index).isValueDefined() would work???
-        while (ret.next(true))
-        {
-            Key key = ret.getKey();
-            String keySchema = key.decodeString();
-            String keyTable = key.decodeString();
-            String keyIndex = key.decodeString();
-
-            if (schema.equals(keySchema)
-                    && table.equals(keyTable)
-                    && index.equals(keyIndex))
-                return null;
-            key = ret.getKey();
-        }
-
-        return ret;
+        ret.clear().append(schema).append(table).append(index);
+        if (ret.traverse(Key.Direction.EQ, true, 0))
+            return null;
+        else
+            return ret;
     }
 
     private volatile boolean hasScheduled = false;
