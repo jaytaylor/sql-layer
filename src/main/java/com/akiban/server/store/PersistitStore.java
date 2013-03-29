@@ -25,7 +25,9 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.*;
 import com.akiban.server.api.dml.ColumnSelector;
@@ -1024,13 +1026,15 @@ public class PersistitStore implements Store, Service {
             if (!hEx.getValue().isDefined()) {
                 throw new NoSuchRowException(hEx.getKey());
             }
+            // record the deletion of the old row
+            addChangeFor(rowDef.userTable(), session, hEx.getKey());
 
             // Remove the h-row
             hEx.remove();
             rowDef.getTableStatus().rowDeleted();
 
             // Remove the indexes, including the PK index
-            addChangeFor(rowDef.userTable(), session, hEx.getKey());
+
             PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(adapter(session));
             if(deleteIndexes) {
                 for (Index index : rowDef.getIndexes()) {
@@ -1082,10 +1086,6 @@ public class PersistitStore implements Store, Service {
         RowDef newRowDef = rowDefFromExplicitOrId(session, newRowData);
         PersistitAdapter adapter = adapter(session);
         Exchange hEx = null;
-
-        // for tracking changes;
-        UserTable usrTable = rowDef.userTable(); // old
-        Key hKey;
 
         UPDATE_ROW_TAP.in();
         try {

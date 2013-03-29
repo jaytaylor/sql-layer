@@ -20,6 +20,7 @@ package com.akiban.server.service.text;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.FullTextIndex;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.UserTable;
@@ -53,7 +54,8 @@ public class FullTextIndexInfo
     private Map<Column,IndexedField> fieldsByColumn;
     private Map<RowType,List<IndexedField>> fieldsByRowType;
     private String defaultFieldName;
-
+    private Operator plan;
+    
     public FullTextIndexInfo(FullTextIndexShared shared) {
         this.shared = shared;
     }
@@ -90,6 +92,8 @@ public class FullTextIndexInfo
             }
             fields.add(entry.getValue());
         }
+        
+        plan = computePlan();
     }
 
     public FullTextIndex getIndex() {
@@ -143,53 +147,70 @@ public class FullTextIndexInfo
         return plan;
     }
     
+    
+    
+    private Operator computePlan()
+    {
+        Operator ret = null;
+
+        Group group = indexedRowType.userTable().getGroup();
+        Set<UserTableRowType> ancestors = new HashSet<>();
+        boolean hasDesc = false;
+        
+        for (IndexColumn ic : index.getKeyColumns())
+        {
+            UserTable colUserTable = ic.getColumn().getUserTable();
+
+            if (!hasDesc)
+                // if any column in the index def belongs to a table
+                // that is a descendant of this indexed row's table
+                // (meaning this indexed row has descendant(s))
+                hasDesc = colUserTable.isDescendantOf(indexedRowType.userTable());
+            
+            // if the indexed table is a child of this column's table
+            // (meaning this indexed row has parent(s))
+            // collect all ancestor's rowtype
+            if (indexedRowType.userTable().isDescendantOf(colUserTable))
+                ancestors.add(schema.userTableRowType(colUserTable));
+        }
+        
+        if (hasDesc)
+        {
+            ret = API.branchLookup_Nested(group, 
+                                           indexedRowType, // input
+                                           indexedRowType, // output  (two are the same?)
+                                           ancestors.isEmpty()
+                                               ? API.InputPreservationOption.KEEP_INPUT
+                                               : API.InputPreservationOption.DISCARD_INPUT,
+                                           0);
+            
+            if (!ancestors.isEmpty())
+                ret = API.ancestorLookup_Default(ret,
+                                                  group,
+                                                  ret.rowType(), 
+                                                  ancestors, 
+                                                  API.InputPreservationOption.DISCARD_INPUT);
+        }
+        else
+        {
+            // has at least one ancestor (which is itself)
+            ancestors.add(indexedRowType);
+            ret = API.ancestorLookup_Nested(group,
+                                            indexedRowType,
+                                            ancestors,
+                                            0);
+        }
+          
+        return ret;
+    }
     /**
      * 
      * @param row
      * @return the operator plan to get to every row related to this index row
      */
-    public Operator getOperator(HKeyRow row)
+    public Operator getOperator()
     {
-        Operator plan = null;
-
-        RowType rowType = row.rowType();
-        for (IndexColumn ic : index.getAllColumns())
-        {
-            // if any column in the index def belongs to a table
-            // that is a descendant of this row's table
-            // (meaning this indexed row has descendants)
-            // then do branchlookup_nested 
-            if (ic.getColumn().getUserTable().isDescendantOf(rowType.userTable()))
-            {
-                // get everything *from* this row and *beneath*
-                // output ==> (this_row, desc_rows)
-                plan = API.branchLookup_Nested(rowType.userTable().getGroup(), 
-                                               rowType,
-                                               indexedRowType,
-                                               API.InputPreservationOption.DISCARD_INPUT,
-                                               0);
-                
-                // get everything *above* this row 
-                //    ,actually including its input (which is (this_row, desc_rows))
-                //     because x is-an ancestor of x
-                // output ==> (ances_rows, (this_row, desc_rows))
-                plan = API.ancestorLookup_Default(plan, 
-                                                  rowType.userTable().getGroup(), 
-                                                  plan.rowType(),
-                                                  Arrays.asList(indexedRowType),
-                                                  API.InputPreservationOption.DISCARD_INPUT);
-                
-                return plan;
-            }
-            
-        }
-        
-        // no descendants, 
-        // do lookup_nested to get *this* and anything above it
-        return API.ancestorLookup_Nested(rowType.userTable().getGroup(),
-                                         rowType,
-                                         Arrays.asList(indexedRowType),
-                                         0);
+        return plan;
     }
 
     public Analyzer getAnalyzer() {

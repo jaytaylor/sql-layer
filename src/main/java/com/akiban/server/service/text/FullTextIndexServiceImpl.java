@@ -61,7 +61,7 @@ import java.util.TimerTask;
 
 public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements FullTextIndexService, Service {
     public static final String INDEX_PATH_PROPERTY = "akserver.text.indexpath";
-    public static final String UPDATE_INTERVAL = "akserver.text.maintenanceInteval";
+    public static final String UPDATE_INTERVAL = "akserver.text.maintenanceInterval";
     public static final String POPULATE_DELAY_INTERVAL = "akserver.text.populateDelayInterval";
 
     private static final String POPULATE_SCHEMA = "populate";
@@ -251,12 +251,13 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             {
                 transactionService.beginTransaction(session);
                 transaction = true;
+                Operator operator = indexInfo.getOperator();
                 for (byte row[] : rows)
                 {
                     HKeyRow hkeyRow = toHKeyRow(row, indexInfo.getHKeyRowType(),
                                                 adapter, cache);
                     queryContext.setRow(0, hkeyRow);
-                    cursor = API.cursor(indexInfo.getOperator(hkeyRow), queryContext);
+                    cursor = API.cursor(operator, queryContext);
                     rowIndexer.updateDocument(cursor, row);
                 }
                 transaction = false;
@@ -486,8 +487,12 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         return true;
     }
     
+//    private Row constructRow(byte hkeyBytes[], Group group, Session session)
+//    {
+//        
+//    }
     private HKeyRow toHKeyRow(byte rowBytes[], HKeyRowType hKeyRowType,
-                              StoreAdapter store, HKeyCache<com.akiban.qp.row.HKey> cache )
+                              StoreAdapter store, HKeyCache<com.akiban.qp.row.HKey> cache)
     {
         PersistitHKey hkey = (PersistitHKey)store.newHKey(hKeyRowType.hKey());
         Key key = hkey.key();
