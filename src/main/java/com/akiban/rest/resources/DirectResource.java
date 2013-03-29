@@ -48,6 +48,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -76,6 +77,9 @@ import com.akiban.rest.RestResponseBuilder.BodyGenerator;
 import com.akiban.rest.resources.DirectResource.EndpointMetadata.ParamCache;
 import com.akiban.rest.resources.DirectResource.EndpointMetadata.ParamMetadata;
 import com.akiban.rest.resources.DirectResource.EndpointMetadata.ParamSourceMetadata;
+import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.MalformedRequestException;
 import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchSchemaException;
 import com.akiban.server.service.routines.ScriptInvoker;
@@ -116,11 +120,10 @@ public class DirectResource implements RestFunctionInvoker {
     private final static String DROP_PROCEDURE_FORMAT = "DROP PROCEDURE %s";
 
     private final static Charset UTF8 = Charset.forName("UTF8");
-    
+
     private final static Object ENDPOINT_MAP_CACHE_KEY = new Object();
 
     private final ResourceRequirements reqs;
-
 
     public DirectResource(ResourceRequirements reqs) {
         this.reqs = reqs;
@@ -448,6 +451,7 @@ public class DirectResource implements RestFunctionInvoker {
             final TableName procName, final String pathParams, final MultivaluedMap<String, String> queryParameters,
             final byte[] content) throws Exception {
         final List<EndpointMetadata> list;
+        
         final EndpointMap endpointMap = getEndpointMap(conn.getSession());
         synchronized (endpointMap) {
             list = endpointMap.getMap().get(new EndpointAddress(method, procName));
@@ -471,7 +475,8 @@ public class DirectResource implements RestFunctionInvoker {
             }
         }
         if (md == null) {
-            throw new Exception("no endpoint"); // TODO
+            // TODO - Is this the correct Exception?  Is there a way to convey this without logged stack trace?
+            throw new MalformedRequestException ("No matching endpoint");
         }
         final Object[] args = new Object[md.inParams.length];
         for (int index = 0; index < md.inParams.length; index++) {
@@ -492,6 +497,7 @@ public class DirectResource implements RestFunctionInvoker {
         }
     }
 
+    
     private static Object convertType(ParamMetadata pm, Object v) throws Exception {
 
         if (v == null) {
@@ -571,16 +577,16 @@ public class DirectResource implements RestFunctionInvoker {
             } else {
                 throw new IllegalArgumentException("JsonNode " + v + " is not textual");
             }
-        } else if (v instanceof String ){
+        } else if (v instanceof String) {
             return (String) v;
         } else if (v instanceof byte[]) {
-            return new String((byte[])v, UTF8);
+            return new String((byte[]) v, UTF8);
         } else if (v != null) {
             return v.toString();
         } else {
             return null;
         }
-        
+
     }
 
     private static Date asDate(ParamMetadata pm, Object v) throws ParseException {
@@ -595,10 +601,9 @@ public class DirectResource implements RestFunctionInvoker {
      * ---------------------------------------------------------------------
      */
 
-
-    static EndpointMetadata createEndpointMetadata(final String function, final String pathParams, final String jsonParams,
-            final String queryParams, final String contentParam, final String inParams, final String outParam)
-            throws Exception {
+    static EndpointMetadata createEndpointMetadata(final String function, final String pathParams,
+            final String jsonParams, final String queryParams, final String contentParam, final String inParams,
+            final String outParam) throws Exception {
         Map<String, ParamSourceMetadata> paramMap = new HashMap<String, ParamSourceMetadata>();
         String pathParamsPattern = null;
 
@@ -777,7 +782,6 @@ public class DirectResource implements RestFunctionInvoker {
      * 
      */
     static class EndpointMetadata {
-
         private final static String X_TYPE_INT = "int";
         private final static String X_TYPE_LONG = "long";
         private final static String X_TYPE_FLOAT = "float";
@@ -987,7 +991,7 @@ public class DirectResource implements RestFunctionInvoker {
                 if (cache.tree == null) {
                     String s;
                     if (content instanceof byte[]) {
-                        s = new String((byte[])content, UTF8);
+                        s = new String((byte[]) content, UTF8);
                     } else {
                         s = (String) content;
                     }
@@ -1140,36 +1144,39 @@ public class DirectResource implements RestFunctionInvoker {
             }
         }
     }
-    
-    private  class EndpointMap  {
+
+    private class EndpointMap {
         final Map<EndpointAddress, List<EndpointMetadata>> map = new HashMap<EndpointAddress, List<EndpointMetadata>>();
-        
+
         public Map<EndpointAddress, List<EndpointMetadata>> getMap() {
             return map;
         }
-        
+
         void populate(final AkibanInformationSchema ais, final Session session) {
             for (final Routine routine : ais.getRoutines().values()) {
-                if (routine.getCallingConvention().equals(CallingConvention.SCRIPT_BINDINGS_JSON) && routine.getDynamicResultSets() == 0) {
-                    final ScriptInvoker invoker = reqs.routineLoader
-                            .getScriptInvoker(session, new TableName(routine.getName().getSchemaName(), routine.getName().getTableName())).get();
+                if (routine.getCallingConvention().equals(CallingConvention.SCRIPT_BINDINGS_JSON)
+                        && routine.getDynamicResultSets() == 0 && routine.getParameters().isEmpty()) {
                     try {
-                    invoker.invokeNamedFunction("_register", new Object[]{new RestFunctionRegistrar() {
-                        @Override
-                        public void register(String jsonSpec) throws Exception {
-                            EndpointMap.this.register(routine.getName().getSchemaName(), routine.getName().getTableName(),
-                                    jsonSpec);
-                        }
-                    }});
+                        final ScriptInvoker invoker = reqs.routineLoader.getScriptInvoker(session,
+                                new TableName(routine.getName().getSchemaName(), routine.getName().getTableName()))
+                                .get();
+                        invoker.invokeNamedFunction("_register", new Object[] { new RestFunctionRegistrar() {
+                            @Override
+                            public void register(String jsonSpec) throws Exception {
+                                EndpointMap.this.register(routine.getName().getSchemaName(), routine.getName()
+                                        .getTableName(), jsonSpec);
+                            }
+                        } });
                     } catch (Exception e) {
-                        // Failed because there is no _register function, or some other exception
-                        // TODO
+                        // Failed because there is no _register function, or
+                        // some other exception
+                        // TODO - log and report this somehow
                         e.printStackTrace();
                     }
                 }
             }
         }
-        
+
         public void register(final String schema, final String routine, final String spec) throws Exception {
             JsonNode tree = readTree(spec);
 
@@ -1183,10 +1190,10 @@ public class DirectResource implements RestFunctionInvoker {
             final String inParams = text(tree.get("in"), false);
             String outParam = text(tree.get("out"), false);
 
-            register(schema, routine, function, method, name, pathParams, jsonParams, queryParams, contentParam, inParams,
-                    outParam);
+            register(schema, routine, function, method, name, pathParams, jsonParams, queryParams, contentParam,
+                    inParams, outParam);
         }
-        
+
         void register(final String schema, final String routine, final String function, final String method,
                 final String name, final String pathParams, final String jsonParams, final String queryParams,
                 final String contentParam, final String inParams, final String outParam) throws Exception {
@@ -1221,7 +1228,7 @@ public class DirectResource implements RestFunctionInvoker {
                 em.populate(ais, session);
                 return em;
             }
-            
+
         });
     }
 }
