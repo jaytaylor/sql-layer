@@ -127,6 +127,7 @@ public class FullTextIndexServiceIT extends ITBase
         FullTextIndex index = createFullTextIndex(serviceManager(),
                                                   SCHEMA, "c", "idx_c", 
                                                   "name", "i.sku", "a.state");
+        Thread.sleep(populateDelayInterval * 2);
         fullText.createIndex(session(), index.getIndexName());
         Thread.sleep(populateDelayInterval * 2);
         RowType rowType = rowType("c");
@@ -136,10 +137,10 @@ public class FullTextIndexServiceIT extends ITBase
             row(rowType, 3L)
         };
         FullTextQueryBuilder builder = new FullTextQueryBuilder(index, ais(), queryContext);
-        Operator plan = builder.scanOperator("flintstone", 10);
+        Operator plan = builder.scanOperator("flintstone", 15);
         compareRows(expected1, cursor(plan, queryContext));
 
-        plan = builder.scanOperator("state:MA", 10);
+        plan = builder.scanOperator("state:MA", 15);
         compareRows(expected1, cursor(plan, queryContext));
         
         
@@ -153,7 +154,6 @@ public class FullTextIndexServiceIT extends ITBase
         // sleep a bit (wait for the worker to do the update)
         Thread.sleep(updateInterval * 2);
 
-        // confirm new changes
         RowBase expected2[] = new RowBase[]
         {
             row(rowType, 1L),
@@ -161,7 +161,9 @@ public class FullTextIndexServiceIT extends ITBase
             row(rowType, 5L),
             row(rowType, 7L)
         };
-        
+
+        // confirm new changes
+        plan = builder.scanOperator("flintstone", 15);
         compareRows(expected2, cursor(plan, queryContext));
         
         // part 3
@@ -173,6 +175,7 @@ public class FullTextIndexServiceIT extends ITBase
         Thread.sleep(updateInterval * 2);
         
         // confirm that new rows are not found (ie., expected2 still works)
+        plan = builder.scanOperator("flintstone", 15);
         compareRows(expected2, cursor(plan, queryContext));
     }
 
