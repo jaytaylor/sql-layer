@@ -1,0 +1,688 @@
+/**
+ * Copyright (C) 2009-2013 Akiban Technologies, Inc.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package com.akiban.rest.resources;
+
+import static com.akiban.util.JsonUtils.readTree;
+
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.sql.Date;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.ws.rs.core.MultivaluedMap;
+
+import org.codehaus.jackson.JsonNode;
+
+import com.akiban.ais.model.TableName;
+
+/**
+ * Easy access to the server version
+ */
+public class EndpointMetadata {
+
+
+    private final static String METHOD = "method";
+    private final static String PATH = "path";
+    private final static String IN = "in";
+    private final static String OUT = "out";
+    private final static String FUNCTION = "function";
+
+    private final static String PP = "pp:";
+    private final static String QP = "qp:";
+    private final static String JP = "json:";
+    private final static String CONTENT = "content:";
+
+    final static String X_TYPE_INT = "int";
+    final static String X_TYPE_LONG = "long";
+    final static String X_TYPE_FLOAT = "float";
+    final static String X_TYPE_DOUBLE = "double";
+    final static String X_TYPE_STRING = "string";
+    final static String X_TYPE_DATE = "date";
+    final static String X_TYPE_BYTEARRAY = "bytearray";
+    final static String X_TYPE_JSON = "json";
+
+    final static List<String> X_TYPES = Arrays.asList(new String[] { X_TYPE_INT, X_TYPE_LONG, X_TYPE_FLOAT,
+            X_TYPE_DOUBLE, X_TYPE_STRING, X_TYPE_DATE, X_TYPE_BYTEARRAY, X_TYPE_JSON });
+
+    private final static Charset UTF8 = Charset.forName("UTF8");
+
+    static Object convertType(ParamMetadata pm, Object v) throws Exception {
+
+        if (v == null) {
+            if (pm.defaultValue != null) {
+                return pm.defaultValue;
+            } else if (pm.required) {
+                throw new IllegalArgumentException("Argument for " + pm + " may not be null");
+            } else {
+                return null;
+            }
+        }
+
+        switch (pm.type) {
+        case EndpointMetadata.X_TYPE_INT:
+            if (v instanceof JsonNode) {
+                if (((JsonNode) v).isInt()) {
+                    return ((JsonNode) v).getIntValue();
+                } else {
+                    break;
+                }
+            } else {
+                assert v instanceof String;
+                return Integer.parseInt((String) v);
+            }
+        case EndpointMetadata.X_TYPE_LONG:
+            if (v instanceof JsonNode) {
+                if (((JsonNode) v).isLong()) {
+                    return ((JsonNode) v).getLongValue();
+                } else {
+                    break;
+                }
+            } else {
+                assert v instanceof String;
+                return Long.parseLong((String) v);
+            }
+        case EndpointMetadata.X_TYPE_FLOAT:
+            if (v instanceof JsonNode) {
+                if (((JsonNode) v).isFloatingPointNumber()) {
+                    return ((JsonNode) v).getNumberValue().floatValue();
+                } else {
+                    break;
+                }
+            } else {
+                assert v instanceof String;
+                return Float.parseFloat((String) v);
+            }
+        case EndpointMetadata.X_TYPE_DOUBLE:
+            if (v instanceof JsonNode) {
+                if (((JsonNode) v).isNumber()) {
+                    return ((JsonNode) v).getNumberValue().doubleValue();
+                } else {
+                    break;
+                }
+            } else {
+                assert v instanceof String;
+                return Double.parseDouble((String) v);
+            }
+        case EndpointMetadata.X_TYPE_STRING:
+            return asString(pm, v);
+        case EndpointMetadata.X_TYPE_DATE:
+            return asDate(pm, v);
+        case EndpointMetadata.X_TYPE_BYTEARRAY:
+            assert v instanceof byte[];
+            return v;
+        case EndpointMetadata.X_TYPE_JSON:
+            String json = asString(pm, v);
+            return readTree(json);
+        default:
+        }
+        throw new IllegalArgumentException("Type specified by " + pm + " is not supported");
+    }
+
+    private static String asString(ParamMetadata pm, Object v) {
+        if (v instanceof JsonNode) {
+            if (((JsonNode) v).isTextual()) {
+                return ((JsonNode) v).getTextValue();
+            } else {
+                throw new IllegalArgumentException("JsonNode " + v + " is not textual");
+            }
+        } else if (v instanceof String) {
+            return (String) v;
+        } else if (v instanceof byte[]) {
+            return new String((byte[]) v, UTF8);
+        } else if (v != null) {
+            return v.toString();
+        } else {
+            return null;
+        }
+    }
+
+    private static Date asDate(ParamMetadata pm, Object v) throws ParseException {
+        String s = asString(pm, v);
+        if ("today".equalsIgnoreCase(s)) {
+            return new Date(System.currentTimeMillis());
+        }
+        return Date.valueOf(s);
+    }
+
+    static EndpointMetadata createEndpointMetadata(final String schema, final String routineName,
+            final String specification) throws Exception {
+        EndpointMetadata em = new EndpointMetadata();
+        em.schemaName = schema;
+        em.routineName = routineName;
+
+        Tokenizer tokens = new Tokenizer(specification, ",= ");
+
+        while (tokens.hasMore()) {
+            String name = tokens.nextName(true);
+            if (!tokens.delimiterIn("=") || !tokens.hasMore()) {
+                throw new IllegalArgumentException("Element " + name + " has no associated value: " + specification);
+            }
+
+            switch (name) {
+
+            case METHOD: {
+                String v = tokens.nextName(true);
+                if (!("GET".equalsIgnoreCase(v)) && !("POST".equalsIgnoreCase(v)) && !("PUT".equalsIgnoreCase(v))
+                        && !("DELETE".equalsIgnoreCase(v))) {
+                    throw new IllegalArgumentException("Method must be GET, POST, PUT or DELETE");
+                }
+                em.method = v.toUpperCase();
+                break;
+            }
+            case PATH: {
+                String v = tokens.next(true);
+                int p = v.indexOf('/');
+                if (p == -1) {
+                    em.name = v;
+                } else {
+                    em.name = v.substring(0, p);
+                    em.pattern = Pattern.compile(v);
+                }
+                break;
+            }
+            case FUNCTION: {
+                em.function = tokens.nextName(true);
+                break;
+            }
+            case OUT: {
+                tokens.grouped = true;
+                String v = tokens.next(true);
+                tokens.grouped = false;
+                em.outParam = createOutParameter(new Tokenizer(v, ", "));
+                break;
+            }
+
+            case IN: {
+                tokens.grouped = true;
+                String v = tokens.next(true);
+                tokens.grouped = false;
+                List<ParamMetadata> list = new ArrayList<>();
+                Tokenizer inTokens = new Tokenizer(v, ", ");
+                while (inTokens.hasMore()) {
+                    list.add(createInParameter(inTokens));
+                    if (inTokens.hasMore() && !inTokens.delimiterIn(",")) {
+                        throw new IllegalArgumentException("Ambiguous input parameter specification: " + v);
+                    }
+                }
+                em.inParams = list.toArray(new ParamMetadata[list.size()]);
+                break;
+            }
+            default:
+                throw new IllegalArgumentException("Invalid parameter specification element " + name + ": " + specification);
+            }
+        }
+        return em;
+    }
+
+    static ParamMetadata createInParameter(final Tokenizer tokens) throws Exception {
+        String v = tokens.next(true);
+        ParamMetadata pm = createOutParameter(tokens);
+
+        ParamSourceMetadata psm = null;
+        if (v.regionMatches(true, 0, PP, 0, PP.length())) {
+            psm = new ParamSourcePath(Integer.parseInt(v.substring(PP.length())));
+        } else if (v.regionMatches(true, 0, QP, 0, QP.length())) {
+            psm = new ParamSourceQueryParam(v.substring(QP.length()));
+        } else if (v.regionMatches(true, 0, JP, 0, JP.length())) {
+            psm = new ParamSourceJson(v.substring(QP.length()));
+        } else if (v.regionMatches(true, 0, CONTENT, 0, CONTENT.length())) {
+            String type = v.substring(CONTENT.length());
+            if (X_TYPE_BYTEARRAY.equalsIgnoreCase(type)) {
+                psm = new ParamSourceContentBytes();
+            } else if (X_TYPE_JSON.equalsIgnoreCase(type)) {
+                psm = new ParamSourceContentString(true);
+            } else if (X_TYPE_STRING.equalsIgnoreCase(type)) {
+                psm = new ParamSourceContentString(false);
+            }
+        }
+        if (psm == null) {
+            throw new IllegalArgumentException("Invalid parameter source for " + pm.name + ": " + tokens.source);
+        }
+        pm.source = psm;
+        return pm;
+    }
+
+    static ParamMetadata createOutParameter(final Tokenizer tokens) throws Exception {
+        ParamMetadata pm = new ParamMetadata();
+        String v = tokens.nextName(true);
+        String type = v.toLowerCase();
+        if (!EndpointMetadata.X_TYPES.contains(type)) {
+            throw new IllegalArgumentException("Unknown parameter type " + v);
+        }
+        pm.type = type;
+
+        String qualifier;
+        while (tokens.getLastDelimiter() == ' ' && !(qualifier = tokens.next(false)).isEmpty()) {
+            if ("required".equals(qualifier)) {
+                pm.required = true;
+            } else if ("default".equals(qualifier)) {
+                v = tokens.next(true);
+                pm.defaultValue = convertType(pm, v);
+            } else {
+                throw new IllegalArgumentException("Unknown qualifier '" + qualifier + "' in " + tokens.source);
+            }
+        }
+        return pm;
+
+    }
+
+    /**
+     * Meta-data for one REST call parameter.
+     */
+    static class ParamMetadata {
+        String name;
+        String type;
+        boolean required;
+        Object defaultValue;
+        ParamSourceMetadata source;
+
+        @Override
+        public String toString() {
+            String s = "(" + name + " " + type;
+            if (required) {
+                s += " required";
+            }
+            if (defaultValue != null) {
+                s += " default=\'" + defaultValue + "\'";
+            }
+            s += " " + source + ")";
+            return s;
+        }
+    }
+
+    /**
+     * Cache to hold partial result, e.b. the JsonNode of the root of a tree
+     * created by parsing the request body as JSON.
+     */
+    static class ParamCache {
+        Matcher matcher;
+        JsonNode tree;
+    }
+
+    abstract static class ParamSourceMetadata {
+        abstract Object value(final String pathParams, final MultivaluedMap<String, String> queryParams,
+                Object content, ParamCache cache);
+
+    }
+
+    /**
+     * Meta-data for a parameter intended to be filled from the query parameters
+     * of the REST call.
+     */
+    static class ParamSourceQueryParam extends ParamSourceMetadata {
+
+        final String paramName;
+
+        ParamSourceQueryParam(final String paramName) {
+            this.paramName = paramName;
+        }
+
+        @Override
+        Object value(final String pathParams, final MultivaluedMap<String, String> queryParams, Object content,
+                ParamCache cache) {
+            List<String> values = queryParams.get(paramName);
+            if (values != null) {
+                if (values.size() == 1) {
+                    return values.get(0);
+                } else {
+                    return values;
+                }
+            } else {
+                return null;
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "(QueryParam:" + paramName + ")";
+        }
+    }
+
+    /**
+     * Meta-data for a parameter intended to be filled from the URI of the REST
+     * call. The procedure call end-point aggregates all text of the URI
+     * following procedure name into a string; this class defines a Pattern for
+     * parsing out an field from that text using a supplied RegEx pattern. The
+     * pattern is case-insensitive.
+     */
+    static class ParamSourcePath extends ParamSourceMetadata {
+        final int matchingGroup;
+
+        ParamSourcePath(final int matchingGroup) {
+            this.matchingGroup = matchingGroup;
+        }
+
+        Object value(final String pathParams, final MultivaluedMap<String, String> queryParams, Object content,
+                ParamCache cache) {
+            if (cache.matcher.matches()) {
+                return cache.matcher.group(matchingGroup);
+            } else {
+                return null;
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "(PathParam:" + matchingGroup + ")";
+        }
+    }
+
+    /**
+     * Meta-data for a parameter that conveys the byte array supplied in the
+     * request body of the REST call. This is intended to support a rest call
+     * that receives a binary payload.
+     */
+    static class ParamSourceContentBytes extends ParamSourceMetadata {
+        Object value(final String pathParams, final MultivaluedMap<String, String> queryParams, Object content,
+                ParamCache cache) {
+            assert content instanceof byte[];
+            return content;
+        }
+
+        @Override
+        public String toString() {
+            return "(ContentBytes)";
+        }
+    }
+
+    /**
+     * Meta-data for a parameter that conveys the byte array supplied in the
+     * request body of the REST call. This is intended to support a rest call
+     * that receives a text-valued payload.
+     */
+    static class ParamSourceContentString extends ParamSourceMetadata {
+        final boolean asJson;
+
+        ParamSourceContentString(final boolean asJason) {
+            this.asJson = asJason;
+        }
+
+        Object value(final String pathParams, final MultivaluedMap<String, String> queryParams, Object content,
+                ParamCache cache) {
+            assert content instanceof String;
+            return new String((byte[]) content, UTF8);
+        }
+
+        @Override
+        public String toString() {
+            return "(ContentString)";
+        }
+    }
+
+    static class ParamSourceJson extends ParamSourceMetadata {
+
+        final String paramName;
+
+        ParamSourceJson(final String paramName) {
+            this.paramName = paramName;
+        }
+
+        Object value(final String pathParams, final MultivaluedMap<String, String> queryParams, Object content,
+                ParamCache cache) {
+            if (cache.tree == null) {
+                String s;
+                if (content instanceof byte[]) {
+                    s = new String((byte[]) content, UTF8);
+                } else {
+                    s = (String) content;
+                }
+                try {
+                    cache.tree = readTree(s);
+                } catch (IOException e) {
+                    return null;
+                }
+            }
+            return cache.tree.get(paramName);
+        }
+
+        @Override
+        public String toString() {
+            return "(JsonParam:" + paramName + ")";
+        }
+    }
+
+    static class EndpointAddress implements Comparable<EndpointAddress> {
+        /**
+         * One of GET, POST, PUT or DELETE
+         */
+        private final String method;
+
+        /**
+         * Schema name
+         */
+        private final String schema;
+        /**
+         * Name of the end-point
+         */
+        private final String name;
+
+        EndpointAddress(final String method, TableName procName) {
+            this.method = method;
+            this.schema = procName.getSchemaName();
+            this.name = procName.getTableName();
+        }
+
+        /**
+         * Sorts by schema, method, procedure name.
+         */
+        public int compareTo(EndpointAddress other) {
+            int c = schema.compareTo(other.schema);
+            if (c == 0) {
+                c = method.compareTo(other.method);
+            }
+            if (c == 0) {
+                c = name.compareTo(other.name);
+            }
+            return c;
+        }
+
+        @Override
+        public int hashCode() {
+            return name.hashCode() ^ schema.hashCode() ^ method.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            EndpointAddress ea = (EndpointAddress) other;
+            return name.equals(ea.name) && method.equals(ea.method);
+        }
+
+    }
+
+    static class Tokenizer {
+        final String source;
+        final StringBuilder result = new StringBuilder();
+        final String delimiters;
+        int index = 0;
+        boolean grouped = false;
+        int depth = 0;
+        char delimiter = (char) -1;
+
+        Tokenizer(String source, String delimiters) {
+            this.source = source;
+            this.delimiters = delimiters;
+        }
+
+        boolean hasMore() {
+            eatSpaces();
+            return index < source.length();
+        }
+
+        boolean delimiterIn(final String match) {
+            return match.indexOf(delimiter) >= 0;
+        }
+
+        String next(boolean required) {
+            result.setLength(0);
+            boolean quoted = false;
+            boolean literal = false;
+            boolean first = true;
+            delimiter = 0;
+            for (; index < source.length(); index++) {
+                char c = source.charAt(index);
+                if (quoted) {
+                    quoted = false;
+                    result.append(c);
+                } else if (c == '\\') {
+                    quoted = true;
+                } else if (grouped && c == '(') {
+                    if (depth > 0) {
+                        result.append(c);
+                    }
+                    depth++;
+                } else if (grouped && c == ')') {
+                    if (depth > 0) {
+                        depth--;
+                        if (depth > 0) {
+                            result.append(c);
+                        }
+                    }
+                } else if (!literal && depth == 0 && delimiters.indexOf(c) >= 0) {
+                    delimiter = c;
+                    index++;
+                    break;
+                } else if (c == '\'') {
+                    if (first) {
+                        literal = true;
+                    } else if (literal) {
+                        literal = false;
+                    }
+                } else {
+                    result.append(c);
+                }
+                first = false;
+            }
+            eatSpaces();
+            if (required && result.length() == 0) {
+                throw new IllegalArgumentException("Token missing: " + source);
+            }
+            return result.toString();
+        }
+
+        String nextName(final boolean required) {
+            result.setLength(0);
+            boolean first = true;
+            delimiter = 0;
+            for (; index < source.length(); index++) {
+                char c = source.charAt(index);
+                if (delimiters.indexOf(c) >= 0) {
+                    delimiter = c;
+                    index++;
+                    break;
+                }
+                if (!Character.isLetterOrDigit(c) || (first && !Character.isLetter(c))) {
+                    throw new IllegalArgumentException("Invalid character in name: " + source);
+                }
+                result.append(c);
+                first = false;
+            }
+            eatSpaces();
+            if (required && result.length() == 0) {
+                throw new IllegalArgumentException("Token missing: " + source);
+            }
+            return result.toString();
+        }
+        
+        char getLastDelimiter() {
+            return delimiter;
+        }
+
+        private void eatSpaces() {
+            while (index < source.length() && source.charAt(index) == ' ') {
+                index++;
+            }
+            if (index == source.length()) {
+                delimiter = 0;
+            }
+        }
+    }
+
+    /**
+     * Schema in which this endpoint is defined
+     */
+    String schemaName;
+
+    /**
+     * Name of the Routine that contains the function definition
+     */
+    String routineName;
+
+    /**
+     * GET / POST / PUT / DELETE
+     */
+
+    String method;
+
+    /**
+     * Name of the function to call in the script
+     */
+    String function;
+
+    /**
+     * Name of endpoint. This is the text prefix of a pattern - i.e., everything
+     * before the '/'.
+     */
+
+    String name;
+    /**
+     * Pattern for matching path
+     */
+    Pattern pattern;
+
+    /**
+     * Parameter meta-data for the return value (specifies type and optional
+     * default value)
+     */
+    ParamMetadata outParam;
+
+    /**
+     * Parameter meta-data for input parameters
+     */
+    ParamMetadata[] inParams;
+
+    @Override
+    public String toString() {
+        String s = "routine=" + routineName;
+        s += ",function=" + function;
+        if (pattern != null) {
+            s += ",pathParamPattern=" + pattern;
+        }
+        if (outParam != null) {
+            s += ",out:" + outParam;
+        }
+        s += ",in:" + Arrays.asList(inParams);
+        return s;
+    }
+
+    void setPathParameterPattern(final String s) {
+        pattern = Pattern.compile(s, Pattern.CASE_INSENSITIVE);
+    }
+
+    Matcher getParamPathMatcher(final ParamCache cache, final String pathParamString) {
+        if (cache.matcher == null) {
+            cache.matcher = pattern.matcher(pathParamString);
+        }
+        return cache.matcher;
+    }
+
+}

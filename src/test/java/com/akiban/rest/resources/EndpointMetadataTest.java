@@ -17,21 +17,17 @@
 
 package com.akiban.rest.resources;
 
-import java.util.Arrays;
-
 import org.junit.Test;
 
-import com.akiban.rest.resources.DirectResource.EndpointMetadata;
-
-public class DirectResourceTest {
+public class EndpointMetadataTest {
 
     @Test
     public void createEndpointMetadata() throws Exception {
 
-        final DirectResource resource = new DirectResource(null);
-        EndpointMetadata md = resource.createEndpointMetadata("abc", "/<ppa>/<ppb>", "jpa,jpb", "qp1,qp2", null,
-                "ppa int required, ppb Date default '2013-01-02', jpb String required, "
-                        + "jpa int,qp2 int default 42,qp1 float", "String default 'foo'");
+        EndpointMetadata md = EndpointMetadata.createEndpointMetadata("schema", "proc",
+                "method=GET path=somePath/([^/]*)/([^/]*), " + " function=functionName, "
+                        + "in=(QP:qp1 String required, QP:qp2 Date default '2010-02-03', "
+                        + "PP:2 int required, PP:1 int default 123)," + " out=String");
         System.out.println(md);
     }
 
