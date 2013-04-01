@@ -164,7 +164,7 @@ public final class EntityParser {
             if (m.matches()) {
                 try {
                     ISODateTimeFormat.dateTimeParser().parseDateTime(node.asText());
-                    table.colTimestamp(name, true);
+                    table.colDateTime(name, true);
                     dateColumn = true;
                 } catch (IllegalArgumentException ex) {
                     dateColumn = false;

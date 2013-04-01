@@ -293,7 +293,7 @@ public class EntityParserIT extends ITBase {
         AkibanInformationSchema ais = processParse (tableName, postInput);
         assertTrue(ais.getTable(tableName).getColumns().size() == 2);
         assertTrue(ais.getTable(tableName).getColumn(0).getType().equals(Types.BIGINT));
-        assertTrue(ais.getTable(tableName).getColumn(1).getType().equals(Types.TIMESTAMP));
+        assertTrue(ais.getTable(tableName).getColumn(1).getType().equals(Types.DATETIME));
     }
     
     @Test
