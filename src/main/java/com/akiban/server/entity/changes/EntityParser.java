@@ -19,8 +19,11 @@ package com.akiban.server.entity.changes;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.codehaus.jackson.JsonNode;
+import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -152,11 +155,25 @@ public final class EntityParser {
             }
         }
     }
-    
+    private static final Pattern DATE_PATTERN = Pattern.compile("^((\\d+)-(\\d+)-(\\d+)).*");    
     private void addColumnToTable (JsonNode node, String name, NewUserTableBuilder table) {
         if (node.isTextual()) {
-            int  len = Math.max(node.asText().length(), stringWidth);
-            table.colString(name, len, true);
+            boolean dateColumn = false;
+            // Do a simple "could be a date" check first, if so, do an exact verify.
+            Matcher m = DATE_PATTERN.matcher(node.asText().trim());
+            if (m.matches()) {
+                try {
+                    ISODateTimeFormat.dateTimeParser().parseDateTime(node.asText());
+                    table.colDateTime(name, true);
+                    dateColumn = true;
+                } catch (IllegalArgumentException ex) {
+                    dateColumn = false;
+                }
+            }
+            if (!dateColumn) {
+                int  len = Math.max(node.asText().length(), stringWidth);
+                table.colString(name, len, true);
+            }
         } else if (node.isIntegralNumber()) {
             table.colBigInt(name, true);
         } else if (node.isDouble()) {

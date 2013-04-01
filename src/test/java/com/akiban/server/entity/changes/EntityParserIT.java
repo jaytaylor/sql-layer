@@ -28,8 +28,6 @@ import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonProcessingException;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Join;
@@ -39,7 +37,6 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.test.it.ITBase;
 
 public class EntityParserIT extends ITBase {
-    private static final Logger LOG = LoggerFactory.getLogger(EntityParserIT.class);
 
     private EntityParser parser;
     
@@ -68,7 +65,7 @@ public class EntityParserIT extends ITBase {
     @Test
     public void testOrders() throws JsonProcessingException, IOException {
         TableName tableName = new TableName ("test", "orders");
-        String postInput = "{\"oid\" : 103, \"cid\" : 2, \"odate\": \"2012-12-31 12:00:00\"}";
+        String postInput = "{\"oid\" : 103, \"cid\" : 2, \"odate\": \"2012-12-31T12:00:00\"}";
         AkibanInformationSchema ais = processParse(tableName, postInput);
 
         assertTrue(ais.getTable(tableName).getColumns().size() == 3);
@@ -128,7 +125,7 @@ public class EntityParserIT extends ITBase {
         TableName tableName = new TableName ("test", "customers");
         String postInput ="{\"cid\": 6, \"first_name\": \"John\",\"last_name\": \"Smith\"," +
                 "\"addresses\": {\"aid\": 104, \"cid\": 6, \"state\": \"MA\", \"city\": \"Boston\"}," +
-                "\"orders\": {\"oid\" : 103, \"cid\" : 2, \"odate\": \"2012-12-31 12:00:00\"}}";
+                "\"orders\": {\"oid\" : 103, \"cid\" : 2, \"odate\": \"2012-12-31T12:00:00\"}}";
         AkibanInformationSchema ais = processParse(tableName, postInput);
         
         UserTable c = ais.getUserTable(tableName);
@@ -288,6 +285,28 @@ public class EntityParserIT extends ITBase {
         assertTrue(ais.getTable(tableName).getColumn(1).getType().equals(Types.BOOLEAN));
     }
 
+    @Test
+    public void testDateGood() throws IOException {
+        TableName tableName = new TableName ("test", "customers");
+        String postInput = "{\"cid\":6, \"order_date\":\"1970-01-01T00:00:01Z\"}";
+        
+        AkibanInformationSchema ais = processParse (tableName, postInput);
+        assertTrue(ais.getTable(tableName).getColumns().size() == 2);
+        assertTrue(ais.getTable(tableName).getColumn(0).getType().equals(Types.BIGINT));
+        assertTrue(ais.getTable(tableName).getColumn(1).getType().equals(Types.DATETIME));
+    }
+    
+    @Test
+    public void testDateBad() throws IOException {
+        TableName tableName = new TableName ("test", "customers");
+        String postInput = "{\"cid\":6, \"phone-number\":\"802-555-1212\", \"ssn\": \"000-41-9999\"}";
+        AkibanInformationSchema ais = processParse (tableName, postInput);
+        assertTrue(ais.getTable(tableName).getColumns().size() == 3);
+        assertTrue(ais.getTable(tableName).getColumn(0).getType().equals(Types.BIGINT));
+        assertTrue(ais.getTable(tableName).getColumn(1).getType().equals(Types.VARCHAR));
+        assertTrue(ais.getTable(tableName).getColumn(2).getType().equals(Types.VARCHAR));
+    }
+    
     private AkibanInformationSchema processParse (TableName tableName, String postInput) throws JsonProcessingException, IOException{
         JsonNode node = readTree(postInput);
         parser.parseAndCreate(ddl(), session(), tableName, node);
