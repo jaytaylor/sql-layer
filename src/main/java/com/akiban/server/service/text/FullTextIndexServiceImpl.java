@@ -230,7 +230,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         }
     }
 
-     @Override
+    @Override
     public void updateIndex(Session session, IndexName name, Iterable<byte[]> rows)         
     {
         try
@@ -245,14 +245,12 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             HKeyCache<com.akiban.qp.row.HKey> cache = new HKeyCache<>(adapter);
             IndexWriter writer = indexInfo.getIndexer().getWriter();
             RowIndexer rowIndexer = new RowIndexer(indexInfo, writer, false);
-            boolean transaction = false;
             Cursor cursor = null;
             boolean success = false;
             try
             {
-                transactionService.beginTransaction(session);
-                transaction = true;
                 Operator operator = indexInfo.getOperator();
+                int n = 0;
                 for (byte row[] : rows)
                 {
                     HKeyRow hkeyRow = toHKeyRow(row, indexInfo.getHKeyRowType(),
@@ -261,7 +259,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                     cursor = API.cursor(operator, queryContext);
                     rowIndexer.updateDocument(cursor, row);
                 }
-                transaction = false;
                 success = true;
             }
             finally
@@ -269,9 +266,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 rowIndexer.close();
                 if (cursor != null)
                     cursor.destroy();
-
-                if (transaction)
-                    transactionService.rollbackTransaction(session);
 
                 try
                 {
@@ -299,22 +293,22 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         public synchronized void run()
         {
             Session session = sessionService.createSession();
+            boolean transaction = true;
             try
             {
+                transactionService.beginTransaction(session);
                 HKeyBytesStream rows = persistitStore.getChangedRows(session);
-                if (rows != null)
-                    do
+                if (rows != null) // if tree is not empty
+                {    do
                     {
-                        // do the update
                         updateIndex(session,
                                     rows.getIndexName(),
                                     rows);
-
-                        // remove the entries (relating to this index)
-                        // that have been taken care of
-                        rows.removeAll();
                     }
                     while (rows.nextIndex());
+                    rows.removeAll(); // done updating. remove all entries
+                }
+                transaction= false;
             }
             catch(PersistitException e)
             {
@@ -322,6 +316,10 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             }
             finally
             {
+                if (transaction)
+                    transactionService.rollbackTransaction(session);
+                else
+                    transactionService.commitTransaction(session);
                 session.close();
             }
         }
@@ -429,6 +427,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
         if (ex.next(true)) // empty tree?
         {
+            key.reset();
             IndexName ret = new IndexName(new TableName(key.decodeString(),
                                                         key.decodeString()),
                                           key.decodeString());

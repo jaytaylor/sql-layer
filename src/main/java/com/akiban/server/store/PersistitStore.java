@@ -137,7 +137,7 @@ public class PersistitStore implements Store, Service {
 
     // Each row change has a 'uniqueChangeId', stored in the 'maintenance.full_text' table
     // The number would be reset after all maintenance is done
-    private volatile AtomicLong uniqueChangeId = new AtomicLong(Long.MAX_VALUE);
+    private volatile AtomicLong uniqueChangeId = new AtomicLong(0); // TODO: change this back to MIN_VAL
     
     private static final StorageAction DIRECT_STORAGE = new StorageAction() {
         @Override
@@ -242,11 +242,11 @@ public class PersistitStore implements Store, Service {
     {
 
         private final Exchange ex;
-        private int size = 0;
         private IndexName indexName;
         private int modCount = 0;
-        private boolean moreRows = true; // more rows of this index?
+        private boolean moreRows; // more rows of this index
         private final Session session;
+        private boolean eot; // end of tree;
         private HKeyBytesStream()
         {
             ex = null;
@@ -256,23 +256,27 @@ public class PersistitStore implements Store, Service {
         // 'private' because this should not be constructed
         // anywhere other than PersistitStore.getChangedRows()
         // The class itself, however, is public, as it can be used anywhere
-        private HKeyBytesStream (Exchange ex, Session session)
+        private HKeyBytesStream (Exchange ex, Session session) throws PersistitException
         {
             this.ex = ex;
             this.session = session;
             indexName = buildName(ex);
+            moreRows = true; // 'true'  because there is at least one row
+            eot = false;     // 'false' because      ditto
         }
 
         public boolean nextIndex() throws PersistitException
         {
+            if (eot)
+                return false;
+
             boolean nextIndex = ex.next(true);
             if (nextIndex)
             {
-                size = 0;
                 modCount = 0;
                 indexName = buildName(ex);
-                if (!ignoreDeleted(ex, indexName, true)) // reach the end after ignoring all deleted indexId
-                    return moreRows = false;             // hence no more rows (or indices)
+                if (eot = !ignoreDeleted(ex, indexName, true)) // reach the end after ignoring all deleted indexId
+                    return moreRows = false;                   // hence no more rows (or indices)
             }
             return nextIndex;
         }
@@ -282,11 +286,6 @@ public class PersistitStore implements Store, Service {
             return indexName;
         }
 
-        public int size()
-        {
-            return size;
-        }
-
         @Override
         public Iterator<byte[]> iterator()
         {
@@ -294,19 +293,13 @@ public class PersistitStore implements Store, Service {
         }
 
         /**
-         * remove all entries about the change in this index
-         * (ie., all entries with the same schema.table.indexName)
+         * remove all change-entries 
          * 
-         * `ex` currently points at the last key-value pair in the
-         *  list of all pairs that have the same indexname
-         *  and we now that there are 'count' such entries
-         *  so just remove them from tail --> head
          * 
          */
         public void removeAll() throws PersistitException
         {
-            while (size-- >= 0)
-                ex.fetchAndRemove();
+            ex.removeAll(); 
             ++modCount;
         }
 
@@ -337,8 +330,8 @@ public class PersistitStore implements Store, Service {
 
                     byte ret[] = ex.getValue().getByteArray();
                     boolean seeNewIndex = false;
-
-                    hasNext = ex.next(true) 
+                    boolean hasMore;
+                    hasNext = (hasMore = ex.next(true)) 
                                         && !(seeNewIndex = seeNewIndex(indexName.getSchemaName(),
                                                                        indexName.getTableName(),
                                                                        indexName.getName(),
@@ -346,8 +339,15 @@ public class PersistitStore implements Store, Service {
                                         // and following this row is at lest one row of
                                         // this index whose index-id is valid
                                         && ignoreDeleted(ex, indexName, false));
-            
-                    
+
+                    // if there are no more entries,
+                    // set eot so the 'outer loop', which takes care of each index
+                    // does not attempt to do 'next(true)'
+                    // (because surpringly, after the end has been reached
+                    //  the key will be set to BEFORE, therefore next(true)
+                    /// will return 'true'. ==> infinite loop!)
+                    eot = !hasMore;
+
                     // Take caution in order NOT to go to the next index (ie., different name)
                     if (seeNewIndex)  
                         // back up one entry, because we have read past the last
@@ -355,7 +355,6 @@ public class PersistitStore implements Store, Service {
                         ex.previous(); 
                     ++innerModCount;
                     ++modCount;
-                    ++size;
 
                     return ret;
                 }
@@ -390,6 +389,8 @@ public class PersistitStore implements Store, Service {
         {
             // KEY: Schema | Table | indexName | indexID | ...
             Key key = ex.getKey();
+            key.reset();
+
             assert indexName.getSchemaName().equals(key.decodeString()) 
                     : "Unexpected schema" ;
             assert indexName.getTableName().equals(key.decodeString())
@@ -406,8 +407,7 @@ public class PersistitStore implements Store, Service {
                 boolean seeNewIndex = false;
 
                 do
-                    ++size;
-                    // do nothing (skipping deleted 'index')
+                    ;// do nothing (skipping deleted 'index')
                 while ((hasMore = ex.next(true))
                                  && !(seeNewIndex = seeNewIndex(indexName.getSchemaName(),
                                                                 indexName.getTableName(),
@@ -415,8 +415,8 @@ public class PersistitStore implements Store, Service {
                                                                 ex.getKey()))
                                  && !seeNewIndexId(ex, indexId));
 
-                if (!hasMore)
-                    return false;     // reach the end! (no more rows or indices!)
+                if (eot = !hasMore)  // reach the end! (no more rows or indices!)
+                    return false;    // set 'eot' for the same reason in StreamIterator.next() 
 
                 else if (seeNewIndex) // back up one entry in order not to 
                 {                     // go past the last pair
@@ -432,6 +432,7 @@ public class PersistitStore implements Store, Service {
                 else // ie., see new IndexId
                 {
                     Key k = ex.getKey();
+                    k.reset();
                     k.decodeString();
                     k.decodeString();
                     k.decodeString();
@@ -439,7 +440,6 @@ public class PersistitStore implements Store, Service {
                     indexId = k.decodeInt();
                 }
             }
-         
             return true;
         }
 
@@ -478,6 +478,7 @@ public class PersistitStore implements Store, Service {
 
         private boolean seeNewIndex(String schema, String table, String indexName, Key k)
         {
+            k.reset();
             return !k.decodeString().equals(schema)
                     || !k.decodeString().equals(table)
                     || !k.decodeString().equals(indexName);
@@ -486,6 +487,7 @@ public class PersistitStore implements Store, Service {
         private IndexName buildName(Exchange e)
         {
             Key key = e.getKey();
+            key.reset();
             return new IndexName(new TableName(key.decodeString(),
                                                key.decodeString()),
                                  key.decodeString());
