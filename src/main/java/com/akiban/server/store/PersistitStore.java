@@ -18,16 +18,13 @@
 package com.akiban.server.store;
 
 import com.akiban.ais.model.*;
-import com.akiban.ais.model.Index.IndexType;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
-import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.*;
 import com.akiban.server.api.dml.ColumnSelector;
@@ -218,11 +215,13 @@ public class PersistitStore implements Store, Service {
     public HKeyBytesStream getChangedRows(Session session) throws PersistitException
     {
         Exchange ex = getChangeExchange(session);
-
         ex.append(Key.BEFORE);
-        if (ex.next(true)) // if the tree is not empty
+        HKeyBytesStream ret;
+        
+        if (ex.hasNext(true)                                           // if the tree is not empty
+                && (ret = new HKeyBytesStream(ex, session)).hasNext()) // and does not contain only invalid indices
         {
-            return new HKeyBytesStream(ex, session);
+            return ret;
         }
         else
         {
@@ -260,12 +259,12 @@ public class PersistitStore implements Store, Service {
         {
             this.ex = ex;
             this.session = session;
-            indexName = buildName(ex);
-            moreRows = true; // 'true'  because there is at least one row
-            eot = false;     // 'false' because      ditto
+            eot = false;
+            moreRows = true;
+            nextIndex(); // at the beginning of the tree now. look for the first legit index
         }
 
-        public boolean nextIndex() throws PersistitException
+        public final boolean nextIndex() throws PersistitException
         {
             if (eot)
                 return false;
@@ -278,7 +277,18 @@ public class PersistitStore implements Store, Service {
                 if (eot = !ignoreDeleted(ex, indexName, true)) // reach the end after ignoring all deleted indexId
                     return moreRows = false;                   // hence no more rows (or indices)
             }
+            else
+            {
+                eot = true;
+                moreRows = false;
+            }
+
             return nextIndex;
+        }
+
+        public boolean hasNext()
+        {
+            return !eot;
         }
 
         public IndexName getIndexName()
@@ -336,7 +346,7 @@ public class PersistitStore implements Store, Service {
                                                                        indexName.getTableName(),
                                                                        indexName.getName(),
                                                                        ex.getKey())
-                                        // and following this row is at lest one row of
+                                        // and following this row is at least one row of
                                         // this index whose index-id is valid
                                         && ignoreDeleted(ex, indexName, false));
 
@@ -390,7 +400,8 @@ public class PersistitStore implements Store, Service {
             // KEY: Schema | Table | indexName | indexID | ...
             Key key = ex.getKey();
             key.reset();
-
+            
+            key.reset();
             assert indexName.getSchemaName().equals(key.decodeString()) 
                     : "Unexpected schema" ;
             assert indexName.getTableName().equals(key.decodeString())
@@ -407,7 +418,7 @@ public class PersistitStore implements Store, Service {
                 boolean seeNewIndex = false;
 
                 do
-                    ;// do nothing (skipping deleted 'index')
+                { /*do nothing (skipping deleted 'index')*/}
                 while ((hasMore = ex.next(true))
                                  && !(seeNewIndex = seeNewIndex(indexName.getSchemaName(),
                                                                 indexName.getTableName(),
@@ -446,6 +457,7 @@ public class PersistitStore implements Store, Service {
         private boolean seeNewIndexId(Exchange ex, Integer oldId)
         {
             Key key = ex.getKey();
+            key.reset();
             // skip uninteresting parts
             key.decodeString();
             key.decodeString();

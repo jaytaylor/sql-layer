@@ -299,7 +299,8 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 transactionService.beginTransaction(session);
                 HKeyBytesStream rows = persistitStore.getChangedRows(session);
                 if (rows != null) // if tree is not empty
-                {    do
+                {
+                    do
                     {
                         updateIndex(session,
                                     rows.getIndexName(),
@@ -489,7 +490,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
     private HKeyRow toHKeyRow(byte rowBytes[], HKeyRowType hKeyRowType,
                               StoreAdapter store, HKeyCache<com.akiban.qp.row.HKey> cache)
-    {       
+    {
         PersistitHKey hkey = (PersistitHKey)store.newHKey(hKeyRowType.hKey());
         Key key = hkey.key();
         key.setEncodedSize(rowBytes.length);

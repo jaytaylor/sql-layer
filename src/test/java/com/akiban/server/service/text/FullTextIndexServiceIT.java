@@ -40,6 +40,7 @@ public class FullTextIndexServiceIT extends ITBase
 {
     public static final String SCHEMA = "test";
     private static final long updateInterval = 1000L; // for testing
+    private static final long populateDelayInterval = 1000L;
     protected FullTextIndexService fullText;
     protected Schema schema;
     protected PersistitAdapter adapter;
@@ -61,6 +62,7 @@ public class FullTextIndexServiceIT extends ITBase
         Map<String, String> properties = new HashMap<>();
         properties.put("akserver.text.indexpath", "/tmp/aktext");
         properties.put(FullTextIndexServiceImpl.UPDATE_INTERVAL, Long.toString(updateInterval));
+        properties.put(FullTextIndexServiceImpl.POPULATE_DELAY_INTERVAL, Long.toString(populateDelayInterval));
         return properties;
     }
 
@@ -126,7 +128,7 @@ public class FullTextIndexServiceIT extends ITBase
                                                   SCHEMA, "c", "idx_c", 
                                                   "name", "i.sku", "a.state");
         fullText.createIndex(session(), index.getIndexName());
-
+        Thread.sleep(populateDelayInterval * 2);
         RowType rowType = rowType("c");
         RowBase[] expected1 = new RowBase[]
         {
@@ -139,6 +141,7 @@ public class FullTextIndexServiceIT extends ITBase
 
         plan = builder.scanOperator("state:MA", 10);
         compareRows(expected1, cursor(plan, queryContext));
+        
         
         // part 2
         // write new rows

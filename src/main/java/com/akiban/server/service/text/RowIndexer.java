@@ -144,12 +144,14 @@ public class RowIndexer implements Closeable
         }
         else
         {
+            indexRow(null); // flush the last updated doc
             do
             {
                 updating = true;
                 indexRow(row);
             }
             while ((row = cursor.next()) != null);
+            indexRow(null); // flush the last updated doc (again?)
         }
         cursor.close();
     }
