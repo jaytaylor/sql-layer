@@ -122,6 +122,7 @@ public class FullTextIndexServiceIT extends ITBase
                 + do the search again and confirm that the new rows are NOT found
 
          */
+
         //CREATE INDEX cust_ft ON customers(FULL_TEXT(name, addresses.state, items.sku))
         // part 1
         FullTextIndex index = createFullTextIndex(serviceManager(),

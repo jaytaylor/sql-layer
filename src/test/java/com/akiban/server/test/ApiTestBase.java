@@ -520,7 +520,7 @@ public class ApiTestBase {
      * overriding the {@link #startupConfigProperties()} and/or
      * {@link #serviceBindingsProvider()} methods.
      */
-    protected static Map<String, String> uniqueStartupConfigProperties(Class clazz) {
+    protected Map<String, String> uniqueStartupConfigProperties(Class clazz) {
         return Collections.singletonMap(
                 "test.services",
                 clazz.getName()

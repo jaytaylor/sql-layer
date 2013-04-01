@@ -68,7 +68,9 @@ public class FullTextIndexInfo
         }
         index = table.getFullTextIndex(name.getName());
         if (index == null) {
-            throw new NoSuchIndexException(name.getName());
+            NoSuchIndexException ret =  new NoSuchIndexException(name.getName());
+            ret.printStackTrace();
+            throw ret;
         }
         schema = SchemaCache.globalSchema(ais);
         indexedRowType = schema.userTableRowType(table);

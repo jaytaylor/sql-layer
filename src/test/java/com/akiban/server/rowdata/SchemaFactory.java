@@ -77,7 +77,12 @@ public class SchemaFactory {
     }
 
     public AkibanInformationSchema ais(String... ddl) {
-        return ais(new AkibanInformationSchema(), ddl);
+        return ais((ServiceManager)null, ddl);
+    }
+    
+    public AkibanInformationSchema ais(ServiceManager sm, String... ddl)
+    {
+        return ais(sm, new AkibanInformationSchema(), ddl);
     }
     
     public static AkibanInformationSchema loadAIS(File fromFile, String defaultSchema) {
@@ -103,7 +108,7 @@ public class SchemaFactory {
         return ais(null, ddlFunctions, session, ddl);
     }
     
-    public AkibanInformationSchema ais(ServiceManager sm,DDLFunctions ddlFunctions, Session session, String... ddl) {
+    public AkibanInformationSchema ais(ServiceManager sm, DDLFunctions ddlFunctions, Session session, String... ddl) {
         StringBuilder buffer = new StringBuilder();
         for (String line : ddl) {
             buffer.append(line);
