@@ -33,6 +33,9 @@ function _register(registrar) {
  * between dates start and end by computing (rate * duration) for each period of
  * employment.
  */
+
+//## Endpoint (method=GET path=totalComp function=computeTotalCompensation  in=(PP:1 int required, QP:start Date default '1800-01-01' QP:end Date default TODAY), out:string)
+
 function computeTotalCompensation(empno, start, end) {
 	var emp = com.akiban.direct.Direct.context.extent.getEmployee(empno);
 	println("Computing total compensation for employee " + empno);

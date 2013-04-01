@@ -178,7 +178,7 @@ public class EndpointMetadata {
                 throw new IllegalArgumentException("Element " + name + " has no associated value: " + specification);
             }
 
-            switch (name) {
+            switch (name.toLowerCase()) {
 
             case METHOD: {
                 String v = tokens.nextName(true);
