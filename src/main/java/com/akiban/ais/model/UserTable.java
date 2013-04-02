@@ -521,12 +521,6 @@ public class UserTable extends Table
         this.version = version;
     }
 
-/*    public boolean isSchemaNameSameAsParent() {
-        Join parentJoin = getParentJoin();
-        return (parentJoin != null) &&
-                parentJoin.getParent().getName().getSchemaName().equals(getName().getSchemaName());
-    }
-*/
     public String getNameForOutput() {
         return nameForOutput;
     }
