@@ -52,8 +52,8 @@ public class EndpointMetadata {
 
     private final static String PP = "pp:";
     private final static String QP = "qp:";
-    private final static String JP = "json:";
-    private final static String CONTENT = "content:";
+    private final static String JSON = "json:";
+    private final static String CONTENT = "content";
 
     final static String X_TYPE_INT = "int";
     final static String X_TYPE_LONG = "long";
@@ -63,9 +63,10 @@ public class EndpointMetadata {
     final static String X_TYPE_DATE = "date";
     final static String X_TYPE_BYTEARRAY = "bytearray";
     final static String X_TYPE_JSON = "json";
+    final static String X_TYPE_VOID = "void";
 
     final static List<String> X_TYPES = Arrays.asList(new String[] { X_TYPE_INT, X_TYPE_LONG, X_TYPE_FLOAT,
-            X_TYPE_DOUBLE, X_TYPE_STRING, X_TYPE_DATE, X_TYPE_BYTEARRAY, X_TYPE_JSON });
+            X_TYPE_DOUBLE, X_TYPE_STRING, X_TYPE_DATE, X_TYPE_BYTEARRAY, X_TYPE_JSON, X_TYPE_VOID });
 
     private final static Charset UTF8 = Charset.forName("UTF8");
 
@@ -199,7 +200,7 @@ public class EndpointMetadata {
                     em.name = v;
                 } else {
                     em.name = v.substring(0, p);
-                    em.pattern = Pattern.compile(v);
+                    em.pattern = Pattern.compile(v.substring(p));
                 }
                 break;
             }
@@ -245,23 +246,18 @@ public class EndpointMetadata {
     static ParamMetadata createInParameter(final Tokenizer tokens) throws Exception {
         String v = tokens.next(true);
         ParamMetadata pm = createOutParameter(tokens);
-
+        if (pm.type == X_TYPE_VOID) {
+            throw new IllegalArgumentException("Input parameter may not have type " + X_TYPE_VOID);
+        }
         ParamSourceMetadata psm = null;
         if (v.regionMatches(true, 0, PP, 0, PP.length())) {
             psm = new ParamSourcePath(Integer.parseInt(v.substring(PP.length())));
         } else if (v.regionMatches(true, 0, QP, 0, QP.length())) {
             psm = new ParamSourceQueryParam(v.substring(QP.length()));
-        } else if (v.regionMatches(true, 0, JP, 0, JP.length())) {
-            psm = new ParamSourceJson(v.substring(QP.length()));
-        } else if (v.regionMatches(true, 0, CONTENT, 0, CONTENT.length())) {
-            String type = v.substring(CONTENT.length());
-            if (X_TYPE_BYTEARRAY.equalsIgnoreCase(type)) {
-                psm = new ParamSourceContentBytes();
-            } else if (X_TYPE_JSON.equalsIgnoreCase(type)) {
-                psm = new ParamSourceContentString(true);
-            } else if (X_TYPE_STRING.equalsIgnoreCase(type)) {
-                psm = new ParamSourceContentString(false);
-            }
+        } else if (v.regionMatches(true, 0, JSON, 0, JSON.length())) {
+            psm = new ParamSourceJson(v.substring(JSON.length()));
+        } else if (v.equalsIgnoreCase(CONTENT)) {
+            psm = new ParamSourceContent(pm.type);
         }
         if (psm == null) {
             throw new IllegalArgumentException("Invalid parameter source for " + pm.name + ": " + tokens.source);
@@ -307,6 +303,9 @@ public class EndpointMetadata {
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
+            if (source != null) {
+                append(sb, source.toString(), " ");
+            }
             append(sb, type);
             if (required) {
                 append(sb, " ", REQUIRED);
@@ -314,15 +313,14 @@ public class EndpointMetadata {
             if (defaultValue != null) {
                 append(sb, " ", DEFAULT, " ", "\'", defaultValue.toString(), "\'");
             }
-            String s = "(" + name + " " + type;
-            if (required) {
-                s += " required";
-            }
-            if (defaultValue != null) {
-                s += " default=\'" + defaultValue + "\'";
-            }
-            s += " " + source + ")";
-            return s;
+            return sb.toString();
+        }
+
+        public boolean equals(Object other) {
+            ParamMetadata pm = (ParamMetadata) other;
+            return EndpointMetadata.equals(pm.name, name) && EndpointMetadata.equals(pm.type, type)
+                    && pm.required == required && EndpointMetadata.equals(pm.defaultValue, defaultValue)
+                    && EndpointMetadata.equals(source, pm.source);
         }
     }
 
@@ -373,7 +371,13 @@ public class EndpointMetadata {
 
         @Override
         public String toString() {
-            return QP + paramName + " " + super.toString();
+            return QP + paramName;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            return (other instanceof ParamSourceQueryParam)
+                    && EndpointMetadata.equals(((ParamSourceQueryParam) other).paramName, paramName);
         }
     }
 
@@ -402,30 +406,13 @@ public class EndpointMetadata {
 
         @Override
         public String toString() {
-            return PP + matchingGroup + " " + super.toString();
-        }
-    }
-
-    /**
-     * Meta-data for a parameter that conveys the byte array supplied in the
-     * request body of the REST call. This is intended to support a rest call
-     * that receives a binary payload.
-     */
-    static class ParamSourceContentBytes extends ParamSourceMetadata {
-        Object value(final String pathParams, final MultivaluedMap<String, String> queryParams, Object content,
-                ParamCache cache) {
-            assert content instanceof byte[];
-            return content;
+            return PP + matchingGroup;
         }
 
         @Override
-        String mimeType() {
-            return MediaType.APPLICATION_OCTET_STREAM;
-        }
-
-        @Override
-        public String toString() {
-            return CONTENT + X_TYPE_BYTEARRAY + " " + super.toString();
+        public boolean equals(Object other) {
+            return other instanceof ParamSourcePath
+                    && EndpointMetadata.equals(((ParamSourcePath) other).matchingGroup, matchingGroup);
         }
     }
 
@@ -436,27 +423,40 @@ public class EndpointMetadata {
      * text/plain and application/json payloads. The constructor argument
      * distinguishes which type is intended.
      */
-    static class ParamSourceContentString extends ParamSourceMetadata {
-        final boolean asJson;
+    static class ParamSourceContent extends ParamSourceMetadata {
+        final private String type;
 
-        ParamSourceContentString(final boolean asJason) {
-            this.asJson = asJason;
+        ParamSourceContent(final String type) {
+            this.type = type;
         }
 
         @Override
         String mimeType() {
-            return asJson ? MediaType.APPLICATION_JSON : MediaType.TEXT_PLAIN;
+            return X_TYPE_BYTEARRAY.equalsIgnoreCase(type) ? MediaType.APPLICATION_OCTET_STREAM : X_TYPE_JSON
+                    .equalsIgnoreCase(type) ? MediaType.APPLICATION_JSON : MediaType.TEXT_PLAIN;
         }
 
         Object value(final String pathParams, final MultivaluedMap<String, String> queryParams, Object content,
                 ParamCache cache) {
-            assert content instanceof String;
-            return new String((byte[]) content, UTF8);
+
+            if (content == null) {
+                return null;
+            } else if (X_TYPE_BYTEARRAY.equalsIgnoreCase(type)) {
+                return content;
+            } else {
+                return new String((byte[]) content, UTF8);
+            }
         }
 
         @Override
         public String toString() {
-            return CONTENT + X_TYPE_STRING + " " + super.toString();
+            return CONTENT;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof ParamSourceContent
+                    && EndpointMetadata.equals(((ParamSourceContent) other).type, type);
         }
     }
 
@@ -493,8 +493,15 @@ public class EndpointMetadata {
 
         @Override
         public String toString() {
-            return JP + paramName + " " + super.toString();
+            return JSON + paramName;
         }
+
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof ParamSourceJson
+                    && EndpointMetadata.equals(((ParamSourceJson) other).paramName, paramName);
+        }
+
     }
 
     static class EndpointAddress implements Comparable<EndpointAddress> {
@@ -698,6 +705,19 @@ public class EndpointMetadata {
 
     String expectedContentType;
 
+    static boolean equals(Object a, Object b) {
+        if (a == null) {
+            return b == null;
+        } else if (a instanceof Object[]) {
+            if (!(b instanceof Object[])) {
+                return false;
+            }
+            return Arrays.equals((ParamMetadata[]) a, (ParamMetadata[]) b);
+        } else {
+            return a.equals(b);
+        }
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -743,4 +763,13 @@ public class EndpointMetadata {
             }
         }
     }
+
+    @Override
+    public boolean equals(final Object other) {
+        EndpointMetadata em = (EndpointMetadata) other;
+        return equals(em.schemaName, schemaName) && equals(em.expectedContentType, expectedContentType)
+                && equals(em.function, function) && equals(em.method, method) && equals(em.name, name)
+                && equals(em.pattern, pattern) && equals(em.outParam, outParam) && equals(em.inParams, inParams);
+    }
+
 }

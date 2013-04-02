@@ -21,6 +21,7 @@ import java.util.Map;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CacheValueGenerator;
+import com.akiban.sql.embedded.JDBCConnection;
 
 /**
  * TODO - Total hack that this is static - need to a way to get this into the
@@ -78,7 +79,7 @@ public class Direct {
         return o;
     }
     
-    public static void enter(final String schemaName, AkibanInformationSchema ais) {
+    public static void enter(final String schemaName, AkibanInformationSchema ais, final JDBCConnection conn) {
         DirectClassLoader dcl = ais.getCachedValue(CACHE_KEY, new CacheValueGenerator<DirectClassLoader>() {
 
             @Override
@@ -89,6 +90,7 @@ public class Direct {
         });
         
         final DirectContextImpl dc = new DirectContextImpl(schemaName, dcl);
+        dc.setConnection(conn);
         contextThreadLocal.set(dc);
         dc.enter();
     }

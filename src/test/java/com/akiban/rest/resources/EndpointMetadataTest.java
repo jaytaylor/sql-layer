@@ -17,18 +17,29 @@
 
 package com.akiban.rest.resources;
 
+import static org.junit.Assert.*;
+
 import org.junit.Test;
 
 public class EndpointMetadataTest {
 
+    private final static String[] VALID = {
+            "method=GET path=somePath/([^/]*)/([^/]*) " + "function=functionName "
+                    + "in=(QP:qp1 String required, QP:qp2 Date default '2010-02-03', "
+                    + "PP:2 int required, PP:1 int default '123') " + "out=String",
+            "method=POST path=raise function=raiseMySalary "
+                    + "in=(json:empno int required, json:percent float required) out=void",
+            "method=POST path=order/(\\\\d*)-(\\\\d+)/((\\\\d+)-\\\\d+)/confirm function=order "
+                    + "in=(pp:1 int required, pp:2 int default '123', "
+                    + "PP:3 String REQUIRED, CONTENT bytearray) out=void" };
+
     @Test
     public void createEndpointMetadata() throws Exception {
 
-        EndpointMetadata md = EndpointMetadata.createEndpointMetadata("schema", "proc",
-                "method=GET path=somePath/([^/]*)/([^/]*), " + " function=functionName, "
-                        + "in=(QP:qp1 String required, QP:qp2 Date default '2010-02-03', "
-                        + "PP:2 int required, PP:1 int default 123)," + " out=String");
-        System.out.println(md);
+        for (final String spec : VALID) {
+            String result = EndpointMetadata.createEndpointMetadata("someSchema", "someLibrary", spec).toString();
+            assertEquals("Expected toString of a valid specification to match", spec.toLowerCase(), result.toLowerCase());
+        }
     }
 
 }
