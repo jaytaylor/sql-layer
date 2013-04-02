@@ -384,7 +384,13 @@ public class UserTable extends Table
         }
         
         if (nameForOutput == null) {
-            nameForOutput = isSchemaNameSameAsParent() ? getName().getTableName() : getName().toString();
+            Join parentJoin = getParentJoin();
+            if ((parentJoin != null) &&
+                    parentJoin.getParent().getName().getSchemaName().equals(getName().getSchemaName())) {
+                nameForOutput = getName().getTableName();
+            } else {
+                nameForOutput = getName().toString(); 
+            }
         }
     }
 
@@ -515,12 +521,12 @@ public class UserTable extends Table
         this.version = version;
     }
 
-    public boolean isSchemaNameSameAsParent() {
+/*    public boolean isSchemaNameSameAsParent() {
         Join parentJoin = getParentJoin();
         return (parentJoin != null) &&
                 parentJoin.getParent().getName().getSchemaName().equals(getName().getSchemaName());
     }
-
+*/
     public String getNameForOutput() {
         return nameForOutput;
     }
@@ -651,11 +657,9 @@ public class UserTable extends Table
     private PrimaryKey primaryKey;
     private HKey hKey;
     private boolean containsOwnHKey;
-    //private HKey branchHKey;
     private List<Column> allHKeyColumns;
     private Integer depth = null;
     private volatile List<UserTable> hKeyDependentTables;
-    //private volatile List<UserTable> ancestors;
     private MemoryTableFactory tableFactory;
     private Integer version;
     private PendingOSC pendingOSC;
