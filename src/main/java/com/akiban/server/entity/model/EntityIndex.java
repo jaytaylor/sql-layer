@@ -17,6 +17,7 @@
 
 package com.akiban.server.entity.model;
 
+import com.google.common.collect.ImmutableList;
 import org.codehaus.jackson.annotate.JsonCreator;
 import org.codehaus.jackson.annotate.JsonValue;
 
@@ -32,7 +33,7 @@ public final class EntityIndex {
     }
 
     public void setFields(List<IndexField> fields) {
-        this.fields = fields;
+        this.fields = ImmutableList.copyOf(fields);
     }
 
     public IndexType getType() {
@@ -94,9 +95,10 @@ public final class EntityIndex {
 
     private static void createIndexFields(Object def, EntityIndex result) {
         List<?> defList = EntityUtil.cast(def, List.class);
-        result.fields = new ArrayList<>(defList.size());
+        List<IndexField> fields = new ArrayList<>(defList.size());
         for (Object field : defList)
-            result.fields.add(IndexField.create(field));
+            fields.add(IndexField.create(field));
+        result.setFields(fields);
     }
 
     public EntityIndex() {

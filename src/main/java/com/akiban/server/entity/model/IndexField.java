@@ -41,6 +41,9 @@ public abstract class IndexField {
 
     @JsonCreator
     public static IndexField create(Object def) {
+        if (def instanceof IndexField) {
+            return (IndexField) def;
+        }
         if (def instanceof Map) {
             Map<?,?> asMap = EntityUtil.cast(def, Map.class);
             if (asMap.size() != 1)
@@ -103,6 +106,11 @@ public abstract class IndexField {
             return fieldName != null ? fieldName.hashCode() : 0;
         }
 
+        @Override
+        public String toString() {
+            return getFieldName();
+        }
+
         public FieldName(String fieldName) {
             this.fieldName = fieldName;
         }
@@ -137,6 +145,11 @@ public abstract class IndexField {
             int result = super.hashCode();
             result = 31 * result + (entityName != null ? entityName.hashCode() : 0);
             return result;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s.%s", getEntityName(), getFieldName());
         }
 
         public QualifiedFieldName(String entityName, String fieldName) {
@@ -178,6 +191,11 @@ public abstract class IndexField {
             int result = latitude != null ? latitude.hashCode() : 0;
             result = 31 * result + (longitude != null ? longitude.hashCode() : 0);
             return result;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("lat_lon(%s, %s)", latitude, longitude);
         }
 
         public SpatialField(FieldName lat, FieldName lon) {

@@ -48,19 +48,18 @@ public final class SpaceTest {
         Entity customer = findElement(space.getEntities(), "customer");
         assertEquals("customer identifying", asList("id"), customer.getIdentifying());
         assertEquals("customer uuid", UUID.fromString("2a57b59e-e1b7-4377-996e-a5c04e0abf29"), customer.getUuid());
-        isUnmodifiable("customer attributes", customer.getFields());
-        isUnmodifiable("customer attributes", customer.getCollections());
-        assertEquals("customer fields", set("id", "last_name", "orders"), elementNames(customer.getFields()));
-        assertEquals("customer collections", set("orders"), elementNames(customer.getCollections()));
+        isUnmodifiable("customer fields", customer.getFields());
+        isUnmodifiable("customer collections", customer.getCollections());
+        assertEquals("customer fields", asList("id", "last_name"), elementNames(customer.getFields()));
+        assertEquals("customer collections", ordered("orders"), ordered(elementNames(customer.getCollections())));
 
         isUnmodifiable("customer indexes", customer.getIndexes());
         assertEquals("customer index names",
-                set("orderplaced_lastname"),
+                set("name_idx"),
                 set(customer.getIndexes().keySet()));
-        EntityIndex index = customer.getIndexes().get("orderplaced_lastname");
+        EntityIndex index = customer.getIndexes().get("name_idx");
         List<? extends IndexField> expectedColumns = asList(
-                new IndexField.QualifiedFieldName("orders", "placed"),
-                new IndexField.QualifiedFieldName("customer", "last_name")
+                new IndexField.FieldName("last_name")
         );
         isUnmodifiable("index columns", index.getFields());
         assertEquals("index columns", expectedColumns, index.getFields());
@@ -68,18 +67,19 @@ public final class SpaceTest {
 
         isUnmodifiable("customer validation", customer.getValidations());
         assertEquals("customer validations",
-                newHashSet(
-                        unique(asList(asList("customer", "last_name"), asList("customer", "first_name"))),
-                        unique(asList(asList("orders", "placed")))
-                ),
+                newHashSet(unique("name_idx")),
                 set(customer.getValidations())
         );
 
         EntityField customerId = findElement(customer.getFields(), "id");
         assertEquals("id uuid", UUID.fromString("8644c36b-f881-4369-a06b-59e3fc580309"), customerId.getUuid());
         assertEquals("id type", "integer", customerId.getType());
-        assertEquals("id properties", Collections.<String, Object>emptyMap(), customerId.getProperties());
-        assertEquals("id validations", Collections.<Validation>emptySet(), set(customerId.getValidations()));
+        assertEquals("id properties",
+                Collections.singletonMap("generate_id", (Object)"as_default"),
+                customerId.getProperties());
+        assertEquals("id validations",
+                newHashSet(new Validation("required", true)),
+                set(customerId.getValidations()));
 
         EntityField lastName = findElement(customer.getFields(), "last_name");
         assertEquals("last_name uuid", UUID.fromString("257e9b59-e77f-4a4d-a5da-00c7c2261875"), lastName.getUuid());
@@ -93,15 +93,19 @@ public final class SpaceTest {
         assertEquals("orders identifying", asList("id"), orders.getIdentifying());
         assertEquals("orders grouping fields", asList("cid"), orders.getGroupingFields());
         assertEquals("orders uuid", UUID.fromString("c5cedd91-9751-41c2-9417-8c29117ca2c9"), orders.getUuid());
-        isUnmodifiable("orders attributes", orders.getCollections());
-        assertEquals("orders attributes key", set(), elementNames(orders.getCollections()));
-        assertEquals("orders attributes key", set("id"), elementNames(orders.getFields()));
+        isUnmodifiable("orders collections", orders.getCollections());
+        assertEquals("orders collections key", Collections.<String>emptyList(), elementNames(orders.getCollections()));
+        assertEquals("orders attributes key", asList("id", "cid", "placed"), elementNames(orders.getFields()));
 
         EntityField orderId = findElement(orders.getFields(), "id");
         assertEquals("id uuid", UUID.fromString("58dd53b7-e8a1-488b-a751-c83f9beca04c"), orderId.getUuid());
         assertEquals("id type", "integer", orderId.getType());
-        assertEquals("id properties", Collections.<String, Object>emptyMap(), orderId.getProperties());
-        assertEquals("id validations", Collections.<Validation>emptySet(), set(orderId.getValidations()));
+        assertEquals("id properties",
+                Collections.singletonMap("generate_id",(Object)"as_default"),
+                orderId.getProperties());
+        assertEquals("id validations",
+                set(Collections.singleton(new Validation("required", true))),
+                set(orderId.getValidations()));
     }
 
     private <T extends EntityElement> T findElement(Collection<T> elements, String name) {
@@ -145,6 +149,15 @@ public final class SpaceTest {
     private static Set<String> set(String... elements) {
         return newHashSet(elements);
     }
+    private static List<String> ordered(String... list) {
+        return ordered(new ArrayList<>(asList(list)));
+    }
+
+    private static <T extends Comparable<T>> List<T> ordered(Collection<T> collection) {
+        List<T> list = new ArrayList<>(collection);
+        Collections.sort(list);
+        return list;
+    }
 
     private static <T> Set<T> set(Collection<? extends T> collection) {
         Set<T> set = new HashSet<>(collection);
@@ -153,8 +166,8 @@ public final class SpaceTest {
         return set;
     }
 
-    private static Validation unique(List<List<String>> columns) {
-        return new Validation("unique", columns);
+    private static Validation unique(String indexName) {
+        return new Validation("unique", indexName);
     }
 
 }

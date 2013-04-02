@@ -30,6 +30,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableBiMap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,7 +49,7 @@ public class Entity extends EntityElement {
     }
 
     public void setFields(List<EntityField> fields) {
-        this.fields = fields;
+        this.fields = ImmutableList.copyOf(fields);
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -56,7 +58,7 @@ public class Entity extends EntityElement {
     }
 
     public void setCollections(List<EntityCollection> collections) {
-        this.collections = collections;
+        this.collections = ImmutableList.copyOf(collections);
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -92,7 +94,7 @@ public class Entity extends EntityElement {
         Set<Validation> validationsSet = new TreeSet<>(validations);
         if (validationsSet.size() != validations.size())
             throw new IllegalEntityDefinition("duplicate validations given: " + validations);
-        this.validations = validationsSet;
+        this.validations = ImmutableSet.copyOf(validationsSet);
     }
 
     void makeModifiable(UUID uuid) {
