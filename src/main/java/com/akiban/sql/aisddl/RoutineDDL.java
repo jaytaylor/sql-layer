@@ -65,7 +65,9 @@ public class RoutineDDL {
         new ParameterStyleCallingConvention(null, "JAVA", 
                                             Routine.CallingConvention.SCRIPT_FUNCTION_JAVA),
         new ParameterStyleCallingConvention(null, "JSON", 
-                                            Routine.CallingConvention.SCRIPT_BINDINGS_JSON)
+                                            Routine.CallingConvention.SCRIPT_BINDINGS_JSON),
+        new ParameterStyleCallingConvention(null, "LIBRARY", 
+                                            Routine.CallingConvention.SCRIPT_LIBRARY),
     };
 
     protected static Routine.CallingConvention findCallingConvention(String schemaName,
@@ -117,6 +119,7 @@ public class RoutineDDL {
         case SQL_ROW:
         case SCRIPT_BINDINGS:
         case SCRIPT_BINDINGS_JSON:
+        case SCRIPT_LIBRARY:
             if (createAlias.getExternalName() != null)
                 throw new InvalidRoutineException(schemaName, routineName, language + " routine cannot have EXTERNAL NAME");
             break;

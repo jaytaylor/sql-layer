@@ -38,6 +38,7 @@ import java.util.NoSuchElementException;
 import java.util.Properties;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.codehaus.jackson.JsonGenerator;
@@ -389,13 +390,14 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     
     @Override
     public void invokeRestEndpoint(final PrintWriter writer, final HttpServletRequest request, final String method, final TableName procName,
-            final String pathParams, final MultivaluedMap<String, String> queryParameters, final byte[] content, final RestFunctionInvoker endpointInvoker) throws Exception {
+            final String pathParams, final MultivaluedMap<String, String> queryParameters, final byte[] content, 
+            final RestFunctionInvoker endpointInvoker, final MediaType[] responseType) throws Exception {
         try (JDBCConnection conn = jdbcConnection(request, procName.getSchemaName());
                 Session session = sessionService.createSession();
                 /*CloseableTransaction txn = transactionService.beginCloseableTransaction(session)*/) {
             Direct.enter( procName.getSchemaName(), dxlService.ddlFunctions().getAIS(session));
             try {
-                endpointInvoker.invokeRestFunction(writer, conn, method, procName, pathParams, queryParameters, content);
+                endpointInvoker.invokeRestFunction(writer, conn, method, procName, pathParams, queryParameters, content, request.getContentType(), responseType);
             } finally {
                 Direct.leave();
             }

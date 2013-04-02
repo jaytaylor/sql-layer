@@ -1,7 +1,10 @@
-function _register(registrar) {
-    java.lang.System.out.println("Executing the _register function");
-    registrar.register("method=GET path=cnames function=customerNames in=(QP:prefix String required) out=String");
-};
+//function _register(registrar) {
+//    java.lang.System.out.println("Executing the _register function");
+//    registrar.register("method=GET path=cnames function=customerNames in=(QP:prefix String required) out=String");
+//};
+
+//## Endpoint method=GET path=cnames
+//##   function=customerNames in=(QP:prefix String required) out=String
 
 function customerNames(s) {
     var result = s;

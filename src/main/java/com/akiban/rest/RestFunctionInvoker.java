@@ -19,6 +19,7 @@ package com.akiban.rest;
 
 import java.io.PrintWriter;
 
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
 import com.akiban.ais.model.TableName;
@@ -28,6 +29,6 @@ public interface RestFunctionInvoker {
 
     public void invokeRestFunction(final PrintWriter writer, JDBCConnection conn, final String method,
             final TableName procName, final String pathParams, final MultivaluedMap<String, String> queryParameters,
-            final byte[] content) throws Exception;
+            final byte[] content, final String requestType, final MediaType[] responseType) throws Exception;
     
 }

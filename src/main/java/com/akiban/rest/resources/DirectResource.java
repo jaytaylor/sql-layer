@@ -21,11 +21,9 @@ import static com.akiban.rest.resources.ResourceHelper.JSONP_ARG_NAME;
 import static com.akiban.rest.resources.ResourceHelper.checkSchemaAccessible;
 import static com.akiban.rest.resources.ResourceHelper.checkTableAccessible;
 import static com.akiban.util.JsonUtils.createJsonGenerator;
-import static com.akiban.util.JsonUtils.readTree;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -49,7 +47,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.JsonNode;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CacheValueGenerator;
@@ -66,10 +63,12 @@ import com.akiban.rest.RestFunctionInvoker;
 import com.akiban.rest.RestFunctionRegistrar;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.rest.RestResponseBuilder.BodyGenerator;
+import com.akiban.rest.RestServiceImpl;
 import com.akiban.rest.resources.EndpointMetadata.EndpointAddress;
-import com.akiban.rest.resources.EndpointMetadata;
 import com.akiban.rest.resources.EndpointMetadata.ParamCache;
 import com.akiban.rest.resources.EndpointMetadata.ParamMetadata;
+import com.akiban.rest.resources.EndpointMetadata.Tokenizer;
+import com.akiban.server.error.ExternalRoutineInvocationException;
 import com.akiban.server.error.MalformedRequestException;
 import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.error.NoSuchSchemaException;
@@ -105,12 +104,16 @@ public class DirectResource implements RestFunctionInvoker {
     private final static String IS_INOUT = "is_inout";
     private final static String IS_RESULT = "is_result";
 
+    private final static String COMMENT_ANNOTATION1 = "//##";
+    private final static String COMMENT_ANNOTATION2 = "##//";
+    private final static String ENDPOINT = "endpoint";
+
+    private final static String DISTINGUISHED_REGISTRATION_METHOD_NAME = "_register";
+
     private final static String CREATE_PROCEDURE_FORMAT = "CREATE PROCEDURE %s ()"
-            + " LANGUAGE %s PARAMETER STYLE json AS $$%s$$";
+            + " LANGUAGE %s PARAMETER STYLE LIBRARY AS $$%s$$";
 
     private final static String DROP_PROCEDURE_FORMAT = "DROP PROCEDURE %s";
-
-    private final static Charset UTF8 = Charset.forName("UTF8");
 
     private final static Object ENDPOINT_MAP_CACHE_KEY = new Object();
 
@@ -366,14 +369,15 @@ public class DirectResource implements RestFunctionInvoker {
             @PathParam("params") final String pathParams, @Context final UriInfo uri) {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
+        final MediaType[] responseType = new MediaType[1];
 
         return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
             @Override
             public void write(PrintWriter writer) throws Exception {
                 reqs.restDMLService.invokeRestEndpoint(writer, request, "GET", procName, pathParams,
-                        uri.getQueryParameters(), null, DirectResource.this);
+                        uri.getQueryParameters(), null, DirectResource.this, responseType);
             }
-        }).build();
+        }).build(responseType[0]);
     }
 
     @POST
@@ -382,14 +386,15 @@ public class DirectResource implements RestFunctionInvoker {
             @PathParam("params") final String pathParams, @Context final UriInfo uri, final byte[] content) {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
+        final MediaType[] responseType = new MediaType[1];
 
         return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
             @Override
             public void write(PrintWriter writer) throws Exception {
                 reqs.restDMLService.invokeRestEndpoint(writer, request, "POST", procName, pathParams,
-                        uri.getQueryParameters(), content, DirectResource.this);
+                        uri.getQueryParameters(), content, DirectResource.this, responseType);
             }
-        }).build();
+        }).build(responseType[0]);
     }
 
     @PUT
@@ -398,14 +403,15 @@ public class DirectResource implements RestFunctionInvoker {
             @PathParam("params") final String pathParams, @Context final UriInfo uri, final byte[] content) {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
+        final MediaType[] responseType = new MediaType[1];
 
         return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
             @Override
             public void write(PrintWriter writer) throws Exception {
                 reqs.restDMLService.invokeRestEndpoint(writer, request, "PUT", procName, pathParams,
-                        uri.getQueryParameters(), content, DirectResource.this);
+                        uri.getQueryParameters(), content, DirectResource.this, responseType);
             }
-        }).build();
+        }).build(responseType[0]);
     }
 
     @DELETE
@@ -414,46 +420,100 @@ public class DirectResource implements RestFunctionInvoker {
             @PathParam("params") final String pathParams, @Context final UriInfo uri, final byte[] content) {
         final TableName procName = ResourceHelper.parseTableName(request, proc);
         ResourceHelper.checkSchemaAccessible(reqs.securityService, request, procName.getSchemaName());
+        final MediaType[] responseType = new MediaType[1];
 
         return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
             @Override
             public void write(PrintWriter writer) throws Exception {
                 reqs.restDMLService.invokeRestEndpoint(writer, request, "DELETE", procName, pathParams,
-                        uri.getQueryParameters(), content, DirectResource.this);
+                        uri.getQueryParameters(), content, DirectResource.this, responseType);
             }
-        }).build();
+        }).build(responseType[0]);
     }
 
-    private static String text(final JsonNode node, boolean requiredNonEmpty) throws Exception {
-        String s = null;
-        if (node != null) {
-            s = node.asText();
-        }
-        if (requiredNonEmpty) {
-            if (s == null || s.isEmpty()) {
-                throw new IllegalArgumentException("Value must be specified");
-            }
-        }
-        return s == null ? "" : s;
-    }
-
+    /**
+     * Invokes a function in a script library. The identity of the function is
+     * determined from multiple factors including the schema name, the library
+     * routine name, the URI of the request, the content type of the request,
+     * etc. This method is called by {@link RestServiceImpl} which validates
+     * security and supplies the JDBCConnection
+     */
     @Override
     public void invokeRestFunction(final PrintWriter writer, JDBCConnection conn, final String method,
             final TableName procName, final String pathParams, final MultivaluedMap<String, String> queryParameters,
-            final byte[] content) throws Exception {
-        final List<EndpointMetadata> list;
-        
+            final byte[] content, final String requestType, final MediaType[] responseType) throws Exception {
+
+        ParamCache cache = new ParamCache();
         final EndpointMap endpointMap = getEndpointMap(conn.getSession());
+        final List<EndpointMetadata> list;
         synchronized (endpointMap) {
             list = endpointMap.getMap().get(new EndpointAddress(method, procName));
         }
+
+        EndpointMetadata md = selectEndpoint(list, pathParams, requestType, responseType, cache);
+        if (md == null) {
+            // TODO - Is this the correct Exception? Is there a way to convey
+            // this without logged stack trace?
+            throw new MalformedRequestException("No matching endpoint");
+        }
+
+        final Object[] args = createArgsArray(pathParams, queryParameters, content, cache, md);
+
+        final ScriptInvoker invoker = conn.getRoutineLoader()
+                .getScriptInvoker(conn.getSession(), new TableName(procName.getSchemaName(), md.routineName)).get();
+        Object result = invoker.invokeNamedFunction(md.function, args);
+        if (result != null) {
+            writer.write(result.toString());
+        }
+        switch (md.outParam.type) {
+
+        case EndpointMetadata.X_TYPE_STRING:
+            responseType[0] = MediaType.TEXT_PLAIN_TYPE;
+            break;
+
+        case EndpointMetadata.X_TYPE_JSON:
+            responseType[0] = MediaType.APPLICATION_JSON_TYPE;
+            break;
+
+        default:
+            responseType[0] = MediaType.APPLICATION_OCTET_STREAM_TYPE;
+            break;
+        }
+    }
+
+    /**
+     * Select a registered <code>EndpointMetadata</code> from the supplied list.
+     * The first candidate in the list that matches the end-point pattern
+     * definition and has a compatible request content type is selected. If
+     * there are no matching endpoints this method return <code>null</code>.
+     * 
+     * @param list
+     *            List of <code>EndpointMetadata</code> instances to chose from.
+     * @param pathParams
+     *            String containing any path parameters; empty if none. If the
+     *            value is not empty, its first character is '/'.
+     * @param requestType
+     *            MIME type specified in the request
+     * @param responseType
+     *            One-long array in which the response MIME type that will be
+     *            generated by the matching endpoint will be returned
+     * @param cache
+     *            A <code>ParamCache</code> instance in which partial results
+     *            are cached
+     * @return the selected <code>EndpointMetadata</code> or <code>null</code>.
+     */
+    EndpointMetadata selectEndpoint(final List<EndpointMetadata> list, final String pathParams,
+            final String requestType, final MediaType[] responseType, ParamCache cache) {
         EndpointMetadata md = null;
-        ParamCache cache = new ParamCache();
         if (list != null) {
             for (final EndpointMetadata candidate : list) {
                 if (candidate.pattern != null) {
                     Matcher matcher = candidate.getParamPathMatcher(cache, pathParams);
                     if (matcher.matches()) {
+                        if (responseType != null && candidate.expectedContentType != null
+                                && !requestType.startsWith(candidate.expectedContentType)) {
+                            continue;
+                        }
                         md = candidate;
                         break;
                     }
@@ -465,52 +525,77 @@ public class DirectResource implements RestFunctionInvoker {
                 }
             }
         }
-        if (md == null) {
-            // TODO - Is this the correct Exception?  Is there a way to convey this without logged stack trace?
-            throw new MalformedRequestException ("No matching endpoint");
-        }
+        return md;
+    }
+
+    /**
+     * Construct an argument array in preparations for calling a function.
+     * Values of the arguments are extracted from elements of the REST request,
+     * including a portion of the URI containing parameter values (the
+     * <code>pathParams</code>), <code>queryParams</code> specified by text
+     * after a '?' character in the URI, and the content of the request which
+     * may be interpreted as a byte array, a String or a JSON-formatted string
+     * in which elements can be specified by name.
+     * 
+     * @param pathParams
+     *            String containing parameters specified as part of the URI path
+     * @param queryParameters
+     *            <code>MultivaluedMap</code> containing query parameters
+     * @param content
+     *            Content of the request body as a byte array, or
+     *            <code>null</code> in the case of a GET request.
+     * @param cache
+     *            A cache for partial results
+     * @param md
+     *            The <code>EndpointMetadata</code> instance selected by
+     *            {@link #selectEndpoint(List, String, String, MediaType[], ParamCache)}
+     * @return the argument array
+     * @throws Exception
+     */
+    Object[] createArgsArray(final String pathParams, final MultivaluedMap<String, String> queryParameters,
+            final byte[] content, ParamCache cache, EndpointMetadata md) throws Exception {
         final Object[] args = new Object[md.inParams.length];
         for (int index = 0; index < md.inParams.length; index++) {
             final ParamMetadata pm = md.inParams[index];
             Object v = pm.source.value(pathParams, queryParameters, content, cache);
             args[index] = EndpointMetadata.convertType(pm, v);
         }
-
-        final ScriptInvoker invoker = conn.getRoutineLoader()
-                .getScriptInvoker(conn.getSession(), new TableName(procName.getSchemaName(), md.routineName)).get();
-        Object result = invoker.invokeNamedFunction(md.function, args);
-        if (result != null) {
-            if (EndpointMetadata.X_TYPE_JSON.equals(md.outParam.type)) {
-                createJsonGenerator(writer).writeObject(result);
-            } else {
-                writer.write(result.toString());
-            }
-        }
+        return args;
     }
 
-
-    private class EndpointMap {
+    class EndpointMap {
         final Map<EndpointAddress, List<EndpointMetadata>> map = new HashMap<EndpointAddress, List<EndpointMetadata>>();
 
-        public Map<EndpointAddress, List<EndpointMetadata>> getMap() {
+        Map<EndpointAddress, List<EndpointMetadata>> getMap() {
             return map;
         }
 
         void populate(final AkibanInformationSchema ais, final Session session) {
             for (final Routine routine : ais.getRoutines().values()) {
-                if (routine.getCallingConvention().equals(CallingConvention.SCRIPT_BINDINGS_JSON)
+                if (routine.getCallingConvention().equals(CallingConvention.SCRIPT_LIBRARY)
                         && routine.getDynamicResultSets() == 0 && routine.getParameters().isEmpty()) {
+                    final String definition = routine.getDefinition();
+                    final String schemaName = routine.getName().getSchemaName();
+                    final String procName = routine.getName().getTableName();
                     try {
-                        final ScriptInvoker invoker = reqs.routineLoader.getScriptInvoker(session,
-                                new TableName(routine.getName().getSchemaName(), routine.getName().getTableName()))
+                        parseAnnotations(schemaName, procName, definition);
+                    } catch (Exception e) {
+                        // Failed due to parse error on annotations.
+                        // TODO - log and report this
+                    }
+                    try {
+                        final ScriptInvoker invoker = reqs.routineLoader.getScriptInvoker(session, routine.getName())
                                 .get();
-                        invoker.invokeNamedFunction("_register", new Object[] { new RestFunctionRegistrar() {
-                            @Override
-                            public void register(String jsonSpec) throws Exception {
-                                EndpointMap.this.register(routine.getName().getSchemaName(), routine.getName()
-                                        .getTableName(), jsonSpec);
-                            }
-                        } });
+                        invoker.invokeNamedFunction(DISTINGUISHED_REGISTRATION_METHOD_NAME,
+                                new Object[] { new RestFunctionRegistrar() {
+                                    @Override
+                                    public void register(String jsonSpec) throws Exception {
+                                        EndpointMap.this.register(routine.getName().getSchemaName(), routine.getName()
+                                                .getTableName(), jsonSpec);
+                                    }
+                                } });
+                    } catch (ExternalRoutineInvocationException e) {
+                        // Ignore - expected case when using annotation
                     } catch (Exception e) {
                         // Failed because there is no _register function, or
                         // some other exception
@@ -521,8 +606,46 @@ public class DirectResource implements RestFunctionInvoker {
             }
         }
 
-        public void register(final String schema, final String routine, final String spec) throws Exception {
-            
+        void parseAnnotations(final String schemaName, final String procName, final String definition) throws Exception {
+            String[] lines = definition.split("\\n");
+            String spec = "";
+            for (final String s : lines) {
+                String line = s.trim();
+                if (line.startsWith(COMMENT_ANNOTATION1) || line.startsWith(COMMENT_ANNOTATION2)) {
+                    line = line.substring(COMMENT_ANNOTATION1.length()).trim();
+                    if (line.regionMatches(true, 0, ENDPOINT, 0, ENDPOINT.length())) {
+                        if (!spec.isEmpty()) {
+                            registerAnnotation(schemaName, procName, spec);
+                        }
+                        spec = line.substring(ENDPOINT.length()).trim();
+                    } else {
+                        if (!spec.isEmpty()) {
+                            spec += " " + line;
+                        }
+                    }
+                } else if (!spec.isEmpty()) {
+                    registerAnnotation(schemaName, procName, spec);
+                    spec = "";
+                }
+            }
+            if (!spec.isEmpty()) {
+                registerAnnotation(schemaName, procName, spec);
+                spec = "";
+            }
+        }
+
+        void registerAnnotation(final String schema, final String routine, final String spec) throws Exception {
+            if (spec.startsWith("(")) {
+                final Tokenizer tokens = new Tokenizer(spec, ", ");
+                tokens.grouped = true;
+                register(schema, routine, tokens.next(true));
+            } else {
+                register(schema, routine, spec);
+            }
+        }
+
+        void register(final String schema, final String routine, final String spec) throws Exception {
+
             EndpointMetadata em = EndpointMetadata.createEndpointMetadata(schema, routine, spec);
             EndpointAddress ea = new EndpointAddress(em.method, new TableName(schema, em.name));
 

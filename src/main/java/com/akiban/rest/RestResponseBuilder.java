@@ -101,6 +101,15 @@ public class RestResponseBuilder {
         }
         return builder.build();
     }
+    
+    public Response build(MediaType type) {
+        if(outputBody == null && outputGenerator == null && jsonp == null) {
+            status(Response.Status.NO_CONTENT);
+        }
+        Response.ResponseBuilder builder = Response.status(status).entity(createStreamingOutput());
+        builder.type(type);
+        return builder.build();
+    }
 
     public static void formatJsonError(StringBuilder builder, String code, String message) {
         builder.append("{\"code\":\"");

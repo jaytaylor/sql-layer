@@ -25,6 +25,7 @@ import com.akiban.server.service.session.Session;
 import org.codehaus.jackson.JsonNode;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
 import java.io.IOException;
@@ -60,6 +61,7 @@ public interface RestDMLService {
     public String ajdaxToSQL(TableName tableName, String ajdax) throws IOException;
     
     public void invokeRestEndpoint(PrintWriter writer, HttpServletRequest request, String method, TableName procName,
-            String pathParams, MultivaluedMap<String, String> queryParameters, byte[] content, RestFunctionInvoker registrar) throws Exception;
+            String pathParams, MultivaluedMap<String, String> queryParameters, byte[] content, 
+            RestFunctionInvoker invoker, final MediaType[] responseType) throws Exception;
     
 }

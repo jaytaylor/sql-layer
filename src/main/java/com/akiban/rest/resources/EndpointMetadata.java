@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.codehaus.jackson.JsonNode;
@@ -40,6 +41,8 @@ import com.akiban.ais.model.TableName;
  */
 public class EndpointMetadata {
 
+    private final static String REQUIRED = "required";
+    private final static String DEFAULT = "default";
 
     private final static String METHOD = "method";
     private final static String PATH = "path";
@@ -219,7 +222,11 @@ public class EndpointMetadata {
                 List<ParamMetadata> list = new ArrayList<>();
                 Tokenizer inTokens = new Tokenizer(v, ", ");
                 while (inTokens.hasMore()) {
-                    list.add(createInParameter(inTokens));
+                    final ParamMetadata pm = createInParameter(inTokens);
+                    if (em.expectedContentType == null && pm.source != null && pm.source.mimeType() != null) {
+                        em.expectedContentType = pm.source.mimeType();
+                    }
+                    list.add(pm);
                     if (inTokens.hasMore() && !inTokens.delimiterIn(",")) {
                         throw new IllegalArgumentException("Ambiguous input parameter specification: " + v);
                     }
@@ -228,7 +235,8 @@ public class EndpointMetadata {
                 break;
             }
             default:
-                throw new IllegalArgumentException("Invalid parameter specification element " + name + ": " + specification);
+                throw new IllegalArgumentException("Invalid parameter specification element " + name + ": "
+                        + specification);
             }
         }
         return em;
@@ -273,9 +281,9 @@ public class EndpointMetadata {
 
         String qualifier;
         while (tokens.getLastDelimiter() == ' ' && !(qualifier = tokens.next(false)).isEmpty()) {
-            if ("required".equals(qualifier)) {
+            if (REQUIRED.equalsIgnoreCase(qualifier)) {
                 pm.required = true;
-            } else if ("default".equals(qualifier)) {
+            } else if (DEFAULT.equalsIgnoreCase(qualifier)) {
                 v = tokens.next(true);
                 pm.defaultValue = convertType(pm, v);
             } else {
@@ -298,6 +306,14 @@ public class EndpointMetadata {
 
         @Override
         public String toString() {
+            StringBuilder sb = new StringBuilder();
+            append(sb, type);
+            if (required) {
+                append(sb, " ", REQUIRED);
+            }
+            if (defaultValue != null) {
+                append(sb, " ", DEFAULT, " ", "\'", defaultValue.toString(), "\'");
+            }
             String s = "(" + name + " " + type;
             if (required) {
                 s += " required";
@@ -323,6 +339,9 @@ public class EndpointMetadata {
         abstract Object value(final String pathParams, final MultivaluedMap<String, String> queryParams,
                 Object content, ParamCache cache);
 
+        String mimeType() {
+            return null;
+        }
     }
 
     /**
@@ -354,7 +373,7 @@ public class EndpointMetadata {
 
         @Override
         public String toString() {
-            return "(QueryParam:" + paramName + ")";
+            return QP + paramName + " " + super.toString();
         }
     }
 
@@ -383,7 +402,7 @@ public class EndpointMetadata {
 
         @Override
         public String toString() {
-            return "(PathParam:" + matchingGroup + ")";
+            return PP + matchingGroup + " " + super.toString();
         }
     }
 
@@ -400,21 +419,33 @@ public class EndpointMetadata {
         }
 
         @Override
+        String mimeType() {
+            return MediaType.APPLICATION_OCTET_STREAM;
+        }
+
+        @Override
         public String toString() {
-            return "(ContentBytes)";
+            return CONTENT + X_TYPE_BYTEARRAY + " " + super.toString();
         }
     }
 
     /**
      * Meta-data for a parameter that conveys the byte array supplied in the
      * request body of the REST call. This is intended to support a rest call
-     * that receives a text-valued payload.
+     * that receives a text-valued payload. This class represents both
+     * text/plain and application/json payloads. The constructor argument
+     * distinguishes which type is intended.
      */
     static class ParamSourceContentString extends ParamSourceMetadata {
         final boolean asJson;
 
         ParamSourceContentString(final boolean asJason) {
             this.asJson = asJason;
+        }
+
+        @Override
+        String mimeType() {
+            return asJson ? MediaType.APPLICATION_JSON : MediaType.TEXT_PLAIN;
         }
 
         Object value(final String pathParams, final MultivaluedMap<String, String> queryParams, Object content,
@@ -425,7 +456,7 @@ public class EndpointMetadata {
 
         @Override
         public String toString() {
-            return "(ContentString)";
+            return CONTENT + X_TYPE_STRING + " " + super.toString();
         }
     }
 
@@ -435,6 +466,11 @@ public class EndpointMetadata {
 
         ParamSourceJson(final String paramName) {
             this.paramName = paramName;
+        }
+
+        @Override
+        String mimeType() {
+            return MediaType.APPLICATION_JSON;
         }
 
         Object value(final String pathParams, final MultivaluedMap<String, String> queryParams, Object content,
@@ -457,7 +493,7 @@ public class EndpointMetadata {
 
         @Override
         public String toString() {
-            return "(JsonParam:" + paramName + ")";
+            return JP + paramName + " " + super.toString();
         }
     }
 
@@ -602,7 +638,7 @@ public class EndpointMetadata {
             }
             return result.toString();
         }
-        
+
         char getLastDelimiter() {
             return delimiter;
         }
@@ -660,18 +696,29 @@ public class EndpointMetadata {
      */
     ParamMetadata[] inParams;
 
+    String expectedContentType;
+
     @Override
     public String toString() {
-        String s = "routine=" + routineName;
-        s += ",function=" + function;
+        StringBuilder sb = new StringBuilder();
+        append(sb, METHOD, "=", method, " ", PATH, "=", name);
         if (pattern != null) {
-            s += ",pathParamPattern=" + pattern;
+            append(sb, pattern.toString());
         }
-        if (outParam != null) {
-            s += ",out:" + outParam;
+        append(sb, " ", FUNCTION, "=", function, " ", IN, "=(");
+        for (int index = 0; index < inParams.length; index++) {
+            if (index > 0) {
+                sb.append(", ");
+            }
+            sb.append(inParams[index]);
         }
-        s += ",in:" + Arrays.asList(inParams);
-        return s;
+        append(sb, ") ", OUT, "=");
+        if (outParam == null) {
+            sb.append("null");
+        } else {
+            append(sb, outParam.toString());
+        }
+        return sb.toString();
     }
 
     void setPathParameterPattern(final String s) {
@@ -685,4 +732,15 @@ public class EndpointMetadata {
         return cache.matcher;
     }
 
+    private static void append(final StringBuilder sb, final CharSequence... strings) {
+        for (final CharSequence s : strings) {
+            for (int index = 0; index < s.length(); index++) {
+                char c = s.charAt(index);
+                if ("\\".indexOf(c) >= 0) {
+                    sb.append('\\');
+                }
+                sb.append(c);
+            }
+        }
+    }
 }

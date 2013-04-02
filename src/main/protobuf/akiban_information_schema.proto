@@ -182,6 +182,7 @@ enum RoutineCallingConvention {
     SCRIPT_BINDINGS = 4;
     SCRIPT_FUNCTION_JSON = 5;
     SCRIPT_BINDINGS_JSON = 6;
+    SCRIPT_LIBRARY = 7;
 }
 
 enum RoutineSQLAllowed {
