@@ -182,14 +182,14 @@ public class EntityResource {
                                  @Context final UriInfo uri) {
         final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
-        return RestResponseBuilder
-                .forRequest(request)
-                .body(new RestResponseBuilder.BodyGenerator() {
-                    @Override
-                    public void write(PrintWriter writer) throws Exception {
-                        reqs.restDMLService.delete(writer, tableName, getPKString(uri));
-                    }
-                })
-                .build();
+        try {
+            reqs.restDMLService.delete(tableName, getPKString(uri));
+            return RestResponseBuilder
+                    .forRequest(request)
+                    .status(Response.Status.NO_CONTENT)
+                    .build();
+        } catch (Exception e) {
+            throw RestResponseBuilder.forRequest(request).wrapException(e);
+        }
     }
 }

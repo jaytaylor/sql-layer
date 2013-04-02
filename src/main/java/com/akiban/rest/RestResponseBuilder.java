@@ -125,7 +125,7 @@ public class RestResponseBuilder {
         return builder.toString();
     }
 
-    private WebApplicationException wrapException(Throwable e) {
+    public WebApplicationException wrapException(Throwable e) {
         final ErrorCode code;
         if(e instanceof InvalidOperationException) {
             code = ((InvalidOperationException)e).getCode();
