@@ -95,7 +95,16 @@ public class RestResponseBuilder {
         if(outputBody == null && outputGenerator == null && jsonp == null) {
             status(Response.Status.NO_CONTENT);
         }
-        Response.ResponseBuilder builder = Response.status(status).entity(createStreamingOutput());
+        if (isJsonp) {
+            status(Response.Status.OK);
+        }
+        Response.ResponseBuilder builder;
+        
+        if (this.status == Response.Status.NO_CONTENT.getStatusCode()) {
+            builder = Response.status(status);
+        } else {
+                builder = Response.status(status).entity(createStreamingOutput());
+        }
         if(isJsonp) {
             builder.type(ResourceHelper.APPLICATION_JAVASCRIPT_TYPE);
         }
@@ -179,7 +188,6 @@ public class RestResponseBuilder {
             }
         };
     }
-
 
     private static Map<Class, Response.Status> buildExceptionStatusMap() {
         Map<Class, Response.Status> map = new HashMap<>();

@@ -253,6 +253,9 @@ public class RestServiceFilesIT extends ITBase {
             if(!caseParams.expectedIgnore) {
                 compareExpected(caseParams.requestMethod + " response", caseParams.expectedResponse, actual);
             }
+            if (caseParams.expectedHeader != null) {
+                compareHeaders(httpConn, caseParams.expectedHeader);
+            }
         } finally {
             fullyDisconnect(httpConn);
         }
@@ -303,6 +306,19 @@ public class RestServiceFilesIT extends ITBase {
             assertEquals(assertMsg, expectedNode.toString(), actualNode.toString());
         } else if(!skipNodeCheck) {
             assertEquals(assertMsg, expectedNode, actualNode);
+        }
+    }
+    
+    private void compareHeaders (HttpURLConnection httpConn, String checkHeaders) throws Exception {
+        String[] headerList = checkHeaders.split (Strings.NL);
+        for (String header : headerList) {
+            String[] nameValue = header.split(":", 2);
+            
+            if (nameValue[0].equals("responseCode")) {
+                assertEquals ("Headers Response", Integer.parseInt(nameValue[1].trim()), httpConn.getResponseCode());
+            } else {
+                assertEquals ("Headers check", nameValue[1].trim(), httpConn.getHeaderField(nameValue[0]));
+            }
         }
     }
 
