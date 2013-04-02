@@ -354,6 +354,38 @@ public class UserTable extends Table
             assert primaryKeyIndex != null : this;
             primaryKey = new PrimaryKey(primaryKeyIndex);
         }
+        
+        // Put the columns into our list
+        TreeSet<String> entities = new TreeSet<String>();
+        for (Column column : getColumns()) {
+            entities.add(column.getName());
+        }
+
+        // put the child tables into their ordered list.
+        TreeMap<String, UserTable> childTables = new TreeMap<String, UserTable>();
+        for (Join childJoin : candidateChildJoins ) {
+            String childName;
+            if (childJoin.getChild().getName().getSchemaName().equals(getName().getSchemaName())) {
+                childName = childJoin.getChild().getName().getTableName();
+            } else {
+                childName = childJoin.getChild().getName().toString();
+            }
+            childTables.put(childName, childJoin.getChild());
+        }
+       
+        // Mangle the child table names to be unique with the "_"
+        for (String child : childTables.keySet()) {
+            String tryName = child;
+            while (entities.contains(tryName)) {
+                tryName = "_" + tryName;
+            }
+            childTables.get(child).nameForOutput = tryName;
+            entities.add(tryName);
+        }
+        
+        if (nameForOutput == null) {
+            nameForOutput = isSchemaNameSameAsParent() ? getName().getTableName() : getName().toString();
+        }
     }
 
     public Integer getDepth()
@@ -490,7 +522,7 @@ public class UserTable extends Table
     }
 
     public String getNameForOutput() {
-        return isSchemaNameSameAsParent() ? getName().getTableName() : getName().toString();
+        return nameForOutput;
     }
     
     private void addTableAndDescendents(UserTable table, List<UserTable> accumulator)
@@ -619,17 +651,18 @@ public class UserTable extends Table
     private PrimaryKey primaryKey;
     private HKey hKey;
     private boolean containsOwnHKey;
-    private HKey branchHKey;
+    //private HKey branchHKey;
     private List<Column> allHKeyColumns;
     private Integer depth = null;
     private volatile List<UserTable> hKeyDependentTables;
-    private volatile List<UserTable> ancestors;
+    //private volatile List<UserTable> ancestors;
     private MemoryTableFactory tableFactory;
     private Integer version;
     private PendingOSC pendingOSC;
     private final Collection<FullTextIndex> fullTextIndexes;
     private final Collection<FullTextIndex> unmodifiableFullTextIndexes;
-
+    private String nameForOutput;
+    
     // consts
 
     private static final Comparator<Column> COLUMNS_BY_TABLE_DEPTH = new Comparator<Column>() {
