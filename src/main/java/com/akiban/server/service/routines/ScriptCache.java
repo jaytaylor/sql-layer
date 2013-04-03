@@ -150,7 +150,7 @@ public class ScriptCache {
         }
 
         public ScriptPool<ScriptInvoker> getScriptInvoker() {
-            assert invocable ;//&& (function != null);
+            assert invocable ; //&& (function != null);
             // Can share if at multi-threaded (or stronger), since we are
             // invoking
             // the function.
