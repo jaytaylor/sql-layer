@@ -182,7 +182,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
-    public void delete(PrintWriter writer, TableName tableName, String identifier) {
+    public void delete(TableName tableName, String identifier) {
         try (Session session = sessionService.createSession();
              CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
             AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
