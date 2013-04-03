@@ -134,8 +134,7 @@ final class EntityBuilder {
                         col.getName());
                 indexFields.add(indexField);
             }
-            EntityIndex entityIndex = new EntityIndex();
-            entityIndex.setFields(indexFields);
+            EntityIndex entityIndex = new EntityIndex(indexFields);
             EntityIndex old = out.put(jsonName, entityIndex);
             if (old != null)
                 throw new InconvertibleAisException("duplicate index name: " + jsonName);

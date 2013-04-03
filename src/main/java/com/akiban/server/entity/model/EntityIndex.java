@@ -32,7 +32,7 @@ public final class EntityIndex {
         return fields;
     }
 
-    public void setFields(List<IndexField> fields) {
+    void setFields(List<IndexField> fields) {
         this.fields = ImmutableList.copyOf(fields);
     }
 
@@ -40,7 +40,7 @@ public final class EntityIndex {
         return type;
     }
 
-    public void setType(IndexType type) {
+    void setType(IndexType type) {
         this.type = type;
     }
 
@@ -76,15 +76,15 @@ public final class EntityIndex {
 
     @JsonCreator
     public static EntityIndex create(Object def) {
-        EntityIndex result = new EntityIndex();
+        EntityIndex result;
         if (def instanceof List) {
-            createIndexFields(def, result);
+            result = createIndexFields(def);
         }
         else if (def instanceof Map) {
             Map<?,?> asMap = EntityUtil.cast(def, Map.class);
             Object fieldObj = asMap.get("fields");
             String typeObj = EntityUtil.cast(asMap.get("type"), String.class);
-            createIndexFields(fieldObj, result);
+            result = createIndexFields(fieldObj);
             result.type = IndexType.valueOf(typeObj.toUpperCase());
         }
         else {
@@ -93,18 +93,19 @@ public final class EntityIndex {
         return result;
     }
 
-    private static void createIndexFields(Object def, EntityIndex result) {
+    private static EntityIndex createIndexFields(Object def) {
         List<?> defList = EntityUtil.cast(def, List.class);
         List<IndexField> fields = new ArrayList<>(defList.size());
         for (Object field : defList)
             fields.add(IndexField.create(field));
-        result.setFields(fields);
+        return new EntityIndex(fields);
     }
 
-    public EntityIndex() {
+    public EntityIndex(List<IndexField> fields) {
+        this.fields = ImmutableList.copyOf(fields);
     }
 
-    private List<IndexField> fields;
+    private ImmutableList<IndexField> fields;
     private IndexType type;
 
     public enum IndexType {
