@@ -34,6 +34,7 @@ public interface FullTextIndexService extends FullTextIndexInfos {
      * @param name 
      */
     public void schedulePopulate(String schema, String table, String index);
+
     /**
      * Update the given index based on the changedRow 
      * 
@@ -41,8 +42,6 @@ public interface FullTextIndexService extends FullTextIndexInfos {
      * @param changedRow 
      */
     public void updateIndex(Session session, IndexName name, Iterable<byte[]> rows);
-
-    public long createIndex(Session session, IndexName name);
     public void dropIndex(Session session, IndexName name);
     public Cursor searchIndex(QueryContext context, IndexName name, 
                               Query query, int limit);

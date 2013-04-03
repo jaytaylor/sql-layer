@@ -78,12 +78,12 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
     private File indexPath;
 
-    private final Timer maintenanceTimer = new Timer();
+    private volatile Timer maintenanceTimer;
     private long maintenanceInterval;
     private TimerTask updateWorker;
     private PersistitStore persistitStore;
 
-    private final Timer populateTimer = new Timer();
+    private volatile Timer populateTimer;
     private long populateDelayInterval;
 
     private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceImpl.class);
@@ -99,14 +99,11 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         this.transactionService = transactionService;
         this.treeService = treeService;
 
-        updateWorker = DEFAULT_UPDATE_WORKER;
-
     }
 
     /* FullTextIndexService */
 
-    @Override
-    public long createIndex(Session session, IndexName name) {
+    private long createIndex(Session session, IndexName name) {
         if (session == null)
             session = sessionService.createSession();
         FullTextIndexInfo index = getIndex(session, name);
@@ -123,10 +120,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         
         try
         {
-            synchronized (indexes) {
-                indexes.remove(name);
-            }
-            
             // see if there exists a promise for populating this index
             Exchange ex = getPopulateExchange(session);
             ex.clear().append(name.getSchemaName())
@@ -135,9 +128,12 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             
             if (ex.traverse(Key.Direction.EQ, true, 0))
                 ex.fetchAndRemove();
-        
+
             FullTextIndexInfo index = getIndex(session, name);
             index.deletePath();
+            synchronized (indexes) {
+                indexes.remove(name);
+            }
         }
         catch (PersistitException e)
         {
@@ -303,7 +299,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         }
     }
 
-    private final TimerTask DEFAULT_UPDATE_WORKER = new TimerTask()
+    private class DefaultUpdateWorker extends TimerTask
     {
         @Override
         // 'sync' because only one worker can work at a time?
@@ -346,13 +342,13 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
  
     @Override
     public void schedulePopulate(String schema, String table, String index)
-    {
+    {   
         Session session = sessionService.createSession();
         boolean success = false;
         try
         {
             transactionService.beginTransaction(session);
-            if(addPopulate(session, schema, table, index) && !hasScheduled)
+            if(addPopulate(session, schema, table, index) && !hasScheduled && populateEnabled)
             {
                 populateTimer.schedule(populateWorker(), populateDelayInterval);
                 hasScheduled = true;
@@ -406,30 +402,47 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     // ---------- for testing ---------------
     void disableUpdateWorker()
     {
+        if (maintenanceTimer == null)
+        {
+            logger.debug("maintenance worker ALREADY disabled");
+            return;
+        }
         updateWorker.cancel();
         maintenanceTimer.cancel();
         maintenanceTimer.purge();
-        
+        maintenanceTimer = null;
+        updateWorker = null;
     }
     
     protected void enableUpdateWorker()
     {
         maintenanceInterval = Long.parseLong(configService.getProperty(UPDATE_INTERVAL));
+        maintenanceTimer = new Timer();
+        updateWorker = new DefaultUpdateWorker();
         maintenanceTimer.scheduleAtFixedRate(updateWorker, maintenanceInterval, maintenanceInterval);
     }
     
     protected void enablePopulateWorker()
     {
         populateDelayInterval = Long.parseLong(configService.getProperty(POPULATE_DELAY_INTERVAL));
+        populateTimer = new Timer();
         populateTimer.schedule(populateWorker(), populateDelayInterval);
+        populateEnabled = true;
         hasScheduled = true;
     }
     
     void disablePopulateWorker()
     {
+        if (populateTimer == null)
+        {
+            logger.debug("populate worker already disabled");
+            return;
+        }
         populateTimer.cancel();
         populateTimer.purge();
         hasScheduled = false;
+        populateEnabled = false;
+        populateTimer = null;
     }
     
     private TimerTask populateWorker()
@@ -465,6 +478,8 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     }
 
     private volatile boolean hasScheduled = false;
+    private volatile boolean populateEnabled = false;
+
     private synchronized boolean addPopulate(Session session,
                            String schema,
                            String table,
