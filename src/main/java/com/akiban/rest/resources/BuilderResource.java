@@ -145,7 +145,6 @@ public class BuilderResource {
 
     @DELETE
     @Path("/entity/{entity}/" + IDENTIFIERS_MULTI)
-    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response delete(@Context HttpServletRequest request,
                            @PathParam("entity") String entityName,
                            @Context final UriInfo uri) {
