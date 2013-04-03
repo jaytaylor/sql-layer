@@ -30,7 +30,6 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
 import com.akiban.qp.row.HKeyRow;
 import com.akiban.qp.rowtype.HKeyRowType;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.util.HKeyCache;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.service.Service;
@@ -370,9 +369,8 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 while ((toPopulate = nextInQueue(ex)) != null)
                 {
                     createIndex(session, toPopulate);
-                    ex.fetchAndRemove();
                 }
-
+                ex.removeAll();
                 hasScheduled = false;
             }
             catch (PersistitException ex1)
@@ -422,7 +420,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     }
 
     //----------- private helpers -----------
-    private IndexName nextInQueue(Exchange ex) throws PersistitException
+    protected IndexName nextInQueue(Exchange ex) throws PersistitException
     {
         Key key = ex.getKey();
 
@@ -438,7 +436,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             return null;
     }
     
-    private Exchange getPopulateExchange(Session session) throws PersistitException
+    protected Exchange getPopulateExchange(Session session) throws PersistitException
     {
         Exchange ret = treeService.getExchange(session,
                                                treeService.treeLink(POPULATE_SCHEMA,

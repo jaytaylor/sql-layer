@@ -18,6 +18,7 @@
 package com.akiban.server.service.text;
 
 import com.akiban.ais.model.FullTextIndex;
+import com.akiban.ais.model.IndexName;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import static com.akiban.qp.operator.API.cursor;
@@ -27,9 +28,13 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionServiceImpl;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.test.it.qp.TestRow;
 
+import com.persistit.Exchange;
+import com.persistit.exception.PersistitException;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -106,6 +111,103 @@ public class FullTextIndexServiceIT extends ITBase
         queryContext = queryContext(adapter);
     }
 
+    @Test
+    public void testPopulateScheduling() throws InterruptedException, PersistitException
+    {
+        // This test is specifically for FullTextIndexServiceImpl.java
+        assertEquals(FullTextIndexServiceImpl.class, fullText.getClass());
+        FullTextIndexServiceImpl fullTextImpl = (FullTextIndexServiceImpl)fullText;
+        
+        // disable the populate worker (so it doesn't read all the entries
+        // out before we get a chance to look at it.
+        fullTextImpl.disableUpdateWorker();
+        
+        // create 3 indices
+        final FullTextIndex expecteds[] = new FullTextIndex[]
+        {
+            createFullTextIndex(serviceManager(),
+                                SCHEMA, "c", "idx1_c",
+                                "name"),
+        
+            createFullTextIndex(serviceManager(),
+                                SCHEMA, "c", "idx2_c",
+                                "i.sku"),
+            createFullTextIndex(serviceManager(),
+                                SCHEMA, "c", "idx3_c",
+                                "name", "i.sku")
+        };
+
+        
+        // read the entries out
+        traverse(fullTextImpl,
+                 new Visitor()
+                 {
+                    int n = 0;
+                    public void visit(IndexName idx)
+                    {
+                        assertEquals("entry[" + n + "]", expecteds[n++].getIndexName(),
+                                                         idx);
+                    }
+
+                    public void endOfTree()
+                    {
+                        assertEquals(expecteds.length, n);
+                    }
+                 });
+        
+
+        // let the worker do its job.
+        // (After it is done, the tree had better be empty)
+        fullTextImpl.enablePopulateWorker();
+        Thread.sleep(populateDelayInterval * 5);
+
+        traverse(fullTextImpl,
+                 new Visitor()
+                 {
+                     int n = 0;
+                    
+                     @Override
+                     public void visit(IndexName idx)
+                     {
+                         ++n;
+                     }
+
+                     @Override
+                     public void endOfTree()
+                     {
+                         assertEquals (0, n);
+                     } 
+                 });
+    }
+
+    
+    private static interface Visitor
+    {
+        void visit(IndexName idx);
+        void endOfTree();
+    }
+    
+    
+    private static void traverse(FullTextIndexServiceImpl serv,
+                                 Visitor visitor) throws PersistitException
+    {
+         Session session = new SessionServiceImpl().createSession();
+
+         try
+         {
+             Exchange ex = serv.getPopulateExchange(session);
+             IndexName toPopulate;
+             while ((toPopulate = serv.nextInQueue(ex)) != null)
+                 visitor.visit(toPopulate);
+             visitor.endOfTree();
+         }
+         finally
+         {
+             session.close();
+         }
+    }
+    
+    
     @Test
     public void testUpdate() throws InterruptedException
     {
