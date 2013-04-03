@@ -176,7 +176,6 @@ public class EntityResource {
 
     @DELETE
     @Path("/" + IDENTIFIERS_MULTI)
-    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response deleteEntity(@Context HttpServletRequest request,
                                  @PathParam("entity") String entity,
                                  @Context final UriInfo uri) {

@@ -101,9 +101,9 @@ public class RestResponseBuilder {
         Response.ResponseBuilder builder;
         
         if (this.status == Response.Status.NO_CONTENT.getStatusCode()) {
-            builder = Response.status(status);
+            builder = Response.status(status).type((MediaType)null);
         } else {
-                builder = Response.status(status).entity(createStreamingOutput());
+            builder = Response.status(status).entity(createStreamingOutput());
         }
         if(isJsonp) {
             builder.type(ResourceHelper.APPLICATION_JAVASCRIPT_TYPE);
