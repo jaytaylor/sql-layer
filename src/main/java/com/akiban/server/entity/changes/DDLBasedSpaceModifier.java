@@ -126,7 +126,8 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
         // The child side of the joins are hidden in entity.json. Find the old ones and copy the UUIds to the new table.
         for(Attribute oldAttr : oldLookups.getAttributesByUuid().values()) {
             Attribute newAttr = newLookups.attributeFor(oldAttr.getUUID());
-            if(oldAttr.getAttributeType() == Attribute.AttributeType.COLLECTION &&
+            if(newAttr != null &&
+               oldAttr.getAttributeType() == Attribute.AttributeType.COLLECTION &&
                newAttr.getAttributeType() == Attribute.AttributeType.COLLECTION) {
                 UserTable oldTable = oldAIS.getUserTable(schemaName, oldLookups.nameFor(oldAttr.getUUID()));
                 UserTable newTable = newAIS.getUserTable(schemaName, newLookups.nameFor(newAttr.getUUID()));
