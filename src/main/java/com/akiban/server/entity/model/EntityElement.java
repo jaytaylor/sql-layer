@@ -37,7 +37,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
-abstract class EntityElement {
+public abstract class EntityElement {
 
     public UUID getUuid() {
         return uuid;

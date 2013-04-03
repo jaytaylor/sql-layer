@@ -18,172 +18,157 @@
 package com.akiban.server.entity.changes;
 
 import com.akiban.server.entity.model.Entity;
+import com.akiban.server.entity.model.EntityCollection;
+import com.akiban.server.entity.model.EntityField;
 import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Space;
 import com.akiban.server.entity.model.Validation;
+import com.akiban.util.MapDiff;
+import com.akiban.util.MapDiffHandler;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
 public final class SpaceDiff {
 
-    public void apply(SpaceModificationHandler out) {
-//        Set<UUID> inBoth = new HashSet<>();
-//        // dropped entities
-//        for (Map.Entry<UUID, Entity> orig : originalEntities.entitiesByUuid().entrySet()) {
-//            UUID uuid = orig.getKey();
-//            if (updatedEntities.containsUuid(uuid))
-//                inBoth.add(uuid);
-//            else
-//                out.dropEntity(orig.getValue(), originalEntities.getName(uuid));
-//        }
-//        // new entities
-//        for (Map.Entry<UUID, Entity> updated : updatedEntities.entitiesByUuid().entrySet()) {
-//            UUID uuid = updated.getKey();
-//            if (!originalEntities.containsUuid(uuid))
-//                out.addEntity(updated.getValue(), updatedEntities.getName(uuid));
-//        }
-//        for (UUID uuid : inBoth) {
-//            out.beginEntity(updatedEntities.getEntity(uuid), updatedEntities.getName(uuid));
-//            if (!originalEntities.getName(uuid).equals(updatedEntities.getName(uuid)))
-//                out.renameEntity(uuid, originalEntities.getName(uuid));
-//            attributeActions(uuid, out);
-//            validationActions(uuid, out);
-//            indexActions(uuid, out);
-//            out.endEntity();
-//        }
+    public static <H extends SpaceModificationHandler> H apply(Space original, Space updated, H out) {
+        MapDiff.apply(entitiesByUuid(original.getEntities()), entitiesByUuid(updated.getEntities()), new Handler(out));
+        return out;
     }
 
-    private void attributeActions(UUID entityUUID, SpaceModificationHandler out) {
-//        AttributeLookups origLookups = new AttributeLookups(originalEntities.getEntity(entityUUID));
-//        AttributeLookups updateLookups = new AttributeLookups(updatedEntities.getEntity(entityUUID));
-//        out.beginAttributes(origLookups, updateLookups);
-//
-//        // added attributes
-//        Set<UUID> inBoth = new HashSet<>();
-//        for (Map.Entry<UUID, Attribute> orig : origLookups.getAttributesByUuid().entrySet()) {
-//            UUID uuid = orig.getKey();
-//            if (updateLookups.containsAttribute(uuid)) {
-//                inBoth.add(uuid);
-//            }
-//            else {
-//                UUID parent = origLookups.getParentAttribute(uuid);
-//                if (parent == null || updateLookups.containsAttribute(parent)) {
-//                    Attribute droppedAttribute = orig.getValue();
-//                    if (droppedAttribute.isSpinal())
-//                        out.error("Can't drop spinal attribute");
-//                    else
-//                        out.dropAttribute(droppedAttribute);
-//                }
-//            }
-//        }
-//        // dropped attributes
-//        for (Map.Entry<UUID, Attribute> updated : updateLookups.getAttributesByUuid().entrySet()) {
-//            UUID uuid = updated.getKey();
-//            if (!origLookups.containsAttribute(uuid)) {
-//                UUID parent = updateLookups.getParentAttribute(uuid);
-//                if (parent == null || origLookups.containsAttribute(parent)) {
-//                    if (updated.getValue().isSpinal())
-//                        out.error("Can't add spinal attributes to entities or collections");
-//                    else
-//                        out.addAttribute(uuid);
-//                }
-//            }
-//        }
-//        // modified
-//        for (UUID uuid : inBoth) {
-//            if (!origLookups.pathFor(uuid).equals(updateLookups.pathFor(uuid))) {
-//                out.error("Can't move attribute");
-//                continue;
-//            }
-//            Attribute orig = origLookups.attributeFor(uuid);
-//            Attribute updated = updateLookups.attributeFor(uuid);
-//            if (!origLookups.nameFor(uuid).equals(updateLookups.nameFor(uuid))) {
-//                if (orig.isSpinal())
-//                    out.error("Can't rename spinal attributes");
-//                else
-//                    out.renameAttribute(uuid, origLookups.nameFor(uuid));
-//            }
-//            if (!Objects.equals(orig.getAttributeType(), updated.getAttributeType())) {
-//                out.error("Can't change an attribute's class (scalar or collection)");
-//            }
-//            else if (orig.getAttributeType() == Attribute.AttributeType.SCALAR) {
-//                if (orig.getSpinePos() != updated.getSpinePos()) {
-//                    // assume at least one of them isSpinal; otherwise they're both -1.
-//                    if (orig.isSpinal() && updated.isSpinal())
-//                        out.error("Can't change order of spinal attributes");
-//                    else if (orig.isSpinal())
-//                        out.error("Can't make spinal attribute non-spinal");
-//                    else
-//                        out.error("Can't make non-spinal attribute spinal");
-//                }
-//                if (!lc(orig.getType()).equals(lc(updated.getType()))) {
-//                    if (orig.isSpinal())
-//                        out.error("Can't change type of spinal attributes");
-//                    else
-//                        out.changeScalarType(uuid, updated);
-//                }
-//                if (!orig.getValidation().equals(updated.getValidation()))
-//                    out.changeScalarValidations(uuid, updated);
-//                if (!orig.getProperties().equals(updated.getProperties())) {
-//                    if (orig.isSpinal())
-//                        out.error("Can't change properties of spinal attributes");
-//                    else
-//                        out.changeScalarProperties(uuid, updated);
-//                }
-//            }
-//            else if (orig.getAttributeType() == Attribute.AttributeType.COLLECTION) {
-//                // do nothing -- the visitor will have captured children
-//            }
-//            else {
-//                throw new AssertionError("unknown attribute class: " + orig.getAttributeType());
-//            }
-//        }
-//        out.endAttributes();
+    private static class Handler implements MapDiffHandler<UUID, Entity> {
+
+        @Override
+        public void added(Entity element) {
+            out.addEntity(element);
+        }
+
+        @Override
+        public void dropped(Entity element) {
+            out.dropEntity(element);
+        }
+
+        @Override
+        public void inBoth(UUID uuid, Entity original, Entity updated) {
+            out.beginEntity(original, updated);
+            String origName = original.getName();
+            String updatedName = updated.getName();
+            if (!origName.equals(updatedName))
+                out.renameEntity();
+            fieldActions(original, updated);
+            validationActions(original, updated);
+            indexActions(original, updated);
+            collectionActions(original, updated);
+            out.endEntity();
+        }
+
+        private void fieldActions(Entity original, Entity updated) {
+            final AttributeLookups<EntityField> origLookups = new AttributeLookups<>(original, EntityField.class);
+            final AttributeLookups<EntityField> updateLookups = new AttributeLookups<>(updated, EntityField.class);
+
+            MapDiff.apply(origLookups.getElementsByUuid(), updateLookups.getElementsByUuid(),
+                    new MapDiffHandler<UUID, EntityField>()
+            {
+                @Override
+                public void added(EntityField element) {
+                    out.addField(element.getUuid());
+                }
+
+                @Override
+                public void dropped(EntityField element) {
+                    out.dropField(element.getUuid());
+                }
+
+                @Override
+                public void inBoth(UUID uuid, EntityField origField, EntityField updatedField) {
+                    assert origField.getUuid().equals(updatedField.getUuid()) : origField + " / " + updatedField;
+                    if (!origLookups.pathFor(uuid).equals(updateLookups.pathFor(uuid))) {
+                        out.error("Can't move field");
+                    }
+                    else {
+                        if (!origField.getName().equals(updatedField.getName()))
+                            out.renameField(origField.getUuid());
+                        if (!origField.getType().toLowerCase().equals(updatedField.getType().toLowerCase()))
+                            out.changeFieldType(uuid);
+                        if (!origField.getValidations().equals(updatedField.getValidations()))
+                            out.changeFieldValidations(uuid);
+                        if (!origField.getProperties().equals(updatedField.getProperties()))
+                            out.changeFieldProperties(uuid);
+                    }
+                }
+            });
+        }
+
+        private void validationActions(Entity original, Entity updated) {
+            Set<Validation> origValidations = new HashSet<>(original.getValidations());
+            Set<Validation> updatedValidations = new HashSet<>(updated.getValidations());
+            for (Validation orig : origValidations) {
+                if (!updatedValidations.contains(orig))
+                    out.dropEntityValidation(orig);
+            }
+            for (Validation updatedValidation : updatedValidations) {
+                if (!origValidations.contains(updatedValidation))
+                    out.addEntityValidation(updatedValidation);
+            }
+        }
+
+        private void indexActions(Entity origial, Entity updated) {
+            Map<EntityIndex, String> originalIndexes = origial.getIndexes().inverse();
+            Map<EntityIndex, String> updatedIndexes = updated.getIndexes().inverse();
+
+            MapDiff.apply(originalIndexes, updatedIndexes, new MapDiffHandler<EntityIndex, String>() {
+                @Override
+                public void added(String element) {
+                    out.addIndex(element);
+                }
+
+                @Override
+                public void dropped(String element) {
+                    out.dropIndex(element);
+                }
+
+                @Override
+                public void inBoth(EntityIndex index, String originalName, String updatedName) {
+                    if (!originalName.equals(updatedName))
+                        out.renameIndex(index);
+                }
+            });
+        }
+
+        private void collectionActions(Entity original, Entity updated) {
+            MapDiff.apply(entitiesByUuid(original.getCollections()), entitiesByUuid(updated.getCollections()), this);
+
+            if (!original.getIdentifying().equals(updated.getIdentifying()))
+                out.identifyingFieldsChanged();
+            boolean isCollection = (original instanceof EntityCollection);
+            assert isCollection == (updated instanceof EntityCollection) : original + " / " + updated;
+            if (isCollection) {
+                EntityCollection origCollection = (EntityCollection) original;
+                EntityCollection updatedCollection = (EntityCollection) updated;
+                if (!origCollection.getGroupingFields().equals(updatedCollection.getGroupingFields()))
+                    out.groupingFieldsChanged();
+            }
+        }
+
+        private Handler(SpaceModificationHandler out) {
+            this.out = out;
+        }
+
+        private final SpaceModificationHandler out;
     }
 
-    private static String lc(String string) {
-        return string.toLowerCase();
-    }
+    private SpaceDiff() {}
 
-    private void validationActions(UUID entityUUID, SpaceModificationHandler out) {
-//        Set<Validation> origValidations = new HashSet<>(originalEntities.getEntity(entityUUID).getValidation());
-//        Set<Validation> updatedValidations = new HashSet<>(updatedEntities.getEntity(entityUUID).getValidation());
-//        for (Validation orig : origValidations) {
-//            if (!updatedValidations.contains(orig))
-//                out.dropEntityValidation(orig);
-//        }
-//        for (Validation updated : updatedValidations) {
-//            if (!origValidations.contains(updated))
-//                out.addEntityValidation(updated);
-//        }
+    private static Map<UUID, Entity> entitiesByUuid(Collection<? extends Entity> entities) {
+        Map<UUID, Entity> entityMap = new HashMap<>(entities.size());
+        for (Entity entity : entities) {
+            Object old = entityMap.put(entity.getUuid(), entity);
+            assert old == null : entity.getUuid();
+        }
+        return entityMap;
     }
-
-    private void indexActions(UUID uuid, SpaceModificationHandler out) {
-//        Map<EntityIndex, String> originalIndexes = originalEntities.getEntity(uuid).getIndexes().inverse();
-//        Map<EntityIndex, String> updatedIndexes = updatedEntities.getEntity(uuid).getIndexes().inverse();
-//        for (Map.Entry<EntityIndex, String> origEntry : originalIndexes.entrySet()) {
-//            EntityIndex origIndex = origEntry.getKey();
-//            String origName = origEntry.getValue();
-//            if (!updatedIndexes.containsKey(origIndex))
-//                out.dropIndex(origName, origIndex);
-//            else if (!origName.equals(updatedIndexes.get(origIndex)))
-//                out.renameIndex(origIndex, origName, updatedIndexes.get(origIndex));
-//        }
-//        for (Map.Entry<EntityIndex, String> updatedIndex : updatedIndexes.entrySet()) {
-//            if (!originalIndexes.containsKey(updatedIndex.getKey()))
-//                out.addIndex(updatedIndex.getValue());
-//        }
-    }
-
-    public SpaceDiff(Space original, Space update) {
-        originalEntities = new SpaceLookups(original);
-        updatedEntities = new SpaceLookups(update);
-    }
-
-    private final SpaceLookups originalEntities;
-    private final SpaceLookups updatedEntities;
 }

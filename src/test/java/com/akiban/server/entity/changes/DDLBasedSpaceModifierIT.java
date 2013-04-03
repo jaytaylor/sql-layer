@@ -80,9 +80,8 @@ public final class DDLBasedSpaceModifierIT extends ITBase {
         Space origSpace = Space.readSpace(testName + ORIG_SUFFIX, DDLBasedSpaceModifierIT.class, null);
         loadSpace(origSpace);
         Space updateSpace = Space.readSpace(testName + UPDATE_SUFFIX, DDLBasedSpaceModifierIT.class, null);
-        SpaceDiff diff = new SpaceDiff(origSpace, updateSpace);
 
-//        diff.apply(new DDLBasedSpaceModifier(ddl(), session(), SCHEMA, updateSpace));
+        SpaceDiff.apply(origSpace, updateSpace, new DDLBasedSpaceModifier(ddl(), session(), SCHEMA, updateSpace));
 
         String expected = Strings.dumpFileToString(new File(dir, testName + EXPECTED_SUFFIX));
         String actual = AISDumper.dumpDeterministicAIS(ais(), SCHEMA);
@@ -91,7 +90,7 @@ public final class DDLBasedSpaceModifierIT extends ITBase {
 
     private void loadSpace(Space space) {
         assert false : "TODO";
-        EntityToAIS eToAIS = new EntityToAIS(/*SCHEMA*/);
+        EntityToAIS eToAIS = new EntityToAIS(SCHEMA);
         space.visit(eToAIS);
         AkibanInformationSchema ais = null;//eToAIS.getAIS();
         for(Group group : ais.getGroups().values()) {

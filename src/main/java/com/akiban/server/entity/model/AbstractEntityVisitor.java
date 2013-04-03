@@ -20,6 +20,7 @@ package com.akiban.server.entity.model;
 public abstract class AbstractEntityVisitor implements EntityVisitor<RuntimeException> {
     @Override
     public void enterTopEntity(Entity entity) {
+        visitEntityInternal(entity);
     }
 
     @Override
@@ -32,6 +33,7 @@ public abstract class AbstractEntityVisitor implements EntityVisitor<RuntimeExce
 
     @Override
     public void enterCollection(EntityCollection collection) {
+        visitEntityInternal(collection);
     }
 
     @Override
@@ -40,5 +42,36 @@ public abstract class AbstractEntityVisitor implements EntityVisitor<RuntimeExce
 
     @Override
     public void leaveCollections() {
+    }
+
+    /**
+     * Visits any entity, regardless of whether it's top-level or a collection.
+     * This is invoked from {@linkplain #enterTopEntity} and {@linkplain #enterCollection}, so if you use this
+     * method and override either of those, make sure to invoke <tt>super</tt> within the override.
+     * @param entity the entity to visit
+     */
+    protected void visitEntity(Entity entity) {
+    }
+
+    /**
+     * Visits any EntityElement: entities, collections and fields.
+     * This is invoked from {@linkplain #enterTopEntity} and {@linkplain #enterCollection}, so if you use this
+     * method and override either of those, make sure to invoke <tt>super</tt> within the override.
+     * @param element the entity to visit
+     */
+    protected void visitEntityElement(EntityElement element) {
+    }
+
+    /**
+     * Default visiting of an entity. We could have also just had this be the default implementation of
+     * {@linkplain #visitEntity}, but then the API gets a bit more complicated in terms of which methods you can
+     * and can't override (without calling super).
+     * @param entity
+     */
+    private void visitEntityInternal(Entity entity) {
+        visitEntity(entity);
+        visitEntityElement(entity);
+        for (EntityField field : entity.getFields())
+            visitEntityElement(field);
     }
 }

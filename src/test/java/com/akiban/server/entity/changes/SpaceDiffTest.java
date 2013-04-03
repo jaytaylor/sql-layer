@@ -94,9 +94,8 @@ public final class SpaceDiffTest {
         JsonNode expected = readTree(new File(dir, testName + EXPECTED_SUFFIX));
         StringWriter writer = new StringWriter();
         assert false;
-//        JsonDiffPreview diff = new JsonDiffPreview(writer);
-//        new SpaceDiff(orig, updated).apply(diff);
-//        diff.finish();
+        JsonDiffPreview diff = SpaceDiff.apply(orig, updated, new JsonDiffPreview(writer));
+        diff.finish();
         JsonNode actual = readTree(new StringReader(writer.toString()));
         assertEquals("changes", expected, actual);
     }

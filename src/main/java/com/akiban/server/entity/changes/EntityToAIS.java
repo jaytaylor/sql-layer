@@ -56,7 +56,7 @@ public class EntityToAIS extends AbstractEntityVisitor {
 //    private static final boolean ATTR_REQUIRED_DEFAULT = false;
 //    private static final Index.JoinType GI_JOIN_TYPE_DEFAULT = Index.JoinType.LEFT;
 //
-//    private final String schemaName;
+    private final String schemaName;
 //    private final AISBuilder builder = new AISBuilder();
 //    private final List<TableInfo> tableInfoStack = new ArrayList<>();
 //    private TableName groupName = null;
@@ -76,9 +76,10 @@ public class EntityToAIS extends AbstractEntityVisitor {
 //        private final TClass tClass;
 //    }
 //
-//    public EntityToAIS(String schemaName) {
-//        this.schemaName = schemaName;
-//    }
+    public EntityToAIS(String schemaName) {
+        this.schemaName = schemaName;
+        throw new UnsupportedOperationException("TODO");
+    }
 //
 //    //
 //    // EntityVisitor
@@ -179,9 +180,10 @@ public class EntityToAIS extends AbstractEntityVisitor {
 //    // EntityToAIS
 //    //
 //
-//    public AkibanInformationSchema getAIS() {
+    public AkibanInformationSchema getAIS() {
+        throw new UnsupportedOperationException("TODO");
 //        return builder.akibanInformationSchema();
-//    }
+    }
 //
 //    //
 //    // Helpers

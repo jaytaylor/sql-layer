@@ -19,9 +19,11 @@ package com.akiban.server.entity.changes;
 
 import com.akiban.server.entity.model.AbstractEntityVisitor;
 import com.akiban.server.entity.model.Entity;
+import com.akiban.server.entity.model.EntityElement;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -29,31 +31,31 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-public final class AttributeLookups {
+public final class AttributeLookups<E extends EntityElement> {
 
-//    public Map<UUID, Attribute> getAttributesByUuid() {
-//        return attributesByUuid;
-//    }
+
+    public Map<UUID, E> getElementsByUuid() {
+        return elementsByUuid;
+    }
 
     public List<UUID> pathFor(UUID uuid) {
         return pathsByUuid.get(uuid);
     }
 
-//    public Attribute attributeFor(UUID uuid) {
-//        return attributesByUuid.get(uuid);
-//    }
-
     public String nameFor(UUID uuid) {
-        return namesByUuid.get(uuid);
+        return elementsByUuid.get(uuid).getName();
     }
 
-//    public boolean containsAttribute(UUID uuid) {
-//        return attributesByUuid.containsKey(uuid);
-//    }
+    public boolean containsAttribute(UUID uuid) {
+        return elementsByUuid.containsKey(uuid);
+    }
 
-//    public AttributeLookups(Entity entity) {
-//        entity.accept(null, new Visitor());
-//    }
+    public AttributeLookups(Entity entity, Class<? extends E> filter) {
+        Visitor<E> visitor = new Visitor<>(filter);
+        entity.accept(visitor);
+        elementsByUuid  = Collections.unmodifiableMap(visitor.elementsByUuid);
+        pathsByUuid = Collections.unmodifiableMap(visitor.pathsByUuid);
+    }
 
     public UUID getParentAttribute(UUID uuid) {
         List<UUID> path = pathsByUuid.get(uuid);
@@ -63,43 +65,30 @@ public final class AttributeLookups {
 
     }
 
-//    private Map<UUID, Attribute> attributesByUuid = new HashMap<>();
-    private Map<UUID, List<UUID>> pathsByUuid = new HashMap<>();
-    private Map<UUID, String> namesByUuid = new HashMap<>();
+    private final Map<UUID, E> elementsByUuid;
+    private final Map<UUID, List<UUID>> pathsByUuid;
 
-    private class Visitor extends AbstractEntityVisitor {
-//        @Override
-//        public void visitEntity(String name, Entity entity) {
-//            currentPath.push(entity.uuid());
-//        }
-//
-//        @Override
-//        public void leaveTopEntity() {
-//            currentPath.pop();
-//        }
-//
-//        @Override
-//        public void visitCollection(String name, Attribute collection) {
-//            seeAttribute(name, collection);
-//            currentPath.push(collection.getUUID());
-//        }
-//
-//        @Override
-//        public void leaveCollection() {
-//            currentPath.pop();
-//        }
-//
-//        @Override
-//        public void visitScalar(String name, Attribute scalar) {
-//            seeAttribute(name, scalar);
-//        }
-//
-//        private void seeAttribute(String name, Attribute attribute) {
-//            attributesByUuid.put(attribute.getUUID(), attribute);
-//            pathsByUuid.put(attribute.getUUID(), ImmutableList.copyOf(currentPath));
-//            namesByUuid.put(attribute.getUUID(), name);
-//        }
-//
-//        private Deque<UUID> currentPath = new ArrayDeque<>();
+    private static class Visitor<E extends EntityElement> extends AbstractEntityVisitor {
+
+        @Override
+        public void visitEntity(Entity entity) {
+            currentPath.push(entity.getUuid());
+        }
+
+        @Override
+        protected void visitEntityElement(EntityElement element) {
+            pathsByUuid.put(element.getUuid(), ImmutableList.copyOf(currentPath));
+            if (filter.isInstance(element))
+                elementsByUuid.put(element.getUuid(), filter.cast(element));
+        }
+
+        private Visitor(Class<? extends E> filter) {
+            this.filter = filter;
+        }
+
+        private final Deque<UUID> currentPath = new ArrayDeque<>();
+        private final Map<UUID, E> elementsByUuid = new HashMap<>();
+        private final Map<UUID, List<UUID>> pathsByUuid = new HashMap<>();
+        private final Class<? extends E> filter;
     }
 }
