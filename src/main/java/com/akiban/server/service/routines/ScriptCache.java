@@ -150,6 +150,8 @@ public class ScriptCache {
         }
 
         public ScriptPool<ScriptInvoker> getScriptInvoker() {
+            // TODO - talk with Mike about having a CacheEntry without a function -
+            // needed for the LIBRARY param styl
             assert invocable ; //&& (function != null);
             // Can share if at multi-threaded (or stronger), since we are
             // invoking
