@@ -130,16 +130,12 @@ public final class SpaceTest {
     @Test
     public void visitor() {
         List<String> expected = asList(
-                "visiting entity: [customer, entity {2a57b59e-e1b7-4377-996e-a5c04e0abf29}]",
-                "visiting scalar: [id, scalar {8644c36b-f881-4369-a06b-59e3fc580309}]",
-                "visiting scalar: [last_name, scalar {257e9b59-e77f-4a4d-a5da-00c7c2261875}]",
-                "visiting collection: [orders, collection {c5cedd91-9751-41c2-9417-8c29117ca2c9}]",
-                "visiting scalar: [id, scalar {58dd53b7-e8a1-488b-a751-c83f9beca04c}]",
+                "visiting top-level entity: [2a57b59e-e1b7-4377-996e-a5c04e0abf29]",
+                "visiting collections",
+                "visiting collection: [c5cedd91-9751-41c2-9417-8c29117ca2c9]",
                 "leaving collection",
-                "visiting entity validation: [unique: [[customer, last_name], [customer, first_name]]]",
-                "visiting entity validation: [unique: [[orders, placed]]]",
-                "visiting index: [orderplaced_lastname, [orders.placed, customer.last_name]]",
-                "leaving entity"
+                "leaving collections",
+                "leaving top-level entity"
         );
         ToStringVisitor visitor = new ToStringVisitor();
         Space.readSpace("coi.json", SpaceTest.class, null).visit(visitor);

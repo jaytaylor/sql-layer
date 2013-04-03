@@ -120,7 +120,7 @@ public class Entity extends EntityElement {
             visitor.enterCollections();
             for (EntityCollection collection : collections)
                 collection.accept(visitor);
-            visitor.enterCollections();
+            visitor.leaveCollections();
         }
         acceptFinish(visitor);
     }
