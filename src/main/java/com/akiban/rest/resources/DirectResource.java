@@ -271,16 +271,16 @@ public class DirectResource implements RestFunctionInvoker {
         return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
             @Override
             public void write(PrintWriter writer) throws Exception {
-                try (Session session = reqs.sessionService.createSession();
-                        TransactionService.CloseableTransaction txn = reqs.transactionService
-                                .beginCloseableTransaction(session)) {
+                try (Session session
+                             = reqs.sessionService.createSession();
+                     TransactionService.CloseableTransaction txn
+                             = reqs.transactionService.beginCloseableTransaction(session)) {
                     JsonGenerator json = createJsonGenerator(writer);
                     AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(session);
 
                     if (procName.isEmpty()) {
                         // Get all routines in the schema.
-                        json.writeStartObject();
-                        {
+                        json.writeStartObject(); {
                             Schema schemaAIS = ais.getSchema(schemaResolved);
                             if (schemaAIS != null) {
                                 for (Map.Entry<String, Routine> routineEntry : schemaAIS.getRoutines().entrySet()) {
@@ -288,9 +288,9 @@ public class DirectResource implements RestFunctionInvoker {
                                     writeProc(routineEntry.getValue(), json);
                                 }
                             }
-                        }
-                        json.writeEndObject();
-                    } else {
+                        } json.writeEndObject();
+                    }
+                    else {
                         // Get just the one routine.
                         Routine routine = ais.getRoutine(schemaResolved, procName);
                         if (routine == null)
@@ -305,22 +305,20 @@ public class DirectResource implements RestFunctionInvoker {
     }
 
     private void writeProc(Routine routine, JsonGenerator json) throws IOException {
-        json.writeStartObject();
-        {
-            json.writeStringField(LANGUAGE, routine.getLanguage());
-            json.writeStringField(CALLING_CONVENTION, routine.getCallingConvention().name());
-            json.writeNumberField(MAX_DYNAMIC_RESULT_SETS, routine.getDynamicResultSets());
-            json.writeStringField(DEFINITION, routine.getDefinition());
-            writeProcParams(PARAMETERS_IN, routine.getParameters(), Parameter.Direction.IN, json);
-            writeProcParams(PARAMETERS_OUT, routine.getParameters(), Parameter.Direction.OUT, json);
-        }
-        json.writeEndObject();
+        json.writeStartObject(); {
+            json.writeStringField("language", routine.getLanguage());
+            json.writeStringField("calling_convention", routine.getCallingConvention().name());
+            json.writeNumberField("max_dynamic_result_sets", routine.getDynamicResultSets());
+            json.writeStringField("definition", routine.getDefinition());
+            writeProcParams("parameters_in", routine.getParameters(), Parameter.Direction.IN, json);
+            writeProcParams("parameters_out", routine.getParameters(), Parameter.Direction.OUT, json);
+        } json.writeEndObject();
     }
 
     private void writeProcParams(String label, List<Parameter> parameters, Parameter.Direction direction,
-            JsonGenerator json) throws IOException {
-        json.writeArrayFieldStart(label);
-        {
+                                 JsonGenerator json) throws IOException
+    {
+        json.writeArrayFieldStart(label); {
             for (int i = 0; i < parameters.size(); i++) {
                 Parameter param = parameters.get(i);
                 Parameter.Direction paramDir = param.getDirection();
@@ -339,27 +337,22 @@ public class DirectResource implements RestFunctionInvoker {
                     throw new IllegalStateException("don't know how to handle parameter " + param);
                 }
                 if (isInteresting) {
-                    json.writeStartObject();
-                    {
-                        json.writeStringField(NAME, param.getName());
-                        json.writeNumberField(POSITION, i);
+                    json.writeStartObject(); {
+                        json.writeStringField("name", param.getName());
+                        json.writeNumberField("position", i);
                         TInstance tInstance = param.tInstance();
                         TClass tClass = param.tInstance().typeClass();
-                        json.writeStringField(TYPE, tClass.name().unqualifiedName());
-                        json.writeObjectFieldStart(TYPE_OPTIONS);
-                        {
+                        json.writeStringField("type", tClass.name().unqualifiedName());
+                        json.writeObjectFieldStart("type_options"); {
                             for (Attribute attr : tClass.attributes())
                                 json.writeObjectField(attr.name().toLowerCase(), tInstance.attributeToObject(attr));
-                        }
-                        json.writeEndObject();
-                        json.writeBooleanField(IS_INOUT, paramDir == Parameter.Direction.INOUT);
-                        json.writeBooleanField(IS_RESULT, param.getDirection() == Parameter.Direction.RETURN);
-                    }
-                    json.writeEndObject();
+                        } json.writeEndObject();
+                        json.writeBooleanField("is_inout", paramDir == Parameter.Direction.INOUT);
+                        json.writeBooleanField("is_result", param.getDirection() == Parameter.Direction.RETURN);
+                    } json.writeEndObject();
                 }
             }
-        }
-        json.writeEndArray();
+        } json.writeEndArray();
     }
 
     @GET
