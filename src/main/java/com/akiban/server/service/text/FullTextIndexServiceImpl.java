@@ -120,10 +120,28 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
     @Override
     public void dropIndex(Session session, IndexName name) {
-        FullTextIndexInfo index = getIndex(session, name);
-        index.deletePath();
-        synchronized (indexes) {
-            indexes.remove(name);
+        
+        try
+        {
+            synchronized (indexes) {
+                indexes.remove(name);
+            }
+            
+            // see if there exists a promise for populating this index
+            Exchange ex = getPopulateExchange(session);
+            ex.clear().append(name.getSchemaName())
+                      .append(name.getTableName())
+                      .append(name.getName());
+            
+            if (ex.traverse(Key.Direction.EQ, true, 0))
+                ex.fetchAndRemove();
+        
+            FullTextIndexInfo index = getIndex(session, name);
+            index.deletePath();
+        }
+        catch (PersistitException e)
+        {
+            throw new AkibanInternalException("Error while removing index", e);
         }
     }
 
@@ -445,21 +463,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         ret.append(Key.BEFORE);
         return ret;
     }
-    
-    private synchronized Exchange nextPopulateEntry(Session session,
-                                       String schema,
-                                       String table,
-                                       String index) throws PersistitException
-    {   
-        Exchange ret = getPopulateExchange(session);
-
-        // see if the entry for this index already exists
-        ret.clear().append(schema).append(table).append(index);
-        if (ret.traverse(Key.Direction.EQ, true, 0))
-            return null;
-        else
-            return ret;
-    }
 
     private volatile boolean hasScheduled = false;
     private synchronized boolean addPopulate(Session session,
@@ -467,19 +470,16 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                            String table,
                            String index) throws PersistitException
     {
-        Exchange ex = nextPopulateEntry(session, schema, table, index);
+        Exchange ex = getPopulateExchange(session);
 
-        // 'promise' for populating this index already exists
-        if (ex == null)
-            return false;
-        
+        // Assumption: There is not any existing entry about this index
+        // (Because they should have been removed in dropIndex())
         // KEY: schema | table | indexName
         ex.getKey().clear()
                    .append(schema)
                    .append(table)
                    .append(index);
 
-        
         // VALUE: <empty>
 
         ex.store();

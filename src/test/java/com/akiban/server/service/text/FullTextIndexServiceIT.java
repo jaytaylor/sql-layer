@@ -119,7 +119,7 @@ public class FullTextIndexServiceIT extends ITBase
         FullTextIndexServiceImpl fullTextImpl = (FullTextIndexServiceImpl)fullText;
         
         // disable the populate worker (so it doesn't read all the entries
-        // out before we get a chance to look at it.
+        // out before we get a chance to look at the tree.
         fullTextImpl.disableUpdateWorker();
         
         // create 3 indices
@@ -178,6 +178,16 @@ public class FullTextIndexServiceIT extends ITBase
                          assertEquals (0, n);
                      } 
                  });
+        
+        // TODO:
+        // <1> disable worker
+        // <2> create 3 new indices
+        // <3> delete 2 of them
+        // <4> recreate those
+        // <5> check that the tree still has only 3 entries
+        //     (because it does not need to re-record promise for
+        //      populating the same index)
+
     }
 
     
@@ -207,6 +217,23 @@ public class FullTextIndexServiceIT extends ITBase
          }
     }
     
+    @Test
+    public void testUpdateScheduling () throws InterruptedException
+    {
+         // This test is specifically for FullTextIndexServiceImpl.java
+        assertEquals(FullTextIndexServiceImpl.class, fullText.getClass());
+        FullTextIndexServiceImpl fullTextImpl = (FullTextIndexServiceImpl)fullText;
+        
+        // disable the update worker (so it doesn't read all the entries
+        // out before we get a chance to look at the tree.
+        fullTextImpl.disableUpdateWorker();
+        
+        FullTextIndex idx1 = createFullTextIndex(serviceManager(),
+                                                SCHEMA, "c", "idx_update1_c",
+                                                "name");
+        
+
+    }
     
     @Test
     public void testUpdate() throws InterruptedException
