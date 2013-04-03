@@ -160,6 +160,20 @@ public class EndpointMetadata {
         }
     }
 
+    private static String assertName(final String s, final String context) {
+        boolean okay = true;
+        for (int index = 0; okay && index < s.length(); index++) {
+            if (index == 0 && !Character.isJavaIdentifierStart(s.charAt(index)) || index > 0
+                    && !Character.isJavaIdentifierPart(s.charAt(index))) {
+                okay = false;
+            }
+        }
+        if (s.isEmpty() || !okay) {
+            throw new IllegalArgumentException("Invalid name " + context + " :" + s);
+        }
+        return s;
+    }
+
     private static Date asDate(ParamMetadata pm, Object v) throws ParseException {
         String s = asString(pm, v);
         if ("today".equalsIgnoreCase(s)) {
@@ -253,9 +267,9 @@ public class EndpointMetadata {
         if (v.regionMatches(true, 0, PP, 0, PP.length())) {
             psm = new ParamSourcePath(Integer.parseInt(v.substring(PP.length())));
         } else if (v.regionMatches(true, 0, QP, 0, QP.length())) {
-            psm = new ParamSourceQueryParam(v.substring(QP.length()));
+            psm = new ParamSourceQueryParam(assertName(v.substring(QP.length()), tokens.source));
         } else if (v.regionMatches(true, 0, JSON, 0, JSON.length())) {
-            psm = new ParamSourceJson(v.substring(JSON.length()));
+            psm = new ParamSourceJson(assertName(v.substring(JSON.length()), tokens.source));
         } else if (v.equalsIgnoreCase(CONTENT)) {
             psm = new ParamSourceContent(pm.type);
         }
@@ -708,6 +722,12 @@ public class EndpointMetadata {
     static boolean equals(Object a, Object b) {
         if (a == null) {
             return b == null;
+        } else if (a instanceof Pattern) {
+            if (!(b instanceof Pattern)) {
+                return false;
+            } else {
+                return a.toString().equals(b.toString());
+            }
         } else if (a instanceof Object[]) {
             if (!(b instanceof Object[])) {
                 return false;

@@ -15,26 +15,21 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-function _register(registrar) {
-	registrar.register("method=GET path=totalComp "
-			+ "function=computeTotalCompensation "
-			+ "in=(pp:1 int required, qp:start Date default '1800-01-01', "
-			+ "qp:end Date default TODAY), out:string");
-
-	registrar.register("method=POST path=raiseSalary "
-			+ "function=raiseSalary "
-			+ "in=(pp:1 int required, json:percent double required, "
-			+ "json:effectiveDate) Date required out:string");
-
-}
-
 /*
  * Compute the total amount of compensation paid to the specified employee
  * between dates start and end by computing (rate * duration) for each period of
  * employment.
+ * 
+ * The following distinguished comments define REST end-point and map them to functions
+ * defined below.
  */
 
-//## Endpoint (method=GET path=totalComp function=computeTotalCompensation  in=(PP:1 int required, QP:start Date default '1800-01-01' QP:end Date default TODAY), out:string)
+//## ENDPOINT (method=GET path=totalComp function=computeTotalCompensation 
+//##           in=(PP:1 int required, QP:start Date default '1800-01-01' QP:end Date default TODAY), out:string)
+//## ENDPOINT method=POST path=raiseSalary function=raiseSalary 
+//##      in=(pp:1 int required, json:percent double required,  json:effectiveDate Date required)
+//##      out:string"
+//##
 
 function computeTotalCompensation(empno, start, end) {
 	var emp = com.akiban.direct.Direct.context.extent.getEmployee(empno);

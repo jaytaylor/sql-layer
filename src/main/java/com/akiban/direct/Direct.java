@@ -79,7 +79,7 @@ public class Direct {
         return o;
     }
     
-    public static void enter(final String schemaName, AkibanInformationSchema ais, final JDBCConnection conn) {
+    public static void enter(final String schemaName, AkibanInformationSchema ais) {
         DirectClassLoader dcl = ais.getCachedValue(CACHE_KEY, new CacheValueGenerator<DirectClassLoader>() {
 
             @Override
@@ -90,7 +90,6 @@ public class Direct {
         });
         
         final DirectContextImpl dc = new DirectContextImpl(schemaName, dcl);
-        dc.setConnection(conn);
         contextThreadLocal.set(dc);
         dc.enter();
     }

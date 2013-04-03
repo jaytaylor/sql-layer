@@ -47,8 +47,6 @@ public abstract class ClassBuilder {
 
     private final static Inflector INFLECTOR = Inflector.getInstance();
 
-    protected final String packageName;
-
     public abstract void startClass(String name, boolean isInterface, String extendsClass, String[] implementsClasses,
             String[] imports) throws CannotCompileException, NotFoundException;
 
@@ -57,8 +55,7 @@ public abstract class ClassBuilder {
 
     public abstract void addConstructor(String[] argumentTypes, String[] argumentNames, String[] body);
 
-    protected ClassBuilder(String packageName) {
-        this.packageName = packageName;
+    protected ClassBuilder() {
     }
 
     /*
@@ -85,15 +82,31 @@ public abstract class ClassBuilder {
     public abstract void close();
 
     public static String asJavaName(final String name, final boolean toUpper) {
-        return INFLECTOR.camelize(INFLECTOR.singularize(name), !toUpper);
+        return sanitize(INFLECTOR.camelize(INFLECTOR.singularize(name), !toUpper));
     }
 
     public static String asJavaCollectionName(final String name, final boolean toUpper) {
-        return INFLECTOR.camelize(name, !toUpper);
+        return sanitize(INFLECTOR.camelize(name, !toUpper));
     }
 
     public static String schemaClassName(String schema) {
-        return PACKAGE + "." + INFLECTOR.classify(schema);
+        return PACKAGE + "." + sanitize(INFLECTOR.classify(schema));
+    }
+    
+    public static String sanitize(final String s) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < s.length(); i++) {
+            char ch = s.charAt(i);
+            if (i == 0 && !Character.isJavaIdentifierStart(ch)) {
+                sb.append("_");
+            }
+            if (Character.isJavaIdentifierPart(ch)) {
+                sb.append(ch);
+            } else {
+                sb.append(String.format("_u%04h", ch));
+            }
+        }
+        return sb.toString();
     }
 
     public static Map<Integer, CtClass> compileGeneratedInterfacesAndClasses(final AkibanInformationSchema ais,
@@ -102,7 +115,7 @@ public abstract class ClassBuilder {
          * Precompile the interfaces
          */
         ClassPool pool = new ClassPool(true);
-        ClassObjectWriter helper = new ClassObjectWriter(pool, PACKAGE);
+        ClassObjectWriter helper = new ClassObjectWriter(pool);
         String scn = schemaClassName(schema);
         Map<Integer, CtClass> implClassMap = new TreeMap<Integer, CtClass>();
 
@@ -198,7 +211,7 @@ public abstract class ClassBuilder {
             for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
                 generateInterfaceClass(table, scn);
             }
-            startClass("_extent_", true, null, null, null);
+            startClass("$$extent$$", true, null, null, null);
             for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
                 if (table.isRoot()) {
                     addExtentAccessor(table, scn, false);
@@ -229,7 +242,7 @@ public abstract class ClassBuilder {
         table.getName().getTableName();
         String scn = schemaClassName(schemaName);
         String typeName = scn + "$" + asJavaName(table.getName().getTableName(), true);
-        String className = packageName + "._" + asJavaName(schemaName, true) + "_"
+        String className = PACKAGE + ".$$" + asJavaName(schemaName, true) + "&&"
                 + asJavaName(table.getName().getTableName(), true);
         startClass(className, false, "com.akiban.direct.AbstractDirectObject", new String[] { typeName }, IMPORTS);
         addConstructor(NONE, NONE, NONE);
@@ -238,7 +251,7 @@ public abstract class ClassBuilder {
     }
 
     void startExtentClass(String schema, final String scn) throws CannotCompileException, NotFoundException {
-        String className = packageName + "._" + asJavaName(schema, true);
+        String className = PACKAGE + ".$$" + asJavaName(schema, true);
         startClass(className, false, "com.akiban.direct.AbstractDirectObject", new String[] { scn }, IMPORTS);
     }
 

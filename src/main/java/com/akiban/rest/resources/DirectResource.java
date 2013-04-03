@@ -90,7 +90,6 @@ public class DirectResource implements RestFunctionInvoker {
     private final static String MODULE_ARG_NAME = "module";
     private final static String SCHEMA_ARG_NAME = "schema";
     private final static String LANGUAGE = "language";
-    private final static String PACKAGE = "com.akiban.direct.entity";
 
     private final static String CALLING_CONVENTION = "calling_convention";
     private final static String MAX_DYNAMIC_RESULT_SETS = "max_dynamic_result_sets";
@@ -110,7 +109,7 @@ public class DirectResource implements RestFunctionInvoker {
 
     private final static String DISTINGUISHED_REGISTRATION_METHOD_NAME = "_register";
 
-    private final static String CREATE_PROCEDURE_FORMAT = "CREATE PROCEDURE %s ()"
+    private final static String CREATE_PROCEDURE_FORMAT = "CREATE PROCEDURE \"%s\" ()"
             + " LANGUAGE %s PARAMETER STYLE LIBRARY AS $$%s$$";
 
     private final static String DROP_PROCEDURE_FORMAT = "DROP PROCEDURE %s";
@@ -149,7 +148,7 @@ public class DirectResource implements RestFunctionInvoker {
                 if (ais.getSchema(schemaName) == null) {
                     throw new NoSuchSchemaException(schemaName);
                 }
-                ClassBuilder helper = new ClassSourceWriter(writer, PACKAGE, false);
+                ClassBuilder helper = new ClassSourceWriter(writer, false);
                 helper.writeGeneratedInterfaces(ais, tableName);
                 helper.close();
             }
@@ -172,7 +171,7 @@ public class DirectResource implements RestFunctionInvoker {
                 if (ais.getSchema(schemaName) == null) {
                     throw new NoSuchSchemaException(schemaName);
                 }
-                ClassBuilder helper = new ClassSourceWriter(writer, PACKAGE, false);
+                ClassBuilder helper = new ClassSourceWriter(writer, false);
                 helper.writeGeneratedClass(ais, tableName);
                 helper.close();
             }
@@ -218,7 +217,7 @@ public class DirectResource implements RestFunctionInvoker {
                 if (ais.getSchema(schemaName) == null) {
                     throw new NoSuchSchemaException(schemaName);
                 }
-                ClassBuilder helper = new ClassXRefWriter(writer, PACKAGE);
+                ClassBuilder helper = new ClassXRefWriter(writer);
                 helper.writeGeneratedXrefs(ais, tableName);
                 helper.close();
             }
@@ -462,21 +461,35 @@ public class DirectResource implements RestFunctionInvoker {
         final ScriptInvoker invoker = conn.getRoutineLoader()
                 .getScriptInvoker(conn.getSession(), new TableName(procName.getSchemaName(), md.routineName)).get();
         Object result = invoker.invokeNamedFunction(md.function, args);
-        if (result != null) {
-            writer.write(result.toString());
-        }
+        
         switch (md.outParam.type) {
-
+        
         case EndpointMetadata.X_TYPE_STRING:
             responseType[0] = MediaType.TEXT_PLAIN_TYPE;
+            if (result != null) {
+                writer.write(result.toString());
+            } else if (md.outParam.defaultValue != null) {
+                writer.write(md.outParam.defaultValue.toString());
+            }
             break;
 
         case EndpointMetadata.X_TYPE_JSON:
             responseType[0] = MediaType.APPLICATION_JSON_TYPE;
+            if (result != null) {
+                writer.write(result.toString());
+            } else if (md.outParam.defaultValue != null) {
+                writer.write(md.outParam.defaultValue.toString());
+            }
+            break;
+
+        case EndpointMetadata.X_TYPE_BYTEARRAY:
+            responseType[0] = MediaType.APPLICATION_OCTET_STREAM_TYPE;
+            // TODO: Unsupported - need to add a path for writing a stream
             break;
 
         default:
-            responseType[0] = MediaType.APPLICATION_OCTET_STREAM_TYPE;
+            // No response type specified
+            responseType[0] = null;
             break;
         }
     }
@@ -563,11 +576,15 @@ public class DirectResource implements RestFunctionInvoker {
         return args;
     }
 
-    class EndpointMap {
+    static class EndpointMap {
         final Map<EndpointAddress, List<EndpointMetadata>> map = new HashMap<EndpointAddress, List<EndpointMetadata>>();
-
+        final ResourceRequirements reqs;
         Map<EndpointAddress, List<EndpointMetadata>> getMap() {
             return map;
+        }
+        
+        EndpointMap(final ResourceRequirements reqs) {
+            this.reqs = reqs;
         }
 
         void populate(final AkibanInformationSchema ais, final Session session) {
@@ -666,7 +683,7 @@ public class DirectResource implements RestFunctionInvoker {
 
             @Override
             public EndpointMap valueFor(AkibanInformationSchema ais) {
-                EndpointMap em = new EndpointMap();
+                EndpointMap em = new EndpointMap(reqs);
                 em.populate(ais, session);
                 return em;
             }

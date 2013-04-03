@@ -66,6 +66,7 @@ import com.akiban.rest.RestFunctionInvoker;
 import com.akiban.server.Quote;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.InvalidArgumentTypeException;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.explain.format.JsonFormatter;
 import com.akiban.server.service.Service;
@@ -374,26 +375,25 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         try (JDBCConnection conn = jdbcConnection(request, procName.getSchemaName());) {
 
             boolean completed = false;
-            boolean repeat = true;
+            int retries = 10;
 
-            while (repeat) {
+            while (true) {
                 try {
-                    Direct.enter(procName.getSchemaName(), dxlService.ddlFunctions().getAIS(conn.getSession()), conn);
-                    repeat = false;
+                    Direct.enter(procName.getSchemaName(), dxlService.ddlFunctions().getAIS(conn.getSession()));
+                    Direct.getContext().setConnection(conn);
                     conn.beginTransaction();
                     endpointInvoker.invokeRestFunction(writer, conn, method, procName, pathParams, queryParameters,
                             content, request.getContentType(), responseType);
+                    conn.commitTransaction();
                     completed = true;
+                    break;
                 } catch (RollbackException e) {
-                    repeat = true;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    throw e;
+                    if (--retries < 0) {
+                        throw e;
+                    }
                 } finally {
                     try {
-                        if (completed) {
-                            conn.commitTransaction();
-                        } else {
+                        if (!completed) {
                             conn.rollbackTransaction();
                         }
                     } finally {

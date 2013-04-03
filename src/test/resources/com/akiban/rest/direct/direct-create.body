@@ -1,10 +1,11 @@
-//function _register(registrar) {
-//    java.lang.System.out.println("Executing the _register function");
-//    registrar.register("method=GET path=cnames function=customerNames in=(QP:prefix String required) out=String");
-//};
+function _register(registrar) {
+    registrar.register(
+        "method=GET path=cnames function=customerNames in=(QP:prefix String required) out=String");
+};
 
-//## Endpoint method=GET path=cnames
-//##   function=customerNames in=(QP:prefix String required) out=String
+//## Endpoint method=GET path=oids/(\\d*)
+//##   function=orderNumbers 
+//##   in=(pp:1 int required) out=String
 
 function customerNames(s) {
     var result = s;
@@ -12,5 +13,15 @@ function customerNames(s) {
     for (customer in Iterator(extent.customers)) {
       result += "," + customer.name;
     }
+    return result;
+}
+
+function orderNumbers(cid) {
+    var result = s;
+    var extent = Packages.com.akiban.direct.Direct.context.extent;
+    var customer = extent.getCustomer(cid); 
+    for (order in customer.orders) {
+       result += "," + order.oid;
+    }    
     return result;
 }
