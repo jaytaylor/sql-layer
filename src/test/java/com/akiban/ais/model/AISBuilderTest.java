@@ -1235,4 +1235,96 @@ public class AISBuilderTest
         AISValidationFailure fail = vResults.failures().iterator().next();
         Assert.assertEquals(ErrorCode.SEQUENCE_MIN_GE_MAX, fail.errorCode());
     }
+    
+    private AISBuilder twoChildGroup () {
+        final AISBuilder builder = new AISBuilder();
+        builder.userTable("test", "c");
+        builder.column("test", "c", "id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("test", "c", "name", 1, "varchar", 64L, 0L, false, false, null, null);
+        builder.index("test", "c", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn("test", "c", Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
+        builder.userTable("test", "o");
+        builder.column("test", "o", "oid", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("test", "o", "cid", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("test", "o", "date", 2, "int", 0L, 0L, false, false, null, null);
+        builder.joinTables("c/id/o/cid", "test", "c", "test", "o");
+        builder.joinColumns("c/id/o/cid", "test", "c", "id", "test", "o", "cid");
+        builder.basicSchemaIsComplete();
+        TableName groupName = TableName.create("test", "coi");
+        builder.createGroup(groupName.getTableName(), groupName.getSchemaName());
+        builder.addJoinToGroup(groupName, "c/id/o/cid", 1);
+        builder.addTableToGroup(groupName, "test", "c");
+        builder.addTableToGroup(groupName, "test", "o");
+        
+        return builder;
+        
+    }
+    
+    @Test
+    public void validateNameForOutputSimple() {
+        AISBuilder builder = twoChildGroup();
+        
+        builder.groupingIsComplete();
+        UserTable c = builder.akibanInformationSchema().getUserTable("test", "c");
+        UserTable o = builder.akibanInformationSchema().getUserTable("test", "o");
+        
+        Assert.assertEquals("test.c", c.getNameForOutput());
+        Assert.assertEquals("o", o.getNameForOutput());
+    }
+    
+    @Test
+    public void validateNameForOutputCase1() {
+        AISBuilder builder = twoChildGroup();
+        builder.column("test", "c", "o", 2, "int", 0L, 0L, false, false, null, null);
+        builder.groupingIsComplete();
+        UserTable c = builder.akibanInformationSchema().getUserTable("test", "c");
+        UserTable o = builder.akibanInformationSchema().getUserTable("test", "o");
+        
+        Assert.assertEquals("test.c", c.getNameForOutput());
+        Assert.assertEquals("_o", o.getNameForOutput());
+    }
+    
+    @Test
+    public void validateNameForOutputCase2() {
+        AISBuilder builder = twoChildGroup();
+        builder.userTable("test", "_o");
+        builder.column("test", "_o", "oid", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("test", "_o", "cid", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("test", "_o", "date", 2, "int", 0L, 0L, false, false, null, null);
+        builder.joinTables("c/id/_o/cid", "test", "c", "test", "_o");
+        builder.joinColumns("c/id/_o/cid", "test", "c", "id", "test", "_o", "cid");
+        TableName groupName = TableName.create("test", "coi");
+        builder.addJoinToGroup(groupName, "c/id/_o/cid", 1);
+        builder.addTableToGroup(groupName, "test", "_o");
+        
+        builder.groupingIsComplete();
+        UserTable o = builder.akibanInformationSchema().getUserTable("test", "o");
+        UserTable _o = builder.akibanInformationSchema().getUserTable("test", "_o");
+        
+        Assert.assertEquals("o", o.getNameForOutput());
+        Assert.assertEquals("_o", _o.getNameForOutput());
+    }
+    
+    @Test
+    public void validateNameForOutputCase3() {
+        AISBuilder builder = twoChildGroup();
+        builder.column("test", "c", "o", 2, "int", 0L, 0L, false, false, null, null);
+        builder.userTable("test", "_o");
+        builder.column("test", "_o", "oid", 0, "int", 0L, 0L, false, false, null, null);
+        builder.column("test", "_o", "cid", 1, "int", 0L, 0L, false, false, null, null);
+        builder.column("test", "_o", "date", 2, "int", 0L, 0L, false, false, null, null);
+        builder.joinTables("c/id/_o/cid", "test", "c", "test", "_o");
+        builder.joinColumns("c/id/_o/cid", "test", "c", "id", "test", "_o", "cid");
+        TableName groupName = TableName.create("test", "coi");
+        builder.addJoinToGroup(groupName, "c/id/_o/cid", 1);
+        builder.addTableToGroup(groupName, "test", "_o");
+        
+        builder.groupingIsComplete();
+        UserTable o = builder.akibanInformationSchema().getUserTable("test", "o");
+        UserTable _o = builder.akibanInformationSchema().getUserTable("test", "_o");
+        
+        Assert.assertEquals("__o", o.getNameForOutput());
+        Assert.assertEquals("_o", _o.getNameForOutput());
+    }
+    
 }

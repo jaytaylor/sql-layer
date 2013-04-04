@@ -59,6 +59,7 @@ public class JsonRowWriter
                 do {
                     appender.append((depth > rowDepth || !begun) ? "}]" : "}");
                     depth--;
+                    tracker.popRowType();
                 } while (depth >= rowDepth);
             }
             if (rowDepth > maxDepth)
@@ -86,6 +87,7 @@ public class JsonRowWriter
         do {
             appender.append((depth > minDepth) ? "}]" : "}");
             depth--;
+            tracker.popRowType();
         } while (depth >= minDepth);
         return true;
     }

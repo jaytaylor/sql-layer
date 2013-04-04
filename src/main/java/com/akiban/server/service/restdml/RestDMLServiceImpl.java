@@ -173,18 +173,16 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
-    public void insert(PrintWriter writer, TableName rootTable, JsonNode node)  {
+    public void insert(PrintWriter writer, TableName tableName, JsonNode node)  {
         try (Session session = sessionService.createSession();
              CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
-            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-            String pk = insertProcessor.processInsert(session, ais, rootTable, node);
+            insertNoTxn(session, writer, tableName, node);
             txn.commit();
-            writer.write(pk);
         }
     }
 
     @Override
-    public void delete(PrintWriter writer, TableName tableName, String identifier) {
+    public void delete(TableName tableName, String identifier) {
         try (Session session = sessionService.createSession();
              CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
             AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
@@ -197,11 +195,25 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     public void update(PrintWriter writer, TableName tableName, String pks, JsonNode node) {
         try (Session session = sessionService.createSession();
              CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
-            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-            String pk = updateProcessor.processUpdate(session, ais, tableName, pks, node);
+            updateNoTxn(session, writer, tableName, pks, node);
             txn.commit();
+        }
+    }
+
+    @Override
+    public void insertNoTxn(Session session, PrintWriter writer, TableName tableName, JsonNode node) {
+        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+        String pk = insertProcessor.processInsert(session, ais, tableName, node);
+        if(writer != null) {
             writer.write(pk);
         }
+    }
+
+    @Override
+    public void updateNoTxn(Session session, PrintWriter writer, TableName tableName, String pks, JsonNode node) {
+        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+        String pk = updateProcessor.processUpdate(session, ais, tableName, pks, node);
+        writer.write(pk);
     }
 
     @Override
