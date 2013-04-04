@@ -37,7 +37,7 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,7 +58,7 @@ public class Entity extends EntityElement {
     public Map<UUID, EntityField> fieldsByUuid() {
         Map<UUID, EntityField> local = fieldsByUuid;
         if (local == null) {
-            local = new HashMap<>(fields.size());
+            local = new LinkedHashMap<>(fields.size());
             for (EntityField field : fields) {
                 Object old = local.put(field.getUuid(), field);
                 assert old == null : field.getUuid();

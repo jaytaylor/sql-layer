@@ -109,12 +109,12 @@ public class JsonDiffPreview implements SpaceModificationHandler
 
     @Override
     public void identifyingFieldsChanged() {
-        error("can't change identifying fields");
+        error("Can't change identifying fields");
     }
 
     @Override
     public void groupingFieldsChanged() {
-        error("can't change grouping fields");
+        error("Can't change grouping fields");
     }
 
     @Override

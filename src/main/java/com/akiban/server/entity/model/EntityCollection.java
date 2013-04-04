@@ -26,9 +26,11 @@
 
 package com.akiban.server.entity.model;
 
+import com.google.common.collect.ImmutableList;
 import org.codehaus.jackson.annotate.JsonProperty;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,8 +42,8 @@ public final class EntityCollection extends Entity {
     }
 
     @JsonProperty("grouping_fields")
-    public void setGroupingFields(List<String> parentColumns) {
-        this.parentColumns = parentColumns;
+    public void setGroupingFields(List<String> groupingFields) {
+        this.parentColumns = ImmutableList.copyOf(groupingFields);
     }
 
     @Override
@@ -61,5 +63,5 @@ public final class EntityCollection extends Entity {
         return collection;
     }
 
-    private List<String> parentColumns;
+    private List<String> parentColumns = Collections.emptyList();
 }

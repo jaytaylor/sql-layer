@@ -19,6 +19,7 @@ package com.akiban.server.entity.changes;
 
 import com.akiban.server.entity.model.Entity;
 import com.akiban.server.entity.model.EntityCollection;
+import com.akiban.server.entity.model.EntityElement;
 import com.akiban.server.entity.model.EntityField;
 import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Space;
@@ -26,9 +27,12 @@ import com.akiban.server.entity.model.Validation;
 import com.akiban.util.MapDiff;
 import com.akiban.util.MapDiffHandler;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -156,8 +160,10 @@ public final class SpaceDiff {
     private SpaceDiff() {}
 
     private static Map<UUID, Entity> entitiesByUuid(Collection<? extends Entity> entities) {
-        Map<UUID, Entity> entityMap = new HashMap<>(entities.size());
-        for (Entity entity : entities) {
+        Map<UUID, Entity> entityMap = new LinkedHashMap<>(entities.size());
+        List<Entity> entitiesSorted = new ArrayList<>(entities);
+        Collections.sort(entitiesSorted, EntityElement.byName);
+        for (Entity entity : entitiesSorted) {
             Object old = entityMap.put(entity.getUuid(), entity);
             assert old == null : entity.getUuid();
         }

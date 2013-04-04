@@ -128,6 +128,7 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     @Override
     public void addField(UUID added) {
         UUID parent = newLookups.getParentAttribute(added);
+        assert parent == newEntity.getUuid();
         String name = newLookups.nameFor(added);
         trackColumnChange(getParentName(parent), TableChange.createAdd(name));
 //            case COLLECTION: // TODO what do do about this?
@@ -137,6 +138,7 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     @Override
     public void dropField(UUID dropped) {
         UUID parent = oldLookups.getParentAttribute(dropped);
+        assert parent == oldEntity.getUuid();
         String oldName = oldLookups.nameFor(dropped);
         trackColumnChange(getParentName(parent), TableChange.createDrop(oldName));
 //            case COLLECTION: TODO what to do about this?
@@ -146,6 +148,8 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     @Override
     public void renameField(UUID fieldUuid) {
         UUID parent = newLookups.getParentAttribute(fieldUuid);
+        assert parent == oldEntity.getUuid();
+        assert parent == newEntity.getUuid();
         String oldName = oldLookups.nameFor(fieldUuid);
         String newName = newLookups.nameFor(fieldUuid);
         trackColumnChange(getParentName(parent), TableChange.createModify(oldName, newName));
@@ -300,6 +304,8 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
 
     private void trackColumnModify(UUID columnUuid) {
         UUID parent = newLookups.getParentAttribute(columnUuid);
+        assert parent == oldEntity.getUuid();
+        assert parent == newEntity.getUuid();
         String oldName = oldLookups.nameFor(columnUuid);
         String newName = newLookups.nameFor(columnUuid);
         trackColumnChange(getParentName(parent), TableChange.createModify(oldName, newName));
