@@ -75,11 +75,12 @@ public abstract class PostgresDMLStatement extends PostgresBaseStatement
     }
 
     @Override
-    public void sendDescription(PostgresQueryContext context, boolean always) 
+    public void sendDescription(PostgresQueryContext context,
+                                boolean always, boolean params)
             throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
-        if (always) {
+        if (params) {
             PostgresType[] parameterTypes = getParameterTypes();
             messenger.beginMessage(PostgresMessages.PARAMETER_DESCRIPTION_TYPE.code());
             if (parameterTypes == null) {
