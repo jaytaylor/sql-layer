@@ -46,10 +46,6 @@ public final class AttributeLookups<E extends EntityElement> {
         return elementsByUuid.get(uuid).getName();
     }
 
-    public boolean containsAttribute(UUID uuid) {
-        return elementsByUuid.containsKey(uuid);
-    }
-
     public AttributeLookups(Entity entity, Class<? extends E> filter) {
         Visitor<E> visitor = new Visitor<>(filter);
         entity.accept(visitor);

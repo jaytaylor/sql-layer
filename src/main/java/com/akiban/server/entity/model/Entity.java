@@ -32,10 +32,12 @@ import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import org.codehaus.jackson.annotate.JsonIgnore;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,8 +50,22 @@ public class Entity extends EntityElement {
         return fields;
     }
 
-    public void setFields(List<EntityField> fields) {
+    void setFields(List<EntityField> fields) {
         this.fields = ImmutableList.copyOf(fields);
+    }
+
+    @JsonIgnore
+    public Map<UUID, EntityField> fieldsByUuid() {
+        Map<UUID, EntityField> local = fieldsByUuid;
+        if (local == null) {
+            local = new HashMap<>(fields.size());
+            for (EntityField field : fields) {
+                Object old = local.put(field.getUuid(), field);
+                assert old == null : field.getUuid();
+            }
+            fieldsByUuid = local; // logically idempotent since fields is immutable, so it's fine even if racy
+        }
+        return local;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -136,4 +152,5 @@ public class Entity extends EntityElement {
     private List<String> identifying = Collections.emptyList();
     private BiMap<String, EntityIndex> indexes = ImmutableBiMap.of();
     private Set<Validation> validations = Collections.emptySet();
+    private transient volatile Map<UUID, EntityField> fieldsByUuid;
 }

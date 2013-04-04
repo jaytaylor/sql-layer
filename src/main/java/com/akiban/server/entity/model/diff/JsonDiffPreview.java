@@ -177,7 +177,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         try
         {
             startObject();
-            entry("action", "add_attribute");
+            entry("action", "add_field");
             entry("destructive", false);
             entry("uuid", attributeUuid);
             endObject();
@@ -195,7 +195,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         try
         {
             startObject();
-            entry("action", "drop_attribute");
+            entry("action", "drop_field");
             entry("destructive", true);
             entry("uuid", dropped);
             endObject();
@@ -213,7 +213,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         try
         {
             startObject();
-            entry("action", "rename_attribute");
+            entry("action", "rename_field");
             entry("destructive", false);
             entry("uuid", uuid);
             entry("old_name", lookupField(oldEntity, uuid).getName());

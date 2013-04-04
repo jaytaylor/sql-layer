@@ -67,11 +67,8 @@ public final class SpaceDiff {
         }
 
         private void fieldActions(Entity original, Entity updated) {
-            final AttributeLookups<EntityField> origLookups = new AttributeLookups<>(original, EntityField.class);
-            final AttributeLookups<EntityField> updateLookups = new AttributeLookups<>(updated, EntityField.class);
 
-            MapDiff.apply(origLookups.getElementsByUuid(), updateLookups.getElementsByUuid(),
-                    new MapDiffHandler<UUID, EntityField>()
+            MapDiff.apply(original.fieldsByUuid(), updated.fieldsByUuid(), new MapDiffHandler<UUID, EntityField>()
             {
                 @Override
                 public void added(EntityField element) {
@@ -86,19 +83,14 @@ public final class SpaceDiff {
                 @Override
                 public void inBoth(UUID uuid, EntityField origField, EntityField updatedField) {
                     assert origField.getUuid().equals(updatedField.getUuid()) : origField + " / " + updatedField;
-                    if (!origLookups.pathFor(uuid).equals(updateLookups.pathFor(uuid))) {
-                        out.error("Can't move field");
-                    }
-                    else {
-                        if (!origField.getName().equals(updatedField.getName()))
-                            out.renameField(origField.getUuid());
-                        if (!origField.getType().toLowerCase().equals(updatedField.getType().toLowerCase()))
-                            out.changeFieldType(uuid);
-                        if (!origField.getValidations().equals(updatedField.getValidations()))
-                            out.changeFieldValidations(uuid);
-                        if (!origField.getProperties().equals(updatedField.getProperties()))
-                            out.changeFieldProperties(uuid);
-                    }
+                    if (!origField.getName().equals(updatedField.getName()))
+                        out.renameField(origField.getUuid());
+                    if (!origField.getType().toLowerCase().equals(updatedField.getType().toLowerCase()))
+                        out.changeFieldType(uuid);
+                    if (!origField.getValidations().equals(updatedField.getValidations()))
+                        out.changeFieldValidations(uuid);
+                    if (!origField.getProperties().equals(updatedField.getProperties()))
+                        out.changeFieldProperties(uuid);
                 }
             });
         }
