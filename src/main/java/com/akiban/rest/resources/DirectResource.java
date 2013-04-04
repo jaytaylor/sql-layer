@@ -37,11 +37,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import org.codehaus.jackson.JsonGenerator;
@@ -75,18 +73,9 @@ public class DirectResource {
     private final static String MODULE_ARG_NAME = "module";
     private final static String SCHEMA_ARG_NAME = "schema";
     private final static String LANGUAGE = "language";
+    private final static String FUNCTIONS = "functions";
 
-    private final static String CALLING_CONVENTION = "calling_convention";
-    private final static String MAX_DYNAMIC_RESULT_SETS = "max_dynamic_result_sets";
-    private final static String DEFINITION = "definition";
-    private final static String PARAMETERS_IN = "parameters_in";
-    private final static String PARAMETERS_OUT = "parameters_out";
-    private final static String NAME = "name";
-    private final static String POSITION = "position";
-    private final static String TYPE = "type";
-    private final static String TYPE_OPTIONS = "type_options";
-    private final static String IS_INOUT = "is_inout";
-    private final static String IS_RESULT = "is_result";
+
 
     private final ResourceRequirements reqs;
 
@@ -227,107 +216,22 @@ public class DirectResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("/library/")
+    @Path("/procedure")
     public Response getProcedures(@Context final HttpServletRequest request,
             @QueryParam(SCHEMA_ARG_NAME) @DefaultValue("") final String schema,
-            @QueryParam(MODULE_ARG_NAME) @DefaultValue("") final String procName) {
-        final String schemaResolved = schema.isEmpty() ? ResourceHelper.getSchema(request) : schema;
-        if (procName.isEmpty())
-            checkSchemaAccessible(reqs.securityService, request, schemaResolved);
-        else
-            checkTableAccessible(reqs.securityService, request, new TableName(schemaResolved, procName));
+            @QueryParam(MODULE_ARG_NAME) @DefaultValue("") final String procName,
+            @QueryParam(FUNCTIONS) @DefaultValue("false") final boolean functionsOnly) {
         return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
             @Override
             public void write(PrintWriter writer) throws Exception {
                 try (Session session = reqs.sessionService.createSession();
                         TransactionService.CloseableTransaction txn = reqs.transactionService
                                 .beginCloseableTransaction(session)) {
-                    JsonGenerator json = createJsonGenerator(writer);
-                    AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(session);
-
-                    if (procName.isEmpty()) {
-                        // Get all routines in the schema.
-                        json.writeStartObject();
-                        {
-                            Schema schemaAIS = ais.getSchema(schemaResolved);
-                            if (schemaAIS != null) {
-                                for (Map.Entry<String, Routine> routineEntry : schemaAIS.getRoutines().entrySet()) {
-                                    json.writeFieldName(routineEntry.getKey());
-                                    writeProc(routineEntry.getValue(), json);
-                                }
-                            }
-                        }
-                        json.writeEndObject();
-                    } else {
-                        // Get just the one routine.
-                        Routine routine = ais.getRoutine(schemaResolved, procName);
-                        if (routine == null)
-                            throw new NoSuchRoutineException(schemaResolved, procName);
-                        writeProc(routine, json);
-                    }
-                    json.flush();
+                    reqs.directService.reportStoredProcedures(writer, request, schema, procName, session, functionsOnly);
                     txn.commit();
                 }
             }
         }).build();
-    }
-
-    private void writeProc(Routine routine, JsonGenerator json) throws IOException {
-        json.writeStartObject();
-        {
-            json.writeStringField(LANGUAGE, routine.getLanguage());
-            json.writeStringField(CALLING_CONVENTION, routine.getCallingConvention().name());
-            json.writeNumberField(MAX_DYNAMIC_RESULT_SETS, routine.getDynamicResultSets());
-            json.writeStringField(DEFINITION, routine.getDefinition());
-            writeProcParams(PARAMETERS_IN, routine.getParameters(), Parameter.Direction.IN, json);
-            writeProcParams(PARAMETERS_OUT, routine.getParameters(), Parameter.Direction.OUT, json);
-        }
-        json.writeEndObject();
-    }
-
-    private void writeProcParams(String label, List<Parameter> parameters, Parameter.Direction direction,
-            JsonGenerator json) throws IOException {
-        json.writeArrayFieldStart(label);
-        {
-            for (int i = 0; i < parameters.size(); i++) {
-                Parameter param = parameters.get(i);
-                Parameter.Direction paramDir = param.getDirection();
-                final boolean isInteresting;
-                switch (paramDir) {
-                case RETURN:
-                    paramDir = Parameter.Direction.OUT;
-                case IN:
-                case OUT:
-                    isInteresting = (paramDir == direction);
-                    break;
-                case INOUT:
-                    isInteresting = true;
-                    break;
-                default:
-                    throw new IllegalStateException("don't know how to handle parameter " + param);
-                }
-                if (isInteresting) {
-                    json.writeStartObject();
-                    {
-                        json.writeStringField(NAME, param.getName());
-                        json.writeNumberField(POSITION, i);
-                        TInstance tInstance = param.tInstance();
-                        TClass tClass = param.tInstance().typeClass();
-                        json.writeStringField(TYPE, tClass.name().unqualifiedName());
-                        json.writeObjectFieldStart(TYPE_OPTIONS);
-                        {
-                            for (Attribute attr : tClass.attributes())
-                                json.writeObjectField(attr.name().toLowerCase(), tInstance.attributeToObject(attr));
-                        }
-                        json.writeEndObject();
-                        json.writeBooleanField(IS_INOUT, paramDir == Parameter.Direction.INOUT);
-                        json.writeBooleanField(IS_RESULT, param.getDirection() == Parameter.Direction.RETURN);
-                    }
-                    json.writeEndObject();
-                }
-            }
-        }
-        json.writeEndArray();
     }
 
     @GET

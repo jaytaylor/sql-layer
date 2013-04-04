@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.rest.resources;
+package com.akiban.server.service.restdml;
 
 import org.junit.Test;
 
 import com.akiban.rest.resources.DirectResource;
 
-public class DirectResourceTest {
+public class DirectServiceTest {
 
     @Test
     public void populateEndpointMap() throws Exception {
-        DirectResource.EndpointMap em = new DirectResource.EndpointMap(null);
+        DirectServiceImpl.EndpointMap em = new DirectServiceImpl.EndpointMap(null);
     }
 }

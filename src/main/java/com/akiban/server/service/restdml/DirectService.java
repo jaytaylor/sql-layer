@@ -24,13 +24,17 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
 import com.akiban.ais.model.TableName;
+import com.akiban.server.service.session.Session;
 
 public interface DirectService {
 
-    public void installLibrary(PrintWriter writer, HttpServletRequest request, String module, String definition, String language)
-            throws Exception;
+    public void installLibrary(PrintWriter writer, HttpServletRequest request, String module, String definition,
+            String language) throws Exception;
 
-    public void removeLibrary(PrintWriter writer, final HttpServletRequest request, String module) throws Exception;
+    public void removeLibrary(PrintWriter writer, HttpServletRequest request, String module) throws Exception;
+
+    public void reportStoredProcedures(PrintWriter writer, HttpServletRequest request, String query, String module,
+            Session session, boolean functionsOnly) throws Exception;
 
     public void invokeRestEndpoint(PrintWriter writer, HttpServletRequest request, String method, TableName procName,
             String pathParams, MultivaluedMap<String, String> queryParameters, byte[] content, MediaType[] responseType)

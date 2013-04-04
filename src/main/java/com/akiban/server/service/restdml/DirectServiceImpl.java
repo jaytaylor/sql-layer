@@ -17,6 +17,11 @@
 
 package com.akiban.server.service.restdml;
 
+import static com.akiban.rest.resources.ResourceHelper.checkSchemaAccessible;
+import static com.akiban.rest.resources.ResourceHelper.checkTableAccessible;
+import static com.akiban.util.JsonUtils.createJsonGenerator;
+
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -33,10 +38,16 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response.Status;
 
+import org.codehaus.jackson.JsonGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CacheValueGenerator;
+import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.Routine.CallingConvention;
+import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.TableName;
 import com.akiban.direct.Direct;
 import com.akiban.rest.RestFunctionRegistrar;
@@ -44,6 +55,7 @@ import com.akiban.rest.RestServiceImpl;
 import com.akiban.rest.resources.ResourceHelper;
 import com.akiban.server.error.ExternalRoutineInvocationException;
 import com.akiban.server.error.MalformedRequestException;
+import com.akiban.server.error.NoSuchRoutineException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.restdml.EndpointMetadata.EndpointAddress;
@@ -52,14 +64,38 @@ import com.akiban.server.service.restdml.EndpointMetadata.ParamMetadata;
 import com.akiban.server.service.restdml.EndpointMetadata.Tokenizer;
 import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.routines.ScriptInvoker;
+import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
+import com.akiban.server.types3.Attribute;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TInstance;
 import com.akiban.sql.embedded.EmbeddedJDBCService;
 import com.akiban.sql.embedded.JDBCConnection;
 import com.google.inject.Inject;
 import com.persistit.exception.RollbackException;
 
 public class DirectServiceImpl implements Service, DirectService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DirectService.class.getName());
+
+    private final static String TABLE_ARG_NAME = "table";
+    private final static String MODULE_ARG_NAME = "module";
+    private final static String SCHEMA_ARG_NAME = "schema";
+    private final static String LANGUAGE = "language";
+    private final static String FUNCTIONS = "functions";
+
+    private final static String CALLING_CONVENTION = "calling_convention";
+    private final static String MAX_DYNAMIC_RESULT_SETS = "max_dynamic_result_sets";
+    private final static String DEFINITION = "definition";
+    private final static String PARAMETERS_IN = "parameters_in";
+    private final static String PARAMETERS_OUT = "parameters_out";
+    private final static String NAME = "name";
+    private final static String POSITION = "position";
+    private final static String TYPE = "type";
+    private final static String TYPE_OPTIONS = "type_options";
+    private final static String IS_INOUT = "is_inout";
+    private final static String IS_RESULT = "is_result";
 
     private final static String COMMENT_ANNOTATION1 = "//##";
     private final static String COMMENT_ANNOTATION2 = "##//";
@@ -74,19 +110,17 @@ public class DirectServiceImpl implements Service, DirectService {
 
     private final static Object ENDPOINT_MAP_CACHE_KEY = new Object();
 
-    private final SessionService sessionService;
+    private final SecurityService securityService;
     private final DXLService dxlService;
     private final EmbeddedJDBCService jdbcService;
-    private final RestDMLService restDMLService;
     private final RoutineLoader routineLoader;
 
     @Inject
-    public DirectServiceImpl(SessionService sessionService, DXLService dxlService, EmbeddedJDBCService jdbcService,
-            RestDMLService restDMLService, RoutineLoader routineLoader) {
-        this.sessionService = sessionService;
+    public DirectServiceImpl(SecurityService securityService, DXLService dxlService, EmbeddedJDBCService jdbcService,
+            RoutineLoader routineLoader) {
+        this.securityService = securityService;
         this.dxlService = dxlService;
         this.jdbcService = jdbcService;
-        this.restDMLService = restDMLService;
         this.routineLoader = routineLoader;
     }
 
@@ -112,18 +146,21 @@ public class DirectServiceImpl implements Service, DirectService {
     @Override
     public void installLibrary(final PrintWriter writer, final HttpServletRequest request, final String module,
             final String definition, final String language) throws Exception {
-        try (JDBCConnection conn = jdbcConnection(request); final Statement s = conn.createStatement()) {
-
+        try (final JDBCConnection conn = jdbcConnection(request); final Statement statement = conn.createStatement()) {
             final TableName procName = ResourceHelper.parseTableName(request, module);
-
-            final String sql = String.format(CREATE_PROCEDURE_FORMAT, procName.getSchemaName(),
+            final String create = String.format(CREATE_PROCEDURE_FORMAT, procName.getSchemaName(),
                     procName.getTableName(), language, definition);
-
-            restDMLService.runSQL(writer, request, sql, procName.getSchemaName());
-
+            statement.execute(create);
             try {
-                getEndpointMap(sessionService.createSession());
+                reportLibraryFunctionCount(createJsonGenerator(writer), procName, getEndpointMap(conn.getSession()));
             } catch (RegistrationException e) {
+                try {
+                    final String drop = String.format(CREATE_PROCEDURE_FORMAT, procName.getSchemaName(),
+                            procName.getTableName(), language, definition);
+                    statement.execute(drop);
+                } catch (Exception e2) {
+                    LOG.error("Unable to remove invalid library " + module, e2);
+                }
                 throw new WebApplicationException(e, Status.INTERNAL_SERVER_ERROR);
             }
         }
@@ -132,9 +169,152 @@ public class DirectServiceImpl implements Service, DirectService {
     @Override
     public void removeLibrary(final PrintWriter writer, final HttpServletRequest request, final String module)
             throws Exception {
-        final TableName procName = ResourceHelper.parseTableName(request, module);
-        final String sql = String.format(DROP_PROCEDURE_FORMAT, procName.getSchemaName(), procName.getTableName());
-        restDMLService.runSQL(writer, request, sql, procName.getSchemaName());
+        try (final JDBCConnection conn = jdbcConnection(request); final Statement statement = conn.createStatement()) {
+            final TableName procName = ResourceHelper.parseTableName(request, module);
+            final String drop = String.format(DROP_PROCEDURE_FORMAT, procName.getSchemaName(), procName.getTableName());
+            statement.execute(drop);
+            try {
+                reportLibraryFunctionCount(createJsonGenerator(writer), procName, getEndpointMap(conn.getSession()));
+            } catch (RegistrationException e) {
+                throw new WebApplicationException(e, Status.INTERNAL_SERVER_ERROR);
+            }
+        }
+    }
+
+    @Override
+    public void reportStoredProcedures(final PrintWriter writer, final HttpServletRequest request, final String schema,
+            final String module, final Session session, boolean functionsOnly) throws Exception {
+        final String schemaResolved = schema.isEmpty() ? ResourceHelper.getSchema(request) : schema;
+        if (module.isEmpty()) {
+            checkSchemaAccessible(securityService, request, schemaResolved);
+        } else {
+            checkTableAccessible(securityService, request, new TableName(schemaResolved, module));
+        }
+        JsonGenerator json = createJsonGenerator(writer);
+        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+        EndpointMap endpointMap = null;
+        
+        if (functionsOnly) {
+            endpointMap = getEndpointMap(session);
+        }
+
+        if (module.isEmpty()) {
+            // Get all routines in the schema.
+            json.writeStartObject();
+            {
+                Schema schemaAIS = ais.getSchema(schema);
+                if (schemaAIS != null) {
+                    for (Map.Entry<String, Routine> routineEntry : schemaAIS.getRoutines().entrySet()) {
+                        json.writeFieldName(routineEntry.getKey());
+                        if (functionsOnly) {
+                            reportLibraryFunctionMetadata(json, new TableName(schema, routineEntry.getKey()), endpointMap);
+                        } else {
+                            reportStoredProcedureDetails(json, routineEntry.getValue());
+                        }
+                    }
+                }
+            }
+            json.writeEndObject();
+        } else {
+            // Get just the one routine.
+            Routine routine = ais.getRoutine(schema, module);
+            if (routine == null) {
+                throw new NoSuchRoutineException(schema, module);
+            }
+            if (functionsOnly) {
+                reportLibraryFunctionCount(json, new TableName(schema, module), endpointMap);
+            } else {
+                reportStoredProcedureDetails(json, routine);
+            }
+        }
+        json.flush();
+    }
+
+    private void reportLibraryFunctionCount(final JsonGenerator json, final TableName module,
+            final EndpointMap endpointMap) throws Exception {
+        int count = 0;
+        for (final Map.Entry<EndpointAddress, List<EndpointMetadata>> entry : endpointMap.getMap().entrySet()) {
+            count += entry.getValue().size();
+        }
+        json.writeStartObject();
+        json.writeNumberField(FUNCTIONS, count);
+        json.writeEndObject();
+        json.flush();
+    }
+
+    private void reportLibraryFunctionMetadata(final JsonGenerator json, final TableName module, final EndpointMap endpointMap)
+            throws Exception {
+        json.writeStartObject();
+        json.writeArrayFieldStart(FUNCTIONS);
+        {
+            for (final Map.Entry<EndpointAddress, List<EndpointMetadata>> entry : endpointMap.getMap().entrySet()) {
+                for (final EndpointMetadata em : entry.getValue()) {
+                    json.writeString(em.toString());
+                }
+            }
+        }
+        json.writeEndArray();
+        json.writeEndObject();
+        json.flush();
+    }
+
+    private void reportStoredProcedureDetails(JsonGenerator json, Routine routine) throws IOException {
+        json.writeStartObject();
+        {
+            json.writeStringField(LANGUAGE, routine.getLanguage());
+            json.writeStringField(CALLING_CONVENTION, routine.getCallingConvention().name());
+            json.writeNumberField(MAX_DYNAMIC_RESULT_SETS, routine.getDynamicResultSets());
+            json.writeStringField(DEFINITION, routine.getDefinition());
+            reportLibraryDetailsParams(PARAMETERS_IN, routine.getParameters(), Parameter.Direction.IN, json);
+            reportLibraryDetailsParams(PARAMETERS_OUT, routine.getParameters(), Parameter.Direction.OUT, json);
+        }
+        json.writeEndObject();
+        json.flush();
+    }
+
+    private void reportLibraryDetailsParams(String label, List<Parameter> parameters, Parameter.Direction direction,
+            JsonGenerator json) throws IOException {
+        json.writeArrayFieldStart(label);
+        {
+            for (int i = 0; i < parameters.size(); i++) {
+                Parameter param = parameters.get(i);
+                Parameter.Direction paramDir = param.getDirection();
+                final boolean isInteresting;
+                switch (paramDir) {
+                case RETURN:
+                    paramDir = Parameter.Direction.OUT;
+                case IN:
+                case OUT:
+                    isInteresting = (paramDir == direction);
+                    break;
+                case INOUT:
+                    isInteresting = true;
+                    break;
+                default:
+                    throw new IllegalStateException("don't know how to handle parameter " + param);
+                }
+                if (isInteresting) {
+                    json.writeStartObject();
+                    {
+                        json.writeStringField(NAME, param.getName());
+                        json.writeNumberField(POSITION, i);
+                        TInstance tInstance = param.tInstance();
+                        TClass tClass = param.tInstance().typeClass();
+                        json.writeStringField(TYPE, tClass.name().unqualifiedName());
+                        json.writeObjectFieldStart(TYPE_OPTIONS);
+                        {
+                            for (Attribute attr : tClass.attributes())
+                                json.writeObjectField(attr.name().toLowerCase(), tInstance.attributeToObject(attr));
+                        }
+                        json.writeEndObject();
+                        json.writeBooleanField(IS_INOUT, paramDir == Parameter.Direction.INOUT);
+                        json.writeBooleanField(IS_RESULT, param.getDirection() == Parameter.Direction.RETURN);
+                    }
+                    json.writeEndObject();
+                }
+            }
+        }
+        json.writeEndArray();
     }
 
     @Override
@@ -320,8 +500,14 @@ public class DirectServiceImpl implements Service, DirectService {
         return args;
     }
 
-    class EndpointMap {
+    static class EndpointMap {
+
+        final RoutineLoader routineLoader;
         final Map<EndpointAddress, List<EndpointMetadata>> map = new HashMap<EndpointAddress, List<EndpointMetadata>>();
+
+        EndpointMap(final RoutineLoader routineLoader) {
+            this.routineLoader = routineLoader;
+        }
 
         Map<EndpointAddress, List<EndpointMetadata>> getMap() {
             return map;
@@ -436,7 +622,7 @@ public class DirectServiceImpl implements Service, DirectService {
 
             @Override
             public EndpointMap valueFor(AkibanInformationSchema ais) {
-                EndpointMap em = new EndpointMap();
+                EndpointMap em = new EndpointMap(routineLoader);
                 em.populate(ais, session);
                 return em;
             }

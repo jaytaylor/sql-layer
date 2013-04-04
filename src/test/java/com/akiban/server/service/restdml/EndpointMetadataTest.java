@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.rest.resources;
+package com.akiban.server.service.restdml;
 
 import static org.junit.Assert.*;
 

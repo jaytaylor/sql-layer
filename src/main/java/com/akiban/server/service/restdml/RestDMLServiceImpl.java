@@ -32,8 +32,6 @@ import com.akiban.ajdax.AjdaxWriter;
 import com.akiban.ajdax.JoinFields;
 import com.akiban.ajdax.JoinStrategy;
 import com.akiban.ajdax.actions.Action;
-import com.akiban.direct.Direct;
-import com.akiban.rest.RestFunctionInvoker;
 import com.akiban.server.Quote;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.InvalidArgumentTypeException;
@@ -246,23 +244,17 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
 
     @Override
     public void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
-                              TableName procName, Map<String,List<String>> queryParams) throws SQLException {
-        callProcedure(writer, request, jsonpArgName, procName, queryParams, null);
-    }
-
-    @Override
-    public void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
-                                 TableName procName, Map<String,List<String>> queryParams, String jsonParams) throws SQLException {
+                                 TableName procName, Map<String,List<String>> queryParams, String content) throws SQLException {
         try (JDBCConnection conn = jdbcConnection(request, procName.getSchemaName());
              JDBCCallableStatement call = conn.prepareCall(procName)) {
             Routine routine = call.getRoutine();
             switch (routine.getCallingConvention()) {
             case SCRIPT_FUNCTION_JSON:
             case SCRIPT_BINDINGS_JSON:
-                callJsonProcedure(writer, request, jsonpArgName, call, queryParams, jsonParams);
+                callJsonProcedure(writer, request, jsonpArgName, call, queryParams, content);
                 break;
             default:
-                callDefaultProcedure(writer, request, jsonpArgName, call, queryParams, jsonParams);
+                callDefaultProcedure(writer, request, jsonpArgName, call, queryParams, content);
                 break;
             }
         }

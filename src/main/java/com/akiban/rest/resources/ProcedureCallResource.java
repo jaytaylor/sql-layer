@@ -60,7 +60,7 @@ public class ProcedureCallResource {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
                         reqs.restDMLService.callProcedure(writer, request, JSONP_ARG_NAME,
-                                                          procName, uri.getQueryParameters());
+                                                          procName, uri.getQueryParameters(), null);
                     }
                 })
                 .build();
