@@ -40,10 +40,12 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import org.codehaus.jackson.JsonGenerator;
@@ -63,7 +65,6 @@ import com.akiban.rest.RestFunctionInvoker;
 import com.akiban.rest.RestFunctionRegistrar;
 import com.akiban.rest.RestResponseBuilder;
 import com.akiban.rest.RestResponseBuilder.BodyGenerator;
-import com.akiban.rest.RestServiceImpl;
 import com.akiban.rest.resources.EndpointMetadata.EndpointAddress;
 import com.akiban.rest.resources.EndpointMetadata.ParamCache;
 import com.akiban.rest.resources.EndpointMetadata.ParamMetadata;
@@ -109,10 +110,10 @@ public class DirectResource implements RestFunctionInvoker {
 
     private final static String DISTINGUISHED_REGISTRATION_METHOD_NAME = "_register";
 
-    private final static String CREATE_PROCEDURE_FORMAT = "CREATE PROCEDURE \"%s\" ()"
+    private final static String CREATE_PROCEDURE_FORMAT = "CREATE PROCEDURE \"%s\".\"%s\" ()"
             + " LANGUAGE %s PARAMETER STYLE LIBRARY AS $$%s$$";
 
-    private final static String DROP_PROCEDURE_FORMAT = "DROP PROCEDURE %s";
+    private final static String DROP_PROCEDURE_FORMAT = "DROP PROCEDURE \"%s\".\"%s\"";
 
     private final static Object ENDPOINT_MAP_CACHE_KEY = new Object();
 
@@ -120,6 +121,25 @@ public class DirectResource implements RestFunctionInvoker {
 
     public DirectResource(ResourceRequirements reqs) {
         this.reqs = reqs;
+    }
+
+    /**
+     * Private unchecked wrapper to communicate errors in function
+     * specifications
+     * 
+     * @author peter
+     * 
+     */
+    @SuppressWarnings("serial")
+    private static class RegistrationException extends RuntimeException {
+
+        RegistrationException(final Throwable t) {
+            super(t);
+        }
+
+        RegistrationException(final String msg, final Throwable t) {
+            super(msg, t);
+        }
     }
 
     /**
@@ -235,8 +255,14 @@ public class DirectResource implements RestFunctionInvoker {
             @Override
             public void write(PrintWriter writer) throws Exception {
                 final TableName procName = ResourceHelper.parseTableName(request, module);
-                final String sql = String.format(CREATE_PROCEDURE_FORMAT, procName, language, new String(payload));
+                final String sql = String.format(CREATE_PROCEDURE_FORMAT, procName.getSchemaName(),
+                        procName.getTableName(), language, new String(payload));
                 reqs.restDMLService.runSQL(writer, request, sql, procName.getSchemaName());
+                try {
+                    getEndpointMap(reqs.sessionService.createSession());
+                } catch (RegistrationException e) {
+                    throw new WebApplicationException(e, Status.INTERNAL_SERVER_ERROR);
+                }
             }
         }).build();
     }
@@ -251,7 +277,8 @@ public class DirectResource implements RestFunctionInvoker {
             @Override
             public void write(PrintWriter writer) throws Exception {
                 final TableName procName = ResourceHelper.parseTableName(request, module);
-                final String sql = String.format(DROP_PROCEDURE_FORMAT, procName);
+                final String sql = String.format(DROP_PROCEDURE_FORMAT, procName.getSchemaName(),
+                        procName.getTableName());
                 reqs.restDMLService.runSQL(writer, request, sql, procName.getSchemaName());
             }
         }).build();
@@ -271,16 +298,16 @@ public class DirectResource implements RestFunctionInvoker {
         return RestResponseBuilder.forRequest(request).body(new BodyGenerator() {
             @Override
             public void write(PrintWriter writer) throws Exception {
-                try (Session session
-                             = reqs.sessionService.createSession();
-                     TransactionService.CloseableTransaction txn
-                             = reqs.transactionService.beginCloseableTransaction(session)) {
+                try (Session session = reqs.sessionService.createSession();
+                        TransactionService.CloseableTransaction txn = reqs.transactionService
+                                .beginCloseableTransaction(session)) {
                     JsonGenerator json = createJsonGenerator(writer);
                     AkibanInformationSchema ais = reqs.dxlService.ddlFunctions().getAIS(session);
 
                     if (procName.isEmpty()) {
                         // Get all routines in the schema.
-                        json.writeStartObject(); {
+                        json.writeStartObject();
+                        {
                             Schema schemaAIS = ais.getSchema(schemaResolved);
                             if (schemaAIS != null) {
                                 for (Map.Entry<String, Routine> routineEntry : schemaAIS.getRoutines().entrySet()) {
@@ -288,9 +315,9 @@ public class DirectResource implements RestFunctionInvoker {
                                     writeProc(routineEntry.getValue(), json);
                                 }
                             }
-                        } json.writeEndObject();
-                    }
-                    else {
+                        }
+                        json.writeEndObject();
+                    } else {
                         // Get just the one routine.
                         Routine routine = ais.getRoutine(schemaResolved, procName);
                         if (routine == null)
@@ -305,20 +332,22 @@ public class DirectResource implements RestFunctionInvoker {
     }
 
     private void writeProc(Routine routine, JsonGenerator json) throws IOException {
-        json.writeStartObject(); {
-            json.writeStringField("language", routine.getLanguage());
-            json.writeStringField("calling_convention", routine.getCallingConvention().name());
-            json.writeNumberField("max_dynamic_result_sets", routine.getDynamicResultSets());
-            json.writeStringField("definition", routine.getDefinition());
-            writeProcParams("parameters_in", routine.getParameters(), Parameter.Direction.IN, json);
-            writeProcParams("parameters_out", routine.getParameters(), Parameter.Direction.OUT, json);
-        } json.writeEndObject();
+        json.writeStartObject();
+        {
+            json.writeStringField(LANGUAGE, routine.getLanguage());
+            json.writeStringField(CALLING_CONVENTION, routine.getCallingConvention().name());
+            json.writeNumberField(MAX_DYNAMIC_RESULT_SETS, routine.getDynamicResultSets());
+            json.writeStringField(DEFINITION, routine.getDefinition());
+            writeProcParams(PARAMETERS_IN, routine.getParameters(), Parameter.Direction.IN, json);
+            writeProcParams(PARAMETERS_OUT, routine.getParameters(), Parameter.Direction.OUT, json);
+        }
+        json.writeEndObject();
     }
 
     private void writeProcParams(String label, List<Parameter> parameters, Parameter.Direction direction,
-                                 JsonGenerator json) throws IOException
-    {
-        json.writeArrayFieldStart(label); {
+            JsonGenerator json) throws IOException {
+        json.writeArrayFieldStart(label);
+        {
             for (int i = 0; i < parameters.size(); i++) {
                 Parameter param = parameters.get(i);
                 Parameter.Direction paramDir = param.getDirection();
@@ -337,22 +366,27 @@ public class DirectResource implements RestFunctionInvoker {
                     throw new IllegalStateException("don't know how to handle parameter " + param);
                 }
                 if (isInteresting) {
-                    json.writeStartObject(); {
-                        json.writeStringField("name", param.getName());
-                        json.writeNumberField("position", i);
+                    json.writeStartObject();
+                    {
+                        json.writeStringField(NAME, param.getName());
+                        json.writeNumberField(POSITION, i);
                         TInstance tInstance = param.tInstance();
                         TClass tClass = param.tInstance().typeClass();
-                        json.writeStringField("type", tClass.name().unqualifiedName());
-                        json.writeObjectFieldStart("type_options"); {
+                        json.writeStringField(TYPE, tClass.name().unqualifiedName());
+                        json.writeObjectFieldStart(TYPE_OPTIONS);
+                        {
                             for (Attribute attr : tClass.attributes())
                                 json.writeObjectField(attr.name().toLowerCase(), tInstance.attributeToObject(attr));
-                        } json.writeEndObject();
-                        json.writeBooleanField("is_inout", paramDir == Parameter.Direction.INOUT);
-                        json.writeBooleanField("is_result", param.getDirection() == Parameter.Direction.RETURN);
-                    } json.writeEndObject();
+                        }
+                        json.writeEndObject();
+                        json.writeBooleanField(IS_INOUT, paramDir == Parameter.Direction.INOUT);
+                        json.writeBooleanField(IS_RESULT, param.getDirection() == Parameter.Direction.RETURN);
+                    }
+                    json.writeEndObject();
                 }
             }
-        } json.writeEndArray();
+        }
+        json.writeEndArray();
     }
 
     @GET
@@ -454,9 +488,9 @@ public class DirectResource implements RestFunctionInvoker {
         final ScriptInvoker invoker = conn.getRoutineLoader()
                 .getScriptInvoker(conn.getSession(), new TableName(procName.getSchemaName(), md.routineName)).get();
         Object result = invoker.invokeNamedFunction(md.function, args);
-        
+
         switch (md.outParam.type) {
-        
+
         case EndpointMetadata.X_TYPE_STRING:
             responseType[0] = MediaType.TEXT_PLAIN_TYPE;
             if (result != null) {
@@ -572,15 +606,16 @@ public class DirectResource implements RestFunctionInvoker {
     static class EndpointMap {
         final Map<EndpointAddress, List<EndpointMetadata>> map = new HashMap<EndpointAddress, List<EndpointMetadata>>();
         final ResourceRequirements reqs;
+
         Map<EndpointAddress, List<EndpointMetadata>> getMap() {
             return map;
         }
-        
+
         EndpointMap(final ResourceRequirements reqs) {
             this.reqs = reqs;
         }
 
-        void populate(final AkibanInformationSchema ais, final Session session) {
+        void populate(final AkibanInformationSchema ais, final Session session) throws RegistrationException {
             for (final Routine routine : ais.getRoutines().values()) {
                 if (routine.getCallingConvention().equals(CallingConvention.SCRIPT_LIBRARY)
                         && routine.getDynamicResultSets() == 0 && routine.getParameters().isEmpty()) {
@@ -599,18 +634,29 @@ public class DirectResource implements RestFunctionInvoker {
                         invoker.invokeNamedFunction(DISTINGUISHED_REGISTRATION_METHOD_NAME,
                                 new Object[] { new RestFunctionRegistrar() {
                                     @Override
-                                    public void register(String jsonSpec) throws Exception {
+                                    public void register(String specification) throws Exception {
                                         EndpointMap.this.register(routine.getName().getSchemaName(), routine.getName()
-                                                .getTableName(), jsonSpec);
+                                                .getTableName(), specification);
                                     }
                                 } });
                     } catch (ExternalRoutineInvocationException e) {
-                        // Ignore - expected case when using annotation
+                        if (e.getCause() instanceof NoSuchMethodError) {
+                            throw new RegistrationException("No " + DISTINGUISHED_REGISTRATION_METHOD_NAME + " method",
+                                    e.getCause());
+                        }
+                        Throwable previous = e;
+                        Throwable current;
+                        while ((current = previous.getCause()) != null && current != previous) {
+                            if (current instanceof RegistrationException) {
+                                throw (RegistrationException) current;
+                            }
+                            previous = current;
+                        }
+                        throw e;
+                    } catch (RegistrationException e) {
+                        throw e;
                     } catch (Exception e) {
-                        // Failed because there is no _register function, or
-                        // some other exception
-                        // TODO - log and report this somehow
-                        e.printStackTrace();
+                        throw new RegistrationException(e);
                     }
                 }
             }
@@ -656,16 +702,20 @@ public class DirectResource implements RestFunctionInvoker {
 
         void register(final String schema, final String routine, final String spec) throws Exception {
 
-            EndpointMetadata em = EndpointMetadata.createEndpointMetadata(schema, routine, spec);
-            EndpointAddress ea = new EndpointAddress(em.method, new TableName(schema, em.name));
+            try {
+                EndpointMetadata em = EndpointMetadata.createEndpointMetadata(schema, routine, spec);
+                EndpointAddress ea = new EndpointAddress(em.method, new TableName(schema, em.name));
 
-            synchronized (map) {
-                List<EndpointMetadata> list = map.get(ea);
-                if (list == null) {
-                    list = new LinkedList<EndpointMetadata>();
-                    map.put(ea, list);
+                synchronized (map) {
+                    List<EndpointMetadata> list = map.get(ea);
+                    if (list == null) {
+                        list = new LinkedList<EndpointMetadata>();
+                        map.put(ea, list);
+                    }
+                    list.add(em);
                 }
-                list.add(em);
+            } catch (Exception e) {
+                throw new RegistrationException("Invalid function specification: " + spec, e);
             }
         }
     }

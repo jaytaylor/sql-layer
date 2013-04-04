@@ -97,10 +97,10 @@ public abstract class ClassBuilder {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < s.length(); i++) {
             char ch = s.charAt(i);
-            if (i == 0 && !Character.isJavaIdentifierStart(ch)) {
-                sb.append("_");
-            }
             if (Character.isJavaIdentifierPart(ch)) {
+                if (i == 0 && !Character.isJavaIdentifierStart(ch)) {
+                    sb.append("_");
+                }
                 sb.append(ch);
             } else {
                 sb.append(String.format("_u%04h", ch));

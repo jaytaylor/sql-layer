@@ -145,22 +145,21 @@ public class BuilderResource {
 
     @DELETE
     @Path("/entity/{entity}/" + IDENTIFIERS_MULTI)
-    @Produces(MEDIATYPE_JSON_JAVASCRIPT)
     public Response delete(@Context HttpServletRequest request,
                            @PathParam("entity") String entityName,
                            @Context final UriInfo uri) {
         final TableName tableName = parseTableName(request, entityName);
         checkTableAccessible(securityService, request, tableName);
-        return RestResponseBuilder
-                .forRequest(request)
-                .body(new RestResponseBuilder.BodyGenerator() {
-                    @Override
-                    public void write(PrintWriter writer) throws Exception {
-                        modelBuilder.create(tableName);
-                        restDMLService.delete(writer, tableName, getPKString(uri));
-                    }
-                })
-                .build();
+        try {
+            modelBuilder.create(tableName);
+            restDMLService.delete(tableName, getPKString(uri));
+            return RestResponseBuilder
+                    .forRequest(request)
+                    .status(Response.Status.NO_CONTENT)
+                    .build();
+        } catch (Exception e) {
+            throw RestResponseBuilder.forRequest(request).wrapException(e);
+        }
     }
 
     @GET

@@ -24,12 +24,18 @@
  * defined below.
  */
 
-//## ENDPOINT (method=GET path=totalComp function=computeTotalCompensation 
-//##           in=(PP:1 int required, QP:start Date default '1800-01-01' QP:end Date default TODAY), out:string)
-//## ENDPOINT method=POST path=raiseSalary function=raiseSalary 
-//##      in=(pp:1 int required, json:percent double required,  json:effectiveDate Date required)
-//##      out:string"
-//##
+function _register(registrar) {
+        registrar.register("method=GET path=totalComp/(\\\\d*) "
+                        + "function=computeTotalCompensation "
+                        + "in=(pp:1 int required, qp:start Date default '1800-01-01', "
+                        + "qp:end Date default TODAY), out=string");
+
+        registrar.register("method=POST path=raiseSalary "
+                        + "function=raiseSalary "
+                        + "in=(json:empid int required, json:percent double required, "
+                        + "json:effectiveDate Date required) out=string");
+
+}
 
 function computeTotalCompensation(empno, start, end) {
 	var emp = com.akiban.direct.Direct.context.extent.getEmployee(empno);

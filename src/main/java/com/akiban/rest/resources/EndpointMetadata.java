@@ -29,8 +29,10 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response.Status;
 
 import org.codehaus.jackson.JsonNode;
 
@@ -349,7 +351,7 @@ public class EndpointMetadata {
 
     abstract static class ParamSourceMetadata {
         abstract Object value(final String pathParams, final MultivaluedMap<String, String> queryParams,
-                Object content, ParamCache cache);
+                Object content, ParamCache cache) throws Exception;
 
         String mimeType() {
             return null;
@@ -488,7 +490,7 @@ public class EndpointMetadata {
         }
 
         Object value(final String pathParams, final MultivaluedMap<String, String> queryParams, Object content,
-                ParamCache cache) {
+                ParamCache cache) throws Exception {
             if (cache.tree == null) {
                 String s;
                 if (content instanceof byte[]) {
@@ -499,7 +501,7 @@ public class EndpointMetadata {
                 try {
                     cache.tree = readTree(s);
                 } catch (IOException e) {
-                    return null;
+                    throw new WebApplicationException(e, Status.CONFLICT);
                 }
             }
             return cache.tree.get(paramName);

@@ -483,6 +483,7 @@ public class AISMerge {
 
     private void doAddIndexMerge() {
         AISBuilder builder = new AISBuilder(targetAIS, nameGenerator);
+        builder.groupingIsComplete();
         builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
         builder.akibanInformationSchema().freeze();
     }

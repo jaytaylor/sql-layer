@@ -38,7 +38,7 @@ public interface RestDMLService {
     public void getAllEntities(PrintWriter writer, TableName tableName, Integer depth);
     public void getEntities(PrintWriter writer, TableName tableName, Integer depth, String pks);
     public void insert(PrintWriter writer, TableName tableName, JsonNode node);
-    public void delete(PrintWriter writer, TableName tableName, String pks);
+    public void delete(TableName tableName, String pks);
     public void update(PrintWriter writer, TableName tableName, String values, JsonNode node);
 
     public void insertNoTxn(Session session, PrintWriter writer, TableName tableName, JsonNode node);
