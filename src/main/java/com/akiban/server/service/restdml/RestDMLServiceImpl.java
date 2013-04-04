@@ -62,7 +62,6 @@ import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import com.persistit.exception.RollbackException;
 
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonNode;
@@ -387,44 +386,6 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             results = call.getMoreResults();
         }
         appender.append('}');
-    }
-
-    @Override
-    public void invokeRestEndpoint(final PrintWriter writer, final HttpServletRequest request, final String method,
-            final TableName procName, final String pathParams, final MultivaluedMap<String, String> queryParameters,
-            final byte[] content, final RestFunctionInvoker endpointInvoker, final MediaType[] responseType)
-            throws Exception {
-        try (JDBCConnection conn = jdbcConnection(request, procName.getSchemaName());) {
-
-            boolean completed = false;
-            boolean repeat = true;
-
-            while (repeat) {
-                try {
-                    Direct.enter(procName.getSchemaName(), dxlService.ddlFunctions().getAIS(conn.getSession()));
-                    Direct.getContext().setConnection(conn);
-                    repeat = false;
-                    conn.beginTransaction();
-                    endpointInvoker.invokeRestFunction(writer, conn, method, procName, pathParams, queryParameters,
-                            content, request.getContentType(), responseType);
-                    conn.commitTransaction();
-                    completed = true;
-                } catch (RollbackException e) {
-                    repeat = true;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    throw e;
-                } finally {
-                    try {
-                        if (!completed) {
-                            conn.rollbackTransaction();
-                        }
-                    } finally {
-                        Direct.leave();
-                    }
-                }
-            }
-        }
     }
 
     @Override

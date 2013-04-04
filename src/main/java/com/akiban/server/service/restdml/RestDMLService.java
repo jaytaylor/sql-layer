@@ -59,9 +59,5 @@ public interface RestDMLService {
     public void refreshFullTextIndex(PrintWriter writer, IndexName indexName);
 
     public String ajdaxToSQL(TableName tableName, String ajdax) throws IOException;
-    
-    public void invokeRestEndpoint(PrintWriter writer, HttpServletRequest request, String method, TableName procName,
-            String pathParams, MultivaluedMap<String, String> queryParameters, byte[] content, 
-            RestFunctionInvoker invoker, final MediaType[] responseType) throws Exception;
-    
+        
 }
