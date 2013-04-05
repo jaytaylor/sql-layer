@@ -58,8 +58,6 @@ public class DefaultFormatterTest
      */
     @Test
     public void testDescribe_Explainer() {
-        System.out.println("describe");
-        
         // copied from TreeFormatTest
         // parent expresion: 
         // SUBSTRING(FROM_UNIXTIME(123456 * 7 + 8, "%Y-%m-%d"), 9 + 10, 11)
