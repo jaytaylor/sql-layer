@@ -32,9 +32,12 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 public final class EntityElementLookupsTest {
+
+    private static final String ELEMENTS_LOOKUPS_SPACE_JSON = "elements_lookups_space.json";
+
     @Test
     public void testAncestors() throws Exception {
-        Space space = Space.readSpace("attribute_lookups_space.json", EntityElementLookupsTest.class, null);
+        Space space = Space.readSpace(ELEMENTS_LOOKUPS_SPACE_JSON, EntityElementLookupsTest.class, null);
         EntityElementLookups lookups = new EntityElementLookups(space);
 
         Paths actual = new Paths();
@@ -56,7 +59,7 @@ public final class EntityElementLookupsTest {
 
     @Test
     public void testParents() throws Exception {
-        Space space = Space.readSpace("attribute_lookups_space.json", EntityElementLookupsTest.class, null);
+        Space space = Space.readSpace(ELEMENTS_LOOKUPS_SPACE_JSON, EntityElementLookupsTest.class, null);
         EntityElementLookups lookups = new EntityElementLookups(space);
 
         Map<String, String> actual = new TreeMap<>();
@@ -81,7 +84,7 @@ public final class EntityElementLookupsTest {
 
     @Test(expected = NoSuchElementException.class)
     public void testGetParentAttributeOfUnknown() {
-        Space space = Space.readSpace("attribute_lookups_space.json", EntityElementLookupsTest.class, null);
+        Space space = Space.readSpace(ELEMENTS_LOOKUPS_SPACE_JSON, EntityElementLookupsTest.class, null);
         EntityElementLookups lookups = new EntityElementLookups(space);
         UUID notThere = UUID.fromString("941b9155-d1a0-4166-a369-3e8c3ce3c53b");
         lookups.getParent(notThere);
