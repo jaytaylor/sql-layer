@@ -30,4 +30,15 @@ public interface MapDiffHandler<K,V> {
     void added(V element);
     void dropped(V element);
     void inBoth(K key, V original, V updated);
+
+    public static class Default<K,V> implements MapDiffHandler<K, V> {
+        @Override
+        public void added(V element) {}
+
+        @Override
+        public void dropped(V element) {}
+
+        @Override
+        public void inBoth(K key, V original, V updated) {}
+    }
 }

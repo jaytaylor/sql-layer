@@ -23,6 +23,7 @@ import com.akiban.server.entity.model.EntityElement;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
@@ -38,15 +39,8 @@ public final class EntityElementLookups {
         return pathsByUuid.get(uuid);
     }
 
-    public EntityElement getElement(UUID uuid) {
-        return elementsByUuid.get(uuid);
-    }
-
-    public EntityElementLookups(Entity entity) {
-        Visitor visitor = new Visitor();
-        entity.accept(visitor);
-        elementsByUuid  = Collections.unmodifiableMap(visitor.elementsByUuid);
-        pathsByUuid = Collections.unmodifiableMap(visitor.pathsByUuid);
+    public Map<UUID, EntityElement> getElementsByUuid() {
+        return elementsByUuid;
     }
 
     public UUID getParent(UUID uuid) {
@@ -58,6 +52,18 @@ public final class EntityElementLookups {
 
     Set<UUID> getUuids() {
         return elementsByUuid.keySet();
+    }
+
+    public EntityElementLookups(Collection<? extends Entity> entities) {
+        Visitor visitor = new Visitor();
+        for (Entity entity : entities)
+            entity.accept(visitor);
+        elementsByUuid  = Collections.unmodifiableMap(visitor.elementsByUuid);
+        pathsByUuid = Collections.unmodifiableMap(visitor.pathsByUuid);
+    }
+
+    EntityElementLookups(Entity entity) {
+        this(Collections.singleton(entity));
     }
 
     private final Map<UUID, EntityElement> elementsByUuid;
@@ -73,7 +79,9 @@ public final class EntityElementLookups {
         @Override
         protected void visitEntityElement(EntityElement element) {
             pathsByUuid.put(element.getUuid(), ImmutableList.copyOf(currentPath));
-            elementsByUuid.put(element.getUuid(), element);
+            Object old = elementsByUuid.put(element.getUuid(), element);
+            if (old != null)
+                throw new IllegalStateException("uuid already seen: " + element.getUuid());
         }
 
         private final Deque<UUID> currentPath = new ArrayDeque<>();
