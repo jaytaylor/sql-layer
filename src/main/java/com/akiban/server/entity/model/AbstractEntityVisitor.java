@@ -69,8 +69,8 @@ public abstract class AbstractEntityVisitor implements EntityVisitor<RuntimeExce
      * @param entity
      */
     private void visitEntityInternal(Entity entity) {
-        visitEntity(entity);
         visitEntityElement(entity);
+        visitEntity(entity);
         for (EntityField field : entity.getFields())
             visitEntityElement(field);
     }
