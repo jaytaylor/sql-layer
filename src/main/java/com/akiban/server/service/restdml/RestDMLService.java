@@ -17,22 +17,19 @@
 
 package com.akiban.server.service.restdml;
 
-import com.akiban.ais.model.IndexName;
-import com.akiban.ais.model.TableName;
-import com.akiban.rest.RestFunctionInvoker;
-
-import com.akiban.server.service.session.Session;
-import org.codehaus.jackson.JsonNode;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.codehaus.jackson.JsonNode;
+
+import com.akiban.ais.model.IndexName;
+import com.akiban.ais.model.TableName;
+import com.akiban.server.service.session.Session;
 
 public interface RestDMLService {
     public void getAllEntities(PrintWriter writer, TableName tableName, Integer depth);

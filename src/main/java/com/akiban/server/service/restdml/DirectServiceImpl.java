@@ -152,7 +152,10 @@ public class DirectServiceImpl implements Service, DirectService {
                     procName.getTableName(), language, definition);
             statement.execute(create);
             try {
-                reportLibraryFunctionCount(createJsonGenerator(writer), procName, getEndpointMap(conn.getSession()));
+                // Note: the side effect of the following call is to register
+                // all functions in the new AIS
+                final EndpointMap endpointMap = getEndpointMap(conn.getSession());
+                reportLibraryFunctionCount(createJsonGenerator(writer), procName, endpointMap);
             } catch (RegistrationException e) {
                 try {
                     final String drop = String.format(CREATE_PROCEDURE_FORMAT, procName.getSchemaName(),
@@ -174,7 +177,10 @@ public class DirectServiceImpl implements Service, DirectService {
             final String drop = String.format(DROP_PROCEDURE_FORMAT, procName.getSchemaName(), procName.getTableName());
             statement.execute(drop);
             try {
-                reportLibraryFunctionCount(createJsonGenerator(writer), procName, getEndpointMap(conn.getSession()));
+                // Note: the side effect of the following call is to register
+                // all functions in the new AIS
+                final EndpointMap endpointMap = getEndpointMap(conn.getSession());
+                reportLibraryFunctionCount(createJsonGenerator(writer), procName, endpointMap);
             } catch (RegistrationException e) {
                 throw new WebApplicationException(e, Status.INTERNAL_SERVER_ERROR);
             }
@@ -185,6 +191,7 @@ public class DirectServiceImpl implements Service, DirectService {
     public void reportStoredProcedures(final PrintWriter writer, final HttpServletRequest request, final String schema,
             final String module, final Session session, boolean functionsOnly) throws Exception {
         final String schemaResolved = schema.isEmpty() ? ResourceHelper.getSchema(request) : schema;
+
         if (module.isEmpty()) {
             checkSchemaAccessible(securityService, request, schemaResolved);
         } else {
@@ -193,7 +200,7 @@ public class DirectServiceImpl implements Service, DirectService {
         JsonGenerator json = createJsonGenerator(writer);
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
         EndpointMap endpointMap = null;
-        
+
         if (functionsOnly) {
             endpointMap = getEndpointMap(session);
         }
@@ -207,7 +214,8 @@ public class DirectServiceImpl implements Service, DirectService {
                     for (Map.Entry<String, Routine> routineEntry : schemaAIS.getRoutines().entrySet()) {
                         json.writeFieldName(routineEntry.getKey());
                         if (functionsOnly) {
-                            reportLibraryFunctionMetadata(json, new TableName(schema, routineEntry.getKey()), endpointMap);
+                            reportLibraryFunctionMetadata(json, new TableName(schema, routineEntry.getKey()),
+                                    endpointMap);
                         } else {
                             reportStoredProcedureDetails(json, routineEntry.getValue());
                         }
@@ -242,8 +250,8 @@ public class DirectServiceImpl implements Service, DirectService {
         json.flush();
     }
 
-    private void reportLibraryFunctionMetadata(final JsonGenerator json, final TableName module, final EndpointMap endpointMap)
-            throws Exception {
+    private void reportLibraryFunctionMetadata(final JsonGenerator json, final TableName module,
+            final EndpointMap endpointMap) throws Exception {
         json.writeStartObject();
         json.writeArrayFieldStart(FUNCTIONS);
         {

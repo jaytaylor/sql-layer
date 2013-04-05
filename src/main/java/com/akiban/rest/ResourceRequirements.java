@@ -21,7 +21,6 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.restdml.DirectService;
 import com.akiban.server.service.restdml.RestDMLService;
-import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.transaction.TransactionService;
@@ -38,7 +37,6 @@ public class ResourceRequirements {
     public final Store store;
     public final TreeService treeService;
     public final ConfigurationService configService;
-    public final RoutineLoader routineLoader;
 
     public ResourceRequirements(DXLService dxlService,
                                 RestDMLService restDMLService,
@@ -48,8 +46,7 @@ public class ResourceRequirements {
                                 TransactionService transactionService,
                                 Store store,
                                 TreeService treeService,
-                                ConfigurationService configService,
-                                RoutineLoader routineLoader) {
+                                ConfigurationService configService) {
         this.dxlService = dxlService;
         this.restDMLService = restDMLService;
         this.directService = directService;
@@ -59,6 +56,5 @@ public class ResourceRequirements {
         this.store = store;
         this.treeService = treeService;
         this.configService = configService;
-        this.routineLoader = routineLoader;
     }
 }
