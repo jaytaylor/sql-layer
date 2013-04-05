@@ -55,9 +55,6 @@ public abstract class ClassBuilder {
 
     public abstract void addConstructor(String[] argumentTypes, String[] argumentNames, String[] body);
 
-    protected ClassBuilder() {
-    }
-
     /*
      * (non-Javadoc)
      * 
@@ -211,7 +208,7 @@ public abstract class ClassBuilder {
             for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
                 generateInterfaceClass(table, scn);
             }
-            startClass("$$extent$$", true, null, null, null);
+            startClass("$$$extent$$$", true, null, null, null);
             for (final UserTable table : ais.getSchema(schema).getUserTables().values()) {
                 if (table.isRoot()) {
                     addExtentAccessor(table, scn, false);
@@ -242,7 +239,7 @@ public abstract class ClassBuilder {
         table.getName().getTableName();
         String scn = schemaClassName(schemaName);
         String typeName = scn + "$" + asJavaName(table.getName().getTableName(), true);
-        String className = PACKAGE + ".$$" + asJavaName(schemaName, true) + "&&"
+        String className = PACKAGE + ".$$$" + asJavaName(schemaName, true) + "$$$"
                 + asJavaName(table.getName().getTableName(), true);
         startClass(className, false, "com.akiban.direct.AbstractDirectObject", new String[] { typeName }, IMPORTS);
         addConstructor(NONE, NONE, NONE);
