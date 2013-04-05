@@ -132,7 +132,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         {
             throw new DiffIOException(ex);
         }
-        entityModified();
+        entityModified(entity);
     }
 
     @Override
@@ -446,5 +446,9 @@ public class JsonDiffPreview implements SpaceModificationHandler
     private void entityModified() {
         assert updatedEntity != null;
         modifiedEntities.add(updatedEntity);
+    }
+
+    private void entityModified(Entity entity) {
+        modifiedEntities.add(entity);
     }
 }

@@ -47,7 +47,7 @@ public abstract class EntityElement {
     public void setUuid(String string) {
         UUID uuid;
         try {
-            uuid = UUID.fromString(string);
+            uuid = string == null ? null : UUID.fromString(string);
         }
         catch (IllegalArgumentException e) {
             throw new IllegalEntityDefinition("invalid uuid");

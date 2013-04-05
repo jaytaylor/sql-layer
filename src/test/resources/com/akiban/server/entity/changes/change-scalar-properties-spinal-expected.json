@@ -1,5 +1,10 @@
 [
     {
-        "error": "Can't change properties of spinal attributes"
+        "action": "change_scalar_properties", 
+        "new_properties": {
+            "endian": "little"
+        }, 
+        "destructive": true, 
+        "uuid": "8644c36b-f881-4369-a06b-59e3fc580309"
     }
 ]
