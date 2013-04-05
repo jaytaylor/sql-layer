@@ -1115,9 +1115,6 @@ public class PersistitStore implements Store, Service {
                 throw new NoSuchRowException (hEx.getKey());
             }
 
-            // record a change about the old row (ie., being deleted)
-            addChangeFor(rowDef.userTable(), session, hEx.getKey());
-            
             // Combine current version of row with the version coming in
             // on the update request.
             // This is done by taking only the values of columns listed

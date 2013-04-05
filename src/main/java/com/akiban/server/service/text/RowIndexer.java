@@ -144,26 +144,9 @@ public class RowIndexer implements Closeable
 
     protected void updateDocument(Cursor cursor, byte hkeyBytes[]) throws IOException
     {
-        cursor.open();
-        Row row = cursor.next();
-
-        // Just the document correlating to this key
-        // because 
-        //      - If there exists one already, that will have been out-dated
-        //      - If not, nothing happens.
-        writer.deleteDocuments(new Term(IndexedField.KEY_FIELD, encodeBytes(hkeyBytes, 0, hkeyBytes.length)));
-
-        if (row != null)
-        {
-            
-            indexRow(null); // flush the last updated doc
-            do
-            {
-                indexRow(row);
-            }
-            while ((row = cursor.next()) != null);
-        }
-        cursor.close();
+        if (indexRows(cursor) == 0)
+            writer.deleteDocuments(new Term(IndexedField.KEY_FIELD,
+                                            encodeBytes(hkeyBytes, 0, hkeyBytes.length)));
     }
 
     protected void addDocument() throws IOException {
