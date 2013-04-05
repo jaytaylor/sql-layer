@@ -32,7 +32,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
 
-public final class AttributeLookups {
+public final class EntityElementLookups {
 
     public List<UUID> pathFor(UUID uuid) {
         return pathsByUuid.get(uuid);
@@ -42,7 +42,7 @@ public final class AttributeLookups {
         return elementsByUuid.get(uuid);
     }
 
-    public AttributeLookups(Entity entity) {
+    public EntityElementLookups(Entity entity) {
         Visitor visitor = new Visitor();
         entity.accept(visitor);
         elementsByUuid  = Collections.unmodifiableMap(visitor.elementsByUuid);

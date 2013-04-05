@@ -31,12 +31,12 @@ import java.util.NoSuchElementException;
 import java.util.TreeMap;
 import java.util.UUID;
 
-public final class AttributeLookupsTest {
+public final class EntityElementLookupsTest {
     @Test
     public void testAncestors() throws Exception {
-        Space space = Space.readSpace("attribute_lookups_space.json", AttributeLookupsTest.class, null);
+        Space space = Space.readSpace("attribute_lookups_space.json", EntityElementLookupsTest.class, null);
         Entity customer = getEntity(space, "customer");
-        AttributeLookups lookups = new AttributeLookups(customer);
+        EntityElementLookups lookups = new EntityElementLookups(customer);
 
         Paths actual = new Paths();
         for (UUID uuid : lookups.getUuids())
@@ -55,9 +55,9 @@ public final class AttributeLookupsTest {
 
     @Test
     public void testParents() throws Exception {
-        Space space = Space.readSpace("attribute_lookups_space.json", AttributeLookupsTest.class, null);
+        Space space = Space.readSpace("attribute_lookups_space.json", EntityElementLookupsTest.class, null);
         Entity customer = getEntity(space, "customer");
-        AttributeLookups lookups = new AttributeLookups(customer);
+        EntityElementLookups lookups = new EntityElementLookups(customer);
 
         Map<String, String> actual = new TreeMap<>();
         for (UUID uuid : lookups.getUuids()) {
@@ -79,9 +79,9 @@ public final class AttributeLookupsTest {
 
     @Test(expected = NoSuchElementException.class)
     public void testGetParentAttributeOfUnknown() {
-        Space space = Space.readSpace("attribute_lookups_space.json", AttributeLookupsTest.class, null);
+        Space space = Space.readSpace("attribute_lookups_space.json", EntityElementLookupsTest.class, null);
         Entity customer = getEntity(space, "customer");
-        AttributeLookups lookups = new AttributeLookups(customer);
+        EntityElementLookups lookups = new EntityElementLookups(customer);
         UUID notThere = UUID.fromString("941b9155-d1a0-4166-a369-3e8c3ce3c53b");
         lookups.getParent(notThere);
     }
