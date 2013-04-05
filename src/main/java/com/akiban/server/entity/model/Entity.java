@@ -122,6 +122,11 @@ public class Entity extends EntityElement {
         validations = new TreeSet<>();
     }
 
+    @Override
+    public String toString() {
+        return getName();
+    }
+
     protected <E extends Exception> void acceptStart(EntityVisitor<E> visitor) throws E {
         visitor.enterTopEntity(this);
     }

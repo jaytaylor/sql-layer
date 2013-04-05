@@ -29,6 +29,7 @@ public interface SpaceModificationHandler {
     void dropEntity(Entity dropped);
 
     void beginEntity(Entity oldEntity, Entity newEntity);
+    void moveEntity(Entity oldParent, Entity newParent);
     void renameEntity();
     void identifyingFieldsChanged();
     void groupingFieldsChanged();

@@ -109,6 +109,11 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     }
 
     @Override
+    public void moveEntity(Entity oldParent, Entity newParent) {
+        errors.add("Can't move entities");
+    }
+
+    @Override
     public void beginEntity(Entity oldEntity, Entity newEntity) {
         this.oldEntity = oldEntity;
         this.newEntity = newEntity;

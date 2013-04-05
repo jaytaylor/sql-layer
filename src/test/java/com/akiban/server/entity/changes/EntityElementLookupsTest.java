@@ -17,7 +17,7 @@
 
 package com.akiban.server.entity.changes;
 
-import com.akiban.server.entity.model.Entity;
+import com.akiban.server.entity.model.EntityElement;
 import com.akiban.server.entity.model.Space;
 import com.akiban.util.JUnitUtils;
 import com.google.common.base.Functions;
@@ -35,12 +35,11 @@ public final class EntityElementLookupsTest {
     @Test
     public void testAncestors() throws Exception {
         Space space = Space.readSpace("attribute_lookups_space.json", EntityElementLookupsTest.class, null);
-        Entity customer = getEntity(space, "customer");
-        EntityElementLookups lookups = new EntityElementLookups(customer);
+        EntityElementLookups lookups = new EntityElementLookups(space);
 
         Paths actual = new Paths();
         for (UUID uuid : lookups.getUuids())
-            actual.put(uuid, lookups.pathFor(uuid));
+            actual.put(uuid, Lists.transform(lookups.ancestorsFor(uuid), EntityElement.toUuid));
 
         Paths expected = new Paths()
                 .put("2a57b59e-e1b7-4377-996e-a5c04e0abf29")
@@ -48,7 +47,9 @@ public final class EntityElementLookupsTest {
                 .put("c5cedd91-9751-41c2-9417-8c29117ca2c9", "2a57b59e-e1b7-4377-996e-a5c04e0abf29")
                 .put("58dd53b7-e8a1-488b-a751-c83f9beca04c", "c5cedd91-9751-41c2-9417-8c29117ca2c9", "2a57b59e-e1b7-4377-996e-a5c04e0abf29")
                 .put("378d22b2-acf0-45d3-8f8a-2c09188a1cf3", "c5cedd91-9751-41c2-9417-8c29117ca2c9", "2a57b59e-e1b7-4377-996e-a5c04e0abf29")
-                .put("24b0cf4f-6a33-43c4-bd15-db3a7b06d963", "378d22b2-acf0-45d3-8f8a-2c09188a1cf3", "c5cedd91-9751-41c2-9417-8c29117ca2c9", "2a57b59e-e1b7-4377-996e-a5c04e0abf29");
+                .put("24b0cf4f-6a33-43c4-bd15-db3a7b06d963", "378d22b2-acf0-45d3-8f8a-2c09188a1cf3", "c5cedd91-9751-41c2-9417-8c29117ca2c9", "2a57b59e-e1b7-4377-996e-a5c04e0abf29")
+                .put("ed0a5f16-786a-4225-8785-f88410371365")
+                .put("b98128e9-4d8c-4275-ba04-5dc8b8729515", "ed0a5f16-786a-4225-8785-f88410371365");
 
         JUnitUtils.equalMaps("paths", expected.paths, actual.paths);
     }
@@ -56,12 +57,11 @@ public final class EntityElementLookupsTest {
     @Test
     public void testParents() throws Exception {
         Space space = Space.readSpace("attribute_lookups_space.json", EntityElementLookupsTest.class, null);
-        Entity customer = getEntity(space, "customer");
-        EntityElementLookups lookups = new EntityElementLookups(customer);
+        EntityElementLookups lookups = new EntityElementLookups(space);
 
         Map<String, String> actual = new TreeMap<>();
         for (UUID uuid : lookups.getUuids()) {
-            UUID parent = lookups.getParent(uuid);
+            UUID parent = EntityElement.toUuid.apply(lookups.getParent(uuid));
             String parentStr = parent == null ? null : parent.toString();
             actual.put(uuid.toString(), parentStr);
         }
@@ -73,6 +73,8 @@ public final class EntityElementLookupsTest {
         expected.put("58dd53b7-e8a1-488b-a751-c83f9beca04c", "c5cedd91-9751-41c2-9417-8c29117ca2c9");
         expected.put("378d22b2-acf0-45d3-8f8a-2c09188a1cf3", "c5cedd91-9751-41c2-9417-8c29117ca2c9");
         expected.put("24b0cf4f-6a33-43c4-bd15-db3a7b06d963", "378d22b2-acf0-45d3-8f8a-2c09188a1cf3");
+        expected.put("ed0a5f16-786a-4225-8785-f88410371365", null);
+        expected.put("b98128e9-4d8c-4275-ba04-5dc8b8729515", "ed0a5f16-786a-4225-8785-f88410371365");
 
         JUnitUtils.equalMaps("paths", expected, actual);
     }
@@ -80,18 +82,9 @@ public final class EntityElementLookupsTest {
     @Test(expected = NoSuchElementException.class)
     public void testGetParentAttributeOfUnknown() {
         Space space = Space.readSpace("attribute_lookups_space.json", EntityElementLookupsTest.class, null);
-        Entity customer = getEntity(space, "customer");
-        EntityElementLookups lookups = new EntityElementLookups(customer);
+        EntityElementLookups lookups = new EntityElementLookups(space);
         UUID notThere = UUID.fromString("941b9155-d1a0-4166-a369-3e8c3ce3c53b");
         lookups.getParent(notThere);
-    }
-
-    private static Entity getEntity(Space space, String name) {
-        for (Entity entity : space.getEntities()) {
-            if (name.equals(entity.getName()))
-                return entity;
-        }
-        throw new NoSuchElementException(name);
     }
 
     private static class Paths {

@@ -36,6 +36,17 @@
                     ]
                 }
             ]
+        },
+        {
+            "name" : "addresses",
+            "uuid" : "ed0a5f16-786a-4225-8785-f88410371365",
+            "fields" : [
+                {
+                    "name" : "aid",
+                    "uuid" : "b98128e9-4d8c-4275-ba04-5dc8b8729515",
+                    "type" : "integer"
+                }
+            ]
         }
     ]
 }

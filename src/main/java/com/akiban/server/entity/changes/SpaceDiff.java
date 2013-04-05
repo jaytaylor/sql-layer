@@ -40,34 +40,59 @@ import java.util.UUID;
 public final class SpaceDiff {
 
     public static <H extends SpaceModificationHandler> H apply(Space original, Space updated, H out) {
-        // First, capture the "bad" UUIDs -- those we should ignore later
+        // This is going to be a multi-pass approach.
+        // In the first pass, we look at all EntityElements that appear in both spaces. Before we do anything else,
+        // we confirm that when an EntityElement appears in both spaces, it is of the same Java class; if not, we
+        // output an error and mark that UUID as having been handled (so that subsequent passes will ignore it).
+        // If both EntityElements are of the same class, we check if the element moved. If so, we (1) raise an error
+        // if it's a field (those can't move) and (2) mark the UUID as having been handled. If the element was an
+        // Entity, we create a runnable to handle it in the next pass.
+        // In the second pass, we simply run all the runnables created in the previous pass. These handle Entities
+        // which exist in both spaces, but with different parents.
+        // In the last pass, we traverse each space's entities root-to-leaf. When we get to a drop or add, we don't
+        // traverse down, because if we're dropping "customers", we don't also need to mention that we're dropping
+        // "orders." We don't want a move to be registered as a drop in one place and an add in another, so we
+        // check as we traverse the tree to make sure that UUIDs haven't already been handled.
         final H out_ = out;
-        final Set<UUID> badUuids = new HashSet<>();
-        final EntityElementLookups origLookups = new EntityElementLookups(original.getEntities());
-        final EntityElementLookups updatedLookups = new EntityElementLookups(updated.getEntities());
+        final Set<UUID> handledUuids = new HashSet<>();
+        final EntityElementLookups origLookups = new EntityElementLookups(original);
+        final EntityElementLookups updatedLookups = new EntityElementLookups(updated);
+        final Collection<Runnable> moveHandlers = new ArrayList<>(5); // rough guess for capacity
+        final Handler diffHandler = new Handler(handledUuids, origLookups, updatedLookups, out);
+
         MapDiff.apply(origLookups.getElementsByUuid(), updatedLookups.getElementsByUuid(),
             new MapDiffHandler.Default<UUID, EntityElement>()
         {
             @Override
-            public void inBoth(UUID key, EntityElement original, EntityElement updated) {
+            public void inBoth(final UUID key, final EntityElement original, final EntityElement updated) {
                 boolean origIsField = (original.getClass() == EntityField.class);
                 boolean updatedIsField = (updated.getClass() == EntityField.class);
                 if (origIsField != updatedIsField) {
                     out_.error("Can't change an element's class (whether it's a field or an entity/collection)");
-                    badUuids.add(key);
+                    handledUuids.add(key);
                 }
-                else if (origIsField && !origLookups.getParent(key).equals(updatedLookups.getParent(key)))
+                if (!EntityElement.sameByUuid(origLookups.getParent(key), updatedLookups.getParent(key)))
                 {
-                    out_.error("Can't move field");
-                    badUuids.add(key);
+                    handledUuids.add(key);
+                    if (origIsField)
+                        out_.error("Can't move field");
+                    else
+                        moveHandlers.add(new Runnable() {
+                            @Override
+                            public void run() {
+                                diffHandler.entityActions(key, (Entity) original, (Entity) updated, true);
+                            }
+                        });
                 }
             }
         });
+        for (Runnable moveHandler : moveHandlers)
+            moveHandler.run();
 
         MapDiff.apply(
-                entitiesByUuid(original.getEntities(), badUuids),
-                entitiesByUuid(updated.getEntities(), badUuids),
-                new Handler(badUuids, out));
+                entitiesByUuid(original.getEntities(), handledUuids),
+                entitiesByUuid(updated.getEntities(), handledUuids),
+                diffHandler);
         return out;
     }
 
@@ -75,21 +100,29 @@ public final class SpaceDiff {
 
         @Override
         public void added(Entity element) {
-            if (!badUuids.contains(element.getUuid()))
+            if (!handledUuids.contains(element.getUuid()))
                 out.addEntity(element);
         }
 
         @Override
         public void dropped(Entity element) {
-            if (!badUuids.contains(element.getUuid()))
+            if (!handledUuids.contains(element.getUuid()))
                 out.dropEntity(element);
         }
 
         @Override
         public void inBoth(UUID uuid, Entity original, Entity updated) {
-            if (badUuids.contains(uuid))
-                return;
+            entityActions(uuid, original, updated, false);
+        }
+
+        public void entityActions(UUID uuid, Entity original, Entity updated, boolean isMoved) {
             out.beginEntity(original, updated);
+            if (isMoved) {
+                // We must have been invoked from the Runnable that w
+                Entity origParent = (Entity) origLookups.getParent(uuid);
+                Entity updatedParent = (Entity) origLookups.getParent(uuid);
+                out.moveEntity(origParent, updatedParent);
+            }
             String origName = original.getName();
             String updatedName = updated.getName();
             if (!origName.equals(updatedName))
@@ -107,20 +140,20 @@ public final class SpaceDiff {
             {
                 @Override
                 public void added(EntityField element) {
-                    if (!badUuids.contains(element.getUuid()))
+                    if (!handledUuids.contains(element.getUuid()))
                         out.addField(element.getUuid());
                 }
 
                 @Override
                 public void dropped(EntityField element) {
-                    if (!badUuids.contains(element.getUuid()))
+                    if (!handledUuids.contains(element.getUuid()))
                         out.dropField(element.getUuid());
                 }
 
                 @Override
                 public void inBoth(UUID uuid, EntityField origField, EntityField updatedField) {
                     assert origField.getUuid().equals(updatedField.getUuid()) : origField + " / " + updatedField;
-                    if (badUuids.contains(uuid))
+                    if (handledUuids.contains(uuid))
                         return;
                     if (!origField.getName().equals(updatedField.getName()))
                         out.renameField(origField.getUuid());
@@ -185,13 +218,21 @@ public final class SpaceDiff {
             }
         }
 
-        private Handler(Set<UUID> badUuids, SpaceModificationHandler out) {
-            this.badUuids = badUuids;
+        private Handler(Set<UUID> handledUuids,
+                        EntityElementLookups origLookups,
+                        EntityElementLookups updatedLookups,
+                        SpaceModificationHandler out)
+        {
+            this.handledUuids = handledUuids;
+            this.origLookups = origLookups;
+            this.updatedLookups = updatedLookups;
             this.out = out;
         }
 
-        private final Set<UUID> badUuids;
+        private final Set<UUID> handledUuids;
         private final SpaceModificationHandler out;
+        private final EntityElementLookups origLookups;
+        private final EntityElementLookups updatedLookups;
     }
 
     private SpaceDiff() {}

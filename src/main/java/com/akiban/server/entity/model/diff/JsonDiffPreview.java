@@ -154,6 +154,11 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
+    public void moveEntity(Entity oldParent, Entity newParent) {
+        error("Can't move entities or collections");
+    }
+
+    @Override
     public void renameEntity()
     {
         try

@@ -27,14 +27,12 @@
 package com.akiban.server.entity.model;
 
 import com.google.common.base.Function;
-import com.google.common.collect.Collections2;
+import com.google.common.base.Preconditions;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 
-import java.util.ArrayList;
-import java.util.Collection;
+
 import java.util.Comparator;
-import java.util.List;
 import java.util.UUID;
 
 public abstract class EntityElement {
@@ -83,15 +81,20 @@ public abstract class EntityElement {
     public static final Function<? super EntityElement, String> toName = new Function<EntityElement, String>() {
         @Override
         public String apply(EntityElement input) {
-            return input.getName();
+            return input == null ? null : input.getName();
         }
     };
 
-    public static final Function<? super Collection<? extends EntityElement>, List<String>> toNames
-            = new Function<Collection<? extends EntityElement>, List<String>>() {
+    public static final Function<? super EntityElement, ? extends UUID> toUuid = new Function<EntityElement, UUID>() {
         @Override
-        public List<String> apply(Collection<? extends EntityElement> input) {
-            return new ArrayList<>(Collections2.transform(input, toName));
+        public UUID apply(EntityElement input) {
+            return input == null ? null : input.getUuid();
         }
     };
+
+    public static boolean sameByUuid(EntityElement one, EntityElement two) {
+        if (one == null)
+            return two == null;
+        return two != null && one.getUuid().equals(Preconditions.checkNotNull(two.getUuid()));
+    }
 }

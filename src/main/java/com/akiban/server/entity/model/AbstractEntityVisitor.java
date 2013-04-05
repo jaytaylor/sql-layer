@@ -25,6 +25,7 @@ public abstract class AbstractEntityVisitor implements EntityVisitor<RuntimeExce
 
     @Override
     public void leaveTopEntity() {
+        leaveEntity();
     }
 
     @Override
@@ -38,6 +39,7 @@ public abstract class AbstractEntityVisitor implements EntityVisitor<RuntimeExce
 
     @Override
     public void leaveCollection() {
+        leaveEntity();
     }
 
     @Override
@@ -60,6 +62,14 @@ public abstract class AbstractEntityVisitor implements EntityVisitor<RuntimeExce
      * @param element the entity to visit
      */
     protected void visitEntityElement(EntityElement element) {
+    }
+
+    /**
+     * Leaves any entity, regardless of whether it's top-level or a collection.
+     * This is invoked from {@linkplain #leaveTopEntity} and {@linkplain #leaveCollection}, so if you use this
+     * method and override either of those, make sure to invoke <tt>super</tt> within the override.
+     */
+    protected void leaveEntity() {
     }
 
     /**
