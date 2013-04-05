@@ -42,6 +42,8 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.*;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
 
 /** Given <code>Row</code>s in hkey order, create <code>Document</code>s. */
 public class RowIndexer implements Closeable
@@ -149,7 +151,6 @@ public class RowIndexer implements Closeable
         //      - If not, nothing happens.
         writer.deleteDocuments(new Term(IndexedField.KEY_FIELD, encodeBytes(hkeyBytes, 0, hkeyBytes.length)));
 
-
         if (row != null)
         {
             
@@ -197,11 +198,16 @@ public class RowIndexer implements Closeable
         }
     }
 
-    private static String encodeBytes(byte bytes[], int offset, int length)
+    static String encodeBytes(byte bytes[], int offset, int length)
     {
         // TODO: needs to be more efficient?
         String ret = Base64.encodeBase64String(Arrays.copyOfRange(bytes, offset, length));
         return ret;
+    }
+    
+    static byte[] decodeString(String st)
+    {
+        return Base64.decodeBase64(st);
     }
 
     @Override
