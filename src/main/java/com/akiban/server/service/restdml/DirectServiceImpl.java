@@ -164,7 +164,7 @@ public class DirectServiceImpl implements Service, DirectService {
                 } catch (Exception e2) {
                     LOG.error("Unable to remove invalid library " + module, e2);
                 }
-                throw new WebApplicationException(e, Status.INTERNAL_SERVER_ERROR);
+                throw new WebApplicationException(e, Status.CONFLICT);
             }
         }
     }
@@ -182,7 +182,7 @@ public class DirectServiceImpl implements Service, DirectService {
                 final EndpointMap endpointMap = getEndpointMap(conn.getSession());
                 reportLibraryFunctionCount(createJsonGenerator(writer), procName, endpointMap);
             } catch (RegistrationException e) {
-                throw new WebApplicationException(e, Status.INTERNAL_SERVER_ERROR);
+                throw new WebApplicationException(e, Status.CONFLICT);
             }
         }
     }
