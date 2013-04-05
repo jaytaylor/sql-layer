@@ -66,7 +66,6 @@ import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.routines.ScriptInvoker;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionService;
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
@@ -79,9 +78,6 @@ public class DirectServiceImpl implements Service, DirectService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DirectService.class.getName());
 
-    private final static String TABLE_ARG_NAME = "table";
-    private final static String MODULE_ARG_NAME = "module";
-    private final static String SCHEMA_ARG_NAME = "schema";
     private final static String LANGUAGE = "language";
     private final static String FUNCTIONS = "functions";
 
