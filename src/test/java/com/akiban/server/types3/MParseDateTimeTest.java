@@ -17,6 +17,7 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.server.error.InvalidDateFormatException;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes.StringType;
 import java.util.ArrayList;
 import java.util.List;
@@ -96,10 +97,28 @@ public class MParseDateTimeTest
                                      1900, 1, 2, 25, 30, 10);
     }
     
+    @Test
     public void testTime() // 25:30:10 is a valid TIME though
     {
         doTest(TIME_ST, "25:30:10",
                         0, 0, 0, 25, 30, 10);
+    }
+    @Test
+    public void testDateTimeT() {
+        doTest(DATETIME_ST, "2012-04-09T12:45:00",
+                2012, 4, 9, 12, 45, 0);
+    }
+    
+    @Test (expected=InvalidDateFormatException.class)
+    public void testDateTimeTT() {
+        doTest(INVALID_DATETIME_ST, "2012-04-09TT12:45:00",
+                2012, 4, 9, 12, 45, 0);
+    }
+    
+    @Test
+    public void testDateTimeTZone() {
+        doTest(DATETIME_ST, "2013-04-03T14:55:08.249Z-05:00",
+                2013, 4, 3, 14, 55, 8);
     }
     
     private static List<Long> toList(long...exp)

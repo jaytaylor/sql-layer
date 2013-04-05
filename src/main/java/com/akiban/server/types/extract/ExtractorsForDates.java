@@ -166,7 +166,7 @@ abstract class ExtractorsForDates extends LongExtractor {
         private final int TIME_FRAC_GROUP = 10;
         private final int TIME_TIMEZONE_GROUP = 11;
         private final Pattern PARSE_PATTERN = Pattern.compile(
-                "^((\\d+)-(\\d+)-(\\d+))(([T]{1}|\\s+)(\\d+):(\\d+):(\\d+)(\\.\\d+)?([+-]\\d+:\\d+)?)?$"
+                "^((\\d+)-(\\d+)-(\\d+))(([T]{1}|\\s+)(\\d+):(\\d+):(\\d+)(\\.\\d+)?[Z]?([+-]\\d+:\\d+)?)?$"
         );
 
         @Override protected long doGetLong(ValueSource source) {
