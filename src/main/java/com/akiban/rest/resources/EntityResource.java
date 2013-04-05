@@ -95,11 +95,11 @@ public class EntityResource {
     }
 
     @POST
-    @Path("/ajdax/to-sql")
+    @Path("/jonquil/to-sql")
     @Consumes(MEDIATYPE_JSON_JAVASCRIPT)
-    public Response ajdaxToSQL(@Context final HttpServletRequest request,
-                          @PathParam("entity") String entity,
-                          final String query) {
+    public Response jonquilToSQL(@Context final HttpServletRequest request,
+                                 @PathParam("entity") String entity,
+                                 final String query) {
         final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
         return RestResponseBuilder
@@ -107,18 +107,18 @@ public class EntityResource {
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
-                        writer.write(reqs.restDMLService.ajdaxToSQL(tableName, query));
+                        writer.write(reqs.restDMLService.jonquilToSQL(tableName, query));
                     }
                 })
                 .build();
     }
 
     @POST
-    @Path("/ajdax/query")
+    @Path("/jonquil/query")
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
-    public Response ajdaxQuery(@Context final HttpServletRequest request,
-                          @PathParam("entity") String entity,
-                          final String query) {
+    public Response jonquilQuery(@Context final HttpServletRequest request,
+                                 @PathParam("entity") String entity,
+                                 final String query) {
         final TableName tableName = parseTableName(request, entity);
         checkTableAccessible(reqs.securityService, request, tableName);
         return RestResponseBuilder
@@ -126,7 +126,7 @@ public class EntityResource {
                 .body(new RestResponseBuilder.BodyGenerator() {
                     @Override
                     public void write(PrintWriter writer) throws Exception {
-                        String sql = reqs.restDMLService.ajdaxToSQL(tableName, query);
+                        String sql = reqs.restDMLService.jonquilToSQL(tableName, query);
                         reqs.restDMLService.runSQL(writer, request, sql, tableName.getSchemaName());
                     }
                 })
