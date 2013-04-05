@@ -26,9 +26,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.TableChange;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.entity.model.Entity;
-import com.akiban.server.entity.model.EntityField;
 import com.akiban.server.entity.model.EntityIndex;
-import com.akiban.server.entity.model.IndexField;
 import com.akiban.server.entity.model.Space;
 import com.akiban.server.entity.model.Validation;
 import com.akiban.server.service.session.Session;
@@ -57,8 +55,6 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     // Current entity being visited.
     private Entity oldEntity;
     private Entity newEntity;
-    private AttributeLookups<?> oldLookups;
-    private AttributeLookups<?> newLookups;
 
 
     public DDLBasedSpaceModifier(DDLFunctions ddlFunctions, Session session, String schemaName, Space newSpace) {
@@ -116,8 +112,6 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     public void beginEntity(Entity oldEntity, Entity newEntity) {
         this.oldEntity = oldEntity;
         this.newEntity = newEntity;
-        this.oldLookups = new AttributeLookups<>(newEntity, EntityField.class);
-        this.newLookups = new AttributeLookups<>(oldEntity, EntityField.class);
     }
 
     @Override
@@ -127,32 +121,25 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
 
     @Override
     public void addField(UUID added) {
-        UUID parent = newLookups.getParentAttribute(added);
-        assert parent == newEntity.getUuid();
-        String name = newLookups.nameFor(added);
-        trackColumnChange(getParentName(parent), TableChange.createAdd(name));
+        String name = getFieldName(added, newEntity);
+        trackColumnChange(newEntity.getName(), TableChange.createAdd(name));
 //            case COLLECTION: // TODO what do do about this?
 //                newTables.add(newAIS.getUserTable(schemaName, attrName));
     }
 
     @Override
     public void dropField(UUID dropped) {
-        UUID parent = oldLookups.getParentAttribute(dropped);
-        assert parent == oldEntity.getUuid();
-        String oldName = oldLookups.nameFor(dropped);
-        trackColumnChange(getParentName(parent), TableChange.createDrop(oldName));
+        String oldName = getFieldName(dropped, oldEntity);
+        trackColumnChange(oldEntity.getName(), TableChange.createDrop(oldName));
 //            case COLLECTION: TODO what to do about this?
 //                dropTables.add(ddlFunctions.getUserTable(session, new TableName(schemaName, oldName)));
     }
 
     @Override
     public void renameField(UUID fieldUuid) {
-        UUID parent = newLookups.getParentAttribute(fieldUuid);
-        assert parent == oldEntity.getUuid();
-        assert parent == newEntity.getUuid();
-        String oldName = oldLookups.nameFor(fieldUuid);
-        String newName = newLookups.nameFor(fieldUuid);
-        trackColumnChange(getParentName(parent), TableChange.createModify(oldName, newName));
+        String oldName = getFieldName(fieldUuid, oldEntity);
+        String newName = getFieldName(fieldUuid, newEntity);
+        trackColumnChange(oldEntity.getName(), TableChange.createModify(oldName, newName));
 //            case COLLECTION:
 //                trackTableRename(oldName, newName); // TODO what to do about this?
     }
@@ -281,16 +268,14 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
         }
         return changeSet;
     }
-//
-    private String getParentName(UUID parentUuid) {
-        return (parentUuid == null) ? oldEntity.getName() : oldLookups.nameFor(parentUuid);
+
+    private static String getFieldName(UUID fieldUuid, Entity entity) {
+        return entity.fieldsByUuid().get(fieldUuid).getName();
     }
 
     private void resetPerEntityData() {
         oldEntity = null;
         newEntity = null;
-        oldLookups = null;
-        newLookups = null;
         dropTables.clear();
         dropGroupIndexes.clear();
         newTables.clear();
@@ -303,12 +288,9 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     }
 
     private void trackColumnModify(UUID columnUuid) {
-        UUID parent = newLookups.getParentAttribute(columnUuid);
-        assert parent == oldEntity.getUuid();
-        assert parent == newEntity.getUuid();
-        String oldName = oldLookups.nameFor(columnUuid);
-        String newName = newLookups.nameFor(columnUuid);
-        trackColumnChange(getParentName(parent), TableChange.createModify(oldName, newName));
+        String oldName = getFieldName(columnUuid, oldEntity);
+        String newName = getFieldName(columnUuid, newEntity);
+        trackColumnChange(oldEntity.getName(), TableChange.createModify(oldName, newName));
     }
 
     private void trackIndexChange(String tableName, TableChange indexChange) {
