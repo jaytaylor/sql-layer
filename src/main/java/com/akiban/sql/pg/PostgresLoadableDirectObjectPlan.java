@@ -79,11 +79,12 @@ public class PostgresLoadableDirectObjectPlan extends PostgresDMLStatement
     }
 
     @Override
-    public void sendDescription(PostgresQueryContext context, boolean always)
+    public void sendDescription(PostgresQueryContext context,
+                                boolean always, boolean params)
             throws IOException {
         // The copy cases will be handled below.
         if (outputMode == DirectObjectPlan.OutputMode.TABLE)
-            super.sendDescription(context, always);
+            super.sendDescription(context, always, params);
     }
 
     @Override

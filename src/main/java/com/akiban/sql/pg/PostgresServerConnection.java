@@ -646,7 +646,7 @@ public class PostgresServerConnection extends ServerSessionBase
         int rowsProcessed = 0;
         if (pstmt != null) {
             checkStatementIsAllowed(pstmt);
-            pstmt.sendDescription(context, false);
+            pstmt.sendDescription(context, false, false);
             rowsProcessed = executeStatementWithAutoTxn(pstmt, context, -1);
         }
         else {
@@ -681,7 +681,7 @@ public class PostgresServerConnection extends ServerSessionBase
                     checkStatementIsAllowed(pstmt);
                     if ((statementCache != null) && singleStmt && pstmt.putInCache())
                         statementCache.put(stmtSQL, pstmt);
-                    pstmt.sendDescription(context, false);
+                    pstmt.sendDescription(context, false, false);
                     rowsProcessed = executeStatement(pstmt, context, -1);
                     success = true;
                 } finally {
@@ -877,12 +877,14 @@ public class PostgresServerConnection extends ServerSessionBase
         String name = messenger.readString();
         PostgresStatement pstmt;
         PostgresQueryContext context;
+        boolean params;
         switch (source) {
         case (byte)'S':
             pstmt = preparedStatements.get(name).getStatement();
             if (pstmt == null)
                 throw new NoSuchPreparedStatementException(name);
             context = new PostgresQueryContext(this);
+            params = true;
             break;
         case (byte)'P':
             {
@@ -892,11 +894,12 @@ public class PostgresServerConnection extends ServerSessionBase
                 pstmt = bound.getStatement().getStatement();
                 context = bound;
             }
+            params = false;
             break;
         default:
             throw new IOException("Unknown describe source: " + (char)source);
         }
-        pstmt.sendDescription(context, true);
+        pstmt.sendDescription(context, true, params);
     }
 
     protected void processExecute() throws IOException {
@@ -1185,7 +1188,7 @@ public class PostgresServerConnection extends ServerSessionBase
             new PostgresBoundQueryContext(this, pstmt, null, false, false);
         estmt.setParameters(context);
         sessionMonitor.startStatement(pstmt.getSQL(), pstmt.getName());
-        pstmt.getStatement().sendDescription(context, false);
+        pstmt.getStatement().sendDescription(context, false, false);
         int nrows = executeStatementWithAutoTxn(pstmt.getStatement(), context, maxrows);
         sessionMonitor.endStatement(nrows);
         return nrows;
@@ -1254,7 +1257,7 @@ public class PostgresServerConnection extends ServerSessionBase
             throw new NoSuchCursorException(name);
         PostgresPreparedStatement pstmt = bound.getStatement();
         sessionMonitor.startStatement(pstmt.getSQL(), pstmt.getName());
-        pstmt.getStatement().sendDescription(bound, false);
+        pstmt.getStatement().sendDescription(bound, false, false);
         int nrows = executeStatementWithAutoTxn(pstmt.getStatement(), bound, count);
         sessionMonitor.endStatement(nrows);
         return nrows;
