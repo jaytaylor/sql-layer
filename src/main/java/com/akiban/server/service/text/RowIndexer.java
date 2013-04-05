@@ -42,6 +42,8 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.*;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.document.StringField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 
@@ -184,8 +186,7 @@ public class RowIndexer implements Closeable
     protected void getKeyBytes(Row row) {
         Key key = ((PersistitHKey)row.hKey()).key();
         keyEncodedString = encodeBytes(key.getEncodedBytes(), 0, key.getEncodedSize());
-        
-        Field field = new StoredField(IndexedField.KEY_FIELD, keyEncodedString);
+        Field field = new StringField(IndexedField.KEY_FIELD, keyEncodedString, Store.YES);
         currentDocument.add(field);
     }
 
