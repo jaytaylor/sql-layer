@@ -119,4 +119,15 @@ public class DateTimeExtractorTest extends LongExtractorTestBase {
     public void dateAndFractionalNoSpace() {
         encodeAndDecode("12-11-10.123");
     }
+    
+    @Test
+    public void dateTimeWithT() {
+        encodeAndDecode ("2012-04-25T08:52:17");
+        assertEquals(ExtractorsForDates.DATETIME.getLong("2012-04-25T08:52:17"), 20120425085217L);
+    }
+    @Test(expected=InvalidDateFormatException.class)
+    public void dateTimeWithTT() {
+        encodeAndDecode ("2012-04-25TT08:52:17");
+    }
+
 }

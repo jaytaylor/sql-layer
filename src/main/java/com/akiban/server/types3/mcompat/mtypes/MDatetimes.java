@@ -545,6 +545,7 @@ public class MDatetimes
         }
     }
 
+    //TODO: Any way of extracting the common code from ExtractorsForDateTime?
     public static long parseDatetime(String st)
     {
         Matcher m = DATE_PATTERN.matcher(st.trim());
@@ -1079,14 +1080,13 @@ public class MDatetimes
     private static final int DATE_MONTH_GROUP = 3;
     private static final int DATE_DAY_GROUP = 4;
     private static final int TIME_GROUP = 5;
-    private static final int TIME_HOUR_GROUP = 6;
-    private static final int TIME_MINUTE_GROUP = 7;
-    private static final int TIME_SECOND_GROUP = 8;
-    private static final int TIME_FRAC_GROUP = 9;
-    private static final int TIME_TIMEZONE_GROUP = 10;
+    private static final int TIME_HOUR_GROUP = 7;
+    private static final int TIME_MINUTE_GROUP = 8;
+    private static final int TIME_SECOND_GROUP = 9;
+    private static final int TIME_FRAC_GROUP = 10;
+    private static final int TIME_TIMEZONE_GROUP = 11;
     private static final Pattern DATE_PATTERN 
-            = Pattern.compile("^((\\d+)-(\\d+)-(\\d+))(\\s+(\\d+):(\\d+):(\\d+)(\\.\\d+)?([+-]\\d+:\\d+)?)?$");
-    
+            = Pattern.compile("^((\\d+)-(\\d+)-(\\d+))(([T]{1}|\\s+)(\\d+):(\\d+):(\\d+)(\\.\\d+)?([+-]\\d+:\\d+)?)?$");
     
     private static final int TIME_WITH_DAY_DAY_GROUP = 2;
     private static final int TIME_WITH_DAY_HOUR_GROUP = 3;

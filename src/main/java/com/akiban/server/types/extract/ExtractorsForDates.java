@@ -151,6 +151,7 @@ abstract class ExtractorsForDates extends LongExtractor {
      * This is how MySQL stores the SQL DATETIME type.
      * See: http://dev.mysql.com/doc/refman/5.5/en/datetime.html
      */
+    //TODO: Any way of extracting the common code from MDateTimes?
     final static ExtractorsForDates DATETIME = new ExtractorsForDates(AkType.DATETIME) {
         private final String ZERO_STR = "0";
         // Capture DATE and TIME into groups (1 and 5) with TIME being optional, each individual fragment also grouped
@@ -158,14 +159,14 @@ abstract class ExtractorsForDates extends LongExtractor {
         private final int DATE_YEAR_GROUP = 2;
         private final int DATE_MONTH_GROUP = 3;
         private final int DATE_DAY_GROUP = 4;
-        private final int TIME_GROUP = 5;
-        private final int TIME_HOUR_GROUP = 6;
-        private final int TIME_MINUTE_GROUP = 7;
-        private final int TIME_SECOND_GROUP = 8;
-        private final int TIME_FRAC_GROUP = 9;
-        private final int TIME_TIMEZONE_GROUP = 10;
+        private final int TIME_GROUP = 6;
+        private final int TIME_HOUR_GROUP = 7;
+        private final int TIME_MINUTE_GROUP = 8;
+        private final int TIME_SECOND_GROUP = 9;
+        private final int TIME_FRAC_GROUP = 10;
+        private final int TIME_TIMEZONE_GROUP = 11;
         private final Pattern PARSE_PATTERN = Pattern.compile(
-                "^((\\d+)-(\\d+)-(\\d+))(\\s+(\\d+):(\\d+):(\\d+)(\\.\\d+)?([+-]\\d+:\\d+)?)?$"
+                "^((\\d+)-(\\d+)-(\\d+))(([T]{1}|\\s+)(\\d+):(\\d+):(\\d+)(\\.\\d+)?([+-]\\d+:\\d+)?)?$"
         );
 
         @Override protected long doGetLong(ValueSource source) {
