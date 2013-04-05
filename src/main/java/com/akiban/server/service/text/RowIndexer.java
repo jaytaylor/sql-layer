@@ -145,8 +145,11 @@ public class RowIndexer implements Closeable
     protected void updateDocument(Cursor cursor, byte hkeyBytes[]) throws IOException
     {
         if (indexRows(cursor) == 0)
+        {
             writer.deleteDocuments(new Term(IndexedField.KEY_FIELD,
                                             encodeBytes(hkeyBytes, 0, hkeyBytes.length)));
+            logger.debug("Deleted documents");
+        }
     }
 
     protected void addDocument() throws IOException {

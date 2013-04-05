@@ -368,7 +368,22 @@ public class FullTextIndexServiceIT extends ITBase
         compareRows(expected2, cursor(plan, queryContext));
         
         ((FullTextIndexServiceImpl)fullText).enableUpdateWorker();
-        Thread.sleep(updateInterval * 2);
+        Thread.sleep(updateInterval * 5);
+        
+        // now the rows should be seen.
+        // (Because disabling the worker does not stop the changes fron being recorded)
+        RowBase expected3[] = new RowBase[]
+        {
+            row(rowType, 1L),
+            row(rowType, 3L),
+            row(rowType, 5L),
+            row(rowType, 7L),
+            row(rowType, 8L),
+            row(rowType, 9L)
+        };
+
+        plan = builder.scanOperator("flintstone", 15);
+        compareRows(expected3, cursor(plan, queryContext));
     }
 
     @Test
