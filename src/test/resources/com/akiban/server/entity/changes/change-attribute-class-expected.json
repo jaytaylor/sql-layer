@@ -1,10 +1,5 @@
 [
     {
-        "action": "drop_attribute", 
-        "destructive": true, 
-        "uuid": "17181af5-7e07-41fc-9a05-78e77cdabe13"
-    }, 
-    {
-        "error": "Can't change an attribute's class (scalar or collection)"
+        "error": "Can't change an element's class (whether it's a field or an entity/collection)"
     }
 ]

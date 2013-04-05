@@ -1,6 +1,6 @@
 [
     {
-        "action": "change_scalar_properties", 
+        "action": "change_field_properties",
         "new_properties": {
             "endian": "little"
         }, 

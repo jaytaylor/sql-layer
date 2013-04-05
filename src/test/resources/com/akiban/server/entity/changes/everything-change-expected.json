@@ -12,7 +12,7 @@
         "old_name": "last_name_old"
     }, 
     {
-        "action": "change_scalar_validations", 
+        "action": "change_field_validations", 
         "new_validations": [
             {
                 "required": true
@@ -25,7 +25,7 @@
         "uuid": "257e9b59-e77f-4a4d-a5da-00c7c2261875"
     }, 
     {
-        "action": "change_scalar_properties", 
+        "action": "change_field_properties", 
         "new_properties": {
             "charset": "utf16"
         }, 

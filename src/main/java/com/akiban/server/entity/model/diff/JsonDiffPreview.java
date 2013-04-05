@@ -232,10 +232,10 @@ public class JsonDiffPreview implements SpaceModificationHandler
         try
         {
             startObject();
-            entry("action", "change_scalar_type");
+            entry("action", "change_field_type");
             entry("destructive", true);
             entry("uuid", uuid);
-            entry("new_scalar_type", lookupField(updatedEntity, uuid).getType());
+            entry("new_field_type", lookupField(updatedEntity, uuid).getType());
             endObject();
         }
         catch (IOException ex)
@@ -251,7 +251,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         try
         {
             startObject();
-            entry("action", "change_scalar_validations");
+            entry("action", "change_field_validations");
             entry("destructive", true);
             entry("uuid", field);
             jsonGen.writeArrayFieldStart("new_validations");
@@ -276,7 +276,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         try
         {
             startObject();
-            entry("action", "change_scalar_properties");
+            entry("action", "change_field_properties");
             entry("destructive", true);
             entry("uuid", field);
             jsonGen.writeObjectFieldStart("new_properties");

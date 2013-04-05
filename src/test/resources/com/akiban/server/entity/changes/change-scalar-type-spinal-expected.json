@@ -1,5 +1,8 @@
 [
     {
-        "error": "Can't change type of spinal attributes"
+        "action": "change_field_type", 
+        "destructive": true, 
+        "new_field_type": "bigint", 
+        "uuid": "8644c36b-f881-4369-a06b-59e3fc580309"
     }
 ]
