@@ -30,7 +30,6 @@ import com.akiban.ais.model.CacheValueGenerator;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
@@ -85,8 +84,7 @@ public class InsertProcessor extends DMLProcessor {
         }
     }
     
-    public String processInsert(Session session, AkibanInformationSchema ais, TableName rootTable, JsonNode node) 
-            {
+    public String processInsert(Session session, AkibanInformationSchema ais, TableName rootTable, JsonNode node) {
         setAIS(ais);
         insertGenerator = getGenerator(CACHED_INSERT_GENERATOR);
 
@@ -208,16 +206,4 @@ public class InsertProcessor extends DMLProcessor {
         PValue result = new PValue(MString.varcharFor(appender.toString()), appender.toString());
         return result;
     }
-    
-    private void setValue (QueryContext queryContext, Column column, String value) {
-        PValue pvalue = null;
-        if (value == null) {
-            pvalue = new PValue(Column.generateTInstance(null, Types.VARCHAR, 65535L, null, true));
-            pvalue.putNull();
-        } else {
-            pvalue = new PValue(Column.generateTInstance(null, Types.VARCHAR, 65535L, null, true), value);
-        }
-        queryContext.setPValue(column.getPosition(), pvalue);
-    }
-    
 }

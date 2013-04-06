@@ -16,19 +16,28 @@
  */
 package com.akiban.server.service.restdml;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
+import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.t3expressions.T3RegistryService;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedParameter;
 import com.akiban.sql.optimizer.rule.PlanGenerator;
 
 public abstract class OperatorGenerator {
@@ -87,5 +96,23 @@ public abstract class OperatorGenerator {
     protected Operator indexAncestorLookup(TableName tableName) {
         UserTable table = ais().getUserTable(tableName);
         return PlanGenerator.generateAncestorPlan(ais(), table);
+    }
+
+    protected RowStream assembleValueScan(UserTable table) {
+        RowStream stream = new RowStream();
+        List<BindableRow> bindableRows = new ArrayList<>();
+        
+        int nfields = table.getColumns().size();
+        TInstance[] types = new TInstance[nfields];
+        TInstance varchar = Column.generateTInstance(null, Types.VARCHAR, 65535L, null, false);
+        List<TPreparedExpression> tExprs = new ArrayList<>();
+        for (int index = 0; index < table.getColumns().size(); index++) {
+            tExprs.add(index, new TPreparedParameter(index, varchar));
+            types[index] = varchar;
+        }
+        stream.rowType =  schema().newValuesType(types);
+        bindableRows.add(BindableRow.of(stream.rowType, null, tExprs, queryContext()));
+        stream.operator = API.valuesScan_Default(bindableRows, stream.rowType);
+        return stream;
     }
 }

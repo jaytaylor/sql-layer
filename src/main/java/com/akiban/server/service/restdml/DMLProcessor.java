@@ -20,6 +20,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CacheValueGenerator;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
@@ -105,7 +106,18 @@ public abstract class DMLProcessor {
         }
         return column;
     }
-    
+
+    protected void setValue (QueryContext queryContext, Column column, String value) {
+        PValue pvalue = null;
+        if (value == null) {
+            pvalue = new PValue(Column.generateTInstance(null, Types.VARCHAR, 65535L, null, true));
+            pvalue.putNull();
+        } else {
+            pvalue = new PValue(Column.generateTInstance(null, Types.VARCHAR, 65535L, null, true), value);
+        }
+        queryContext.setPValue(column.getPosition(), pvalue);
+    }
+
     protected OperatorGenerator getGenerator(CacheValueGenerator<? extends OperatorGenerator> generator) {
         OperatorGenerator gen = ais.getCachedValue(this, generator);
         gen.setT3Registry(registryService);

@@ -68,5 +68,9 @@ public class PlanGenerator
         // No caching possible.
         return com.akiban.sql.optimizer.rule.PlanGenerator.generateBranchPlan(table, scan, scanType);
     }
+    
+    public Operator generateAncestorPlan (UserTable table) {
+        return com.akiban.sql.optimizer.rule.PlanGenerator.generateAncestorPlan(schema.ais(), table);
+    }
 
 }
