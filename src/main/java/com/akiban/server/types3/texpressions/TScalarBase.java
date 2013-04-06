@@ -128,7 +128,7 @@ public abstract class TScalarBase implements TScalar {
         }
         for (int i = 0; i < inputs.size(); ++i) {
             if (constnessMatters(i)) {
-                Constantness constness = constness(i, inputs);
+                Constantness constness = constness(context, i, inputs);
                 if (constness == Constantness.NOT_CONST)
                     return null;
                 if (constness == Constantness.CONST)
@@ -200,7 +200,7 @@ public abstract class TScalarBase implements TScalar {
      * @param values
      * @return what is known about this expression's constness due to this input
      */
-    protected Constantness constness(int inputIndex, LazyList<? extends TPreptimeValue> values) {
+    protected Constantness constness(TPreptimeContext context, int inputIndex, LazyList<? extends TPreptimeValue> values) {
         return constSource(values,  inputIndex) == null ? Constantness.NOT_CONST : Constantness.UNKNOWN;
     }
 

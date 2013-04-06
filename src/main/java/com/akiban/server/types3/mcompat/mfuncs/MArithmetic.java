@@ -799,7 +799,7 @@ public abstract class MArithmetic extends TArithmetic {
         }
 
         @Override
-        protected Constantness constness(int inputIndex, LazyList<? extends TPreptimeValue> values) {
+        protected Constantness constness(TPreptimeContext context, int inputIndex, LazyList<? extends TPreptimeValue> values) {
             return Constantness.CONST;
         }
 

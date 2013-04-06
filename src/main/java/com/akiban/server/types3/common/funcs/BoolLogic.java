@@ -26,6 +26,7 @@ import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TScalar;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -41,6 +42,7 @@ import java.util.List;
 public class BoolLogic extends TScalarBase
 {
     public static final TScalar BINARIES[] = new TScalar[Op.values().length];
+    private static final int OUT_VAL = 0;
     static
     {
         Op op[] = Op.values();
@@ -118,13 +120,16 @@ public class BoolLogic extends TScalarBase
     }
 
     @Override
-    protected Constantness constness(int inputIndex, LazyList<? extends TPreptimeValue> values) {
+    protected Constantness constness(TPreptimeContext context, int inputIndex, LazyList<? extends TPreptimeValue> values) {
         // The expression is const iff either argument is a const whose value is equal to op.contaminant.
         // The first argument can never make the expression non-const (though it can make it const), and the second
         // argument can never leave the constness unknown.
         PValueSource preptimeValue = constSource(values, inputIndex);
         if ((preptimeValue != null) && Objects.equal(op.contaminant, getBoolean(preptimeValue)))
+        {
+            context.set(OUT_VAL, op.contaminant);
             return Constantness.CONST;
+        }
         return (inputIndex == 0) ? Constantness.UNKNOWN : Constantness.NOT_CONST;
     }
 
@@ -136,6 +141,12 @@ public class BoolLogic extends TScalarBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
+        Object outVal = context.preptimeObjectAt(OUT_VAL);
+        if (outVal != null)
+        {
+            output.putBool((Boolean)outVal);
+            return;
+        }
         Boolean firstArg = getBoolean(inputs, 0);
         final Boolean result;
         if (Objects.equal(op.contaminant, firstArg)) {
