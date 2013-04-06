@@ -201,6 +201,16 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
+    public void upsert(PrintWriter writer, TableName tableName, JsonNode node) {
+        try (Session session = sessionService.createSession();
+                CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
+            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+            writer.write("{[]}");
+            txn.commit();
+        }        
+    }
+
+    @Override
     public void insertNoTxn(Session session, PrintWriter writer, TableName tableName, JsonNode node) {
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
         String pk = insertProcessor.processInsert(session, ais, tableName, node);
@@ -651,4 +661,5 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         }
         writer.write(String.format("{\"count\":%d}", count));
     }
+
 }

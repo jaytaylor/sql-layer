@@ -35,6 +35,7 @@ public interface RestDMLService {
     public void insert(PrintWriter writer, TableName tableName, JsonNode node);
     public void delete(TableName tableName, String pks);
     public void update(PrintWriter writer, TableName tableName, String values, JsonNode node);
+    public void upsert(PrintWriter writer, TableName tableName, JsonNode node);
 
     public void insertNoTxn(Session session, PrintWriter writer, TableName tableName, JsonNode node);
     public void updateNoTxn(Session session, PrintWriter writer, TableName tableName, String values, JsonNode node);
