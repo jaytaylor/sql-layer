@@ -317,8 +317,7 @@ public class UserTable extends Table
     {
         PrimaryKey declaredPrimaryKey = primaryKey;
         if (declaredPrimaryKey != null) {
-            List<IndexColumn> pkColumns = primaryKey.getIndex().getKeyColumns();
-            if (pkColumns.size() == 1 && pkColumns.get(0).getColumn().isAkibanPKColumn()) {
+            if (declaredPrimaryKey.isAkibanPK()) {
                 declaredPrimaryKey = null;
             }
         }
