@@ -184,14 +184,14 @@ public class DirectServiceImpl implements Service, DirectService {
     }
 
     @Override
-    public void reportStoredProcedures(final PrintWriter writer, final HttpServletRequest request, final String schema,
+    public void reportStoredProcedures(final PrintWriter writer, final HttpServletRequest request, final String suppliedSchemaName,
             final String module, final Session session, boolean functionsOnly) throws Exception {
-        final String schemaResolved = schema.isEmpty() ? ResourceHelper.getSchema(request) : schema;
+        final String schemaName = suppliedSchemaName.isEmpty() ? ResourceHelper.getSchema(request) : suppliedSchemaName;
 
         if (module.isEmpty()) {
-            checkSchemaAccessible(securityService, request, schemaResolved);
+            checkSchemaAccessible(securityService, request, schemaName);
         } else {
-            checkTableAccessible(securityService, request, new TableName(schemaResolved, module));
+            checkTableAccessible(securityService, request, new TableName(schemaName, module));
         }
         JsonGenerator json = createJsonGenerator(writer);
         AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
@@ -205,12 +205,12 @@ public class DirectServiceImpl implements Service, DirectService {
             // Get all routines in the schema.
             json.writeStartObject();
             {
-                Schema schemaAIS = ais.getSchema(schema);
+                Schema schemaAIS = ais.getSchema(schemaName);
                 if (schemaAIS != null) {
                     for (Map.Entry<String, Routine> routineEntry : schemaAIS.getRoutines().entrySet()) {
                         json.writeFieldName(routineEntry.getKey());
                         if (functionsOnly) {
-                            reportLibraryFunctionMetadata(json, new TableName(schema, routineEntry.getKey()),
+                            reportLibraryFunctionMetadata(json, new TableName(schemaName, routineEntry.getKey()),
                                     endpointMap);
                         } else {
                             reportStoredProcedureDetails(json, routineEntry.getValue());
@@ -221,12 +221,12 @@ public class DirectServiceImpl implements Service, DirectService {
             json.writeEndObject();
         } else {
             // Get just the one routine.
-            Routine routine = ais.getRoutine(schema, module);
+            Routine routine = ais.getRoutine(schemaName, module);
             if (routine == null) {
-                throw new NoSuchRoutineException(schema, module);
+                throw new NoSuchRoutineException(schemaName, module);
             }
             if (functionsOnly) {
-                reportLibraryFunctionCount(json, new TableName(schema, module), endpointMap);
+                reportLibraryFunctionCount(json, new TableName(schemaName, module), endpointMap);
             } else {
                 reportStoredProcedureDetails(json, routine);
             }
