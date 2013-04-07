@@ -17,6 +17,7 @@
 
 package com.akiban.server.entity.model;
 
+import com.akiban.ais.model.Index;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.ImmutableList;
@@ -98,17 +99,32 @@ public final class EntityIndex {
         List<IndexField> fields = new ArrayList<>(defList.size());
         for (Object field : defList)
             fields.add(IndexField.create(field));
-        return new EntityIndex(fields);
+        return new EntityIndex(fields, (IndexType) null);
     }
 
-    public EntityIndex(List<IndexField> fields) {
+    public EntityIndex(List<IndexField> fields, IndexType type) {
         this.fields = ImmutableList.copyOf(fields);
+        this.type = type;
+    }
+
+    public EntityIndex(List<IndexField> indexFields, Index.JoinType joinType) {
+        this(indexFields, IndexType.valueOf(joinType));
     }
 
     private ImmutableList<IndexField> fields;
     private IndexType type;
 
     public enum IndexType {
-        LEFT, RIGHT, FULL_TEXT
+        LEFT, RIGHT, FULL_TEXT;
+
+        public static IndexType valueOf(Index.JoinType aisJoinType) {
+            if (aisJoinType == null)
+                return null;
+            switch (aisJoinType) {
+            case LEFT:  return LEFT;
+            case RIGHT: return RIGHT;
+            default: throw new AssertionError(aisJoinType);
+            }
+        }
     }
 }

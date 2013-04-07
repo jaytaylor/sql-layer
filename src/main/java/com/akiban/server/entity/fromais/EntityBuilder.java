@@ -36,6 +36,7 @@ import com.akiban.server.types3.TInstance;
 import com.google.common.base.Predicate;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.Collections2;
+import com.google.common.collect.Iterables;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -50,8 +51,6 @@ final class EntityBuilder {
     public EntityBuilder(UserTable rootTable) {
         entity = Entity.modifiableEntity(uuidOrCreate(rootTable));
         buildContainer(entity, rootTable);
-        Set<String> uniques = buildIndexes(entity.getIndexes());
-        buildUniques(entity.getValidations(), uniques);
     }
 
     private void buildFields(List<EntityField> fields, UserTable table) {
@@ -96,14 +95,6 @@ final class EntityBuilder {
             UserTable child = childJoin.getChild();
             collections.add(buildCollection(child));
         }
-        // while we're here...
-        indexes.addAll(Collections2.filter(table.getIndexes(), nonPks));
-        for (GroupIndex gi : table.getGroupIndexes()) {
-            if (gi.getJoinType() != Index.JoinType.LEFT)
-                throw new InconvertibleAisException("can't convert non-LEFT group indexes: " + gi);
-            if (gi.leafMostTable() == table)
-                indexes.add(gi);
-        }
     }
 
     private EntityCollection buildCollection(UserTable table) {
@@ -120,31 +111,38 @@ final class EntityBuilder {
             buildGroupingFields(collection.getGroupingFields(), table);
         }
         buildCollections(container.getCollections(), table);
+        Set<String> uniques = buildIndexes(container.getIndexes(), table);
+        buildUniques(container.getValidations(), uniques);
         container.setName(table.getName().getTableName());
     }
 
     /**
      * Build the indexes, and return back the names of the unique ones. This assumes that indexes have already
      * been compiled into the "indexes" collection.
+     *
      * @param out the map to insert into
+     * @param table the table to build from
      * @return the json names of the unique indexes
      */
-    private Set<String> buildIndexes(BiMap<String, EntityIndex> out) {
+    private Set<String> buildIndexes(BiMap<String, EntityIndex> out, UserTable table) {
         Set<String> uniques = new HashSet<>(out.size());
-        for (Index index : indexes) {
-            if (index.getIndexName().getName().startsWith("__akiban"))
+        for (Index index : getAllIndexes(table)) {
+            if (index.isPrimaryKey() || index.getIndexName().getName().startsWith("__akiban"))
                 continue;
             String jsonName = index.getIndexName().getName();
             List<IndexColumn> keyColumns = index.getKeyColumns();
             List<IndexField> indexFields = new ArrayList<>(keyColumns.size());
-            for (IndexColumn indexCol : keyColumns) {
-                Column col = indexCol.getColumn();
-                IndexField indexField = new IndexField.QualifiedFieldName(
-                        col.getTable().getName().getTableName(),
-                        col.getName());
+            int spatial = index.isSpatial() ? index.firstSpatialArgument() : -1;
+            for (int i = 0; i < keyColumns.size(); i++) {
+                IndexField.FieldName indexFieldName = buildIndexField(keyColumns, i, table);
+                IndexField indexField = indexFieldName;
+                if (i == spatial) {
+                    IndexField.FieldName nextIndexFieldName = buildIndexField(keyColumns, ++i, table);
+                    indexField = new IndexField.SpatialField(indexFieldName, nextIndexFieldName);
+                }
                 indexFields.add(indexField);
             }
-            EntityIndex entityIndex = new EntityIndex(indexFields);
+            EntityIndex entityIndex = new EntityIndex(indexFields, index.getJoinType());
             EntityIndex old = out.put(jsonName, entityIndex);
             if (old != null)
                 throw new InconvertibleAisException("duplicate index name: " + jsonName);
@@ -152,6 +150,25 @@ final class EntityBuilder {
                 uniques.add(jsonName);
         }
         return uniques;
+    }
+
+    private Iterable<? extends Index> getAllIndexes(final UserTable table) {
+        Collection<? extends Index> tableIndexes = table.getIndexes();
+        Collection<? extends Index> ftIndexes = table.getOwnFullTextIndexes();
+        Collection<? extends Index> gis = Collections2.filter(table.getGroupIndexes(), new Predicate<GroupIndex>() {
+            @Override
+            public boolean apply(GroupIndex input) {
+                return input.leafMostTable() == table;
+            }
+        });
+        return Iterables.concat(tableIndexes, ftIndexes, gis);
+    }
+
+    private static IndexField.FieldName buildIndexField(List<IndexColumn> indexColumns, int i, UserTable contextTable) {
+        Column column = indexColumns.get(i).getColumn();
+        return (column.getTable() == contextTable)
+                ? new IndexField.FieldName(column.getName())
+                : new IndexField.QualifiedFieldName(column.getTable().getName().getTableName(), column.getName());
     }
 
     private void buildUniques(Collection<Validation> validation, Set<String> uniques) {
@@ -177,12 +194,4 @@ final class EntityBuilder {
     }
 
     private final Entity entity;
-    private final List<Index> indexes = new ArrayList<>();
-
-    private static final Predicate<? super Index> nonPks = new Predicate<Index>() {
-        @Override
-        public boolean apply(Index input) {
-            return ! input.isPrimaryKey();
-        }
-    };
 }

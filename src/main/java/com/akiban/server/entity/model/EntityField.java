@@ -51,7 +51,7 @@ public final class EntityField extends EntityElement {
     }
 
     public void setProperties(Map<String, Object> properties) {
-        this.properties = properties;
+        this.properties = Collections.unmodifiableMap(new TreeMap<>(properties));
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -60,7 +60,7 @@ public final class EntityField extends EntityElement {
     }
 
     public void setValidations(Set<Validation> validations) {
-        this.validations = validations;
+        this.validations = Collections.unmodifiableSet(new TreeSet<>(validations));
     }
 
     public static EntityField modifiableScalar(UUID uuid, String type) {
