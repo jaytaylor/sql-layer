@@ -127,15 +127,15 @@ public class Entity extends EntityElement {
         return getName();
     }
 
-    protected <E extends Exception> void acceptStart(EntityVisitor<E> visitor) throws E {
+    protected void acceptStart(EntityVisitor visitor) {
         visitor.enterTopEntity(this);
     }
 
-    protected <E extends Exception> void acceptFinish(EntityVisitor<E> visitor) throws E {
+    protected void acceptFinish(EntityVisitor visitor) {
         visitor.leaveTopEntity();
     }
 
-    public final  <E extends Exception> void accept(EntityVisitor<E> visitor) throws E {
+    public final void accept(EntityVisitor visitor) {
         acceptStart(visitor);
         if (!collections.isEmpty()) {
             visitor.enterCollections();

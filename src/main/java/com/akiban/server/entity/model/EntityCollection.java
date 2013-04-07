@@ -47,12 +47,12 @@ public final class EntityCollection extends Entity {
     }
 
     @Override
-    protected <E extends Exception> void acceptStart(EntityVisitor<E> visitor) throws E {
+    protected void acceptStart(EntityVisitor visitor) {
         visitor.enterCollection(this);
     }
 
     @Override
-    protected <E extends Exception> void acceptFinish(EntityVisitor<E> visitor) throws E {
+    protected void acceptFinish(EntityVisitor visitor) {
         visitor.leaveCollection();
     }
 

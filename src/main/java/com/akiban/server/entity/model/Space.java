@@ -66,7 +66,7 @@ public final class Space {
         }
     }
 
-    public <E extends Exception> void visit(EntityVisitor<E> visitor) throws E {
+    public void visit(EntityVisitor visitor) {
         for (Entity entity : entities) {
             entity.accept(visitor);
         }

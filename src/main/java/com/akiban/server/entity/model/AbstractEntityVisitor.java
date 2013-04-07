@@ -17,7 +17,7 @@
 
 package com.akiban.server.entity.model;
 
-public abstract class AbstractEntityVisitor implements EntityVisitor<RuntimeException> {
+public abstract class AbstractEntityVisitor implements EntityVisitor {
     @Override
     public void enterTopEntity(Entity entity) {
         visitEntityInternal(entity);

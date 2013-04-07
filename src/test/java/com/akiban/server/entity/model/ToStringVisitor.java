@@ -23,7 +23,7 @@ import com.google.common.collect.BiMap;
 import java.util.Map;
 import java.util.Set;
 
-class ToStringVisitor extends JUnitUtils.MessageTaker implements EntityVisitor<RuntimeException> {
+class ToStringVisitor extends JUnitUtils.MessageTaker implements EntityVisitor {
     @Override
     public void enterTopEntity(Entity entity) throws RuntimeException {
         message("visiting top-level entity", entity.getUuid());
