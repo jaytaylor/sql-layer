@@ -96,6 +96,9 @@ public class EntityToAIS implements EntityVisitor {
 
     @Override
     public void leaveTopEntity() {
+        endTable();
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
         curTable = null;
         groupName = null;
         uniqueValidations.clear();
@@ -231,14 +234,21 @@ public class EntityToAIS implements EntityVisitor {
             builder.joinTables(joinName, schemaName, curTable.name, schemaName, child.name);
 
             List<String> pksFields = curTable.pksFields;
-            List<String> fkFields = child.fkFields;
-            if (fkFields == null || fkFields.isEmpty() || fkFields.size() != pksFields.size())
-                throw new IllegalArgumentException("Grouping fields don't match parent's PK: " + fkFields
-                        + " reference PK " + pksFields);
+            List<String> fkFields;
+            if (child.fkFields == null || child.fkFields.isEmpty())
+                fkFields = null;
+            else {
+                if (child.fkFields.size() != pksFields.size())
+                    throw new IllegalArgumentException("Grouping fields don't match parent's PK: " + child.fkFields
+                            + " reference PK " + pksFields);
+                fkFields = child.fkFields;
+            }
             for (int i = 0; i < pksFields.size(); i++) {
                 String parentColName = pksFields.get(i);
-                String childColName = fkFields.get(i);
                 Column parentCol = curTable.table.getColumn(parentColName);
+                String childColName = (fkFields == null)
+                        ? createColumnName(child.table.getColumns(), parentColName + "_ref")
+                        : fkFields.get(i);
                 Column newCol = Column.create(child.table, parentCol, childColName, child.nextColPos++);
                 // Should be exactly the same *except* UUID
                 newCol.setUuid(null);
@@ -263,6 +273,18 @@ public class EntityToAIS implements EntityVisitor {
             builder.addJoinToGroup(groupName, joins.get(0).getName(), 0);
             addJoinsToGroup(builder, groupName, child);
         }
+    }
+
+    private static String createColumnName(List<Column> curColumns, String proposed) {
+        int offset = 1;
+        String newName = proposed;
+        for(int i = 0; i < curColumns.size(); ++i) {
+            if(curColumns.get(i).getName().equals(newName)) {
+                newName = proposed + "$" + offset++;
+                i = -1;
+            }
+        }
+        return newName;
     }
 
     private static void createPrimaryKeys(AISBuilder builder, String schemaName, TableInfo table) {
