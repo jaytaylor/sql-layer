@@ -99,16 +99,12 @@ public final class EntityIndex {
         List<IndexField> fields = new ArrayList<>(defList.size());
         for (Object field : defList)
             fields.add(IndexField.create(field));
-        return new EntityIndex(fields, (IndexType) null);
+        return new EntityIndex(fields, null);
     }
 
     public EntityIndex(List<IndexField> fields, IndexType type) {
         this.fields = ImmutableList.copyOf(fields);
         this.type = type;
-    }
-
-    public EntityIndex(List<IndexField> indexFields, Index.JoinType joinType) {
-        this(indexFields, IndexType.valueOf(joinType));
     }
 
     private ImmutableList<IndexField> fields;

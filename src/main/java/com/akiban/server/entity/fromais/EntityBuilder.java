@@ -18,6 +18,7 @@
 package com.akiban.server.entity.fromais;
 
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
@@ -142,7 +143,11 @@ final class EntityBuilder {
                 }
                 indexFields.add(indexField);
             }
-            EntityIndex entityIndex = new EntityIndex(indexFields, index.getJoinType());
+            EntityIndex.IndexType indexType;
+            indexType = (index instanceof FullTextIndex)
+                    ? EntityIndex.IndexType.FULL_TEXT
+                    : EntityIndex.IndexType.valueOf(index.getJoinType());
+            EntityIndex entityIndex = new EntityIndex(indexFields, indexType);
             EntityIndex old = out.put(jsonName, entityIndex);
             if (old != null)
                 throw new InconvertibleAisException("duplicate index name: " + jsonName);
