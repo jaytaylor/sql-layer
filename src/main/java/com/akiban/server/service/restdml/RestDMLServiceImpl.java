@@ -205,6 +205,9 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
 
     @Override
     public void upsert(PrintWriter writer, TableName tableName, JsonNode node) {
+        
+        writer.write("[]");
+/*        
         try (Session session = sessionService.createSession();
                 CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
             AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
@@ -212,6 +215,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             writer.write(pk);
             txn.commit();
         }        
+*/        
     }
 
     @Override
