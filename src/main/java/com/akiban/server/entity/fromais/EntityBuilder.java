@@ -22,6 +22,7 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
+import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.entity.model.Entity;
@@ -53,7 +54,7 @@ final class EntityBuilder {
         buildUniques(entity.getValidations(), uniques);
     }
 
-    private void buildScalars(List<EntityField> fields, UserTable table) {
+    private void buildFields(List<EntityField> fields, UserTable table) {
         for (Column column : table.getColumns()) {
             TInstance tInstance = column.tInstance();
             TClass tClass = tInstance.typeClass();
@@ -84,6 +85,11 @@ final class EntityBuilder {
         }
     }
 
+    private void buildGroupingFields(List<String> groupingFields, UserTable table) {
+        for (JoinColumn joinColumn : table.getParentJoin().getJoinColumns())
+            groupingFields.add(joinColumn.getChild().getName());
+    }
+
     private void buildCollections(Collection<EntityCollection> collections, UserTable table) {
         List<Join> childJoins = table.getChildJoins();
         for (Join childJoin : childJoins) {
@@ -107,8 +113,12 @@ final class EntityBuilder {
     }
 
     private void buildContainer(Entity container, UserTable table) {
-        buildScalars(container.getFields(), table);
+        buildFields(container.getFields(), table);
         buildIdentifying(container.getIdentifying(), table);
+        if (container instanceof EntityCollection) {
+            EntityCollection collection = (EntityCollection) container;
+            buildGroupingFields(collection.getGroupingFields(), table);
+        }
         buildCollections(container.getCollections(), table);
         container.setName(table.getName().getTableName());
     }

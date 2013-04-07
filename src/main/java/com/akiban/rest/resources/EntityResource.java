@@ -20,7 +20,7 @@ package com.akiban.rest.resources;
 import com.akiban.ais.model.TableName;
 import com.akiban.rest.ResourceRequirements;
 import com.akiban.rest.RestResponseBuilder;
-import org.codehaus.jackson.JsonNode;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;

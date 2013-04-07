@@ -18,8 +18,8 @@
 package com.akiban.server.entity.model;
 
 import com.google.common.base.Function;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.map.JsonMappingException;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonMappingException;
 
 import java.io.BufferedReader;
 import java.io.IOException;

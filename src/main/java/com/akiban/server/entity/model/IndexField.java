@@ -35,9 +35,7 @@ public abstract class IndexField {
     public abstract boolean equals(Object obj);
 
     @JsonValue
-    public Object asJsonValue() {
-        throw new UnsupportedOperationException();
-    }
+    public abstract Object toJsonValue();
 
     @JsonCreator
     public static IndexField create(Object def) {
@@ -166,7 +164,7 @@ public abstract class IndexField {
         public Object toJsonValue() {
             return Collections.singletonMap(
                     "spatial",
-                    Arrays.asList(latitude.asJsonValue(), longitude.asJsonValue()));
+                    Arrays.asList(latitude.toJsonValue(), longitude.toJsonValue()));
         }
 
         public IndexField getLatitude() {
