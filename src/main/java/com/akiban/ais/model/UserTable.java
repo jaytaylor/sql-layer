@@ -317,7 +317,11 @@ public class UserTable extends Table
     {
         PrimaryKey declaredPrimaryKey = primaryKey;
         if (declaredPrimaryKey != null) {
-            if (declaredPrimaryKey.isAkibanPK()) {
+            
+            // TODO: This could be replace by a call to PrimaryKey#isAkibanPK()
+            // But there is some dependecy here which causes the tests to fail if you do so.
+            List<IndexColumn> pkColumns = primaryKey.getIndex().getKeyColumns();
+            if (pkColumns.size() == 1 && pkColumns.get(0).getColumn().isAkibanPKColumn()) {
                 declaredPrimaryKey = null;
             }
         }
