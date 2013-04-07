@@ -60,10 +60,12 @@ import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.JsonNode;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -312,12 +314,12 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                 throw new AkibanInternalException("Error reading from string", ex);
             }
             if (parsed.isObject()) {
-                Iterator<String> iter = parsed.getFieldNames();
+                Iterator<String> iter = parsed.fieldNames();
                 while (iter.hasNext()) {
                     String field = iter.next();
                     JsonNode value = parsed.get(field);
                     if (value.isBigDecimal()) {
-                        call.setBigDecimal(field, value.getDecimalValue());
+                        call.setBigDecimal(field, value.decimalValue());
                     }
                     else if (value.isBoolean()) {
                         call.setBoolean(field, value.asBoolean());
@@ -332,7 +334,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                         call.setLong(field, value.asLong());
                     }
                     else {
-                        call.setString(field, value.getTextValue());
+                        call.setString(field, value.textValue());
                     }
                 }
             }
@@ -383,7 +385,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
             ais = dxlService.ddlFunctions().getAIS(session);
             txn.commit();
         }
-        JsonParser json = jsonParser(ajdax);
+        JsonParser json = oldJsonFactory.createJsonParser(ajdax);
         final String schema = tableName.getSchemaName();
         // the JoinStrategy will assume all tables are in the same schema
         JoinStrategy joinStrategy = new JoinStrategy() {
@@ -639,4 +641,6 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         }
         writer.write(String.format("{\"count\":%d}", count));
     }
+
+    private static final JsonFactory oldJsonFactory = new JsonFactory(new ObjectMapper()); // for Ajdax
 }

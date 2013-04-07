@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.akiban.server.service.externaldata.TableRowTracker;
-import org.codehaus.jackson.JsonNode;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -130,7 +130,7 @@ public class InsertProcessor extends DMLProcessor {
     private void processTable (JsonNode node, AkibanAppender appender, InsertContext context) {
         
         // Pass one, insert fields from the table
-        Iterator<Entry<String,JsonNode>> i = node.getFields();
+        Iterator<Entry<String,JsonNode>> i = node.fields();
         while (i.hasNext()) {
             Entry<String,JsonNode> field = i.next();
             if (field.getValue().isValueNode()) {
@@ -140,7 +140,7 @@ public class InsertProcessor extends DMLProcessor {
         runUpdate(context, appender);
         boolean first = true;
         // pass 2: insert the child nodes
-        i = node.getFields();
+        i = node.fields();
         while (i.hasNext()) {
             Entry<String,JsonNode> field = i.next();
             if (field.getValue().isContainerNode()) {

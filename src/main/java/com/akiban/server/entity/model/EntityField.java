@@ -26,6 +26,8 @@
 
 package com.akiban.server.entity.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -43,6 +45,7 @@ public final class EntityField extends EntityElement {
         this.type = type;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getProperties() {
         return properties;
     }
@@ -51,6 +54,7 @@ public final class EntityField extends EntityElement {
         this.properties = properties;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Set<Validation> getValidations() {
         return validations;
     }

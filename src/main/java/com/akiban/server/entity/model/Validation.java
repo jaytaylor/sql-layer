@@ -18,8 +18,8 @@
 package com.akiban.server.entity.model;
 
 import com.akiban.util.ArgumentValidation;
-import org.codehaus.jackson.annotate.JsonCreator;
-import org.codehaus.jackson.annotate.JsonValue;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 import java.util.Collections;
 import java.util.Map;

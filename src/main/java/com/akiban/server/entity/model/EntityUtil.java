@@ -28,7 +28,6 @@ package com.akiban.server.entity.model;
 
 final class EntityUtil {
 
-
     private EntityUtil() {}
 
     public static <T> T cast(Object o, Class<T> target) {

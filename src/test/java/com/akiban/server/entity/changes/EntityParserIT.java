@@ -24,7 +24,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
-import org.codehaus.jackson.JsonNode;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.codehaus.jackson.JsonProcessingException;
 import org.junit.Before;
 import org.junit.Test;

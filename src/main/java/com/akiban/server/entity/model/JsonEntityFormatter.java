@@ -17,7 +17,7 @@
 
 package com.akiban.server.entity.model;
 
-import org.codehaus.jackson.JsonGenerator;
+import com.fasterxml.jackson.core.JsonGenerator;
 
 import java.io.IOException;
 

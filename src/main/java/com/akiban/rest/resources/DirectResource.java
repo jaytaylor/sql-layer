@@ -62,7 +62,7 @@ import com.akiban.server.service.transaction.TransactionService;
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
-import org.codehaus.jackson.JsonGenerator;
+import com.fasterxml.jackson.core.JsonGenerator;
 
 /**
  * Easy access to the server version

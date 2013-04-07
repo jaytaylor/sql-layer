@@ -26,7 +26,7 @@ import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.sql.RegexFilenameFilter;
 import com.akiban.util.Strings;
-import org.codehaus.jackson.JsonNode;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.codehaus.jackson.JsonParseException;
 import org.junit.Test;
 import org.junit.runner.RunWith;

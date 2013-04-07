@@ -19,7 +19,7 @@ package com.akiban.server.service.restdml;
 
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.TableName;
-import org.codehaus.jackson.JsonNode;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
