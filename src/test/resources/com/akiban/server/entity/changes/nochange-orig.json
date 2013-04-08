@@ -55,12 +55,14 @@
                     "indexes" : {
                         "placed" : [ "placed" ],
                         "orderplaced_lastname" : [ "placed", ["customer", "last_name"] ]
-                    }
+                    },
+                    "validations" : [
+                        { "unique" : "placed" }
+                    ]
                 }
             ],
             "validations" : [
-                { "unique" : "last_first" },
-                { "unique" : "placed" }
+                { "unique" : "last_first" }
             ],
             "indexes" : {
                 "last_first" : [ "last_name", "first_name" ]

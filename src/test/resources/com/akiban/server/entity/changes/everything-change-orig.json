@@ -37,6 +37,7 @@
                     "uuid": "8644c36b-f881-4369-a06b-59e3fc580309"
                 }
             ],
+            "identifying" : ["spine"],
             "indexes": {
                 "last_first": [
                     "last_name_old",
@@ -57,6 +58,7 @@
                             "uuid": "58dd53b7-e8a1-488b-a751-c83f9beca04c"
                         }
                     ],
+                    "identifying" : ["spine"],
                     "indexes": {
                         "placed": [
                             "placed_old"
@@ -83,6 +85,7 @@
                                     "uuid": "a006a1b4-7662-11e2-81f0-525b7188419e"
                                 }
                             ],
+                            "identifying" : ["spine"],
                             "name": "items_old",
                             "uuid": "99edbd9e-7662-11e2-bfaf-2afbf046605f"
                         }
