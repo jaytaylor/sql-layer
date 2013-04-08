@@ -17,6 +17,7 @@
 
 package com.akiban.server.service;
 
+import java.util.Collection;
 import java.util.Observable;
 
 
@@ -25,6 +26,8 @@ public interface BackgroundWork<O extends BackgroundObserver, W extends Backgrou
     public void addObserver(O observer);
 
     public void removeObserver(O observer);
+    
+    public void removeObsevers(Collection<O> os);
     
     public void removeAllObservers();
     

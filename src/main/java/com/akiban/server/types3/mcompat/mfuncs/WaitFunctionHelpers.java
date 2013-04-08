@@ -58,6 +58,11 @@ public class WaitFunctionHelpers
                 if (allAwaken)
                     break;
             }
+            
+            for (BackgroundWork wk : works)
+            {
+                wk.removeObsevers(waiters);
+            }
         }
     }
     

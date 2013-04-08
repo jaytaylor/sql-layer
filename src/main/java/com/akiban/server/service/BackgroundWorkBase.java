@@ -17,6 +17,7 @@
 
 package com.akiban.server.service;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -40,6 +41,11 @@ public abstract class BackgroundWorkBase implements BackgroundWork<BackgroundObs
     public void removeObserver(BackgroundObserver observer)
     {
         observers.remove(observer);
+    }
+
+    public void removeObsevers(Collection<BackgroundObserver> os)
+    {
+        observers.removeAll(os);
     }
 
     @Override
