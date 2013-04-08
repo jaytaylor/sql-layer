@@ -1,11 +1,10 @@
 function _register(registrar) {
     registrar.register(
         "method=GET path=cnames function=customerNames in=(QP:prefix String required) out=String");
+        
+    registrar.register(
+        "method=GET path=oids/(\\d*) function=orderNumbers in=(pp:1 int required) out=String"); 
 };
-
-//## Endpoint method=GET path=oids/(\\d*)
-//##   function=orderNumbers 
-//##   in=(pp:1 int required) out=String
 
 function customerNames(s) {
     var result = s;

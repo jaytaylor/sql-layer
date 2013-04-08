@@ -539,14 +539,6 @@ public class DirectServiceImpl implements Service, DirectService {
             for (final Routine routine : ais.getRoutines().values()) {
                 if (routine.getCallingConvention().equals(CallingConvention.SCRIPT_LIBRARY)
                         && routine.getDynamicResultSets() == 0 && routine.getParameters().isEmpty()) {
-                    final String definition = routine.getDefinition();
-                    final String schemaName = routine.getName().getSchemaName();
-                    final String procName = routine.getName().getTableName();
-                    try {
-                        parseAnnotations(schemaName, procName, definition);
-                    } catch (Exception e) {
-                        throw new RegistrationException(e);
-                    }
                     try {
                         final ScriptInvoker invoker = routineLoader.getScriptInvoker(session, routine.getName()).get();
                         invoker.invokeNamedFunction(DISTINGUISHED_REGISTRATION_METHOD_NAME,
@@ -559,8 +551,8 @@ public class DirectServiceImpl implements Service, DirectService {
                                 } });
                     } catch (ExternalRoutineInvocationException e) {
                         if (e.getCause() instanceof NoSuchMethodException) {
-                            throw new RegistrationException("No " + DISTINGUISHED_REGISTRATION_METHOD_NAME
-                                    + " method in " + routine.getName(), e.getCause());
+                            LOG.warn("Script library " + routine.getName() + " has no _register function");
+                            return;
                         }
                         Throwable previous = e;
                         Throwable current;
@@ -580,43 +572,6 @@ public class DirectServiceImpl implements Service, DirectService {
             }
         }
 
-        void parseAnnotations(final String schemaName, final String procName, final String definition) throws Exception {
-            String[] lines = definition.split("\\n");
-            String spec = "";
-            for (final String s : lines) {
-                String line = s.trim();
-                if (line.startsWith(COMMENT_ANNOTATION1) || line.startsWith(COMMENT_ANNOTATION2)) {
-                    line = line.substring(COMMENT_ANNOTATION1.length()).trim();
-                    if (line.regionMatches(true, 0, ENDPOINT, 0, ENDPOINT.length())) {
-                        if (!spec.isEmpty()) {
-                            registerAnnotation(schemaName, procName, spec);
-                        }
-                        spec = line.substring(ENDPOINT.length()).trim();
-                    } else {
-                        if (!spec.isEmpty()) {
-                            spec += " " + line;
-                        }
-                    }
-                } else if (!spec.isEmpty()) {
-                    registerAnnotation(schemaName, procName, spec);
-                    spec = "";
-                }
-            }
-            if (!spec.isEmpty()) {
-                registerAnnotation(schemaName, procName, spec);
-                spec = "";
-            }
-        }
-
-        void registerAnnotation(final String schema, final String routine, final String spec) throws Exception {
-            if (spec.startsWith("(")) {
-                final Tokenizer tokens = new Tokenizer(spec, ", ");
-                tokens.grouped = true;
-                register(schema, routine, tokens.next(true));
-            } else {
-                register(schema, routine, spec);
-            }
-        }
 
         void register(final String schema, final String routine, final String spec) throws Exception {
 
