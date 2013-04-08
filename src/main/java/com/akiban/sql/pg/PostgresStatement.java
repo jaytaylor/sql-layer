@@ -34,9 +34,12 @@ public interface PostgresStatement extends ServerStatement
     /** Get the types of any parameters. */
     public PostgresType[] getParameterTypes();
 
-    /** Send a description message. If <code>always</code>, do so even
-     * if no result set. */
-    public void sendDescription(PostgresQueryContext context, boolean always) throws IOException;
+    /** Send a description message.
+     * @param always Send row description even if no rows.
+     * @param params Send parameter description, too.
+     */
+    public void sendDescription(PostgresQueryContext context, 
+                                boolean always, boolean params) throws IOException;
 
     /** Execute statement and output results. Return number of rows processed. */
     public int execute(PostgresQueryContext context, int maxrows) throws IOException;

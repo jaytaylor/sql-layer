@@ -53,6 +53,5 @@ public interface RestDMLService {
     // TODO: Temporary.
     public void refreshFullTextIndex(PrintWriter writer, IndexName indexName);
 
-    public String ajdaxToSQL(TableName tableName, String ajdax) throws IOException;
-        
+    public String jonquilToSQL(TableName tableName, String jonquil) throws IOException;
 }

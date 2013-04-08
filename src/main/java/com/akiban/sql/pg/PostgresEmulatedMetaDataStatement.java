@@ -214,7 +214,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     }
 
     @Override
-    public void sendDescription(PostgresQueryContext context, boolean always) 
+    public void sendDescription(PostgresQueryContext context,
+                                boolean always, boolean params)
             throws IOException {
         int ncols;
         String[] names;

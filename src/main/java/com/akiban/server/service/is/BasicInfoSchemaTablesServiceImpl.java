@@ -20,6 +20,7 @@ package com.akiban.server.service.is;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.FullTextIndex;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
@@ -723,7 +724,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                      indexType,
                                      boolResult(index.isUnique()),
                                      index.isGroupIndex() ? index.getJoinType().name() : null,
-                                     index.isSpatial() ? index.getIndexMethod().name() : null,
+                                     (index.getIndexMethod() == Index.IndexMethod.NORMAL) ? null : index.getIndexMethod().name(),
                                      ++rowCounter /*hidden pk*/);
             }
         }
@@ -1077,6 +1078,7 @@ public class BasicInfoSchemaTablesServiceImpl
         private final Iterator<UserTable> tableIt;
         Iterator<TableIndex> tableIndexIt;
         Iterator<GroupIndex> groupIndexIt;
+        Iterator<FullTextIndex> textIndexIt;
         UserTable curTable;
 
         public IndexIteration(Session session,
@@ -1094,11 +1096,15 @@ public class BasicInfoSchemaTablesServiceImpl
                         return index;
                     }
                 }
+                while(textIndexIt != null && textIndexIt.hasNext()) {
+                    return textIndexIt.next();
+                }
                 while(tableIt.hasNext()) {
                     curTable = tableIt.next();
                     if(isAccessible(session, curTable.getName())) {
                         tableIndexIt = curTable.getIndexes().iterator();
                         groupIndexIt = curTable.getGroup().getIndexes().iterator();
+                        textIndexIt = curTable.getOwnFullTextIndexes().iterator();
                         continue getIndexes;
                     }
                 } 
