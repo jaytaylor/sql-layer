@@ -34,8 +34,7 @@ abstract class ClassSourceWriterBase extends ClassBuilder {
     protected final Stack<String> classNames = new Stack<String>();
     protected String[] imports;
 
-    public ClassSourceWriterBase(final PrintWriter writer, final String packageName) {
-        super(packageName);
+    public ClassSourceWriterBase(final PrintWriter writer) {
         this.writer = writer;
     }
 

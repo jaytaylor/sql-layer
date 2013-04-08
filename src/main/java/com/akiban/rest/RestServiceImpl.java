@@ -22,6 +22,7 @@ import com.akiban.rest.resources.*;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.restdml.DirectService;
 import com.akiban.server.service.restdml.RestDMLService;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.server.service.session.SessionService;
@@ -51,6 +52,7 @@ public class RestServiceImpl implements RestService, Service {
     public RestServiceImpl(ConfigurationService configService,
                            HttpConductor http,
                            RestDMLService restDMLService,
+                           DirectService directService,
                            SessionService sessionService,
                            TransactionService transactionService,
                            SecurityService securityService,
@@ -62,6 +64,7 @@ public class RestServiceImpl implements RestService, Service {
         this.reqs = new ResourceRequirements(
             dxlService,
             restDMLService,
+            directService,
             securityService,
             sessionService,
             transactionService,

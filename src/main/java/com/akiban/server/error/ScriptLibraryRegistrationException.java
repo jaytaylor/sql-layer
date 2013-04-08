@@ -15,13 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.routines;
+package com.akiban.server.error;
 
-public interface ScriptInvoker
-{
-    public String getEngineName();
-    public String getFunctionName();
-    public boolean isCompiled();
-    public Object invoke(Object[] args);
-    public Object invokeNamedFunction(String functionName, Object[] args);
+
+public class ScriptLibraryRegistrationException extends InvalidOperationException {
+    public ScriptLibraryRegistrationException(Throwable e) {
+        super(ErrorCode.SCRIPT_REGISTRATION_EXCEPTION, e);
+    }
 }

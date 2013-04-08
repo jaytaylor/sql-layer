@@ -15,13 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.routines;
+package com.akiban.rest;
 
-public interface ScriptInvoker
-{
-    public String getEngineName();
-    public String getFunctionName();
-    public boolean isCompiled();
-    public Object invoke(Object[] args);
-    public Object invokeNamedFunction(String functionName, Object[] args);
+
+public interface RestFunctionRegistrar {
+
+    public void register(final String jsonSpec) throws Exception;
+
 }

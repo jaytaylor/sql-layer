@@ -15,13 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.routines;
+package com.akiban.server.service.restdml;
 
-public interface ScriptInvoker
-{
-    public String getEngineName();
-    public String getFunctionName();
-    public boolean isCompiled();
-    public Object invoke(Object[] args);
-    public Object invokeNamedFunction(String functionName, Object[] args);
+import org.junit.Test;
+
+import com.akiban.rest.resources.DirectResource;
+
+public class DirectServiceTest {
+
+    @Test
+    public void populateEndpointMap() throws Exception {
+        DirectServiceImpl.EndpointMap em = new DirectServiceImpl.EndpointMap(null);
+    }
 }

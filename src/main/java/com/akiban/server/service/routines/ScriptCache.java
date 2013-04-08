@@ -150,7 +150,9 @@ public class ScriptCache {
         }
 
         public ScriptPool<ScriptInvoker> getScriptInvoker() {
-            assert invocable && (function != null);
+            // TODO - talk with Mike about having a CacheEntry without a function -
+            // needed for the LIBRARY param styl
+            assert invocable ; //&& (function != null);
             // Can share if at multi-threaded (or stronger), since we are
             // invoking
             // the function.
@@ -437,6 +439,18 @@ public class ScriptCache {
             logger.debug("Calling {} in {}", function, routineName);
             try {
                 return invocable.invokeFunction(function, args);
+            } catch (ScriptException ex) {
+                throw new ExternalRoutineInvocationException(routineName, ex);
+            } catch (NoSuchMethodException ex) {
+                throw new ExternalRoutineInvocationException(routineName, ex);
+            }
+        }
+        
+        @Override
+        public Object invokeNamedFunction(String functionName, Object[] args) {
+            logger.debug("Calling {} in {}", function, routineName);
+            try {
+                return invocable.invokeFunction(functionName, args);
             } catch (ScriptException ex) {
                 throw new ExternalRoutineInvocationException(routineName, ex);
             } catch (NoSuchMethodException ex) {

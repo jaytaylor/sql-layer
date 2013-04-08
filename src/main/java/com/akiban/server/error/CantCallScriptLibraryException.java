@@ -15,13 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.akiban.server.service.routines;
+package com.akiban.server.error;
 
-public interface ScriptInvoker
-{
-    public String getEngineName();
-    public String getFunctionName();
-    public boolean isCompiled();
-    public Object invoke(Object[] args);
-    public Object invokeNamedFunction(String functionName, Object[] args);
+import com.akiban.sql.parser.QueryTreeNode;
+
+public class CantCallScriptLibraryException extends BaseSQLException {
+    public CantCallScriptLibraryException(QueryTreeNode node) {
+        super(ErrorCode.CANT_CALL_SCRIPT_LIBRARY, node);
+    }
 }

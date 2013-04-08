@@ -17,17 +17,19 @@
 
 package com.akiban.server.service.restdml;
 
-import com.akiban.ais.model.IndexName;
-import com.akiban.ais.model.TableName;
-import com.akiban.server.service.session.Session;
-import org.codehaus.jackson.JsonNode;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.codehaus.jackson.JsonNode;
+
+import com.akiban.ais.model.IndexName;
+import com.akiban.ais.model.TableName;
+import com.akiban.server.service.session.Session;
 
 public interface RestDMLService {
     public void getAllEntities(PrintWriter writer, TableName tableName, Integer depth);
@@ -45,9 +47,7 @@ public interface RestDMLService {
     public void explainSQL(PrintWriter writer, HttpServletRequest request, String sql) throws IOException, SQLException;
 
     public void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
-                              TableName procName, Map<String,List<String>> queryParams) throws SQLException;
-    public void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
-                              TableName procName, String jsonParams) throws SQLException;
+                              TableName procName, Map<String,List<String>> queryParams, String content) throws SQLException;
 
     public void fullTextSearch(PrintWriter writer, IndexName indexName, Integer depth, String query, Integer limit);
     // TODO: Temporary.

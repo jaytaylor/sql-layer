@@ -56,6 +56,7 @@ public class RestServiceFilesIT extends ITBase {
     private static final File RESOURCE_DIR = new File(
             "src/test/resources/" + RestServiceFilesIT.class.getPackage().getName().replace('.', '/')
     );
+    
     public static final String SCHEMA_NAME = "test";
 
     private static class CaseParams {
