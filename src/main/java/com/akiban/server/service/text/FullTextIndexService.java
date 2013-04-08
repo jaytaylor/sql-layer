@@ -45,7 +45,7 @@ public interface FullTextIndexService extends FullTextIndexInfos {
     public void updateIndex(Session session, IndexName name, Iterable<byte[]> rows);
     
     /**
-     * TODO: move this to <pre>Serverce</pre>?
+     * TODO: move this to <pre>Service</pre> ?
      * 
      * @return An array of available background works
      */
