@@ -21,6 +21,7 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -67,7 +68,7 @@ public class Elt extends TScalarBase
     }
 
     @Override
-    protected Constantness constness(int inputIndex, LazyList<? extends TPreptimeValue> values) {
+    protected Constantness constness(TPreptimeContext context, int inputIndex, LazyList<? extends TPreptimeValue> values) {
         assert inputIndex == 0 : inputIndex + " for " + values; // 0 should be enough to fully answer the question
         PValueSource indexVal = constSource(values, 0);
         if (indexVal == null)
