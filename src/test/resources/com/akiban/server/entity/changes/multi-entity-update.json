@@ -27,12 +27,12 @@
                             "type" : "integer"
                         }
                     ],
-                    "identifying" : ["id"]
+                    "identifying" : ["id"],
+                    "indexes" : {
+                        "subid_val" : [ "id", ["ent1", "val"] ]
+                    }
                 }
-            ],
-            "indexes" : {
-                "subid_val" : [ ["sub_ent1", "id"], "val" ]
-            }
+            ]
         },
         {
             "name" : "ent2",
@@ -61,12 +61,12 @@
                             "type" : "bigint"
                         }
                     ],
-                    "identifying" : ["id"]
+                    "identifying" : ["id"],
+                    "indexes" : {
+                        "subid_val" : [ ["sub_ent2", "id"], ["ent2", "val"] ]
+                    }
                 }
-            ],
-            "indexes" : {
-                "subid_val" : [ ["sub_ent2", "id"], ["ent2", "val"] ]
-            }
+            ]
         }
     ]
 }

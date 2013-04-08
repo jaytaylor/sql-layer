@@ -208,6 +208,9 @@ public class EntityToAIS implements EntityVisitor {
                 int pos = 0;
                 for(IndexField col : columns) {
                     TableName colName = getFieldName(col, context);
+                    if (!isCurrentOrAncestor(colName.getSchemaName()))
+                        throw new IllegalArgumentException(indexName + ": "
+                                + colName + " belongs to a table that isn't an ancestor of " + context);
                     builder.groupIndexColumn(groupName, indexName, schemaName,
                             colName.getSchemaName(), colName.getTableName(), pos++);
                 }
@@ -224,6 +227,14 @@ public class EntityToAIS implements EntityVisitor {
         if (!uniques.isEmpty())
             throw new IllegalArgumentException("UNIQUE constraint for undefined index(es) on " + context
                     + ": " + uniques);
+    }
+
+    private boolean isCurrentOrAncestor(String tableName) {
+        for (TableInfo table : tableInfoStack) {
+            if (table.entity.getName().equals(tableName))
+                return true;
+        }
+        return false;
     }
 
     private TableName getFieldName(IndexField indexField, Entity context) {
