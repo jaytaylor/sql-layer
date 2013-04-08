@@ -257,7 +257,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             QueryContext queryContext = new SimpleQueryContext(adapter);
             HKeyCache<com.akiban.qp.row.HKey> cache = new HKeyCache<>(adapter);
             IndexWriter writer = indexInfo.getIndexer().getWriter();
-            RowIndexer rowIndexer = new RowIndexer(indexInfo, writer, false);
+            RowIndexer rowIndexer = new RowIndexer(indexInfo, writer, true);
             Cursor cursor = null;
             boolean success = false;
             try
