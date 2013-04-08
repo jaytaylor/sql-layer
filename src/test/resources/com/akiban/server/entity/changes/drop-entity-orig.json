@@ -40,7 +40,8 @@
                     "name": "spine", 
                     "uuid": "8644c36b-f881-4369-a06b-59e3fc580309"
                 }
-            ], 
+            ],
+            "identifying" : ["spine"],
             "validations": [
                 {
                     "unique": "last_first"
@@ -65,7 +66,8 @@
                             "name": "spine", 
                             "uuid": "58dd53b7-e8a1-488b-a751-c83f9beca04c"
                         }
-                    ], 
+                    ],
+                    "identifying" : ["spine"],
                     "validations": [
                         {
                             "unique": "placed"

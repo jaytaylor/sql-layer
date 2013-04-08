@@ -141,7 +141,7 @@ public class EntityToAIS implements EntityVisitor {
         UserTable parentTable = parentInfo.table;
         List<String> pkFields = parentEntity.getIdentifying();
         if (pkFields.isEmpty())
-            throw new IllegalArgumentException("parent table " + parentTable + " has no PK");
+            throw new IllegalArgumentException(parentTable + " has no PK, but has child " + childEntity);
         final List<String> fkFields = childEntity.getGroupingFields();
         final boolean generateFkCols = fkFields.isEmpty();
         if ((!generateFkCols) && (childEntity.getGroupingFields().size() != parentEntity.getIdentifying().size()))

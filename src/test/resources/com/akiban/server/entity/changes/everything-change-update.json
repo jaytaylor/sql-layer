@@ -76,7 +76,8 @@
                                     "name": "spine", 
                                     "uuid": "a006a1b4-7662-11e2-81f0-525b7188419e"
                                 }
-                            ], 
+                            ],
+                            "identifying" : ["spine"],
                             "indexes": {
                                 "orderplaced_sku": [
                                     [
@@ -85,7 +86,7 @@
                                     ], 
                                     "sku_new"
                                 ]
-                            }, 
+                            },
                             "name": "items_new", 
                             "uuid": "99edbd9e-7662-11e2-bfaf-2afbf046605f"
                         }
