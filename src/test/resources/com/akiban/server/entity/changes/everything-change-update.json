@@ -36,7 +36,8 @@
                     "name": "spine", 
                     "uuid": "8644c36b-f881-4369-a06b-59e3fc580309"
                 }
-            ], 
+            ],
+            "identifying" : ["spine"],
             "indexes": {
                 "last_first": [
                     "last_name_new", 
@@ -88,7 +89,8 @@
                             "name": "items_new", 
                             "uuid": "99edbd9e-7662-11e2-bfaf-2afbf046605f"
                         }
-                    ], 
+                    ],
+                    "identifying" : ["spine"],
                     "name": "orders_new", 
                     "uuid": "c5cedd91-9751-41c2-9417-8c29117ca2c9"
                 }

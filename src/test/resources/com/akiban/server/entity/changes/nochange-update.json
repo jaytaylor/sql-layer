@@ -5,11 +5,6 @@
             "uuid" : "2a57b59e-e1b7-4377-996e-a5c04e0abf29",
             "fields" : [
                 {
-                    "name" : "spine",
-                    "uuid" : "8644c36b-f881-4369-a06b-59e3fc580309",
-                    "type" : "integer"
-                },
-                {
                     "name" : "first_name",
                     "uuid" : "177400c6-7662-11e2-8057-2afbf046605f",
                     "type" : "varchar",
@@ -20,6 +15,11 @@
                         { "max_length" : 64 },
                         { "required" : false }
                     ]
+                },
+                {
+                    "name" : "spine",
+                    "uuid" : "8644c36b-f881-4369-a06b-59e3fc580309",
+                    "type" : "integer"
                 },
                 {
                     "name" : "last_name",
@@ -55,12 +55,14 @@
                     "indexes" : {
                         "placed" : [ "placed" ],
                         "orderplaced_lastname" : [ "placed", ["customer", "last_name"] ]
-                    }
+                    },
+                    "validations" : [
+                        { "unique" : "placed" }
+                    ]
                 }
             ],
             "validations" : [
-                { "unique" : "last_first" },
-                { "unique" : "placed" }
+                { "unique" : "last_first" }
             ],
             "indexes" : {
                 "last_first" : [ "last_name", "first_name" ]
