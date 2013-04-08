@@ -53,38 +53,4 @@ class ToStringVisitor extends JUnitUtils.MessageTaker implements EntityVisitor {
     public void leaveCollections() throws RuntimeException {
         message("leaving collections");
     }
-
-    //    @Override
-//    public void visitTopEntity(Entity entity) throws RuntimeException {
-//        message("visiting entity", entity.getName());
-//    }
-//
-//    @Override
-//    public void leaveTopEntity() {
-//        message("leaving entity");
-//    }
-//
-//    @Override
-//    public void visitField(EntityField field) throws RuntimeException {
-//        message("visiting field", field.getName());
-//    }
-//
-//    @Override
-//    public void visitCollection(EntityCollection collection) throws RuntimeException {
-//        message("visiting collection", collection.getName());
-//    }
-//
-//    @Override
-//    public void visitIndexes(BiMap<String, EntityIndex> indexes) {
-//        for (Map.Entry<String, EntityIndex> index : indexes.entrySet())
-//            message("visiting index", index.getKey(), index.getValue());
-//    }
-//
-//    @Override
-//    public void visitEntityValidations(Set<Validation> validations) {
-//        for (Validation validation : validations)
-//            message("visiting entity validation", validation);
-//
-//    }
-
 }
