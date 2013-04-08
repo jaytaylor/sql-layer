@@ -234,7 +234,7 @@ public class EndpointMetadata {
 
             case IN: {
                 tokens.grouped = true;
-                String v = tokens.next(true);
+                String v = tokens.next(false);
                 tokens.grouped = false;
                 List<ParamMetadata> list = new ArrayList<>();
                 Tokenizer inTokens = new Tokenizer(v, ", ");

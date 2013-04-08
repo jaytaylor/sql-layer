@@ -33,10 +33,8 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response.Status;
 
 import org.codehaus.jackson.JsonGenerator;
 import org.slf4j.Logger;
@@ -56,6 +54,7 @@ import com.akiban.rest.resources.ResourceHelper;
 import com.akiban.server.error.ExternalRoutineInvocationException;
 import com.akiban.server.error.MalformedRequestException;
 import com.akiban.server.error.NoSuchRoutineException;
+import com.akiban.server.error.ScriptLibraryRegistrationException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.restdml.EndpointMetadata.EndpointAddress;
@@ -144,6 +143,24 @@ public class DirectServiceImpl implements Service, DirectService {
             final String definition, final String language) throws Exception {
         try (final JDBCConnection conn = jdbcConnection(request); final Statement statement = conn.createStatement()) {
             final TableName procName = ResourceHelper.parseTableName(request, module);
+            /*
+             * TODO - once it becomes possible to execute DDL statements within
+             * the scope of an existing transaction, the following should be
+             * changed. Right now we perform as many as three consecutive DDL
+             * operations (drop an existing procedure, create a new one and then
+             * drop it again if there's an error in the _register function) in
+             * separate transactions, and in each case we construct a new AIS.
+             */
+            final AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(conn.getSession());
+            if (ais.getRoutine(procName) != null) {
+                try {
+                    final String drop = String.format(DROP_PROCEDURE_FORMAT, procName.getSchemaName(),
+                            procName.getTableName(), language, definition);
+                    statement.execute(drop);
+                } catch (Exception e) {
+                    LOG.error("Unable to remove invalid library " + module, e);
+                }
+            }
             final String create = String.format(CREATE_PROCEDURE_FORMAT, procName.getSchemaName(),
                     procName.getTableName(), language, definition);
             statement.execute(create);
@@ -154,13 +171,13 @@ public class DirectServiceImpl implements Service, DirectService {
                 reportLibraryFunctionCount(createJsonGenerator(writer), procName, endpointMap);
             } catch (RegistrationException e) {
                 try {
-                    final String drop = String.format(CREATE_PROCEDURE_FORMAT, procName.getSchemaName(),
+                    final String drop = String.format(DROP_PROCEDURE_FORMAT, procName.getSchemaName(),
                             procName.getTableName(), language, definition);
                     statement.execute(drop);
                 } catch (Exception e2) {
                     LOG.error("Unable to remove invalid library " + module, e2);
                 }
-                throw new WebApplicationException(e, Status.CONFLICT);
+                throw new ScriptLibraryRegistrationException(e);
             }
         }
     }
@@ -178,14 +195,15 @@ public class DirectServiceImpl implements Service, DirectService {
                 final EndpointMap endpointMap = getEndpointMap(conn.getSession());
                 reportLibraryFunctionCount(createJsonGenerator(writer), procName, endpointMap);
             } catch (RegistrationException e) {
-                throw new WebApplicationException(e, Status.CONFLICT);
+                throw new ScriptLibraryRegistrationException(e);
             }
         }
     }
 
     @Override
-    public void reportStoredProcedures(final PrintWriter writer, final HttpServletRequest request, final String suppliedSchemaName,
-            final String module, final Session session, boolean functionsOnly) throws Exception {
+    public void reportStoredProcedures(final PrintWriter writer, final HttpServletRequest request,
+            final String suppliedSchemaName, final String module, final Session session, boolean functionsOnly)
+            throws Exception {
         final String schemaName = suppliedSchemaName.isEmpty() ? ResourceHelper.getSchema(request) : suppliedSchemaName;
 
         if (module.isEmpty()) {
@@ -540,9 +558,9 @@ public class DirectServiceImpl implements Service, DirectService {
                                     }
                                 } });
                     } catch (ExternalRoutineInvocationException e) {
-                        if (e.getCause() instanceof NoSuchMethodError) {
-                            throw new RegistrationException("No " + DISTINGUISHED_REGISTRATION_METHOD_NAME + " method",
-                                    e.getCause());
+                        if (e.getCause() instanceof NoSuchMethodException) {
+                            throw new RegistrationException("No " + DISTINGUISHED_REGISTRATION_METHOD_NAME
+                                    + " method in " + routine.getName(), e.getCause());
                         }
                         Throwable previous = e;
                         Throwable current;

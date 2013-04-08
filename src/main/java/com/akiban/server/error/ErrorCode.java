@@ -281,6 +281,7 @@ public enum ErrorCode {
     
     // Class 42/800 - Akiba Direct errors
     CANT_CALL_SCRIPT_LIBRARY ("42", "800", Importance.DEBUG, CantCallScriptLibraryException.class),
+    SCRIPT_REGISTRATION_EXCEPTION ("42", "801", Importance.DEBUG, ScriptLibraryRegistrationException.class),
         
     // Class 44 - with check option violation
 
