@@ -21,7 +21,6 @@ import com.akiban.server.explain.CompoundExplainer;
 import com.akiban.server.explain.ExplainContext;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 
 import java.util.List;
