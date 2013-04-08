@@ -150,6 +150,13 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     }
 
     @Override
+    public void fieldOrderChanged(UUID fieldUuid) {
+        String oldName = getFieldName(fieldUuid, oldEntity);
+        String newName = getFieldName(fieldUuid, newEntity);
+        trackColumnChange(oldEntity.getName(), TableChange.createModify(oldName, newName));
+    }
+
+    @Override
     public void changeFieldType(UUID fieldUuid) {
         trackColumnModify(fieldUuid);
     }

@@ -30,8 +30,10 @@ import com.akiban.util.MapDiffHandler;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -118,7 +120,6 @@ public final class SpaceDiff {
         public void entityActions(UUID uuid, Entity original, Entity updated, boolean isMoved) {
             out.beginEntity(original, updated);
             if (isMoved) {
-                // We must have been invoked from the Runnable that w
                 Entity origParent = (Entity) origLookups.getParent(uuid);
                 Entity updatedParent = (Entity) origLookups.getParent(uuid);
                 out.moveEntity(origParent, updatedParent);
@@ -130,24 +131,31 @@ public final class SpaceDiff {
             fieldActions(original, updated);
             validationActions(original, updated);
             indexActions(original, updated);
-            collectionActions(original, updated);
             out.endEntity();
+            collectionActions(original, updated);
         }
 
         private void fieldActions(Entity original, Entity updated) {
-
-            MapDiff.apply(original.fieldsByUuid(), updated.fieldsByUuid(), new MapDiffHandler<UUID, EntityField>()
+            Map<UUID, EntityField> originalFields = original.fieldsByUuid();
+            Map<UUID, EntityField> updatedFields = updated.fieldsByUuid();
+            final LinkedHashSet<UUID> originalUuids = new LinkedHashSet<>(originalFields.keySet());
+            final LinkedHashSet<UUID> updatedUUids = new LinkedHashSet<>(updatedFields.keySet());
+            MapDiff.apply(originalFields, updatedFields, new MapDiffHandler<UUID, EntityField>()
             {
                 @Override
                 public void added(EntityField element) {
                     if (!handledUuids.contains(element.getUuid()))
                         out.addField(element.getUuid());
+                    // This wasn't in the original map, so remove its UUID from that one
+                    originalUuids.remove(element.getUuid());
                 }
 
                 @Override
                 public void dropped(EntityField element) {
                     if (!handledUuids.contains(element.getUuid()))
                         out.dropField(element.getUuid());
+                    // This wasn't in the updated map, so remove its UUID from that one
+                    updatedUUids.remove(element.getUuid());
                 }
 
                 @Override
@@ -165,6 +173,22 @@ public final class SpaceDiff {
                         out.changeFieldProperties(uuid);
                 }
             });
+            Map<UUID, Integer> originalUuidPositions = uuidByPosition(originalUuids);
+            int pos = 0;
+            for (UUID uuid : updatedUUids) {
+                int originalPos = originalUuidPositions.get(uuid);
+                int updatedPos = pos++;
+                if (originalPos != updatedPos)
+                    out.fieldOrderChanged(uuid);
+            }
+        }
+
+        private Map<UUID, Integer> uuidByPosition(LinkedHashSet<UUID> uuids) {
+            Map<UUID, Integer> map = new HashMap<>(uuids.size());
+            int pos = 0;
+            for (UUID uuid : uuids)
+                map.put(uuid, pos++);
+            return map;
         }
 
         private void validationActions(Entity original, Entity updated) {

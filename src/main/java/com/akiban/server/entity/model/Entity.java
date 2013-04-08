@@ -54,6 +54,13 @@ public class Entity extends EntityElement {
         this.fields = ImmutableList.copyOf(fields);
     }
 
+    /**
+     * Returns a map of each field by its UUID, ordered by the field positions. Iterations (key, value and entry-set)
+     * will all reflect the field order as it is in {@linkplain #getFields()}. So for instance, this:
+     * <pre>    assert getFields().equals(new ArrayList&lt;&gt;(fieldsByUuid().values()));</pre>
+     * should <em>not</em> raise an assert
+     * @return a map of fields by UUID, ordered by field position
+     */
     @JsonIgnore
     public Map<UUID, EntityField> fieldsByUuid() {
         Map<UUID, EntityField> local = fieldsByUuid;
@@ -63,6 +70,7 @@ public class Entity extends EntityElement {
                 Object old = local.put(field.getUuid(), field);
                 assert old == null : field.getUuid();
             }
+            local = Collections.unmodifiableMap(local);
             fieldsByUuid = local; // logically idempotent since fields is immutable, so it's fine even if racy
         }
         return local;

@@ -5,6 +5,18 @@
             "uuid" : "2a57b59e-e1b7-4377-996e-a5c04e0abf29",
             "fields" : [
                 {
+                    "name" : "last_name",
+                    "uuid" : "257e9b59-e77f-4a4d-a5da-00c7c2261875",
+                    "type" : "varchar",
+                    "properties" : {
+                        "charset" : "utf8"
+                    },
+                    "validations" : [
+                        { "max_length" : 64 },
+                        { "required" : false }
+                    ]
+                },
+                {
                     "name" : "first_name",
                     "uuid" : "177400c6-7662-11e2-8057-2afbf046605f",
                     "type" : "varchar",
@@ -20,18 +32,6 @@
                     "name" : "spine",
                     "uuid" : "8644c36b-f881-4369-a06b-59e3fc580309",
                     "type" : "integer"
-                },
-                {
-                    "name" : "last_name",
-                    "uuid" : "257e9b59-e77f-4a4d-a5da-00c7c2261875",
-                    "type" : "varchar",
-                    "properties" : {
-                        "charset" : "utf8"
-                    },
-                    "validations" : [
-                        { "max_length" : 64 },
-                        { "required" : false }
-                    ]
                 }
             ],
             "identifying" : ["spine"],
@@ -53,8 +53,7 @@
                     ],
                     "identifying" : ["spine"],
                     "indexes" : {
-                        "placed" : [ "placed" ],
-                        "orderplaced_lastname" : [ "placed", ["customer", "last_name"] ]
+                        "placed" : [ "placed" ]
                     },
                     "validations" : [
                         { "unique" : "placed" }

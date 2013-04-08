@@ -89,10 +89,9 @@ public final class DDLBasedSpaceModifierIT extends ITBase {
     }
 
     private void loadSpace(Space space) {
-        assert false : "TODO";
         EntityToAIS eToAIS = new EntityToAIS(SCHEMA);
         space.visit(eToAIS);
-        AkibanInformationSchema ais = null;//eToAIS.getAIS();
+        AkibanInformationSchema ais = eToAIS.getAIS();
         for(Group group : ais.getGroups().values()) {
             UserTable root = group.getRoot();
             root.traverseTableAndDescendants(new NopVisitor() {

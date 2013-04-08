@@ -213,6 +213,23 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
+    public void fieldOrderChanged(UUID uuid) {
+        try
+        {
+            startObject();
+            entry("action", "field_order_changed");
+            entry("uuid", uuid.toString());
+            entry("destructive", false);
+            endObject();
+        }
+        catch (IOException ex)
+        {
+            throw new DiffIOException(ex);
+        }
+        entityModified();
+    }
+
+    @Override
     public void renameField(UUID uuid)
     {
         try

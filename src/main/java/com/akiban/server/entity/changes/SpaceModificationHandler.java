@@ -35,6 +35,7 @@ public interface SpaceModificationHandler {
     void groupingFieldsChanged();
     void addField(UUID fieldUuid);
     void dropField(UUID fieldUuid);
+    void fieldOrderChanged(UUID fieldUuid);
     void renameField(UUID fieldUuid);
     void changeFieldType(UUID fieldUuid);
     void changeFieldValidations(UUID fieldUuid);

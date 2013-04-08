@@ -53,8 +53,7 @@
                     ],
                     "identifying" : ["spine"],
                     "indexes" : {
-                        "placed" : [ "placed" ],
-                        "orderplaced_lastname" : [ "placed", ["customer", "last_name"] ]
+                        "placed" : [ "placed" ]
                     },
                     "validations" : [
                         { "unique" : "placed" }
