@@ -32,6 +32,9 @@ import com.akiban.qp.row.HKeyRow;
 import com.akiban.qp.rowtype.HKeyRowType;
 import com.akiban.qp.util.HKeyCache;
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.service.BackgroundObserver;
+import com.akiban.server.service.BackgroundWork;
+import com.akiban.server.service.BackgroundWorkBase;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
@@ -55,6 +58,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -153,6 +161,12 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         }
     }
 
+    @Override
+    public List<? extends BackgroundWork> getBackgroundWorks()
+    {
+        return backgroundWorks;
+    }
+    
     /* Service */
     
     @Override
@@ -335,6 +349,8 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 else
                     transactionService.commitTransaction(session);
                 session.close();
+                backgroundWorks.get(updateWork).notifyObservers();
+                
             }
         }
     }; 
@@ -370,6 +386,32 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         }
     }
     
+    private final List<? extends BackgroundWork> backgroundWorks
+        = Collections.unmodifiableList(Arrays.asList(new BackgroundWorkBase()
+                                                     {
+
+                                                        @Override
+                                                        public long getMinimumWaitTime()
+                                                        {
+                                                            return hasScheduled
+                                                                     ? populateDelayInterval
+                                                                     : 0;
+                                                        }
+                                                     },
+                                                     new BackgroundWorkBase()
+                                                     {
+
+                                                        @Override
+                                                        public long getMinimumWaitTime()
+                                                        {
+                                                            return maintenanceInterval;
+                                                        }
+                                                     }));
+    
+    
+    private static final int populateWork = 0;
+    private static final int updateWork = 1;
+    
     private class DefaultPopulateWorker extends TimerTask
     {
         @Override
@@ -394,6 +436,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             finally
             {
                 session.close();
+                backgroundWorks.get(populateWork).notifyObservers();
             }
         }
         
