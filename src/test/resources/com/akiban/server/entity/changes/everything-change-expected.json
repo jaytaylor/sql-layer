@@ -15,10 +15,10 @@
         "action": "change_field_validations", 
         "new_validations": [
             {
-                "required": true
-            }, 
-            {
                 "max_length": 128
+            },
+            {
+                "required": true
             }
         ], 
         "destructive": true, 
