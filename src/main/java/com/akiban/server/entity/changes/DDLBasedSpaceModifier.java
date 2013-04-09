@@ -52,6 +52,7 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     private final Map<String,TableChangeInfo> tableChanges = new HashMap<>();
 
     // Current entity being visited.
+    private int level;
     private Entity oldEntity;
     private Entity newEntity;
     private Entity oldTopEntity;
@@ -127,7 +128,8 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
 
     @Override
     public void beginEntity(Entity oldEntity, Entity newEntity) {
-        if (this.oldEntity == null) {
+        if (level++ == 0) {
+            assert oldTopEntity == null : oldEntity;
             oldTopEntity = oldEntity;
         }
         this.oldEntity = oldEntity;
@@ -225,10 +227,8 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
 
     @Override
     public void endEntity() {
-    }
-
-    @Override
-    public void endTopLevelEntity() {
+        if (--level != 0)
+            return;
         if(!errors.isEmpty()) {
             resetPerEntityData();
             return;

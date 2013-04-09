@@ -131,9 +131,8 @@ public final class SpaceDiff {
             fieldActions(original, updated);
             validationActions(original, updated);
             indexActions(original, updated);
-            out.endEntity();
             collectionActions(original, updated);
-            out.endTopLevelEntity();
+            out.endEntity();
         }
 
         private void fieldActions(Entity original, Entity updated) {
