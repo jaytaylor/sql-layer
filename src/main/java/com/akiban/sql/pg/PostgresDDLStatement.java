@@ -51,11 +51,17 @@ public class PostgresDDLStatement extends PostgresBaseStatement
     }
 
     @Override
-    public void sendDescription(PostgresQueryContext context, boolean always) 
+    public void sendDescription(PostgresQueryContext context,
+                                boolean always, boolean params)
             throws IOException {
         if (always) {
             PostgresServerSession server = context.getServer();
             PostgresMessenger messenger = server.getMessenger();
+            if (params) {
+                messenger.beginMessage(PostgresMessages.PARAMETER_DESCRIPTION_TYPE.code());
+                messenger.writeShort(0);
+                messenger.sendMessage();
+            }
             messenger.beginMessage(PostgresMessages.NO_DATA_TYPE.code());
             messenger.sendMessage();
         }

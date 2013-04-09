@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 import java.security.Principal;
 
 public class ResourceHelper {
@@ -37,6 +38,8 @@ public class ResourceHelper {
     public static final String MEDIATYPE_JSON_JAVASCRIPT = MediaType.APPLICATION_JSON + "," + APPLICATION_JAVASCRIPT;
 
     public static final String JSONP_ARG_NAME = "callback";
+
+    public static final String IDENTIFIERS_MULTI = "{identifiers:.*}";
 
     public static String getSchema(HttpServletRequest request) {
         Principal user = request.getUserPrincipal();
@@ -56,5 +59,12 @@ public class ResourceHelper {
         if(!security.isAccessible(request, schema)) {
             throw new WebApplicationException(FORBIDDEN_RESPONSE);
         }
+    }
+
+    /** Expected to be used along with {@link #IDENTIFIERS_MULTI} */
+    public static String getPKString(UriInfo uri) {
+        String pks[] = uri.getPath(false).split("/");
+        assert pks.length > 0: uri;
+        return pks[pks.length - 1];
     }
 }

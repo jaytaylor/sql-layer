@@ -32,8 +32,8 @@ public class ClassXRefWriter extends ClassSourceWriterBase {
 
     boolean first = true;
 
-    public ClassXRefWriter(final PrintWriter writer, final String packageName) {
-        super(writer, packageName);
+    public ClassXRefWriter(final PrintWriter writer) {
+        super(writer);
         append("{");
     }
 

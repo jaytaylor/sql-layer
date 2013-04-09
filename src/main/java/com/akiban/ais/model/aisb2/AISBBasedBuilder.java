@@ -19,10 +19,8 @@ package com.akiban.ais.model.aisb2;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.Parameter;
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.TableName;
@@ -55,7 +53,7 @@ public class AISBBasedBuilder
         return new ActualBuilder().defaultSchema(defaultSchema);
     }
 
-    private static class ActualBuilder implements NewAISBuilder, NewViewBuilder, NewAkibanJoinBuilder, NewRoutineBuilder, NewSQLJJarBuilder {
+    private static class ActualBuilder implements NewViewBuilder, NewAkibanJoinBuilder, NewRoutineBuilder, NewSQLJJarBuilder {
 
         // NewAISProvider interface
 
@@ -216,22 +214,22 @@ public class AISBBasedBuilder
 
         @Override
         public NewUserTableBuilder colLong(String name) {
-            return colLong(name, false, NULLABLE_DEFAULT, null);
+            return colLong(name, NULLABLE_DEFAULT, null);
         }
 
         @Override
         public NewUserTableBuilder colLong(String name, boolean nullable) {
-            return colLong(name, nullable, false, null);
+            return colLong(name, nullable, null);
         }
 
         @Override
         public NewUserTableBuilder autoIncLong(String name, int initialValue) {
-            return colLong(name, false, true, initialValue);
+            return colLong(name, false, initialValue);
         }
 
-        private NewUserTableBuilder colLong(String name, boolean nullable, boolean autoIncrement, Integer initialAutoInc) {
+        private NewUserTableBuilder colLong(String name, boolean nullable, Integer initialAutoInc) {
             checkUsable();
-            aisb.column(schema, userTable, name, uTableColumnPos++, "INT", 10L, null, nullable, autoIncrement, null, null);
+            aisb.column(schema, userTable, name, uTableColumnPos++, "INT", 10L, null, nullable, false, null, null);
             if (initialAutoInc != null) {
                 String sequenceName = "temp-seq-" + userTable + "-" + name;
                 long initValue = initialAutoInc.longValue();
@@ -326,6 +324,18 @@ public class AISBBasedBuilder
             aisb.column(schema, userTable, name, uTableColumnPos++, "TEXT", null, null, nullable, false, null, null);
             return this;
         }
+        
+        @Override
+        public NewUserTableBuilder colDateTime (String name) {
+            return colDateTime(name, NULLABLE_DEFAULT);
+        }
+        
+        @Override
+        public NewUserTableBuilder colDateTime (String name, boolean nullable) {
+            aisb.column(schema, userTable, name, uTableColumnPos++, "DATETIME", null, null, nullable, false, null, null);
+            return this;
+        }
+
 
         @Override
         public NewUserTableBuilder pk(String... columns) {
@@ -552,7 +562,7 @@ public class AISBBasedBuilder
             catch (MalformedURLException ex1) {
                 File file = new File(value);
                 try {
-                    url = file.toURL();
+                    url = file.toURI().toURL();
                 }
                 catch (MalformedURLException ex2) {
                     // Report original failure.

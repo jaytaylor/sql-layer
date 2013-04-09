@@ -26,12 +26,12 @@ import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Routine;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.ajdax.Ajdax;
-import com.akiban.ajdax.AjdaxException;
-import com.akiban.ajdax.AjdaxWriter;
-import com.akiban.ajdax.JoinFields;
-import com.akiban.ajdax.JoinStrategy;
-import com.akiban.ajdax.actions.Action;
+import com.akiban.jonquil.Jonquil;
+import com.akiban.jonquil.JonquilException;
+import com.akiban.jonquil.JonquilWriter;
+import com.akiban.jonquil.JoinFields;
+import com.akiban.jonquil.JoinStrategy;
+import com.akiban.jonquil.actions.Action;
 import com.akiban.server.Quote;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.InvalidArgumentTypeException;
@@ -56,18 +56,19 @@ import com.akiban.sql.embedded.JDBCConnection;
 import com.akiban.sql.embedded.JDBCParameterMetaData;
 import com.akiban.sql.embedded.JDBCResultSet;
 import com.akiban.util.AkibanAppender;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonNode;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -175,18 +176,16 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
-    public void insert(PrintWriter writer, TableName rootTable, JsonNode node)  {
+    public void insert(PrintWriter writer, TableName tableName, JsonNode node)  {
         try (Session session = sessionService.createSession();
              CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
-            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-            String pk = insertProcessor.processInsert(session, ais, rootTable, node);
+            insertNoTxn(session, writer, tableName, node);
             txn.commit();
-            writer.write(pk);
         }
     }
 
     @Override
-    public void delete(PrintWriter writer, TableName tableName, String identifier) {
+    public void delete(TableName tableName, String identifier) {
         try (Session session = sessionService.createSession();
              CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
             AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
@@ -199,11 +198,25 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     public void update(PrintWriter writer, TableName tableName, String pks, JsonNode node) {
         try (Session session = sessionService.createSession();
              CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
-            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-            String pk = updateProcessor.processUpdate(session, ais, tableName, pks, node);
+            updateNoTxn(session, writer, tableName, pks, node);
             txn.commit();
+        }
+    }
+
+    @Override
+    public void insertNoTxn(Session session, PrintWriter writer, TableName tableName, JsonNode node) {
+        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+        String pk = insertProcessor.processInsert(session, ais, tableName, node);
+        if(writer != null) {
             writer.write(pk);
         }
+    }
+
+    @Override
+    public void updateNoTxn(Session session, PrintWriter writer, TableName tableName, String pks, JsonNode node) {
+        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
+        String pk = updateProcessor.processUpdate(session, ais, tableName, pks, node);
+        writer.write(pk);
     }
 
     @Override
@@ -230,28 +243,17 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
 
     @Override
     public void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
-                              TableName procName, Map<String,List<String>> queryParams) throws SQLException {
-        callProcedure(writer, request, jsonpArgName, procName, queryParams, null);
-    }
-
-    @Override
-    public void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
-                              TableName procName, String jsonParams) throws SQLException {
-        callProcedure(writer, request, jsonpArgName, procName, null, jsonParams);
-    }
-
-    protected void callProcedure(PrintWriter writer, HttpServletRequest request, String jsonpArgName,
-                                 TableName procName, Map<String,List<String>> queryParams, String jsonParams) throws SQLException {
+                                 TableName procName, Map<String,List<String>> queryParams, String content) throws SQLException {
         try (JDBCConnection conn = jdbcConnection(request, procName.getSchemaName());
              JDBCCallableStatement call = conn.prepareCall(procName)) {
             Routine routine = call.getRoutine();
             switch (routine.getCallingConvention()) {
             case SCRIPT_FUNCTION_JSON:
             case SCRIPT_BINDINGS_JSON:
-                callJsonProcedure(writer, request, jsonpArgName, call, queryParams, jsonParams);
+                callJsonProcedure(writer, request, jsonpArgName, call, queryParams, content);
                 break;
             default:
-                callDefaultProcedure(writer, request, jsonpArgName, call, queryParams, jsonParams);
+                callDefaultProcedure(writer, request, jsonpArgName, call, queryParams, content);
                 break;
             }
         }
@@ -378,14 +380,14 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
     }
 
     @Override
-    public String ajdaxToSQL(TableName tableName, String ajdax) throws IOException {
+    public String jonquilToSQL(TableName tableName, String jonquil) throws IOException {
         final AkibanInformationSchema ais;
         try (Session session = sessionService.createSession();
              CloseableTransaction txn = transactionService.beginCloseableTransaction(session)) {
             ais = dxlService.ddlFunctions().getAIS(session);
             txn.commit();
         }
-        JsonParser json = oldJsonFactory.createJsonParser(ajdax);
+        JsonParser json = oldJsonFactory.createJsonParser(jonquil);
         final String schema = tableName.getSchemaName();
         // the JoinStrategy will assume all tables are in the same schema
         JoinStrategy joinStrategy = new JoinStrategy() {
@@ -414,7 +416,7 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         Map<String, Action> additionalActionsMap = new HashMap<>();
         additionalActionsMap.put("fields", new Action() {
             @Override
-            public void apply(JsonParser input, AjdaxWriter output, String tableName) throws IOException {
+            public void apply(JsonParser input, JonquilWriter output, String tableName) throws IOException {
                 JsonToken token = input.nextToken();
                 if (token == JsonToken.VALUE_STRING) {
                     String value = input.getText();
@@ -424,25 +426,25 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
                             output.addScalar(column.getName());
                     }
                     else {
-                        throw new AjdaxException("illegal string value for @fields (must be \"all\"): " + value);
+                        throw new JonquilException("illegal string value for @fields (must be \"all\"): " + value);
                     }
                 }
                 else if (token == JsonToken.START_ARRAY) {
                     while (input.nextToken() != JsonToken.END_ARRAY) {
                         if (input.getCurrentToken() != JsonToken.VALUE_STRING) {
-                            throw new AjdaxException("illegal value for @attributes list: "
+                            throw new JonquilException("illegal value for @attributes list: "
                                     + input.getText() + " (" + token + ')');
                         }
                         output.addScalar(input.getText());
                     }
                 }
                 else {
-                    throw new AjdaxException("illegal value for @fields: " + input.getText() + " (" + token + ')');
+                    throw new JonquilException("illegal value for @fields: " + input.getText() + " (" + token + ')');
                 }
             }
         });
         Function<String, Action> additionalActions = Functions.forMap(additionalActionsMap, null);
-        return Ajdax.createSQL(tableName.getTableName(), json, joinStrategy, additionalActions);
+        return Jonquil.createSQL(tableName.getTableName(), json, joinStrategy, additionalActions);
     }
 
     public interface ProcessStatement {
@@ -642,5 +644,5 @@ public class RestDMLServiceImpl implements Service, RestDMLService {
         writer.write(String.format("{\"count\":%d}", count));
     }
 
-    private static final JsonFactory oldJsonFactory = new JsonFactory(new ObjectMapper()); // for Ajdax
+    private static final JsonFactory oldJsonFactory = new JsonFactory(new ObjectMapper()); // for Jonquil
 }

@@ -36,42 +36,32 @@ import static com.akiban.rest.resources.ResourceHelper.MEDIATYPE_JSON_JAVASCRIPT
 @Path("{other:.*}")
 public class DefaultResource {
 
-    private final ResourceRequirements reqs;
-    
-    public DefaultResource(ResourceRequirements reqs) {
-        this.reqs = reqs;
-    }
-
     @GET
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
-    public Response handleGetNoResource(@Context HttpServletRequest request,
-                                        @PathParam("other") String other) {
-        return buildResponse(request, other);
+    public Response handleGetNoResource(@Context HttpServletRequest request) {
+        return buildResponse(request);
     }
     
     @PUT
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
-    public Response handlePutNoResource(@Context HttpServletRequest request,
-            @PathParam("other") String other) {
-        return buildResponse(request, other);
+    public Response handlePutNoResource(@Context HttpServletRequest request) {
+        return buildResponse(request);
     }
     
     @POST
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
-    public Response handlePostNoResource(@Context HttpServletRequest request,
-            @PathParam("other") String other) {
-        return buildResponse(request, other);
+    public Response handlePostNoResource(@Context HttpServletRequest request) {
+        return buildResponse(request);
     }
     
     @DELETE
     @Produces(MEDIATYPE_JSON_JAVASCRIPT)
-    public Response handleDeleteNoResource(@Context HttpServletRequest request,
-            @PathParam("other") String other) {
-        return buildResponse(request, other);
+    public Response handleDeleteNoResource(@Context HttpServletRequest request) {
+        return buildResponse(request);
     }
 
-    private Response buildResponse(HttpServletRequest request, String path) {
-        String msg = String.format("API %s/%s not supported", reqs.restService.getContextPath(), path);
+    private Response buildResponse(HttpServletRequest request) {
+        String msg = String.format("API %s not supported", request.getRequestURI());
         return RestResponseBuilder
                 .forRequest(request)
                 .status(Response.Status.NOT_FOUND)

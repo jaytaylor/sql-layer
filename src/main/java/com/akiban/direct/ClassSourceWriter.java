@@ -30,8 +30,8 @@ public class ClassSourceWriter extends ClassSourceWriterBase {
     private final boolean isAbstract;
     private String[] imports;
 
-    public ClassSourceWriter(final PrintWriter writer, final String packageName, boolean isAbstract) {
-        super(writer, packageName);
+    public ClassSourceWriter(final PrintWriter writer, boolean isAbstract) {
+        super(writer);
         this.isAbstract = isAbstract;
     }
 
@@ -47,7 +47,7 @@ public class ClassSourceWriter extends ClassSourceWriterBase {
             /*
              * Only for non-inner classes
              */
-            println("package " + packageName + ";");
+            println("package " + PACKAGE + ";");
             newLine();
             if (imports != null) {
                 for (final String s : imports) {

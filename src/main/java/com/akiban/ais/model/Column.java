@@ -694,7 +694,7 @@ public class Column implements ColumnContainer
                                         boolean nullable)
     {
         if (charsetAndCollation == null)
-            return tClass.instance(nullable);
+            return tClass.instance(typeParameter1.intValue(), nullable);
         StringFactory.Charset charset = StringFactory.Charset.of(charsetAndCollation.charset());
         String collationName = charsetAndCollation.collation();
         int collatorId = AkCollatorFactory.getAkCollator(collationName).getCollationId();

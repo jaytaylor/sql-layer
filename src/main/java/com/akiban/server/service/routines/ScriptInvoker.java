@@ -23,4 +23,5 @@ public interface ScriptInvoker
     public String getFunctionName();
     public boolean isCompiled();
     public Object invoke(Object[] args);
+    public Object invokeNamedFunction(String functionName, Object[] args);
 }

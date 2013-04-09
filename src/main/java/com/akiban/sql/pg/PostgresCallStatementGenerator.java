@@ -24,6 +24,7 @@ import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.StaticMethodCallNode;
 
+import com.akiban.server.error.CantCallScriptLibraryException;
 import com.akiban.server.explain.Explainable;
 
 import java.util.List;
@@ -54,6 +55,8 @@ public class PostgresCallStatementGenerator extends PostgresBaseStatementGenerat
         case LOADABLE_PLAN:
             pstmt = PostgresLoadablePlan.statement(server, invocation);
             break;
+        case SCRIPT_LIBRARY:
+            throw new CantCallScriptLibraryException(stmt);
         default:
             pstmt = PostgresJavaRoutine.statement(server, invocation,
                                                   params, paramTypes);

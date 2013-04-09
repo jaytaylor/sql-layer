@@ -92,7 +92,8 @@ public class PostgresExecuteStatement extends PostgresBaseCursorStatement
     }
 
     @Override
-    public void sendDescription(PostgresQueryContext context, boolean always) 
+    public void sendDescription(PostgresQueryContext context,
+                                boolean always, boolean params)
             throws IOException {
         // Execute will do it.
     }

@@ -53,8 +53,8 @@
     <dependencies>
         <dependency>
             <groupId>com.akiban</groupId>
-            <artifactId>ajdax</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <artifactId>jonquil</artifactId>
+            <version>1.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
