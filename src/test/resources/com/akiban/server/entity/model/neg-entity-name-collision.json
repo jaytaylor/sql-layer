@@ -1,12 +1,12 @@
 {
-    "entities" : {
-        "customer" : {
-            "entity" : "2a57b59e-e1b7-4377-996e-a5c04e0abf29",
-            "attributes" : {}
+    "entities" : [
+        {
+            "name" : "customer",
+            "uuid" : "2a57b59e-e1b7-4377-996e-a5c04e0abf29"
         },
-        "customer" : {
-            "entity" : "e85af658-c6d9-4879-8961-27b1a98d6f29",
-            "attributes" : {}
+         {
+            "name" : "customer",
+            "uuid" : "e85af658-c6d9-4879-8961-27b1a98d6f29"
         }
-    }
+    ]
 }

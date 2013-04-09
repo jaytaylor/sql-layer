@@ -124,30 +124,16 @@ public final class Space {
     private static class Validator extends AbstractEntityVisitor {
 
         @Override
-        public void enterTopEntity(Entity entity) {
-            visitContainer(entity);
-        }
-
-        @Override
-        public void enterCollection(EntityCollection collection) {
-            visitContainer(collection);
-        }
-
-        private void visitContainer(Entity container) {
-            visitElement(container);
+        public void visitEntity(Entity container) {
             String name = container.getName();
             if (!collectionNames.add(name))
                 throw new IllegalEntityDefinition("duplicate name within entity and collections: " + name);
             if (container.getFields() == null)
                 throw new IllegalEntityDefinition("no fields defined for entity: " + container.getName());
-            for (EntityField field : container.getFields()) {
-                visitElement(field);
-                if (field.getType() == null)
-                    throw new IllegalEntityDefinition("no type set for field " + field.getName());
-            }
         }
 
-        private void visitElement(EntityElement element) {
+        @Override
+        public void visitEntityElement(EntityElement element) {
             if (element.getUuid() == null)
                 element.setUuid(uuidGenerator.apply(element.getName()));
             UUID uuid = element.getUuid();
@@ -155,6 +141,12 @@ public final class Space {
                 throw new IllegalEntityDefinition("no uuid specified");
             if (!uuids.add(uuid))
                 throw new IllegalEntityDefinition("duplicate uuid found: " + uuid);
+        }
+
+        @Override
+        protected void visitEntityField(EntityField field) {
+            if (field.getType() == null)
+                throw new IllegalEntityDefinition("no type set for field " + field.getName());
         }
 
         private Validator(Function<String, UUID> uuidGenerator) {

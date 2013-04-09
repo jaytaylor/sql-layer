@@ -72,6 +72,9 @@ public abstract class AbstractEntityVisitor implements EntityVisitor {
     protected void leaveEntity() {
     }
 
+    protected void visitEntityField(EntityField field) {
+    }
+
     /**
      * Default visiting of an entity. We could have also just had this be the default implementation of
      * {@linkplain #visitEntity}, but then the API gets a bit more complicated in terms of which methods you can
@@ -81,7 +84,9 @@ public abstract class AbstractEntityVisitor implements EntityVisitor {
     private void visitEntityInternal(Entity entity) {
         visitEntityElement(entity);
         visitEntity(entity);
-        for (EntityField field : entity.getFields())
+        for (EntityField field : entity.getFields()) {
             visitEntityElement(field);
+            visitEntityField(field);
+        }
     }
 }
