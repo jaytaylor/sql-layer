@@ -68,6 +68,11 @@ public abstract class EntityElement {
         this.name = name;
     }
 
+    @Override
+    public String toString() {
+        return String.format("%s (%s)", getName(), getUuid());
+    }
+
     private UUID uuid;
     private String name;
 

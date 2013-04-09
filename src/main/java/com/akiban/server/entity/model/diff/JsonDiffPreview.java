@@ -415,6 +415,11 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     @Override
+    public void endTopLevelEntity() {
+        // None
+    }
+
+    @Override
     public void error(String message)
     {
         try

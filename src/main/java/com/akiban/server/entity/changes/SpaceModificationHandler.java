@@ -47,5 +47,7 @@ public interface SpaceModificationHandler {
     void renameIndex(EntityIndex index);
     void endEntity();
 
+    void endTopLevelEntity();
+
     void error(String message);
 }

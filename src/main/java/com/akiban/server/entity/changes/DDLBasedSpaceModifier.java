@@ -54,6 +54,7 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     // Current entity being visited.
     private Entity oldEntity;
     private Entity newEntity;
+    private Entity oldTopEntity;
 
 
     public DDLBasedSpaceModifier(DDLFunctions ddlFunctions, Session session, String schemaName, Space newSpace) {
@@ -126,6 +127,9 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
 
     @Override
     public void beginEntity(Entity oldEntity, Entity newEntity) {
+        if (this.oldEntity == null) {
+            oldTopEntity = oldEntity;
+        }
         this.oldEntity = oldEntity;
         this.newEntity = newEntity;
     }
@@ -221,16 +225,20 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
 
     @Override
     public void endEntity() {
+    }
+
+    @Override
+    public void endTopLevelEntity() {
         if(!errors.isEmpty()) {
             resetPerEntityData();
             return;
         }
 
         if(!dropGroupIndexes.isEmpty()) {
-            TableName oldGroupName = new TableName(schemaName, oldEntity.getName());
+            TableName oldGroupName = new TableName(schemaName, oldTopEntity.getName());
             ddlFunctions.dropGroupIndexes(session, oldGroupName, dropGroupIndexes);
         }
-        UserTable oldRoot = oldAIS.getUserTable(schemaName, oldEntity.getName());
+        UserTable oldRoot = oldAIS.getUserTable(schemaName, oldTopEntity.getName());
         oldRoot.traverseTableAndDescendants(new NopVisitor() {
             @Override
             public void visitUserTable(UserTable table) {
@@ -285,6 +293,7 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     }
 
     private void resetPerEntityData() {
+        oldTopEntity = null;
         oldEntity = null;
         newEntity = null;
         dropGroupIndexes.clear();

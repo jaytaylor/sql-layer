@@ -133,6 +133,7 @@ public final class SpaceDiff {
             indexActions(original, updated);
             out.endEntity();
             collectionActions(original, updated);
+            out.endTopLevelEntity();
         }
 
         private void fieldActions(Entity original, Entity updated) {

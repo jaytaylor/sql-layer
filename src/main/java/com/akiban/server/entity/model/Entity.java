@@ -130,11 +130,6 @@ public class Entity extends EntityElement {
         validations = new TreeSet<>();
     }
 
-    @Override
-    public String toString() {
-        return getName();
-    }
-
     protected void acceptStart(EntityVisitor visitor) {
         visitor.enterTopEntity(this);
     }
