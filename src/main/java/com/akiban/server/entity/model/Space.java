@@ -138,8 +138,8 @@ public final class Space {
             String name = container.getName();
             if (!collectionNames.add(name))
                 throw new IllegalEntityDefinition("duplicate name within entity and collections: " + name);
-            if (container.getFields() == null || container.getFields().isEmpty())
-                throw new IllegalEntityDefinition("no attributes set for entity: " + container.getName());
+            if (container.getFields() == null)
+                throw new IllegalEntityDefinition("no fields defined for entity: " + container.getName());
             for (EntityField field : container.getFields()) {
                 visitElement(field);
                 if (field.getType() == null)

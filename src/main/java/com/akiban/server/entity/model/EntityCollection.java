@@ -26,6 +26,7 @@
 
 package com.akiban.server.entity.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 
@@ -37,6 +38,7 @@ import java.util.UUID;
 public final class EntityCollection extends Entity {
 
     @JsonProperty("grouping_fields")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<String> getGroupingFields() {
         return parentColumns;
     }
