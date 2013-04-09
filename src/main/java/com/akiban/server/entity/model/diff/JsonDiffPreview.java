@@ -73,10 +73,10 @@ public class JsonDiffPreview implements SpaceModificationHandler
         try
         {
             startObject();
-            jsonGen.writeObjectFieldStart("modified_entities");
+            jsonGen.writeArrayFieldStart("modified_entities");
             for (Entity entity : modifiedEntities)
                 jsonGen.writeObject(entity);
-            jsonGen.writeEndObject();
+            jsonGen.writeEndArray();
             endObject();
         }
         catch (IOException ex)
