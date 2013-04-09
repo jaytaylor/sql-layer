@@ -233,9 +233,7 @@ public final class SpaceDiff {
 
             if (!original.getIdentifying().equals(updated.getIdentifying()))
                 out.identifyingFieldsChanged();
-            boolean isCollection = (original instanceof EntityCollection);
-            assert isCollection == (updated instanceof EntityCollection) : original + " / " + updated;
-            if (isCollection) {
+            if ((original instanceof EntityCollection) && (updated instanceof EntityCollection)) {
                 EntityCollection origCollection = (EntityCollection) original;
                 EntityCollection updatedCollection = (EntityCollection) updated;
                 if (!origCollection.getGroupingFields().equals(updatedCollection.getGroupingFields()))

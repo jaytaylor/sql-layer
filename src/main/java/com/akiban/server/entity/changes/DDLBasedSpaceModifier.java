@@ -169,7 +169,16 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
 
     @Override
     public void changeFieldType(UUID fieldUuid) {
-        trackColumnModify(fieldUuid);
+        String oldFieldName = oldEntity.fieldsByUuid().get(fieldUuid).getName();
+        boolean changingSpinal = oldEntity.getIdentifying().contains(oldFieldName);
+        if (!changingSpinal && (oldEntity instanceof EntityCollection)) {
+            EntityCollection oldCollection = (EntityCollection) oldEntity;
+            changingSpinal = oldCollection.getGroupingFields().contains(oldFieldName);
+        }
+        if (changingSpinal)
+            errors.add("Can't change type of identifying fields or grouping fields");
+        else
+            trackColumnModify(fieldUuid);
     }
 
     @Override
