@@ -146,16 +146,16 @@ public final class SpaceDiff {
                 public void added(EntityField element) {
                     if (!handledUuids.contains(element.getUuid()))
                         out.addField(element.getUuid());
-                    // This wasn't in the original map, so remove its UUID from that one
-                    originalUuids.remove(element.getUuid());
+                    // This wasn't in the original map, so remove its UUID from the updated one to sync them
+                    updatedUUids.remove(element.getUuid());
                 }
 
                 @Override
                 public void dropped(EntityField element) {
                     if (!handledUuids.contains(element.getUuid()))
                         out.dropField(element.getUuid());
-                    // This wasn't in the updated map, so remove its UUID from that one
-                    updatedUUids.remove(element.getUuid());
+                    // This wasn't in the updated map, so remove its UUID from the original one to sync them
+                    originalUuids.remove(element.getUuid());
                 }
 
                 @Override
@@ -173,6 +173,7 @@ public final class SpaceDiff {
                         out.changeFieldProperties(uuid);
                 }
             });
+            assert originalUuids.equals(updatedUUids) : originalUuids + ", " + updatedUUids;
             Map<UUID, Integer> originalUuidPositions = uuidByPosition(originalUuids);
             int pos = 0;
             for (UUID uuid : updatedUUids) {

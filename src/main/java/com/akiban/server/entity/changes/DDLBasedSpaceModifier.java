@@ -26,6 +26,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.TableChange;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.entity.model.Entity;
+import com.akiban.server.entity.model.EntityCollection;
 import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Space;
 import com.akiban.server.entity.model.Validation;
@@ -46,9 +47,7 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     private final List<String> errors = new ArrayList<>();
 
     // Per entity change information. Tracked after beginEntity() and executed in endEntity()
-    private final List<UserTable> dropTables = new ArrayList<>();
     private final List<String> dropGroupIndexes = new ArrayList<>();
-    private final List<UserTable> newTables = new ArrayList<>();
     private final List<Index> newGroupIndexes = new ArrayList<>();
     private final Map<String,TableChangeInfo> tableChanges = new HashMap<>();
 
@@ -96,16 +95,28 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
 
     @Override
     public void addEntity(Entity newEntity) {
-        UserTable newRoot = newAIS.getUserTable(schemaName, newEntity.getName());
-        createTableRecursively(newRoot);
-        if(!newRoot.getGroup().getIndexes().isEmpty()) {
-            ddlFunctions.createIndexes(session, newRoot.getGroup().getIndexes());
+        if (newEntity instanceof EntityCollection) {
+            UserTable table = newAIS.getUserTable(schemaName, newEntity.getName());
+            createTableRecursively(table);
+        }
+        else {
+            UserTable newRoot = newAIS.getUserTable(schemaName, newEntity.getName());
+            createTableRecursively(newRoot);
+            if(!newRoot.getGroup().getIndexes().isEmpty()) {
+                ddlFunctions.createIndexes(session, newRoot.getGroup().getIndexes());
+            }
         }
     }
 
     @Override
     public void dropEntity(Entity dropped) {
-        ddlFunctions.dropGroup(session, new TableName(schemaName, dropped.getName()));
+        if (dropped instanceof EntityCollection) {
+            UserTable table = ddlFunctions.getUserTable(session, new TableName(schemaName, dropped.getName()));
+            dropTableRecursively(table);
+        }
+        else {
+            ddlFunctions.dropGroup(session, new TableName(schemaName, dropped.getName()));
+        }
     }
 
     @Override
@@ -128,16 +139,12 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     public void addField(UUID added) {
         String name = getFieldName(added, newEntity);
         trackColumnChange(newEntity.getName(), TableChange.createAdd(name));
-//            case COLLECTION: // TODO what do do about this?
-//                newTables.add(newAIS.getUserTable(schemaName, attrName));
     }
 
     @Override
     public void dropField(UUID dropped) {
         String oldName = getFieldName(dropped, oldEntity);
         trackColumnChange(oldEntity.getName(), TableChange.createDrop(oldName));
-//            case COLLECTION: TODO what to do about this?
-//                dropTables.add(ddlFunctions.getUserTable(session, new TableName(schemaName, oldName)));
     }
 
     @Override
@@ -145,8 +152,6 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
         String oldName = getFieldName(fieldUuid, oldEntity);
         String newName = getFieldName(fieldUuid, newEntity);
         trackColumnChange(oldEntity.getName(), TableChange.createModify(oldName, newName));
-//            case COLLECTION:
-//                trackTableRename(oldName, newName); // TODO what to do about this?
     }
 
     @Override
@@ -225,12 +230,6 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
             TableName oldGroupName = new TableName(schemaName, oldEntity.getName());
             ddlFunctions.dropGroupIndexes(session, oldGroupName, dropGroupIndexes);
         }
-        for(UserTable table : dropTables) {
-            dropTableRecursively(table);
-        }
-        for(UserTable table : newTables) {
-            createTableRecursively(table);
-        }
         UserTable oldRoot = oldAIS.getUserTable(schemaName, oldEntity.getName());
         oldRoot.traverseTableAndDescendants(new NopVisitor() {
             @Override
@@ -288,9 +287,7 @@ public class DDLBasedSpaceModifier implements SpaceModificationHandler {
     private void resetPerEntityData() {
         oldEntity = null;
         newEntity = null;
-        dropTables.clear();
         dropGroupIndexes.clear();
-        newTables.clear();
         newGroupIndexes.clear();
         tableChanges.clear();
     }
