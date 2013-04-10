@@ -234,7 +234,7 @@ public class AISBBasedBuilder
                 String sequenceName = "temp-seq-" + userTable + "-" + name;
                 long initValue = initialAutoInc.longValue();
                 aisb.sequence(schema, sequenceName, 
-                              initValue, 1L, Long.MIN_VALUE, Long.MAX_VALUE, 
+                              initValue, 1L, initValue, Long.MAX_VALUE,
                               false);
                 aisb.columnAsIdentity(schema, userTable, name, sequenceName, true);
                 aisb.akibanInformationSchema().
