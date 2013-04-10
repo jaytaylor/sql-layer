@@ -24,7 +24,7 @@ import com.akiban.server.service.restdml.ModelBuilder;
 import com.akiban.server.service.restdml.RestDMLService;
 import com.akiban.server.service.security.SecurityService;
 import com.akiban.util.JsonUtils;
-import org.codehaus.jackson.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DELETE;

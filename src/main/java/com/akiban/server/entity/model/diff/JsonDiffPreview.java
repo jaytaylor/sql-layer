@@ -45,6 +45,8 @@ public class JsonDiffPreview implements SpaceModificationHandler
     private final Set<Entity> modifiedEntities;
     private Entity oldEntity;
     private Entity updatedEntity;
+    private Entity updatedTopLevelEntity;
+    private int level;
     private boolean finished = false;
 
     private static final Comparator<Entity> entitiesByName = new Comparator<Entity>() {
@@ -103,6 +105,8 @@ public class JsonDiffPreview implements SpaceModificationHandler
 
     @Override
     public void beginEntity(Entity oldEntity, Entity newEntity) {
+        if (level++ == 0)
+            this.updatedTopLevelEntity = newEntity;
         this.oldEntity = oldEntity;
         this.updatedEntity = newEntity;
     }
@@ -132,7 +136,8 @@ public class JsonDiffPreview implements SpaceModificationHandler
         {
             throw new DiffIOException(ex);
         }
-        entityModified(entity);
+        if (level == 0)
+            entityModified(entity);
     }
 
     @Override
@@ -174,6 +179,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
         {
             throw new DiffIOException(ex);
         }
+        entityModified(updatedTopLevelEntity);
     }
 
     @Override
@@ -411,7 +417,7 @@ public class JsonDiffPreview implements SpaceModificationHandler
 
     @Override
     public void endEntity() {
-        // None
+        --level;
     }
 
     @Override
@@ -466,8 +472,8 @@ public class JsonDiffPreview implements SpaceModificationHandler
     }
 
     private void entityModified() {
-        assert updatedEntity != null;
-        modifiedEntities.add(updatedEntity);
+        assert updatedTopLevelEntity != null;
+        modifiedEntities.add(updatedTopLevelEntity);
     }
 
     private void entityModified(Entity entity) {

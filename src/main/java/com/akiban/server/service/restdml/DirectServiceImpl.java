@@ -36,7 +36,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
-import org.codehaus.jackson.JsonGenerator;
+import com.fasterxml.jackson.core.JsonGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +60,6 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.restdml.EndpointMetadata.EndpointAddress;
 import com.akiban.server.service.restdml.EndpointMetadata.ParamCache;
 import com.akiban.server.service.restdml.EndpointMetadata.ParamMetadata;
-import com.akiban.server.service.restdml.EndpointMetadata.Tokenizer;
 import com.akiban.server.service.routines.RoutineLoader;
 import com.akiban.server.service.routines.ScriptInvoker;
 import com.akiban.server.service.security.SecurityService;
