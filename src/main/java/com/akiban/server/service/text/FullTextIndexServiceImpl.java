@@ -436,7 +436,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 }
                 ex.removeAll();
                 hasScheduled = false;
-                populateWorker = null;
                 transaction = false;
             }
             catch (PersistitException ex1)
