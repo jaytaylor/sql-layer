@@ -108,6 +108,7 @@ public class AccumulatorAdapter {
         ROW_COUNT(1, Accumulator.Type.SUM),
         UNIQUE_ID(2, Accumulator.Type.SEQ),
         AUTO_INC(3, Accumulator.Type.SUM),
+        SEQUENCE(4, Accumulator.Type.SEQ)
         ;
     
         AccumInfo(int index, Accumulator.Type type) {
