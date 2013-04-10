@@ -93,7 +93,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
 
     private volatile Timer populateTimer;
     private long populateDelayInterval;
-    private TimerTask populateWorker;
 
     private static final Logger logger = LoggerFactory.getLogger(FullTextIndexServiceImpl.class);
 
@@ -360,7 +359,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             transactionService.beginTransaction(session);
             if(addPopulate(session, schema, table, index) && !hasScheduled && populateEnabled)
             {
-                populateTimer.schedule(populateWorker, populateDelayInterval);
+                populateTimer.schedule(populateWorker(), populateDelayInterval);
                 hasScheduled = true;
             }
 
@@ -483,8 +482,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
     {
         populateDelayInterval = Long.parseLong(configService.getProperty(POPULATE_DELAY_INTERVAL));
         populateTimer = new Timer();
-        populateWorker = new DefaultPopulateWorker();
-        populateTimer.schedule(populateWorker, populateDelayInterval);
+        populateTimer.schedule(populateWorker(), populateDelayInterval);
         populateEnabled = true;
         hasScheduled = true;
     }
@@ -501,7 +499,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         hasScheduled = false;
         populateEnabled = false;
         populateTimer = null;
-        populateWorker = null;
     }
 
 
@@ -512,9 +509,9 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
         if (updateWorker == null || updateRunning)
             return false;
 
-        // Use a timer, so the work is executed in a different
+        // execute the thread in different 
         // thread (so it has a new session)
-        new Timer().schedule(new DefaultUpdateWorker(), 0);
+        new Thread(updateWorker).start();
         return true;
     }
     
@@ -545,16 +542,21 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             // get a new timer
             // (So schedulePopulate can schedule new task if new index is created)
             populateTimer = new Timer();
-            populateWorker = new DefaultPopulateWorker();
 
             // execute the task
-            // (Use timer to ensure it runs in its OWN thread
-            //  otherwise we'd get "transaction already began" exception
-            //  because each thread only has one session)
-            populateTimer.schedule(new DefaultPopulateWorker(), 0);
+            // in a different thread
+            // because we'd otherwise get "transaction already began" exception
+            //  as each thread only has one session)
+            new Thread(populateWorker()).start();
+
         }
        
         return true;
+    }
+
+    private synchronized TimerTask populateWorker ()
+    {
+        return new DefaultPopulateWorker();
     }
 
     protected IndexName nextInQueue(Exchange ex) throws PersistitException
