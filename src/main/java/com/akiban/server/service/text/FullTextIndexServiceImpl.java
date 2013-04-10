@@ -432,8 +432,6 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 IndexName toPopulate;
                 while ((toPopulate = nextInQueue(ex)) != null)
                 {
-                    // each createIndex is done within in a separate transction
-                    // hence we need different sessions
                     createIndex(session, toPopulate);
                 }
                 ex.removeAll();
