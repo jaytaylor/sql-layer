@@ -40,12 +40,17 @@ public class WaitFunctionHelpers
                 // This work doesn't require wait time
                 if (wk.getMinimumWaitTime() <= 0)
                     continue;
+
+                // request the task to be executed
+                wk.forceExecution();
+                
+                // add observer
                 BackgroundObserverImpl w = new BackgroundObserverImpl();
                 wk.addObserver(w);
                 waiters.add(w);
             }
 
-            // busy-loop waiting for all the work to be done
+            // busy-loop waiting for all the works to be done
             boolean allAwaken;
             while (true)
             {
@@ -59,6 +64,7 @@ public class WaitFunctionHelpers
                     break;
             }
             
+            // clean up
             for (BackgroundWork wk : works)
             {
                 wk.removeObsevers(waiters);

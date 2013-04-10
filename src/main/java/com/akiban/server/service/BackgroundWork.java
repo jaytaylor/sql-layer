@@ -18,7 +18,6 @@
 package com.akiban.server.service;
 
 import java.util.Collection;
-import java.util.Observable;
 
 
 public interface BackgroundWork<O extends BackgroundObserver, W extends BackgroundWork>
@@ -39,4 +38,14 @@ public interface BackgroundWork<O extends BackgroundObserver, W extends Backgrou
      * the work has been executed at least once.
      */
     public abstract long getMinimumWaitTime();
+    
+    /**
+     * Force the work to be executed immediately if it is not already running.
+     * 
+     * (This is only a request, not a command. The handler might choose not 
+     *  to carry it out, if that would cause conflicts)
+     * 
+     * @return  true if the request is executed, false otherwise
+     */
+    public boolean forceExecution();
 }
