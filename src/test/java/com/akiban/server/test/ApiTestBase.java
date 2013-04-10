@@ -779,10 +779,10 @@ public class ApiTestBase {
         SchemaFactory schemaFactory = new SchemaFactory(schema);
         
         // Insert DDL into the System 
-        AkibanInformationSchema ais = schemaFactory.ais(ddl(), session(), ddl);
+        AkibanInformationSchema ais = schemaFactory.ais(serviceManager(), ddl(), session(), ddl);
         
         // sort DDL to find first root table of the user schema
-        ais = schemaFactory.ais (ddl);
+        ais = schemaFactory.ais (serviceManager(), ddl);
         List<UserTable> tables = new ArrayList<>(ais.getUserTables().values());
         Collections.sort(tables, new Comparator<UserTable>() {
             @Override
