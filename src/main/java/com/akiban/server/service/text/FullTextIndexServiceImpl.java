@@ -551,7 +551,7 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             // (Use timer to ensure it runs in its OWN thread
             //  otherwise we'd get "transaction already began" exception
             //  because each thread only has one session)
-            populateTimer.schedule(populateWorker, 0);
+            populateTimer.schedule(new DefaultPopulateWorker(), 0);
         }
        
         return true;
