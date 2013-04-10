@@ -808,12 +808,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         checkSequenceName(session, sequence.getSequenceName(), false);
         AkibanInformationSchema newAIS = AISMerge.mergeSequence(this.getAis(session), sequence);
         saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(sequence.getSchemaName()));
-        try {
-            sequence.setStartWithAccumulator(treeService);
-        } catch (PersistitException e) {
-            LOG.error("Setting sequence starting value for sequence {} failed", sequence.getSequenceName().getDescription());
-            throw wrapPersistitException(session, e);
-        }
     }
     
     /** Drop the given sequence from the current AIS. */
@@ -1537,14 +1531,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
             // Memory only table changed, no reason to re-serialize
             mergedTable.setMemoryTableFactory(factory);
             unSavedAISChangeWithRowDefs(session, newAIS);
-        }
-        try {
-            if (mergedTable.getIdentityColumn() != null) {
-                mergedTable.getIdentityColumn().getIdentityGenerator().setStartWithAccumulator(treeService);
-            }
-        } catch (PersistitException ex) {
-            LOG.error("Setting sequence starting value for table {} failed", mergedTable.getName().getDescription());
-            throw wrapPersistitException(session, ex);
         }
         return newName;
     }
