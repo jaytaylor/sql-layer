@@ -18,8 +18,10 @@
 package com.akiban.server.service.text;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
@@ -382,7 +384,10 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
                 IndexName toPopulate;
                 while ((toPopulate = nextInQueue(ex)) != null)
                 {
-                    createIndex(session, toPopulate);
+                    if (stillExists(session, toPopulate))
+                        createIndex(session, toPopulate);
+                    else
+                        logger.debug("FullTextIndex " + toPopulate + " deleted before population");
                 }
                 ex.removeAll();
                 hasScheduled = false;
@@ -397,6 +402,13 @@ public class FullTextIndexServiceImpl extends FullTextIndexInfosImpl implements 
             }
         }
         
+        private boolean stillExists(Session session, IndexName indexName)
+        {
+            AkibanInformationSchema ais = getAIS(session);
+            UserTable table = ais.getUserTable(indexName.getFullTableName());
+            return !(table == null ||  table.getFullTextIndex(indexName.getName()) == null);
+        }
+
     };
 
     // ---------- for testing ---------------
