@@ -806,7 +806,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     @Override
     public void createSequence(Session session, Sequence sequence) {
         checkSequenceName(session, sequence.getSequenceName(), false);
-        AkibanInformationSchema newAIS = AISMerge.mergeSequence(this.getAis(session), sequence);
+        AISMerge merge = AISMerge.newForOther(nameGenerator, getAis(session));
+        AkibanInformationSchema newAIS = merge.mergeSequence(sequence);
         saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(sequence.getSchemaName()));
     }
     

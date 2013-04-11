@@ -42,7 +42,13 @@ public class Sequence implements TreeLink {
         ais.addSequence(sequence);
         return sequence; 
     }
-    
+
+    /** Create a copy of <code>seq</code>. Internal data (e.g. tree name) is not copied. */
+    public static Sequence create (AkibanInformationSchema ais, Sequence seq) {
+        return create(ais, seq.sequenceName.getSchemaName(), seq.sequenceName.getTableName(),
+                      seq.startsWith, seq.increment, seq.minValue, seq.maxValue, seq.cycle);
+    }
+
     protected Sequence (AkibanInformationSchema ais,
             String schemaName, 
             String sequenceName, 
