@@ -104,10 +104,15 @@ public class AccumulatorAdapter {
      * </p>
      */
     public static enum AccumInfo {
+        /** Ordinal value as used in the hkey. Write once. Attached to the PK tree. */
         ORDINAL(0, Accumulator.Type.SUM),
+        /** Size of a table or group index. Attached to PK tree and GI tree, respectively */
         ROW_COUNT(1, Accumulator.Type.SUM),
+        /** Source of values for hidden primary keys. Attached to the PK tree. */
         UNIQUE_ID(2, Accumulator.Type.SEQ),
+        /** Saves values from the MySQL adapter AUTO INCREMENT columns. Attached to the PK tree. */
         AUTO_INC(3, Accumulator.Type.SUM),
+        /** Source of values for SQL sequences. Attached to the sequence tree. */
         SEQUENCE(4, Accumulator.Type.SEQ)
         ;
     
