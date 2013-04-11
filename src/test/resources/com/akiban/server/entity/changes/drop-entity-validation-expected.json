@@ -1,7 +1,3 @@
 [
-    {
-        "action": "drop_entity_validation",
-        "destructive": true, 
-        "dropped_validation": {"unique": "name"}
-    }
+    {"error":"Dropping entity validations is not yet supported: unique: name"}
 ]
