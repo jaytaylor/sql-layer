@@ -115,7 +115,7 @@ class OperatorStoreGIHandler {
     private void storeExchange(GroupIndex groupIndex, Exchange exchange) {
         try {
             exchange.store();
-            AccumulatorAdapter.updateAndGet(AccumulatorAdapter.AccumInfo.ROW_COUNT, exchange, 1);
+            AccumulatorAdapter.sumAdd(AccumulatorAdapter.AccumInfo.ROW_COUNT, exchange, 1);
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
         }
@@ -127,7 +127,7 @@ class OperatorStoreGIHandler {
     private void removeExchange(GroupIndex groupIndex, Exchange exchange) {
         try {
             if (exchange.remove()) {
-                AccumulatorAdapter.updateAndGet(AccumulatorAdapter.AccumInfo.ROW_COUNT, exchange, -1);
+                AccumulatorAdapter.sumAdd(AccumulatorAdapter.AccumInfo.ROW_COUNT, exchange, -1);
             }
             else
                 UNNEEDED_DELETE_TAP.hit();

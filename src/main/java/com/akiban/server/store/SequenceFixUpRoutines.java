@@ -92,7 +92,7 @@ public class SequenceFixUpRoutines {
             treeService.populateTreeCache(seq);
             try(CloseableTransaction txn = server.getTransactionService().beginCloseableTransaction(session)) {
                 for(int i = 0; i < newValue; ++i) {
-                    seq.nextValue(treeService);
+                    seq.nextValue();
                 }
                 txn.commit();
             }

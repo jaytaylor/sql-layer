@@ -135,10 +135,10 @@ public class Sequence implements TreeLink {
         return treeCache.get();
     }
 
-    public long nextValue(TreeService treeService) throws PersistitException {
+    public long nextValue() throws PersistitException {
         // Note: Ever increasing, always incremented by 1, rollbacks will leave gaps. See bug1167045 for discussion.
-        AccumulatorAdapter accum = getAdapter(treeService);
-        long rawSequence = accum.updateAndGet(1);
+        AccumulatorAdapter accum = getAdapter();
+        long rawSequence = accum.seqAllocate();
 
         long nextValue = notCycled(rawSequence);
         if (nextValue > maxValue || nextValue < minValue) {
@@ -150,14 +150,14 @@ public class Sequence implements TreeLink {
         return nextValue;
     }
 
-    public long currentValue(TreeService treeService) throws PersistitException {
-        AccumulatorAdapter accum = getAdapter(treeService);
+    public long currentValue() throws PersistitException {
+        AccumulatorAdapter accum = getAdapter();
         return cycled(notCycled(accum.getSnapshot()));
     }
 
-    private AccumulatorAdapter getAdapter(TreeService treeService) throws PersistitException {
+    private AccumulatorAdapter getAdapter() throws PersistitException {
         Tree tree = getTreeCache().getTree();
-        return new AccumulatorAdapter(AccumInfo.SEQUENCE, treeService, tree);
+        return new AccumulatorAdapter(AccumInfo.SEQUENCE, tree);
     }
 
     private long notCycled(long rawSequence) {

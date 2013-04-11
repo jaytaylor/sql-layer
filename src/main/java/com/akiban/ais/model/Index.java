@@ -359,12 +359,11 @@ public abstract class Index implements Traversable
 
     // Unique, non-PK indexes store a "null separator value", making index rows unique that would otherwise
     // be considered duplicates due to nulls.
-    public long nextNullSeparatorValue(TreeService treeService)
+    public long nextNullSeparatorValue()
     {
         Tree tree = indexDef.getTreeCache().getTree();
-        AccumulatorAdapter accumulator =
-            new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, treeService, tree);
-        return accumulator.updateAndGet(1);
+        AccumulatorAdapter accumulator = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, tree);
+        return accumulator.seqAllocate();
     }
 
     // akTypes, akCollators and tInstances provide type info for physical index rows.

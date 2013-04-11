@@ -239,7 +239,6 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     private static final String DELAYED_TREE_KEY = "delayedTree";
 
     private static final int SCHEMA_GEN_ACCUM_INDEX = 0;
-    private static final Accumulator.Type SCHEMA_GEN_ACCUM_TYPE = Accumulator.Type.SEQ;
 
     // Changed from 1 to 2 due to incompatibility related to index row changes (see bug 985007)
     private static final int PROTOBUF_PSSM_VERSION = 2;
@@ -1462,14 +1461,14 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         return !curVer.equals(tableVer);
     }
 
-    private Accumulator getGenerationAccumulator(Session session) throws PersistitException {
+    private Accumulator.SeqAccumulator getGenerationAccumulator(Session session) throws PersistitException {
         // treespace policy could split the _schema_ tree across volumes and give us multiple accumulators, which would
         // be very bad. Work around that with a fake/constant schema name. It isn't a problem if this somehow got changed
         // across a restart. Really, we want a constant, system-like volume to put this in.
         final String SCHEMA = "pssm";
         Exchange ex = schemaTreeExchange(session, SCHEMA);
         try {
-            return ex.getTree().getAccumulator(SCHEMA_GEN_ACCUM_TYPE, SCHEMA_GEN_ACCUM_INDEX);
+            return ex.getTree().getSeqAccumulator(SCHEMA_GEN_ACCUM_INDEX);
         } finally {
             treeService.releaseExchange(session, ex);
         }
@@ -1477,16 +1476,15 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
 
     private long getGenerationSnapshot(Session session) {
         try {
-            return getGenerationAccumulator(session).getSnapshotValue(treeService.getDb().getTransaction());
+            return getGenerationAccumulator(session).getSnapshotValue();
         } catch(PersistitException e) {
             throw wrapPersistitException(session, e);
         }
     }
 
     private long getNextGeneration(Session session) {
-        final int ACCUM_UPDATE_VALUE = 1;   // irrelevant for SEQ types
         try {
-            return getGenerationAccumulator(session).update(ACCUM_UPDATE_VALUE, treeService.getDb().getTransaction());
+            return getGenerationAccumulator(session).allocate();
         } catch(PersistitException e) {
             throw wrapPersistitException(session, e);
         }

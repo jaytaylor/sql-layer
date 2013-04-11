@@ -151,7 +151,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         }
         final Exchange ex = store.getExchange(session, index);
         try {
-            return AccumulatorAdapter.getSnapshot(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, ex.getTree());
+            return AccumulatorAdapter.getSnapshot(AccumulatorAdapter.AccumInfo.ROW_COUNT, ex.getTree());
         }
         finally {
             store.releaseExchange(session, ex);
@@ -165,7 +165,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         }
         final Exchange ex = store.getExchange(session, index);
         try {
-            return AccumulatorAdapter.getLiveValue(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, ex.getTree());
+            return AccumulatorAdapter.getLiveValue(AccumulatorAdapter.AccumInfo.ROW_COUNT, ex.getTree());
         }
         finally {
             store.releaseExchange(session, ex);

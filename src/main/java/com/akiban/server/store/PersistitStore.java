@@ -930,7 +930,7 @@ public class PersistitStore implements Store, Service {
             try {
                 iEx.removeAll();
                 if (index.isGroupIndex()) {
-                    new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, iEx.getTree()).set(0);
+                    new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, iEx.getTree()).set(0);
                 }
             } catch (PersistitException e) {
                 throw new PersistitAdapterException(e);

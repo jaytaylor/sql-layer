@@ -95,32 +95,34 @@ public class SequenceDDLIT extends AISDDLITBase {
 
     @Test
     public void durableAfterRollbackAndRestart() throws Exception {
-        String sql = "CREATE SEQUENCE test.s1 START WITH 1 INCREMENT BY 1";
+        TableName seqName = new TableName("test", "s1");
+        String sql = "CREATE SEQUENCE "+seqName+" START WITH 1 INCREMENT BY 1";
         executeDDL(sql);
-        Sequence s1 = ais().getSequence(new TableName("test", "s1"));
+        Sequence s1 = ais().getSequence(seqName);
         assertNotNull("s1", s1);
 
         txnService().beginTransaction(session());
-        assertEquals("start val a", 0, s1.currentValue(treeService()));
-        assertEquals("next val a", 1, s1.nextValue(treeService()));
+        assertEquals("start val a", 0, s1.currentValue());
+        assertEquals("next val a", 1, s1.nextValue());
         txnService().commitTransaction(session());
 
         txnService().beginTransaction(session());
-        assertEquals("next val b", 2, s1.nextValue(treeService()));
-        assertEquals("cur val b", 2, s1.currentValue(treeService()));
+        assertEquals("next val b", 2, s1.nextValue());
+        assertEquals("cur val b", 2, s1.currentValue());
         txnService().rollbackTransactionIfOpen(session());
 
         txnService().beginTransaction(session());
-        assertEquals("cur val c", 1, s1.currentValue(treeService()));
+        assertEquals("cur val c", 1, s1.currentValue());
         // Expected gap, see nextValue() impl
-        assertEquals("next val c", 3, s1.nextValue(treeService()));
+        assertEquals("next val c", 3, s1.nextValue());
         txnService().commitTransaction(session());
 
         safeRestartTestServices();
 
+        s1 = ais().getSequence(seqName);
         txnService().beginTransaction(session());
-        assertEquals("cur val after restart", 3, s1.currentValue(treeService()));
-        assertEquals("next val after restart", 4, s1.nextValue(treeService()));
+        assertEquals("cur val after restart", 3, s1.currentValue());
+        assertEquals("next val after restart", 4, s1.nextValue());
         txnService().commitTransaction(session());
     }
 
@@ -135,8 +137,8 @@ public class SequenceDDLIT extends AISDDLITBase {
             assertNotNull("s1, loop"+i, s1);
 
             txnService().beginTransaction(session());
-            assertEquals("start val, loop"+i, 0, s1.currentValue(treeService()));
-            assertEquals("next val, loop"+i, 1, s1.nextValue(treeService()));
+            assertEquals("start val, loop"+i, 0, s1.currentValue());
+            assertEquals("next val, loop"+i, 1, s1.nextValue());
             txnService().commitTransaction(session());
 
             executeDDL(drop);
