@@ -31,7 +31,11 @@ import com.akiban.server.entity.model.EntityIndex;
 import com.akiban.server.entity.model.Validation;
 
 public abstract class AbstractSpaceModificationHandler implements SpaceModificationHandler {
-
+    // This class is here to handle the common errors.
+    // As long as all SpaceModificationHandler implementations extend from this class, and as long as none of those
+    // subclasses invoke this.error(String), all errors should be in sync.
+    // Please don't un-finalize any of the methods here. If you need to override them, just delete them from this
+    // class altogether.
 
     @Override
     public final void identifyingFieldsChanged() {
@@ -42,7 +46,6 @@ public abstract class AbstractSpaceModificationHandler implements SpaceModificat
     public final void groupingFieldsChanged() {
         error("Can't change grouping fields");
     }
-
 
     @Override
     public final void moveEntity(Entity oldParent, Entity newParent) {
