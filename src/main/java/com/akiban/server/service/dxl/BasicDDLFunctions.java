@@ -1192,9 +1192,9 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public void createRoutine(Session session, Routine routine)
+    public void createRoutine(Session session, Routine routine, boolean replaceExisting)
     {
-        schemaManager().createRoutine(session, routine);
+        schemaManager().createRoutine(session, routine, replaceExisting);
     }
 
     @Override

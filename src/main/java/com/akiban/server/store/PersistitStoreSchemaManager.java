@@ -587,8 +587,8 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
     }
 
     @Override
-    public void createRoutine(Session session, Routine routine) {
-        createRoutineCommon(session, routine, false);
+    public void createRoutine(Session session, Routine routine, boolean replaceExisting) {
+        createRoutineCommon(session, routine, false, replaceExisting);
     }
 
     @Override
@@ -601,7 +601,7 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         transactionally(sessionService.createSession(), new ThrowingRunnable() {
             @Override
             public void run(Session session) throws PersistitException {
-                createRoutineCommon(session, routine, true);
+                createRoutineCommon(session, routine, true, false);
             }
         });
     }
@@ -616,10 +616,11 @@ public class PersistitStoreSchemaManager implements Service, SchemaManager {
         });
     }
 
-    private void createRoutineCommon(Session session, Routine routine, boolean inSystem) {
+    private void createRoutineCommon(Session session, Routine routine, 
+                                     boolean inSystem, boolean replaceExisting) {
         final AkibanInformationSchema oldAIS = getAis(session);
         checkSystemSchema(routine.getName(), inSystem);
-        if (oldAIS.getRoutine(routine.getName()) != null)
+        if (!replaceExisting && (oldAIS.getRoutine(routine.getName()) != null))
             throw new DuplicateRoutineNameException(routine.getName());
         final AkibanInformationSchema newAIS = AISMerge.mergeRoutine(oldAIS, routine);
         if (inSystem)
