@@ -17,9 +17,9 @@
 
 package com.akiban.server.service.routines;
 
-public interface ScriptInvoker
+public interface ScriptLibrary
 {
-    public ScriptLibrary getLibrary();
-    public String getFunctionName();
-    public Object invoke(Object[] args);
+    public String getEngineName();
+    public boolean isCompiled();
+    public Object invoke(String function, Object[] args);
 }
