@@ -36,6 +36,7 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
+import com.akiban.server.error.KeyColumnMissingException;
 import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.externaldata.ExternalDataService;
@@ -128,8 +129,7 @@ public class UpsertProcessor extends DMLProcessor {
         }
         
         if (pkIndex.getColumns().size() !=pkFields) {
-            //TODO Write New error - code and message -> JsonNode object needs all PK field with values
-            throw new RuntimeException();
+            throw new KeyColumnMissingException(String.format("%s.%s", context.table.getName().toString(), pkIndex.getIndex().getIndexName()));
         }
         Row row = determineExistance (context);
         if (row != null) {
