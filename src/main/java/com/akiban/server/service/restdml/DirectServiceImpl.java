@@ -98,7 +98,7 @@ public class DirectServiceImpl implements Service, DirectService {
 
     private final static String DISTINGUISHED_REGISTRATION_METHOD_NAME = "_register";
 
-    private final static String CREATE_PROCEDURE_FORMAT = "CREATE PROCEDURE \"%s\".\"%s\" ()"
+    private final static String CREATE_PROCEDURE_FORMAT = "CREATE OR REPLACE PROCEDURE \"%s\".\"%s\" ()"
             + " LANGUAGE %s PARAMETER STYLE LIBRARY AS $$%s$$";
 
     private final static String DROP_PROCEDURE_FORMAT = "DROP PROCEDURE \"%s\".\"%s\"";
@@ -146,21 +146,11 @@ public class DirectServiceImpl implements Service, DirectService {
             /*
              * TODO - once it becomes possible to execute DDL statements within
              * the scope of an existing transaction, the following should be
-             * changed. Right now we perform as many as three consecutive DDL
-             * operations (drop an existing procedure, create a new one and then
-             * drop it again if there's an error in the _register function) in
-             * separate transactions, and in each case we construct a new AIS.
+             * changed. Right now we perform consecutive DDL operations (create
+             * the procedure and then drop it again if there's an error in the
+             * _register function) in separate transactions, and in both cases
+             * we construct a new AIS.
              */
-            final AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(conn.getSession());
-            if (ais.getRoutine(procName) != null) {
-                try {
-                    final String drop = String.format(DROP_PROCEDURE_FORMAT, procName.getSchemaName(),
-                            procName.getTableName(), language, definition);
-                    statement.execute(drop);
-                } catch (Exception e) {
-                    LOG.error("Unable to remove invalid library " + module, e);
-                }
-            }
             final String create = String.format(CREATE_PROCEDURE_FORMAT, procName.getSchemaName(),
                     procName.getTableName(), language, definition);
             statement.execute(create);
